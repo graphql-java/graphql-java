@@ -4,11 +4,10 @@ import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
-import graphql.language.Field;
+import graphql.execution.MergedFields;
 import graphql.language.FragmentDefinition;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,7 +31,7 @@ public class DataFetchingEnvironmentBuilder {
                 .context(environment.getContext())
                 .root(environment.getRoot())
                 .fieldDefinition(environment.getFieldDefinition())
-                .fields(environment.getFields())
+                .mergedFields(environment.getMergedFields())
                 .fieldType(environment.getFieldType())
                 .executionStepInfo(environment.getExecutionStepInfo())
                 .parentType(environment.getParentType())
@@ -61,7 +60,7 @@ public class DataFetchingEnvironmentBuilder {
     private Object context;
     private Object root;
     private GraphQLFieldDefinition fieldDefinition;
-    private List<Field> fields = Collections.emptyList();
+    private MergedFields mergedFields;
     private GraphQLOutputType fieldType;
     private GraphQLType parentType;
     private GraphQLSchema graphQLSchema;
@@ -96,8 +95,8 @@ public class DataFetchingEnvironmentBuilder {
         return this;
     }
 
-    public DataFetchingEnvironmentBuilder fields(List<Field> fields) {
-        this.fields = fields;
+    public DataFetchingEnvironmentBuilder mergedFields(MergedFields mergedFields) {
+        this.mergedFields = mergedFields;
         return this;
     }
 
@@ -143,7 +142,7 @@ public class DataFetchingEnvironmentBuilder {
 
     public DataFetchingEnvironment build() {
         return new DataFetchingEnvironmentImpl(source, arguments, context, root,
-                fieldDefinition, fields, fieldType, parentType, graphQLSchema, fragmentsByName, executionId, selectionSet,
+                fieldDefinition, mergedFields, fieldType, parentType, graphQLSchema, fragmentsByName, executionId, selectionSet,
                 executionStepInfo,
                 executionContext);
     }

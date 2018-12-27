@@ -9,6 +9,7 @@ import graphql.parser.Parser
 import graphql.schema.GraphQLObjectType
 import spock.lang.Specification
 
+import static graphql.TestUtil.mergedFields
 import static graphql.execution.FieldCollectorParameters.newParameters
 
 class FieldCollectorTest extends Specification {
@@ -35,11 +36,11 @@ class FieldCollectorTest extends Specification {
         def bar2 = field.selectionSet.selections[1]
 
         when:
-        def result = fieldCollector.collectFields(fieldCollectorParameters, [field])
+        def result = fieldCollector.collectFields(fieldCollectorParameters, mergedFields(field))
 
         then:
-        result['bar1'] == [bar1]
-        result['bar2'] == [bar2]
+        result.getSubField('bar1').getFields() == [bar1]
+        result.getSubField('bar2').getFields() == [bar2]
     }
 
     def "collect fields on inline fragments"() {
@@ -68,10 +69,10 @@ class FieldCollectorTest extends Specification {
         def interfaceField = inlineFragment.selectionSet.selections[0]
 
         when:
-        def result = fieldCollector.collectFields(fieldCollectorParameters, [bar1Field])
+        def result = fieldCollector.collectFields(fieldCollectorParameters, mergedFields(bar1Field))
 
         then:
-        result['fieldOnInterface'] == [interfaceField]
+        result.getSubField('fieldOnInterface').getFields() == [interfaceField]
 
     }
 }

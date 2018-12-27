@@ -14,6 +14,8 @@ import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStrategy;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldCollectorParameters;
+import graphql.execution.MergedFields;
+import graphql.execution.MergedSelectionSet;
 import graphql.execution.NonNullableFieldValidator;
 import graphql.execution.ResolveType;
 import graphql.execution.SimpleDataFetcherExceptionHandler;
@@ -22,7 +24,6 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
-import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingFieldSelectionSet;
@@ -111,7 +112,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
         ExecutionNode root = new ExecutionNode(type,
                 parameters.getExecutionStepInfo(),
-                parameters.getFields(),
+                parameters.getFields().getSubFields(),
                 singletonList(MapOrList.createMap(new LinkedHashMap<>())),
                 Collections.singletonList(parameters.getSource())
         );
@@ -151,7 +152,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         }
 
         String fieldName = curFieldNames.next();
-        List<Field> currentField = curNode.getFields().get(fieldName);
+        MergedFields currentField = curNode.getFields().get(fieldName);
 
 
         //
@@ -168,12 +169,12 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .build();
 
         ExecutionPath fieldPath = curNode.getExecutionStepInfo().getPath().segment(mkNameForPath(currentField));
-        GraphQLFieldDefinition fieldDefinition = getFieldDef(executionContext.getGraphQLSchema(), curNode.getType(), currentField.get(0));
+        GraphQLFieldDefinition fieldDefinition = getFieldDef(executionContext.getGraphQLSchema(), curNode.getType(), currentField.getSingleField());
 
         ExecutionStepInfo executionStepInfo = newExecutionStepInfo()
                 .type(fieldDefinition.getType())
                 .fieldDefinition(fieldDefinition)
-                .field(currentField.get(0))
+                .field(currentField)
                 .path(fieldPath)
                 .parentInfo(newParentExecutionStepInfo)
                 .build();
@@ -205,9 +206,9 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                                                                 String fieldName,
                                                                 ExecutionNode node) {
         GraphQLObjectType parentType = node.getType();
-        List<Field> fields = node.getFields().get(fieldName);
+        MergedFields fields = node.getFields().get(fieldName);
 
-        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
+        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.getSingleField());
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
@@ -222,7 +223,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
             Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
                     codeRegistry,
-                    fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
+                    fieldDef.getArguments(), fields.getSingleField().getArguments(), executionContext.getVariables());
 
             return completeValues(executionContext, fetchedValues, executionStepInfo, fieldName, fields, argumentValues);
         });
@@ -238,13 +239,13 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                                                        ExecutionNode node,
                                                        GraphQLFieldDefinition fieldDef) {
         GraphQLObjectType parentType = node.getType();
-        List<Field> fields = node.getFields().get(fieldName);
+        MergedFields fields = node.getFields().get(fieldName);
         List<MapOrList> parentResults = node.getParentResults();
 
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
                 codeRegistry,
-                fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
+                fieldDef.getArguments(), fields.getSingleField().getArguments(), executionContext.getVariables());
 
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, fields);
@@ -253,7 +254,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .source(node.getSources())
                 .arguments(argumentValues)
                 .fieldDefinition(fieldDef)
-                .fields(fields)
+                .mergedFields(fields)
                 .fieldType(fieldDef.getType())
                 .executionStepInfo(parameters.getExecutionStepInfo())
                 .parentType(parentType)
@@ -285,7 +286,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .handle(handleResult(executionContext, parameters, parentResults, fields, fieldDef, argumentValues, environment));
     }
 
-    private BiFunction<List<Object>, Throwable, FetchedValues> handleResult(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<MapOrList> parentResults, List<Field> fields, GraphQLFieldDefinition fieldDef, Map<String, Object> argumentValues, DataFetchingEnvironment environment) {
+    private BiFunction<List<Object>, Throwable, FetchedValues> handleResult(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<MapOrList> parentResults, MergedFields fields, GraphQLFieldDefinition fieldDef, Map<String, Object> argumentValues, DataFetchingEnvironment environment) {
         return (result, exception) -> {
             if (exception != null) {
                 if (exception instanceof CompletionException) {
@@ -295,7 +296,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                         .executionContext(executionContext)
                         .dataFetchingEnvironment(environment)
                         .argumentValues(argumentValues)
-                        .field(fields.get(0))
+                        .field(fields)
                         .fieldDefinition(fieldDef)
                         .path(parameters.getPath())
                         .exception(exception)
@@ -335,7 +336,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     private List<ExecutionNode> completeValues(ExecutionContext executionContext,
                                                FetchedValues fetchedValues, ExecutionStepInfo executionStepInfo,
-                                               String fieldName, List<Field> fields,
+                                               String fieldName, MergedFields fields,
                                                Map<String, Object> argumentValues) {
 
         handleNonNullType(executionContext, fetchedValues);
@@ -356,7 +357,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     @SuppressWarnings("unchecked")
     private List<ExecutionNode> handleList(ExecutionContext executionContext, Map<String, Object> argumentValues,
-                                           FetchedValues fetchedValues, String fieldName, List<Field> fields,
+                                           FetchedValues fetchedValues, String fieldName, MergedFields fields,
                                            ExecutionStepInfo executionStepInfo) {
 
         GraphQLList listType = (GraphQLList) executionStepInfo.getUnwrappedNonNullType();
@@ -385,7 +386,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     @SuppressWarnings("UnnecessaryLocalVariable")
     private List<ExecutionNode> handleObject(ExecutionContext executionContext, Map<String, Object> argumentValues,
-                                             FetchedValues fetchedValues, String fieldName, List<Field> fields,
+                                             FetchedValues fetchedValues, String fieldName, MergedFields fields,
                                              ExecutionStepInfo executionStepInfo) {
 
         // collect list of values by actual type (needed because of interfaces and unions)
@@ -400,7 +401,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             }
             MapOrList childResult = mapOrList.createAndPutMap(fieldName);
 
-            GraphQLObjectType resolvedType = getGraphQLObjectType(executionContext, fields.get(0), executionStepInfo.getUnwrappedNonNullType(), value.getValue(), argumentValues);
+            GraphQLObjectType resolvedType = getGraphQLObjectType(executionContext, fields, executionStepInfo.getUnwrappedNonNullType(), value.getValue(), argumentValues);
             resultsByType.putIfAbsent(resolvedType, new ArrayList<>());
             resultsByType.get(resolvedType).add(childResult);
 
@@ -412,11 +413,11 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         for (GraphQLObjectType resolvedType : resultsByType.keySet()) {
             List<MapOrList> results = resultsByType.get(resolvedType);
             List<Object> sources = sourceByType.get(resolvedType);
-            Map<String, List<Field>> childFields = getChildFields(executionContext, resolvedType, fields);
+            MergedSelectionSet childFields = getChildFields(executionContext, resolvedType, fields);
 
             ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(resolvedType);
 
-            childNodes.add(new ExecutionNode(resolvedType, newExecutionStepInfo, childFields, results, sources));
+            childNodes.add(new ExecutionNode(resolvedType, newExecutionStepInfo, childFields.getSubFields(), results, sources));
         }
         return childNodes;
     }
@@ -432,8 +433,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         }
     }
 
-    private Map<String, List<Field>> getChildFields(ExecutionContext executionContext, GraphQLObjectType resolvedType,
-                                                    List<Field> fields) {
+    private MergedSelectionSet getChildFields(ExecutionContext executionContext, GraphQLObjectType resolvedType,
+                                              MergedFields fields) {
 
         FieldCollectorParameters collectorParameters = newParameters()
                 .schema(executionContext.getGraphQLSchema())
@@ -445,7 +446,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         return fieldCollector.collectFields(collectorParameters, fields);
     }
 
-    private GraphQLObjectType getGraphQLObjectType(ExecutionContext executionContext, Field field, GraphQLType fieldType, Object value, Map<String, Object> argumentValues) {
+    private GraphQLObjectType getGraphQLObjectType(ExecutionContext executionContext, MergedFields field, GraphQLType fieldType, Object value, Map<String, Object> argumentValues) {
         return resolveType.resolveType(executionContext, field, value, argumentValues, fieldType);
     }
 

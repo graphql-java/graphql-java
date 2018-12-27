@@ -12,10 +12,10 @@ import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
+import graphql.execution.MergedSelectionSet;
 import graphql.execution.ValuesResolver;
 import graphql.execution.nextgen.result.ResultNodesUtil;
 import graphql.language.Document;
-import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
@@ -86,12 +86,12 @@ public class Execution {
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
                 .build();
-        Map<String, List<Field>> fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
+        MergedSelectionSet mergedSelectionSet = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
         ExecutionStepInfo executionInfo = newExecutionStepInfo().type(operationRootType).path(ExecutionPath.rootPath()).build();
 
         FieldSubSelection fieldSubSelection = new FieldSubSelection();
         fieldSubSelection.setSource(root);
-        fieldSubSelection.setFields(fields);
+        fieldSubSelection.setMergedSelectionSet(mergedSelectionSet);
         fieldSubSelection.setExecutionStepInfo(executionInfo);
 
         try {

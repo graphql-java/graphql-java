@@ -5,6 +5,7 @@ import graphql.ExecutionResult;
 import graphql.Internal;
 import graphql.execution.ExecutionPath;
 import graphql.execution.FieldValueInfo;
+import graphql.execution.MergedFields;
 import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -12,7 +13,6 @@ import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
-import graphql.language.Field;
 import org.dataloader.DataLoaderRegistry;
 import org.slf4j.Logger;
 
@@ -161,7 +161,7 @@ public class FieldLevelTrackingApproach {
             }
 
             @Override
-            public void onDeferredField(List<Field> field) {
+            public void onDeferredField(MergedFields field) {
                 boolean dispatchNeeded;
                 // fake fetch count for this field
                 synchronized (callStack) {

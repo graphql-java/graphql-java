@@ -12,6 +12,7 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
+import graphql.execution.MergedFields;
 import graphql.execution.UnboxPossibleOptional;
 import graphql.execution.ValuesResolver;
 import graphql.language.Field;
@@ -53,7 +54,7 @@ public class ValueFetcher {
     }
 
 
-    public CompletableFuture<List<FetchedValue>> fetchBatchedValues(List<Object> sources, List<Field> sameFields, List<ExecutionStepInfo> executionInfos) {
+    public CompletableFuture<List<FetchedValue>> fetchBatchedValues(List<Object> sources, MergedFields sameFields, List<ExecutionStepInfo> executionInfos) {
         System.out.println("Fetch batch values size: " + sources.size());
         ExecutionStepInfo executionStepInfo = executionInfos.get(0);
         if (isDataFetcherBatched(executionStepInfo)) {
@@ -98,8 +99,8 @@ public class ValueFetcher {
         return dataFetcher instanceof BatchedDataFetcher;
     }
 
-    public CompletableFuture<FetchedValue> fetchValue(Object source, List<Field> sameFields, ExecutionStepInfo executionInfo) {
-        Field field = sameFields.get(0);
+    public CompletableFuture<FetchedValue> fetchValue(Object source, MergedFields sameFields, ExecutionStepInfo executionInfo) {
+        Field field = sameFields.getSingleField();
         GraphQLFieldDefinition fieldDef = executionInfo.getFieldDefinition();
 
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
@@ -114,7 +115,7 @@ public class ValueFetcher {
                 .source(source)
                 .arguments(argumentValues)
                 .fieldDefinition(fieldDef)
-                .fields(sameFields)
+                .mergedFields(sameFields)
                 .fieldType(fieldType)
                 .executionStepInfo(executionInfo)
                 .parentType(parentType)
@@ -178,7 +179,7 @@ public class ValueFetcher {
 
     }
 
-    private FetchedValue unboxPossibleDataFetcherResult(List<Field> sameField, ExecutionPath executionPath, FetchedValue result) {
+    private FetchedValue unboxPossibleDataFetcherResult(MergedFields sameField, ExecutionPath executionPath, FetchedValue result) {
         if (result.getFetchedValue() instanceof DataFetcherResult) {
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result.getFetchedValue();
             List<AbsoluteGraphQLError> addErrors = dataFetcherResult.getErrors().stream()

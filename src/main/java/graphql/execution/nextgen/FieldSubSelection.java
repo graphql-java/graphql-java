@@ -2,10 +2,9 @@ package graphql.execution.nextgen;
 
 import graphql.Internal;
 import graphql.execution.ExecutionStepInfo;
-import graphql.language.Field;
+import graphql.execution.MergedFields;
+import graphql.execution.MergedSelectionSet;
 
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 
@@ -19,7 +18,7 @@ public class FieldSubSelection {
     private Object source;
     // the type of this must be objectType
     private ExecutionStepInfo executionInfo;
-    private Map<String, List<Field>> fields = new LinkedHashMap<>();
+    private MergedSelectionSet mergedSelectionSet;
 
     public Object getSource() {
         return source;
@@ -29,12 +28,12 @@ public class FieldSubSelection {
         this.source = source;
     }
 
-    public Map<String, List<Field>> getFields() {
-        return fields;
+    public Map<String, MergedFields> getSubFields() {
+        return mergedSelectionSet.getSubFields();
     }
 
-    public void setFields(Map<String, List<Field>> fields) {
-        this.fields = fields;
+    public void setMergedSelectionSet(MergedSelectionSet mergedSelectionSet) {
+        this.mergedSelectionSet = mergedSelectionSet;
     }
 
     public ExecutionStepInfo getExecutionStepInfo() {
@@ -50,13 +49,13 @@ public class FieldSubSelection {
         return "FieldSubSelection{" +
                 "source=" + source +
                 ", executionInfo=" + executionInfo +
-                ", fields=" + fields +
+                ", mergedSelectionSet" + mergedSelectionSet +
                 '}';
     }
 
     public String toShortString() {
         return "FieldSubSelection{" +
-                "fields=" + fields.keySet() +
+                "fields=" + mergedSelectionSet.getSubFields().keySet() +
                 '}';
     }
 

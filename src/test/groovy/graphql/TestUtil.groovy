@@ -1,7 +1,10 @@
 package graphql
 
+import graphql.execution.MergedFields
+import graphql.execution.MergedSelectionSet
 import graphql.introspection.Introspection.DirectiveLocation
 import graphql.language.Document
+import graphql.language.Field
 import graphql.language.ScalarTypeDefinition
 import graphql.parser.Parser
 import graphql.schema.Coercing
@@ -21,7 +24,6 @@ import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.TypeRuntimeWiring
 import graphql.schema.idl.WiringFactory
 import graphql.schema.idl.errors.SchemaProblem
-import org.antlr.v4.runtime.misc.ParseCancellationException
 
 import java.util.function.Supplier
 import java.util.stream.Collectors
@@ -202,6 +204,18 @@ class TestUtil {
 
     static Document parseQuery(String query) {
         new Parser().parseDocument(query)
+    }
+
+    static MergedFields mergedFields(List<Field> fields) {
+        return MergedFields.newMergedFields(fields).build()
+    }
+
+    static MergedFields mergedFields(Field field) {
+        return MergedFields.newMergedFields(field).build()
+    }
+
+    static MergedSelectionSet mergedSelectionSet(Map<String, MergedFields> subFields) {
+        return MergedSelectionSet.newMergedSelectionSet().subFields(subFields).build()
     }
 
 }

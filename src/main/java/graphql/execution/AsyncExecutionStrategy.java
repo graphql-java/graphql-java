@@ -9,7 +9,6 @@ import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
-import graphql.language.Field;
 import graphql.schema.GraphQLFieldDefinition;
 
 import java.util.ArrayList;
@@ -20,6 +19,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static graphql.execution.MergedSelectionSet.newMergedSelectionSet;
 
 /**
  * The standard graphql execution strategy that runs fields asynchronously non-blocking.
@@ -51,12 +52,12 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         ExecutionStrategyInstrumentationContext executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
 
-        Map<String, List<Field>> fields = parameters.getFields();
+        MergedSelectionSet fields = parameters.getFields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());
         List<CompletableFuture<FieldValueInfo>> futures = new ArrayList<>();
         List<String> resolvedFields = new ArrayList<>();
         for (String fieldName : fieldNames) {
-            List<Field> currentField = fields.get(fieldName);
+            MergedFields currentField = fields.getSubField(fieldName);
 
             ExecutionPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters
@@ -94,22 +95,25 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         return overallResult;
     }
 
-    private boolean isDeferred(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<Field> currentField) {
+    private boolean isDeferred(ExecutionContext executionContext, ExecutionStrategyParameters parameters, MergedFields currentField) {
         DeferSupport deferSupport = executionContext.getDeferSupport();
         if (deferSupport.checkForDeferDirective(currentField)) {
             DeferredErrorSupport errorSupport = new DeferredErrorSupport();
 
             // with a deferred field we are really resetting where we execute from, that is from this current field onwards
-            Map<String, List<Field>> fields = new LinkedHashMap<>();
-            fields.put(currentField.get(0).getName(), currentField);
+            Map<String, MergedFields> fields = new LinkedHashMap<>();
+            fields.put(currentField.getName(), currentField);
 
             ExecutionStrategyParameters callParameters = parameters.transform(builder ->
-                    builder.deferredErrorSupport(errorSupport)
-                            .field(currentField)
-                            .fields(fields)
-                            .parent(null) // this is a break in the parent -> child chain - its a new start effectively
-                            .listSize(0)
-                            .currentListIndex(0)
+                    {
+                        MergedSelectionSet mergedSelectionSet = newMergedSelectionSet().subFields(fields).build();
+                        builder.deferredErrorSupport(errorSupport)
+                                .field(currentField)
+                                .fields(mergedSelectionSet)
+                                .parent(null) // this is a break in the parent -> child chain - its a new start effectively
+                                .listSize(0)
+                                .currentListIndex(0);
+                    }
             );
 
             DeferredCall call = new DeferredCall(deferredExecutionResult(executionContext, callParameters), errorSupport);
@@ -122,7 +126,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     @SuppressWarnings("FutureReturnValueIgnored")
     private Supplier<CompletableFuture<ExecutionResult>> deferredExecutionResult(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         return () -> {
-            GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().get(0));
+            GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().getSingleField());
 
             Instrumentation instrumentation = executionContext.getInstrumentation();
             DeferredFieldInstrumentationContext fieldCtx = instrumentation.beginDeferredField(

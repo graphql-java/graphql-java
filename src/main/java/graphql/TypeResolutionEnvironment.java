@@ -1,6 +1,6 @@
 package graphql;
 
-import graphql.language.Field;
+import graphql.execution.MergedFields;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 
@@ -16,12 +16,12 @@ public class TypeResolutionEnvironment {
 
     private final Object object;
     private final Map<String, Object> arguments;
-    private final Field field;
+    private final MergedFields field;
     private final GraphQLType fieldType;
     private final GraphQLSchema schema;
     private final Object context;
 
-    public TypeResolutionEnvironment(Object object, Map<String, Object> arguments, Field field, GraphQLType fieldType, GraphQLSchema schema, final Object context) {
+    public TypeResolutionEnvironment(Object object, Map<String, Object> arguments, MergedFields field, GraphQLType fieldType, GraphQLSchema schema, final Object context) {
         this.object = object;
         this.arguments = arguments;
         this.field = field;
@@ -52,7 +52,7 @@ public class TypeResolutionEnvironment {
     /**
      * @return the graphql field in question
      */
-    public Field getField() {
+    public MergedFields getField() {
         return field;
     }
 

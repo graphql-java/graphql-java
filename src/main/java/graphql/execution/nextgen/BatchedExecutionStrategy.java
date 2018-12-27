@@ -6,6 +6,7 @@ import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStepInfoFactory;
+import graphql.execution.MergedFields;
 import graphql.execution.nextgen.result.ExecutionResultMultiZipper;
 import graphql.execution.nextgen.result.ExecutionResultNode;
 import graphql.execution.nextgen.result.ExecutionResultZipper;
@@ -13,7 +14,6 @@ import graphql.execution.nextgen.result.NamedResultNode;
 import graphql.execution.nextgen.result.ObjectExecutionResultNode;
 import graphql.execution.nextgen.result.ObjectExecutionResultNode.RootExecutionResultNode;
 import graphql.execution.nextgen.result.ResultNodesUtil;
-import graphql.language.Field;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -88,8 +88,8 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
     }
 
     private List<ExecutionResultMultiZipper> groupNodesIntoBatches(ExecutionResultMultiZipper unresolvedZipper) {
-        Map<Map<String, List<Field>>, List<ExecutionResultZipper>> zipperBySubSelection = unresolvedZipper.getZippers().stream()
-                .collect(groupingBy(executionResultZipper -> executionResultZipper.getCurNode().getFetchedValueAnalysis().getFieldSubSelection().getFields()));
+        Map<Map<String, MergedFields>, List<ExecutionResultZipper>> zipperBySubSelection = unresolvedZipper.getZippers().stream()
+                .collect(groupingBy(executionResultZipper -> executionResultZipper.getCurNode().getFetchedValueAnalysis().getFieldSubSelection().getSubFields()));
 
         return zipperBySubSelection
                 .entrySet()
@@ -110,11 +110,11 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
         // each field in the subSelection has n sources as input
         List<CompletableFuture<List<FetchedValueAnalysis>>> fetchedValues = fieldSubSelections
                 .get(0)
-                .getFields()
+                .getSubFields()
                 .entrySet()
                 .stream()
                 .map(entry -> {
-                    List<Field> sameFields = entry.getValue();
+                    MergedFields sameFields = entry.getValue();
                     String name = entry.getKey();
 
                     List<ExecutionStepInfo> newExecutionStepInfos = fieldSubSelections.stream().map(executionResultNode -> {
@@ -161,9 +161,9 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
 
     // only used for the root sub selection atm
     private CompletableFuture<List<FetchedValueAnalysis>> fetchAndAnalyze(FieldSubSelection fieldSubSelection) {
-        List<CompletableFuture<FetchedValueAnalysis>> fetchedValues = fieldSubSelection.getFields().entrySet().stream()
+        List<CompletableFuture<FetchedValueAnalysis>> fetchedValues = fieldSubSelection.getSubFields().entrySet().stream()
                 .map(entry -> {
-                    List<Field> sameFields = entry.getValue();
+                    MergedFields sameFields = entry.getValue();
                     String name = entry.getKey();
                     ExecutionStepInfo newExecutionStepInfo = executionInfoFactory.newExecutionStepInfoForSubField(executionContext, sameFields, fieldSubSelection.getExecutionStepInfo());
                     return valueFetcher
@@ -176,13 +176,13 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
     }
 
     // only used for the root sub selection atm
-    private FetchedValueAnalysis analyseValue(FetchedValue fetchedValue, String name, List<Field> field, ExecutionStepInfo executionInfo) {
+    private FetchedValueAnalysis analyseValue(FetchedValue fetchedValue, String name, MergedFields field, ExecutionStepInfo executionInfo) {
         FetchedValueAnalysis fetchedValueAnalysis = fetchedValueAnalyzer.analyzeFetchedValue(fetchedValue, name, field, executionInfo);
         return fetchedValueAnalysis;
     }
 
 
-    private List<FetchedValueAnalysis> analyseValues(List<FetchedValue> fetchedValues, String name, List<Field> field, List<ExecutionStepInfo> executionInfos) {
+    private List<FetchedValueAnalysis> analyseValues(List<FetchedValue> fetchedValues, String name, MergedFields field, List<ExecutionStepInfo> executionInfos) {
         List<FetchedValueAnalysis> result = new ArrayList<>();
         for (int i = 0; i < fetchedValues.size(); i++) {
             FetchedValue fetchedValue = fetchedValues.get(i);

@@ -6,9 +6,6 @@ import graphql.execution.reactive.CompletionStageMappingPublisher;
 import graphql.language.Field;
 import org.reactivestreams.Publisher;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static graphql.Assert.assertTrue;
@@ -111,17 +108,15 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
     }
 
     private String getRootFieldName(ExecutionStrategyParameters parameters) {
-        Field rootField = parameters.getField().get(0);
+        Field rootField = parameters.getField().getSingleField();
         return rootField.getAlias() != null ? rootField.getAlias() : rootField.getName();
     }
 
     private ExecutionStrategyParameters firstFieldOfSubscriptionSelection(ExecutionStrategyParameters parameters) {
-        Map<String, List<Field>> fields = parameters.getFields();
-        List<String> fieldNames = new ArrayList<>(fields.keySet());
+        MergedSelectionSet fields = parameters.getFields();
+        MergedFields firstField = fields.getSubField(fields.getKeys().get(0));
 
-        List<Field> firstField = fields.get(fieldNames.get(0));
-
-        ExecutionPath fieldPath = parameters.getPath().segment(mkNameForPath(firstField));
+        ExecutionPath fieldPath = parameters.getPath().segment(mkNameForPath(firstField.getSingleField()));
         return parameters.transform(builder -> builder.field(firstField).path(fieldPath));
     }
 

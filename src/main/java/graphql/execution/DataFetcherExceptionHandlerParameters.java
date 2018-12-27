@@ -1,6 +1,6 @@
 package graphql.execution;
 
-import graphql.language.Field;
+import graphql.PublicApi;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLFieldDefinition;
 
@@ -9,17 +9,18 @@ import java.util.Map;
 /**
  * The parameters available to {@link DataFetcherExceptionHandler}s
  */
+@PublicApi
 public class DataFetcherExceptionHandlerParameters {
 
     private final ExecutionContext executionContext;
     private final DataFetchingEnvironment dataFetchingEnvironment;
-    private final Field field;
+    private final MergedFields field;
     private final GraphQLFieldDefinition fieldDefinition;
     private final Map<String, Object> argumentValues;
     private final ExecutionPath path;
     private final Throwable exception;
 
-    public DataFetcherExceptionHandlerParameters(ExecutionContext executionContext, DataFetchingEnvironment dataFetchingEnvironment, Field field, GraphQLFieldDefinition fieldDefinition, Map<String, Object> argumentValues, ExecutionPath path, Throwable exception) {
+    public DataFetcherExceptionHandlerParameters(ExecutionContext executionContext, DataFetchingEnvironment dataFetchingEnvironment, MergedFields field, GraphQLFieldDefinition fieldDefinition, Map<String, Object> argumentValues, ExecutionPath path, Throwable exception) {
         this.executionContext = executionContext;
         this.dataFetchingEnvironment = dataFetchingEnvironment;
         this.field = field;
@@ -41,7 +42,7 @@ public class DataFetcherExceptionHandlerParameters {
         return dataFetchingEnvironment;
     }
 
-    public Field getField() {
+    public MergedFields getField() {
         return field;
     }
 
@@ -64,7 +65,7 @@ public class DataFetcherExceptionHandlerParameters {
     public static class Builder {
         ExecutionContext executionContext;
         DataFetchingEnvironment dataFetchingEnvironment;
-        Field field;
+        MergedFields field;
         GraphQLFieldDefinition fieldDefinition;
         Map<String, Object> argumentValues;
         ExecutionPath path;
@@ -83,7 +84,7 @@ public class DataFetcherExceptionHandlerParameters {
             return this;
         }
 
-        public Builder field(Field field) {
+        public Builder field(MergedFields field) {
             this.field = field;
             return this;
         }

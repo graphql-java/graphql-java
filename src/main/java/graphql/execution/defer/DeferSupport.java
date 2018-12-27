@@ -3,12 +3,12 @@ package graphql.execution.defer;
 import graphql.Directives;
 import graphql.ExecutionResult;
 import graphql.Internal;
+import graphql.execution.MergedFields;
 import graphql.execution.reactive.SingleSubscriberPublisher;
 import graphql.language.Field;
 import org.reactivestreams.Publisher;
 
 import java.util.Deque;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,8 +24,8 @@ public class DeferSupport {
     private final Deque<DeferredCall> deferredCalls = new ConcurrentLinkedDeque<>();
     private final SingleSubscriberPublisher<ExecutionResult> publisher = new SingleSubscriberPublisher<>();
 
-    public boolean checkForDeferDirective(List<Field> currentField) {
-        for (Field field : currentField) {
+    public boolean checkForDeferDirective(MergedFields currentField) {
+        for (Field field : currentField.getFields()) {
             if (field.getDirective(Directives.DeferDirective.getName()) != null) {
                 return true;
             }

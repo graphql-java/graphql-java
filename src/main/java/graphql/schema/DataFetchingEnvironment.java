@@ -4,6 +4,7 @@ import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
+import graphql.execution.MergedFields;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import org.dataloader.DataLoader;
@@ -84,6 +85,12 @@ public interface DataFetchingEnvironment {
 
 
     /**
+     * Use {@link #getMergedFields()}.
+     */
+    @Deprecated
+    List<Field> getFields();
+
+    /**
      * It can happen that a query has overlapping fields which are
      * are querying the same data. If this is the case they get merged
      * together and fetched only once, but this method returns all of the Fields
@@ -109,10 +116,10 @@ public interface DataFetchingEnvironment {
      *
      * @return the list of fields currently queried
      */
-    List<Field> getFields();
+    MergedFields getMergedFields();
 
     /**
-     * @return returns the field which is currently queried. See also {@link #getFields()}
+     * @return returns the field which is currently queried. See also {@link #getMergedFields()}.
      */
     Field getField();
 
