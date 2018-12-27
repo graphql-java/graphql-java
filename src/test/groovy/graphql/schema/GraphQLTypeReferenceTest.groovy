@@ -24,7 +24,6 @@ class GraphQLTypeReferenceTest extends Specification {
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                 .name("test")
                 .type(Scalars.GraphQLString)
-                .dataFetcher({ env -> "test" })
                 .argument(GraphQLArgument.newArgument()
                 .name("in")
                 .type(inputObject))
@@ -32,7 +31,8 @@ class GraphQLTypeReferenceTest extends Specification {
 
         then:
         // issue 1216 - reuse of type reference caused problems
-        GraphQLInputObjectType objInput = ((GraphQLInputObjectType)schema.getType("ObjInput"));
+        GraphQLInputObjectType objInput = ((GraphQLInputObjectType)schema.getType("ObjInput"))
+        objInput.getField("value").getType() != ref
         objInput.getField("value2").getType() != ref
     }
 }
