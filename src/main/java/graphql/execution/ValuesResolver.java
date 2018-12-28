@@ -39,8 +39,6 @@ import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FI
 @Internal
 public class ValuesResolver {
 
-    private final ValuesConverter valuesConverter = new ValuesConverter();
-
     /**
      * The http://facebook.github.io/graphql/#sec-Coercing-Variable-Values says :
      *
@@ -136,7 +134,6 @@ public class ValuesResolver {
             // only put an arg into the result IF they specified a variable at all or
             // the default value ended up being something non null
             if (argumentMap.containsKey(argName) || value != null) {
-                value = valuesConverter.convertValue(value, codeRegistry, fieldArgument);
                 result.put(argName, value);
             }
         }
