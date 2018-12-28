@@ -12,8 +12,8 @@ import graphql.schema.GraphQLSchema;
 public class InstrumentationValidationParameters extends InstrumentationExecutionParameters {
     private final Document document;
 
-    public InstrumentationValidationParameters(ExecutionInput executionInput, Document document, GraphQLSchema schema, InstrumentationState instrumentationState) {
-        super(executionInput, schema, instrumentationState);
+    public InstrumentationValidationParameters(ExecutionInput executionInput, String operationName, Document document, GraphQLSchema schema, InstrumentationState instrumentationState) {
+        super(executionInput, operationName, schema, instrumentationState);
         this.document = document;
     }
 
@@ -27,7 +27,7 @@ public class InstrumentationValidationParameters extends InstrumentationExecutio
     @Override
     public InstrumentationValidationParameters withNewState(InstrumentationState instrumentationState) {
         return new InstrumentationValidationParameters(
-                this.getExecutionInput(), document, getSchema(), instrumentationState);
+                this.getExecutionInput(), getOperation(), document, getSchema(), instrumentationState);
     }
 
 

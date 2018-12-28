@@ -2,10 +2,13 @@ package graphql;
 
 import org.dataloader.DataLoaderRegistry;
 
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
 
@@ -15,21 +18,20 @@ import static graphql.Assert.assertNotNull;
 @PublicApi
 public class ExecutionInput {
     private final String query;
-    private final String operationName;
+    private final List<String> operationNames;
     private final Object context;
     private final Object root;
     private final Map<String, Object> variables;
     private final DataLoaderRegistry dataLoaderRegistry;
 
-
     public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables) {
-        this(query, operationName, context, root, variables, new DataLoaderRegistry());
+        this(query, Collections.singletonList(operationName), context, root, variables, new DataLoaderRegistry());
     }
 
     @Internal
-    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry) {
+    private ExecutionInput(String query, List<String> operationNames, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry) {
         this.query = query;
-        this.operationName = operationName;
+        this.operationNames = operationNames;
         this.context = context;
         this.root = root;
         this.variables = variables;
@@ -41,13 +43,6 @@ public class ExecutionInput {
      */
     public String getQuery() {
         return query;
-    }
-
-    /**
-     * @return the name of the query operation
-     */
-    public String getOperationName() {
-        return operationName;
     }
 
     /**
@@ -89,7 +84,7 @@ public class ExecutionInput {
     public ExecutionInput transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder()
                 .query(this.query)
-                .operationName(this.operationName)
+                .operationNames(this.operationNames)
                 .context(this.context)
                 .root(this.root)
                 .dataLoaderRegistry(this.dataLoaderRegistry)
@@ -100,12 +95,19 @@ public class ExecutionInput {
         return builder.build();
     }
 
+    public <T> Stream<T> mapOperations(Function<String, T> consumer) {
+        if (operationNames == null) {
+            return Stream.of(consumer.apply(null));
+        } else {
+            return operationNames.stream().map(consumer);
+        }
+    }
 
     @Override
     public String toString() {
         return "ExecutionInput{" +
                 "query='" + query + '\'' +
-                ", operationName='" + operationName + '\'' +
+                ", operationNames='" + operationNames + '\'' +
                 ", context=" + context +
                 ", root=" + root +
                 ", variables=" + variables +
@@ -123,7 +125,7 @@ public class ExecutionInput {
     public static class Builder {
 
         private String query;
-        private String operationName;
+        private List<String> operationNames;
         private Object context = GraphQLContext.newContext();
         private Object root;
         private Map<String, Object> variables = Collections.emptyMap();
@@ -135,7 +137,16 @@ public class ExecutionInput {
         }
 
         public Builder operationName(String operationName) {
-            this.operationName = operationName;
+            this.operationNames = Collections.singletonList(operationName);
+            return this;
+        }
+
+        public Builder operationNames(String ... operationNames) {
+            return operationNames(Arrays.asList(operationNames));
+        }
+
+        public Builder operationNames(List<String> operationNames) {
+            this.operationNames = operationNames;
             return this;
         }
 
@@ -186,7 +197,7 @@ public class ExecutionInput {
         }
 
         public ExecutionInput build() {
-            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry);
+            return new ExecutionInput(query, operationNames, context, root, variables, dataLoaderRegistry);
         }
     }
 }

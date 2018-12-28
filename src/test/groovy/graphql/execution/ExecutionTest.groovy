@@ -55,7 +55,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, null, instrumentationState)
 
         then:
         queryStrategy.execute == 1
@@ -75,7 +75,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, null, instrumentationState)
 
         then:
         queryStrategy.execute == 0
@@ -95,7 +95,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, null, instrumentationState)
 
         then:
         queryStrategy.execute == 0

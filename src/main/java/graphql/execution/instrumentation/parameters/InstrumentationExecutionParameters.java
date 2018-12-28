@@ -22,10 +22,10 @@ public class InstrumentationExecutionParameters {
     private final InstrumentationState instrumentationState;
     private final GraphQLSchema schema;
 
-    public InstrumentationExecutionParameters(ExecutionInput executionInput, GraphQLSchema schema, InstrumentationState instrumentationState) {
+    public InstrumentationExecutionParameters(ExecutionInput executionInput, String operationName, GraphQLSchema schema, InstrumentationState instrumentationState) {
         this.executionInput = executionInput;
         this.query = executionInput.getQuery();
-        this.operation = executionInput.getOperationName();
+        this.operation = operationName;
         this.context = executionInput.getContext();
         this.variables = executionInput.getVariables() != null ? executionInput.getVariables() : Collections.emptyMap();
         this.instrumentationState = instrumentationState;
@@ -40,7 +40,7 @@ public class InstrumentationExecutionParameters {
      * @return a new parameters object with the new state
      */
     public InstrumentationExecutionParameters withNewState(InstrumentationState instrumentationState) {
-        return new InstrumentationExecutionParameters(this.getExecutionInput(), this.schema, instrumentationState);
+        return new InstrumentationExecutionParameters(this.getExecutionInput(), this.operation, this.schema, instrumentationState);
     }
 
     public ExecutionInput getExecutionInput() {

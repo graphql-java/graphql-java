@@ -39,7 +39,7 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
             }
         }
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
+        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, null, query, schema, null)
         InstrumentationContext instrumentationContext = maxQueryComplexityInstrumentation.beginValidation(validationParameters)
         when:
         instrumentationContext.onCompleted([new ValidationError(ValidationErrorType.SubSelectionNotAllowed)], null)
@@ -67,7 +67,7 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
             }
         }
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
+        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, null, query, schema, null)
         InstrumentationContext instrumentationContext = maxQueryComplexityInstrumentation.beginValidation(validationParameters)
         when:
         instrumentationContext.onCompleted(null, new RuntimeException())
@@ -93,7 +93,7 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
             """)
         MaxQueryComplexityInstrumentation queryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(10)
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
+        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, null, query, schema, null)
         InstrumentationContext instrumentationContext = queryComplexityInstrumentation.beginValidation(validationParameters)
         when:
         instrumentationContext.onCompleted(null, null)
@@ -115,7 +115,7 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
             """)
         MaxQueryComplexityInstrumentation queryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(1)
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
+        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, null, query, schema, null)
         InstrumentationContext instrumentationContext = queryComplexityInstrumentation.beginValidation(validationParameters)
         when:
         instrumentationContext.onCompleted(null, null)
@@ -143,7 +143,7 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
         def calculator = Mock(FieldComplexityCalculator)
         MaxQueryComplexityInstrumentation queryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(5, calculator)
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
+        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, null, query, schema, null)
         InstrumentationContext instrumentationContext = queryComplexityInstrumentation.beginValidation(validationParameters)
         when:
         instrumentationContext.onCompleted(null, null)
@@ -181,7 +181,7 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
         }
         MaxQueryComplexityInstrumentation queryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(10, maxQueryComplexityExceededFunction)
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
+        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, null, query, schema, null)
         InstrumentationContext instrumentationContext = queryComplexityInstrumentation.beginValidation(validationParameters)
         when:
         instrumentationContext.onCompleted(null, null)

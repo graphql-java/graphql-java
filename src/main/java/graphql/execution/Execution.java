@@ -56,9 +56,9 @@ public class Execution {
         this.instrumentation = instrumentation;
     }
 
-    public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState) {
+    public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, String operationName, InstrumentationState instrumentationState) {
 
-        NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, executionInput.getOperationName());
+        NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
         Map<String, FragmentDefinition> fragmentsByName = getOperationResult.fragmentsByName;
         OperationDefinition operationDefinition = getOperationResult.operationDefinition;
 
@@ -94,7 +94,7 @@ public class Execution {
 
 
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(
-                executionInput, graphQLSchema, instrumentationState
+                executionInput, operationName, graphQLSchema, instrumentationState
         );
         executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters);
         return executeOperation(executionContext, parameters, executionInput.getRoot(), executionContext.getOperationDefinition());

@@ -35,11 +35,13 @@ public class Execution {
 
     private final FieldCollector fieldCollector = new FieldCollector();
 
-    public CompletableFuture<ExecutionResult> execute(Class<? extends ExecutionStrategy> executionStrategy, Document document,
+    public CompletableFuture<ExecutionResult> execute(Class<? extends ExecutionStrategy> executionStrategy,
+                                                      Document document,
                                                       GraphQLSchema graphQLSchema,
                                                       ExecutionId executionId,
-                                                      ExecutionInput executionInput) {
-        NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, executionInput.getOperationName());
+                                                      ExecutionInput executionInput,
+                                                      String operationName) {
+        NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
         Map<String, FragmentDefinition> fragmentsByName = getOperationResult.fragmentsByName;
         OperationDefinition operationDefinition = getOperationResult.operationDefinition;
 

@@ -232,6 +232,33 @@ class GraphQLTest extends Specification {
         result.errors.size() == 0
     }
 
+    def "document with two operations executes them both in sequence"() {
+        given:
+
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .field(newFieldDefinition().name("field1").type(GraphQLString).dataFetcher(new StaticDataFetcher("value1")))
+                        .field(newFieldDefinition().name("field2").type(GraphQLString).dataFetcher(new StaticDataFetcher("value2")))
+        )
+                .build()
+
+        def query = """
+        query Query1 { field1 }
+        query Query2 { field2 }
+        """
+
+        def expected = [field2: 'value2']
+
+        when:
+        def executionInput = newExecutionInput().query(query).operationNames('Query1', 'Query2').context(null).variables([:])
+        def result = GraphQL.newGraphQL(schema).build().execute(executionInput)
+
+        then:
+        result.data == expected
+        result.errors.size() == 0
+    }
+
     def "document with two operations but no specified operation throws"() {
         given:
 
