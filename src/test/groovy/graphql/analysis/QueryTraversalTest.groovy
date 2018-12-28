@@ -6,6 +6,7 @@ import graphql.language.Field
 import graphql.language.FragmentDefinition
 import graphql.language.FragmentSpread
 import graphql.language.InlineFragment
+import graphql.language.NodeTraverser
 import graphql.parser.Parser
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
@@ -13,6 +14,8 @@ import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static graphql.language.NodeTraverser.LeaveOrEnter.ENTER
+import static graphql.language.NodeTraverser.LeaveOrEnter.LEAVE
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
 import static java.util.Collections.emptyMap
@@ -1302,6 +1305,80 @@ class QueryTraversalTest extends Specification {
                     ((FragmentDefinition) it.traverserContext.getParentContext().getParentContext().thisNode()).getDirective("myDirective") != null
         })
 
+
+    }
+
+    def "test depthFirst"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {foo { subFoo} bar }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal.visitDepthFirst(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "foo" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == ENTER
+        })
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "subFoo" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == ENTER
+
+        })
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "subFoo" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == LEAVE
+
+        })
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "foo" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == LEAVE
+        })
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "bar" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == ENTER
+        })
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "bar" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == LEAVE
+        })
+
+    }
+
+    def "test accumulate  is returned"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                bar: String
+            }
+        """)
+        def query = createQuery("""
+            {bar}
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        def visitor = new QueryVisitorStub() {
+            @Override
+            void visitField(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
+                queryVisitorFieldEnvironment.traverserContext.setAccumulate("RESULT")
+            }
+
+        }
+        when:
+        def result = queryTraversal.visitDepthFirst(visitor)
+
+        then:
+        result == "RESULT"
 
     }
 

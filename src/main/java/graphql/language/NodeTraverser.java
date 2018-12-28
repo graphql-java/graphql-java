@@ -21,7 +21,7 @@ public class NodeTraverser {
 
 
     /**
-     * Used by depthFirst to indicate via {@link TraverserContext#getVar(Class)} if the visit happens inside the ENTER or LEAVE phase.
+     * Used to indicate via {@link TraverserContext#getVar(Class)} if the visit happens inside the ENTER or LEAVE phase.
      */
     public enum LeaveOrEnter {
         LEAVE,
@@ -47,8 +47,8 @@ public class NodeTraverser {
      * @param nodeVisitor the visitor of the nodes
      * @param root        the root node
      */
-    public void depthFirst(NodeVisitor nodeVisitor, Node root) {
-        depthFirst(nodeVisitor, Collections.singleton(root));
+    public Object depthFirst(NodeVisitor nodeVisitor, Node root) {
+        return depthFirst(nodeVisitor, Collections.singleton(root));
     }
 
     /**
@@ -57,7 +57,7 @@ public class NodeTraverser {
      * @param nodeVisitor the visitor of the nodes
      * @param roots       the root nodes
      */
-    public void depthFirst(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
+    public Object depthFirst(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
 
             @Override
@@ -73,7 +73,7 @@ public class NodeTraverser {
             }
 
         };
-        doTraverse(roots, nodeTraverserVisitor);
+        return doTraverse(roots, nodeTraverserVisitor);
     }
 
     /**
@@ -82,8 +82,8 @@ public class NodeTraverser {
      * @param nodeVisitor the visitor of the nodes
      * @param root        the root node
      */
-    public void preOrder(NodeVisitor nodeVisitor, Node root) {
-        preOrder(nodeVisitor, Collections.singleton(root));
+    public Object preOrder(NodeVisitor nodeVisitor, Node root) {
+        return preOrder(nodeVisitor, Collections.singleton(root));
     }
 
     /**
@@ -92,7 +92,7 @@ public class NodeTraverser {
      * @param nodeVisitor the visitor of the nodes
      * @param roots       the root nodes
      */
-    public void preOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
+    public Object preOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
 
             @Override
@@ -107,8 +107,7 @@ public class NodeTraverser {
             }
 
         };
-        doTraverse(roots, nodeTraverserVisitor);
-
+        return doTraverse(roots, nodeTraverserVisitor);
     }
 
     /**
@@ -117,8 +116,8 @@ public class NodeTraverser {
      * @param nodeVisitor the visitor of the nodes
      * @param root        the root node
      */
-    public void postOrder(NodeVisitor nodeVisitor, Node root) {
-        postOrder(nodeVisitor, Collections.singleton(root));
+    public Object postOrder(NodeVisitor nodeVisitor, Node root) {
+        return postOrder(nodeVisitor, Collections.singleton(root));
     }
 
     /**
@@ -127,7 +126,7 @@ public class NodeTraverser {
      * @param nodeVisitor the visitor of the nodes
      * @param roots       the root nodes
      */
-    public void postOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
+    public Object postOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
 
             @Override
@@ -142,13 +141,13 @@ public class NodeTraverser {
             }
 
         };
-        doTraverse(roots, nodeTraverserVisitor);
+        return doTraverse(roots, nodeTraverserVisitor);
     }
 
-    private void doTraverse(Collection<? extends Node> roots, TraverserVisitor traverserVisitor) {
+    private Object doTraverse(Collection<? extends Node> roots, TraverserVisitor traverserVisitor) {
         Traverser<Node> nodeTraverser = Traverser.depthFirst(this.getChildren);
         nodeTraverser.rootVars(rootVars);
-        nodeTraverser.traverse(roots, traverserVisitor);
+        return nodeTraverser.traverse(roots, traverserVisitor).getAccumulatedResult();
     }
 
     @SuppressWarnings("TypeParameterUnusedInFormals")

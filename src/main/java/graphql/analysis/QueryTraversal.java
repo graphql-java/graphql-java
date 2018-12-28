@@ -87,6 +87,10 @@ public class QueryTraversal {
         this.fragmentsByName = assertNotNull(fragmentsByName, "fragmentsByName can't be null");
     }
 
+    public Object visitDepthFirst(QueryVisitor queryVisitor) {
+        return visitImpl(queryVisitor, null);
+    }
+
     /**
      * Visits the Document (or parts of it) in post-order.
      *
@@ -170,16 +174,23 @@ public class QueryTraversal {
         return Collections.singletonList(fragmentsByName.get(fragmentSpread.getName()));
     }
 
-    private void visitImpl(QueryVisitor visitFieldCallback, boolean preOrder) {
+    private Object visitImpl(QueryVisitor visitFieldCallback, Boolean preOrder) {
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
         rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, rootParentType, null, null));
 
-        QueryVisitor noOp = new QueryVisitorStub();
-        QueryVisitor preOrderCallback = preOrder ? visitFieldCallback : noOp;
-        QueryVisitor postOrderCallback = !preOrder ? visitFieldCallback : noOp;
+        QueryVisitor preOrderCallback;
+        QueryVisitor postOrderCallback;
+        if (preOrder == null) {
+            preOrderCallback = visitFieldCallback;
+            postOrderCallback = visitFieldCallback;
+        } else {
+            QueryVisitor noOp = new QueryVisitorStub();
+            preOrderCallback = preOrder ? visitFieldCallback : noOp;
+            postOrderCallback = !preOrder ? visitFieldCallback : noOp;
+        }
 
         NodeTraverser nodeTraverser = new NodeTraverser(rootVars, this::childrenOf);
-        nodeTraverser.depthFirst(new NodeVisitorImpl(preOrderCallback, postOrderCallback), roots);
+        return nodeTraverser.depthFirst(new NodeVisitorImpl(preOrderCallback, postOrderCallback), roots);
     }
 
     private class NodeVisitorImpl extends NodeVisitorStub {
