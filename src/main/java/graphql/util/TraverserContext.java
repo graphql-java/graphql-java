@@ -3,6 +3,7 @@ package graphql.util;
 import graphql.PublicApi;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -151,5 +152,12 @@ public interface TraverserContext<T> {
      * @return true for the root context, otherwise false
      */
     boolean isRootContext();
+
+    /**
+     * In case of leave returns the children contexts, which have already been visited.
+     *
+     * @return the children contexts, or empty map if
+     */
+    Map<String, List<TraverserContext<T>>> getChildrenContexts();
 
 }

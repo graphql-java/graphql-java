@@ -105,15 +105,18 @@ public class Traverser<T> {
         while (!traverserState.isEmpty()) {
             Object top = traverserState.pop();
 
-            if (top == TraverserState.Marker.END_LIST) {
+            if (top instanceof TraverserState.EndList) {
+                Map<String, List<TraverserContext<T>>> childrenContextMap = ((TraverserState.EndList<T>) top).childrenContextMap;
                 // end-of-list marker, we are done recursing children,
                 // mark the current node as fully visited
                 currentContext = (DefaultTraverserContext) traverserState.pop();
                 currentContext.setCurAccValue(currentAccValue);
+                currentContext.setChildrenContexts(childrenContextMap);
                 TraversalControl traversalControl = visitor.leave(currentContext);
                 currentAccValue = currentContext.getNewAccumulate();
                 assertNotNull(traversalControl, "result of leave must not be null");
                 assertTrue(CONTINUE_OR_QUIT.contains(traversalControl), "result can only return CONTINUE or QUIT");
+
                 switch (traversalControl) {
                     case QUIT:
                         break traverseLoop;
