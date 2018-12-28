@@ -162,7 +162,7 @@ public class QueryTraversal {
         }
     }
 
-    private List<Node> childrenOf(Node node) {
+    private List<Node> childrenOf(Node<?> node) {
         if (!(node instanceof FragmentSpread)) {
             return node.getChildren();
         }
