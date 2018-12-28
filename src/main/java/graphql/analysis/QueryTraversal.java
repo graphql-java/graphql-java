@@ -36,6 +36,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.language.NodeTraverser.LeaveOrEnter.LEAVE;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
+import static java.util.Collections.singletonList;
 
 /**
  * Helps to traverse (or reduce) a Document (or parts of it) and tracks at the same time the corresponding Schema types.
@@ -70,7 +71,7 @@ public class QueryTraversal {
         this.schema = assertNotNull(schema, "schema can't be null");
         this.variables = assertNotNull(variables, "variables can't be null");
         this.fragmentsByName = getOperationResult.fragmentsByName;
-        this.roots = Collections.singletonList(getOperationResult.operationDefinition);
+        this.roots = singletonList(getOperationResult.operationDefinition);
         this.rootParentType = getRootTypeFromOperation(getOperationResult.operationDefinition);
     }
 
@@ -171,7 +172,7 @@ public class QueryTraversal {
             return node.getChildren();
         }
         FragmentSpread fragmentSpread = (FragmentSpread) node;
-        return Collections.singletonList(fragmentsByName.get(fragmentSpread.getName()));
+        return singletonList(fragmentsByName.get(fragmentSpread.getName()));
     }
 
     private Object visitImpl(QueryVisitor visitFieldCallback, Boolean preOrder) {
