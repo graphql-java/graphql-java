@@ -3,6 +3,7 @@ package graphql.util;
 import graphql.PublicApi;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -81,9 +82,20 @@ public interface TraverserContext<T> {
      * @param <S> type of the variable
      * @param key key to lookup the variable value
      *
-     * @return a variable value of {@code null}
+     * @return a variable value or {@code null}
      */
     <S> S getVar(Class<? super S> key);
+
+    /**
+     * Searches for a context variable starting from the parent
+     * up the hierarchy of contexts until the first variable is found.
+     *
+     * @param <S> type of the variable
+     * @param key key to lookup the variable value
+     *
+     * @return a variable value or {@code null}
+     */
+    <S> S getVarFromParents(Class<? super S> key);
 
     /**
      * Stores a variable in the context
@@ -140,5 +152,13 @@ public interface TraverserContext<T> {
      * @return true for the root context, otherwise false
      */
     boolean isRootContext();
+
+    /**
+     * In case of leave returns the children contexts, which have already been visited.
+     *
+     *
+     * @return the children contexts. If the childs are a simple list the key is null.
+     */
+    Map<String, List<TraverserContext<T>>> getChildrenContexts();
 
 }

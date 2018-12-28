@@ -25,6 +25,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     private Object curAccValue;
     private final NodePosition position;
     private final boolean isRootContext;
+    private Map<String, List<TraverserContext<T>>> children;
 
     public DefaultTraverserContext(T curNode,
                                    TraverserContext<T> parent,
@@ -148,4 +149,30 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
         return isRootContext;
     }
 
+    @Override
+    public <S> S getVarFromParents(Class<? super S> key) {
+        TraverserContext<T> curContext = parent;
+        while (curContext != null) {
+            S var = curContext.getVar(key);
+            if (var != null) {
+                return var;
+            }
+            curContext = curContext.getParentContext();
+        }
+        return null;
+    }
+
+    /*
+     * PRIVATE: Used by {@link Traverser}
+     */
+    void setChildrenContexts(Map<String, List<TraverserContext<T>>> children) {
+        assertTrue(this.children == null, "children already set");
+        this.children = children;
+    }
+
+    @Override
+    public Map<String, List<TraverserContext<T>>> getChildrenContexts() {
+        assertNotNull(children, "children not available");
+        return children;
+    }
 }

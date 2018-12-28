@@ -274,6 +274,29 @@ class TraverserTest extends Specification {
         true
     }
 
+    def "test context variables from parents"() {
+        given:
+        def visitor = [
+                enter: { TraverserContext context ->
+                    assert context.getVarFromParents(Object.class) == "var1"
+                    assert context.getVarFromParents(String.class) == "var2"
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        when:
+        Traverser.breadthFirst({ n -> n.children })
+                .rootVars([(Object.class): "var1", (String.class): "var2"])
+                .traverse(root, visitor)
+
+
+        then:
+        true
+    }
+
+
     def "test accumulator"() {
         given:
         def visitor = [
@@ -505,6 +528,49 @@ class TraverserTest extends Specification {
 
     }
 
+    def "depth-first traversal children contexts are available"() {
+        given:
+        def childContextVars = []
+        def visitor = [
+                enter: { TraverserContext context ->
+                    context.setVar(Object.class, context.thisNode().number)
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    def childNumbers = context.getChildrenContexts().get(null).collect { it.getVar(Object.class) }
+                    childContextVars << childNumbers
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        when:
+        Traverser.depthFirst({ n -> n.children }).traverse(root, visitor)
+
+
+        then:
+        childContextVars == [[], [3], [], [], [4, 5], [1, 2]]
+    }
+
+    def "breadth-first traversal children contexts are available"() {
+        given:
+        def childContextVars = []
+        def visitor = [
+                enter: { TraverserContext context ->
+                    context.setVar(Object.class, context.thisNode().number)
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    def childNumbers = context.getChildrenContexts().get(null).collect { it.getVar(Object.class) }
+                    childContextVars << childNumbers
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        when:
+        Traverser.breadthFirst({ n -> n.children }).traverse(root, visitor)
+
+
+        then:
+        childContextVars == [[1, 2], [3], [4, 5], [], [], []]
+    }
 
 }
 
