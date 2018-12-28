@@ -156,7 +156,8 @@ public interface TraverserContext<T> {
     /**
      * In case of leave returns the children contexts, which have already been visited.
      *
-     * @return the children contexts, or empty map if
+     *
+     * @return the children contexts. If the childs are a simple list the key is null.
      */
     Map<String, List<TraverserContext<T>>> getChildrenContexts();
 
