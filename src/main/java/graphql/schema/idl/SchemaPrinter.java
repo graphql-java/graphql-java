@@ -56,15 +56,18 @@ public class SchemaPrinter {
         private final boolean includeScalars;
         private final boolean includeExtendedScalars;
         private final boolean includeSchemaDefinition;
+        private final boolean includeDirectives;
 
         private Options(boolean includeIntrospectionTypes,
                         boolean includeScalars,
                         boolean includeExtendedScalars,
-                        boolean includeSchemaDefinition) {
+                        boolean includeSchemaDefinition,
+                        boolean includeDirectives) {
             this.includeIntrospectionTypes = includeIntrospectionTypes;
             this.includeScalars = includeScalars;
             this.includeExtendedScalars = includeExtendedScalars;
             this.includeSchemaDefinition = includeSchemaDefinition;
+            this.includeDirectives = includeDirectives;
         }
 
         public boolean isIncludeIntrospectionTypes() {
@@ -83,8 +86,12 @@ public class SchemaPrinter {
             return includeSchemaDefinition;
         }
 
+        public boolean isIncludeDirectives() {
+            return includeDirectives;
+        }
+
         public static Options defaultOptions() {
-            return new Options(false, false, false, false);
+            return new Options(false, false, false, false, true);
         }
 
         /**
@@ -95,7 +102,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeIntrospectionTypes(boolean flag) {
-            return new Options(flag, this.includeScalars, includeExtendedScalars, this.includeSchemaDefinition);
+            return new Options(flag, this.includeScalars, includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives);
         }
 
         /**
@@ -106,7 +113,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, flag, includeExtendedScalars, this.includeSchemaDefinition);
+            return new Options(this.includeIntrospectionTypes, flag, includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives);
         }
 
         /**
@@ -118,7 +125,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeExtendedScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag, this.includeSchemaDefinition);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag, this.includeSchemaDefinition, this.includeDirectives);
         }
 
         /**
@@ -132,7 +139,18 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeSchemaDefintion(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, flag);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, flag, this.includeDirectives);
+        }
+
+        /**
+         * Allow to print directives. In some situations, auto-generated schemas contain a lot of directives that
+         * make the printout noisy and having this flag would allow cleaner printout. On by default.
+         *
+         * @param flag whether to print directives
+         * @return new instance of options
+         */
+        public Options includeDirectives(boolean flag) {
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, flag);
         }
     }
 
@@ -444,6 +462,9 @@ public class SchemaPrinter {
     }
 
     private String directivesString(List<GraphQLDirective> directives) {
+        if (!options.includeDirectives)
+            return "";
+
         StringBuilder sb = new StringBuilder();
         if (!directives.isEmpty()) {
             sb.append(" ");
