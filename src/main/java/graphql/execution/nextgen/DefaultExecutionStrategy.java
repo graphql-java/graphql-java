@@ -42,13 +42,54 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
                 .thenApply(ObjectExecutionResultNode.RootExecutionResultNode::new);
     }
 
+    private CompletableFuture<List<NamedResultNode>> resolveSubSelection(FieldSubSelection fieldSubSelection) {
+        List<CompletableFuture<NamedResultNode>> result = fetchSubSelection(fieldSubSelection)
+                .stream().map(namedResultNodeCF -> namedResultNodeCF.thenCompose(this::resolveNode)).collect(toList());
+        return Async.each(result);
+    }
+
+    private List<CompletableFuture<NamedResultNode>> fetchSubSelection(FieldSubSelection fieldSubSelection) {
+        List<CompletableFuture<FetchedValueAnalysis>> fetchedValueAnalysis = fetchAndAnalyze(fieldSubSelection);
+        return fetchedValueAnalysisToNodes(fetchedValueAnalysis);
+    }
+
+    private List<CompletableFuture<NamedResultNode>> fetchedValueAnalysisToNodes(List<CompletableFuture<FetchedValueAnalysis>> fetchedValueAnalysisList) {
+        return fetchedValueAnalysisList
+                .stream()
+                .map(fetchedValueAnalysisCF -> fetchedValueAnalysisCF.thenApply(fetchedValueAnalysis -> {
+                    ExecutionResultNode resultNode = resultNodesCreator.createResultNode(fetchedValueAnalysis);
+                    return new NamedResultNode(fetchedValueAnalysis.getName(), resultNode);
+                })).collect(Collectors.toList());
+    }
+
+
+    private List<CompletableFuture<FetchedValueAnalysis>> fetchAndAnalyze(FieldSubSelection fieldSubSelection) {
+        List<CompletableFuture<FetchedValueAnalysis>> fetchedValues = fieldSubSelection.getSubFields().entrySet().stream()
+                .map(entry -> mapMergedFields(fieldSubSelection.getSource(), entry.getKey(), entry.getValue(), fieldSubSelection.getExecutionStepInfo()))
+                .collect(toList());
+        return fetchedValues;
+    }
+
+    private CompletableFuture<FetchedValueAnalysis> mapMergedFields(Object source, String key, MergedFields mergedFields, ExecutionStepInfo executionStepInfo) {
+        ExecutionStepInfo newExecutionStepInfo = executionInfoFactory.newExecutionStepInfoForSubField(executionContext, mergedFields, executionStepInfo);
+        return valueFetcher
+                .fetchValue(source, mergedFields, newExecutionStepInfo)
+                .thenApply(fetchValue -> analyseValue(fetchValue, key, mergedFields, newExecutionStepInfo));
+    }
+
+    private FetchedValueAnalysis analyseValue(FetchedValue fetchedValue, String name, MergedFields field, ExecutionStepInfo executionInfo) {
+        FetchedValueAnalysis fetchedValueAnalysis = fetchedValueAnalyzer.analyzeFetchedValue(fetchedValue, name, field, executionInfo);
+        return fetchedValueAnalysis;
+    }
+
     private CompletableFuture<NamedResultNode> resolveNode(NamedResultNode namedResultNode) {
+        // can be empty
         ExecutionResultMultiZipper unresolvedMultiZipper = ResultNodesUtil.getUnresolvedNodes(namedResultNode.getNode());
         // must be a unresolved Node
         List<CompletableFuture<ExecutionResultZipper>> cfList = unresolvedMultiZipper
                 .getZippers()
                 .stream()
-                .map(this::resolveZipper)
+                .map(this::resolveNodeZipper)
                 .collect(Collectors.toList());
         return Async
                 .each(cfList)
@@ -57,55 +98,13 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
                 .thenApply(namedResultNode::withNode);
     }
 
-    private CompletableFuture<ExecutionResultZipper> resolveZipper(ExecutionResultZipper unresolvedNodeZipper) {
+    // recursive call back to resolveSubSelection
+    private CompletableFuture<ExecutionResultZipper> resolveNodeZipper(ExecutionResultZipper unresolvedNodeZipper) {
         FetchedValueAnalysis fetchedValueAnalysis = unresolvedNodeZipper.getCurNode().getFetchedValueAnalysis();
         return resolveSubSelection(fetchedValueAnalysis.getFieldSubSelection())
                 .thenApply(resolvedChildMap -> new ObjectExecutionResultNode(fetchedValueAnalysis, resolvedChildMap))
                 .thenApply(unresolvedNodeZipper::withNode);
     }
 
-    private CompletableFuture<List<NamedResultNode>> resolveSubSelection(FieldSubSelection fieldSubSelection) {
-        return fetchSubSelection(fieldSubSelection)
-                .thenCompose(children -> {
-                    List<CompletableFuture<NamedResultNode>> listOfCF = children
-                            .stream()
-                            .map(this::resolveNode)
-                            .collect(Collectors.toList());
-                    return Async.each(listOfCF);
-                });
-    }
-
-
-    private CompletableFuture<List<NamedResultNode>> fetchSubSelection(FieldSubSelection fieldSubSelection) {
-        CompletableFuture<List<FetchedValueAnalysis>> fetchedValueAnalysisFlux = fetchAndAnalyze(fieldSubSelection);
-        return fetchedValueAnalysisToNodes(fetchedValueAnalysisFlux);
-    }
-
-    private CompletableFuture<List<NamedResultNode>> fetchedValueAnalysisToNodes(CompletableFuture<List<FetchedValueAnalysis>> fetchedValueAnalysisFlux) {
-        return Async.map(fetchedValueAnalysisFlux,
-                fetchedValueAnalysis -> {
-                    ExecutionResultNode resultNode = resultNodesCreator.createResultNode(fetchedValueAnalysis);
-                    return new NamedResultNode(fetchedValueAnalysis.getName(), resultNode);
-                });
-    }
-
-    private CompletableFuture<List<FetchedValueAnalysis>> fetchAndAnalyze(FieldSubSelection fieldSubSelection) {
-        List<CompletableFuture<FetchedValueAnalysis>> fetchedValues = fieldSubSelection.getSubFields().entrySet().stream()
-                .map(entry -> {
-                    MergedFields sameFields = entry.getValue();
-                    String name = entry.getKey();
-                    ExecutionStepInfo newExecutionStepInfo = executionInfoFactory.newExecutionStepInfoForSubField(executionContext, sameFields, fieldSubSelection.getExecutionStepInfo());
-                    return valueFetcher
-                            .fetchValue(fieldSubSelection.getSource(), sameFields, newExecutionStepInfo)
-                            .thenApply(fetchValue -> analyseValue(fetchValue, name, sameFields, newExecutionStepInfo));
-                })
-                .collect(toList());
-        return Async.each(fetchedValues);
-    }
-
-    private FetchedValueAnalysis analyseValue(FetchedValue fetchedValue, String name, MergedFields field, ExecutionStepInfo executionInfo) {
-        FetchedValueAnalysis fetchedValueAnalysis = fetchedValueAnalyzer.analyzeFetchedValue(fetchedValue, name, field, executionInfo);
-        return fetchedValueAnalysis;
-    }
 
 }
