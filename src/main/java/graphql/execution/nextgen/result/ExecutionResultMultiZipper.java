@@ -54,6 +54,10 @@ public class ExecutionResultMultiZipper {
         return commonRoot;
     }
 
+    public int size() {
+        return zippers.size();
+    }
+
     public List<ExecutionResultZipper> getZippers() {
         return new ArrayList<>(zippers);
     }
