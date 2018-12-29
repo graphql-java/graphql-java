@@ -4,7 +4,6 @@ import graphql.Internal;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.nextgen.result.ExecutionResultMultiZipper;
-import graphql.execution.nextgen.result.ExecutionResultNode;
 import graphql.execution.nextgen.result.ExecutionResultZipper;
 import graphql.execution.nextgen.result.NamedResultNode;
 import graphql.execution.nextgen.result.ObjectExecutionResultNode;
@@ -19,8 +18,7 @@ import static java.util.stream.Collectors.toList;
 @Internal
 public class DefaultExecutionStrategy implements ExecutionStrategy {
 
-    ResultNodesCreator resultNodesCreator = new ResultNodesCreator();
-    ExecutionStrategyUtil executionStrategyUtil = new ExecutionStrategyUtil();
+    ExecutionStrategyUtil util = new ExecutionStrategyUtil();
 
 
     /*
@@ -37,20 +35,12 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
 
     // recursive entry point
     private CompletableFuture<List<NamedResultNode>> resolveSubSelection(ExecutionContext executionContext, FieldSubSelection fieldSubSelection) {
-        List<CompletableFuture<NamedResultNode>> result = fetchSubSelection(executionContext, fieldSubSelection)
+        List<CompletableFuture<NamedResultNode>> result = util.fetchSubSelection(executionContext, fieldSubSelection)
                 .stream().map(namedResultNodeCF -> namedResultNodeCF.thenCompose(node -> resolveNode(executionContext, node))).collect(toList());
         return Async.each(result);
     }
 
     // ----------- fetching subSelection into ResultNode
-    private List<CompletableFuture<NamedResultNode>> fetchSubSelection(ExecutionContext executionContext, FieldSubSelection fieldSubSelection) {
-        List<CompletableFuture<FetchedValueAnalysis>> fetchedValueAnalysisList = executionStrategyUtil.fetchAndAnalyze(executionContext, fieldSubSelection);
-        return Async.map(fetchedValueAnalysisList, fetchedValueAnalysis -> {
-            ExecutionResultNode resultNode = resultNodesCreator.createResultNode(fetchedValueAnalysis);
-            return new NamedResultNode(fetchedValueAnalysis.getName(), resultNode);
-        });
-    }
-
 
     // ----------- get all unresolved Nodes and recursively resolves them
     // this method is actually an async transformer of specific child nodes

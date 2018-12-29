@@ -10,7 +10,6 @@ import graphql.execution.MergedField;
 import graphql.execution.nextgen.result.ExecutionResultMultiZipper;
 import graphql.execution.nextgen.result.ExecutionResultNode;
 import graphql.execution.nextgen.result.ExecutionResultZipper;
-import graphql.execution.nextgen.result.NamedResultNode;
 import graphql.execution.nextgen.result.ObjectExecutionResultNode;
 import graphql.execution.nextgen.result.ObjectExecutionResultNode.RootExecutionResultNode;
 import graphql.execution.nextgen.result.ResultNodesUtil;
@@ -33,29 +32,19 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
     ResultNodesCreator resultNodesCreator = new ResultNodesCreator();
 
     FetchedValueAnalyzer fetchedValueAnalyzer = new FetchedValueAnalyzer();
-    ExecutionStrategyUtil executionStrategyUtil = new ExecutionStrategyUtil();
+    ExecutionStrategyUtil util = new ExecutionStrategyUtil();
 
 
     public CompletableFuture<RootExecutionResultNode> execute(ExecutionContext executionContext, FieldSubSelection fieldSubSelection) {
-        CompletableFuture<RootExecutionResultNode> rootMono = fetchSubSelection(executionContext, fieldSubSelection).thenApply(RootExecutionResultNode::new);
+        CompletableFuture<RootExecutionResultNode> rootCF = Async.each(util.fetchSubSelection(executionContext, fieldSubSelection)).thenApply(RootExecutionResultNode::new);
 
-        return rootMono
+        return rootCF
                 .thenCompose(rootNode -> {
                     ExecutionResultMultiZipper unresolvedNodes = ResultNodesUtil.getUnresolvedNodes(rootNode);
                     return nextStep(executionContext, unresolvedNodes);
                 })
                 .thenApply(finalZipper -> finalZipper.toRootNode())
                 .thenApply(RootExecutionResultNode.class::cast);
-    }
-
-    private CompletableFuture<List<NamedResultNode>> fetchSubSelection(ExecutionContext executionContext, FieldSubSelection fieldSubSelection) {
-        CompletableFuture<List<FetchedValueAnalysis>> fetchedValueAnalysisFlux = Async.each(executionStrategyUtil.fetchAndAnalyze(executionContext, fieldSubSelection));
-        return fetchedValueAnalysisFluxToNodes(fetchedValueAnalysisFlux);
-    }
-
-    private CompletableFuture<List<NamedResultNode>> fetchedValueAnalysisFluxToNodes(CompletableFuture<List<FetchedValueAnalysis>> fetchedValueAnalysisFlux) {
-        return Async.map(fetchedValueAnalysisFlux,
-                fetchedValueAnalysis -> new NamedResultNode(fetchedValueAnalysis.getName(), resultNodesCreator.createResultNode(fetchedValueAnalysis)));
     }
 
 
@@ -144,9 +133,9 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
         return unresolvedNodeZipper.withNode(newNode);
     }
 
-    private Map<String, ExecutionResultNode> fetchedValueAnalysisToNodes(List<FetchedValueAnalysis> fetchedValueAnalysisFlux) {
+    private Map<String, ExecutionResultNode> fetchedValueAnalysisToNodes(List<FetchedValueAnalysis> fetchedValueAnalysisList) {
         Map<String, ExecutionResultNode> result = new LinkedHashMap<>();
-        fetchedValueAnalysisFlux.forEach(fetchedValueAnalysis -> {
+        fetchedValueAnalysisList.forEach(fetchedValueAnalysis -> {
             result.put(fetchedValueAnalysis.getName(), resultNodesCreator.createResultNode(fetchedValueAnalysis));
         });
         return result;
