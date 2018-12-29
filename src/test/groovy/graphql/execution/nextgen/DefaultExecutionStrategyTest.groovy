@@ -6,6 +6,8 @@ import graphql.execution.ExecutionId
 import graphql.schema.DataFetcher
 import spock.lang.Specification
 
+import java.util.concurrent.CompletableFuture
+
 class DefaultExecutionStrategyTest extends Specification {
 
 
@@ -52,6 +54,83 @@ class DefaultExecutionStrategyTest extends Specification {
         then:
         result.getData() == [foo: fooData]
 
+    }
+
+    def "fields are resolved in depth in parallel"() {
+
+        List<CompletableFuture> cfs = []
+
+        def fooResolver = { env ->
+            println env.getField()
+            def result = new CompletableFuture()
+            cfs << result
+            result
+        } as DataFetcher
+        def idResolver1 = Mock(DataFetcher)
+        def idResolver2 = Mock(DataFetcher)
+        def idResolver3 = Mock(DataFetcher)
+        def dataFetchers = [
+                Query: [foo: fooResolver],
+                Foo  : [id1: idResolver1, id2: idResolver2, id3: idResolver3]
+        ]
+        def schema = TestUtil.schema("""
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            id1: ID
+            id2: ID
+            id3: ID
+        }    
+        """, dataFetchers)
+
+
+        def document = graphql.TestUtil.parseQuery("""
+        {
+            f1: foo  { id1 }
+            f2: foo { id2 }
+            f3: foo  { id3 }
+        }
+        """)
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .build()
+
+        Execution execution = new Execution();
+
+        def cfId1 = new CompletableFuture()
+        def cfId2 = new CompletableFuture()
+        def cfId3 = new CompletableFuture()
+
+        when:
+        execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
+
+        then:
+        cfs.size() == 3
+        0 * idResolver1.get(_)
+        0 * idResolver1.get(_)
+        0 * idResolver1.get(_)
+
+        when:
+        cfs[1].complete(new Object())
+        then:
+        0 * idResolver1.get(_)
+        1 * idResolver2.get(_) >> cfId2
+        0 * idResolver3.get(_)
+
+        when:
+        cfs[2].complete(new Object())
+        then:
+        0 * idResolver1.get(_)
+        0 * idResolver2.get(_)
+        1 * idResolver3.get(_) >> cfId3
+
+
+        when:
+        cfs[0].complete(new Object())
+        then:
+        1 * idResolver1.get(_) >> cfId1
+        0 * idResolver2.get(_)
+        0 * idResolver3.get(_)
 
     }
 
@@ -88,7 +167,6 @@ class DefaultExecutionStrategyTest extends Specification {
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .build()
-
 
         Execution execution = new Execution();
 
