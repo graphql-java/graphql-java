@@ -5,7 +5,7 @@ import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStepInfoFactory;
-import graphql.execution.MergedFields;
+import graphql.execution.MergedField;
 import graphql.execution.nextgen.result.ExecutionResultMultiZipper;
 import graphql.execution.nextgen.result.ExecutionResultNode;
 import graphql.execution.nextgen.result.ExecutionResultZipper;
@@ -65,19 +65,19 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
 
     private List<CompletableFuture<FetchedValueAnalysis>> fetchAndAnalyze(FieldSubSelection fieldSubSelection) {
         List<CompletableFuture<FetchedValueAnalysis>> fetchedValues = fieldSubSelection.getSubFields().entrySet().stream()
-                .map(entry -> mapMergedFields(fieldSubSelection.getSource(), entry.getKey(), entry.getValue(), fieldSubSelection.getExecutionStepInfo()))
+                .map(entry -> mapmergedField(fieldSubSelection.getSource(), entry.getKey(), entry.getValue(), fieldSubSelection.getExecutionStepInfo()))
                 .collect(toList());
         return fetchedValues;
     }
 
-    private CompletableFuture<FetchedValueAnalysis> mapMergedFields(Object source, String key, MergedFields mergedFields, ExecutionStepInfo executionStepInfo) {
-        ExecutionStepInfo newExecutionStepInfo = executionInfoFactory.newExecutionStepInfoForSubField(executionContext, mergedFields, executionStepInfo);
+    private CompletableFuture<FetchedValueAnalysis> mapmergedField(Object source, String key, MergedField mergedField, ExecutionStepInfo executionStepInfo) {
+        ExecutionStepInfo newExecutionStepInfo = executionInfoFactory.newExecutionStepInfoForSubField(executionContext, mergedField, executionStepInfo);
         return valueFetcher
-                .fetchValue(source, mergedFields, newExecutionStepInfo)
-                .thenApply(fetchValue -> analyseValue(fetchValue, key, mergedFields, newExecutionStepInfo));
+                .fetchValue(source, mergedField, newExecutionStepInfo)
+                .thenApply(fetchValue -> analyseValue(fetchValue, key, mergedField, newExecutionStepInfo));
     }
 
-    private FetchedValueAnalysis analyseValue(FetchedValue fetchedValue, String name, MergedFields field, ExecutionStepInfo executionInfo) {
+    private FetchedValueAnalysis analyseValue(FetchedValue fetchedValue, String name, MergedField field, ExecutionStepInfo executionInfo) {
         FetchedValueAnalysis fetchedValueAnalysis = fetchedValueAnalyzer.analyzeFetchedValue(fetchedValue, name, field, executionInfo);
         return fetchedValueAnalysis;
     }

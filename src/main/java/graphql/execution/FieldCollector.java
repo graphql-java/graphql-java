@@ -30,10 +30,10 @@ public class FieldCollector {
 
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
-    public MergedSelectionSet collectFields(FieldCollectorParameters parameters, MergedFields mergedFields) {
-        Map<String, MergedFields> subFields = new LinkedHashMap<>();
+    public MergedSelectionSet collectFields(FieldCollectorParameters parameters, MergedField mergedField) {
+        Map<String, MergedField> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
-        for (Field field : mergedFields.getFields()) {
+        for (Field field : mergedField.getFields()) {
             if (field.getSelectionSet() == null) {
                 continue;
             }
@@ -51,14 +51,14 @@ public class FieldCollector {
      * @return a map of the sub field selections
      */
     public MergedSelectionSet collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet) {
-        Map<String, MergedFields> subFields = new LinkedHashMap<>();
+        Map<String, MergedField> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
         this.collectFields(parameters, selectionSet, visitedFragments, subFields);
         return newMergedSelectionSet().subFields(subFields).build();
     }
 
 
-    private void collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet, List<String> visitedFragments, Map<String, MergedFields> fields) {
+    private void collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet, List<String> visitedFragments, Map<String, MergedField> fields) {
 
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
@@ -71,7 +71,7 @@ public class FieldCollector {
         }
     }
 
-    private void collectFragmentSpread(FieldCollectorParameters parameters, List<String> visitedFragments, Map<String, MergedFields> fields, FragmentSpread fragmentSpread) {
+    private void collectFragmentSpread(FieldCollectorParameters parameters, List<String> visitedFragments, Map<String, MergedField> fields, FragmentSpread fragmentSpread) {
         if (visitedFragments.contains(fragmentSpread.getName())) {
             return;
         }
@@ -90,7 +90,7 @@ public class FieldCollector {
         collectFields(parameters, fragmentDefinition.getSelectionSet(), visitedFragments, fields);
     }
 
-    private void collectInlineFragment(FieldCollectorParameters parameters, List<String> visitedFragments, Map<String, MergedFields> fields, InlineFragment inlineFragment) {
+    private void collectInlineFragment(FieldCollectorParameters parameters, List<String> visitedFragments, Map<String, MergedField> fields, InlineFragment inlineFragment) {
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), inlineFragment.getDirectives()) ||
                 !doesFragmentConditionMatch(parameters, inlineFragment)) {
             return;
@@ -98,16 +98,16 @@ public class FieldCollector {
         collectFields(parameters, inlineFragment.getSelectionSet(), visitedFragments, fields);
     }
 
-    private void collectField(FieldCollectorParameters parameters, Map<String, MergedFields> fields, Field field) {
+    private void collectField(FieldCollectorParameters parameters, Map<String, MergedField> fields, Field field) {
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), field.getDirectives())) {
             return;
         }
         String name = getFieldEntryKey(field);
         if (fields.containsKey(name)) {
-            MergedFields curFields = fields.get(name);
+            MergedField curFields = fields.get(name);
             fields.put(name, curFields.transform(builder -> builder.addField(field)));
         } else {
-            fields.put(name, MergedFields.newMergedFields(field).build());
+            fields.put(name, MergedField.newMergedField(field).build());
         }
     }
 

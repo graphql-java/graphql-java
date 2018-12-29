@@ -30,7 +30,7 @@ import java.util.concurrent.CompletionException
 
 import static ExecutionStrategyParameters.newParameters
 import static graphql.Scalars.GraphQLString
-import static graphql.TestUtil.mergedFields
+import static graphql.TestUtil.mergedField
 import static graphql.TestUtil.mergedSelectionSet
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLEnumType.newEnum
@@ -99,7 +99,7 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(result)
                 .fields(mergedSelectionSet(["fld": [Field.newField().build()]]))
-                .field(mergedFields(Field.newField().build()))
+                .field(mergedField(Field.newField().build()))
                 .build()
 
         when:
@@ -128,7 +128,7 @@ class ExecutionStrategyTest extends Specification {
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .fields(mergedSelectionSet(["fld": []]))
-                .field(mergedFields(field))
+                .field(mergedField(field))
                 .build()
 
         when:
@@ -343,7 +343,7 @@ class ExecutionStrategyTest extends Specification {
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .fields(mergedSelectionSet(["fld": []]))
-                .field(mergedFields(new Field("someField")))
+                .field(mergedField(new Field("someField")))
                 .build()
 
         when:
@@ -489,7 +489,7 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(typeInfo)
                 .source("source")
                 .fields(mergedSelectionSet(["someField": [field]]))
-                .field(mergedFields(field))
+                .field(mergedField(field))
                 .nonNullFieldValidator(nullableFieldValidator)
                 .path(executionPath)
                 .build()
@@ -538,7 +538,7 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(typeInfo)
                 .source("source")
                 .fields(mergedSelectionSet(["someField": [field]]))
-                .field(mergedFields(field))
+                .field(mergedField(field))
                 .path(expectedPath)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .build()
@@ -641,8 +641,8 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(typeInfo)
                 .source(null)
                 .nonNullFieldValidator(nullableFieldValidator)
-                .field(mergedFields(field))
-                .fields(mergedSelectionSet(["someField": [mergedFields(field)]]))
+                .field(mergedField(field))
+                .fields(mergedSelectionSet(["someField": [mergedField(field)]]))
                 .path(ExecutionPath.rootPath().segment("abc"))
                 .build()
 
@@ -668,8 +668,8 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(executionStepInfo)
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
-                .fields(mergedSelectionSet(["fld": [mergedFields(Field.newField().build())]]))
-                .field(mergedFields(Field.newField().build()))
+                .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().build())]]))
+                .field(mergedField(Field.newField().build()))
                 .build()
 
         when:
@@ -689,8 +689,8 @@ class ExecutionStrategyTest extends Specification {
         def field = Field.newField("parent").sourceLocation(new SourceLocation(5, 10)).build()
         def parameters = newParameters()
                 .path(ExecutionPath.fromList(["parent"]))
-                .field(mergedFields(field))
-                .fields(mergedSelectionSet(["parent": [mergedFields(field)]]))
+                .field(mergedField(field))
+                .fields(mergedSelectionSet(["parent": [mergedField(field)]]))
                 .executionStepInfo(executionStepInfo)
                 .build()
 
@@ -716,8 +716,8 @@ class ExecutionStrategyTest extends Specification {
         def field = Field.newField("parent").sourceLocation(new SourceLocation(5, 10)).build()
         def parameters = newParameters()
                 .path(ExecutionPath.fromList(["parent"]))
-                .field(mergedFields(field))
-                .fields(mergedSelectionSet(["parent": [mergedFields(field)]]))
+                .field(mergedField(field))
+                .fields(mergedSelectionSet(["parent": [mergedField(field)]]))
                 .executionStepInfo(executionStepInfo)
                 .build()
 
@@ -746,8 +746,8 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(executionStepInfo)
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
-                .fields(mergedSelectionSet(["fld": [mergedFields(Field.newField().build())]]))
-                .field(mergedFields(Field.newField().build()))
+                .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().build())]]))
+                .field(mergedField(Field.newField().build()))
                 .build()
 
         when:
@@ -770,8 +770,8 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(typeInfo)
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
-                .fields(mergedSelectionSet(["fld": [mergedFields(Field.newField().build())]]))
-                .field(mergedFields(Field.newField().build()))
+                .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().build())]]))
+                .field(mergedField(Field.newField().build()))
                 .build()
 
         when:

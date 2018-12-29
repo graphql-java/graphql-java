@@ -13,13 +13,13 @@ import java.util.Set;
 @PublicApi
 public class MergedSelectionSet {
 
-    private final Map<String, MergedFields> subFields;
+    private final Map<String, MergedField> subFields;
 
-    private MergedSelectionSet(Map<String, MergedFields> subFields) {
+    private MergedSelectionSet(Map<String, MergedField> subFields) {
         this.subFields = Assert.assertNotNull(subFields);
     }
 
-    public Map<String, MergedFields> getSubFields() {
+    public Map<String, MergedField> getSubFields() {
         return subFields;
     }
 
@@ -31,7 +31,7 @@ public class MergedSelectionSet {
         return subFields.keySet();
     }
 
-    public MergedFields getSubField(String key) {
+    public MergedField getSubField(String key) {
         return subFields.get(key);
     }
 
@@ -48,13 +48,13 @@ public class MergedSelectionSet {
     }
 
     public static class Builder {
-        private Map<String, MergedFields> subFields = new LinkedHashMap<>();
+        private Map<String, MergedField> subFields = new LinkedHashMap<>();
 
         private Builder() {
 
         }
 
-        public Builder subFields(Map<String, MergedFields> subFields) {
+        public Builder subFields(Map<String, MergedField> subFields) {
             this.subFields = subFields;
             return this;
         }

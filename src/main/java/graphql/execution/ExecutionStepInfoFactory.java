@@ -20,21 +20,21 @@ public class ExecutionStepInfoFactory {
     ValuesResolver valuesResolver = new ValuesResolver();
 
 
-    public ExecutionStepInfo newExecutionStepInfoForSubField(ExecutionContext executionContext, MergedFields mergedFields, ExecutionStepInfo parentInfo) {
+    public ExecutionStepInfo newExecutionStepInfoForSubField(ExecutionContext executionContext, MergedField mergedField, ExecutionStepInfo parentInfo) {
         GraphQLObjectType parentType = (GraphQLObjectType) parentInfo.getUnwrappedNonNullType();
-        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(executionContext.getGraphQLSchema(), parentType, mergedFields.getName());
+        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(executionContext.getGraphQLSchema(), parentType, mergedField.getName());
         GraphQLOutputType fieldType = fieldDefinition.getType();
-        List<Argument> fieldArgs = mergedFields.getArguments();
+        List<Argument> fieldArgs = mergedField.getArguments();
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables());
 
-        ExecutionPath newPath = parentInfo.getPath().segment(mkNameForPath(mergedFields));
+        ExecutionPath newPath = parentInfo.getPath().segment(mkNameForPath(mergedField));
 
         return parentInfo.transform(builder -> builder
                 .parentInfo(parentInfo)
                 .type(fieldType)
                 .fieldDefinition(fieldDefinition)
-                .field(mergedFields)
+                .field(mergedField)
                 .path(newPath)
                 .arguments(argumentValues));
     }
@@ -49,7 +49,7 @@ public class ExecutionStepInfoFactory {
                 .path(indexedPath));
     }
 
-    private static String mkNameForPath(MergedFields currentField) {
+    private static String mkNameForPath(MergedField currentField) {
         Field field = currentField.getSingleField();
         return field.getAlias() != null ? field.getAlias() : field.getName();
     }

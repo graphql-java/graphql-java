@@ -4,7 +4,7 @@ import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
-import graphql.execution.MergedFields;
+import graphql.execution.MergedField;
 import graphql.language.FragmentDefinition;
 
 import java.util.Collections;
@@ -31,7 +31,7 @@ public class DataFetchingEnvironmentBuilder {
                 .context(environment.getContext())
                 .root(environment.getRoot())
                 .fieldDefinition(environment.getFieldDefinition())
-                .mergedFields(environment.getMergedFields())
+                .mergedField(environment.getMergedField())
                 .fieldType(environment.getFieldType())
                 .executionStepInfo(environment.getExecutionStepInfo())
                 .parentType(environment.getParentType())
@@ -60,7 +60,7 @@ public class DataFetchingEnvironmentBuilder {
     private Object context;
     private Object root;
     private GraphQLFieldDefinition fieldDefinition;
-    private MergedFields mergedFields;
+    private MergedField mergedField;
     private GraphQLOutputType fieldType;
     private GraphQLType parentType;
     private GraphQLSchema graphQLSchema;
@@ -95,8 +95,8 @@ public class DataFetchingEnvironmentBuilder {
         return this;
     }
 
-    public DataFetchingEnvironmentBuilder mergedFields(MergedFields mergedFields) {
-        this.mergedFields = mergedFields;
+    public DataFetchingEnvironmentBuilder mergedField(MergedField mergedField) {
+        this.mergedField = mergedField;
         return this;
     }
 
@@ -142,7 +142,7 @@ public class DataFetchingEnvironmentBuilder {
 
     public DataFetchingEnvironment build() {
         return new DataFetchingEnvironmentImpl(source, arguments, context, root,
-                fieldDefinition, mergedFields, fieldType, parentType, graphQLSchema, fragmentsByName, executionId, selectionSet,
+                fieldDefinition, mergedField, fieldType, parentType, graphQLSchema, fragmentsByName, executionId, selectionSet,
                 executionStepInfo,
                 executionContext);
     }

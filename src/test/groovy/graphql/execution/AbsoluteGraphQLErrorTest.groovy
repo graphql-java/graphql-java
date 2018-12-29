@@ -6,7 +6,7 @@ import graphql.language.SourceLocation
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
-import static graphql.TestUtil.mergedFields
+import static graphql.TestUtil.mergedField
 import static graphql.TestUtil.mergedSelectionSet
 import static graphql.execution.ExecutionStrategyParameters.newParameters
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
@@ -31,8 +31,8 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def parameters = newParameters()
                 .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(mergedSelectionSet(["fld": mergedFields([Field.newField().build()])]))
-                .field(mergedFields(field))
+                .fields(mergedSelectionSet(["fld": mergedField([Field.newField().build()])]))
+                .field(mergedField(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
 
@@ -66,8 +66,8 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def parameters = newParameters()
                 .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(mergedSelectionSet(["fld": mergedFields(Field.newField().build())]))
-                .field(mergedFields(field))
+                .fields(mergedSelectionSet(["fld": mergedField(Field.newField().build())]))
+                .field(mergedField(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
 
@@ -90,8 +90,8 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def parameters = newParameters()
                 .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(mergedSelectionSet(["fld": mergedFields(Field.newField().build())]))
-                .field(mergedFields(field))
+                .fields(mergedSelectionSet(["fld": mergedField(Field.newField().build())]))
+                .field(mergedField(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
 
@@ -115,8 +115,8 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def parameters = newParameters()
                 .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(mergedSelectionSet(["fld": mergedFields(Field.newField().build())]))
-                .field(mergedFields(field))
+                .fields(mergedSelectionSet(["fld": mergedField(Field.newField().build())]))
+                .field(mergedField(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
 
@@ -140,8 +140,8 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def parameters = newParameters()
                 .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(mergedSelectionSet(["fld": mergedFields(Field.newField().build())]))
-                .field(mergedFields(field))
+                .fields(mergedSelectionSet(["fld": mergedField(Field.newField().build())]))
+                .field(mergedField(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
 
@@ -164,8 +164,8 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def parameters = newParameters()
                 .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(mergedSelectionSet(["fld": mergedFields(Field.newField().build())]))
-                .field(mergedFields(field))
+                .fields(mergedSelectionSet(["fld": mergedField(Field.newField().build())]))
+                .field(mergedField(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
 

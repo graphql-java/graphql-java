@@ -14,13 +14,13 @@ public class DataFetcherExceptionHandlerParameters {
 
     private final ExecutionContext executionContext;
     private final DataFetchingEnvironment dataFetchingEnvironment;
-    private final MergedFields field;
+    private final MergedField field;
     private final GraphQLFieldDefinition fieldDefinition;
     private final Map<String, Object> argumentValues;
     private final ExecutionPath path;
     private final Throwable exception;
 
-    public DataFetcherExceptionHandlerParameters(ExecutionContext executionContext, DataFetchingEnvironment dataFetchingEnvironment, MergedFields field, GraphQLFieldDefinition fieldDefinition, Map<String, Object> argumentValues, ExecutionPath path, Throwable exception) {
+    public DataFetcherExceptionHandlerParameters(ExecutionContext executionContext, DataFetchingEnvironment dataFetchingEnvironment, MergedField field, GraphQLFieldDefinition fieldDefinition, Map<String, Object> argumentValues, ExecutionPath path, Throwable exception) {
         this.executionContext = executionContext;
         this.dataFetchingEnvironment = dataFetchingEnvironment;
         this.field = field;
@@ -42,7 +42,7 @@ public class DataFetcherExceptionHandlerParameters {
         return dataFetchingEnvironment;
     }
 
-    public MergedFields getField() {
+    public MergedField getField() {
         return field;
     }
 
@@ -65,7 +65,7 @@ public class DataFetcherExceptionHandlerParameters {
     public static class Builder {
         ExecutionContext executionContext;
         DataFetchingEnvironment dataFetchingEnvironment;
-        MergedFields field;
+        MergedField field;
         GraphQLFieldDefinition fieldDefinition;
         Map<String, Object> argumentValues;
         ExecutionPath path;
@@ -84,7 +84,7 @@ public class DataFetcherExceptionHandlerParameters {
             return this;
         }
 
-        public Builder field(MergedFields field) {
+        public Builder field(MergedField field) {
             this.field = field;
             return this;
         }

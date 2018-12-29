@@ -71,7 +71,7 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
         MergedSelectionSet fields = parameters.getFields();
         Map<String, Future<CompletableFuture<ExecutionResult>>> futures = new LinkedHashMap<>();
         for (String fieldName : fields.keySet()) {
-            final MergedFields currentField = fields.getSubField(fieldName);
+            final MergedField currentField = fields.getSubField(fieldName);
 
             ExecutionPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters

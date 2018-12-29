@@ -5,7 +5,7 @@ import graphql.Internal;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
-import graphql.execution.MergedFields;
+import graphql.execution.MergedField;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import org.dataloader.DataLoader;
@@ -25,7 +25,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Object context;
     private final Object root;
     private final GraphQLFieldDefinition fieldDefinition;
-    private final MergedFields mergedFields;
+    private final MergedField mergedField;
     private final GraphQLOutputType fieldType;
     private final GraphQLType parentType;
     private final GraphQLSchema graphQLSchema;
@@ -40,7 +40,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                                        Object context,
                                        Object root,
                                        GraphQLFieldDefinition fieldDefinition,
-                                       MergedFields mergedFields,
+                                       MergedField mergedField,
                                        GraphQLOutputType fieldType,
                                        GraphQLType parentType,
                                        GraphQLSchema graphQLSchema,
@@ -55,7 +55,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.context = context;
         this.root = root;
         this.fieldDefinition = fieldDefinition;
-        this.mergedFields = mergedFields;
+        this.mergedField = mergedField;
         this.fieldType = fieldType;
         this.parentType = parentType;
         this.graphQLSchema = graphQLSchema;
@@ -102,17 +102,17 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public List<Field> getFields() {
-        return mergedFields.getFields();
+        return mergedField.getFields();
     }
 
     @Override
     public Field getField() {
-        return mergedFields.getSingleField();
+        return mergedField.getSingleField();
     }
 
     @Override
-    public MergedFields getMergedFields() {
-        return mergedFields;
+    public MergedField getMergedField() {
+        return mergedField;
     }
 
     @Override

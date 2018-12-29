@@ -43,7 +43,7 @@ public class AbsoluteGraphQLError implements GraphQLError {
         }
     }
 
-    public AbsoluteGraphQLError(MergedFields sameField, ExecutionPath executionPath, GraphQLError relativeError) {
+    public AbsoluteGraphQLError(MergedField sameField, ExecutionPath executionPath, GraphQLError relativeError) {
         this.absolutePath = createAbsolutePath(executionPath, relativeError);
         this.locations = createAbsoluteLocations(relativeError, sameField);
         this.message = relativeError.getMessage();
@@ -115,7 +115,7 @@ public class AbsoluteGraphQLError implements GraphQLError {
      *
      * @return List of locations from the root.
      */
-    private List<SourceLocation> createAbsoluteLocations(GraphQLError relativeError, MergedFields fields) {
+    private List<SourceLocation> createAbsoluteLocations(GraphQLError relativeError, MergedField fields) {
         Optional<SourceLocation> baseLocation = Optional.ofNullable(fields.getSingleField().getSourceLocation());
 //        if (!fields.isEmpty()) {
 //            baseLocation = Optional.ofNullable(fields.get(0).getSourceLocation());

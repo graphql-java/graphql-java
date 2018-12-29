@@ -34,7 +34,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         List<String> fieldNames = new ArrayList<>(fields.keySet());
 
         CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, index, prevResults) -> {
-            MergedFields currentField = fields.getSubField(fieldName);
+            MergedField currentField = fields.getSubField(fieldName);
             ExecutionPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));

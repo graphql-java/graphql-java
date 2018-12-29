@@ -57,7 +57,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         List<CompletableFuture<FieldValueInfo>> futures = new ArrayList<>();
         List<String> resolvedFields = new ArrayList<>();
         for (String fieldName : fieldNames) {
-            MergedFields currentField = fields.getSubField(fieldName);
+            MergedField currentField = fields.getSubField(fieldName);
 
             ExecutionPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters
@@ -95,13 +95,13 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         return overallResult;
     }
 
-    private boolean isDeferred(ExecutionContext executionContext, ExecutionStrategyParameters parameters, MergedFields currentField) {
+    private boolean isDeferred(ExecutionContext executionContext, ExecutionStrategyParameters parameters, MergedField currentField) {
         DeferSupport deferSupport = executionContext.getDeferSupport();
         if (deferSupport.checkForDeferDirective(currentField)) {
             DeferredErrorSupport errorSupport = new DeferredErrorSupport();
 
             // with a deferred field we are really resetting where we execute from, that is from this current field onwards
-            Map<String, MergedFields> fields = new LinkedHashMap<>();
+            Map<String, MergedField> fields = new LinkedHashMap<>();
             fields.put(currentField.getName(), currentField);
 
             ExecutionStrategyParameters callParameters = parameters.transform(builder ->

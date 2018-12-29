@@ -3,7 +3,7 @@ package graphql.execution.defer;
 import graphql.Directives;
 import graphql.ExecutionResult;
 import graphql.Internal;
-import graphql.execution.MergedFields;
+import graphql.execution.MergedField;
 import graphql.execution.reactive.SingleSubscriberPublisher;
 import graphql.language.Field;
 import org.reactivestreams.Publisher;
@@ -24,7 +24,7 @@ public class DeferSupport {
     private final Deque<DeferredCall> deferredCalls = new ConcurrentLinkedDeque<>();
     private final SingleSubscriberPublisher<ExecutionResult> publisher = new SingleSubscriberPublisher<>();
 
-    public boolean checkForDeferDirective(MergedFields currentField) {
+    public boolean checkForDeferDirective(MergedField currentField) {
         for (Field field : currentField.getFields()) {
             if (field.getDirective(Directives.DeferDirective.getName()) != null) {
                 return true;

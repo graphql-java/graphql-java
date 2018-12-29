@@ -4,7 +4,7 @@ import graphql.Internal;
 import graphql.execution.ExecutionContext;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
-import graphql.execution.MergedFields;
+import graphql.execution.MergedField;
 import graphql.execution.MergedSelectionSet;
 import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
@@ -66,10 +66,10 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         }
     };
 
-    public static DataFetchingFieldSelectionSet newCollector(ExecutionContext executionContext, GraphQLType fieldType, MergedFields mergedFields) {
+    public static DataFetchingFieldSelectionSet newCollector(ExecutionContext executionContext, GraphQLType fieldType, MergedField mergedField) {
         GraphQLType unwrappedType = GraphQLTypeUtil.unwrapAll(fieldType);
         if (unwrappedType instanceof GraphQLFieldsContainer) {
-            return new DataFetchingFieldSelectionSetImpl(executionContext, (GraphQLFieldsContainer) unwrappedType, mergedFields);
+            return new DataFetchingFieldSelectionSetImpl(executionContext, (GraphQLFieldsContainer) unwrappedType, mergedField);
         } else {
             // we can only collect fields on object types and interfaces.  Scalars, Unions etc... cant be done.
             return NOOP;
@@ -83,22 +83,22 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     private final FieldCollector fieldCollector = new FieldCollector();
     private final ValuesResolver valuesResolver = new ValuesResolver();
 
-    private final MergedFields parentFields;
+    private final MergedField parentFields;
     private final GraphQLSchema graphQLSchema;
     private final GraphQLFieldsContainer parentFieldType;
     private final Map<String, Object> variables;
     private final Map<String, FragmentDefinition> fragmentsByName;
 
-    private Map<String, MergedFields> selectionSetFields;
+    private Map<String, MergedField> selectionSetFields;
     private Map<String, GraphQLFieldDefinition> selectionSetFieldDefinitions;
     private Map<String, Map<String, Object>> selectionSetFieldArgs;
     private Set<String> flattenedFields;
 
-    private DataFetchingFieldSelectionSetImpl(ExecutionContext executionContext, GraphQLFieldsContainer parentFieldType, MergedFields parentFields) {
+    private DataFetchingFieldSelectionSetImpl(ExecutionContext executionContext, GraphQLFieldsContainer parentFieldType, MergedField parentFields) {
         this(parentFields, parentFieldType, executionContext.getGraphQLSchema(), executionContext.getVariables(), executionContext.getFragmentsByName());
     }
 
-    public DataFetchingFieldSelectionSetImpl(MergedFields parentFields, GraphQLFieldsContainer parentFieldType, GraphQLSchema graphQLSchema, Map<String, Object> variables, Map<String, FragmentDefinition> fragmentsByName) {
+    public DataFetchingFieldSelectionSetImpl(MergedField parentFields, GraphQLFieldsContainer parentFieldType, GraphQLSchema graphQLSchema, Map<String, Object> variables, Map<String, FragmentDefinition> fragmentsByName) {
         this.parentFields = parentFields;
         this.graphQLSchema = graphQLSchema;
         this.parentFieldType = parentFieldType;
@@ -145,7 +145,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     public SelectedField getField(String fqFieldName) {
         computeValuesLazily();
 
-        MergedFields fields = selectionSetFields.get(fqFieldName);
+        MergedField fields = selectionSetFields.get(fqFieldName);
         if (fields == null) {
             return null;
         }
@@ -191,7 +191,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         private final DataFetchingFieldSelectionSet selectionSet;
         private final Map<String, Object> arguments;
 
-        private SelectedFieldImpl(String qualifiedName, MergedFields parentFields, GraphQLFieldDefinition fieldDefinition, Map<String, Object> arguments) {
+        private SelectedFieldImpl(String qualifiedName, MergedField parentFields, GraphQLFieldDefinition fieldDefinition, Map<String, Object> arguments) {
             this.qualifiedName = qualifiedName;
             this.name = parentFields.getName();
             this.fieldDefinition = fieldDefinition;
@@ -252,7 +252,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     private final static String SEP = "/";
 
 
-    private void traverseFields(MergedFields fieldList, GraphQLFieldsContainer parentFieldType, String fieldPrefix) {
+    private void traverseFields(MergedField fieldList, GraphQLFieldsContainer parentFieldType, String fieldPrefix) {
 
         FieldCollectorParameters parameters = FieldCollectorParameters.newParameters()
                 .schema(graphQLSchema)
@@ -262,9 +262,9 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
                 .build();
 
         MergedSelectionSet collectedFields = fieldCollector.collectFields(parameters, fieldList);
-        for (Map.Entry<String, MergedFields> entry : collectedFields.getSubFields().entrySet()) {
+        for (Map.Entry<String, MergedField> entry : collectedFields.getSubFields().entrySet()) {
             String fieldName = mkFieldName(fieldPrefix, entry.getKey());
-            MergedFields collectedFieldList = entry.getValue();
+            MergedField collectedFieldList = entry.getValue();
             selectionSetFields.put(fieldName, collectedFieldList);
 
             Field field = collectedFieldList.getSingleField();

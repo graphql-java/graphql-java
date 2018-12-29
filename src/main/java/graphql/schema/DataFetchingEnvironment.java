@@ -4,7 +4,7 @@ import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
-import graphql.execution.MergedFields;
+import graphql.execution.MergedField;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import org.dataloader.DataLoader;
@@ -85,7 +85,7 @@ public interface DataFetchingEnvironment {
 
 
     /**
-     * Use {@link #getMergedFields()}.
+     * Use {@link #getMergedField()}.
      */
     @Deprecated
     List<Field> getFields();
@@ -116,10 +116,10 @@ public interface DataFetchingEnvironment {
      *
      * @return the list of fields currently queried
      */
-    MergedFields getMergedFields();
+    MergedField getMergedField();
 
     /**
-     * @return returns the field which is currently queried. See also {@link #getMergedFields()}.
+     * @return returns the field which is currently queried. See also {@link #getMergedField()}.
      */
     Field getField();
 
