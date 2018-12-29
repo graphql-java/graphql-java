@@ -743,9 +743,8 @@ type Query {
     }
 
 
-    def "directives will be printed"() {
-        given:
-        def idl = """
+    def idlWithDirectives() {
+       return """
             
             interface SomeInterface @interfaceTypeDirective {
                 fieldA : String @interfaceFieldDirective
@@ -779,7 +778,12 @@ type Query {
                 fieldA : String @inputFieldDirective
             }
         """
-        def registry = new SchemaParser().parse(idl)
+    }
+
+
+    def "directives will be printed with the includeDirectives flag set"() {
+        given:
+        def registry = new SchemaParser().parse(idlWithDirectives())
         def runtimeWiring = newRuntimeWiring()
             .scalar(mockScalar(registry.scalars().get("SomeScalar")))
             .type(mockTypeRuntimeWiring("SomeInterface", true))
@@ -823,6 +827,46 @@ scalar SomeScalar @scalarDirective
 
 input SomeInput @inputTypeDirective {
   fieldA: String @inputFieldDirective
+}
+'''
+        when:
+        def resultNoDirectives = new SchemaPrinter(defaultOptions()
+                .includeScalarTypes(true)
+                .includeDirectives(false))
+                .print(schema)
+
+        then:
+        // args and directives are sorted like the rest of the schema printer
+        resultNoDirectives == '''interface SomeInterface {
+  fieldA: String
+}
+
+union SomeUnion = Single | SomeImplementingType
+
+type Query {
+  fieldA: String
+  fieldB(input: SomeInput): SomeScalar
+  fieldC: SomeEnum
+  fieldD: SomeInterface
+  fieldE: SomeUnion
+}
+
+type Single {
+  fieldA: String
+}
+
+type SomeImplementingType implements SomeInterface {
+  fieldA: String
+}
+
+enum SomeEnum {
+  SOME_ENUM_VALUE
+}
+
+scalar SomeScalar
+
+input SomeInput {
+  fieldA: String
 }
 '''
     }
