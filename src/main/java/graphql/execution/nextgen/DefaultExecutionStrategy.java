@@ -36,32 +36,33 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
         this.executionInfoFactory = new ExecutionStepInfoFactory();
     }
 
+    /*
+     * the fundamental algorithm is:
+     * - fetch sub selection and analyze it
+     * - convert the fetched value analysis into result node
+     * - get all unresolved result nodes and resolve the sub selection (start again recursively)
+     */
     @Override
     public CompletableFuture<ObjectExecutionResultNode.RootExecutionResultNode> execute(FieldSubSelection fieldSubSelection) {
         return resolveSubSelection(fieldSubSelection)
                 .thenApply(ObjectExecutionResultNode.RootExecutionResultNode::new);
     }
 
+    // recursive entry point
     private CompletableFuture<List<NamedResultNode>> resolveSubSelection(FieldSubSelection fieldSubSelection) {
         List<CompletableFuture<NamedResultNode>> result = fetchSubSelection(fieldSubSelection)
                 .stream().map(namedResultNodeCF -> namedResultNodeCF.thenCompose(this::resolveNode)).collect(toList());
         return Async.each(result);
     }
 
+    // ----------- fetching subSelection into ResultNode
     private List<CompletableFuture<NamedResultNode>> fetchSubSelection(FieldSubSelection fieldSubSelection) {
-        List<CompletableFuture<FetchedValueAnalysis>> fetchedValueAnalysis = fetchAndAnalyze(fieldSubSelection);
-        return fetchedValueAnalysisToNodes(fetchedValueAnalysis);
+        List<CompletableFuture<FetchedValueAnalysis>> fetchedValueAnalysisList = fetchAndAnalyze(fieldSubSelection);
+        return Async.map(fetchedValueAnalysisList, fetchedValueAnalysis -> {
+            ExecutionResultNode resultNode = resultNodesCreator.createResultNode(fetchedValueAnalysis);
+            return new NamedResultNode(fetchedValueAnalysis.getName(), resultNode);
+        });
     }
-
-    private List<CompletableFuture<NamedResultNode>> fetchedValueAnalysisToNodes(List<CompletableFuture<FetchedValueAnalysis>> fetchedValueAnalysisList) {
-        return fetchedValueAnalysisList
-                .stream()
-                .map(fetchedValueAnalysisCF -> fetchedValueAnalysisCF.thenApply(fetchedValueAnalysis -> {
-                    ExecutionResultNode resultNode = resultNodesCreator.createResultNode(fetchedValueAnalysis);
-                    return new NamedResultNode(fetchedValueAnalysis.getName(), resultNode);
-                })).collect(Collectors.toList());
-    }
-
 
     private List<CompletableFuture<FetchedValueAnalysis>> fetchAndAnalyze(FieldSubSelection fieldSubSelection) {
         List<CompletableFuture<FetchedValueAnalysis>> fetchedValues = fieldSubSelection.getSubFields().entrySet().stream()
@@ -82,6 +83,8 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
         return fetchedValueAnalysis;
     }
 
+    // ----------- get all unresolved Nodes and recursively resolves them
+    // this method is actually an async transformer of specific child nodes
     private CompletableFuture<NamedResultNode> resolveNode(NamedResultNode namedResultNode) {
         // can be empty
         ExecutionResultMultiZipper unresolvedMultiZipper = ResultNodesUtil.getUnresolvedNodes(namedResultNode.getNode());
@@ -89,7 +92,7 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
         List<CompletableFuture<ExecutionResultZipper>> cfList = unresolvedMultiZipper
                 .getZippers()
                 .stream()
-                .map(this::resolveNodeZipper)
+                .map(this::resolveUnresolvedNode)
                 .collect(Collectors.toList());
         return Async
                 .each(cfList)
@@ -99,11 +102,10 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
     }
 
     // recursive call back to resolveSubSelection
-    private CompletableFuture<ExecutionResultZipper> resolveNodeZipper(ExecutionResultZipper unresolvedNodeZipper) {
+    private CompletableFuture<ExecutionResultZipper> resolveUnresolvedNode(ExecutionResultZipper unresolvedNodeZipper) {
         FetchedValueAnalysis fetchedValueAnalysis = unresolvedNodeZipper.getCurNode().getFetchedValueAnalysis();
         return resolveSubSelection(fetchedValueAnalysis.getFieldSubSelection())
-                .thenApply(resolvedChildMap -> new ObjectExecutionResultNode(fetchedValueAnalysis, resolvedChildMap))
-                .thenApply(unresolvedNodeZipper::withNode);
+                .thenApply(resolvedChildMap -> unresolvedNodeZipper.withNode(new ObjectExecutionResultNode(fetchedValueAnalysis, resolvedChildMap)));
     }
 
 
