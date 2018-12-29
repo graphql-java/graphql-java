@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -106,6 +107,37 @@ public class FpKit {
     // quickly turn a map of values into its list equivalent
     public static <T> List<T> valuesToList(Map<?, T> map) {
         return new ArrayList<>(map.values());
+    }
+
+    public static <T, U> List<U> map(List<T> list, Function<T, U> function) {
+        return list.stream().map(function).collect(Collectors.toList());
+    }
+
+
+    public static <T> List<List<T>> transposeMatrix(List<? extends List<T>> matrix) {
+        int rowCount = matrix.size();
+        int colCount = matrix.get(0).size();
+        List<List<T>> result = new ArrayList<>();
+        for (int i = 0; i < rowCount; i++) {
+            for (int j = 0; j < colCount; j++) {
+                T val = matrix.get(i).get(j);
+                if (result.size() <= j) {
+                    result.add(j, new ArrayList());
+                }
+                result.get(j).add(i, val);
+            }
+        }
+        return result;
+    }
+
+    public static <T> CompletableFuture<List<T>> flatList(CompletableFuture<List<List<T>>> cf) {
+        return cf.thenApply(FpKit::flatList);
+    }
+
+    public static <T> List<T> flatList(List<List<T>> listLists) {
+        return listLists.stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
     }
 
 }

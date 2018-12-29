@@ -10,12 +10,13 @@ import graphql.execution.MergedField;
 import graphql.execution.nextgen.result.ExecutionResultMultiZipper;
 import graphql.execution.nextgen.result.ExecutionResultNode;
 import graphql.execution.nextgen.result.ExecutionResultZipper;
+import graphql.execution.nextgen.result.NamedResultNode;
 import graphql.execution.nextgen.result.ObjectExecutionResultNode;
 import graphql.execution.nextgen.result.ObjectExecutionResultNode.RootExecutionResultNode;
 import graphql.execution.nextgen.result.ResultNodesUtil;
+import graphql.util.FpKit;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -43,7 +44,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
                     ExecutionResultMultiZipper unresolvedNodes = ResultNodesUtil.getUnresolvedNodes(rootNode);
                     return nextStep(executionContext, unresolvedNodes);
                 })
-                .thenApply(finalZipper -> finalZipper.toRootNode())
+                .thenApply(ExecutionResultMultiZipper::toRootNode)
                 .thenApply(RootExecutionResultNode.class::cast);
     }
 
@@ -65,7 +66,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
         CompletableFuture<List<List<ExecutionResultZipper>>> listListCF = Async.flatMap(unresolvedNodes,
                 executionResultMultiZipper -> fetchAndAnalyze(executionContext, executionResultMultiZipper.getZippers()));
 
-        return Common.flatList(listListCF)
+        return FpKit.flatList(listListCF)
                 .thenApply(zippers -> new ExecutionResultMultiZipper(commonRoot, zippers));
 
     }
@@ -113,7 +114,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
 
         return Async.each(fetchedValues).thenApply(fetchedValuesMatrix -> {
             List<ExecutionResultZipper> result = new ArrayList<>();
-            List<List<FetchedValueAnalysis>> newChildsPerNode = Common.transposeMatrix(fetchedValuesMatrix);
+            List<List<FetchedValueAnalysis>> newChildsPerNode = FpKit.transposeMatrix(fetchedValuesMatrix);
 
             for (int i = 0; i < newChildsPerNode.size(); i++) {
                 ExecutionResultZipper unresolvedNodeZipper = unresolvedNodes.get(i);
@@ -127,19 +128,11 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
 
     private ExecutionResultZipper resolvedZipper(ExecutionResultZipper unresolvedNodeZipper, List<FetchedValueAnalysis> fetchedValuesForNode) {
         ObjectExecutionResultNode.UnresolvedObjectResultNode unresolvedNode = (ObjectExecutionResultNode.UnresolvedObjectResultNode) unresolvedNodeZipper.getCurNode();
-        Map<String, ExecutionResultNode> newChildren = fetchedValueAnalysisToNodes(fetchedValuesForNode);
-
+        List<NamedResultNode> newChildren = util.fetchedValueAnalysisToNodes(fetchedValuesForNode);
         ObjectExecutionResultNode newNode = unresolvedNode.withChildren(newChildren);
         return unresolvedNodeZipper.withNode(newNode);
     }
 
-    private Map<String, ExecutionResultNode> fetchedValueAnalysisToNodes(List<FetchedValueAnalysis> fetchedValueAnalysisList) {
-        Map<String, ExecutionResultNode> result = new LinkedHashMap<>();
-        fetchedValueAnalysisList.forEach(fetchedValueAnalysis -> {
-            result.put(fetchedValueAnalysis.getName(), resultNodesCreator.createResultNode(fetchedValueAnalysis));
-        });
-        return result;
-    }
 
 
     private List<FetchedValueAnalysis> analyseValues(ExecutionContext executionContext, List<FetchedValue> fetchedValues, String name, MergedField field, List<ExecutionStepInfo> executionInfos) {

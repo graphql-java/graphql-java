@@ -58,7 +58,7 @@ public class ObjectExecutionResultNode extends ExecutionResultNode {
                 .findFirst();
     }
 
-    public ObjectExecutionResultNode withChildren(Map<String, ExecutionResultNode> children) {
+    public ObjectExecutionResultNode withChildren(List<NamedResultNode> children) {
         return new ObjectExecutionResultNode(getFetchedValueAnalysis(), children);
     }
 

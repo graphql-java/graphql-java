@@ -7,6 +7,7 @@ import graphql.execution.ExecutionStepInfoFactory;
 import graphql.execution.MergedField;
 import graphql.execution.nextgen.result.ExecutionResultNode;
 import graphql.execution.nextgen.result.NamedResultNode;
+import graphql.util.FpKit;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -21,10 +22,7 @@ public class ExecutionStrategyUtil {
 
     public List<CompletableFuture<NamedResultNode>> fetchSubSelection(ExecutionContext executionContext, FieldSubSelection fieldSubSelection) {
         List<CompletableFuture<FetchedValueAnalysis>> fetchedValueAnalysisList = fetchAndAnalyze(executionContext, fieldSubSelection);
-        return Async.map(fetchedValueAnalysisList, fetchedValueAnalysis -> {
-            ExecutionResultNode resultNode = resultNodesCreator.createResultNode(fetchedValueAnalysis);
-            return new NamedResultNode(fetchedValueAnalysis.getName(), resultNode);
-        });
+        return fetchedValueAnalysisToNodesAsync(fetchedValueAnalysisList);
     }
 
     private List<CompletableFuture<FetchedValueAnalysis>> fetchAndAnalyze(ExecutionContext context, FieldSubSelection fieldSubSelection) {
@@ -33,6 +31,20 @@ public class ExecutionStrategyUtil {
                 .map(entry -> mapMergedField(context, fieldSubSelection.getSource(), entry.getKey(), entry.getValue(), fieldSubSelection.getExecutionStepInfo()))
                 .collect(toList());
         return fetchedValues;
+    }
+
+    private List<CompletableFuture<NamedResultNode>> fetchedValueAnalysisToNodesAsync(List<CompletableFuture<FetchedValueAnalysis>> list) {
+        return Async.map(list, fetchedValueAnalysis -> {
+            ExecutionResultNode resultNode = resultNodesCreator.createResultNode(fetchedValueAnalysis);
+            return new NamedResultNode(fetchedValueAnalysis.getName(), resultNode);
+        });
+    }
+
+    public List<NamedResultNode> fetchedValueAnalysisToNodes(List<FetchedValueAnalysis> fetchedValueAnalysisList) {
+        return FpKit.map(fetchedValueAnalysisList, fetchedValueAnalysis -> {
+            ExecutionResultNode resultNode = resultNodesCreator.createResultNode(fetchedValueAnalysis);
+            return new NamedResultNode(fetchedValueAnalysis.getName(), resultNode);
+        });
     }
 
     private CompletableFuture<FetchedValueAnalysis> mapMergedField(ExecutionContext context, Object source, String key, MergedField mergedField,
