@@ -65,12 +65,12 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
 
     private List<CompletableFuture<FetchedValueAnalysis>> fetchAndAnalyze(FieldSubSelection fieldSubSelection) {
         List<CompletableFuture<FetchedValueAnalysis>> fetchedValues = fieldSubSelection.getSubFields().entrySet().stream()
-                .map(entry -> mapmergedField(fieldSubSelection.getSource(), entry.getKey(), entry.getValue(), fieldSubSelection.getExecutionStepInfo()))
+                .map(entry -> mapMergedField(fieldSubSelection.getSource(), entry.getKey(), entry.getValue(), fieldSubSelection.getExecutionStepInfo()))
                 .collect(toList());
         return fetchedValues;
     }
 
-    private CompletableFuture<FetchedValueAnalysis> mapmergedField(Object source, String key, MergedField mergedField, ExecutionStepInfo executionStepInfo) {
+    private CompletableFuture<FetchedValueAnalysis> mapMergedField(Object source, String key, MergedField mergedField, ExecutionStepInfo executionStepInfo) {
         ExecutionStepInfo newExecutionStepInfo = executionInfoFactory.newExecutionStepInfoForSubField(executionContext, mergedField, executionStepInfo);
         return valueFetcher
                 .fetchValue(source, mergedField, newExecutionStepInfo)
