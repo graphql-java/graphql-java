@@ -40,8 +40,6 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
         return Async.each(result);
     }
 
-    // ----------- fetching subSelection into ResultNode
-
     // ----------- get all unresolved Nodes and recursively resolves them
     // this method is actually an async transformer of specific child nodes
     private CompletableFuture<NamedResultNode> resolveNode(ExecutionContext context, NamedResultNode namedResultNode) {

@@ -7,6 +7,7 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStepInfoFactory;
 import graphql.execution.MergedField;
+import graphql.execution.MergedSelectionSet;
 import graphql.execution.nextgen.result.ExecutionResultMultiZipper;
 import graphql.execution.nextgen.result.ExecutionResultNode;
 import graphql.execution.nextgen.result.ExecutionResultZipper;
@@ -31,12 +32,12 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
 
     ExecutionStepInfoFactory executionInfoFactory = new ExecutionStepInfoFactory();
     ValueFetcher valueFetcher = new ValueFetcher();
-    ResultNodesCreator resultNodesCreator = new ResultNodesCreator();
 
     FetchedValueAnalyzer fetchedValueAnalyzer = new FetchedValueAnalyzer();
     ExecutionStrategyUtil util = new ExecutionStrategyUtil();
 
 
+    @Override
     public CompletableFuture<RootExecutionResultNode> execute(ExecutionContext executionContext, FieldSubSelection fieldSubSelection) {
         CompletableFuture<RootExecutionResultNode> rootCF = Async.each(util.fetchSubSelection(executionContext, fieldSubSelection))
                 .thenApply(RootExecutionResultNode::new);
@@ -80,27 +81,21 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
         return mapEntries(zipperBySubSelection, (key, value) -> new ExecutionResultMultiZipper(unresolvedZipper.getCommonRoot(), value));
     }
 
-    //constrain: all fieldSubSelections have the same fields
     private CompletableFuture<List<ExecutionResultZipper>> fetchAndAnalyze(ExecutionContext executionContext, List<ExecutionResultZipper> unresolvedNodes) {
         Assert.assertTrue(unresolvedNodes.size() > 0, "unresolvedNodes can't be empty");
 
         List<FieldSubSelection> fieldSubSelections = map(unresolvedNodes, zipper -> zipper.getCurNode().getFetchedValueAnalysis().getFieldSubSelection());
         List<Object> sources = map(fieldSubSelections, FieldSubSelection::getSource);
 
-        // each field in the subSelection has n sources as input
-        Map<String, MergedField> subFields = fieldSubSelections.get(0).getSubFields();
+        //constrain: all fieldSubSelections have the same mergedSelectionSet
+        MergedSelectionSet subFields = fieldSubSelections.get(0).getMergedSelectionSet();
 
-        List<CompletableFuture<List<FetchedValueAnalysis>>> fetchedValues = mapEntries(subFields, (name, mergedField) -> {
+        List<CompletableFuture<List<FetchedValueAnalysis>>> fetchedValues = batchFetchForEachSubField(executionContext, fieldSubSelections, sources, subFields);
 
-            List<ExecutionStepInfo> newExecutionStepInfos = map(fieldSubSelections,
-                    executionResultNode -> executionInfoFactory.newExecutionStepInfoForSubField(executionContext, mergedField, executionResultNode.getExecutionStepInfo()));
+        return mapBatchedResultsBack(unresolvedNodes, fetchedValues);
+    }
 
-            CompletableFuture<List<FetchedValueAnalysis>> fetchedValueAnalyzis = valueFetcher
-                    .fetchBatchedValues(executionContext, sources, mergedField, newExecutionStepInfos)
-                    .thenApply(fetchValue -> analyseValues(executionContext, fetchValue, name, mergedField, newExecutionStepInfos));
-            return fetchedValueAnalyzis;
-        });
-
+    private CompletableFuture<List<ExecutionResultZipper>> mapBatchedResultsBack(List<ExecutionResultZipper> unresolvedNodes, List<CompletableFuture<List<FetchedValueAnalysis>>> fetchedValues) {
         return Async.each(fetchedValues).thenApply(fetchedValuesMatrix -> {
             List<ExecutionResultZipper> result = new ArrayList<>();
             List<List<FetchedValueAnalysis>> newChildsPerNode = transposeMatrix(fetchedValuesMatrix);
@@ -112,6 +107,19 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
                 result.add(resolvedZipper);
             }
             return result;
+        });
+    }
+
+    private List<CompletableFuture<List<FetchedValueAnalysis>>> batchFetchForEachSubField(ExecutionContext executionContext,
+                                                                                          List<FieldSubSelection> fieldSubSelections,
+                                                                                          List<Object> sources,
+                                                                                          MergedSelectionSet mergedSelectionSet) {
+        return mapEntries(mergedSelectionSet.getSubFields(), (name, mergedField) -> {
+            List<ExecutionStepInfo> newExecutionStepInfos = map(fieldSubSelections,
+                    executionResultNode -> executionInfoFactory.newExecutionStepInfoForSubField(executionContext, mergedField, executionResultNode.getExecutionStepInfo()));
+            return valueFetcher
+                    .fetchBatchedValues(executionContext, sources, mergedField, newExecutionStepInfos)
+                    .thenApply(fetchValue -> analyseValues(executionContext, fetchValue, name, mergedField, newExecutionStepInfos));
         });
     }
 
