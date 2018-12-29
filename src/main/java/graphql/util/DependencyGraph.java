@@ -26,13 +26,32 @@ import java.util.stream.Collectors;
  * @param <N>
  */
 public class DependencyGraph<N extends Vertex<N>> {   
+    public DependencyGraph () {
+        this(16, 16);
+    }
+    
+    public DependencyGraph (int order, int size) {
+        this(new LinkedHashMap<>(order), new HashMap<>(order), new LinkedHashSet<>(size), 0);
+    }
+    
+    public DependencyGraph (DependencyGraph<? super N> other) {
+        this(new LinkedHashMap<>(Objects.requireNonNull(other).vertices), new HashMap<>(other.verticesById), new LinkedHashSet<>(other.edges), other.nextId);
+    }
+    
+    private DependencyGraph (Map<? super N, ? super N> vertices, Map<Object, ? super N> verticesById, Set<? super Edge<N>> edges, int startId) {
+        this.vertices = Objects.requireNonNull((Map<N, N>)vertices);
+        this.verticesById = Objects.requireNonNull((Map<Object, N>)verticesById);
+        this.edges = Objects.requireNonNull((Set<Edge<N>>)edges);
+        this.nextId = startId;
+    }
+    
     public N addNode (N maybeNode) {
         Objects.requireNonNull(maybeNode);
         
         return vertices.computeIfAbsent(maybeNode, 
             node -> {
                 int id = nextId++;
-                verticesById.put(id, node.outer(this).id(id));
+                verticesById.put(id, node.id(id));
                 return node;
             });
     }
@@ -50,7 +69,10 @@ public class DependencyGraph<N extends Vertex<N>> {
     }
     
     public DependencyGraph<N> addDependency (N maybeSink, N maybeSource, BiConsumer<? super N, ? super N> edgeAction) {
-        addNode(maybeSink).dependsOn(addNode(maybeSource), edgeAction);
+        Optional
+            .ofNullable(addNode(maybeSink).dependsOn(addNode(maybeSource), edgeAction))
+            .ifPresent(edges::add);
+        
         return this;
     }
     
@@ -92,16 +114,19 @@ public class DependencyGraph<N extends Vertex<N>> {
         }
 
         Collection<N> calculateNext () {
-            return (Collection<N>)Traverser
-                .<N>breadthFirst(Vertex::adjacencySet, new ArrayList<>())
-                .traverse(
-                    unclosed
-                        .stream()
-                        .filter(node -> closed.containsAll(node.dependencySet()))
-                        .collect(Collectors.toList()),
-                    this
-                )
-                .getResult();
+            Collection<N> nextClosure = new ArrayList<>();
+            return Optional
+                .ofNullable((Collection<N>)Traverser
+                    .<N>breadthFirst(Vertex::adjacencySet, nextClosure)
+                    .traverse(
+                        unclosed
+                            .stream()
+                            .filter(node -> closed.containsAll(node.dependencySet()))
+                            .collect(Collectors.toList()),
+                        this
+                    )            
+                    .getResult())
+                .orElse(nextClosure);
         }
 
         @Override
@@ -131,11 +156,6 @@ public class DependencyGraph<N extends Vertex<N>> {
             closed.add(node);
             unclosed.remove(node);
         }
-
-        @Override
-        public void start(TraverserContext<N> context) {
-            context.setResult(context.getInitialData());
-        }
         
         @Override
         public TraversalControl enter(TraverserContext<N> context) {
@@ -148,10 +168,10 @@ public class DependencyGraph<N extends Vertex<N>> {
             } else if (node.canResolve()) {
                 node.resolve(node);
                 return TraversalControl.CONTINUE;
-            }                
-            
-            closure.add(node);
-            return TraversalControl.ABORT;
+            } else {
+                closure.add(node);
+                return TraversalControl.ABORT;
+            }                           
         }
 
         @Override
@@ -182,8 +202,8 @@ public class DependencyGraph<N extends Vertex<N>> {
         return new DependencyGraph<>();
     }
     
-    protected final Map<N, N> vertices = new LinkedHashMap<>();
-    protected final Map<Object, N> verticesById = new HashMap<>();
-    protected final Set<Edge<N>> edges = new LinkedHashSet<>();
+    protected final Map<N, N> vertices;
+    protected final Map<Object, N> verticesById;
+    protected final Set<Edge<N>> edges;
     protected int nextId = 0;
 }

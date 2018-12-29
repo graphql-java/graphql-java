@@ -5,7 +5,6 @@
  */
 package graphql.util;
 
-import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -29,26 +28,21 @@ public abstract class Vertex<N extends Vertex<N>> {
         return (N)this;
     }
     
-    protected N outer (DependencyGraph<? super N> outer) {
-        this.outer = Objects.requireNonNull((DependencyGraph<N>)outer);
-        return (N)this;
-    }
-    
-    public N dependsOn (N source, BiConsumer<? super N, ? super N> edgeAction) {
+    public Edge<N> dependsOn (N source, BiConsumer<? super N, ? super N> edgeAction) {
         Objects.requireNonNull(source);
         Objects.requireNonNull(edgeAction);
         
         if (this != source) {// do not record dependency on itself
             Edge<N> edge = new Edge<>(source, (N)this, edgeAction);
-            outer.addEdge(edge);
 
             this.outdegrees.add(edge);
             source.indegrees.add(edge);
+            
+            return edge;
         } else {
             LOGGER.warn("ignoring cyclic dependency on itself: {}", this);
+            return null;
         }
-        
-        return (N)this;
     }
     
     public List<N> adjacencySet () {
@@ -96,7 +90,6 @@ public abstract class Vertex<N extends Vertex<N>> {
             );
     }
     
-    protected DependencyGraph<N> outer;
     protected Object id;
     protected final Set<Edge<N>> outdegrees = new LinkedHashSet<>();
     protected final Set<Edge<N>> indegrees = new LinkedHashSet<>();

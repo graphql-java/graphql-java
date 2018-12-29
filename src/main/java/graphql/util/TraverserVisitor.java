@@ -27,20 +27,4 @@ public interface TraverserVisitor<T> {
     default TraversalControl backRef(TraverserContext<T> context) {
         return TraversalControl.CONTINUE;
     }
-
-    /**
-     * Notifies visitor when traverser is about to start 
-     * 
-     * @param context the very root context
-     */
-    default void start (TraverserContext<T> context) {
-    }
-    
-    /**
-     * Notifies visitor when traverser has stopped traversing
-     * 
-     * @param context the context in place
-     */
-    default void finish (TraverserContext<T> context) {
-    }
 }
