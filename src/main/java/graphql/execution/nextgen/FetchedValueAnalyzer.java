@@ -38,17 +38,10 @@ import static graphql.schema.GraphQLTypeUtil.isList;
 @Internal
 public class FetchedValueAnalyzer {
 
-    private final ExecutionContext executionContext;
-    ResolveType resolveType;
+    ResolveType resolveType = new ResolveType();
     FieldCollector fieldCollector = new FieldCollector();
-    ExecutionStepInfoFactory executionInfoFactory;
+    ExecutionStepInfoFactory executionInfoFactory = new ExecutionStepInfoFactory();
 
-
-    public FetchedValueAnalyzer(ExecutionContext executionContext) {
-        this.executionContext = executionContext;
-        this.resolveType = new ResolveType();
-        this.executionInfoFactory = new ExecutionStepInfoFactory();
-    }
 
     private static final Logger log = LoggerFactory.getLogger(FetchedValueAnalyzer.class);
 
@@ -58,15 +51,15 @@ public class FetchedValueAnalyzer {
      * enum: same as scalar
      * list: list of X: X can be list again, list of scalars or enum or objects
      */
-    public FetchedValueAnalysis analyzeFetchedValue(FetchedValue fetchedValue, String name, MergedField field, ExecutionStepInfo executionInfo) throws NonNullableFieldWasNullException {
-        return analyzeFetchedValueImpl(fetchedValue, fetchedValue.getFetchedValue(), name, field, executionInfo);
+    public FetchedValueAnalysis analyzeFetchedValue(ExecutionContext executionContext, FetchedValue fetchedValue, String name, MergedField field, ExecutionStepInfo executionInfo) throws NonNullableFieldWasNullException {
+        return analyzeFetchedValueImpl(executionContext, fetchedValue, fetchedValue.getFetchedValue(), name, field, executionInfo);
     }
 
-    private FetchedValueAnalysis analyzeFetchedValueImpl(FetchedValue fetchedValue, Object toAnalyze, String name, MergedField field, ExecutionStepInfo executionInfo) throws NonNullableFieldWasNullException {
+    private FetchedValueAnalysis analyzeFetchedValueImpl(ExecutionContext executionContext, FetchedValue fetchedValue, Object toAnalyze, String name, MergedField field, ExecutionStepInfo executionInfo) throws NonNullableFieldWasNullException {
         GraphQLType fieldType = executionInfo.getUnwrappedNonNullType();
 
         if (isList(fieldType)) {
-            return analyzeList(fetchedValue, toAnalyze, name, executionInfo);
+            return analyzeList(executionContext, fetchedValue, toAnalyze, name, executionInfo);
         } else if (fieldType instanceof GraphQLScalarType) {
             return analyzeScalarValue(fetchedValue, toAnalyze, name, (GraphQLScalarType) fieldType, executionInfo);
         } else if (fieldType instanceof GraphQLEnumType) {
@@ -87,7 +80,7 @@ public class FetchedValueAnalyzer {
                         .build();
             }
             resolvedObjectType = resolveType.resolveType(executionContext, field, toAnalyze, executionInfo.getArguments(), fieldType);
-            return analyzeObject(fetchedValue, toAnalyze, name, resolvedObjectType, executionInfo);
+            return analyzeObject(executionContext, fetchedValue, toAnalyze, name, resolvedObjectType, executionInfo);
         } catch (UnresolvedTypeException ex) {
             return handleUnresolvedTypeProblem(fetchedValue, name, executionInfo, ex);
         }
@@ -105,7 +98,7 @@ public class FetchedValueAnalyzer {
                 .build();
     }
 
-    private FetchedValueAnalysis analyzeList(FetchedValue fetchedValue, Object toAnalyze, String name, ExecutionStepInfo executionInfo) {
+    private FetchedValueAnalysis analyzeList(ExecutionContext executionContext, FetchedValue fetchedValue, Object toAnalyze, String name, ExecutionStepInfo executionInfo) {
         if (toAnalyze == null) {
             return newFetchedValueAnalysis(LIST)
                     .fetchedValue(fetchedValue)
@@ -117,7 +110,7 @@ public class FetchedValueAnalyzer {
 
         if (toAnalyze.getClass().isArray() || toAnalyze instanceof Iterable) {
             Collection<Object> collection = FpKit.toCollection(toAnalyze);
-            return analyzeIterable(fetchedValue, collection, name, executionInfo);
+            return analyzeIterable(executionContext, fetchedValue, collection, name, executionInfo);
         } else {
             TypeMismatchError error = new TypeMismatchError(executionInfo.getPath(), executionInfo.getType());
             return newFetchedValueAnalysis(LIST)
@@ -132,14 +125,14 @@ public class FetchedValueAnalyzer {
     }
 
 
-    private FetchedValueAnalysis analyzeIterable(FetchedValue fetchedValue, Iterable<Object> iterableValues, String name, ExecutionStepInfo executionInfo) {
+    private FetchedValueAnalysis analyzeIterable(ExecutionContext executionContext, FetchedValue fetchedValue, Iterable<Object> iterableValues, String name, ExecutionStepInfo executionInfo) {
 
         Collection<Object> values = FpKit.toCollection(iterableValues);
         List<FetchedValueAnalysis> children = new ArrayList<>();
         int index = 0;
         for (Object item : values) {
             ExecutionStepInfo executionInfoForListElement = executionInfoFactory.newExecutionStepInfoForListElement(executionInfo, index);
-            children.add(analyzeFetchedValueImpl(fetchedValue, item, name, executionInfo.getField(), executionInfoForListElement));
+            children.add(analyzeFetchedValueImpl(executionContext, fetchedValue, item, name, executionInfo.getField(), executionInfoForListElement));
             index++;
         }
         return newFetchedValueAnalysis(LIST)
@@ -227,7 +220,7 @@ public class FetchedValueAnalyzer {
                 .build();
     }
 
-    private FetchedValueAnalysis analyzeObject(FetchedValue fetchedValue, Object toAnalyze, String name, GraphQLObjectType resolvedObjectType, ExecutionStepInfo executionInfo) {
+    private FetchedValueAnalysis analyzeObject(ExecutionContext executionContext, FetchedValue fetchedValue, Object toAnalyze, String name, GraphQLObjectType resolvedObjectType, ExecutionStepInfo executionInfo) {
 
         FieldCollectorParameters collectorParameters = newParameters()
                 .schema(executionContext.getGraphQLSchema())

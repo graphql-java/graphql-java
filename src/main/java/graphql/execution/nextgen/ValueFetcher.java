@@ -41,7 +41,6 @@ import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvir
 @Internal
 public class ValueFetcher {
 
-    private final ExecutionContext executionContext;
 
     ValuesResolver valuesResolver = new ValuesResolver();
 
@@ -49,22 +48,21 @@ public class ValueFetcher {
 
     public static final Object NULL_VALUE = new Object();
 
-    public ValueFetcher(ExecutionContext executionContext) {
-        this.executionContext = executionContext;
+    public ValueFetcher() {
     }
 
 
-    public CompletableFuture<List<FetchedValue>> fetchBatchedValues(List<Object> sources, MergedField sameFields, List<ExecutionStepInfo> executionInfos) {
+    public CompletableFuture<List<FetchedValue>> fetchBatchedValues(ExecutionContext executionContext, List<Object> sources, MergedField sameFields, List<ExecutionStepInfo> executionInfos) {
         System.out.println("Fetch batch values size: " + sources.size());
         ExecutionStepInfo executionStepInfo = executionInfos.get(0);
-        if (isDataFetcherBatched(executionStepInfo)) {
+        if (isDataFetcherBatched(executionContext, executionStepInfo)) {
             //TODO: the stepInfo is not correct for all values: how to give the DF all executionInfos?
-            return fetchValue(sources, sameFields, executionStepInfo)
+            return fetchValue(executionContext, sources, sameFields, executionStepInfo)
                     .thenApply(fetchedValue -> extractBatchedValues(fetchedValue, sources.size()));
         } else {
             List<CompletableFuture<FetchedValue>> fetchedValues = new ArrayList<>();
             for (int i = 0; i < sources.size(); i++) {
-                fetchedValues.add(fetchValue(sources.get(i), sameFields, executionInfos.get(i)));
+                fetchedValues.add(fetchValue(executionContext, sources.get(i), sameFields, executionInfos.get(i)));
             }
             return Async.each(fetchedValues);
         }
@@ -92,14 +90,14 @@ public class ValueFetcher {
         return (GraphQLFieldsContainer) GraphQLTypeUtil.unwrapAll(type);
     }
 
-    private boolean isDataFetcherBatched(ExecutionStepInfo executionStepInfo) {
+    private boolean isDataFetcherBatched(ExecutionContext executionContext, ExecutionStepInfo executionStepInfo) {
         GraphQLFieldsContainer parentType = getFieldsContainer(executionStepInfo);
         GraphQLFieldDefinition fieldDef = executionStepInfo.getFieldDefinition();
         DataFetcher dataFetcher = executionContext.getGraphQLSchema().getCodeRegistry().getDataFetcher(parentType, fieldDef);
         return dataFetcher instanceof BatchedDataFetcher;
     }
 
-    public CompletableFuture<FetchedValue> fetchValue(Object source, MergedField sameFields, ExecutionStepInfo executionInfo) {
+    public CompletableFuture<FetchedValue> fetchValue(ExecutionContext executionContext, Object source, MergedField sameFields, ExecutionStepInfo executionInfo) {
         Field field = sameFields.getSingleField();
         GraphQLFieldDefinition fieldDef = executionInfo.getFieldDefinition();
 

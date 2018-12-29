@@ -28,34 +28,28 @@ import static java.util.stream.Collectors.toList;
 @Internal
 public class BatchedExecutionStrategy implements ExecutionStrategy {
 
-    ExecutionStepInfoFactory executionInfoFactory;
-    ValueFetcher valueFetcher;
+    ExecutionStepInfoFactory executionInfoFactory = new ExecutionStepInfoFactory();
+    ValueFetcher valueFetcher = new ValueFetcher();
     ResultNodesCreator resultNodesCreator = new ResultNodesCreator();
 
-    private final ExecutionContext executionContext;
-    private FetchedValueAnalyzer fetchedValueAnalyzer;
+    FetchedValueAnalyzer fetchedValueAnalyzer = new FetchedValueAnalyzer();
+    ExecutionStrategyUtil executionStrategyUtil = new ExecutionStrategyUtil();
 
-    public BatchedExecutionStrategy(ExecutionContext executionContext) {
-        this.executionContext = executionContext;
-        this.fetchedValueAnalyzer = new FetchedValueAnalyzer(executionContext);
-        this.valueFetcher = new ValueFetcher(executionContext);
-        this.executionInfoFactory = new ExecutionStepInfoFactory();
-    }
 
-    public CompletableFuture<RootExecutionResultNode> execute(FieldSubSelection fieldSubSelection) {
-        CompletableFuture<RootExecutionResultNode> rootMono = fetchSubSelection(fieldSubSelection).thenApply(RootExecutionResultNode::new);
+    public CompletableFuture<RootExecutionResultNode> execute(ExecutionContext executionContext, FieldSubSelection fieldSubSelection) {
+        CompletableFuture<RootExecutionResultNode> rootMono = fetchSubSelection(executionContext, fieldSubSelection).thenApply(RootExecutionResultNode::new);
 
         return rootMono
                 .thenCompose(rootNode -> {
                     ExecutionResultMultiZipper unresolvedNodes = ResultNodesUtil.getUnresolvedNodes(rootNode);
-                    return nextStep(unresolvedNodes);
+                    return nextStep(executionContext, unresolvedNodes);
                 })
                 .thenApply(finalZipper -> finalZipper.toRootNode())
                 .thenApply(RootExecutionResultNode.class::cast);
     }
 
-    private CompletableFuture<List<NamedResultNode>> fetchSubSelection(FieldSubSelection fieldSubSelection) {
-        CompletableFuture<List<FetchedValueAnalysis>> fetchedValueAnalysisFlux = fetchAndAnalyze(fieldSubSelection);
+    private CompletableFuture<List<NamedResultNode>> fetchSubSelection(ExecutionContext executionContext, FieldSubSelection fieldSubSelection) {
+        CompletableFuture<List<FetchedValueAnalysis>> fetchedValueAnalysisFlux = Async.each(executionStrategyUtil.fetchAndAnalyze(executionContext, fieldSubSelection));
         return fetchedValueAnalysisFluxToNodes(fetchedValueAnalysisFlux);
     }
 
@@ -65,22 +59,22 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
     }
 
 
-    private CompletableFuture<ExecutionResultMultiZipper> nextStep(ExecutionResultMultiZipper multizipper) {
+    private CompletableFuture<ExecutionResultMultiZipper> nextStep(ExecutionContext executionContext, ExecutionResultMultiZipper multizipper) {
         ExecutionResultMultiZipper nextUnresolvedNodes = ResultNodesUtil.getUnresolvedNodes(multizipper.toRootNode());
         if (nextUnresolvedNodes.getZippers().size() == 0) {
             return CompletableFuture.completedFuture(nextUnresolvedNodes);
         }
         List<ExecutionResultMultiZipper> groups = groupNodesIntoBatches(nextUnresolvedNodes);
-        return nextStepImpl(groups).thenCompose(this::nextStep);
+        return nextStepImpl(executionContext, groups).thenCompose(next -> nextStep(executionContext, next));
     }
 
     // all multizipper have the same root
-    private CompletableFuture<ExecutionResultMultiZipper> nextStepImpl(List<ExecutionResultMultiZipper> unresolvedNodes) {
+    private CompletableFuture<ExecutionResultMultiZipper> nextStepImpl(ExecutionContext executionContext, List<ExecutionResultMultiZipper> unresolvedNodes) {
         Assert.assertNotEmpty(unresolvedNodes, "unresolvedNodes can't be empty");
         ExecutionResultNode commonRoot = unresolvedNodes.get(0).getCommonRoot();
 
         CompletableFuture<List<List<ExecutionResultZipper>>> listListCF = Async.flatMap(unresolvedNodes,
-                executionResultMultiZipper -> fetchAndAnalyze(executionResultMultiZipper.getZippers()));
+                executionResultMultiZipper -> fetchAndAnalyze(executionContext, executionResultMultiZipper.getZippers()));
 
         return Common.flatList(listListCF)
                 .thenApply(zippers -> new ExecutionResultMultiZipper(commonRoot, zippers));
@@ -99,7 +93,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
     }
 
     //constrain: all fieldSubSelections have the same fields
-    private CompletableFuture<List<ExecutionResultZipper>> fetchAndAnalyze(List<ExecutionResultZipper> unresolvedNodes) {
+    private CompletableFuture<List<ExecutionResultZipper>> fetchAndAnalyze(ExecutionContext executionContext, List<ExecutionResultZipper> unresolvedNodes) {
         Assert.assertTrue(unresolvedNodes.size() > 0, "unresolvedNodes can't be empty");
 
         List<FieldSubSelection> fieldSubSelections = unresolvedNodes.stream()
@@ -122,8 +116,8 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
                     }).collect(Collectors.toList());
 
                     CompletableFuture<List<FetchedValueAnalysis>> fetchedValueAnalyzis = valueFetcher
-                            .fetchBatchedValues(sources, sameFields, newExecutionStepInfos)
-                            .thenApply(fetchValue -> analyseValues(fetchValue, name, sameFields, newExecutionStepInfos));
+                            .fetchBatchedValues(executionContext, sources, sameFields, newExecutionStepInfos)
+                            .thenApply(fetchValue -> analyseValues(executionContext, fetchValue, name, sameFields, newExecutionStepInfos));
                     return fetchedValueAnalyzis;
                 })
                 .collect(toList());
@@ -159,35 +153,12 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
     }
 
 
-    // only used for the root sub selection atm
-    private CompletableFuture<List<FetchedValueAnalysis>> fetchAndAnalyze(FieldSubSelection fieldSubSelection) {
-        List<CompletableFuture<FetchedValueAnalysis>> fetchedValues = fieldSubSelection.getSubFields().entrySet().stream()
-                .map(entry -> {
-                    MergedField sameFields = entry.getValue();
-                    String name = entry.getKey();
-                    ExecutionStepInfo newExecutionStepInfo = executionInfoFactory.newExecutionStepInfoForSubField(executionContext, sameFields, fieldSubSelection.getExecutionStepInfo());
-                    return valueFetcher
-                            .fetchValue(fieldSubSelection.getSource(), sameFields, newExecutionStepInfo)
-                            .thenApply(fetchValue -> analyseValue(fetchValue, name, sameFields, newExecutionStepInfo));
-                })
-                .collect(toList());
-
-        return Async.each(fetchedValues);
-    }
-
-    // only used for the root sub selection atm
-    private FetchedValueAnalysis analyseValue(FetchedValue fetchedValue, String name, MergedField field, ExecutionStepInfo executionInfo) {
-        FetchedValueAnalysis fetchedValueAnalysis = fetchedValueAnalyzer.analyzeFetchedValue(fetchedValue, name, field, executionInfo);
-        return fetchedValueAnalysis;
-    }
-
-
-    private List<FetchedValueAnalysis> analyseValues(List<FetchedValue> fetchedValues, String name, MergedField field, List<ExecutionStepInfo> executionInfos) {
+    private List<FetchedValueAnalysis> analyseValues(ExecutionContext executionContext, List<FetchedValue> fetchedValues, String name, MergedField field, List<ExecutionStepInfo> executionInfos) {
         List<FetchedValueAnalysis> result = new ArrayList<>();
         for (int i = 0; i < fetchedValues.size(); i++) {
             FetchedValue fetchedValue = fetchedValues.get(i);
             ExecutionStepInfo executionStepInfo = executionInfos.get(i);
-            FetchedValueAnalysis fetchedValueAnalysis = fetchedValueAnalyzer.analyzeFetchedValue(fetchedValue, name, field, executionStepInfo);
+            FetchedValueAnalysis fetchedValueAnalysis = fetchedValueAnalyzer.analyzeFetchedValue(executionContext, fetchedValue, name, field, executionStepInfo);
             result.add(fetchedValueAnalysis);
         }
         return result;

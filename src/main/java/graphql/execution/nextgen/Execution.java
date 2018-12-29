@@ -96,9 +96,9 @@ public class Execution {
 
         try {
             return executionStrategy
-                    .getConstructor(ExecutionContext.class)
-                    .newInstance(executionContext)
-                    .execute(fieldSubSelection)
+                    .getConstructor()
+                    .newInstance()
+                    .execute(executionContext, fieldSubSelection)
                     .thenApply(ResultNodesUtil::toExecutionResult);
         } catch (Exception e) {
             throw new RuntimeException(e);
