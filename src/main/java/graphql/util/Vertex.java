@@ -28,7 +28,7 @@ public abstract class Vertex<N extends Vertex<N>> {
         return (N)this;
     }
     
-    public Edge<N> dependsOn (N source, BiConsumer<? super N, ? super N> edgeAction) {
+    public N dependsOn (N source, BiConsumer<? super N, ? super N> edgeAction) {
         Objects.requireNonNull(source);
         Objects.requireNonNull(edgeAction);
         
@@ -36,13 +36,12 @@ public abstract class Vertex<N extends Vertex<N>> {
             Edge<N> edge = new Edge<>(source, (N)this, edgeAction);
 
             this.outdegrees.add(edge);
-            source.indegrees.add(edge);
-            
-            return edge;
+            source.indegrees.add(edge);            
         } else {
             LOGGER.warn("ignoring cyclic dependency on itself: {}", this);
-            return null;
         }
+        
+        return (N)this;
     }
     
     public List<N> adjacencySet () {

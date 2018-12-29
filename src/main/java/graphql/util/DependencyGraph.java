@@ -6,13 +6,14 @@
 package graphql.util;
 
 import static graphql.Assert.assertShouldNeverHappen;
+import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -20,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  *
@@ -27,21 +29,20 @@ import java.util.stream.Collectors;
  */
 public class DependencyGraph<N extends Vertex<N>> {   
     public DependencyGraph () {
-        this(16, 16);
+        this(16);
     }
     
-    public DependencyGraph (int order, int size) {
-        this(new LinkedHashMap<>(order), new HashMap<>(order), new LinkedHashSet<>(size), 0);
+    public DependencyGraph (int order) {
+        this(new LinkedHashMap<>(order), new HashMap<>(order), 0);
     }
     
     public DependencyGraph (DependencyGraph<? super N> other) {
-        this(new LinkedHashMap<>(Objects.requireNonNull(other).vertices), new HashMap<>(other.verticesById), new LinkedHashSet<>(other.edges), other.nextId);
+        this(new LinkedHashMap<>(Objects.requireNonNull(other).vertices), new HashMap<>(other.verticesById), other.nextId);
     }
     
-    private DependencyGraph (Map<? super N, ? super N> vertices, Map<Object, ? super N> verticesById, Set<? super Edge<N>> edges, int startId) {
+    private DependencyGraph (Map<? super N, ? super N> vertices, Map<Object, ? super N> verticesById, int startId) {
         this.vertices = Objects.requireNonNull((Map<N, N>)vertices);
         this.verticesById = Objects.requireNonNull((Map<Object, N>)verticesById);
-        this.edges = Objects.requireNonNull((Set<Edge<N>>)edges);
         this.nextId = startId;
     }
     
@@ -69,9 +70,7 @@ public class DependencyGraph<N extends Vertex<N>> {
     }
     
     public DependencyGraph<N> addDependency (N maybeSink, N maybeSource, BiConsumer<? super N, ? super N> edgeAction) {
-        Optional
-            .ofNullable(addNode(maybeSink).dependsOn(addNode(maybeSource), edgeAction))
-            .ifPresent(edges::add);
+        addNode(maybeSink).dependsOn(addNode(maybeSource), edgeAction);
         
         return this;
     }
@@ -202,8 +201,61 @@ public class DependencyGraph<N extends Vertex<N>> {
         return new DependencyGraph<>();
     }
     
+    protected int nextId = 0;
     protected final Map<N, N> vertices;
     protected final Map<Object, N> verticesById;
-    protected final Set<Edge<N>> edges;
-    protected int nextId = 0;
+    protected final Set<Edge<N>> edges = new AbstractSet<Edge<N>>() {
+        @Override
+        public boolean add(Edge<N> e) {
+            Objects.requireNonNull(e);
+            
+            return e.sink.outdegrees.add(e) &&
+                e.source.indegrees.add(e);
+        }
+        
+        @Override
+        public Iterator<Edge<N>> iterator() {
+            return new Iterator<Edge<N>>() {
+                @Override
+                public boolean hasNext() {
+                    boolean hasNext;
+                    while (!(hasNext = current.hasNext()) && partitions.hasNext())
+                        current = partitions.next();
+                    
+                    return hasNext;
+                }
+
+                @Override
+                public Edge<N> next() {
+                    return (last = current.next());
+                }
+
+                @Override
+                public void remove() {
+                    current.remove();
+                    last.sink.outdegrees.remove(last);
+                }
+                
+                final Iterator<Iterator<Edge<N>>> partitions = Stream.concat(
+                        verticesById
+                            .values()
+                            .stream()
+                            .map(v -> v.indegrees.iterator()),
+                        Stream.of(Collections.<Edge<N>>emptyIterator())
+                    )
+                    .collect(Collectors.toList())
+                    .iterator();
+                Iterator<Edge<N>> current = partitions.next();
+                Edge<N> last;
+            };
+        }
+
+        @Override
+        public int size() {
+            return verticesById
+                .values()
+                .stream()
+                .collect(Collectors.summingInt(v -> v.indegrees.size()));
+        }
+    };
 }
