@@ -20,10 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
+import static graphql.util.FpKit.flatList;
+import static graphql.util.FpKit.map;
+import static graphql.util.FpKit.mapEntries;
+import static graphql.util.FpKit.transposeMatrix;
 
 @Internal
 public class BatchedExecutionStrategy implements ExecutionStrategy {
@@ -37,7 +38,8 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
 
 
     public CompletableFuture<RootExecutionResultNode> execute(ExecutionContext executionContext, FieldSubSelection fieldSubSelection) {
-        CompletableFuture<RootExecutionResultNode> rootCF = Async.each(util.fetchSubSelection(executionContext, fieldSubSelection)).thenApply(RootExecutionResultNode::new);
+        CompletableFuture<RootExecutionResultNode> rootCF = Async.each(util.fetchSubSelection(executionContext, fieldSubSelection))
+                .thenApply(RootExecutionResultNode::new);
 
         return rootCF
                 .thenCompose(rootNode -> {
@@ -66,55 +68,42 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
         CompletableFuture<List<List<ExecutionResultZipper>>> listListCF = Async.flatMap(unresolvedNodes,
                 executionResultMultiZipper -> fetchAndAnalyze(executionContext, executionResultMultiZipper.getZippers()));
 
-        return FpKit.flatList(listListCF)
+        return flatList(listListCF)
                 .thenApply(zippers -> new ExecutionResultMultiZipper(commonRoot, zippers));
 
     }
 
     private List<ExecutionResultMultiZipper> groupNodesIntoBatches(ExecutionResultMultiZipper unresolvedZipper) {
-        Map<Map<String, MergedField>, List<ExecutionResultZipper>> zipperBySubSelection = unresolvedZipper.getZippers().stream()
-                .collect(groupingBy(executionResultZipper -> executionResultZipper.getCurNode().getFetchedValueAnalysis().getFieldSubSelection().getSubFields()));
+        Map<Map<String, MergedField>, List<ExecutionResultZipper>> zipperBySubSelection = FpKit.groupingBy(unresolvedZipper.getZippers(),
+                (executionResultZipper -> executionResultZipper.getCurNode().getFetchedValueAnalysis().getFieldSubSelection().getSubFields()));
 
-        return zipperBySubSelection
-                .entrySet()
-                .stream()
-                .map(entry -> new ExecutionResultMultiZipper(unresolvedZipper.getCommonRoot(), entry.getValue()))
-                .collect(Collectors.toList());
+        return mapEntries(zipperBySubSelection, (key, value) -> new ExecutionResultMultiZipper(unresolvedZipper.getCommonRoot(), value));
     }
 
     //constrain: all fieldSubSelections have the same fields
     private CompletableFuture<List<ExecutionResultZipper>> fetchAndAnalyze(ExecutionContext executionContext, List<ExecutionResultZipper> unresolvedNodes) {
         Assert.assertTrue(unresolvedNodes.size() > 0, "unresolvedNodes can't be empty");
 
-        List<FieldSubSelection> fieldSubSelections = unresolvedNodes.stream()
-                .map(zipper -> zipper.getCurNode().getFetchedValueAnalysis().getFieldSubSelection())
-                .collect(Collectors.toList());
-        List<Object> sources = fieldSubSelections.stream().map(fieldSubSelection -> fieldSubSelection.getSource()).collect(Collectors.toList());
+        List<FieldSubSelection> fieldSubSelections = map(unresolvedNodes, zipper -> zipper.getCurNode().getFetchedValueAnalysis().getFieldSubSelection());
+        List<Object> sources = map(fieldSubSelections, FieldSubSelection::getSource);
 
         // each field in the subSelection has n sources as input
-        List<CompletableFuture<List<FetchedValueAnalysis>>> fetchedValues = fieldSubSelections
-                .get(0)
-                .getSubFields()
-                .entrySet()
-                .stream()
-                .map(entry -> {
-                    MergedField sameFields = entry.getValue();
-                    String name = entry.getKey();
+        Map<String, MergedField> subFields = fieldSubSelections.get(0).getSubFields();
 
-                    List<ExecutionStepInfo> newExecutionStepInfos = fieldSubSelections.stream().map(executionResultNode -> {
-                        return executionInfoFactory.newExecutionStepInfoForSubField(executionContext, sameFields, executionResultNode.getExecutionStepInfo());
-                    }).collect(Collectors.toList());
+        List<CompletableFuture<List<FetchedValueAnalysis>>> fetchedValues = mapEntries(subFields, (name, mergedField) -> {
 
-                    CompletableFuture<List<FetchedValueAnalysis>> fetchedValueAnalyzis = valueFetcher
-                            .fetchBatchedValues(executionContext, sources, sameFields, newExecutionStepInfos)
-                            .thenApply(fetchValue -> analyseValues(executionContext, fetchValue, name, sameFields, newExecutionStepInfos));
-                    return fetchedValueAnalyzis;
-                })
-                .collect(toList());
+            List<ExecutionStepInfo> newExecutionStepInfos = map(fieldSubSelections,
+                    executionResultNode -> executionInfoFactory.newExecutionStepInfoForSubField(executionContext, mergedField, executionResultNode.getExecutionStepInfo()));
+
+            CompletableFuture<List<FetchedValueAnalysis>> fetchedValueAnalyzis = valueFetcher
+                    .fetchBatchedValues(executionContext, sources, mergedField, newExecutionStepInfos)
+                    .thenApply(fetchValue -> analyseValues(executionContext, fetchValue, name, mergedField, newExecutionStepInfos));
+            return fetchedValueAnalyzis;
+        });
 
         return Async.each(fetchedValues).thenApply(fetchedValuesMatrix -> {
             List<ExecutionResultZipper> result = new ArrayList<>();
-            List<List<FetchedValueAnalysis>> newChildsPerNode = FpKit.transposeMatrix(fetchedValuesMatrix);
+            List<List<FetchedValueAnalysis>> newChildsPerNode = transposeMatrix(fetchedValuesMatrix);
 
             for (int i = 0; i < newChildsPerNode.size(); i++) {
                 ExecutionResultZipper unresolvedNodeZipper = unresolvedNodes.get(i);
@@ -132,7 +121,6 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
         ObjectExecutionResultNode newNode = unresolvedNode.withChildren(newChildren);
         return unresolvedNodeZipper.withNode(newNode);
     }
-
 
 
     private List<FetchedValueAnalysis> analyseValues(ExecutionContext executionContext, List<FetchedValue> fetchedValues, String name, MergedField field, List<ExecutionStepInfo> executionInfos) {

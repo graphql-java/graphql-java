@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -18,6 +19,7 @@ import java.util.stream.IntStream;
 
 import static java.util.Collections.singletonList;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.mapping;
 
 @Internal
 public class FpKit {
@@ -31,6 +33,11 @@ public class FpKit {
                 mergeFunc,
                 LinkedHashMap::new)
         );
+    }
+
+    // normal groupingBy but with LinkedHashMap
+    public static <T, NewKey> Map<NewKey, List<T>> groupingBy(List<T> list, Function<T, NewKey> function) {
+        return list.stream().collect(Collectors.groupingBy(function, LinkedHashMap::new, mapping(Function.identity(), Collectors.toList())));
     }
 
     //
@@ -111,6 +118,10 @@ public class FpKit {
 
     public static <T, U> List<U> map(List<T> list, Function<T, U> function) {
         return list.stream().map(function).collect(Collectors.toList());
+    }
+
+    public static <K, V, U> List<U> mapEntries(Map<K, V> map, BiFunction<K, V, U> function) {
+        return map.entrySet().stream().map(entry -> function.apply(entry.getKey(), entry.getValue())).collect(Collectors.toList());
     }
 
 
