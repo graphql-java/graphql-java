@@ -32,6 +32,10 @@ public class FieldSubSelection {
         return mergedSelectionSet.getSubFields();
     }
 
+    public MergedSelectionSet getMergedSelectionSet() {
+        return mergedSelectionSet;
+    }
+
     public void setMergedSelectionSet(MergedSelectionSet mergedSelectionSet) {
         this.mergedSelectionSet = mergedSelectionSet;
     }
