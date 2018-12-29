@@ -14,7 +14,7 @@ import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStrategy;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldCollectorParameters;
-import graphql.execution.MergedFields;
+import graphql.execution.MergedField;
 import graphql.execution.MergedSelectionSet;
 import graphql.execution.NonNullableFieldValidator;
 import graphql.execution.ResolveType;
@@ -152,7 +152,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         }
 
         String fieldName = curFieldNames.next();
-        MergedFields currentField = curNode.getFields().get(fieldName);
+        MergedField currentField = curNode.getFields().get(fieldName);
 
 
         //
@@ -206,7 +206,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                                                                 String fieldName,
                                                                 ExecutionNode node) {
         GraphQLObjectType parentType = node.getType();
-        MergedFields fields = node.getFields().get(fieldName);
+        MergedField fields = node.getFields().get(fieldName);
 
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.getSingleField());
 
@@ -239,7 +239,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                                                        ExecutionNode node,
                                                        GraphQLFieldDefinition fieldDef) {
         GraphQLObjectType parentType = node.getType();
-        MergedFields fields = node.getFields().get(fieldName);
+        MergedField fields = node.getFields().get(fieldName);
         List<MapOrList> parentResults = node.getParentResults();
 
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
@@ -254,7 +254,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .source(node.getSources())
                 .arguments(argumentValues)
                 .fieldDefinition(fieldDef)
-                .mergedFields(fields)
+                .mergedField(fields)
                 .fieldType(fieldDef.getType())
                 .executionStepInfo(parameters.getExecutionStepInfo())
                 .parentType(parentType)
@@ -286,7 +286,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .handle(handleResult(executionContext, parameters, parentResults, fields, fieldDef, argumentValues, environment));
     }
 
-    private BiFunction<List<Object>, Throwable, FetchedValues> handleResult(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<MapOrList> parentResults, MergedFields fields, GraphQLFieldDefinition fieldDef, Map<String, Object> argumentValues, DataFetchingEnvironment environment) {
+    private BiFunction<List<Object>, Throwable, FetchedValues> handleResult(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<MapOrList> parentResults, MergedField fields, GraphQLFieldDefinition fieldDef, Map<String, Object> argumentValues, DataFetchingEnvironment environment) {
         return (result, exception) -> {
             if (exception != null) {
                 if (exception instanceof CompletionException) {
@@ -336,7 +336,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     private List<ExecutionNode> completeValues(ExecutionContext executionContext,
                                                FetchedValues fetchedValues, ExecutionStepInfo executionStepInfo,
-                                               String fieldName, MergedFields fields,
+                                               String fieldName, MergedField fields,
                                                Map<String, Object> argumentValues) {
 
         handleNonNullType(executionContext, fetchedValues);
@@ -357,7 +357,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     @SuppressWarnings("unchecked")
     private List<ExecutionNode> handleList(ExecutionContext executionContext, Map<String, Object> argumentValues,
-                                           FetchedValues fetchedValues, String fieldName, MergedFields fields,
+                                           FetchedValues fetchedValues, String fieldName, MergedField fields,
                                            ExecutionStepInfo executionStepInfo) {
 
         GraphQLList listType = (GraphQLList) executionStepInfo.getUnwrappedNonNullType();
@@ -386,7 +386,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     @SuppressWarnings("UnnecessaryLocalVariable")
     private List<ExecutionNode> handleObject(ExecutionContext executionContext, Map<String, Object> argumentValues,
-                                             FetchedValues fetchedValues, String fieldName, MergedFields fields,
+                                             FetchedValues fetchedValues, String fieldName, MergedField fields,
                                              ExecutionStepInfo executionStepInfo) {
 
         // collect list of values by actual type (needed because of interfaces and unions)
@@ -434,7 +434,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     }
 
     private MergedSelectionSet getChildFields(ExecutionContext executionContext, GraphQLObjectType resolvedType,
-                                              MergedFields fields) {
+                                              MergedField fields) {
 
         FieldCollectorParameters collectorParameters = newParameters()
                 .schema(executionContext.getGraphQLSchema())
@@ -446,7 +446,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         return fieldCollector.collectFields(collectorParameters, fields);
     }
 
-    private GraphQLObjectType getGraphQLObjectType(ExecutionContext executionContext, MergedFields field, GraphQLType fieldType, Object value, Map<String, Object> argumentValues) {
+    private GraphQLObjectType getGraphQLObjectType(ExecutionContext executionContext, MergedField field, GraphQLType fieldType, Object value, Map<String, Object> argumentValues) {
         return resolveType.resolveType(executionContext, field, value, argumentValues, fieldType);
     }
 

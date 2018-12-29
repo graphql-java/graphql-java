@@ -2,7 +2,7 @@ package graphql.execution.nextgen;
 
 import graphql.Internal;
 import graphql.execution.ExecutionStepInfo;
-import graphql.execution.MergedFields;
+import graphql.execution.MergedField;
 import graphql.execution.MergedSelectionSet;
 
 import java.util.Map;
@@ -28,7 +28,7 @@ public class FieldSubSelection {
         this.source = source;
     }
 
-    public Map<String, MergedFields> getSubFields() {
+    public Map<String, MergedField> getSubFields() {
         return mergedSelectionSet.getSubFields();
     }
 

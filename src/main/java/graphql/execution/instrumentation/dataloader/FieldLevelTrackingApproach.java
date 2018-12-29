@@ -5,7 +5,7 @@ import graphql.ExecutionResult;
 import graphql.Internal;
 import graphql.execution.ExecutionPath;
 import graphql.execution.FieldValueInfo;
-import graphql.execution.MergedFields;
+import graphql.execution.MergedField;
 import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -161,7 +161,7 @@ public class FieldLevelTrackingApproach {
             }
 
             @Override
-            public void onDeferredField(MergedFields field) {
+            public void onDeferredField(MergedField field) {
                 boolean dispatchNeeded;
                 // fake fetch count for this field
                 synchronized (callStack) {

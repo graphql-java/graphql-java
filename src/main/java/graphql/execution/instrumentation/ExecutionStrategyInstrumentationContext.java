@@ -2,7 +2,7 @@ package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
 import graphql.execution.FieldValueInfo;
-import graphql.execution.MergedFields;
+import graphql.execution.MergedField;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ public interface ExecutionStrategyInstrumentationContext extends Instrumentation
 
     }
 
-    default void onDeferredField(MergedFields field) {
+    default void onDeferredField(MergedField field) {
 
     }
 }

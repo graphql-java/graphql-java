@@ -14,7 +14,7 @@ import java.util.Map;
 public class ResolveType {
 
 
-    public GraphQLObjectType resolveType(ExecutionContext executionContext, MergedFields field, Object source, Map<String, Object> arguments, GraphQLType fieldType) {
+    public GraphQLObjectType resolveType(ExecutionContext executionContext, MergedField field, Object source, Map<String, Object> arguments, GraphQLType fieldType) {
         GraphQLObjectType resolvedType;
         if (fieldType instanceof GraphQLInterfaceType) {
             TypeResolutionParameters resolutionParams = TypeResolutionParameters.newParameters()

@@ -1,7 +1,7 @@
 package graphql.execution.batched;
 
 import graphql.execution.ExecutionStepInfo;
-import graphql.execution.MergedFields;
+import graphql.execution.MergedField;
 import graphql.schema.GraphQLObjectType;
 
 import java.util.List;
@@ -12,13 +12,13 @@ class ExecutionNode {
 
     private final GraphQLObjectType type;
     private final ExecutionStepInfo executionStepInfo;
-    private final Map<String, MergedFields> fields;
+    private final Map<String, MergedField> fields;
     private final List<MapOrList> parentResults;
     private final List<Object> sources;
 
     public ExecutionNode(GraphQLObjectType type,
                          ExecutionStepInfo executionStepInfo,
-                         Map<String, MergedFields> fields,
+                         Map<String, MergedField> fields,
                          List<MapOrList> parentResults,
                          List<Object> sources) {
         this.type = type;
@@ -36,7 +36,7 @@ class ExecutionNode {
         return executionStepInfo;
     }
 
-    public Map<String, MergedFields> getFields() {
+    public Map<String, MergedField> getFields() {
         return fields;
     }
 

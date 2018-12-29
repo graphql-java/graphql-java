@@ -1,6 +1,6 @@
 package graphql
 
-import graphql.execution.MergedFields
+import graphql.execution.MergedField
 import graphql.execution.MergedSelectionSet
 import graphql.introspection.Introspection.DirectiveLocation
 import graphql.language.Document
@@ -206,15 +206,15 @@ class TestUtil {
         new Parser().parseDocument(query)
     }
 
-    static MergedFields mergedFields(List<Field> fields) {
-        return MergedFields.newMergedFields(fields).build()
+    static MergedField mergedField(List<Field> fields) {
+        return MergedField.newMergedField(fields).build()
     }
 
-    static MergedFields mergedFields(Field field) {
-        return MergedFields.newMergedFields(field).build()
+    static MergedField mergedField(Field field) {
+        return MergedField.newMergedField(field).build()
     }
 
-    static MergedSelectionSet mergedSelectionSet(Map<String, MergedFields> subFields) {
+    static MergedSelectionSet mergedSelectionSet(Map<String, MergedField> subFields) {
         return MergedSelectionSet.newMergedSelectionSet().subFields(subFields).build()
     }
 

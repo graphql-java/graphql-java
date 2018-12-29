@@ -220,7 +220,7 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException in the future if a non null field resolves to a null value
      */
     protected CompletableFuture<Object> fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        MergedFields field = parameters.getField();
+        MergedField field = parameters.getField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field.getSingleField());
 
@@ -235,7 +235,7 @@ public abstract class ExecutionStrategy {
                 .source(parameters.getSource())
                 .arguments(argumentValues)
                 .fieldDefinition(fieldDef)
-                .mergedFields(parameters.getField())
+                .mergedField(parameters.getField())
                 .fieldType(fieldType)
                 .executionStepInfo(executionStepInfo)
                 .parentType(parentType)
@@ -296,7 +296,7 @@ public abstract class ExecutionStrategy {
 
     private void handleFetchingException(ExecutionContext executionContext,
                                          ExecutionStrategyParameters parameters,
-                                         MergedFields field,
+                                         MergedField field,
                                          GraphQLFieldDefinition fieldDef,
                                          Map<String, Object> argumentValues,
                                          DataFetchingEnvironment environment,
@@ -785,8 +785,8 @@ public abstract class ExecutionStrategy {
     }
 
     @Internal
-    public static String mkNameForPath(MergedFields mergedFields) {
-        return mkNameForPath(mergedFields.getFields());
+    public static String mkNameForPath(MergedField mergedField) {
+        return mkNameForPath(mergedField.getFields());
     }
 
 

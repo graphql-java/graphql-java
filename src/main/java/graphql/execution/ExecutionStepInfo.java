@@ -31,11 +31,11 @@ public class ExecutionStepInfo {
     private final ExecutionStepInfo parent;
 
     // field, fieldDefinition and arguments stay the same for steps inside a list field
-    private final MergedFields field;
+    private final MergedField field;
     private final GraphQLFieldDefinition fieldDefinition;
     private final Map<String, Object> arguments;
 
-    private ExecutionStepInfo(GraphQLOutputType type, GraphQLFieldDefinition fieldDefinition, MergedFields field, ExecutionPath path, ExecutionStepInfo parent, Map<String, Object> arguments) {
+    private ExecutionStepInfo(GraphQLOutputType type, GraphQLFieldDefinition fieldDefinition, MergedField field, ExecutionPath path, ExecutionStepInfo parent, Map<String, Object> arguments) {
         this.fieldDefinition = fieldDefinition;
         this.field = field;
         this.path = path;
@@ -78,7 +78,7 @@ public class ExecutionStepInfo {
      *
      * @return the  merged fields
      */
-    public MergedFields getField() {
+    public MergedField getField() {
         return field;
     }
 
@@ -195,7 +195,7 @@ public class ExecutionStepInfo {
         GraphQLOutputType type;
         ExecutionStepInfo parentInfo;
         GraphQLFieldDefinition fieldDefinition;
-        MergedFields field;
+        MergedField field;
         ExecutionPath path;
         Map<String, Object> arguments = new LinkedHashMap<>();
 
@@ -229,7 +229,7 @@ public class ExecutionStepInfo {
             return this;
         }
 
-        public Builder field(MergedFields field) {
+        public Builder field(MergedField field) {
             this.field = field;
             return this;
         }

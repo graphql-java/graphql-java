@@ -9,7 +9,7 @@ import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStepInfoFactory;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
-import graphql.execution.MergedFields;
+import graphql.execution.MergedField;
 import graphql.execution.MergedSelectionSet;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.ResolveType;
@@ -58,11 +58,11 @@ public class FetchedValueAnalyzer {
      * enum: same as scalar
      * list: list of X: X can be list again, list of scalars or enum or objects
      */
-    public FetchedValueAnalysis analyzeFetchedValue(FetchedValue fetchedValue, String name, MergedFields field, ExecutionStepInfo executionInfo) throws NonNullableFieldWasNullException {
+    public FetchedValueAnalysis analyzeFetchedValue(FetchedValue fetchedValue, String name, MergedField field, ExecutionStepInfo executionInfo) throws NonNullableFieldWasNullException {
         return analyzeFetchedValueImpl(fetchedValue, fetchedValue.getFetchedValue(), name, field, executionInfo);
     }
 
-    private FetchedValueAnalysis analyzeFetchedValueImpl(FetchedValue fetchedValue, Object toAnalyze, String name, MergedFields field, ExecutionStepInfo executionInfo) throws NonNullableFieldWasNullException {
+    private FetchedValueAnalysis analyzeFetchedValueImpl(FetchedValue fetchedValue, Object toAnalyze, String name, MergedField field, ExecutionStepInfo executionInfo) throws NonNullableFieldWasNullException {
         GraphQLType fieldType = executionInfo.getUnwrappedNonNullType();
 
         if (isList(fieldType)) {

@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotEmpty;
 
 /**
- * This represent all Fields in query which overlap and are merged into one.
+ * This represent all Fields in a query which overlap and are merged into one.
  * This means they all represent the same field actually when the query is executed.
  *
  * Example query with more than one Field merged together:
@@ -56,11 +56,11 @@ import static graphql.Assert.assertNotEmpty;
  * The actual logic when fields can successfully merged together is implemented in {#graphql.validation.rules.OverlappingFieldsCanBeMerged}
  */
 @PublicApi
-public class MergedFields {
+public class MergedField {
 
     private final List<Field> fields;
 
-    public MergedFields(List<Field> fields) {
+    public MergedField(List<Field> fields) {
         assertNotEmpty(fields);
         this.fields = new ArrayList<>(fields);
     }
@@ -107,19 +107,19 @@ public class MergedFields {
         return new ArrayList<>(fields);
     }
 
-    public static Builder newMergedFields() {
+    public static Builder newMergedField() {
         return new Builder();
     }
 
-    public static Builder newMergedFields(Field field) {
+    public static Builder newMergedField(Field field) {
         return new Builder().addField(field);
     }
 
-    public static Builder newMergedFields(List<Field> fields) {
+    public static Builder newMergedField(List<Field> fields) {
         return new Builder().fields(fields);
     }
 
-    public MergedFields transform(Consumer<Builder> builderConsumer) {
+    public MergedField transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
         return builder.build();
@@ -132,7 +132,7 @@ public class MergedFields {
 
         }
 
-        private Builder(MergedFields existing) {
+        private Builder(MergedField existing) {
             this.fields = existing.getFields();
         }
 
@@ -146,8 +146,8 @@ public class MergedFields {
             return this;
         }
 
-        public MergedFields build() {
-            return new MergedFields(fields);
+        public MergedField build() {
+            return new MergedField(fields);
         }
 
 

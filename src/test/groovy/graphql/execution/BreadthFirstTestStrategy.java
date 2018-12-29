@@ -59,7 +59,7 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
         // then for every fetched value, complete it, breath first
         Map<String, Object> results = new LinkedHashMap<>();
         for (String fieldName : fetchedValues.keySet()) {
-            MergedFields fieldList = fields.getSubField(fieldName);
+            MergedField fieldList = fields.getSubField(fieldName);
 
             ExecutionStrategyParameters newParameters = newParameters(parameters, fields, fieldName);
 
@@ -77,7 +77,7 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
     }
 
     private ExecutionStrategyParameters newParameters(ExecutionStrategyParameters parameters, MergedSelectionSet fields, String fieldName) {
-        MergedFields currentField = fields.getSubField(fieldName);
+        MergedField currentField = fields.getSubField(fieldName);
         ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
         return parameters
                 .transform(builder -> builder.field(currentField).path(fieldPath));
