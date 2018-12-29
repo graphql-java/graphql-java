@@ -60,7 +60,7 @@ public class MergedField {
 
     private final List<Field> fields;
 
-    public MergedField(List<Field> fields) {
+    private MergedField(List<Field> fields) {
         assertNotEmpty(fields);
         this.fields = new ArrayList<>(fields);
     }
