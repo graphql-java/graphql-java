@@ -7,10 +7,15 @@ package graphql.util;
 
 import java.util.Objects;
 import java.util.function.BiConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- *
- * @param <N>
+ * Represents an edge between two vertices in the DependencyGraph
+ * The direction of edge is from source -- to --&gt; sink
+ * This is opposite from the represented dependency direction, e.g. from sink -- to --&gt; source
+ * 
+ * @param <N> the actual Vertex subtype used
  */
 public class Edge<N extends Vertex<N>> {
     protected Edge (N source, N sink) {
@@ -29,6 +34,21 @@ public class Edge<N extends Vertex<N>> {
     
     public N getSink () {
         return sink;
+    }
+    
+    protected boolean connectEndpoints () {
+        if (source != sink) {// do not record dependency on the same vertex
+            return source.indegrees.add(this) &&
+                    sink.outdegrees.add(this);
+        } else {
+            LOGGER.warn("ignoring short circuit dependency: {}", this);
+            return false;
+        }
+    }
+    
+    protected boolean disconnectEndpoints () {
+        return source.indegrees.remove(this) &&
+            sink.outdegrees.remove(this);
     }
     
     public void fire () {
@@ -74,4 +94,5 @@ public class Edge<N extends Vertex<N>> {
     protected final BiConsumer<N, N> action;
     
     public static final BiConsumer<?, ?> EMPTY_ACTION = (from, to) -> {};
+    private static final Logger LOGGER = LoggerFactory.getLogger(Edge.class);
 }

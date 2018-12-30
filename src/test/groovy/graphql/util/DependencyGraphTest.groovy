@@ -15,7 +15,7 @@ import spock.lang.Specification
 class DependencyGraphTest extends Specification {
     def "test empty graph ordering"() {
         given:
-        def graph = DependencyGraph.<String>simpleGraph()
+        def graph = DependencyGraph.<String>simple()
             
         when:
         def ordering = graph.orderDependencies()
@@ -28,9 +28,9 @@ class DependencyGraphTest extends Specification {
     
     def "test 1 vertex ordering"() {
         given:
-        def v1 = new SimpleNode<>("v1")
+        def v1 = new SimpleVertex<>("v1")
         def graph = DependencyGraph
-            .<String>simpleGraph()
+            .<String>simple()
             .addDependency(v1, v1)
             
         when:
@@ -46,10 +46,10 @@ class DependencyGraphTest extends Specification {
     
     def "test 2 independent vertices ordering"() {
         given:
-        def v1 = new SimpleNode<>("v1")
-        def v2 = new SimpleNode<>("v2")
+        def v1 = new SimpleVertex<>("v1")
+        def v2 = new SimpleVertex<>("v2")
         def graph = DependencyGraph
-            .<String>simpleGraph()
+            .<String>simple()
             .addDependency(v1, v1)
             .addDependency(v2, v2)
             
@@ -66,10 +66,10 @@ class DependencyGraphTest extends Specification {
     
     def "test 2 dependent vertices ordering"() {
         given:
-        def v1 = new SimpleNode<>("v1")
-        def v2 = new SimpleNode<>("v2")
+        def v1 = new SimpleVertex<>("v1")
+        def v2 = new SimpleVertex<>("v2")
         def graph = DependencyGraph
-            .<String>simpleGraph()
+            .<String>simple()
             .addDependency(v1, v2)
             
         when:
@@ -87,11 +87,11 @@ class DependencyGraphTest extends Specification {
     
     def "test possible https://en.wikipedia.org/wiki/Dependency_graph example"() {
         given:
-            def a = new SimpleNode("a")
-            def b = new SimpleNode("b")
-            def c = new SimpleNode("c")
-            def d = new SimpleNode("d")
-            def graph = DependencyGraph.<String>simpleGraph()
+            def a = new SimpleVertex("a")
+            def b = new SimpleVertex("b")
+            def c = new SimpleVertex("c")
+            def d = new SimpleVertex("d")
+            def graph = DependencyGraph.<String>simple()
                 .addDependency(a, b)
                 .addDependency(a, c)
                 .addDependency(b, d)
@@ -113,11 +113,11 @@ class DependencyGraphTest extends Specification {
     
     def "test impossible https://en.wikipedia.org/wiki/Dependency_graph example"() {
         given:
-            def a = new SimpleNode("a")
-            def b = new SimpleNode("b")
-            def c = new SimpleNode("c")
-            def d = new SimpleNode("d")
-            def graph = DependencyGraph.<String>simpleGraph()
+            def a = new SimpleVertex("a")
+            def b = new SimpleVertex("b")
+            def c = new SimpleVertex("c")
+            def d = new SimpleVertex("d")
+            def graph = DependencyGraph.<String>simple()
                 .addDependency(a, b)
                 .addDependency(b, d)
                 .addDependency(b, c)
@@ -137,11 +137,11 @@ class DependencyGraphTest extends Specification {
     
     def "test illegal next"() {
         given:
-            def a = new SimpleNode("a")
-            def b = new SimpleNode("b")
-            def c = new SimpleNode("c")
-            def d = new SimpleNode("d")
-            def graph = DependencyGraph.<String>simpleGraph()
+            def a = new SimpleVertex("a")
+            def b = new SimpleVertex("b")
+            def c = new SimpleVertex("c")
+            def d = new SimpleVertex("d")
+            def graph = DependencyGraph.<String>simple()
                 .addDependency(a, b)
                 .addDependency(a, c)
                 .addDependency(b, d)
@@ -159,11 +159,11 @@ class DependencyGraphTest extends Specification {
     
     def "test hasNext idempotency"() {
         given:
-            def a = new SimpleNode("a")
-            def b = new SimpleNode("b")
-            def c = new SimpleNode("c")
-            def d = new SimpleNode("d")
-            def graph = DependencyGraph.<String>simpleGraph()
+            def a = new SimpleVertex("a")
+            def b = new SimpleVertex("b")
+            def c = new SimpleVertex("c")
+            def d = new SimpleVertex("d")
+            def graph = DependencyGraph.<String>simple()
                 .addDependency(a, b)
                 .addDependency(a, c)
                 .addDependency(b, d)
@@ -183,11 +183,11 @@ class DependencyGraphTest extends Specification {
     
     def "test close by value"() {
         given:
-            def a = new SimpleNode("a")
-            def b = new SimpleNode("b")
-            def c = new SimpleNode("c")
-            def d = new SimpleNode("d")
-            def graph = DependencyGraph.<String>simpleGraph()
+            def a = new SimpleVertex("a")
+            def b = new SimpleVertex("b")
+            def c = new SimpleVertex("c")
+            def d = new SimpleVertex("d")
+            def graph = DependencyGraph.<String>simple()
                 .addDependency(a, b)
                 .addDependency(a, c)
                 .addDependency(b, d)
@@ -198,23 +198,23 @@ class DependencyGraphTest extends Specification {
         then:
             ordering.hasNext() == true
             ordering.next() == [c, d]
-            ordering.close([new SimpleNode("c"), new SimpleNode("d")])
+            ordering.close([new SimpleVertex("c"), new SimpleVertex("d")])
             ordering.hasNext() == true
             ordering.next() == [b]
-            ordering.close([new SimpleNode("b")])
+            ordering.close([new SimpleVertex("b")])
             ordering.hasNext() == true
-            ordering.next() == [new SimpleNode("a")]
+            ordering.next() == [new SimpleVertex("a")]
             ordering.close([a])
             ordering.hasNext() == false
     }
         
     def "test close by id"() {
         given:
-            def a = new SimpleNode("a")
-            def b = new SimpleNode("b")
-            def c = new SimpleNode("c")
-            def d = new SimpleNode("d")
-            def graph = DependencyGraph.<String>simpleGraph()
+            def a = new SimpleVertex("a")
+            def b = new SimpleVertex("b")
+            def c = new SimpleVertex("c")
+            def d = new SimpleVertex("d")
+            def graph = DependencyGraph.<String>simple()
                 .addDependency(a, b)
                 .addDependency(a, c)
                 .addDependency(b, d)
@@ -225,23 +225,23 @@ class DependencyGraphTest extends Specification {
         then:
             ordering.hasNext() == true
             ordering.next() == [c, d]
-            ordering.close([new SimpleNode("c").id(c.getId()), new SimpleNode("d").id(d.getId())])
+            ordering.close([new SimpleVertex("c").id(c.getId()), new SimpleVertex("d").id(d.getId())])
             ordering.hasNext() == true
             ordering.next() == [b]
-            ordering.close([new SimpleNode("b").id(b.getId())])
+            ordering.close([new SimpleVertex("b").id(b.getId())])
             ordering.hasNext() == true
-            ordering.next() == [new SimpleNode("a").id(a.getId())]
+            ordering.next() == [new SimpleVertex("a").id(a.getId())]
             ordering.close([a])
             ordering.hasNext() == false
     }
     
     def "test close by invalid id"() {
         given:
-            def a = new SimpleNode("a")
-            def b = new SimpleNode("b")
-            def c = new SimpleNode("c")
-            def d = new SimpleNode("d")
-            def graph = DependencyGraph.<String>simpleGraph()
+            def a = new SimpleVertex("a")
+            def b = new SimpleVertex("b")
+            def c = new SimpleVertex("c")
+            def d = new SimpleVertex("d")
+            def graph = DependencyGraph.<String>simple()
                 .addDependency(a, b)
                 .addDependency(a, c)
                 .addDependency(b, d)
@@ -250,7 +250,7 @@ class DependencyGraphTest extends Specification {
             def ordering = graph.orderDependencies()
             ordering.hasNext()
             ordering.next()
-            ordering.close([new SimpleNode("c").id(c.getId()), new SimpleNode("d").id(12345)])
+            ordering.close([new SimpleVertex("c").id(c.getId()), new SimpleVertex("d").id(12345)])
             
         then:
             java.lang.IllegalArgumentException e = thrown()
@@ -259,11 +259,11 @@ class DependencyGraphTest extends Specification {
     
     def "test close by invalid value"() {
         given:
-            def a = new SimpleNode("a")
-            def b = new SimpleNode("b")
-            def c = new SimpleNode("c")
-            def d = new SimpleNode("d")
-            def graph = DependencyGraph.<String>simpleGraph()
+            def a = new SimpleVertex("a")
+            def b = new SimpleVertex("b")
+            def c = new SimpleVertex("c")
+            def d = new SimpleVertex("d")
+            def graph = DependencyGraph.<String>simple()
                 .addDependency(a, b)
                 .addDependency(a, c)
                 .addDependency(b, d)
@@ -272,11 +272,38 @@ class DependencyGraphTest extends Specification {
             def ordering = graph.orderDependencies()
             ordering.hasNext()
             ordering.next()
-            ordering.close([new SimpleNode("c").id(c.getId()), new SimpleNode("e")])
+            ordering.close([new SimpleVertex("c").id(c.getId()), new SimpleVertex("e")])
             
         then:
             java.lang.IllegalArgumentException e = thrown()
             e.message.contains("node not found")
     }
+    
+    def "test possible https://en.wikipedia.org/wiki/Dependency_graph example via addEdge"() {
+        given:
+            def graph = DependencyGraph.<String>simple()
+            def a = graph.addNode(new SimpleVertex("a"))
+            def b = graph.addNode(new SimpleVertex("b"))
+            def c = graph.addNode(new SimpleVertex("c"))
+            def d = graph.addNode(new SimpleVertex("d"))
+                
+        when:
+            graph
+               .addEdge(new Edge<>(b, a))
+               .addEdge(new Edge<>(c, a))
+               .addEdge(new Edge<>(d, b))
+            def ordering = graph.orderDependencies()
+            
+        then:
+            graph.order() == 4
+            graph.size() == 3
+            ordering.hasNext() == true
+            ordering.next() == [c, d]
+            ordering.hasNext() == true
+            ordering.next() == [b]
+            ordering.hasNext() == true
+            ordering.next() == [a]
+            ordering.hasNext() == false
+    } 
 }
 

@@ -8,12 +8,12 @@ package graphql.util;
 import java.util.Objects;
 
 /**
- *
- * @author gkesler
- * @param <T>
+ * Simple Vertex subtype that can carry a payload of type T
+ * 
+ * @param <T> type of Vertex payload
  */
-public class SimpleNode<T> extends Vertex<SimpleNode<T>> { 
-    public SimpleNode (T data) {
+public class SimpleVertex<T> extends Vertex<SimpleVertex<T>> { 
+    public SimpleVertex (T data) {
         this.data = data;
     }
     
@@ -39,7 +39,7 @@ public class SimpleNode<T> extends Vertex<SimpleNode<T>> {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final SimpleNode<?> other = (SimpleNode<?>) obj;
+        final SimpleVertex<?> other = (SimpleVertex<?>) obj;
         if (!Objects.equals(this.data, other.data)) {
             return false;
         }

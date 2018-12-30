@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -24,8 +25,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- *
- * @param <N>
+ * Basic DAG  (dependency graph) implementation
+ * The main purpose of DependencyGraph is to perform topological sort of its vertices
+ * 
+ * @param <N> type of vertices in the DependencyGraph
  */
 public class DependencyGraph<N extends Vertex<N>> {   
     public DependencyGraph () {
@@ -64,15 +67,22 @@ public class DependencyGraph<N extends Vertex<N>> {
             .orElseGet(() -> Optional.ofNullable(vertices.get(maybeNode)))
             .orElse(null);
     }
+    
+    protected DependencyGraph<N> addEdge (Edge<? super N> edge) {
+        Objects.requireNonNull(edge);
+        
+        edges.add((Edge<N>)edge);
+        return this;
+    }
   
     public DependencyGraph<N> addDependency (N maybeSink, N maybeSource) {
         return addDependency(maybeSink, maybeSource, (BiConsumer<N, N>)Edge.EMPTY_ACTION);
     }
     
     public DependencyGraph<N> addDependency (N maybeSink, N maybeSource, BiConsumer<? super N, ? super N> edgeAction) {
-        addNode(maybeSink).dependsOn(addNode(maybeSource), edgeAction);
-        
-        return this;
+        // note reverse ordering of Vertex arguments.
+        // an Edge points from source - to -> sink, we say "sink depends on source"
+        return addEdge(new Edge<>(addNode(maybeSource), addNode(maybeSink), edgeAction));
     }
     
     public Collection<N> getDependencies (N maybeSource) {
@@ -90,11 +100,11 @@ public class DependencyGraph<N extends Vertex<N>> {
         return edges.size();
     }
     
-    public TopOrderIterator<N> orderDependencies () {
-        return new TopOrderIteratorImpl();
+    public DependenciesIterator<N> orderDependencies () {
+        return new DependenciesIteratorImpl();
     }
     
-    protected class TopOrderIteratorImpl implements TopOrderIterator<N>, TraverserVisitor<N> {
+    protected class DependenciesIteratorImpl implements DependenciesIterator<N>, TraverserVisitor<N> {
         @Override
         public boolean hasNext() {
             if (!lastClosure.isEmpty()) {
@@ -115,8 +125,8 @@ public class DependencyGraph<N extends Vertex<N>> {
         Collection<N> calculateNext () {
             Collection<N> nextClosure = new ArrayList<>();
             return Optional
-                .ofNullable((Collection<N>)Traverser
-                    .<N>breadthFirst(Vertex::adjacencySet, nextClosure)
+                .ofNullable((Collection<N>)traverser
+                    .rootVar(List.class, nextClosure)
                     .traverse(
                         unclosed
                             .stream()
@@ -158,8 +168,10 @@ public class DependencyGraph<N extends Vertex<N>> {
         
         @Override
         public TraversalControl enter(TraverserContext<N> context) {
-            Collection<N> closure = (Collection<N>)context.getInitialData();
-            context.setResult(closure);
+            List<N> closure = context.getParentContext().getVar(List.class);
+            context
+                .setVar(List.class, closure)    // to be propagated to children
+                .setResult(closure);            // to be returned
             
             N node = context.thisNode();
             if (closed.contains(node)) {
@@ -188,16 +200,10 @@ public class DependencyGraph<N extends Vertex<N>> {
         Collection<N> closed = new HashSet<>();
         Collection<N> currentClosure = Collections.emptyList();
         Collection<N> lastClosure = Collections.emptyList();
+        Traverser<N> traverser = Traverser.<N>breadthFirst(Vertex::adjacencySet, null);
     }
     
-    protected DependencyGraph<N> addEdge (Edge<? super N> edge) {
-        Objects.requireNonNull(edge);
-        
-        edges.add((Edge<N>)edge);
-        return this;
-    }
-    
-    public static <T> DependencyGraph<SimpleNode<T>> simpleGraph () {
+    public static <T> DependencyGraph<SimpleVertex<T>> simple () {
         return new DependencyGraph<>();
     }
     
@@ -209,8 +215,7 @@ public class DependencyGraph<N extends Vertex<N>> {
         public boolean add(Edge<N> e) {
             Objects.requireNonNull(e);
             
-            return e.sink.outdegrees.add(e) &&
-                e.source.indegrees.add(e);
+            return e.connectEndpoints();
         }
         
         @Override
@@ -233,7 +238,7 @@ public class DependencyGraph<N extends Vertex<N>> {
                 @Override
                 public void remove() {
                     current.remove();
-                    last.sink.outdegrees.remove(last);
+                    last.disconnectEndpoints();
                 }
                 
                 final Iterator<Iterator<Edge<N>>> partitions = Stream.concat(

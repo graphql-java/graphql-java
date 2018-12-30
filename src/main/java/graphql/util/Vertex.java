@@ -15,8 +15,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Represents a Vertex in a DependencyGraph
  * 
- * @param <N> 
+ * @param <N> the actual subtype of the Vertex
  */
 public abstract class Vertex<N extends Vertex<N>> {
     public Object getId () {
@@ -32,14 +33,8 @@ public abstract class Vertex<N extends Vertex<N>> {
         Objects.requireNonNull(source);
         Objects.requireNonNull(edgeAction);
         
-        if (this != source) {// do not record dependency on itself
-            Edge<N> edge = new Edge<>(source, (N)this, edgeAction);
-
-            this.outdegrees.add(edge);
-            source.indegrees.add(edge);            
-        } else {
-            LOGGER.warn("ignoring cyclic dependency on itself: {}", this);
-        }
+        new Edge<>(source, (N)this, edgeAction)
+            .connectEndpoints();
         
         return (N)this;
     }
