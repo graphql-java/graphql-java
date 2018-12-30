@@ -23,6 +23,10 @@ public class MergedSelectionSet {
         return subFields;
     }
 
+    public List<MergedField> getSubFieldsList() {
+        return new ArrayList<>(subFields.values());
+    }
+
     public int size() {
         return subFields.size();
     }

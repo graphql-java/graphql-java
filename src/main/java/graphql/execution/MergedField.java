@@ -68,12 +68,26 @@ public class MergedField {
     /**
      * All merged fields have the same name.
      *
-     * WARNING: This is not always the key in the execution result, because of possible aliases.
+     * WARNING: This is not always the key in the execution result, because of possible aliases. See {@link #getResultKey()}
      *
      * @return the name of of the merged fields.
      */
     public String getName() {
         return fields.get(0).getName();
+    }
+
+    /**
+     * Returns the key of this MergedField for the overall result.
+     * This is either an alias or the field name.
+     *
+     * @return the key for this MergedField.
+     */
+    public String getResultKey() {
+        Field singleField = getSingleField();
+        if (singleField.getAlias() != null) {
+            return singleField.getAlias();
+        }
+        return singleField.getName();
     }
 
     /**
