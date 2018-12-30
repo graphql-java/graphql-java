@@ -174,10 +174,8 @@ public class DependencyGraph<N extends Vertex<N>> {
                 .setResult(closure);            // to be returned
             
             N node = context.thisNode();
-            if (closed.contains(node)) {
-                return TraversalControl.CONTINUE;
-            } else if (node.canResolve()) {
-                node.resolve(node);
+            if (node.canResolve()) {
+                closeNode(node);
                 return TraversalControl.CONTINUE;
             } else {
                 closure.add(node);
