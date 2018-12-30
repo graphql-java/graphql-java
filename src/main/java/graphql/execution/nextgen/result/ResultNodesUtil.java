@@ -87,7 +87,7 @@ public class ResultNodesUtil {
 
         if (root instanceof UnresolvedObjectResultNode) {
             FetchedValueAnalysis fetchedValueAnalysis = root.getFetchedValueAnalysis();
-            return data("Not resolved : " + fetchedValueAnalysis.getExecutionStepInfo().getPath() + " with subSelection " + fetchedValueAnalysis.getFieldSubSelection().toShortString());
+            return data("Not resolved : " + fetchedValueAnalysis.getExecutionStepInfo().getPath() + " with field " + fetchedValueAnalysis.getField());
         }
         if (root instanceof ObjectExecutionResultNode) {
             Optional<NonNullableFieldWasNullException> childrenNonNullableException = ((ObjectExecutionResultNode) root).getChildrenNonNullableException();

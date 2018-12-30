@@ -1,7 +1,6 @@
 package graphql.execution.nextgen;
 
 import graphql.Internal;
-import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.nextgen.result.ExecutionResultMultiZipper;
 import graphql.execution.nextgen.result.ExecutionResultZipper;
@@ -11,9 +10,10 @@ import graphql.execution.nextgen.result.ResultNodesUtil;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
+import static graphql.execution.Async.each;
+import static graphql.execution.Async.mapCompose;
+import static graphql.util.FpKit.map;
 
 @Internal
 public class DefaultExecutionStrategy implements ExecutionStrategy {
@@ -33,36 +33,32 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
                 .thenApply(ObjectExecutionResultNode.RootExecutionResultNode::new);
     }
 
-    // recursive entry point
     private CompletableFuture<List<NamedResultNode>> resolveSubSelection(ExecutionContext executionContext, FieldSubSelection fieldSubSelection) {
-        List<CompletableFuture<NamedResultNode>> result = util.fetchSubSelection(executionContext, fieldSubSelection)
-                .stream().map(namedResultNodeCF -> namedResultNodeCF.thenCompose(node -> resolveNode(executionContext, node))).collect(toList());
-        return Async.each(result);
+        List<CompletableFuture<NamedResultNode>> namedNodesCFList =
+                mapCompose(util.fetchSubSelection(executionContext, fieldSubSelection), node -> resolveAllChildNodes(executionContext, node));
+        return each(namedNodesCFList);
     }
 
-    // ----------- get all unresolved Nodes and recursively resolves them
-    // this method is actually an async transformer of specific child nodes
-    private CompletableFuture<NamedResultNode> resolveNode(ExecutionContext context, NamedResultNode namedResultNode) {
-        // can be empty
-        ExecutionResultMultiZipper unresolvedMultiZipper = ResultNodesUtil.getUnresolvedNodes(namedResultNode.getNode());
-        // must be a unresolved Node
-        List<CompletableFuture<ExecutionResultZipper>> cfList = unresolvedMultiZipper
-                .getZippers()
-                .stream()
-                .map(zipper -> resolveUnresolvedNode(context, zipper))
-                .collect(Collectors.toList());
-        return Async
-                .each(cfList)
-                .thenApply(unresolvedMultiZipper::withZippers)
+    private CompletableFuture<NamedResultNode> resolveAllChildNodes(ExecutionContext context, NamedResultNode namedResultNode) {
+        ExecutionResultMultiZipper unresolvedNodes = ResultNodesUtil.getUnresolvedNodes(namedResultNode.getNode());
+        List<CompletableFuture<ExecutionResultZipper>> resolvedNodes = map(unresolvedNodes.getZippers(), unresolvedNode -> resolveNode(context, unresolvedNode));
+        return resolvedNodesToResultNode(namedResultNode, unresolvedNodes, resolvedNodes);
+    }
+
+    private CompletableFuture<ExecutionResultZipper> resolveNode(ExecutionContext executionContext, ExecutionResultZipper unresolvedNode) {
+        FetchedValueAnalysis fetchedValueAnalysis = unresolvedNode.getCurNode().getFetchedValueAnalysis();
+        FieldSubSelection fieldSubSelection = util.createFieldSubSelection(executionContext, fetchedValueAnalysis);
+        return resolveSubSelection(executionContext, fieldSubSelection)
+                .thenApply(resolvedChildMap -> unresolvedNode.withNode(new ObjectExecutionResultNode(fetchedValueAnalysis, resolvedChildMap)));
+    }
+
+    private CompletableFuture<NamedResultNode> resolvedNodesToResultNode(NamedResultNode namedResultNode,
+                                                                         ExecutionResultMultiZipper unresolvedNodes,
+                                                                         List<CompletableFuture<ExecutionResultZipper>> resolvedNodes) {
+        return each(resolvedNodes)
+                .thenApply(unresolvedNodes::withZippers)
                 .thenApply(ExecutionResultMultiZipper::toRootNode)
                 .thenApply(namedResultNode::withNode);
-    }
-
-    // recursive call back to resolveSubSelection
-    private CompletableFuture<ExecutionResultZipper> resolveUnresolvedNode(ExecutionContext executionContext, ExecutionResultZipper unresolvedNodeZipper) {
-        FetchedValueAnalysis fetchedValueAnalysis = unresolvedNodeZipper.getCurNode().getFetchedValueAnalysis();
-        return resolveSubSelection(executionContext, fetchedValueAnalysis.getFieldSubSelection())
-                .thenApply(resolvedChildMap -> unresolvedNodeZipper.withNode(new ObjectExecutionResultNode(fetchedValueAnalysis, resolvedChildMap)));
     }
 
 

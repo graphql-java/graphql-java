@@ -1,6 +1,7 @@
 package graphql.execution.nextgen.result;
 
 import graphql.Internal;
+import graphql.execution.MergedField;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.nextgen.FetchedValueAnalysis;
 
@@ -20,6 +21,10 @@ public abstract class ExecutionResultNode {
 
     public FetchedValueAnalysis getFetchedValueAnalysis() {
         return fetchedValueAnalysis;
+    }
+
+    public MergedField getMergedField() {
+        return fetchedValueAnalysis.getExecutionStepInfo().getField();
     }
 
     public NonNullableFieldWasNullException getNonNullableFieldWasNullException() {

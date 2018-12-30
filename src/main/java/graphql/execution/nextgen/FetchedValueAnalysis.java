@@ -3,6 +3,8 @@ package graphql.execution.nextgen;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.ExecutionStepInfo;
+import graphql.execution.MergedField;
+import graphql.schema.GraphQLObjectType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,11 +37,8 @@ public class FetchedValueAnalysis {
     private final List<FetchedValueAnalysis> children;
 
     // only for object
-    private final FieldSubSelection fieldSubSelection;
+    private final GraphQLObjectType resolvedType;
 
-
-    // for children of list name is the same as for the list itself
-    private final String name;
 
     private final ExecutionStepInfo executionStepInfo;
     // for LIST this is the whole list
@@ -52,8 +51,7 @@ public class FetchedValueAnalysis {
         this.completedValue = builder.completedValue;
         this.nullValue = builder.nullValue;
         this.children = builder.children;
-        this.fieldSubSelection = builder.fieldSubSelection;
-        this.name = builder.name;
+        this.resolvedType = builder.resolvedType;
         this.executionStepInfo = assertNotNull(builder.executionInfo);
         this.fetchedValue = assertNotNull(builder.fetchedValue);
     }
@@ -85,10 +83,6 @@ public class FetchedValueAnalysis {
         return fetchedValue;
     }
 
-    public String getName() {
-        return name;
-    }
-
     public FetchedValueAnalysis transfrom(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
@@ -112,26 +106,15 @@ public class FetchedValueAnalysis {
         return executionStepInfo;
     }
 
+    public GraphQLObjectType getResolvedType() {
+        return resolvedType;
+    }
 
-    public FieldSubSelection getFieldSubSelection() {
-        return fieldSubSelection;
+    public MergedField getField() {
+        return executionStepInfo.getField();
     }
 
 
-    @Override
-    public String toString() {
-        return "FetchedValueAnalysis{" +
-                "valueType=" + valueType +
-                ", errors=" + errors +
-                ", completedValue=" + completedValue +
-                ", children=" + children +
-                ", nullValue=" + nullValue +
-                ", name='" + name + '\'' +
-                ", fieldSubSelection=" + fieldSubSelection +
-                ", executionStepInfo=" + executionStepInfo +
-                ", fetchedValue=" + fetchedValue +
-                '}';
-    }
 
     public static final class Builder {
         private FetchedValueType valueType;
@@ -139,9 +122,8 @@ public class FetchedValueAnalysis {
         private Object completedValue;
         private FetchedValue fetchedValue;
         private List<FetchedValueAnalysis> children;
-        private FieldSubSelection fieldSubSelection;
+        private GraphQLObjectType resolvedType;
         private boolean nullValue;
-        private String name;
         private ExecutionStepInfo executionInfo;
 
         private Builder() {
@@ -153,9 +135,8 @@ public class FetchedValueAnalysis {
             completedValue = existing.getCompletedValue();
             fetchedValue = existing.getFetchedValue();
             children = existing.getChildren();
-            fieldSubSelection = existing.fieldSubSelection;
             nullValue = existing.isNullValue();
-            name = existing.getName();
+            resolvedType = existing.getResolvedType();
             executionInfo = existing.getExecutionStepInfo();
         }
 
@@ -192,13 +173,13 @@ public class FetchedValueAnalysis {
             return this;
         }
 
-        public Builder name(String val) {
-            name = val;
+        public Builder field(MergedField field) {
+            field = field;
             return this;
         }
 
-        public Builder fieldSubSelection(FieldSubSelection fieldSubSelection) {
-            this.fieldSubSelection = fieldSubSelection;
+        public Builder resolvedType(GraphQLObjectType resolvedType) {
+            this.resolvedType = resolvedType;
             return this;
         }
 

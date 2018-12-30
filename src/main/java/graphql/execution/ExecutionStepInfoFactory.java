@@ -3,7 +3,6 @@ package graphql.execution;
 import graphql.Internal;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
-import graphql.language.Field;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLList;
@@ -28,7 +27,7 @@ public class ExecutionStepInfoFactory {
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables());
 
-        ExecutionPath newPath = parentInfo.getPath().segment(mkNameForPath(mergedField));
+        ExecutionPath newPath = parentInfo.getPath().segment(mergedField.getResultKey());
 
         return parentInfo.transform(builder -> builder
                 .parentInfo(parentInfo)
@@ -49,8 +48,4 @@ public class ExecutionStepInfoFactory {
                 .path(indexedPath));
     }
 
-    private static String mkNameForPath(MergedField currentField) {
-        Field field = currentField.getSingleField();
-        return field.getAlias() != null ? field.getAlias() : field.getName();
-    }
 }

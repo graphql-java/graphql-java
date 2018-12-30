@@ -16,7 +16,7 @@ import java.util.Map;
 public class FieldSubSelection {
 
     private Object source;
-    // the type of this must be objectType
+    // the type of this must be objectType and is the parent executionStepInfo for all mergedSelectionSet
     private ExecutionStepInfo executionInfo;
     private MergedSelectionSet mergedSelectionSet;
 
