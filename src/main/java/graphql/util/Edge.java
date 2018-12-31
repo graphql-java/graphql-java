@@ -35,6 +35,10 @@ public class Edge<N extends Vertex<N>> {
     public N getSink () {
         return sink;
     }
+
+    public BiConsumer<N, N> getAction() {
+        return action;
+    }
     
     protected boolean connectEndpoints () {
         if (source != sink) {// do not record dependency on the same vertex
