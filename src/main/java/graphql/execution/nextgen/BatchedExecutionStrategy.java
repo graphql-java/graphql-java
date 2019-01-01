@@ -66,7 +66,6 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
     private CompletableFuture<ExecutionResultMultiZipper> resolveNodes(ExecutionContext executionContext, List<ExecutionResultMultiZipper> unresolvedNodes) {
         assertNotEmpty(unresolvedNodes, "unresolvedNodes can't be empty");
         ExecutionResultNode commonRoot = unresolvedNodes.get(0).getCommonRoot();
-
         CompletableFuture<List<List<ExecutionResultZipper>>> listListCF = Async.flatMap(unresolvedNodes,
                 executionResultMultiZipper -> fetchAndAnalyze(executionContext, executionResultMultiZipper.getZippers()));
 
@@ -76,7 +75,6 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
     private List<ExecutionResultMultiZipper> groupNodesIntoBatches(ExecutionResultMultiZipper unresolvedZipper) {
         Map<MergedField, List<ExecutionResultZipper>> zipperBySubSelection = FpKit.groupingBy(unresolvedZipper.getZippers(),
                 (executionResultZipper -> executionResultZipper.getCurNode().getMergedField()));
-
         return mapEntries(zipperBySubSelection, (key, value) -> new ExecutionResultMultiZipper(unresolvedZipper.getCommonRoot(), value));
     }
 

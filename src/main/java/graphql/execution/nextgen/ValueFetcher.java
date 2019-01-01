@@ -52,17 +52,15 @@ public class ValueFetcher {
     }
 
 
-    public CompletableFuture<List<FetchedValue>> fetchBatchedValues(ExecutionContext executionContext, List<Object> sources, MergedField sameFields, List<ExecutionStepInfo> executionInfos) {
-        System.out.println("Fetch batch values size: " + sources.size());
+    public CompletableFuture<List<FetchedValue>> fetchBatchedValues(ExecutionContext executionContext, List<Object> sources, MergedField field, List<ExecutionStepInfo> executionInfos) {
         ExecutionStepInfo executionStepInfo = executionInfos.get(0);
         if (isDataFetcherBatched(executionContext, executionStepInfo)) {
-            //TODO: the stepInfo is not correct for all values: how to give the DF all executionInfos?
-            return fetchValue(executionContext, sources, sameFields, executionStepInfo)
+            return fetchValue(executionContext, sources, field, executionStepInfo)
                     .thenApply(fetchedValue -> extractBatchedValues(fetchedValue, sources.size()));
         } else {
             List<CompletableFuture<FetchedValue>> fetchedValues = new ArrayList<>();
             for (int i = 0; i < sources.size(); i++) {
-                fetchedValues.add(fetchValue(executionContext, sources.get(i), sameFields, executionInfos.get(i)));
+                fetchedValues.add(fetchValue(executionContext, sources.get(i), field, executionInfos.get(i)));
             }
             return Async.each(fetchedValues);
         }
@@ -79,7 +77,7 @@ public class ValueFetcher {
             } else {
                 errors = Collections.emptyList();
             }
-            FetchedValue fetchedValue = new FetchedValue(list.get(0), fetchedValueContainingList.getRawFetchedValue(), errors);
+            FetchedValue fetchedValue = new FetchedValue(list.get(i), fetchedValueContainingList.getRawFetchedValue(), errors);
             result.add(fetchedValue);
         }
         return result;
