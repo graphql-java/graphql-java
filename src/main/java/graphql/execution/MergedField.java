@@ -167,4 +167,10 @@ public class MergedField {
 
     }
 
+    @Override
+    public String toString() {
+        return "MergedField{" +
+                "fields=" + fields +
+                '}';
+    }
 }
