@@ -58,9 +58,9 @@ public class FetchedValueAnalyzer {
         if (isList(fieldType)) {
             return analyzeList(executionContext, fetchedValue, toAnalyze, name, executionInfo);
         } else if (fieldType instanceof GraphQLScalarType) {
-            return analyzeScalarValue(fetchedValue, toAnalyze, name, (GraphQLScalarType) fieldType, executionInfo);
+            return analyzeScalarValue(fetchedValue, toAnalyze, (GraphQLScalarType) fieldType, executionInfo);
         } else if (fieldType instanceof GraphQLEnumType) {
-            return analyzeEnumValue(fetchedValue, toAnalyze, name, (GraphQLEnumType) fieldType, executionInfo);
+            return analyzeEnumValue(fetchedValue, toAnalyze, (GraphQLEnumType) fieldType, executionInfo);
         }
 
         // when we are here, we have a complex type: Interface, Union or Object
@@ -124,7 +124,6 @@ public class FetchedValueAnalyzer {
 
     }
 
-
     private FetchedValueAnalysis analyzeIterable(ExecutionContext executionContext, FetchedValue fetchedValue, Iterable<Object> iterableValues, String name, ExecutionStepInfo executionInfo) {
 
         Collection<Object> values = FpKit.toCollection(iterableValues);
@@ -144,7 +143,7 @@ public class FetchedValueAnalyzer {
     }
 
 
-    private FetchedValueAnalysis analyzeScalarValue(FetchedValue fetchedValue, Object toAnalyze, String name, GraphQLScalarType scalarType, ExecutionStepInfo executionInfo) {
+    private FetchedValueAnalysis analyzeScalarValue(FetchedValue fetchedValue, Object toAnalyze, GraphQLScalarType scalarType, ExecutionStepInfo executionInfo) {
         if (toAnalyze == null) {
             return newFetchedValueAnalysis(SCALAR)
                     .fetchedValue(fetchedValue)
@@ -154,7 +153,7 @@ public class FetchedValueAnalyzer {
         }
         Object serialized;
         try {
-            serialized = scalarType.getCoercing().serialize(toAnalyze);
+            serialized = serializeScalarValue(toAnalyze, scalarType, executionInfo);
         } catch (CoercingSerializeException e) {
             SerializationError error = new SerializationError(executionInfo.getPath(), e);
             return newFetchedValueAnalysis(SCALAR)
@@ -183,7 +182,11 @@ public class FetchedValueAnalyzer {
                 .build();
     }
 
-    private FetchedValueAnalysis analyzeEnumValue(FetchedValue fetchedValue, Object toAnalyze, String name, GraphQLEnumType enumType, ExecutionStepInfo executionInfo) {
+    protected Object serializeScalarValue(Object toAnalyze, GraphQLScalarType scalarType, ExecutionStepInfo executionStepInfo) throws CoercingSerializeException {
+        return scalarType.getCoercing().serialize(toAnalyze);
+    }
+
+    private FetchedValueAnalysis analyzeEnumValue(FetchedValue fetchedValue, Object toAnalyze, GraphQLEnumType enumType, ExecutionStepInfo executionInfo) {
         if (toAnalyze == null) {
             return newFetchedValueAnalysis(SCALAR)
                     .fetchedValue(fetchedValue)
