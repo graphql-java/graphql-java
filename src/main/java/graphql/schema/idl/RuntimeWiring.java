@@ -19,7 +19,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 
 /**
- * A runtime wiring is a specification of data fetchers, type resolves and custom scalars that are needed
+ * A runtime wiring is a specification of data fetchers, type resolvers and custom scalars that are needed
  * to wire together a functional {@link GraphQLSchema}
  */
 @PublicApi
