@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import static graphql.execution.nextgen.result.ExecutionResultNodePosition.index;
 import static graphql.execution.nextgen.result.ExecutionResultNodePosition.key;
+import static java.util.Collections.emptyList;
 
 @Internal
 public class ResultNodesUtil {
@@ -50,9 +51,6 @@ public class ResultNodesUtil {
         }
     }
 
-    private static ExecutionResultData data(Object data) {
-        return new ExecutionResultData(data);
-    }
 
     private static ExecutionResultData data(Object data, ExecutionResultNode executionResultNode) {
         return new ExecutionResultData(data, executionResultNode.getFetchedValueAnalysis().getErrors());
@@ -68,7 +66,7 @@ public class ResultNodesUtil {
 
     private static ExecutionResultData toDataImpl(ExecutionResultNode root) {
         if (root instanceof LeafExecutionResultNode) {
-            return root.getFetchedValueAnalysis().isNullValue() ? data(null) : data(((LeafExecutionResultNode) root).getValue(), root);
+            return root.getFetchedValueAnalysis().isNullValue() ? data(null, root) : data(((LeafExecutionResultNode) root).getValue(), root);
         }
         if (root instanceof ListExecutionResultNode) {
             Optional<NonNullableFieldWasNullException> childNonNullableException = ((ListExecutionResultNode) root).getChildNonNullableException();
@@ -87,7 +85,7 @@ public class ResultNodesUtil {
 
         if (root instanceof UnresolvedObjectResultNode) {
             FetchedValueAnalysis fetchedValueAnalysis = root.getFetchedValueAnalysis();
-            return data("Not resolved : " + fetchedValueAnalysis.getExecutionStepInfo().getPath() + " with field " + fetchedValueAnalysis.getField());
+            return data("Not resolved : " + fetchedValueAnalysis.getExecutionStepInfo().getPath() + " with field " + fetchedValueAnalysis.getField(), emptyList());
         }
         if (root instanceof ObjectExecutionResultNode) {
             Optional<NonNullableFieldWasNullException> childrenNonNullableException = ((ObjectExecutionResultNode) root).getChildrenNonNullableException();

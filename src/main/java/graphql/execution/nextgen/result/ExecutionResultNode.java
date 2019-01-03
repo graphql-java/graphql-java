@@ -19,6 +19,10 @@ public abstract class ExecutionResultNode {
         this.nonNullableFieldWasNullException = nonNullableFieldWasNullException;
     }
 
+
+    /*
+     * can be null for the RootExecutionResultNode
+     */
     public FetchedValueAnalysis getFetchedValueAnalysis() {
         return fetchedValueAnalysis;
     }
