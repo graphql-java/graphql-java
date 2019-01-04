@@ -96,7 +96,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
         return new Builder();
     }
 
-    public static Builder newSelectionSet(List<Selection> selections) {
+    public static Builder newSelectionSet(Collection<? extends Selection> selections) {
         return new Builder().selections(selections);
     }
 
