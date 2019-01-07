@@ -405,7 +405,8 @@ public class SchemaPrinter {
 
     String argsString(List<GraphQLArgument> arguments) {
         boolean hasDescriptions = arguments.stream().anyMatch(arg -> !isNullOrEmpty(arg.getDescription()));
-        String prefix = hasDescriptions ? "  " : "";
+        String halfPrefix = hasDescriptions ? "  " : "";
+        String prefix = hasDescriptions ? "    " : "";
         int count = 0;
         StringBuilder sb = new StringBuilder();
         arguments = arguments
@@ -424,7 +425,7 @@ public class SchemaPrinter {
             String description = argument.getDescription();
             if (!isNullOrEmpty(description)) {
                 Stream<String> stream = Arrays.stream(description.split("\n"));
-                stream.map(s -> "  #" + s + "\n").forEach(sb::append);
+                stream.map(s -> prefix + "#" + s + "\n").forEach(sb::append);
             }
             sb.append(prefix).append(argument.getName()).append(": ").append(typeString(argument.getType()));
             Object defaultValue = argument.getDefaultValue();
@@ -438,7 +439,7 @@ public class SchemaPrinter {
             if (hasDescriptions) {
                 sb.append("\n");
             }
-            sb.append(prefix).append(")");
+            sb.append(halfPrefix).append(")");
         }
         return sb.toString();
     }
