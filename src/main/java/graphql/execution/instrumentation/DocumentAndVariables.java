@@ -3,6 +3,7 @@ package graphql.execution.instrumentation;
 import graphql.PublicApi;
 import graphql.language.Document;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -23,7 +24,7 @@ public class DocumentAndVariables {
     }
 
     public Map<String, Object> getVariables() {
-        return variables;
+        return new LinkedHashMap<>(variables);
     }
 
     public DocumentAndVariables transform(Consumer<Builder> builderConsumer) {
