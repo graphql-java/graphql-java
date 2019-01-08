@@ -424,8 +424,16 @@ public class SchemaPrinter {
             }
             String description = argument.getDescription();
             if (!isNullOrEmpty(description)) {
-                Stream<String> stream = Arrays.stream(description.split("\n"));
-                stream.map(s -> prefix + "#" + s + "\n").forEach(sb::append);
+                String[] descriptionSplitByNewlines = description.split("\n");
+                Stream<String> stream = Arrays.stream(descriptionSplitByNewlines);
+                if (descriptionSplitByNewlines.length > 1) {
+                    String multiLineComment = "\"\"\"";
+                    stream = Stream.concat(Stream.of(multiLineComment), stream);
+                    stream = Stream.concat(stream, Stream.of(multiLineComment));
+                    stream.map(s -> prefix + s + "\n").forEach(sb::append);
+                } else {
+                    stream.map(s -> prefix + "#" + s + "\n").forEach(sb::append);
+                }
             }
             sb.append(prefix).append(argument.getName()).append(": ").append(typeString(argument.getType()));
             Object defaultValue = argument.getDefaultValue();
