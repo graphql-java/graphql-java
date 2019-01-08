@@ -6,15 +6,13 @@ import graphql.ExecutionInput
 import graphql.TestUtil
 import graphql.execution.ExecutionId
 import graphql.schema.DataFetcher
-import graphql.schema.idl.RuntimeWiring
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.idl.RuntimeWiring
 import spock.lang.Specification
-import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
 
 import static graphql.ExecutionInput.newExecutionInput
-
 import static graphql.execution.DataFetcherResult.newResult
 
 class DefaultExecutionStrategyTest extends Specification {
@@ -667,7 +665,7 @@ class DefaultExecutionStrategyTest extends Specification {
         }
         ''')
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().build()
+        ExecutionInput executionInput = newExecutionInput().build()
         Execution execution = new Execution()
 
         when:
@@ -680,7 +678,7 @@ class DefaultExecutionStrategyTest extends Specification {
         result.data == [foo: fooData]
     }
 
-    private ExceptionWhileDataFetching mkError(DataFetchingEnvironment env) {
+    private static ExceptionWhileDataFetching mkError(DataFetchingEnvironment env) {
         def rte = new RuntimeException("Bang on " + env.getField().getName())
         new ExceptionWhileDataFetching(env.executionStepInfo.getPath(), rte, env.getField().sourceLocation)
     }
