@@ -15,7 +15,6 @@ import static graphql.Assert.assertNotNull;
 @Internal
 public class FetchedValueAnalysis {
 
-
     public enum FetchedValueType {
         OBJECT,
         LIST,
@@ -24,30 +23,23 @@ public class FetchedValueAnalysis {
         DEFER
     }
 
-
     private final FetchedValueType valueType;
     private final List<GraphQLError> errors;
-
     // not applicable for LIST
     private final Object completedValue;
-
     private final boolean nullValue;
-
     // only available for LIST
     private final List<FetchedValueAnalysis> children;
-
     // only for object
     private final GraphQLObjectType resolvedType;
-
-
     private final ExecutionStepInfo executionStepInfo;
     // for LIST this is the whole list
     private final FetchedValue fetchedValue;
 
-
     private FetchedValueAnalysis(Builder builder) {
-        this.valueType = assertNotNull(builder.valueType);
         this.errors = new ArrayList<>(builder.errors);
+        this.errors.addAll(builder.fetchedValue.getErrors());
+        this.valueType = assertNotNull(builder.valueType);
         this.completedValue = builder.completedValue;
         this.nullValue = builder.nullValue;
         this.children = builder.children;
@@ -56,11 +48,9 @@ public class FetchedValueAnalysis {
         this.fetchedValue = assertNotNull(builder.fetchedValue);
     }
 
-
     public FetchedValueType getValueType() {
         return valueType;
     }
-
 
     public List<GraphQLError> getErrors() {
         return errors;
@@ -78,7 +68,6 @@ public class FetchedValueAnalysis {
         return nullValue;
     }
 
-
     public FetchedValue getFetchedValue() {
         return fetchedValue;
     }
@@ -88,7 +77,6 @@ public class FetchedValueAnalysis {
         builderConsumer.accept(builder);
         return builder.build();
     }
-
 
     public static Builder newFetchedValueAnalysis() {
         return new Builder();
@@ -183,7 +171,6 @@ public class FetchedValueAnalysis {
 
         public Builder fetchedValue(FetchedValue fetchedValue) {
             this.fetchedValue = fetchedValue;
-            errors(fetchedValue.getErrors());
             return this;
         }
 
