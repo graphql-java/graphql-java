@@ -61,13 +61,29 @@ public interface DataFetchingEnvironment {
      * Returns a context argument that is set up when the {@link graphql.GraphQL#execute} method
      * is invoked.
      * <p>
-     * This is a info object which is provided to all DataFetcher, but never used by graphql-java itself.
+     * This is a info object which is provided to all DataFetchers, but never used by graphql-java itself.
      *
      * @param <T> you decide what type it is
      *
      * @return can be null
      */
     <T> T getContext();
+
+    /**
+     * This returns a context object that parent fields may have returned returned
+     * via {@link graphql.execution.DataFetcherResult#getLocalContext()} which can be used to pass down extra information to
+     * fields beyond the normal {@link #getSource()}
+     * <p>
+     * This differs from {@link #getContext()} in that its field specific and passed from parent field to child field,
+     * whilst {@link #getContext()} is global for the whole query.
+     * <p>
+     * If the field is a top level field then 'localContext' equals the global 'context'
+     *
+     * @param <T> you decide what type it is
+     *
+     * @return can be null if no field context objects are passed back by previous parent fields
+     */
+    <T> T getLocalContext();
 
     /**
      * This is the source object for the root query.

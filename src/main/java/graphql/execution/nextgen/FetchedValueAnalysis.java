@@ -3,6 +3,7 @@ package graphql.execution.nextgen;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.ExecutionStepInfo;
+import graphql.execution.FetchedValue;
 import graphql.execution.MergedField;
 import graphql.schema.GraphQLObjectType;
 
@@ -113,7 +114,6 @@ public class FetchedValueAnalysis {
     public MergedField getField() {
         return executionStepInfo.getField();
     }
-
 
 
     public static final class Builder {

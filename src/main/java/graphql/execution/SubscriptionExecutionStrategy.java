@@ -67,8 +67,9 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
     private CompletableFuture<Publisher<Object>> createSourceEventStream(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
 
-        CompletableFuture<Object> fieldFetched = fetchField(executionContext, newParameters);
-        return fieldFetched.thenApply(publisher -> {
+        CompletableFuture<FetchedValue> fieldFetched = fetchField(executionContext, newParameters);
+        return fieldFetched.thenApply(fetchedValue -> {
+            Object publisher = fetchedValue.getFetchedValue();
             if (publisher != null) {
                 assertTrue(publisher instanceof Publisher, "You data fetcher must return a Publisher of events when using graphql subscriptions");
             }
@@ -94,8 +95,12 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         ExecutionContext newExecutionContext = executionContext.transform(builder -> builder.root(eventPayload));
 
         ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
+        FetchedValue fetchedValue = FetchedValue.newFetchedValue().fetchedValue(eventPayload)
+                .rawFetchedValue(eventPayload)
+                .localContext(parameters.getLocalContext())
+                .build();
 
-        return completeField(newExecutionContext, newParameters, eventPayload).getFieldValue()
+        return completeField(newExecutionContext, newParameters, fetchedValue).getFieldValue()
                 .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult));
     }
 

@@ -139,6 +139,7 @@ public class Execution {
         ExecutionStrategyParameters parameters = newParameters()
                 .executionStepInfo(executionStepInfo)
                 .source(root)
+                .localContext(executionContext.getContext())
                 .fields(fields)
                 .nonNullFieldValidator(nonNullableFieldValidator)
                 .path(path)
