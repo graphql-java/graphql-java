@@ -539,8 +539,10 @@ scalar Scalar
     #about arg1
     arg1: String, 
     arg2: String, 
-    #about 3
-    #second line
+    \"\"\"
+    about 3
+    second line
+    \"\"\"
     arg3: String
   ): String
 }
