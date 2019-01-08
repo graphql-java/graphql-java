@@ -114,11 +114,9 @@ public class FetchedValueAnalysis {
         return executionStepInfo.getField();
     }
 
-
-
     public static final class Builder {
         private FetchedValueType valueType;
-        private List<GraphQLError> errors = new ArrayList<>();
+        private final List<GraphQLError> errors = new ArrayList<>();
         private Object completedValue;
         private FetchedValue fetchedValue;
         private List<FetchedValueAnalysis> children;
@@ -131,7 +129,7 @@ public class FetchedValueAnalysis {
 
         private Builder(FetchedValueAnalysis existing) {
             valueType = existing.getValueType();
-            errors = existing.getErrors();
+            errors.addAll(existing.getErrors());
             completedValue = existing.getCompletedValue();
             fetchedValue = existing.getFetchedValue();
             children = existing.getChildren();
@@ -146,35 +144,30 @@ public class FetchedValueAnalysis {
             return this;
         }
 
-        public Builder errors(List<GraphQLError> val) {
-            errors = val;
+        public Builder errors(List<GraphQLError> errors) {
+            this.errors.addAll(errors);
             return this;
         }
 
-        public Builder error(GraphQLError val) {
-            errors.add(val);
+        public Builder error(GraphQLError error) {
+            this.errors.add(error);
             return this;
         }
 
 
-        public Builder completedValue(Object val) {
-            completedValue = val;
+        public Builder completedValue(Object completedValue) {
+            this.completedValue = completedValue;
             return this;
         }
 
-        public Builder children(List<FetchedValueAnalysis> val) {
-            children = val;
+        public Builder children(List<FetchedValueAnalysis> children) {
+            this.children = children;
             return this;
         }
 
 
         public Builder nullValue() {
-            nullValue = true;
-            return this;
-        }
-
-        public Builder field(MergedField field) {
-            field = field;
+            this.nullValue = true;
             return this;
         }
 
@@ -190,6 +183,7 @@ public class FetchedValueAnalysis {
 
         public Builder fetchedValue(FetchedValue fetchedValue) {
             this.fetchedValue = fetchedValue;
+            errors(fetchedValue.getErrors());
             return this;
         }
 
