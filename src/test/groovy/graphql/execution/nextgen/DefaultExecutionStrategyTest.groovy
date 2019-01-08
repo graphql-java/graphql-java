@@ -1,17 +1,21 @@
 package graphql.execution.nextgen
 
 import graphql.ContextPassingDataFetcher
+import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionInput
 import graphql.TestUtil
 import graphql.execution.ExecutionId
 import graphql.schema.DataFetcher
 import graphql.schema.idl.RuntimeWiring
+import graphql.schema.DataFetchingEnvironment
 import spock.lang.Specification
 import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
 
 import static graphql.ExecutionInput.newExecutionInput
+
+import static graphql.execution.DataFetcherResult.newResult
 
 class DefaultExecutionStrategyTest extends Specification {
 
@@ -624,5 +628,60 @@ class DefaultExecutionStrategyTest extends Specification {
 
         result.errors.isEmpty()
         result.data == [first: [second: [third: [skip: [fourth: "1,2,3,4,4,"]]]]]
+    }
+
+    def "DataFetcherResult is respected with errors"() {
+
+        def fooData = [[id: "fooId1"], null, [id: "fooId3"]]
+        def dataFetchers = [
+                Query: [
+                        foo: { env ->
+                            newResult().data(fooData)
+                                    .error(mkError(env))
+                                    .build()
+                        } as DataFetcher],
+                Foo  : [
+                        id: { env ->
+                            def id = env.source[env.getField().getName()]
+                            newResult().data(id)
+                                    .error(mkError(env))
+                                    .build()
+                        } as DataFetcher
+                ]
+        ]
+        def schema = TestUtil.schema('''
+        type Query {
+            foo: [Foo]
+        }
+        type Foo {
+            id: ID
+        }    
+        ''', dataFetchers)
+
+
+        def document = TestUtil.parseQuery('''
+        {
+            foo {
+                id
+            }
+        }
+        ''')
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().build()
+        Execution execution = new Execution()
+
+        when:
+        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
+        def result = monoResult.get()
+
+
+        then:
+        result.errors.size() == 3
+        result.data == [foo: fooData]
+    }
+
+    private ExceptionWhileDataFetching mkError(DataFetchingEnvironment env) {
+        def rte = new RuntimeException("Bang on " + env.getField().getName())
+        new ExceptionWhileDataFetching(env.executionStepInfo.getPath(), rte, env.getField().sourceLocation)
     }
 }

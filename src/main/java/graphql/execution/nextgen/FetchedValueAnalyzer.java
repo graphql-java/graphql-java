@@ -18,8 +18,6 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
 import graphql.util.FpKit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,9 +37,6 @@ public class FetchedValueAnalyzer {
     ResolveType resolveType = new ResolveType();
 
 
-    private static final Logger log = LoggerFactory.getLogger(FetchedValueAnalyzer.class);
-
-
     /*
      * scalar: the value, null and/or error
      * enum: same as scalar
@@ -54,10 +49,9 @@ public class FetchedValueAnalyzer {
     private FetchedValueAnalysis analyzeFetchedValueImpl(ExecutionContext executionContext, FetchedValue fetchedValue, Object toAnalyze, ExecutionStepInfo executionInfo) throws NonNullableFieldWasNullException {
         GraphQLType fieldType = executionInfo.getUnwrappedNonNullType();
         MergedField field = executionInfo.getField();
-        String name = field.getResultKey();
 
         if (isList(fieldType)) {
-            return analyzeList(executionContext, fetchedValue, toAnalyze, name, executionInfo);
+            return analyzeList(executionContext, fetchedValue, toAnalyze, executionInfo);
         } else if (fieldType instanceof GraphQLScalarType) {
             return analyzeScalarValue(fetchedValue, toAnalyze, (GraphQLScalarType) fieldType, executionInfo);
         } else if (fieldType instanceof GraphQLEnumType) {
@@ -71,20 +65,17 @@ public class FetchedValueAnalyzer {
             return newFetchedValueAnalysis(OBJECT)
                     .fetchedValue(fetchedValue)
                     .executionStepInfo(executionInfo)
-                    .field(field)
                     .nullValue()
                     .build();
         }
         try {
             GraphQLObjectType resolvedObjectType = resolveType.resolveType(executionContext, field, toAnalyze, executionInfo.getArguments(), fieldType);
-            FetchedValueAnalysis result = newFetchedValueAnalysis(OBJECT)
+            return newFetchedValueAnalysis(OBJECT)
                     .fetchedValue(fetchedValue)
                     .executionStepInfo(executionInfo)
-                    .field(field)
                     .completedValue(toAnalyze)
                     .resolvedType(resolvedObjectType)
                     .build();
-            return result;
         } catch (UnresolvedTypeException ex) {
             return handleUnresolvedTypeProblem(fetchedValue, executionInfo, ex);
         }
@@ -101,7 +92,7 @@ public class FetchedValueAnalyzer {
                 .build();
     }
 
-    private FetchedValueAnalysis analyzeList(ExecutionContext executionContext, FetchedValue fetchedValue, Object toAnalyze, String name, ExecutionStepInfo executionInfo) {
+    private FetchedValueAnalysis analyzeList(ExecutionContext executionContext, FetchedValue fetchedValue, Object toAnalyze, ExecutionStepInfo executionInfo) {
         if (toAnalyze == null) {
             return newFetchedValueAnalysis(LIST)
                     .fetchedValue(fetchedValue)
@@ -112,7 +103,7 @@ public class FetchedValueAnalyzer {
 
         if (toAnalyze.getClass().isArray() || toAnalyze instanceof Iterable) {
             Collection<Object> collection = FpKit.toCollection(toAnalyze);
-            return analyzeIterable(executionContext, fetchedValue, collection, name, executionInfo);
+            return analyzeIterable(executionContext, fetchedValue, collection, executionInfo);
         } else {
             TypeMismatchError error = new TypeMismatchError(executionInfo.getPath(), executionInfo.getType());
             return newFetchedValueAnalysis(LIST)
@@ -125,7 +116,7 @@ public class FetchedValueAnalyzer {
 
     }
 
-    private FetchedValueAnalysis analyzeIterable(ExecutionContext executionContext, FetchedValue fetchedValue, Iterable<Object> iterableValues, String name, ExecutionStepInfo executionInfo) {
+    private FetchedValueAnalysis analyzeIterable(ExecutionContext executionContext, FetchedValue fetchedValue, Iterable<Object> iterableValues, ExecutionStepInfo executionInfo) {
 
         Collection<Object> values = FpKit.toCollection(iterableValues);
         List<FetchedValueAnalysis> children = new ArrayList<>();
@@ -154,7 +145,7 @@ public class FetchedValueAnalyzer {
         }
         Object serialized;
         try {
-            serialized = serializeScalarValue(toAnalyze, scalarType, executionInfo);
+            serialized = serializeScalarValue(toAnalyze, scalarType);
         } catch (CoercingSerializeException e) {
             SerializationError error = new SerializationError(executionInfo.getPath(), e);
             return newFetchedValueAnalysis(SCALAR)
@@ -183,7 +174,7 @@ public class FetchedValueAnalyzer {
                 .build();
     }
 
-    protected Object serializeScalarValue(Object toAnalyze, GraphQLScalarType scalarType, ExecutionStepInfo executionStepInfo) throws CoercingSerializeException {
+    protected Object serializeScalarValue(Object toAnalyze, GraphQLScalarType scalarType) throws CoercingSerializeException {
         return scalarType.getCoercing().serialize(toAnalyze);
     }
 
