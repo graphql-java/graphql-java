@@ -75,14 +75,14 @@ public class IntrospectionResultToSchema {
         boolean nonDefaultQueryName = !"Query".equals(query.getName());
 
         SchemaDefinition.Builder schemaDefinition = SchemaDefinition.newSchemaDefinition();
-        schemaDefinition.operationTypeDefinition(OperationTypeDefinition.newOperationTypeDefinition().name("query").type(query).build());
+        schemaDefinition.operationTypeDefinition(OperationTypeDefinition.newOperationTypeDefinition().name("query").typeName(query).build());
 
         Map<String, Object> mutationType = (Map<String, Object>) schema.get("mutationType");
         boolean nonDefaultMutationName = false;
         if (mutationType != null) {
             TypeName mutation = TypeName.newTypeName().name((String) mutationType.get("name")).build();
             nonDefaultMutationName = !"Mutation".equals(mutation.getName());
-            schemaDefinition.operationTypeDefinition(OperationTypeDefinition.newOperationTypeDefinition().name("mutation").type(mutation).build());
+            schemaDefinition.operationTypeDefinition(OperationTypeDefinition.newOperationTypeDefinition().name("mutation").typeName(mutation).build());
         }
 
         Map<String, Object> subscriptionType = (Map<String, Object>) schema.get("subscriptionType");
@@ -90,7 +90,7 @@ public class IntrospectionResultToSchema {
         if (subscriptionType != null) {
             TypeName subscription = TypeName.newTypeName().name(((String) subscriptionType.get("name"))).build();
             nonDefaultSubscriptionName = !"Subscription".equals(subscription.getName());
-            schemaDefinition.operationTypeDefinition(OperationTypeDefinition.newOperationTypeDefinition().name("subscription").type(subscription).build());
+            schemaDefinition.operationTypeDefinition(OperationTypeDefinition.newOperationTypeDefinition().name("subscription").typeName(subscription).build());
         }
 
         Document.Builder document = Document.newDocument();
