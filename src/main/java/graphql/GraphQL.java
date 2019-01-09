@@ -40,6 +40,7 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.InvalidSyntaxError.toInvalidSyntaxError;
+import static graphql.execution.ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDER;
 
 /**
  * This class is where all graphql-java query execution begins.  It combines the objects that are needed
@@ -89,7 +90,6 @@ public class GraphQL {
 
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
-    private static final ExecutionIdProvider DEFAULT_EXECUTION_ID_PROVIDER = (query, operationName, context) -> ExecutionId.generate();
 
     private final GraphQLSchema graphQLSchema;
     private final ExecutionStrategy queryStrategy;
@@ -592,33 +592,4 @@ public class GraphQL {
         return future;
     }
 
-    private static class ParseResult {
-        private final Document document;
-        private final Exception exception;
-
-        private ParseResult(Document document, Exception exception) {
-            this.document = document;
-            this.exception = exception;
-        }
-
-        private boolean isFailure() {
-            return document == null;
-        }
-
-        private Document getDocument() {
-            return document;
-        }
-
-        private Exception getException() {
-            return exception;
-        }
-
-        private static ParseResult of(Document document) {
-            return new ParseResult(document, null);
-        }
-
-        private static ParseResult ofError(Exception e) {
-            return new ParseResult(null, e);
-        }
-    }
 }
