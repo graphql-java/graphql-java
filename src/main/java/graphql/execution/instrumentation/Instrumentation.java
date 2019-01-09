@@ -167,15 +167,15 @@ public interface Instrumentation {
     }
 
     /**
-     * This is called to instrument a {@link graphql.language.Document} before it is used allowing you to adjust the query AST if you so desire
+     * This is called to instrument a {@link graphql.language.Document} and variables before it is used allowing you to adjust the query AST if you so desire
      *
-     * @param document   the document to be used
-     * @param parameters the parameters describing the execution
+     * @param documentAndVariables the document and variables to be used
+     * @param parameters           the parameters describing the execution
      *
-     * @return a non null instrumented Document, the default is to return to the same object
+     * @return a non null instrumented DocumentAndVariables, the default is to return to the same objects
      */
-    default Document instrumentDocument(Document document, InstrumentationExecutionParameters parameters) {
-        return document;
+    default DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters) {
+        return documentAndVariables;
     }
 
     /**
