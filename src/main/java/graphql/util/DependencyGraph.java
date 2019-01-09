@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -123,10 +124,10 @@ public class DependencyGraph<N extends Vertex<N>> {
         }
 
         Collection<N> calculateNext () {
-            Collection<N> nextClosure = new ArrayList<>();
+            Collection<N> nextClosure = Collections.newSetFromMap(new IdentityHashMap<>());
             return Optional
                 .ofNullable((Collection<N>)traverser
-                    .rootVar(List.class, nextClosure)
+                    .rootVar(Collection.class, nextClosure)
                     .traverse(
                         unclosed
                             .stream()
@@ -144,7 +145,7 @@ public class DependencyGraph<N extends Vertex<N>> {
                 throw new NoSuchElementException("next closure hasn't been calculated yet");
 
             Collection<N> closure = lastClosure = currentClosure;
-            currentClosure = Collections.emptyList();
+            currentClosure = Collections.emptySet();
             return closure;
         }
 
@@ -153,7 +154,7 @@ public class DependencyGraph<N extends Vertex<N>> {
             Objects.requireNonNull(resolvedSet);
             
             resolvedSet.forEach(this::closeNode);
-            lastClosure = Collections.emptyList();
+            lastClosure = Collections.emptySet();
         }
 
         private void closeNode (N maybeNode) {
@@ -168,10 +169,10 @@ public class DependencyGraph<N extends Vertex<N>> {
         
         @Override
         public TraversalControl enter(TraverserContext<N> context) {
-            List<N> closure = context.getParentContext().getVar(List.class);
+            Collection<N> closure = context.getParentContext().getVar(Collection.class);
             context
-                .setVar(List.class, closure)    // to be propagated to children
-                .setResult(closure);            // to be returned
+                .setVar(Collection.class, closure)    // to be propagated to children
+                .setResult(closure);                  // to be returned
             
             N node = context.thisNode();
             if (node.canResolve()) {
@@ -193,12 +194,16 @@ public class DependencyGraph<N extends Vertex<N>> {
             assertShouldNeverHappen("cycle around node", context.thisNode());
             return TraversalControl.QUIT;
         }
-
-        Collection<N> unclosed = new HashSet<>(vertices.values());
-        Collection<N> closed = new HashSet<>();
-        Collection<N> currentClosure = Collections.emptyList();
-        Collection<N> lastClosure = Collections.emptyList();
-        Traverser<N> traverser = Traverser.<N>breadthFirst(Vertex::adjacencySet, null);
+        
+        DependenciesIteratorImpl () {
+            unclosed.addAll(vertices.values());
+        }
+        
+        final Collection<N> unclosed = Collections.newSetFromMap(new IdentityHashMap<>());
+        final Collection<N> closed = Collections.newSetFromMap(new IdentityHashMap<>());
+        Collection<N> currentClosure = Collections.emptySet();
+        Collection<N> lastClosure = Collections.emptySet();
+        final Traverser<N> traverser = Traverser.<N>breadthFirst(Vertex::adjacencySet, null);
     }
     
     public static <T> DependencyGraph<SimpleVertex<T>> simple () {

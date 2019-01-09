@@ -59,6 +59,10 @@ public class Edge<N extends Vertex<N>> {
         action.accept(source, sink);
     }
 
+    public static <N extends Vertex<N>> BiConsumer<N, N> emptyAction () {
+        return (BiConsumer<N, N>)EMPTY_ACTION;
+    }
+    
     @Override
     public int hashCode() {
         int hash = 5;

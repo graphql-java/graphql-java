@@ -5,12 +5,14 @@
  */
 package graphql.util;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +37,27 @@ public abstract class Vertex<N extends Vertex<N>> {
         
         new Edge<>(source, (N)this, edgeAction)
             .connectEndpoints();
+        
+        return (N)this;
+    }
+    
+    public N undependsOn (N source) {
+        Objects.requireNonNull(source);
+        
+        new ArrayList<>(outdegrees)
+            .stream()
+            .filter(edge -> edge.getSource() == source)
+            .forEach(Edge::disconnectEndpoints);
+        
+        return (N)this;
+    }
+    
+    public N disconnect () {
+        Stream.concat(
+            new ArrayList<>(indegrees).stream(), 
+            new ArrayList<>(outdegrees).stream()
+        )
+        .forEach(Edge::disconnectEndpoints);
         
         return (N)this;
     }

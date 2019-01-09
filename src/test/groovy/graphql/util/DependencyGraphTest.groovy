@@ -40,7 +40,7 @@ class DependencyGraphTest extends Specification {
         graph.size() == 0
         graph.order() == 1
         ordering.hasNext() == true
-        ordering.next() == [v1]
+        ordering.next() == [v1] as Set
         ordering.hasNext() == false
     }
     
@@ -60,7 +60,7 @@ class DependencyGraphTest extends Specification {
         graph.size() == 0
         graph.order() == 2
         ordering.hasNext() == true
-        ordering.next() == [v1, v2]
+        ordering.next() == [v1, v2] as Set
         ordering.hasNext() == false
     }
     
@@ -79,9 +79,31 @@ class DependencyGraphTest extends Specification {
         graph.size() == 1
         graph.order() == 2
         ordering.hasNext() == true
-        ordering.next() == [v2]
+        ordering.next() == [v2] as Set
         ordering.hasNext() == true
-        ordering.next() == [v1]
+        ordering.next() == [v1] as Set
+        ordering.hasNext() == false
+    }
+    
+    def "test 2 nodes undepend"() {
+        given:
+        def v1 = new SimpleVertex<>("v1")
+        def v2 = new SimpleVertex<>("v2")
+        def graph = DependencyGraph
+            .<String>simple()
+            .addDependency(v1, v2)
+            
+        when:
+        v1.undependsOn(v2)
+        def ordering = graph.orderDependencies()
+
+        then:
+        graph.size() == 0
+        graph.order() == 2
+        v1.dependencySet().isEmpty() == true
+        v2.adjacencySet().isEmpty() == true
+        ordering.hasNext() == true
+        ordering.next() == [v1, v2] as Set
         ordering.hasNext() == false
     }
     
@@ -103,11 +125,36 @@ class DependencyGraphTest extends Specification {
             graph.order() == 4
             graph.size() == 3
             ordering.hasNext() == true
-            ordering.next() == [c, d]
+            ordering.next() == [c, d] as Set
             ordering.hasNext() == true
-            ordering.next() == [b]
+            ordering.next() == [b] as Set
             ordering.hasNext() == true
-            ordering.next() == [a]
+            ordering.next() == [a] as Set
+            ordering.hasNext() == false
+    } 
+    
+    def "test disconnect https://en.wikipedia.org/wiki/Dependency_graph example"() {
+        given:
+            def a = new SimpleVertex("a")
+            def b = new SimpleVertex("b")
+            def c = new SimpleVertex("c")
+            def d = new SimpleVertex("d")
+            def graph = DependencyGraph.<String>simple()
+                .addDependency(a, b)
+                .addDependency(a, c)
+                .addDependency(b, d)
+                
+        when:
+            a.disconnect()
+            def ordering = graph.orderDependencies()
+            
+        then:
+            graph.order() == 4
+            graph.size() == 1
+            ordering.hasNext() == true
+            ordering.next() == [c, d, a] as Set
+            ordering.hasNext() == true
+            ordering.next() == [b] as Set
             ordering.hasNext() == false
     } 
     
@@ -173,11 +220,11 @@ class DependencyGraphTest extends Specification {
             
         then:
             ordering.hasNext() == ordering.hasNext()
-            ordering.next() == [c, d]
+            ordering.next() == [c, d] as Set
             ordering.hasNext() == ordering.hasNext()
-            ordering.next() == [b]
+            ordering.next() == [b] as Set
             ordering.hasNext() == ordering.hasNext()
-            ordering.next() == [a]
+            ordering.next() == [a] as Set
             ordering.hasNext() == ordering.hasNext()
     }
     
@@ -197,13 +244,13 @@ class DependencyGraphTest extends Specification {
             
         then:
             ordering.hasNext() == true
-            ordering.next() == [c, d]
+            ordering.next() == [c, d] as Set
             ordering.close([new SimpleVertex("c"), new SimpleVertex("d")])
             ordering.hasNext() == true
-            ordering.next() == [b]
+            ordering.next() == [b] as Set
             ordering.close([new SimpleVertex("b")])
             ordering.hasNext() == true
-            ordering.next() == [new SimpleVertex("a")]
+            ordering.next() == [new SimpleVertex("a")] as Set
             ordering.close([a])
             ordering.hasNext() == false
     }
@@ -224,13 +271,13 @@ class DependencyGraphTest extends Specification {
             
         then:
             ordering.hasNext() == true
-            ordering.next() == [c, d]
+            ordering.next() == [c, d] as Set
             ordering.close([new SimpleVertex("c").id(c.getId()), new SimpleVertex("d").id(d.getId())])
             ordering.hasNext() == true
-            ordering.next() == [b]
+            ordering.next() == [b] as Set
             ordering.close([new SimpleVertex("b").id(b.getId())])
             ordering.hasNext() == true
-            ordering.next() == [new SimpleVertex("a").id(a.getId())]
+            ordering.next() == [new SimpleVertex("a").id(a.getId())] as Set
             ordering.close([a])
             ordering.hasNext() == false
     }
@@ -298,11 +345,11 @@ class DependencyGraphTest extends Specification {
             graph.order() == 4
             graph.size() == 3
             ordering.hasNext() == true
-            ordering.next() == [c, d]
+            ordering.next() == [c, d] as Set
             ordering.hasNext() == true
-            ordering.next() == [b]
+            ordering.next() == [b] as Set
             ordering.hasNext() == true
-            ordering.next() == [a]
+            ordering.next() == [a] as Set
             ordering.hasNext() == false
     } 
 }

@@ -25,7 +25,7 @@ public class Traverser<T> {
 
     private static final List<TraversalControl> CONTINUE_OR_QUIT = Arrays.asList(CONTINUE, QUIT);
 
-    private Traverser(TraverserState<T> traverserState, Function<? super T, ? extends List<T>> getChildren) {
+    public Traverser(TraverserState<T> traverserState, Function<? super T, ? extends List<T>> getChildren) {
         this.traverserState = assertNotNull(traverserState);
         this.getChildren = assertNotNull(getChildren);
     }

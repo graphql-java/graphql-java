@@ -5,6 +5,7 @@ import graphql.util.SimpleTraverserContext;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
 import graphql.util.TraverserContext;
+import graphql.util.TraverserState;
 import graphql.util.TraverserVisitor;
 
 import java.util.Collection;
@@ -30,14 +31,28 @@ public class NodeTraverser {
 
     private final Map<Class<?>, Object> rootVars;
     private final Function<? super Node, ? extends List<Node>> getChildren;
+    private final Object initialData;
 
-    public NodeTraverser(Map<Class<?>, Object> rootVars, Function<? super Node, ? extends List<Node>> getChildren) {
+    public NodeTraverser(Map<Class<?>, Object> rootVars, Function<? super Node, ? extends List<Node>> getChildren, Object initialData) {
         this.rootVars = rootVars;
         this.getChildren = getChildren;
+        this.initialData = initialData;
     }
 
+    public NodeTraverser(Map<Class<?>, Object> rootVars, Function<? super Node, ? extends List<Node>> getChildren) {
+        this(rootVars, getChildren, null);
+    }
+
+    public NodeTraverser(Function<? super Node, ? extends List<Node>> getChildren, Object initialData) {
+        this(Collections.emptyMap(), getChildren, initialData);
+    }
+    
+    public NodeTraverser(Object initialData) {
+        this(Collections.emptyMap(), Node::getChildren, initialData);
+    }
+    
     public NodeTraverser() {
-        this(Collections.emptyMap(), Node::getChildren);
+        this(null);
     }
 
 
@@ -58,8 +73,31 @@ public class NodeTraverser {
      * @param roots       the root nodes
      */
     public void depthFirst(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
-        TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
+        doTraverse(roots, decorate(nodeVisitor));
+    }
 
+    /**
+     * breadthFirst traversal with a enter/leave phase.
+     *
+     * @param nodeVisitor the visitor of the nodes
+     * @param root        the root node
+     */
+    public void breadthFirst(NodeVisitor nodeVisitor, Node root) {
+        breadthFirst(nodeVisitor, Collections.singleton(root));
+    }
+    
+    /**
+     * breadthFirst traversal with a enter/leave phase.
+     *
+     * @param nodeVisitor the visitor of the nodes
+     * @param roots       the root nodes
+     */
+    public void breadthFirst(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
+        doTraverse(roots, decorate(nodeVisitor), TraverserState::newQueueState);
+    }
+    
+    private static TraverserVisitor<Node> decorate (NodeVisitor nodeVisitor) {
+        return new TraverserVisitor<Node>() {
             @Override
             public TraversalControl enter(TraverserContext<Node> context) {
                 context.setVar(LeaveOrEnter.class, LeaveOrEnter.ENTER);
@@ -73,9 +111,8 @@ public class NodeTraverser {
             }
 
         };
-        doTraverse(roots, nodeTraverserVisitor);
     }
-
+    
     /**
      * Version of {@link #preOrder(NodeVisitor, Collection)} with one root.
      *
@@ -93,6 +130,17 @@ public class NodeTraverser {
      * @param roots       the root nodes
      */
     public void preOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
+        preOrder(nodeVisitor, roots, TraverserState::newStackState);
+    }
+    
+    /**
+     * Pre-Order traversal: This is a specialized version of depthFirst with only the enter phase.
+     *
+     * @param nodeVisitor the visitor of the nodes
+     * @param roots       the root nodes
+     * @param newState
+     */
+    public void preOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots, Function<? super Object, ? extends TraverserState<Node>> newState) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
 
             @Override
@@ -107,7 +155,7 @@ public class NodeTraverser {
             }
 
         };
-        doTraverse(roots, nodeTraverserVisitor);
+        doTraverse(roots, nodeTraverserVisitor, newState);
 
     }
 
@@ -120,7 +168,7 @@ public class NodeTraverser {
     public void postOrder(NodeVisitor nodeVisitor, Node root) {
         postOrder(nodeVisitor, Collections.singleton(root));
     }
-
+    
     /**
      * Post-Order traversal: This is a specialized version of depthFirst with only the leave phase.
      *
@@ -128,6 +176,17 @@ public class NodeTraverser {
      * @param roots       the root nodes
      */
     public void postOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
+        postOrder(nodeVisitor, roots, TraverserState::newStackState);
+    }
+
+    /**
+     * Post-Order traversal: This is a specialized version of depthFirst with only the leave phase.
+     *
+     * @param nodeVisitor the visitor of the nodes
+     * @param roots       the root nodes
+     * @param newState
+     */
+    public void postOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots, Function<? super Object, ? extends TraverserState<Node>> newState) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
 
             @Override
@@ -142,11 +201,15 @@ public class NodeTraverser {
             }
 
         };
-        doTraverse(roots, nodeTraverserVisitor);
+        doTraverse(roots, nodeTraverserVisitor, newState);
     }
 
     private void doTraverse(Collection<? extends Node> roots, TraverserVisitor traverserVisitor) {
-        Traverser<Node> nodeTraverser = Traverser.depthFirst(this.getChildren);
+        doTraverse(roots, traverserVisitor, TraverserState::newStackState);
+    }
+    
+    private void doTraverse(Collection<? extends Node> roots, TraverserVisitor traverserVisitor, Function<? super Object, ? extends TraverserState<Node>> newState) {
+        Traverser<Node> nodeTraverser = new Traverser<>(newState.apply(initialData), getChildren);
         nodeTraverser.rootVars(rootVars);
         nodeTraverser.traverse(roots, traverserVisitor);
     }
