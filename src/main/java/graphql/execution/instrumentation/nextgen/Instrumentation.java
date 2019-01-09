@@ -2,12 +2,17 @@ package graphql.execution.instrumentation.nextgen;
 
 import graphql.ExecutionResult;
 import graphql.Internal;
+import graphql.execution.instrumentation.DocumentAndVariables;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimpleInstrumentationContext;
 import graphql.language.Document;
 import graphql.nextgen.ExecutionInput;
 import graphql.schema.GraphQLSchema;
+import graphql.validation.ValidationError;
+
+import java.util.List;
+
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.noOp;
 
 @Internal
 public interface Instrumentation {
@@ -21,13 +26,12 @@ public interface Instrumentation {
         return executionInput;
     }
 
-    default GraphQLSchema instrumentSchema(GraphQLSchema graphQLSchema, InstrumentationExecutionParameters parameters) {
-        return graphQLSchema;
+    default DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters) {
+        return documentAndVariables;
     }
 
-    default Document instrumentDocument(Document document, InstrumentationExecutionParameters parameters) {
-        // TODO -
-        return document;
+    default GraphQLSchema instrumentSchema(GraphQLSchema graphQLSchema, InstrumentationExecutionParameters parameters) {
+        return graphQLSchema;
     }
 
     default ExecutionResult instrumentExecutionResult(ExecutionResult result, InstrumentationExecutionParameters parameters) {
@@ -35,10 +39,14 @@ public interface Instrumentation {
     }
 
     default InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
-        return new SimpleInstrumentationContext<>();
+        return noOp();
     }
 
     default InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
-        return new SimpleInstrumentationContext<>();
+        return noOp();
+    }
+
+    default InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
+        return noOp();
     }
 }

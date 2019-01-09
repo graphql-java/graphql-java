@@ -1,16 +1,16 @@
 package graphql.execution.nextgen
 
 import graphql.ExceptionWhileDataFetching
-import graphql.ExecutionInput
-import graphql.TestUtil
-import graphql.execution.ExecutionId
+import graphql.nextgen.GraphQL
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
 
+import static graphql.TestUtil.schema
 import static graphql.execution.DataFetcherResult.newResult
+import static graphql.nextgen.ExecutionInput.newExecutionInput
 
 class DefaultExecutionStrategyTest extends Specification {
 
@@ -20,7 +20,7 @@ class DefaultExecutionStrategyTest extends Specification {
         def dataFetchers = [
                 Query: [foo: { env -> fooData } as DataFetcher]
         ]
-        def schema = TestUtil.schema("""
+        def schema = schema("""
         type Query {
             foo: Foo
         }
@@ -35,7 +35,7 @@ class DefaultExecutionStrategyTest extends Specification {
         """, dataFetchers)
 
 
-        def document = graphql.TestUtil.parseQuery("""
+        def query = """
         {foo {
             id
             bar {
@@ -43,17 +43,12 @@ class DefaultExecutionStrategyTest extends Specification {
                 name
             }
         }}
-        """)
+        """
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .build()
-
-        Execution execution = new Execution()
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
-        def result = monoResult.get()
-
+        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(DefaultExecutionStrategy).build()
+        def result = graphQL.executeAsync(newExecutionInput().query(query)).get()
 
         then:
         result.getData() == [foo: fooData]
@@ -77,7 +72,7 @@ class DefaultExecutionStrategyTest extends Specification {
                 Query: [foo: fooResolver],
                 Foo  : [id1: idResolver1, id2: idResolver2, id3: idResolver3]
         ]
-        def schema = TestUtil.schema("""
+        def schema = schema("""
         type Query {
             foo: Foo
         }
@@ -89,24 +84,21 @@ class DefaultExecutionStrategyTest extends Specification {
         """, dataFetchers)
 
 
-        def document = graphql.TestUtil.parseQuery("""
+        def query = """
         {
             f1: foo  { id1 }
             f2: foo { id2 }
             f3: foo  { id3 }
         }
-        """)
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .build()
-
-        Execution execution = new Execution();
+        """
 
         def cfId1 = new CompletableFuture()
         def cfId2 = new CompletableFuture()
         def cfId3 = new CompletableFuture()
 
         when:
-        execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
+        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(DefaultExecutionStrategy).build()
+        graphQL.executeAsync(newExecutionInput().query(query))
 
         then:
         cfs.size() == 3
@@ -144,7 +136,7 @@ class DefaultExecutionStrategyTest extends Specification {
         def dataFetchers = [
                 Query: [foo: { env -> fooData } as DataFetcher]
         ]
-        def schema = TestUtil.schema("""
+        def schema = schema("""
         type Query {
             foo: [Foo]
         }
@@ -159,7 +151,7 @@ class DefaultExecutionStrategyTest extends Specification {
         """, dataFetchers)
 
 
-        def document = graphql.TestUtil.parseQuery("""
+        def query = """
         {foo {
             id
             bar {
@@ -167,21 +159,14 @@ class DefaultExecutionStrategyTest extends Specification {
                 name
             }
         }}
-        """)
-
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .build()
-
-        Execution execution = new Execution();
+        """
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
-        def result = monoResult.get()
-
+        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(DefaultExecutionStrategy).build()
+        def result = graphQL.executeAsync(newExecutionInput().query(query)).get()
 
         then:
         result.getData() == [foo: fooData]
-
     }
 
     def "test execution with null element "() {
@@ -190,7 +175,7 @@ class DefaultExecutionStrategyTest extends Specification {
         def dataFetchers = [
                 Query: [foo: { env -> fooData } as DataFetcher]
         ]
-        def schema = TestUtil.schema("""
+        def schema = schema("""
         type Query {
             foo: [Foo]
         }
@@ -205,7 +190,7 @@ class DefaultExecutionStrategyTest extends Specification {
         """, dataFetchers)
 
 
-        def document = graphql.TestUtil.parseQuery("""
+        def query = """
         {foo {
             id
             bar {
@@ -213,18 +198,11 @@ class DefaultExecutionStrategyTest extends Specification {
                 name
             }
         }}
-        """)
-
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .build()
-
-
-        Execution execution = new Execution()
+        """
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
-        def result = monoResult.get()
-
+        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(DefaultExecutionStrategy).build()
+        def result = graphQL.executeAsync(newExecutionInput().query(query)).get()
 
         then:
         result.getData() == [foo: fooData]
@@ -237,7 +215,7 @@ class DefaultExecutionStrategyTest extends Specification {
         def dataFetchers = [
                 Query: [foo: { env -> fooData } as DataFetcher]
         ]
-        def schema = TestUtil.schema("""
+        def schema = schema("""
         type Query {
             foo: [Foo]
         }
@@ -252,7 +230,7 @@ class DefaultExecutionStrategyTest extends Specification {
         """, dataFetchers)
 
 
-        def document = graphql.TestUtil.parseQuery("""
+        def query = """
         {foo {
             id
             bar {
@@ -260,18 +238,11 @@ class DefaultExecutionStrategyTest extends Specification {
                 name
             }
         }}
-        """)
-
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .build()
-
-
-        Execution execution = new Execution()
+        """
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
-        def result = monoResult.get()
-
+        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(DefaultExecutionStrategy).build()
+        def result = graphQL.executeAsync(newExecutionInput().query(query)).get()
 
         then:
         result.getData() == [foo: fooData]
@@ -284,7 +255,7 @@ class DefaultExecutionStrategyTest extends Specification {
         def dataFetchers = [
                 Query: [foo: { env -> fooData } as DataFetcher]
         ]
-        def schema = TestUtil.schema("""
+        def schema = schema("""
         type Query {
             foo: [Foo]
         }
@@ -299,7 +270,7 @@ class DefaultExecutionStrategyTest extends Specification {
         """, dataFetchers)
 
 
-        def document = graphql.TestUtil.parseQuery("""
+        def query = """
         {foo {
             id
             bar {
@@ -307,21 +278,15 @@ class DefaultExecutionStrategyTest extends Specification {
                 name
             }
         }}
-        """)
+        """
 
         def expectedFooData = [[id: "fooId1", bar: null],
                                [id: "fooId2", bar: [[id: "barId3", name: "someBar3"], [id: "barId4", name: "someBar4"]]]]
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .build()
-
-
-        Execution execution = new Execution()
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
-        def result = monoResult.get()
-
+        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(DefaultExecutionStrategy).build()
+        def result = graphQL.executeAsync(newExecutionInput().query(query)).get()
 
         then:
         result.getData() == [foo: expectedFooData]
@@ -334,7 +299,7 @@ class DefaultExecutionStrategyTest extends Specification {
         def dataFetchers = [
                 Query: [foo: { env -> fooData } as DataFetcher]
         ]
-        def schema = TestUtil.schema("""
+        def schema = schema("""
         type Query {
             foo: [Foo]
         }
@@ -349,7 +314,7 @@ class DefaultExecutionStrategyTest extends Specification {
         """, dataFetchers)
 
 
-        def document = graphql.TestUtil.parseQuery("""
+        def query = """
         {foo {
             id
             bar {
@@ -357,25 +322,17 @@ class DefaultExecutionStrategyTest extends Specification {
                 name
             }
         }}
-        """)
+        """
 
         def expectedFooData = [null,
                                [id: "fooId2", bar: [[id: "barId3", name: "someBar3"], [id: "barId4", name: "someBar4"]]]]
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .build()
-
-
-        Execution execution = new Execution()
-
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
-        def result = monoResult.get()
-
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        def result = graphQL.executeAsync(newExecutionInput().query(query)).get()
 
         then:
         result.getData() == [foo: expectedFooData]
-
     }
 
     def "test execution with null element bubbling up to top "() {
@@ -384,7 +341,7 @@ class DefaultExecutionStrategyTest extends Specification {
         def dataFetchers = [
                 Query: [foo: { env -> fooData } as DataFetcher]
         ]
-        def schema = TestUtil.schema("""
+        def schema = schema("""
         type Query {
             foo: [Foo!]!
         }
@@ -399,7 +356,7 @@ class DefaultExecutionStrategyTest extends Specification {
         """, dataFetchers)
 
 
-        def document = graphql.TestUtil.parseQuery("""
+        def query = """
         {foo {
             id
             bar {
@@ -407,23 +364,14 @@ class DefaultExecutionStrategyTest extends Specification {
                 name
             }
         }}
-        """)
-
-
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .build()
-
-
-        Execution execution = new Execution()
+        """
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
-        def result = monoResult.get()
-
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        def result = graphQL.executeAsync(newExecutionInput().query(query)).get()
 
         then:
         result.getData() == null
-
     }
 
     def "test list"() {
@@ -431,7 +379,7 @@ class DefaultExecutionStrategyTest extends Specification {
         def dataFetchers = [
                 Query: [foo: { env -> fooData } as DataFetcher]
         ]
-        def schema = TestUtil.schema("""
+        def schema = schema("""
         type Query {
             foo: [Foo]
         }
@@ -441,27 +389,18 @@ class DefaultExecutionStrategyTest extends Specification {
         """, dataFetchers)
 
 
-        def document = graphql.TestUtil.parseQuery("""
+        def query = """
         {foo {
             id
         }}
-        """)
-
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .build()
-
-
-        Execution execution = new Execution();
+        """
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
-        def result = monoResult.get()
-
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        def result = graphQL.executeAsync(newExecutionInput().query(query)).get()
 
         then:
         result.getData() == [foo: fooData]
-
-
     }
 
     def "test list in lists "() {
@@ -469,7 +408,7 @@ class DefaultExecutionStrategyTest extends Specification {
         def dataFetchers = [
                 Query: [foo: { env -> fooData } as DataFetcher]
         ]
-        def schema = TestUtil.schema("""
+        def schema = schema("""
         type Query {
             foo: [Foo]
         }
@@ -482,29 +421,19 @@ class DefaultExecutionStrategyTest extends Specification {
         """, dataFetchers)
 
 
-        def document = graphql.TestUtil.parseQuery("""
+        def query = """
         {foo {
             bar {
                 id
             }
         }}
-        """)
-
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .build()
-
-
-        Execution execution = new Execution();
-
+        """
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
-        def result = monoResult.get()
-
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        def result = graphQL.executeAsync(newExecutionInput().query(query)).get()
 
         then:
         result.getData() == [foo: fooData]
-
-
     }
 
     def "test simple batching with null value in list"() {
@@ -512,7 +441,7 @@ class DefaultExecutionStrategyTest extends Specification {
         def dataFetchers = [
                 Query: [foo: { env -> fooData } as DataFetcher]
         ]
-        def schema = TestUtil.schema("""
+        def schema = schema("""
         type Query {
             foo: [Foo]
         }
@@ -522,27 +451,18 @@ class DefaultExecutionStrategyTest extends Specification {
         """, dataFetchers)
 
 
-        def document = graphql.TestUtil.parseQuery("""
+        def query = """
         {foo {
             id
         }}
-        """)
-
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .build()
-
-
-        Execution execution = new Execution();
+        """
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
-        def result = monoResult.get()
-
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        def result = graphQL.executeAsync(newExecutionInput().query(query)).get()
 
         then:
         result.getData() == [foo: fooData]
-
-
     }
 
 
@@ -565,7 +485,7 @@ class DefaultExecutionStrategyTest extends Specification {
                         } as DataFetcher
                 ]
         ]
-        def schema = TestUtil.schema('''
+        def schema = schema('''
         type Query {
             foo: [Foo]
         }
@@ -575,21 +495,17 @@ class DefaultExecutionStrategyTest extends Specification {
         ''', dataFetchers)
 
 
-        def document = TestUtil.parseQuery('''
+        def query = '''
         {
             foo {
                 id
             }
         }
-        ''')
-
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().build()
-        Execution execution = new Execution()
+        '''
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
-        def result = monoResult.get()
-
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        def result = graphQL.executeAsync(newExecutionInput().query(query)).get()
 
         then:
         result.errors.size() == 3
@@ -600,6 +516,5 @@ class DefaultExecutionStrategyTest extends Specification {
         def rte = new RuntimeException("Bang on " + env.getField().getName())
         new ExceptionWhileDataFetching(env.executionStepInfo.getPath(), rte, env.getField().sourceLocation)
     }
-
 }
 

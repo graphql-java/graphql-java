@@ -1,14 +1,15 @@
 package graphql.execution.nextgen;
 
-import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.Async;
 import graphql.execution.ExecutionId;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.nextgen.result.ResultNodesUtil;
 import graphql.language.Document;
+import graphql.nextgen.ExecutionInput;
 import graphql.schema.GraphQLSchema;
 
 import java.util.concurrent.CompletableFuture;
@@ -22,10 +23,11 @@ public class Execution {
                                                       Document document,
                                                       GraphQLSchema graphQLSchema,
                                                       ExecutionId executionId,
-                                                      ExecutionInput executionInput) {
+                                                      ExecutionInput executionInput,
+                                                      InstrumentationState instrumentationState) {
         ExecutionHelper.ExecutionData executionData;
         try {
-            executionData = executionHelper.createExecutionData(document, graphQLSchema, executionId, executionInput);
+            executionData = executionHelper.createExecutionData(document, graphQLSchema, executionId, executionInput, instrumentationState);
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
                 return CompletableFuture.completedFuture(new ExecutionResultImpl((GraphQLError) rte));
@@ -43,6 +45,4 @@ public class Execution {
             throw new RuntimeException(e);
         }
     }
-
-
 }

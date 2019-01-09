@@ -1,6 +1,5 @@
 package graphql.execution.nextgen;
 
-import graphql.ExecutionInput;
 import graphql.Internal;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
@@ -10,11 +9,13 @@ import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.MergedSelectionSet;
 import graphql.execution.ValuesResolver;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
+import graphql.nextgen.ExecutionInput;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
@@ -37,7 +38,8 @@ public class ExecutionHelper {
     public ExecutionData createExecutionData(Document document,
                                              GraphQLSchema graphQLSchema,
                                              ExecutionId executionId,
-                                             ExecutionInput executionInput) {
+                                             ExecutionInput executionInput,
+                                             InstrumentationState instrumentationState) {
 
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, executionInput.getOperationName());
         Map<String, FragmentDefinition> fragmentsByName = getOperationResult.fragmentsByName;
@@ -52,6 +54,7 @@ public class ExecutionHelper {
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .executionId(executionId)
+                .instrumentationState(instrumentationState)
                 .graphQLSchema(graphQLSchema)
                 .context(executionInput.getContext())
                 .root(executionInput.getRoot())
@@ -59,7 +62,6 @@ public class ExecutionHelper {
                 .variables(coercedVariables)
                 .document(document)
                 .operationDefinition(operationDefinition)
-                .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
                 .build();
 
         GraphQLObjectType operationRootType;

@@ -7,11 +7,13 @@ import graphql.ParseResult;
 import graphql.execution.AbortExecutionException;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionIdProvider;
+import graphql.execution.instrumentation.DocumentAndVariables;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.nextgen.Instrumentation;
 import graphql.execution.instrumentation.nextgen.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.nextgen.InstrumentationExecutionParameters;
+import graphql.execution.instrumentation.nextgen.InstrumentationValidationParameters;
 import graphql.execution.nextgen.DefaultExecutionStrategy;
 import graphql.execution.nextgen.Execution;
 import graphql.execution.nextgen.ExecutionStrategy;
@@ -35,7 +37,9 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.InvalidSyntaxError.toInvalidSyntaxError;
+import static graphql.execution.instrumentation.DocumentAndVariables.newDocumentAndVariables;
 
+@SuppressWarnings("Duplicates")
 @Internal
 public class GraphQL {
     private static final Logger log = LoggerFactory.getLogger(graphql.GraphQL.class);
@@ -167,16 +171,19 @@ public class GraphQL {
 
         Parser parser = new Parser();
         Document document;
+        DocumentAndVariables documentAndVariables;
         try {
             document = parser.parseDocument(executionInput.getQuery());
-            document = instrumentation.instrumentDocument(document, parameters);
+            documentAndVariables = newDocumentAndVariables()
+                    .document(document).variables(executionInput.getVariables()).build();
+            documentAndVariables = instrumentation.instrumentDocumentAndVariables(documentAndVariables, parameters);
         } catch (ParseCancellationException e) {
             parseInstrumentation.onCompleted(null, e);
             return ParseResult.ofError(e);
         }
 
-        parseInstrumentation.onCompleted(document, null);
-        return ParseResult.of(document);
+        parseInstrumentation.onCompleted(documentAndVariables.getDocument(), null);
+        return ParseResult.of(documentAndVariables);
     }
 
     private List<ValidationError> validate(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
@@ -198,7 +205,7 @@ public class GraphQL {
         ExecutionId executionId = idProvider.provide(query, operationName, context);
 
         log.debug("Executing '{}'. operation name: '{}'. query: '{}'. variables '{}'", executionId, executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
-        CompletableFuture<ExecutionResult> future = execution.execute(executionStrategy, document, graphQLSchema, executionId, executionInput);
+        CompletableFuture<ExecutionResult> future = execution.execute(executionStrategy, document, graphQLSchema, executionId, executionInput, instrumentationState);
         future = future.whenComplete((result, throwable) -> {
             if (throwable != null) {
                 log.error(String.format("Execution '%s' threw exception when executing : query : '%s'. variables '%s'", executionId, executionInput.getQuery(), executionInput.getVariables()), throwable);
