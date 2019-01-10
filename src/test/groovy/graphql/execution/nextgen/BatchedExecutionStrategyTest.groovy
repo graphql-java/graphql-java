@@ -42,7 +42,7 @@ class BatchedExecutionStrategyTest extends Specification {
 
 
         when:
-        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(BatchedExecutionStrategy).build()
+        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
         def result = graphQL.executeAsync(newExecutionInput(query)).get()
 
         then:
@@ -81,7 +81,7 @@ class BatchedExecutionStrategyTest extends Specification {
         """
 
         when:
-        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(BatchedExecutionStrategy).build()
+        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
         def result = graphQL.executeAsync(newExecutionInput(query)).get()
 
         then:
@@ -119,7 +119,7 @@ class BatchedExecutionStrategyTest extends Specification {
         }}
         """
         when:
-        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(BatchedExecutionStrategy).build()
+        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
         def result = graphQL.executeAsync(newExecutionInput(query)).get()
 
 
@@ -159,7 +159,7 @@ class BatchedExecutionStrategyTest extends Specification {
         }}
         """
         when:
-        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(BatchedExecutionStrategy).build()
+        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
         def result = graphQL.executeAsync(newExecutionInput(query)).get()
 
         then:
@@ -200,7 +200,7 @@ class BatchedExecutionStrategyTest extends Specification {
                                [id: "fooId2", bar: [[id: "barId3", name: "someBar3"], [id: "barId4", name: "someBar4"]]]]
 
         when:
-        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(BatchedExecutionStrategy).build()
+        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
         def result = graphQL.executeAsync(newExecutionInput(query)).get()
 
         then:
@@ -242,7 +242,7 @@ class BatchedExecutionStrategyTest extends Specification {
                                [id: "fooId2", bar: [[id: "barId3", name: "someBar3"], [id: "barId4", name: "someBar4"]]]]
 
         when:
-        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(BatchedExecutionStrategy).build()
+        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
         def result = graphQL.executeAsync(newExecutionInput(query)).get()
 
         then:
@@ -280,7 +280,7 @@ class BatchedExecutionStrategyTest extends Specification {
         }}
         """
         when:
-        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(BatchedExecutionStrategy).build()
+        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
         def result = graphQL.executeAsync(newExecutionInput(query)).get()
 
         then:
@@ -309,7 +309,7 @@ class BatchedExecutionStrategyTest extends Specification {
         """
 
         when:
-        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(BatchedExecutionStrategy).build()
+        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
         def result = graphQL.executeAsync(newExecutionInput(query)).get()
 
         then:
@@ -317,9 +317,9 @@ class BatchedExecutionStrategyTest extends Specification {
     }
 
     def "test list in lists "() {
-        def catsBatchSize
+        def catsBatchSize = 0
         def catsCallCount = 0
-        def idsBatchSize
+        def idsBatchSize = 0
         def idsCallCount = 0
 
         def catsDataFetcher = { env ->
@@ -362,7 +362,7 @@ class BatchedExecutionStrategyTest extends Specification {
         """
 
         when:
-        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(BatchedExecutionStrategy).build()
+        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
         def result = graphQL.executeAsync(newExecutionInput(query)).get()
 
         then:
@@ -395,7 +395,7 @@ class BatchedExecutionStrategyTest extends Specification {
         """
 
         when:
-        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(BatchedExecutionStrategy).build()
+        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
         def result = graphQL.executeAsync(newExecutionInput(query)).get()
 
         then:

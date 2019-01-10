@@ -19,7 +19,7 @@ public class Execution {
 
     ExecutionHelper executionHelper = new ExecutionHelper();
 
-    public CompletableFuture<ExecutionResult> execute(Class<? extends ExecutionStrategy> executionStrategy,
+    public CompletableFuture<ExecutionResult> execute(ExecutionStrategy executionStrategy,
                                                       Document document,
                                                       GraphQLSchema graphQLSchema,
                                                       ExecutionId executionId,
@@ -37,8 +37,6 @@ public class Execution {
 
         try {
             return executionStrategy
-                    .getConstructor()
-                    .newInstance()
                     .execute(executionData.executionContext, executionData.fieldSubSelection)
                     .thenApply(ResultNodesUtil::toExecutionResult);
         } catch (Exception e) {

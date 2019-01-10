@@ -46,7 +46,7 @@ public class GraphQL {
     private static final Logger log = LoggerFactory.getLogger(graphql.GraphQL.class);
 
     private final GraphQLSchema graphQLSchema;
-    private final Class<? extends ExecutionStrategy> executionStrategy;
+    private final ExecutionStrategy executionStrategy;
     private final ExecutionIdProvider idProvider;
     private final Instrumentation instrumentation;
     private final PreparsedDocumentProvider preparsedDocumentProvider;
@@ -250,7 +250,7 @@ public class GraphQL {
 
     public static class Builder {
         private GraphQLSchema graphQLSchema;
-        private Class<? extends ExecutionStrategy> executionStrategy = DefaultExecutionStrategy.class;
+        private ExecutionStrategy executionStrategy = new DefaultExecutionStrategy();
         private ExecutionIdProvider idProvider = ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDER;
         private Instrumentation instrumentation = new Instrumentation() {
         };
@@ -273,7 +273,7 @@ public class GraphQL {
             return this;
         }
 
-        public Builder executionStrategy(Class<? extends ExecutionStrategy> executionStrategy) {
+        public Builder executionStrategy(ExecutionStrategy executionStrategy) {
             this.executionStrategy = assertNotNull(executionStrategy, "ExecutionStrategy must be non null");
             return this;
         }
