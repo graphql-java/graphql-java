@@ -35,5 +35,10 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
         return hash;
     }
 
+    @Override
+    <U> U accept(U data, NodeVertexVisitor<? super U> visitor) {
+        return (U)visitor.visit(this, data);
+    }
+
     private final GraphQLFieldsContainer definedIn;
 }

@@ -17,11 +17,11 @@ public class OperationVertex extends NodeVertex<OperationDefinition, GraphQLObje
     public OperationVertex(OperationDefinition node, GraphQLObjectType type) {
         super(node, type);
     }  
-
-    @Override
-    public boolean canResolve() {
-        return true;
-    }
+//
+//    @Override
+//    public boolean canResolve() {
+//        return true;
+//    }
 
     @Override
     public int hashCode() {
@@ -31,4 +31,9 @@ public class OperationVertex extends NodeVertex<OperationDefinition, GraphQLObje
         hash = 97 * hash + Objects.hashCode(this.type);
         return hash;
     }    
+
+    @Override
+    <U> U accept(U data, NodeVertexVisitor<? super U> visitor) {
+        return (U)visitor.visit(this, data);
+    }
 }

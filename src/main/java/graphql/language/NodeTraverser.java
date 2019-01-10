@@ -138,7 +138,7 @@ public class NodeTraverser {
      *
      * @param nodeVisitor the visitor of the nodes
      * @param roots       the root nodes
-     * @param newState
+     * @param newState    TraverserState factory
      */
     public void preOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots, Function<? super Object, ? extends TraverserState<Node>> newState) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
@@ -184,7 +184,7 @@ public class NodeTraverser {
      *
      * @param nodeVisitor the visitor of the nodes
      * @param roots       the root nodes
-     * @param newState
+     * @param newState    TraverserState factory
      */
     public void postOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots, Function<? super Object, ? extends TraverserState<Node>> newState) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {

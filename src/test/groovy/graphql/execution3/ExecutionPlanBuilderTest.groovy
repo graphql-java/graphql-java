@@ -68,6 +68,8 @@ class ExecutionPlanBuilderTest extends Specification {
         order.next() == [Foo_id, Foo_bar] as Set
         order.hasNext() == true
         order.next() == [Bar_id, Bar_name] as Set
+        order.hasNext() == true
+        order.next() == [Query] as Set
         order.hasNext() == false
     }
 /*

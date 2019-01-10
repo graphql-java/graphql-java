@@ -13,8 +13,8 @@ import java.util.Objects;
 /**
  *
  * @author gkesler
- * @param <N>
- * @param <T>
+ * @param <N>   actual type of Node associated with this Vertex
+ * @param <T>   GraphQLType from the GraphQLSchema dictionary that describes the Node 
  */
 public abstract class NodeVertex<N extends Node, T extends GraphQLType> extends Vertex<NodeVertex<N, T>> {
     protected NodeVertex (N node, T type) {
@@ -77,6 +77,8 @@ public abstract class NodeVertex<N extends Node, T extends GraphQLType> extends 
         
         throw new IllegalArgumentException(String.format("could not cast to '%s'", castTo.getName()));
     }
+    
+    abstract <U> U accept (U data, NodeVertexVisitor<? super U> visitor);
     
     protected final N node;
     protected final T type;
