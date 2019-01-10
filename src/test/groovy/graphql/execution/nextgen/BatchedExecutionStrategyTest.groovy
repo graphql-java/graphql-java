@@ -43,8 +43,7 @@ class BatchedExecutionStrategyTest extends Specification {
 
         when:
         def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
-        def result = graphQL.executeAsync(newExecutionInput(query)).get()
-
+        def result = graphQL.execute(newExecutionInput(query))
         then:
         result.getData() == [foo: fooData]
     }
@@ -82,8 +81,7 @@ class BatchedExecutionStrategyTest extends Specification {
 
         when:
         def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
-        def result = graphQL.executeAsync(newExecutionInput(query)).get()
-
+        def result = graphQL.execute(newExecutionInput(query))
         then:
         result.getData() == [foo: fooData]
     }
@@ -120,8 +118,7 @@ class BatchedExecutionStrategyTest extends Specification {
         """
         when:
         def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
-        def result = graphQL.executeAsync(newExecutionInput(query)).get()
-
+        def result = graphQL.execute(newExecutionInput(query))
 
         then:
         result.getData() == [foo: fooData]
@@ -160,8 +157,7 @@ class BatchedExecutionStrategyTest extends Specification {
         """
         when:
         def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
-        def result = graphQL.executeAsync(newExecutionInput(query)).get()
-
+        def result = graphQL.execute(newExecutionInput(query))
         then:
         result.getData() == [foo: fooData]
     }
@@ -201,8 +197,7 @@ class BatchedExecutionStrategyTest extends Specification {
 
         when:
         def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
-        def result = graphQL.executeAsync(newExecutionInput(query)).get()
-
+        def result = graphQL.execute(newExecutionInput(query))
         then:
         result.getData() == [foo: expectedFooData]
     }
@@ -243,8 +238,7 @@ class BatchedExecutionStrategyTest extends Specification {
 
         when:
         def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
-        def result = graphQL.executeAsync(newExecutionInput(query)).get()
-
+        def result = graphQL.execute(newExecutionInput(query))
         then:
         result.getData() == [foo: expectedFooData]
     }
@@ -281,8 +275,7 @@ class BatchedExecutionStrategyTest extends Specification {
         """
         when:
         def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
-        def result = graphQL.executeAsync(newExecutionInput(query)).get()
-
+        def result = graphQL.execute(newExecutionInput(query))
         then:
         result.getData() == null
     }
@@ -310,8 +303,7 @@ class BatchedExecutionStrategyTest extends Specification {
 
         when:
         def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
-        def result = graphQL.executeAsync(newExecutionInput(query)).get()
-
+        def result = graphQL.execute(newExecutionInput(query))
         then:
         result.getData() == [foo: fooData]
     }
@@ -363,8 +355,7 @@ class BatchedExecutionStrategyTest extends Specification {
 
         when:
         def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
-        def result = graphQL.executeAsync(newExecutionInput(query)).get()
-
+        def result = graphQL.execute(newExecutionInput(query))
         then:
         result.getData() == [friends: [[cats: [[id: "catId1"], [id: "catId2"]]], [cats: null], [cats: [[id: "catId3"], [id: "catId4"], [id: "catId5"]]]]]
         catsCallCount == 1
@@ -396,7 +387,7 @@ class BatchedExecutionStrategyTest extends Specification {
 
         when:
         def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new BatchedExecutionStrategy()).build()
-        def result = graphQL.executeAsync(newExecutionInput(query)).get()
+        def result = graphQL.execute(newExecutionInput(query))
 
         then:
         result.getData() == [foo: fooData]

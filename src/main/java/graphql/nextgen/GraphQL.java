@@ -62,6 +62,55 @@ public class GraphQL {
     /**
      * Executes the graphql query using the provided input object builder
      * <p>
+     * This will return a completed {@link ExecutionResult}
+     * which is the result of executing the provided query.
+     *
+     * @param executionInputBuilder {@link ExecutionInput.Builder}
+     *
+     * @return an {@link ExecutionResult} which can include errors
+     */
+    public ExecutionResult execute(ExecutionInput.Builder executionInputBuilder) {
+        return executeAsync(executionInputBuilder.build()).join();
+    }
+
+    /**
+     * Executes the graphql query using the provided input object builder
+     * <p>
+     * This will return a completed {@link ExecutionResult}
+     * which is the result of executing the provided query.
+     * <p>
+     * This allows a lambda style like :
+     * <pre>
+     * {@code
+     *    ExecutionResult result = graphql.execute(input -> input.query("{hello}").root(startingObj).context(contextObj));
+     * }
+     * </pre>
+     *
+     * @param builderFunction a function that is given a {@link ExecutionInput.Builder}
+     *
+     * @return a promise to an {@link ExecutionResult} which can include errors
+     */
+    public CompletableFuture<ExecutionResult> execute(UnaryOperator<ExecutionInput.Builder> builderFunction) {
+        return executeAsync(builderFunction.apply(ExecutionInput.newExecutionInput()).build());
+    }
+
+    /**
+     * Executes the graphql query using the provided input object
+     * <p>
+     * This will return a completed {@link ExecutionResult}
+     * which is the result of executing the provided query.
+     *
+     * @param executionInput {@link ExecutionInput}
+     *
+     * @return a promise to an {@link ExecutionResult} which can include errors
+     */
+    public ExecutionResult execute(ExecutionInput executionInput) {
+        return executeAsync(executionInput).join();
+    }
+
+    /**
+     * Executes the graphql query using the provided input object builder
+     * <p>
      * This will return a promise (aka {@link CompletableFuture}) to provide a {@link ExecutionResult}
      * which is the result of executing the provided query.
      *
@@ -82,7 +131,7 @@ public class GraphQL {
      * This allows a lambda style like :
      * <pre>
      * {@code
-     *    ExecutionResult result = graphql.execute(input -> input.query("{hello}").root(startingObj).context(contextObj));
+     *    ExecutionResult result = graphql.executeAsync(input -> input.query("{hello}").root(startingObj).context(contextObj));
      * }
      * </pre>
      *
