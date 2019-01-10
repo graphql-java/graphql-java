@@ -197,7 +197,7 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
     @Override
     public TraversalControl visitSelectionSet(SelectionSet node, TraverserContext<Node> context) {
         switch (leaveOrEnter(context)) {
-            case ENTER:                
+            case ENTER: {                
                 // propagate current OperationVertex further to the next neighbors
                 context.setVar(OperationVertex.class, context.getParentContext().getVar(OperationVertex.class));
                 
@@ -207,6 +207,7 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
 
                 // propagate my parent vertex to my children
                 context.setResult(vertex);
+            }
         }
         
         return TraversalControl.CONTINUE;
@@ -215,8 +216,15 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
     @Override
     public TraversalControl visitInlineFragment(InlineFragment node, TraverserContext<Node> context) {
         switch (leaveOrEnter(context)) {
-            case ENTER:
-                return FIELD_COLLECTOR.collectInlineFragment(this, node, context);
+            case ENTER: {
+                if (!FIELD_COLLECTOR.collectInlineFragment(this, node, context))
+                    return TraversalControl.ABORT;
+
+                // propagate current OperationVertex further to the next neighbors
+                context.setVar(OperationVertex.class, context.getParentContext().getVar(OperationVertex.class));
+                // propagate my parent vertex to my children
+                context.setResult(context.getParentResult());
+            }
         }
         
         return TraversalControl.CONTINUE;
@@ -225,8 +233,15 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
     @Override
     public TraversalControl visitFragmentSpread(FragmentSpread node, TraverserContext<Node> context) {
         switch (leaveOrEnter(context)) {
-            case ENTER:
-                return FIELD_COLLECTOR.collectFragmentSpread(this, node, context);
+            case ENTER: {
+                if (!FIELD_COLLECTOR.collectFragmentSpread(this, node, context)) 
+                    return TraversalControl.ABORT;
+                
+                // propagate current OperationVertex further to the next neighbors
+                context.setVar(OperationVertex.class, context.getParentContext().getVar(OperationVertex.class));
+                // propagate my parent vertex to my children
+                context.setResult(context.getParentResult());
+            }
         }
         
         return TraversalControl.CONTINUE;
@@ -235,8 +250,20 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
     @Override
     public TraversalControl visitField(Field node, TraverserContext<Node> context) {
         switch (leaveOrEnter(context)) {
-            case ENTER:
-                return FIELD_COLLECTOR.collectField(this, node, context);
+            case ENTER: {
+                NodeVertex<Node, GraphQLType> vertex = FIELD_COLLECTOR.collectField(this, node, context);
+                if (vertex == null)
+                    return TraversalControl.ABORT;
+
+                // FIXME: create a real action
+                OperationVertex operationVertex = context.getParentContext().getVar(OperationVertex.class);
+                cast(operationVertex).dependsOn(vertex, Edge.emptyAction());
+
+                // propagate current OperationVertex further to the children
+                context.setVar(OperationVertex.class, operationVertex);
+                // propagate my vertex to my children
+                context.setResult(vertex);
+            }
         }
         
         return TraversalControl.CONTINUE;
@@ -253,9 +280,9 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
     }
     
     private static class FieldCollectorHelper extends FieldCollector {
-        TraversalControl collectField (ExecutionPlanBuilder outer, Field node, TraverserContext<Node> context) {
+        NodeVertex<Node, GraphQLType> collectField (ExecutionPlanBuilder outer, Field node, TraverserContext<Node> context) {
             if (!conditionalNodes.shouldInclude(outer.variables, node.getDirectives()))
-                return TraversalControl.ABORT;
+                return null;
 
             // create a vertex for this node and add dependency on the parent one
             NodeVertex<Node, GraphQLType> parentVertex = (NodeVertex<Node, GraphQLType>)context.getParentResult();        
@@ -264,52 +291,33 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
                     .as(FieldVertex.class);
 
             // FIXME: create a real action
-            cast(vertex).dependsOn(parentVertex, Edge.emptyAction());
-
-            // FIXME: create a real action
-            OperationVertex operationVertex = context.getParentContext().getVar(OperationVertex.class);
-            cast(operationVertex).dependsOn(cast(vertex), Edge.emptyAction());
-            // propagate current OperationVertex further to the next neighbors
-            context.setVar(OperationVertex.class, operationVertex);
-
-            context.setResult(vertex);
-            return TraversalControl.CONTINUE;
+            return cast(vertex).dependsOn(parentVertex, Edge.emptyAction());
         }
         
-        TraversalControl collectInlineFragment (ExecutionPlanBuilder outer, InlineFragment node, TraverserContext<Node> context) {
+        boolean collectInlineFragment (ExecutionPlanBuilder outer, InlineFragment node, TraverserContext<Node> context) {
             if (!conditionalNodes.shouldInclude(outer.variables, node.getDirectives()))
-                return TraversalControl.ABORT;
+                return false;
 
             FieldCollectorParameters collectorParameters = fieldCollectorParameters(context);
             if (!FIELD_COLLECTOR.doesFragmentConditionMatch(collectorParameters, node))
-                return TraversalControl.ABORT;
+                return false;
 
-            // propagate current OperationVertex further to the next neighbors
-            context.setVar(OperationVertex.class, context.getParentContext().getVar(OperationVertex.class));
-
-            // propagate my parent vertex to my children
-            context.setResult(context.getParentResult());
-            return TraversalControl.CONTINUE;
+            return true;
         }
         
-        TraversalControl collectFragmentSpread (ExecutionPlanBuilder outer, FragmentSpread node, TraverserContext<Node> context) {
+        boolean collectFragmentSpread (ExecutionPlanBuilder outer, FragmentSpread node, TraverserContext<Node> context) {
             if (!conditionalNodes.shouldInclude(outer.variables, node.getDirectives()))
-                return TraversalControl.ABORT;
+                return false;
 
             FragmentDefinition fragmentDefinition = outer.fragmentsByName.get(node.getName());
             if (!conditionalNodes.shouldInclude(outer.variables, fragmentDefinition.getDirectives()))
-                return TraversalControl.ABORT;
+                return false;
 
             FieldCollectorParameters collectorParameters = fieldCollectorParameters(context);
             if (!FIELD_COLLECTOR.doesFragmentConditionMatch(collectorParameters, fragmentDefinition))
-                return TraversalControl.ABORT;
+                return false;
 
-            // propagate current OperationVertex further to the next neighbors
-            context.setVar(OperationVertex.class, context.getParentContext().getVar(OperationVertex.class));
-
-            // propagate my parent vertex to my children
-            context.setResult(context.getParentResult());
-            return TraversalControl.CONTINUE;
+            return true;
         }
 
         void createFieldCollectorParameters (ExecutionPlanBuilder outer, GraphQLObjectType type, TraverserContext<Node> context) {
