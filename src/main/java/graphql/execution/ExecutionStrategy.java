@@ -269,7 +269,7 @@ public abstract class ExecutionStrategy {
                 .handle((result, exception) -> {
                     fetchCtx.onCompleted(result, exception);
                     if (exception != null) {
-                        handleFetchingException(executionContext, parameters, field, fieldDef, argumentValues, environment, exception);
+                        handleFetchingException(executionContext, parameters, environment, exception);
                         return null;
                     } else {
                         return result;
@@ -296,22 +296,15 @@ public abstract class ExecutionStrategy {
 
     private void handleFetchingException(ExecutionContext executionContext,
                                          ExecutionStrategyParameters parameters,
-                                         MergedField field,
-                                         GraphQLFieldDefinition fieldDef,
-                                         Map<String, Object> argumentValues,
                                          DataFetchingEnvironment environment,
                                          Throwable e) {
         DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
-                .executionContext(executionContext)
                 .dataFetchingEnvironment(environment)
-                .argumentValues(argumentValues)
-                .field(field)
-                .fieldDefinition(fieldDef)
-                .path(parameters.getPath())
                 .exception(e)
                 .build();
 
-        dataFetcherExceptionHandler.accept(handlerParameters);
+        DataFetcherExceptionHandlerResult handlerResult = dataFetcherExceptionHandler.onException(handlerParameters);
+        handlerResult.getErrors().forEach(executionContext::addError);
 
         parameters.deferredErrorSupport().onFetchingException(parameters, e);
     }
