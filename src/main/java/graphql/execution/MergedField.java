@@ -105,7 +105,7 @@ public class MergedField {
     /**
      * All merged fields share the same arguments.
      *
-     * @return
+     * @return the list of arguments
      */
     public List<Argument> getArguments() {
         return getSingleField().getArguments();
