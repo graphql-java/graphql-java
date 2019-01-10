@@ -3,6 +3,7 @@ package graphql.execution.nextgen;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.ExecutionStepInfo;
+import graphql.execution.FetchedValue;
 import graphql.execution.MergedField;
 import graphql.schema.GraphQLObjectType;
 

@@ -27,43 +27,41 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
 
-        Map<String, Object> fetchedValues = fetchFields(executionContext, parameters);
+        Map<String, FetchedValue> fetchedValues = fetchFields(executionContext, parameters);
 
         return completeFields(executionContext, parameters, fetchedValues);
     }
 
-    private Map<String, Object> fetchFields(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    private Map<String, FetchedValue> fetchFields(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         MergedSelectionSet fields = parameters.getFields();
 
-        Map<String, CompletableFuture<Object>> fetchFutures = new LinkedHashMap<>();
+        Map<String, CompletableFuture<FetchedValue>> fetchFutures = new LinkedHashMap<>();
 
         // first fetch every value
         for (String fieldName : fields.keySet()) {
             ExecutionStrategyParameters newParameters = newParameters(parameters, fields, fieldName);
 
-            CompletableFuture<Object> fetchFuture = fetchField(executionContext, newParameters);
+            CompletableFuture<FetchedValue> fetchFuture = fetchField(executionContext, newParameters);
             fetchFutures.put(fieldName, fetchFuture);
         }
 
         // now wait for all fetches to finish together via this join
         allOf(fetchFutures.values()).join();
 
-        Map<String, Object> fetchedValues = new LinkedHashMap<>();
+        Map<String, FetchedValue> fetchedValues = new LinkedHashMap<>();
         fetchFutures.forEach((k, v) -> fetchedValues.put(k, v.join()));
         return fetchedValues;
     }
 
-    private CompletableFuture<ExecutionResult> completeFields(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Map<String, Object> fetchedValues) {
+    private CompletableFuture<ExecutionResult> completeFields(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Map<String, FetchedValue> fetchedValues) {
         MergedSelectionSet fields = parameters.getFields();
 
         // then for every fetched value, complete it, breath first
         Map<String, Object> results = new LinkedHashMap<>();
         for (String fieldName : fetchedValues.keySet()) {
-            MergedField fieldList = fields.getSubField(fieldName);
-
             ExecutionStrategyParameters newParameters = newParameters(parameters, fields, fieldName);
 
-            Object fetchedValue = fetchedValues.get(fieldName);
+            FetchedValue fetchedValue = fetchedValues.get(fieldName);
             try {
                 ExecutionResult resolvedResult = completeField(executionContext, newParameters, fetchedValue).getFieldValue().join();
                 results.put(fieldName, resolvedResult != null ? resolvedResult.getData() : null);

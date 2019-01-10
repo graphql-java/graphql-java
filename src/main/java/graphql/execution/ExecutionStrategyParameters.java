@@ -16,6 +16,7 @@ import static graphql.Assert.assertNotNull;
 public class ExecutionStrategyParameters {
     private final ExecutionStepInfo executionStepInfo;
     private final Object source;
+    private final Object localContext;
     private final Map<String, Object> arguments;
     private final MergedSelectionSet fields;
     private final NonNullableFieldValidator nonNullableFieldValidator;
@@ -28,6 +29,7 @@ public class ExecutionStrategyParameters {
 
     private ExecutionStrategyParameters(ExecutionStepInfo executionStepInfo,
                                         Object source,
+                                        Object localContext,
                                         MergedSelectionSet fields,
                                         Map<String, Object> arguments,
                                         NonNullableFieldValidator nonNullableFieldValidator,
@@ -39,6 +41,7 @@ public class ExecutionStrategyParameters {
                                         DeferredErrorSupport deferredErrorSupport) {
 
         this.executionStepInfo = assertNotNull(executionStepInfo, "executionStepInfo is null");
+        this.localContext = localContext;
         this.fields = assertNotNull(fields, "fields is null");
         this.source = source;
         this.arguments = arguments;
@@ -75,6 +78,10 @@ public class ExecutionStrategyParameters {
         return path;
     }
 
+    public Object getLocalContext() {
+        return localContext;
+    }
+
     public int getListSize() {
         return listSize;
     }
@@ -93,6 +100,7 @@ public class ExecutionStrategyParameters {
 
     /**
      * This returns the current field in its query representations.
+     *
      * @return the current merged fields
      */
     public MergedField getField() {
@@ -122,6 +130,7 @@ public class ExecutionStrategyParameters {
     public static class Builder {
         ExecutionStepInfo executionStepInfo;
         Object source;
+        Object localContext;
         MergedSelectionSet fields;
         Map<String, Object> arguments;
         NonNullableFieldValidator nonNullableFieldValidator;
@@ -144,6 +153,7 @@ public class ExecutionStrategyParameters {
         private Builder(ExecutionStrategyParameters oldParameters) {
             this.executionStepInfo = oldParameters.executionStepInfo;
             this.source = oldParameters.source;
+            this.localContext = oldParameters.localContext;
             this.fields = oldParameters.fields;
             this.arguments = oldParameters.arguments;
             this.nonNullableFieldValidator = oldParameters.nonNullableFieldValidator;
@@ -177,6 +187,11 @@ public class ExecutionStrategyParameters {
 
         public Builder source(Object source) {
             this.source = source;
+            return this;
+        }
+
+        public Builder localContext(Object localContext) {
+            this.localContext = localContext;
             return this;
         }
 
@@ -216,7 +231,7 @@ public class ExecutionStrategyParameters {
         }
 
         public ExecutionStrategyParameters build() {
-            return new ExecutionStrategyParameters(executionStepInfo, source, fields, arguments, nonNullableFieldValidator, path, currentField, listSize, currentListIndex, parent, deferredErrorSupport);
+            return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, arguments, nonNullableFieldValidator, path, currentField, listSize, currentListIndex, parent, deferredErrorSupport);
         }
     }
 }

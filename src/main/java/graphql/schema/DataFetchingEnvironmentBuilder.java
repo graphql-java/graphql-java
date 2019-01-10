@@ -29,6 +29,7 @@ public class DataFetchingEnvironmentBuilder {
                 .source(environment.getSource())
                 .arguments(environment.getArguments())
                 .context(environment.getContext())
+                .localContext(environment.getLocalContext())
                 .root(environment.getRoot())
                 .fieldDefinition(environment.getFieldDefinition())
                 .mergedField(environment.getMergedField())
@@ -58,6 +59,7 @@ public class DataFetchingEnvironmentBuilder {
     private Object source;
     private Map<String, Object> arguments = Collections.emptyMap();
     private Object context;
+    private Object localContext;
     private Object root;
     private GraphQLFieldDefinition fieldDefinition;
     private MergedField mergedField;
@@ -82,6 +84,11 @@ public class DataFetchingEnvironmentBuilder {
 
     public DataFetchingEnvironmentBuilder context(Object context) {
         this.context = context;
+        return this;
+    }
+
+    public DataFetchingEnvironmentBuilder localContext(Object localContext) {
+        this.localContext = localContext;
         return this;
     }
 
@@ -141,7 +148,7 @@ public class DataFetchingEnvironmentBuilder {
     }
 
     public DataFetchingEnvironment build() {
-        return new DataFetchingEnvironmentImpl(source, arguments, context, root,
+        return new DataFetchingEnvironmentImpl(source, arguments, context, localContext, root,
                 fieldDefinition, mergedField, fieldType, parentType, graphQLSchema, fragmentsByName, executionId, selectionSet,
                 executionStepInfo,
                 executionContext);

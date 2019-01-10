@@ -15,11 +15,12 @@ class ExecutionStrategyParametersTest extends Specification {
         def parameters = newParameters()
                 .executionStepInfo(newExecutionStepInfo().type(GraphQLString))
                 .source(new Object())
+                .localContext("localContext")
                 .fields(mergedSelectionSet("a": []))
                 .build()
 
         when:
-        def newParameters = parameters.transform { it -> it.source(123) }
+        def newParameters = parameters.transform { it -> it.source(123).localContext("newLocalContext") }
 
         then:
         newParameters.getExecutionStepInfo() == parameters.getExecutionStepInfo()
@@ -27,6 +28,7 @@ class ExecutionStrategyParametersTest extends Specification {
 
         newParameters.getSource() != parameters.getSource()
         newParameters.getSource() == 123
+        newParameters.getLocalContext() == "newLocalContext"
     }
 
 }

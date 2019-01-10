@@ -12,6 +12,7 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
+import graphql.execution.FetchedValue;
 import graphql.execution.MergedField;
 import graphql.execution.UnboxPossibleOptional;
 import graphql.execution.ValuesResolver;
@@ -37,6 +38,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
+import static java.util.Collections.singletonList;
 
 @Internal
 public class ValueFetcher {
@@ -54,18 +56,21 @@ public class ValueFetcher {
 
     public CompletableFuture<List<FetchedValue>> fetchBatchedValues(ExecutionContext executionContext, List<Object> sources, MergedField field, List<ExecutionStepInfo> executionInfos) {
         ExecutionStepInfo executionStepInfo = executionInfos.get(0);
+        // TODO - add support for field context to batching code
+        Object todoLocalContext = null;
         if (isDataFetcherBatched(executionContext, executionStepInfo)) {
-            return fetchValue(executionContext, sources, field, executionStepInfo)
+            return fetchValue(executionContext, sources, todoLocalContext, field, executionStepInfo)
                     .thenApply(fetchedValue -> extractBatchedValues(fetchedValue, sources.size()));
         } else {
             List<CompletableFuture<FetchedValue>> fetchedValues = new ArrayList<>();
             for (int i = 0; i < sources.size(); i++) {
-                fetchedValues.add(fetchValue(executionContext, sources.get(i), field, executionInfos.get(i)));
+                fetchedValues.add(fetchValue(executionContext, sources.get(i), todoLocalContext, field, executionInfos.get(i)));
             }
             return Async.each(fetchedValues);
         }
     }
 
+    @SuppressWarnings("unchecked")
     private List<FetchedValue> extractBatchedValues(FetchedValue fetchedValueContainingList, int expectedSize) {
         List<Object> list = (List<Object>) fetchedValueContainingList.getFetchedValue();
         Assert.assertTrue(list.size() == expectedSize, "Unexpected result size");
@@ -77,7 +82,12 @@ public class ValueFetcher {
             } else {
                 errors = Collections.emptyList();
             }
-            FetchedValue fetchedValue = new FetchedValue(list.get(i), fetchedValueContainingList.getRawFetchedValue(), errors);
+            FetchedValue fetchedValue = FetchedValue.newFetchedValue()
+                    .fetchedValue(list.get(i))
+                    .rawFetchedValue(fetchedValueContainingList.getRawFetchedValue())
+                    .errors(errors)
+                    .localContext(fetchedValueContainingList.getLocalContext())
+                    .build();
             result.add(fetchedValue);
         }
         return result;
@@ -95,7 +105,7 @@ public class ValueFetcher {
         return dataFetcher instanceof BatchedDataFetcher;
     }
 
-    public CompletableFuture<FetchedValue> fetchValue(ExecutionContext executionContext, Object source, MergedField sameFields, ExecutionStepInfo executionInfo) {
+    public CompletableFuture<FetchedValue> fetchValue(ExecutionContext executionContext, Object source, Object localContext, MergedField sameFields, ExecutionStepInfo executionInfo) {
         Field field = sameFields.getSingleField();
         GraphQLFieldDefinition fieldDef = executionInfo.getFieldDefinition();
 
@@ -109,6 +119,7 @@ public class ValueFetcher {
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(source)
+                .localContext(localContext)
                 .arguments(argumentValues)
                 .fieldDefinition(fieldDef)
                 .mergedField(sameFields)
@@ -121,24 +132,24 @@ public class ValueFetcher {
         ExecutionId executionId = executionContext.getExecutionId();
         ExecutionPath path = executionInfo.getPath();
         return callDataFetcher(codeRegistry, parentType, fieldDef, environment, executionId, path)
-                .thenApply(rawFetchedValue -> new FetchedValue(rawFetchedValue, rawFetchedValue, Collections.emptyList()))
+                .thenApply(rawFetchedValue -> FetchedValue.newFetchedValue()
+                        .fetchedValue(rawFetchedValue)
+                        .rawFetchedValue(rawFetchedValue)
+                        .build())
                 .exceptionally(exception -> handleExceptionWhileFetching(field, path, exception))
-                .thenApply(result -> unboxPossibleDataFetcherResult(sameFields, path, result))
+                .thenApply(result -> unboxPossibleDataFetcherResult(sameFields, path, result, localContext))
                 .thenApply(this::unboxPossibleOptional);
     }
 
     private FetchedValue handleExceptionWhileFetching(Field field, ExecutionPath path, Throwable exception) {
         ExceptionWhileDataFetching exceptionWhileDataFetching = new ExceptionWhileDataFetching(path, exception, field.getSourceLocation());
-        FetchedValue fetchedValue = new FetchedValue(
-                null,
-                null,
-                Collections.singletonList(exceptionWhileDataFetching));
-        return fetchedValue;
+        return FetchedValue.newFetchedValue().errors(singletonList(exceptionWhileDataFetching)).build();
     }
 
     private FetchedValue unboxPossibleOptional(FetchedValue result) {
-        return new FetchedValue(UnboxPossibleOptional.unboxPossibleOptional(result.getFetchedValue()), result.getRawFetchedValue(), result.getErrors());
-
+        return result.transform(
+                builder -> builder.fetchedValue(UnboxPossibleOptional.unboxPossibleOptional(result.getFetchedValue()))
+        );
     }
 
     private CompletableFuture<Object> callDataFetcher(GraphQLCodeRegistry codeRegistry, GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment, ExecutionId executionId, ExecutionPath path) {
@@ -162,7 +173,9 @@ public class ValueFetcher {
             return;
         }
         if (fetchedValue instanceof CompletionStage) {
-            ((CompletionStage<Object>) fetchedValue).whenComplete((value, throwable) -> {
+            //noinspection unchecked
+            CompletionStage<Object> stage = (CompletionStage<Object>) fetchedValue;
+            stage.whenComplete((value, throwable) -> {
                 if (throwable != null) {
                     cf.completeExceptionally(throwable);
                 } else {
@@ -172,10 +185,9 @@ public class ValueFetcher {
             return;
         }
         cf.complete(fetchedValue);
-
     }
 
-    private FetchedValue unboxPossibleDataFetcherResult(MergedField sameField, ExecutionPath executionPath, FetchedValue result) {
+    private FetchedValue unboxPossibleDataFetcherResult(MergedField sameField, ExecutionPath executionPath, FetchedValue result, Object localContext) {
         if (result.getFetchedValue() instanceof DataFetcherResult) {
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result.getFetchedValue();
             List<AbsoluteGraphQLError> addErrors = dataFetcherResult.getErrors().stream()
@@ -183,11 +195,20 @@ public class ValueFetcher {
                     .collect(Collectors.toList());
             List<GraphQLError> newErrors = new ArrayList<>(result.getErrors());
             newErrors.addAll(addErrors);
-            return new FetchedValue(dataFetcherResult.getData(), result.getRawFetchedValue(), newErrors);
+
+            Object newLocalContext = dataFetcherResult.getLocalContext();
+            if (newLocalContext == null) {
+                // if the field returns nothing then they get the context of their parent field
+                newLocalContext = localContext;
+            }
+            return FetchedValue.newFetchedValue()
+                    .fetchedValue(dataFetcherResult.getData())
+                    .rawFetchedValue(result.getRawFetchedValue())
+                    .errors(newErrors)
+                    .localContext(newLocalContext)
+                    .build();
         } else {
             return result;
         }
     }
-
-
 }

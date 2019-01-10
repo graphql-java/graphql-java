@@ -15,17 +15,25 @@ import java.util.Map;
 @Internal
 public class FieldSubSelection {
 
-    private Object source;
+    private final Object source;
+    private final Object localContext;
     // the type of this must be objectType and is the parent executionStepInfo for all mergedSelectionSet
-    private ExecutionStepInfo executionInfo;
-    private MergedSelectionSet mergedSelectionSet;
+    private final ExecutionStepInfo executionInfo;
+    private final MergedSelectionSet mergedSelectionSet;
+
+    private FieldSubSelection(Builder builder) {
+        this.source = builder.source;
+        this.localContext = builder.localContext;
+        this.executionInfo = builder.executionInfo;
+        this.mergedSelectionSet = builder.mergedSelectionSet;
+    }
 
     public Object getSource() {
         return source;
     }
 
-    public void setSource(Object source) {
-        this.source = source;
+    public Object getLocalContext() {
+        return localContext;
     }
 
     public Map<String, MergedField> getSubFields() {
@@ -36,16 +44,8 @@ public class FieldSubSelection {
         return mergedSelectionSet;
     }
 
-    public void setMergedSelectionSet(MergedSelectionSet mergedSelectionSet) {
-        this.mergedSelectionSet = mergedSelectionSet;
-    }
-
     public ExecutionStepInfo getExecutionStepInfo() {
         return executionInfo;
-    }
-
-    public void setExecutionStepInfo(ExecutionStepInfo executionInfo) {
-        this.executionInfo = executionInfo;
     }
 
     @Override
@@ -57,10 +57,41 @@ public class FieldSubSelection {
                 '}';
     }
 
-    public String toShortString() {
-        return "FieldSubSelection{" +
-                "fields=" + mergedSelectionSet.getSubFields().keySet() +
-                '}';
+    public static Builder newFieldSubSelection() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Object source;
+        private Object localContext;
+        private ExecutionStepInfo executionInfo;
+        private MergedSelectionSet mergedSelectionSet;
+
+        public Builder source(Object source) {
+            this.source = source;
+            return this;
+        }
+
+        public Builder localContext(Object localContext) {
+            this.localContext = localContext;
+            return this;
+        }
+
+        public Builder executionInfo(ExecutionStepInfo executionInfo) {
+            this.executionInfo = executionInfo;
+            return this;
+        }
+
+        public Builder mergedSelectionSet(MergedSelectionSet mergedSelectionSet) {
+            this.mergedSelectionSet = mergedSelectionSet;
+            return this;
+        }
+
+        public FieldSubSelection build() {
+            return new FieldSubSelection(this);
+        }
+
+
     }
 
 }
