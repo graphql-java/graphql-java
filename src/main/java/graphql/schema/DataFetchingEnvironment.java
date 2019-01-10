@@ -101,7 +101,9 @@ public interface DataFetchingEnvironment {
 
 
     /**
-     * Use {@link #getMergedField()}.
+     * @return the list of fields
+     *
+     * @deprecated Use {@link #getMergedField()}.
      */
     @Deprecated
     List<Field> getFields();

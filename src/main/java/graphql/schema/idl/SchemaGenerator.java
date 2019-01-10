@@ -356,7 +356,7 @@ public class SchemaGenerator {
     }
 
     private GraphQLObjectType buildOperation(BuildContext buildCtx, OperationTypeDefinition operation) {
-        Type type = operation.getType();
+        Type type = operation.getTypeName();
 
         return buildOutputType(buildCtx, type);
     }
