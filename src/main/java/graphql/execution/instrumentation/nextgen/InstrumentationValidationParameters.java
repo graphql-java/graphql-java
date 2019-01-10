@@ -1,9 +1,9 @@
 package graphql.execution.instrumentation.nextgen;
 
+import graphql.ExecutionInput;
 import graphql.Internal;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
-import graphql.nextgen.ExecutionInput;
 import graphql.schema.GraphQLSchema;
 
 /**

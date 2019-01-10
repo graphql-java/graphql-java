@@ -8,9 +8,9 @@ import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
 
+import static graphql.ExecutionInput.newExecutionInput
 import static graphql.TestUtil.schema
 import static graphql.execution.DataFetcherResult.newResult
-import static graphql.nextgen.ExecutionInput.newExecutionInput
 
 class DefaultExecutionStrategyTest extends Specification {
 

@@ -1,5 +1,6 @@
 package graphql.execution.nextgen;
 
+import graphql.ExecutionInput;
 import graphql.Internal;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
@@ -15,7 +16,6 @@ import graphql.language.FragmentDefinition;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
-import graphql.nextgen.ExecutionInput;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 

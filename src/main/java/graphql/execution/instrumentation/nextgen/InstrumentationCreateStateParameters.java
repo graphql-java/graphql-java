@@ -1,7 +1,7 @@
 package graphql.execution.instrumentation.nextgen;
 
+import graphql.ExecutionInput;
 import graphql.Internal;
-import graphql.nextgen.ExecutionInput;
 import graphql.schema.GraphQLSchema;
 
 /**

@@ -1,5 +1,6 @@
 package graphql.nextgen;
 
+import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.Internal;

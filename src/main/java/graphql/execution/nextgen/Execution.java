@@ -1,5 +1,6 @@
 package graphql.execution.nextgen;
 
+import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
@@ -9,7 +10,6 @@ import graphql.execution.ExecutionId;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.nextgen.result.ResultNodesUtil;
 import graphql.language.Document;
-import graphql.nextgen.ExecutionInput;
 import graphql.schema.GraphQLSchema;
 
 import java.util.concurrent.CompletableFuture;
