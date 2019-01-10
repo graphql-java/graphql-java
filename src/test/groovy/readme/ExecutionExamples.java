@@ -10,6 +10,7 @@ import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.AsyncSerialExecutionStrategy;
 import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
+import graphql.execution.DataFetcherExceptionHandlerResult;
 import graphql.execution.ExecutionStrategy;
 import graphql.execution.ExecutorServiceExecutionStrategy;
 import graphql.language.SourceLocation;
@@ -60,7 +61,7 @@ public class ExecutionExamples {
         //::/FigureA
     }
 
-    @SuppressWarnings({"Convert2MethodRef","unused","FutureReturnValueIgnored"})
+    @SuppressWarnings({"Convert2MethodRef", "unused", "FutureReturnValueIgnored"})
     private void simpleAsyncQueryExecution() throws Exception {
         //::FigureB
         GraphQL graphQL = buildSchema();
@@ -158,14 +159,23 @@ public class ExecutionExamples {
     private void exceptionHandler() {
         //::FigureI
         DataFetcherExceptionHandler handler = new DataFetcherExceptionHandler() {
+
             @Override
-            public void accept(DataFetcherExceptionHandlerParameters handlerParameters) {
+            public DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
                 //
                 // do your custom handling here.  The parameters have all you need
+                GraphQLError buildCustomError = buildCustomError(handlerParameters);
+
+                return DataFetcherExceptionHandlerResult.newResult()
+                        .error(buildCustomError).build();
             }
         };
         ExecutionStrategy executionStrategy = new AsyncExecutionStrategy(handler);
         //::/FigureI
+    }
+
+    private GraphQLError buildCustomError(DataFetcherExceptionHandlerParameters handlerParameters) {
+        return null;
     }
 
     private void blockedFields() {
