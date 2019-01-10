@@ -7,6 +7,7 @@ import graphql.UnresolvedTypeError;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStepInfoFactory;
+import graphql.execution.FetchedValue;
 import graphql.execution.MergedField;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.ResolveType;

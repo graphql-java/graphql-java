@@ -89,7 +89,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  * <p>
  * The first phase (data fetching) is handled by the method {@link #fetchField(ExecutionContext, ExecutionStrategyParameters)}
  * <p>
- * The second phase (value completion) is handled by the methods {@link #completeField(ExecutionContext, ExecutionStrategyParameters, Object)}
+ * The second phase (value completion) is handled by the methods {@link #completeField(ExecutionContext, ExecutionStrategyParameters, FetchedValue)}
  * and the other "completeXXX" methods.
  * <p>
  * The order of fields fetching and completion is up to the execution strategy. As the graphql specification
@@ -194,7 +194,7 @@ public abstract class ExecutionStrategy {
                 new InstrumentationFieldParameters(executionContext, fieldDef, createExecutionStepInfo(executionContext, parameters, fieldDef))
         );
 
-        CompletableFuture<Object> fetchFieldFuture = fetchField(executionContext, parameters);
+        CompletableFuture<FetchedValue> fetchFieldFuture = fetchField(executionContext, parameters);
         CompletableFuture<FieldValueInfo> result = fetchFieldFuture.thenApply((fetchedValue) ->
                 completeField(executionContext, parameters, fetchedValue));
 
@@ -219,7 +219,7 @@ public abstract class ExecutionStrategy {
      *
      * @throws NonNullableFieldWasNullException in the future if a non null field resolves to a null value
      */
-    protected CompletableFuture<Object> fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    protected CompletableFuture<FetchedValue> fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         MergedField field = parameters.getField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field.getSingleField());
@@ -233,6 +233,7 @@ public abstract class ExecutionStrategy {
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(parameters.getSource())
+                .localContext(parameters.getLocalContext())
                 .arguments(argumentValues)
                 .fieldDefinition(fieldDef)
                 .mergedField(parameters.getField())
@@ -275,22 +276,36 @@ public abstract class ExecutionStrategy {
                         return result;
                     }
                 })
-                .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result))
-                .thenApply(UnboxPossibleOptional::unboxPossibleOptional);
+                .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result));
     }
 
-    Object unboxPossibleDataFetcherResult(ExecutionContext executionContext,
-                                          ExecutionStrategyParameters parameters,
-                                          Object result) {
+    FetchedValue unboxPossibleDataFetcherResult(ExecutionContext executionContext,
+                                                ExecutionStrategyParameters parameters,
+                                                Object result) {
+
         if (result instanceof DataFetcherResult) {
             //noinspection unchecked
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result;
             dataFetcherResult.getErrors().stream()
                     .map(relError -> new AbsoluteGraphQLError(parameters, relError))
                     .forEach(executionContext::addError);
-            return dataFetcherResult.getData();
+
+            Object localContext = dataFetcherResult.getLocalContext();
+            if (localContext == null) {
+                // if the field returns nothing then they get the context of their parent field
+                localContext = parameters.getLocalContext();
+            }
+            return FetchedValue.newFetchedValue()
+                    .fetchedValue(UnboxPossibleOptional.unboxPossibleOptional(dataFetcherResult.getData()))
+                    .rawFetchedValue(dataFetcherResult.getData())
+                    .errors(dataFetcherResult.getErrors())
+                    .localContext(localContext)
+                    .build();
         } else {
-            return result;
+            return FetchedValue.newFetchedValue()
+                    .fetchedValue(UnboxPossibleOptional.unboxPossibleOptional(result))
+                    .rawFetchedValue(result)
+                    .build();
         }
     }
 
@@ -333,7 +348,7 @@ public abstract class ExecutionStrategy {
      *
      * @throws NonNullableFieldWasNullException in the {@link FieldValueInfo#getFieldValue()} future if a non null field resolves to a null value
      */
-    protected FieldValueInfo completeField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object fetchedValue) {
+    protected FieldValueInfo completeField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, FetchedValue fetchedValue) {
         Field field = parameters.getField().getSingleField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
@@ -353,7 +368,8 @@ public abstract class ExecutionStrategy {
         ExecutionStrategyParameters newParameters = parameters.transform(builder ->
                 builder.executionStepInfo(executionStepInfo)
                         .arguments(argumentValues)
-                        .source(fetchedValue)
+                        .source(fetchedValue.getFetchedValue())
+                        .localContext(fetchedValue.getLocalContext())
                         .nonNullFieldValidator(nonNullableFieldValidator)
         );
 

@@ -696,11 +696,14 @@ class ExecutionStrategyTest extends Specification {
 
         def executionData = ["child": [:]]
         when:
-        def executionResult = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters,
-                new DataFetcherResult(executionData, [new DataFetchingErrorGraphQLError("bad foo", ["child", "foo"])]))
+        def fetchedValue = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters,
+                DataFetcherResult.newResult().data(executionData)
+                        .error(new DataFetchingErrorGraphQLError("bad foo", ["child", "foo"]))
+                        .build()
+        )
 
         then:
-        executionResult == executionData
+        fetchedValue.getFetchedValue() == executionData
         executionContext.getErrors()[0].locations == [new SourceLocation(7, 20)]
         executionContext.getErrors()[0].message == "bad foo"
         executionContext.getErrors()[0].path == ["parent", "child", "foo"]
@@ -723,11 +726,12 @@ class ExecutionStrategyTest extends Specification {
 
         def executionData = ["child": [:]]
         when:
-        def executionResult = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters,
-                new DataFetcherResult(executionData, [new DataFetchingErrorGraphQLError("bad foo")]))
-
+        def fetchedValue = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters,
+                DataFetcherResult.newResult().data(executionData)
+                        .error(new DataFetchingErrorGraphQLError("bad foo"))
+                        .build())
         then:
-        executionResult == executionData
+        fetchedValue.getFetchedValue() == executionData
         executionContext.getErrors()[0].locations == null
         executionContext.getErrors()[0].message == "bad foo"
         executionContext.getErrors()[0].path == null

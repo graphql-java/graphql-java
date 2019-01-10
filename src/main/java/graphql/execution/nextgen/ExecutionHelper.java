@@ -75,10 +75,13 @@ public class ExecutionHelper {
         MergedSelectionSet mergedSelectionSet = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
         ExecutionStepInfo executionInfo = newExecutionStepInfo().type(operationRootType).path(ExecutionPath.rootPath()).build();
 
-        FieldSubSelection fieldSubSelection = new FieldSubSelection();
-        fieldSubSelection.setSource(executionInput.getRoot());
-        fieldSubSelection.setMergedSelectionSet(mergedSelectionSet);
-        fieldSubSelection.setExecutionStepInfo(executionInfo);
+        FieldSubSelection fieldSubSelection = FieldSubSelection.newFieldSubSelection()
+                .source(executionInput.getRoot())
+                .localContext(executionInput.getContext())
+                .mergedSelectionSet(mergedSelectionSet)
+                .executionInfo(executionInfo)
+                .build();
+
         ExecutionData executionData = new ExecutionData();
         executionData.executionContext = executionContext;
         executionData.fieldSubSelection = fieldSubSelection;
