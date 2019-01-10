@@ -100,6 +100,12 @@ artifacts {
     archives javadocJar
 }
 
+test {
+    testLogging {
+        exceptionFormat = 'full'
+    }
+}
+
 allprojects {
     tasks.withType(Javadoc) {
         exclude('**/antlr/**')
