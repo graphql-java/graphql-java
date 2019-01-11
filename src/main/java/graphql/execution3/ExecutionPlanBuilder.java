@@ -172,11 +172,6 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
             }
 
             @Override
-            public <S> S computeVarIfAbsent(Class<? super S> key, BiFunction<? super TraverserContext<Node>, ? super Class<S>, ? extends S> provider) {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-            }
-
-            @Override
             public <S> S getVar(Class<? super S> key) {
                 return (S)vars.computeIfAbsent(key, k -> Optional
                         .ofNullable(parent)
@@ -200,11 +195,6 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
                 return Optional
                     .ofNullable(result)
                     .orElseGet(() -> result = getParentResult());
-            }
-
-            @Override
-            public Object computeResultIfAbsent(Function<? super TraverserContext<Node>, ? extends Object> provider) {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
             }
 
             @Override

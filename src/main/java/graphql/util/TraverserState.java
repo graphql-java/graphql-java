@@ -156,10 +156,8 @@ public abstract class TraverserState<T> {
             }
 
             @Override
-            public <S> S computeVarIfAbsent(Class<? super S> key, BiFunction<? super TraverserContext<T>, ? super Class<S>, ? extends S> provider) {
-                assertNotNull(provider);
-                
-                return (S) key.cast(vars.computeIfAbsent(key, k -> provider.apply(this, (Class<S>)k)));
+            public <S> S getVar(Class<? super S> key) {
+                return (S)vars.get(key);
             }
 
             @Override
@@ -174,12 +172,8 @@ public abstract class TraverserState<T> {
             }
 
             @Override
-            public Object computeResultIfAbsent(Function<? super TraverserContext<T>, ? extends Object> provider) {
-                Objects.requireNonNull(provider);
-                
-                return Optional
-                    .ofNullable(this.result)
-                    .orElseGet(() -> provider.apply(this));
+            public Object getResult() {
+                return this.result;
             }
 
             @Override
