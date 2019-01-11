@@ -6,6 +6,8 @@ import graphql.util.TraversalControl
 import graphql.util.TraverserContext
 import spock.lang.Specification
 
+import static graphql.schema.GraphQLArgument.newArgument
+
 class TypeTraverserTest extends Specification {
 
 
@@ -27,7 +29,7 @@ class TypeTraverserTest extends Specification {
         when:
         def visitor = new GraphQLTestingVisitor()
 
-        new TypeTraverser().depthFirst(visitor, GraphQLArgument.newArgument()
+        new TypeTraverser().depthFirst(visitor, newArgument()
                 .name("Test")
                 .type(Scalars.GraphQLString)
                 .build())
@@ -38,7 +40,7 @@ class TypeTraverserTest extends Specification {
     def "reachable number argument type"() {
         when:
         def visitor = new GraphQLTestingVisitor()
-        new TypeTraverser().depthFirst(visitor, GraphQLArgument.newArgument()
+        new TypeTraverser().depthFirst(visitor, newArgument()
                 .name("Test")
                 .type(Scalars.GraphQLInt)
                 .build())
@@ -246,7 +248,7 @@ class TypeTraverserTest extends Specification {
     def "reachable argument directive"() {
         when:
         def visitor = new GraphQLTestingVisitor()
-        def argument = GraphQLArgument.newArgument()
+        def argument = newArgument()
                 .name("foo")
                 .type(Scalars.GraphQLString)
                 .withDirective(GraphQLDirective.newDirective()
@@ -339,6 +341,30 @@ class TypeTraverserTest extends Specification {
         then:
         visitor.getStack() == ["input object field: foo", "fallback: foo", "scalar: String", "fallback: String", "directive: bar", "fallback: bar"]
     }
+
+    def "back references is are called when a type reference node is visited more than once"() {
+        when:
+        def visitor = new GraphQLTestingVisitor()
+
+        def typeRef = GraphQLTypeReference.typeRef("String")
+
+        new TypeTraverser().depthFirst(visitor, [
+                newArgument()
+                        .name("Test1")
+                        .type(typeRef)
+                        .build(),
+                newArgument()
+                        .name("Test2")
+                        .type(typeRef)
+                        .build()
+        ])
+        then:
+        visitor.getStack() == ["argument: Test1", "fallback: Test1", "reference: String", "fallback: String",
+                               "argument: Test2", "fallback: Test2", "reference: String", "fallback: String"
+        ]
+
+    }
+
 
     def NOOP_RESOLVER = new TypeResolver() {
         @Override
