@@ -37,7 +37,7 @@ public class AstTransformer {
                 NodePosition generalNodePosition = context.getPosition();
                 if (generalNodePosition != null) {
                     NodeLocation location = new NodeLocation(generalNodePosition.getName(), generalNodePosition.getIndex());
-                    breadCrumbsStack.push(new AstBreadcrumb(context.getParentContext().thisNode(), location));
+                    breadCrumbsStack.push(new AstBreadcrumb(context.getParentNode(), location));
                 }
                 List<AstBreadcrumb> breadcrumbs = new ArrayList<>(breadCrumbsStack);
                 AstZipper astZipper = new AstZipper(context.thisNode(), breadcrumbs);

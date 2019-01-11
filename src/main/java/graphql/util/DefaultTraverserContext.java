@@ -72,14 +72,14 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     @Override
     public void changeNode(T newNode) {
         assertNotNull(newNode);
-        assertTrue(this.newNode == null && !this.nodeDeleted, "node can only be changed or deleted once");
+        assertFalse(this.nodeDeleted, "node is deleted");
         this.newNode = newNode;
     }
 
     @Override
     public void deleteNode() {
-        assertNull(this.newNode, "node can only be changed or deleted once");
-        assertFalse(this.nodeDeleted, "node can only be changed or deleted once");
+        assertNull(this.newNode, "node is already changed");
+        assertFalse(this.nodeDeleted, "node is already deleted");
         this.nodeDeleted = true;
     }
 
