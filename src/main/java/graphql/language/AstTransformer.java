@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
@@ -21,9 +22,7 @@ import static graphql.Assert.assertNotNull;
  */
 @PublicApi
 public class AstTransformer {
-
-
-    public Node transform(Node root, NodeVisitor nodeVisitor) {
+    public Node transform(Node root, NodeVisitor nodeVisitor, Map<Class<?>, Object> rootVars) {
         assertNotNull(root);
         assertNotNull(nodeVisitor);
 
@@ -57,8 +56,12 @@ public class AstTransformer {
         };
 
         Traverser<Node> nodeTraverser = Traverser.depthFirstWithNamedChildren(node -> node.getNamedChildren().getChildren(), null, astMultiZipper);
+        nodeTraverser.rootVars(rootVars);
         AstMultiZipper multiZipperResult = (AstMultiZipper) nodeTraverser.traverse(root, nodeTraverserVisitor).getAccumulatedResult();
         return multiZipperResult.toRootNode();
     }
 
+    public Node transform(Node root, NodeVisitor nodeVisitor) {
+        return transform(root, nodeVisitor, Collections.emptyMap());
+    }
 }

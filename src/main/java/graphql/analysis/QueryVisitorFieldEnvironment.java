@@ -45,4 +45,9 @@ public interface QueryVisitorFieldEnvironment {
     SelectionSetContainer getSelectionSetContainer();
 
     TraverserContext<Node> getTraverserContext();
+
+    /**
+     * @return false if field should not be included due to evaluation of conditional directive.
+     */
+    boolean shouldInclude();
 }

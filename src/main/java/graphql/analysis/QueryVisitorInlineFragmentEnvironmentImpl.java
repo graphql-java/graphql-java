@@ -2,20 +2,36 @@ package graphql.analysis;
 
 import graphql.Internal;
 import graphql.language.InlineFragment;
+import graphql.language.Node;
+import graphql.util.TraverserContext;
 
 import java.util.Objects;
 
 @Internal
 public class QueryVisitorInlineFragmentEnvironmentImpl implements QueryVisitorInlineFragmentEnvironment {
     private final InlineFragment inlineFragment;
+    private final boolean shouldInclude;
+    private final TraverserContext<Node> traverserContext;
 
-    public QueryVisitorInlineFragmentEnvironmentImpl(InlineFragment inlineFragment) {
+    public QueryVisitorInlineFragmentEnvironmentImpl(InlineFragment inlineFragment, boolean shouldInclude, TraverserContext<Node> traverserContext) {
         this.inlineFragment = inlineFragment;
+        this.shouldInclude = shouldInclude;
+        this.traverserContext = traverserContext;
     }
 
     @Override
     public InlineFragment getInlineFragment() {
         return inlineFragment;
+    }
+
+    @Override
+    public TraverserContext<Node> getTraverserContext() {
+        return traverserContext;
+    }
+
+    @Override
+    public boolean shouldInclude() {
+        return shouldInclude;
     }
 
     @Override
