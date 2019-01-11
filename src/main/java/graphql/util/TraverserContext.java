@@ -1,6 +1,9 @@
 package graphql.util;
 
 import graphql.PublicApi;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -36,14 +39,21 @@ public interface TraverserContext<T> {
      *
      * @return the parent result
      */
-    Object getParentResult();
+    default Object getParentResult() {
+        return Optional
+            .ofNullable(getParentContext())
+            .map(TraverserContext::getResult)
+            .orElse(null);
+    }
 
     /**
      * Informs that the current node has been already "visited"
      *
      * @return {@code true} if a node had been already visited
      */
-    boolean isVisited();
+    default boolean isVisited() {
+        return visitedNodes().contains(thisNode());
+    }
 
     /**
      * Obtains all visited nodes and values received by the {@link TraverserVisitor#enter(graphql.util.TraverserContext) }
@@ -118,5 +128,4 @@ public interface TraverserContext<T> {
      * @return the initial data
      */
     Object getInitialData();
-
 }
