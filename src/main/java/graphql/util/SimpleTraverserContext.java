@@ -46,11 +46,6 @@ public class SimpleTraverserContext<T> implements TraverserContext<T> {
     }
 
     @Override
-    public <S> S getVar(Class<? super S> key) {
-        return null;
-    }
-
-    @Override
     public <S> S computeVarIfAbsent(Class<? super S> key, BiFunction<? super TraverserContext<T>, ? super Class<S>, ? extends S> provider) {
         return null;
     }
@@ -63,11 +58,6 @@ public class SimpleTraverserContext<T> implements TraverserContext<T> {
     @Override
     public void setResult(Object result) {
         this.result = result;
-    }
-
-    @Override
-    public Object getResult() {
-        return this.result;
     }
 
     @Override
