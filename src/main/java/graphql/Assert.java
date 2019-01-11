@@ -22,6 +22,20 @@ public class Assert {
         throw new AssertException("Object required to be not null");
     }
 
+    public static <T> void assertNull(T object, String format, Object... args) {
+        if (object == null) {
+            return;
+        }
+        throw new AssertException(format(format, args));
+    }
+
+    public static <T> void assertNull(T object) {
+        if (object == null) {
+            return;
+        }
+        throw new AssertException("Object required to be null");
+    }
+
     public static <T> T assertNeverCalled() {
         throw new AssertException("Should never been called");
     }
@@ -50,6 +64,13 @@ public class Assert {
 
     public static void assertTrue(boolean condition, String format, Object... args) {
         if (condition) {
+            return;
+        }
+        throw new AssertException(format(format, args));
+    }
+
+    public static void assertFalse(boolean condition, String format, Object... args) {
+        if (!condition) {
             return;
         }
         throw new AssertException(format(format, args));

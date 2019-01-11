@@ -99,6 +99,11 @@ public class NodeChildrenContainer {
             return this;
         }
 
+        public Builder removeChild(String key, int index) {
+            this.children.get(key).remove(index);
+            return this;
+        }
+
         public NodeChildrenContainer build() {
             return new NodeChildrenContainer(this.children);
 

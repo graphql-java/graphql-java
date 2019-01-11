@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static graphql.Assert.assertFalse;
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertNull;
 import static graphql.Assert.assertTrue;
 
 @Internal
@@ -15,6 +17,8 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
 
     private final T curNode;
     private T newNode;
+    private boolean nodeDeleted;
+
     private final TraverserContext<T> parent;
     private final Set<T> visited;
     private final Map<Class<?>, Object> vars;
@@ -53,20 +57,36 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
 
     @Override
     public T thisNode() {
+        assertFalse(this.nodeDeleted, "node is deleted");
         if (newNode != null) {
             return newNode;
         }
         return curNode;
     }
 
+    @Override
+    public T originalThisNode() {
+        return curNode;
+    }
 
     @Override
     public void changeNode(T newNode) {
         assertNotNull(newNode);
-        assertTrue(this.newNode == null, "node can only be changed once");
+        assertTrue(this.newNode == null && !this.nodeDeleted, "node can only be changed or deleted once");
         this.newNode = newNode;
     }
 
+    @Override
+    public void deleteNode() {
+        assertNull(this.newNode, "node can only be changed or deleted once");
+        assertFalse(this.nodeDeleted, "node can only be changed or deleted once");
+        this.nodeDeleted = true;
+    }
+
+    @Override
+    public boolean isDeleted() {
+        return this.nodeDeleted;
+    }
 
     @Override
     public TraverserContext<T> getParentContext() {
@@ -82,6 +102,14 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
             curContext = curContext.getParentContext();
         }
         return result;
+    }
+
+    @Override
+    public T getParentNode() {
+        if (parent == null) {
+            return null;
+        }
+        return parent.thisNode();
     }
 
     @Override

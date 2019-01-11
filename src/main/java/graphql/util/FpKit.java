@@ -14,6 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -149,6 +150,14 @@ public class FpKit {
         return listLists.stream()
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
+    }
+
+    public static <T> T findOne(List<T> list, Predicate<T> filter) {
+        return list
+                .stream()
+                .filter(filter)
+                .findFirst()
+                .orElse(null);
     }
 
 }
