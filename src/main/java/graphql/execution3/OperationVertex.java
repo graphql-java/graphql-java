@@ -5,8 +5,10 @@
  */
 package graphql.execution3;
 
+import graphql.language.Node;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLType;
 import java.util.Objects;
 
 /**
@@ -22,6 +24,11 @@ public class OperationVertex extends NodeVertex<OperationDefinition, GraphQLObje
 //    public boolean canResolve() {
 //        return true;
 //    }
+
+    @Override
+    <U extends NodeVertex<? extends Node, ? extends GraphQLType>> U asNodeVertex() {
+        return (U)this;
+    }
 
     @Override
     public int hashCode() {

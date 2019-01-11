@@ -6,8 +6,10 @@
 package graphql.execution3;
 
 import graphql.language.Field;
+import graphql.language.Node;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLType;
 import java.util.Objects;
 
 /**
@@ -32,6 +34,11 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
 
     public Object getScope() {
         return scopeAlias;
+    }
+
+    @Override
+    <U extends NodeVertex<? extends Node, ? extends GraphQLType>> U asNodeVertex() {
+        return (U)this;
     }
 
     @Override

@@ -78,6 +78,8 @@ public abstract class NodeVertex<N extends Node, T extends GraphQLType> extends 
         throw new IllegalArgumentException(String.format("could not cast to '%s'", castTo.getName()));
     }
     
+    abstract <U extends NodeVertex<? extends Node, ? extends GraphQLType>> U asNodeVertex ();
+    
     abstract <U> U accept (U data, NodeVertexVisitor<? super U> visitor);
     
     protected final N node;
