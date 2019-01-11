@@ -44,6 +44,10 @@ import java.util.function.BiFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import graphql.util.TraverserContext;
+import graphql.util.TraverserState;
+import graphql.util.TraverserState.StackTraverserState;
+import graphql.util.TraverserState.TraverserContextBuilder;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -131,9 +135,83 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
         // walk Operations ASTs to record dependencies between fields
         DependencyGraph<NodeVertex<Node, GraphQLType>> executionPlan = new DependencyGraph<>();
         NodeTraverser traverser = new NodeTraverser(this::getChildrenOf, executionPlan);
-        traverser.depthFirst(this, operations);
+        traverser.depthFirst(this, operations, ExecutionPlanBuilder::newTraverserState);
         
         return executionPlan;
+    }
+    
+    private static StackTraverserState<Node> newTraverserState (Object initialData) {
+        return TraverserState.newStackState(initialData, ExecutionPlanBuilder::newTraverserContext);
+    }
+    
+    private static TraverserContext<Node> newTraverserContext (TraverserContextBuilder<Node> builder) {
+        Objects.requireNonNull(builder);
+        
+        Node curNode = builder.getNode();
+        TraverserContext<Node> parent = builder.getParentContext();
+        Map<Class<?>, Object> vars = builder.getVars();
+        Set<Node> visited = builder.getVisited();
+        Object initialData = builder.getInitialData();
+        
+        return new TraverserContext<Node>() {
+            Object result;
+            
+            @Override
+            public Node thisNode() {
+                return curNode;
+            }
+
+            @Override
+            public TraverserContext<Node> getParentContext() {
+                return parent;
+            }
+
+            @Override
+            public Set<Node> visitedNodes() {
+                return visited;
+            }
+
+            @Override
+            public <S> S computeVarIfAbsent(Class<? super S> key, BiFunction<? super TraverserContext<Node>, ? super Class<S>, ? extends S> provider) {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+
+            @Override
+            public <S> S getVar(Class<? super S> key) {
+                return (S)vars.computeIfAbsent(key, k -> Optional
+                        .ofNullable(parent)
+                        .map(p -> p.getVar((Class<S>)k))
+                        .orElse(null));
+            }
+
+            @Override
+            public <S> TraverserContext<Node> setVar(Class<? super S> key, S value) {
+                vars.put(key, value);
+                return this;
+            }
+
+            @Override
+            public void setResult(Object result) {
+                this.result = result;
+            }
+
+            @Override
+            public Object getResult() {
+                return Optional
+                    .ofNullable(result)
+                    .orElseGet(() -> result = getParentResult());
+            }
+
+            @Override
+            public Object computeResultIfAbsent(Function<? super TraverserContext<Node>, ? extends Object> provider) {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+
+            @Override
+            public Object getInitialData() {
+                return initialData;
+            }
+        };
     }
     
     private OperationVertex newOperationVertex (OperationDefinition operationDefinition) {
@@ -161,38 +239,12 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
     private static DependencyGraph<? extends NodeVertex<Node, GraphQLType>> executionPlan (TraverserContext<Node> context) {
         return (DependencyGraph<NodeVertex<Node, GraphQLType>>)context.getInitialData();
     }
-    
-    private static <U> U getNearestVar (TraverserContext<Node> context, Class<? super U> key) {
-        BiFunction<TraverserContext<Node>, Class<U>, U> inNearestScope = 
-            (BiFunction<TraverserContext<Node>, Class<U>, U>)(BiFunction<? super TraverserContext<Node>, ? super Class<U>, ? extends U>)NEAREST_VAR;
-        return context.computeVarIfAbsent(key, inNearestScope);
-    }
-    
-    private static <U> U getNearestResult (TraverserContext<Node> context) {
-        return (U)context.computeResultIfAbsent(NEAREST_RESULT);
-    }
-    
-    private static LeaveOrEnter leaveOrEnter (TraverserContext<Node> context) {
-        return context.getVar(LeaveOrEnter.class);
-    }
 
-    private static FieldCollectorParameters fieldCollectorParameters (TraverserContext<Node> context) {
-        return getNearestVar(context, FieldCollectorParameters.class);
-    }
-    
-    private static OperationVertex operationVertex (TraverserContext<Node> context) {
-        return getNearestVar(context, OperationVertex.class);
-    }
-    
-    private static Field scope (TraverserContext<Node> context) {
-        return getNearestVar(context, Field.class);
-    }
-    
     // NodeVisitor methods
         
     @Override
     public TraversalControl visitOperationDefinition(OperationDefinition node, TraverserContext<Node> context) {
-        switch (leaveOrEnter(context)) {
+        switch (context.getVar(LeaveOrEnter.class)) {
             case ENTER: {
                 OperationVertex vertex = executionPlan(context)
                         .addNode(cast(newOperationVertex(node)))
@@ -223,13 +275,14 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
     
     @Override
     public TraversalControl visitSelectionSet(SelectionSet node, TraverserContext<Node> context) {
-        switch (leaveOrEnter(context)) {
+        switch (context.getVar(LeaveOrEnter.class)) {
             case ENTER: {                                
-                NodeVertex<Node, GraphQLType> vertex = getNearestResult(context);
+                NodeVertex<Node, GraphQLType> parentVertex = (NodeVertex<Node, GraphQLType>)context.getParentResult();
+                
                 // set up parameters to collect child fields
                 FieldCollectorParameters collectorParams = FieldCollectorParameters.newParameters()
                         .schema(schema)
-                        .objectType((GraphQLObjectType)vertex.getType())
+                        .objectType((GraphQLObjectType)parentVertex.getType())
                         .fragments(fragmentsByName)
                         .variables(variables)
                         .build();
@@ -242,9 +295,9 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
 
     @Override
     public TraversalControl visitInlineFragment(InlineFragment node, TraverserContext<Node> context) {
-        switch (leaveOrEnter(context)) {
+        switch (context.getVar(LeaveOrEnter.class)) {
             case ENTER: {
-                if (!FIELD_COLLECTOR.shouldCollectInlineFragment(this, node, context))
+                if (!FIELD_COLLECTOR.shouldCollectInlineFragment(this, node, context.getVar(FieldCollectorParameters.class)))
                     return TraversalControl.ABORT;
             }
         }
@@ -254,9 +307,9 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
 
     @Override
     public TraversalControl visitFragmentSpread(FragmentSpread node, TraverserContext<Node> context) {
-        switch (leaveOrEnter(context)) {
+        switch (context.getVar(LeaveOrEnter.class)) {
             case ENTER: {
-                if (!FIELD_COLLECTOR.shouldCollectFragmentSpread(this, node, context)) 
+                if (!FIELD_COLLECTOR.shouldCollectFragmentSpread(this, node, context.getVar(FieldCollectorParameters.class))) 
                     return TraversalControl.ABORT;
             }
         }
@@ -266,21 +319,22 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
 
     @Override
     public TraversalControl visitField(Field node, TraverserContext<Node> context) {
-        switch (leaveOrEnter(context)) {
+        switch (context.getVar(LeaveOrEnter.class)) {
             case ENTER: {
-                if (!FIELD_COLLECTOR.shouldCollectField(this, node, context))
+                if (!FIELD_COLLECTOR.shouldCollectField(this, node))
                     return TraversalControl.ABORT;
 
                 // create a vertex for this node and add dependency on the parent one
                 TraverserContext<Node> parentContext = context.getParentContext();
-                NodeVertex<Node, GraphQLType> parentVertex = getNearestResult(parentContext);
+                NodeVertex<Node, GraphQLType> parentVertex = (NodeVertex<Node, GraphQLType>)parentContext.getResult();
+                
                 FieldVertex vertex = executionPlan(parentContext)
-                        .addNode(cast(newFieldVertex(node, (GraphQLObjectType)parentVertex.getType(), scope(parentContext))))
+                        .addNode(cast(newFieldVertex(node, (GraphQLObjectType)parentVertex.getType(), parentContext.getVar(Field.class))))
                         .as(FieldVertex.class);
                 // FIXME: create a real action
                 cast(vertex).dependsOn(parentVertex, Edge.emptyAction());
                 
-                OperationVertex operationVertex = operationVertex(context);
+                OperationVertex operationVertex = context.getVar(OperationVertex.class);
                 // FIXME: create a real action
                 cast(operationVertex).dependsOn(cast(vertex), Edge.emptyAction());
 
@@ -296,25 +350,24 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
     }
     
     private static class FieldCollectorHelper extends FieldCollector {
-        boolean shouldCollectField (ExecutionPlanBuilder outer, Field node, TraverserContext<Node> context) {
+        boolean shouldCollectField (ExecutionPlanBuilder outer, Field node) {
             if (!conditionalNodes.shouldInclude(outer.variables, node.getDirectives()))
                 return false;
 
             return true;
         }
         
-        boolean shouldCollectInlineFragment (ExecutionPlanBuilder outer, InlineFragment node, TraverserContext<Node> context) {
+        boolean shouldCollectInlineFragment (ExecutionPlanBuilder outer, InlineFragment node, FieldCollectorParameters collectorParams) {
             if (!conditionalNodes.shouldInclude(outer.variables, node.getDirectives()))
                 return false;
 
-            FieldCollectorParameters collectorParameters = fieldCollectorParameters(context);
-            if (!FIELD_COLLECTOR.doesFragmentConditionMatch(collectorParameters, node))
+            if (!doesFragmentConditionMatch(collectorParams, node))
                 return false;
 
             return true;
         }
         
-        boolean shouldCollectFragmentSpread (ExecutionPlanBuilder outer, FragmentSpread node, TraverserContext<Node> context) {
+        boolean shouldCollectFragmentSpread (ExecutionPlanBuilder outer, FragmentSpread node, FieldCollectorParameters collectorParams) {
             if (!conditionalNodes.shouldInclude(outer.variables, node.getDirectives()))
                 return false;
 
@@ -322,8 +375,7 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
             if (!conditionalNodes.shouldInclude(outer.variables, fragmentDefinition.getDirectives()))
                 return false;
 
-            FieldCollectorParameters collectorParameters = fieldCollectorParameters(context);
-            if (!FIELD_COLLECTOR.doesFragmentConditionMatch(collectorParameters, fragmentDefinition))
+            if (!doesFragmentConditionMatch(collectorParams, fragmentDefinition))
                 return false;
 
             return true;
@@ -339,26 +391,6 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
     private /*final*/ Map<String, FragmentDefinition> fragmentsByName = Collections.emptyMap();
     private /*final*/ Map<String, Object> variables = Collections.emptyMap();    
 
-    private static final BiFunction<? super TraverserContext<Node>, ? super Class<Object>, ? extends Object> NEAREST_VAR = 
-            new BiFunction<TraverserContext<Node>, Class<Object>, Object>() {
-        @Override
-        public Object apply(TraverserContext<Node> context, Class<Object> key) {
-            return Optional
-                .ofNullable(context.getParentContext())
-                .map(ctx -> ctx.computeVarIfAbsent(key, this))
-                .orElse(null);
-        }
-    };
-    private static final Function<? super TraverserContext<Node>, ? extends Object> NEAREST_RESULT = 
-            new Function<TraverserContext<Node>, Object>() {
-        @Override
-        public Object apply(TraverserContext<Node> context) {
-            return Optional
-                .ofNullable(context.getParentContext())
-                .map(ctx -> { Object result; context.setResult(result = ctx.computeResultIfAbsent(this)); return result; }) 
-                .orElse(null);
-        }
-    };
     private static final FieldCollectorHelper FIELD_COLLECTOR = new FieldCollectorHelper();
     private static final NodeVertexVisitor<Boolean> IS_FIELD = new NodeVertexVisitor<Boolean>() {
         @Override
