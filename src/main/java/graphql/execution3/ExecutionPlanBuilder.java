@@ -272,16 +272,16 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
                     return TraversalControl.ABORT;
 
                 // create a vertex for this node and add dependency on the parent one
-                NodeVertex<Node, GraphQLType> parentVertex = getNearestResult(context);
-                FieldVertex vertex = executionPlan(context)
-                        .addNode(cast(newFieldVertex(node, (GraphQLObjectType)parentVertex.getType(), scope(context))))
+                TraverserContext<Node> parentContext = context.getParentContext();
+                NodeVertex<Node, GraphQLType> parentVertex = getNearestResult(parentContext);
+                FieldVertex vertex = executionPlan(parentContext)
+                        .addNode(cast(newFieldVertex(node, (GraphQLObjectType)parentVertex.getType(), scope(parentContext))))
                         .as(FieldVertex.class);
-
                 // FIXME: create a real action
                 cast(vertex).dependsOn(parentVertex, Edge.emptyAction());
                 
-                // FIXME: create a real action
                 OperationVertex operationVertex = operationVertex(context);
+                // FIXME: create a real action
                 cast(operationVertex).dependsOn(cast(vertex), Edge.emptyAction());
 
                 // propagate current scope further to children
