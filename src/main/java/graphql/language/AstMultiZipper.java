@@ -67,7 +67,7 @@ public class AstMultiZipper {
     }
 
     public AstZipper getZipperForNode(Node node) {
-        return FpKit.findOne(zippers, zipper -> zipper.getCurNode() == node);
+        return FpKit.findOneOrNull(zippers, zipper -> zipper.getCurNode() == node);
     }
 
     public AstMultiZipper withReplacedZippers(List<AstZipper> zippers) {

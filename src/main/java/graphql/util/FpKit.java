@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
@@ -152,12 +153,15 @@ public class FpKit {
                 .collect(Collectors.toList());
     }
 
-    public static <T> T findOne(List<T> list, Predicate<T> filter) {
+    public static <T> Optional<T> findOne(List<T> list, Predicate<T> filter) {
         return list
                 .stream()
                 .filter(filter)
-                .findFirst()
-                .orElse(null);
+                .findFirst();
+    }
+
+    public static <T> T findOneOrNull(List<T> list, Predicate<T> filter) {
+        return findOne(list, filter).orElse(null);
     }
 
 }
