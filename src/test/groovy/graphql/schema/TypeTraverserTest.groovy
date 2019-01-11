@@ -7,6 +7,7 @@ import graphql.util.TraverserContext
 import spock.lang.Specification
 
 import static graphql.schema.GraphQLArgument.newArgument
+import static graphql.schema.GraphQLTypeReference.typeRef
 
 class TypeTraverserTest extends Specification {
 
@@ -166,7 +167,7 @@ class TypeTraverserTest extends Specification {
     def "reachable reference type"() {
         when:
         def visitor = new GraphQLTestingVisitor()
-        new TypeTraverser().depthFirst(visitor, GraphQLTypeReference.typeRef("something"))
+        new TypeTraverser().depthFirst(visitor, typeRef("something"))
         then:
         visitor.getStack() == ["reference: something", "fallback: something"]
     }
@@ -177,7 +178,7 @@ class TypeTraverserTest extends Specification {
         new TypeTraverser().depthFirst(visitor, GraphQLUnionType.newUnionType()
                 .name("foo")
                 .possibleType(GraphQLObjectType.newObject().name("dummy").build())
-                .possibleType(GraphQLTypeReference.typeRef("dummyRef"))
+                .possibleType(typeRef("dummyRef"))
                 .typeResolver(NOOP_RESOLVER)
                 .build())
         then:
@@ -346,7 +347,7 @@ class TypeTraverserTest extends Specification {
         when:
         def visitor = new GraphQLTestingVisitor()
 
-        def typeRef = GraphQLTypeReference.typeRef("String")
+        def typeRef = typeRef("String")
 
         new TypeTraverser().depthFirst(visitor, [
                 newArgument()
