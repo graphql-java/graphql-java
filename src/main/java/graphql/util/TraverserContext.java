@@ -3,6 +3,7 @@ package graphql.util;
 import graphql.PublicApi;
 
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Traversal context
@@ -59,8 +60,21 @@ public interface TraverserContext<T> {
      *
      * @return a variable value of {@code null}
      */
-    <S> S getVar(Class<? super S> key);
+    default <S> S getVar(Class<? super S> key) {
+        return computeVarIfAbsent(key, k -> null);
+    }
 
+    /**
+     * Obtains a context variable or a default value if local variable is not present
+     * 
+     * @param <S>       type of the variable
+     * @param key       key to lookup the variable value
+     * @param provider  method to provide default value
+     *
+     * @return a variable value of {@code null}
+     */
+    <S> S computeVarIfAbsent (Class<? super S> key, Function<? super Class<S>, ? extends S> provider);
+    
     /**
      * Stores a variable in the context
      *

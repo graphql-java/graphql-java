@@ -5,6 +5,7 @@ import graphql.Internal;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 @Internal
 public class SimpleTraverserContext<T> implements TraverserContext<T> {
@@ -45,6 +46,11 @@ public class SimpleTraverserContext<T> implements TraverserContext<T> {
 
     @Override
     public <S> S getVar(Class<? super S> key) {
+        return null;
+    }
+
+    @Override
+    public <S> S computeVarIfAbsent(Class<? super S> key, Function<? super Class<S>, ? extends S> provider) {
         return null;
     }
 

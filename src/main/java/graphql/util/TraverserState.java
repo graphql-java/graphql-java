@@ -132,6 +132,13 @@ public abstract class TraverserState<T> {
             }
 
             @Override
+            public <S> S computeVarIfAbsent(Class<? super S> key, Function<? super Class<S>, ? extends S> provider) {
+                assertNotNull(provider);
+                
+                return (S) key.cast(vars.computeIfAbsent(key, (Function<Class<?>, Object>)provider));
+            }
+
+            @Override
             public <S> TraverserContext<T> setVar(Class<? super S> key, S value) {
                 vars.put(key, value);
                 return this;
@@ -151,8 +158,6 @@ public abstract class TraverserState<T> {
             public Object getInitialData() {
                 return initialData;
             }
-
-
         };
     }
 
