@@ -37,4 +37,19 @@ public interface GraphQLType {
      * Note! Visitor's operation might return special results to control traversal process.
      */
     TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor);
+
+    /**
+     * Double-dispatch entry point for nodes that are visited more than once.
+     *
+     * {@link graphql.util.TraverserContext#isVisited()} will be true when this call is made
+     *
+     * @param context TraverserContext bound to this graphQL type object
+     * @param visitor Visitor instance that performs actual processing on the types(s)
+     *
+     * @return Result of Visitor's operation.
+     * Note! Visitor's operation might return special results to control traversal process.
+     */
+    default TraversalControl acceptBackRef(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+        return TraversalControl.CONTINUE;
+    }
 }

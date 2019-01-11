@@ -77,6 +77,11 @@ public class TypeTraverser {
         public TraversalControl leave(TraverserContext<GraphQLType> context) {
             return CONTINUE;
         }
+
+        @Override
+        public TraversalControl backRef(TraverserContext<GraphQLType> context) {
+            return context.thisNode().acceptBackRef(context, before);
+        }
     }
 
 }
