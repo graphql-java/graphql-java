@@ -5,7 +5,6 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.UnionTypeDefinition;
 import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -20,6 +19,7 @@ import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
+import graphql.util.TraverserContext;
 
 /**
  * A union type is a polymorphic type that dynamically represents one of more concrete object types.

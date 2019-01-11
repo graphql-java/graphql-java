@@ -4,7 +4,6 @@ package graphql.language;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +11,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.language.NodeUtil.argumentsByName;
+import graphql.util.TraverserContext;
 
 @PublicApi
 public class Directive extends AbstractNode<Directive> implements NamedNode<Directive> {

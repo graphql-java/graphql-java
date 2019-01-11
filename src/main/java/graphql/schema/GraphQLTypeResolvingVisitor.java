@@ -2,12 +2,12 @@ package graphql.schema;
 
 import graphql.Internal;
 import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
+import graphql.util.TraverserContext;
 
 @Internal
 public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {

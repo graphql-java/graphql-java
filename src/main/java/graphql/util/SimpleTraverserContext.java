@@ -4,7 +4,9 @@ import graphql.Internal;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 @Internal
@@ -22,7 +24,6 @@ public class SimpleTraverserContext<T> implements TraverserContext<T> {
     public T thisNode() {
         return node;
     }
-
 
     @Override
     public TraverserContext<T> getParentContext() {
@@ -50,7 +51,7 @@ public class SimpleTraverserContext<T> implements TraverserContext<T> {
     }
 
     @Override
-    public <S> S computeVarIfAbsent(Class<? super S> key, Function<? super Class<S>, ? extends S> provider) {
+    public <S> S computeVarIfAbsent(Class<? super S> key, BiFunction<? super TraverserContext<T>, ? super Class<S>, ? extends S> provider) {
         return null;
     }
 
@@ -66,6 +67,11 @@ public class SimpleTraverserContext<T> implements TraverserContext<T> {
 
     @Override
     public Object getResult() {
+        return this.result;
+    }
+
+    @Override
+    public Object computeResultIfAbsent(Function<? super TraverserContext<T>, ? extends Object> provider) {
         return this.result;
     }
 

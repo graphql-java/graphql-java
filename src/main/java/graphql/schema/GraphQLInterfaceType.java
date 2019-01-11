@@ -5,7 +5,6 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,6 +20,7 @@ import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.lang.String.format;
+import graphql.util.TraverserContext;
 
 /**
  * In graphql, an interface is an abstract type that defines the set of fields that a type must include to

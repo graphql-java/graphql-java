@@ -4,9 +4,9 @@ package graphql.schema;
 import graphql.PublicApi;
 
 import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 
 import static graphql.Assert.assertValidName;
+import graphql.util.TraverserContext;
 
 /**
  * A special type to allow a object/interface types to reference itself. It's replaced with the real type

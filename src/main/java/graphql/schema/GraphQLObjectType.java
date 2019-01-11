@@ -5,7 +5,6 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.ObjectTypeDefinition;
 import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -21,6 +20,7 @@ import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import graphql.util.TraverserContext;
 
 /**
  * This is the work horse type and represents an object with one or more field values that can be retrieved

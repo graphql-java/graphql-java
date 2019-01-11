@@ -6,7 +6,6 @@
 package graphql.execution3;
 
 import graphql.AssertException;
-import graphql.execution.AsyncSerialExecutionStrategy;
 import graphql.execution.ConditionalNodes;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
@@ -24,7 +23,6 @@ import graphql.language.NodeTraverser.LeaveOrEnter;
 import graphql.language.NodeVisitorStub;
 import graphql.language.OperationDefinition;
 import graphql.language.SelectionSet;
-import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
@@ -34,7 +32,6 @@ import graphql.schema.GraphQLTypeUtil;
 import graphql.util.DependencyGraph;
 import graphql.util.Edge;
 import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,10 +40,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
+import java.util.function.BiFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import graphql.util.TraverserContext;
+import java.util.function.Function;
 
 /**
  *
@@ -164,24 +162,30 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
         return (DependencyGraph<NodeVertex<Node, GraphQLType>>)context.getInitialData();
     }
     
+    private static <U> U getNearestVar (TraverserContext<Node> context, Class<? super U> key) {
+        BiFunction<TraverserContext<Node>, Class<U>, U> inNearestScope = 
+            (BiFunction<TraverserContext<Node>, Class<U>, U>)(BiFunction<? super TraverserContext<Node>, ? super Class<U>, ? extends U>)NEAREST_VAR;
+        return context.computeVarIfAbsent(key, inNearestScope);
+    }
+    
+    private static <U> U getNearestResult (TraverserContext<Node> context) {
+        return (U)context.computeResultIfAbsent(NEAREST_RESULT);
+    }
+    
     private static LeaveOrEnter leaveOrEnter (TraverserContext<Node> context) {
         return context.getVar(LeaveOrEnter.class);
     }
 
     private static FieldCollectorParameters fieldCollectorParameters (TraverserContext<Node> context) {
-        return context.getVar(FieldCollectorParameters.class);
+        return getNearestVar(context, FieldCollectorParameters.class);
     }
     
     private static OperationVertex operationVertex (TraverserContext<Node> context) {
-        return context.getVar(OperationVertex.class);
+        return getNearestVar(context, OperationVertex.class);
     }
     
     private static Field scope (TraverserContext<Node> context) {
-        return context.getVar(Field.class);
-    }
-    
-    private static <U> void propagateVar (TraverserContext<Node> context, Class<? super U> varClass) {
-        context.setVar(varClass, context.getParentContext().getVar(varClass));
+        return getNearestVar(context, Field.class);
     }
     
     // NodeVisitor methods
@@ -195,6 +199,7 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
                         .as(OperationVertex.class);      
                 context.setVar(OperationVertex.class, vertex);
                 
+                // propagate my parent vertex to my children
                 context.setResult(vertex);                
                 break;
             }
@@ -220,7 +225,7 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
     public TraversalControl visitSelectionSet(SelectionSet node, TraverserContext<Node> context) {
         switch (leaveOrEnter(context)) {
             case ENTER: {                                
-                NodeVertex<Node, GraphQLType> vertex = (NodeVertex<Node, GraphQLType>)context.getParentResult();
+                NodeVertex<Node, GraphQLType> vertex = getNearestResult(context);
                 // set up parameters to collect child fields
                 FieldCollectorParameters collectorParams = FieldCollectorParameters.newParameters()
                         .schema(schema)
@@ -229,13 +234,6 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
                         .variables(variables)
                         .build();
                 context.setVar(FieldCollectorParameters.class, collectorParams);
-
-                // propagate current OperationVertex further to the next neighbors
-                propagateVar(context, OperationVertex.class);
-                // propagate current scope further to children
-                propagateVar(context, Field.class);
-                // propagate my parent vertex to my children
-                context.setResult(vertex);
             }
         }
         
@@ -246,17 +244,8 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
     public TraversalControl visitInlineFragment(InlineFragment node, TraverserContext<Node> context) {
         switch (leaveOrEnter(context)) {
             case ENTER: {
-                if (!FIELD_COLLECTOR.shouldCollectInlineFragment(this, node, context.getParentContext()))
+                if (!FIELD_COLLECTOR.shouldCollectInlineFragment(this, node, context))
                     return TraversalControl.ABORT;
-
-                // propagate current OperationVertex further to the next neighbors
-                propagateVar(context, OperationVertex.class);
-                // propagate current FieldCollectorParameters further to the next neighbors
-                propagateVar(context, FieldCollectorParameters.class);
-                // propagate current scope further to children
-                propagateVar(context, Field.class);
-                // propagate my parent vertex to my children
-                context.setResult(context.getParentResult());
             }
         }
         
@@ -267,17 +256,8 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
     public TraversalControl visitFragmentSpread(FragmentSpread node, TraverserContext<Node> context) {
         switch (leaveOrEnter(context)) {
             case ENTER: {
-                if (!FIELD_COLLECTOR.shouldCollectFragmentSpread(this, node, context.getParentContext())) 
+                if (!FIELD_COLLECTOR.shouldCollectFragmentSpread(this, node, context)) 
                     return TraversalControl.ABORT;
-                
-                // propagate current OperationVertex further to the next neighbors
-                propagateVar(context, OperationVertex.class);
-                // propagate current FieldCollectorParameters further to the next neighbors
-                propagateVar(context, FieldCollectorParameters.class);
-                // propagate current scope further to children
-                propagateVar(context, Field.class);
-                // propagate my parent vertex to my children
-                context.setResult(context.getParentResult());
             }
         }
         
@@ -288,43 +268,31 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
     public TraversalControl visitField(Field node, TraverserContext<Node> context) {
         switch (leaveOrEnter(context)) {
             case ENTER: {
-                if (!FIELD_COLLECTOR.shouldCollectField(this, node, context.getParentContext()))
+                if (!FIELD_COLLECTOR.shouldCollectField(this, node, context))
                     return TraversalControl.ABORT;
 
                 // create a vertex for this node and add dependency on the parent one
-                TraverserContext<Node> parentContext = context.getParentContext();
-                NodeVertex<Node, GraphQLType> parentVertex = (NodeVertex<Node, GraphQLType>)parentContext.getResult();
-                FieldVertex vertex = executionPlan(parentContext)
-                        .addNode(cast(newFieldVertex(node, (GraphQLObjectType)parentVertex.getType(), scope(parentContext))))
+                NodeVertex<Node, GraphQLType> parentVertex = getNearestResult(context);
+                FieldVertex vertex = executionPlan(context)
+                        .addNode(cast(newFieldVertex(node, (GraphQLObjectType)parentVertex.getType(), scope(context))))
                         .as(FieldVertex.class);
 
                 // FIXME: create a real action
                 cast(vertex).dependsOn(parentVertex, Edge.emptyAction());
                 
                 // FIXME: create a real action
-                OperationVertex operationVertex = operationVertex(parentContext);
+                OperationVertex operationVertex = operationVertex(context);
                 cast(operationVertex).dependsOn(cast(vertex), Edge.emptyAction());
 
-                // propagate current OperationVertex further to the children
-                context.setVar(OperationVertex.class, operationVertex);
                 // propagate current scope further to children
                 context.setVar(Field.class, node);
+                
                 // propagate my vertex to my children
                 context.setResult(vertex);
             }
         }
         
         return TraversalControl.CONTINUE;
-    }
-
-    @Override
-    public TraversalControl visitVariableDefinition(VariableDefinition node, TraverserContext<Node> context) {
-        switch (leaveOrEnter(context)) {
-            case ENTER:
-            // FIXME: verify variables here
-        }
-        
-        return TraversalControl.CONTINUE; 
     }
     
     private static class FieldCollectorHelper extends FieldCollector {
@@ -371,6 +339,26 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
     private /*final*/ Map<String, FragmentDefinition> fragmentsByName = Collections.emptyMap();
     private /*final*/ Map<String, Object> variables = Collections.emptyMap();    
 
+    private static final BiFunction<? super TraverserContext<Node>, ? super Class<Object>, ? extends Object> NEAREST_VAR = 
+            new BiFunction<TraverserContext<Node>, Class<Object>, Object>() {
+        @Override
+        public Object apply(TraverserContext<Node> context, Class<Object> key) {
+            return Optional
+                .ofNullable(context.getParentContext())
+                .map(ctx -> ctx.computeVarIfAbsent(key, this))
+                .orElse(null);
+        }
+    };
+    private static final Function<? super TraverserContext<Node>, ? extends Object> NEAREST_RESULT = 
+            new Function<TraverserContext<Node>, Object>() {
+        @Override
+        public Object apply(TraverserContext<Node> context) {
+            return Optional
+                .ofNullable(context.getParentContext())
+                .map(ctx -> { Object result; context.setResult(result = ctx.computeResultIfAbsent(this)); return result; }) 
+                .orElse(null);
+        }
+    };
     private static final FieldCollectorHelper FIELD_COLLECTOR = new FieldCollectorHelper();
     private static final NodeVertexVisitor<Boolean> IS_FIELD = new NodeVertexVisitor<Boolean>() {
         @Override

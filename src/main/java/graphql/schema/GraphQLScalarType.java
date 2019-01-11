@@ -5,7 +5,6 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.ScalarTypeDefinition;
 import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -19,6 +18,7 @@ import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
+import graphql.util.TraverserContext;
 
 /**
  * A scalar type is a leaf node in the graphql tree of types.  This class allows you to define new scalar types.

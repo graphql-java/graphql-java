@@ -5,7 +5,6 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
-import graphql.util.TraverserContext;
 import graphql.util.TraverserResult;
 import graphql.util.TraverserVisitor;
 
@@ -17,6 +16,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static graphql.util.TraversalControl.CONTINUE;
+import graphql.util.TraverserContext;
 
 @PublicApi
 public class TypeTraverser {

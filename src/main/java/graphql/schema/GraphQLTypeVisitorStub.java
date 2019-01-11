@@ -2,9 +2,9 @@ package graphql.schema;
 
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 
 import static graphql.util.TraversalControl.CONTINUE;
+import graphql.util.TraverserContext;
 
 /**
  * Base implementation of {@link GraphQLTypeVisitor} for convenience.

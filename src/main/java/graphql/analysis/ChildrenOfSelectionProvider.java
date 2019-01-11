@@ -11,11 +11,11 @@ import graphql.language.NodeVisitorStub;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
 import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import graphql.util.TraverserContext;
 
 /**
  * QueryTraversal helper class responsible for obtaining Selection

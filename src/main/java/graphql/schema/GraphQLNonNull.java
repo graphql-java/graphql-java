@@ -3,13 +3,13 @@ package graphql.schema;
 
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 
 import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
+import graphql.util.TraverserContext;
 
 /**
  * A modified type that indicates there the underlying wrapped type will not be null.

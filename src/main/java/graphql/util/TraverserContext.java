@@ -3,6 +3,7 @@ package graphql.util;
 import graphql.PublicApi;
 
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -61,7 +62,7 @@ public interface TraverserContext<T> {
      * @return a variable value of {@code null}
      */
     default <S> S getVar(Class<? super S> key) {
-        return computeVarIfAbsent(key, k -> null);
+        return computeVarIfAbsent(key, (context, k) -> null);
     }
 
     /**
@@ -73,7 +74,7 @@ public interface TraverserContext<T> {
      *
      * @return a variable value of {@code null}
      */
-    <S> S computeVarIfAbsent (Class<? super S> key, Function<? super Class<S>, ? extends S> provider);
+    <S> S computeVarIfAbsent (Class<? super S> key, BiFunction<? super TraverserContext<T>, ? super Class<S>, ? extends S> provider);
     
     /**
      * Stores a variable in the context
@@ -99,7 +100,17 @@ public interface TraverserContext<T> {
      *
      * @return the result
      */
-    Object getResult();
+    default Object getResult() {
+        return computeResultIfAbsent(context -> null);
+    }
+    
+    /**
+     * The result of this TraverserContext or default value calculated using provided method
+     * 
+     * @param provider  method to provide default value
+     * @return the result
+     */
+    Object computeResultIfAbsent (Function<? super TraverserContext<T>, ? extends Object> provider);
 
     /**
      * Used to share something across all TraverserContext.

@@ -24,7 +24,6 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -36,6 +35,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.language.NodeTraverser.LeaveOrEnter.LEAVE;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
+import graphql.util.TraverserContext;
 
 /**
  * Helps to traverse (or reduce) a Document (or parts of it) and tracks at the same time the corresponding Schema types.

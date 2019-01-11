@@ -15,6 +15,9 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.BiFunction;
 
 @Internal
 public abstract class TraverserState<T> {
@@ -132,10 +135,10 @@ public abstract class TraverserState<T> {
             }
 
             @Override
-            public <S> S computeVarIfAbsent(Class<? super S> key, Function<? super Class<S>, ? extends S> provider) {
+            public <S> S computeVarIfAbsent(Class<? super S> key, BiFunction<? super TraverserContext<T>, ? super Class<S>, ? extends S> provider) {
                 assertNotNull(provider);
                 
-                return (S) key.cast(vars.computeIfAbsent(key, (Function<Class<?>, Object>)provider));
+                return (S) key.cast(vars.computeIfAbsent(key, k -> provider.apply(this, (Class<S>)k)));
             }
 
             @Override
@@ -152,6 +155,15 @@ public abstract class TraverserState<T> {
             @Override
             public Object getResult() {
                 return this.result;
+            }
+
+            @Override
+            public Object computeResultIfAbsent(Function<? super TraverserContext<T>, ? extends Object> provider) {
+                Objects.requireNonNull(provider);
+                
+                return Optional
+                    .ofNullable(this.result)
+                    .orElseGet(() -> provider.apply(this));
             }
 
             @Override

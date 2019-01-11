@@ -3,10 +3,10 @@ package graphql.language;
 
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 
 import java.io.Serializable;
 import java.util.List;
+import graphql.util.TraverserContext;
 
 /**
  * The base interface for virtually all graphql language elements

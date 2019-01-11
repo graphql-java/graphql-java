@@ -4,11 +4,11 @@ package graphql.language;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import graphql.util.TraverserContext;
 
 @PublicApi
 public class ListType extends AbstractNode<ListType> implements Type<ListType> {

@@ -2,11 +2,11 @@ package graphql.schema;
 
 import graphql.Internal;
 import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 
 import static graphql.Assert.assertTrue;
 import static graphql.schema.FieldCoordinates.coordinates;
 import static graphql.util.TraversalControl.CONTINUE;
+import graphql.util.TraverserContext;
 
 /**
  * This ensure that all fields have data fetchers and that unions and interfaces have type resolvers
