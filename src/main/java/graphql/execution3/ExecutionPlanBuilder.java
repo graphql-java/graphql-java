@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import graphql.util.TraverserContext;
@@ -48,7 +47,6 @@ import graphql.util.TraverserState;
 import graphql.util.TraverserState.StackTraverserState;
 import graphql.util.TraverserState.TraverserContextBuilder;
 import java.util.Set;
-import java.util.function.Function;
 
 /**
  *
@@ -108,20 +106,19 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
     private List<Node> getChildrenOf (Node node) {
         return NodeTraverser.oneVisitWithResult(node, new NodeVisitorStub() {
             @Override
+            public TraversalControl visitFragmentSpread(FragmentSpread node, TraverserContext<Node> context) {
+                FragmentDefinition fragmentDefinition = Optional
+                    .ofNullable(fragmentsByName.get(node.getName()))
+                    .orElseThrow(() -> new AssertException(String.format("No fragment definition with name '%s'", node.getName())));
+                
+                return visitNode(fragmentDefinition, context);
+            }            
+            
+            @Override
             protected TraversalControl visitNode(Node node, TraverserContext<Node> context) {
                 context.setResult(node.getChildren());
                 return TraversalControl.QUIT;
             }
-
-            @Override
-            public TraversalControl visitFragmentSpread(FragmentSpread node, TraverserContext<Node> context) {
-                FragmentDefinition fragmentDefinition = Optional
-                        .ofNullable(fragmentsByName.get(node.getName()))
-                        .orElseThrow(() -> new AssertException(String.format("No fragment definition with name '%s'", node.getName())));
-                
-                context.setResult(fragmentDefinition.getChildren());
-                return TraversalControl.QUIT;
-            }            
         });
     }
     
