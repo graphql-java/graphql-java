@@ -209,9 +209,9 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
         return new OperationVertex(operationDefinition, operationType);
     }
 
-    private FieldVertex newFieldVertex (Field field, GraphQLObjectType parentType, Field scope) {
+    private FieldVertex newFieldVertex (Field field, GraphQLObjectType parentType, NodeVertex<? super Node, ? super GraphQLType> scope) {
         GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, (GraphQLCompositeType)GraphQLTypeUtil.unwrapNonNull(parentType), field.getName());
-        return new FieldVertex(field, fieldDefinition.getType(), parentType, Optional.ofNullable(scope).map(Field::getAlias).orElse(null));
+        return new FieldVertex(field, fieldDefinition.getType(), parentType, scope);
     }
 
     private DependencyGraph<? extends NodeVertex<? extends Node, ? extends GraphQLType>> executionPlan (TraverserContext<Node> context) {
@@ -310,7 +310,7 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
                 NodeVertex<Node, GraphQLType> parentVertex = (NodeVertex<Node, GraphQLType>)parentContext.getResult();
                 
                 FieldVertex vertex = (FieldVertex)executionPlan(parentContext)
-                        .addNode(newFieldVertex(node, (GraphQLObjectType)parentVertex.getType(), parentContext.getVar(Field.class)).asNodeVertex());
+                        .addNode(newFieldVertex(node, (GraphQLObjectType)parentVertex.getType(), parentContext.getVar(NodeVertex.class)).asNodeVertex());
                 // FIXME: create a real action
                 vertex.dependsOn(parentVertex.asNodeVertex(), Edge.emptyAction());
                 
@@ -319,7 +319,8 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
                 operationVertex.dependsOn(vertex.asNodeVertex(), Edge.emptyAction());
 
                 // propagate current scope further to children
-                context.setVar(Field.class, node);
+                if (node.getAlias() != null)
+                    context.setVar(NodeVertex.class, vertex);
                 
                 // propagate my vertex to my children
                 context.setResult(vertex);

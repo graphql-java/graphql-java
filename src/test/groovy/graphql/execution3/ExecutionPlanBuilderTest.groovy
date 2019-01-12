@@ -396,6 +396,7 @@ class ExecutionPlanBuilderTest extends Specification {
         order.hasNext() == false
     }
     
+    //@Ignore
     def "test simple query with aliases"() {
         def fooData = [id: "fooId", bar: [id: "barId", name: "someBar"]]
         def dataFetchers = [
@@ -445,8 +446,8 @@ class ExecutionPlanBuilderTest extends Specification {
         def Foo_bar1 = plan.getNode new FieldVertex(Field.newField("bar").alias("bar1").build(), schema.getType("Bar"), schema.getType("Foo"))
         def Bar_id = plan.getNode new FieldVertex(new Field("id"), schema.getType("ID"), schema.getType("Bar"))    
         def Bar_name = plan.getNode new FieldVertex(new Field("name"), schema.getType("String"), schema.getType("Bar"))    
-        def Bar1_id = plan.getNode new FieldVertex(new Field("id"), schema.getType("ID"), schema.getType("Bar"), "bar1")    
-        def Bar1_name = plan.getNode new FieldVertex(new Field("name"), schema.getType("String"), schema.getType("Bar"), "bar1")    
+        def Bar1_id = plan.getNode new FieldVertex(new Field("id"), schema.getType("ID"), schema.getType("Bar"), Foo_bar1)    
+        def Bar1_name = plan.getNode new FieldVertex(new Field("name"), schema.getType("String"), schema.getType("Bar"), Foo_bar1)    
         
         def order = plan.orderDependencies()
 

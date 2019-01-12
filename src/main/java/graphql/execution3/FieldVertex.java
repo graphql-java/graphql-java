@@ -21,11 +21,11 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
         this(node, type, definedIn, null);
     }    
     
-    public FieldVertex(Field node, GraphQLOutputType type, GraphQLFieldsContainer definedIn, String scopeAlias) {
+    public FieldVertex(Field node, GraphQLOutputType type, GraphQLFieldsContainer definedIn, NodeVertex<? super Node, ? super GraphQLType> inScopeOf) {
         super(node, type);
         
         this.definedIn = Objects.requireNonNull(definedIn);
-        this.scopeAlias = scopeAlias;
+        this.inScopeOf = inScopeOf;
     }    
 
     public GraphQLFieldsContainer getDefinedIn() {
@@ -33,7 +33,7 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
     }
 
     public Object getScope() {
-        return scopeAlias;
+        return inScopeOf;
     }
 
     @Override
@@ -48,7 +48,7 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
         hash = 97 * hash + Objects.hashCode(this.node.getAlias());
         hash = 97 * hash + Objects.hashCode(this.type);
         hash = 97 * hash + Objects.hashCode(this.definedIn);
-        hash = 97 * hash + Objects.hashCode(this.scopeAlias);
+        hash = 97 * hash + System.identityHashCode(this.inScopeOf);
         return hash;
     }
 
@@ -57,7 +57,7 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
         if (super.equals(obj)) {
             FieldVertex other = (FieldVertex)obj;
             return Objects.equals(this.definedIn, other.definedIn) &&
-                    Objects.equals(this.scopeAlias, other.scopeAlias);
+                    Objects.equals(this.inScopeOf, other.inScopeOf);
         }
         
         return false;
@@ -68,7 +68,7 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
         return super
                 .toString(builder)
                 .append(", definedIn=").append(definedIn)
-                .append(", scopeAlias=").append(scopeAlias);
+                .append(", inScopeOf=").append(inScopeOf);
     }
 
     @Override
@@ -77,5 +77,5 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
     }
 
     private final GraphQLFieldsContainer definedIn;
-    private final String scopeAlias;
+    private final NodeVertex<Node, GraphQLType> inScopeOf;
 }
