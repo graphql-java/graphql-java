@@ -4,7 +4,6 @@ import graphql.GraphQLError;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
@@ -29,6 +28,10 @@ public class DataFetcherExceptionHandlerResult {
         return new Builder();
     }
 
+    public static Builder newResult(GraphQLError error) {
+        return new Builder().error(error);
+    }
+
     public static class Builder {
 
         private final List<GraphQLError> errors = new ArrayList<>();
@@ -39,13 +42,12 @@ public class DataFetcherExceptionHandlerResult {
         }
 
         public Builder error(GraphQLError error) {
-            return errors(Collections.singletonList(assertNotNull(error)));
+            errors.add(assertNotNull(error));
+            return this;
         }
 
         public DataFetcherExceptionHandlerResult build() {
             return new DataFetcherExceptionHandlerResult(this);
         }
-
     }
-
 }
