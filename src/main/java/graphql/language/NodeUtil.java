@@ -94,4 +94,10 @@ public class NodeUtil {
             throw new IllegalArgumentException("Cannot pass non-empty newChildren to Node that doesn't hold children");
         }
     }
+
+    public static Node removeChild(Node node, NodeLocation childLocationToRemove) {
+        NodeChildrenContainer namedChildren = node.getNamedChildren();
+        NodeChildrenContainer newChildren = namedChildren.transform(builder -> builder.removeChild(childLocationToRemove.getName(), childLocationToRemove.getIndex()));
+        return node.withNewChildren(newChildren);
+    }
 }

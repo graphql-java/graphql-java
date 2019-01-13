@@ -39,18 +39,20 @@ public abstract class TraverserState<T> {
             super.state.push(endList);
             Map<String, List<TraverserContext<U>>> childrenContextMap = new LinkedHashMap<>();
 
-            Map<String, ? extends List<U>> childrenMap = getChildren.apply(traverserContext.thisNode());
-            childrenMap.keySet().forEach(key -> {
-                List<U> children = childrenMap.get(key);
-                for (int i = children.size() - 1; i >= 0; i--) {
-                    U child = assertNotNull(children.get(i), "null child for key " + key);
-                    NodePosition nodePosition = new NodePosition(key, i);
-                    DefaultTraverserContext<U> context = super.newContext(child, traverserContext, nodePosition);
-                    super.state.push(context);
-                    childrenContextMap.computeIfAbsent(key, notUsed -> new ArrayList<>());
-                    childrenContextMap.get(key).add(0, context);
-                }
-            });
+            if (!traverserContext.isDeleted()) {
+                Map<String, ? extends List<U>> childrenMap = getChildren.apply(traverserContext.thisNode());
+                childrenMap.keySet().forEach(key -> {
+                    List<U> children = childrenMap.get(key);
+                    for (int i = children.size() - 1; i >= 0; i--) {
+                        U child = assertNotNull(children.get(i), "null child for key " + key);
+                        NodePosition nodePosition = new NodePosition(key, i);
+                        DefaultTraverserContext<U> context = super.newContext(child, traverserContext, nodePosition);
+                        super.state.push(context);
+                        childrenContextMap.computeIfAbsent(key, notUsed -> new ArrayList<>());
+                        childrenContextMap.get(key).add(0, context);
+                    }
+                });
+            }
             endList.childrenContextMap = childrenContextMap;
         }
     }
@@ -64,19 +66,21 @@ public abstract class TraverserState<T> {
 
         @Override
         public void pushAll(TraverserContext<U> traverserContext, Function<? super U, Map<String, ? extends List<U>>> getChildren) {
-            Map<String, ? extends List<U>> childrenMap = getChildren.apply(traverserContext.thisNode());
             Map<String, List<TraverserContext<U>>> childrenContextMap = new LinkedHashMap<>();
-            childrenMap.keySet().forEach(key -> {
-                List<U> children = childrenMap.get(key);
-                for (int i = 0; i < children.size(); i++) {
-                    U child = assertNotNull(children.get(i), "null child for key " + key);
-                    NodePosition nodePosition = new NodePosition(key, i);
-                    DefaultTraverserContext<U> context = super.newContext(child, traverserContext, nodePosition);
-                    childrenContextMap.computeIfAbsent(key, notUsed -> new ArrayList<>());
-                    childrenContextMap.get(key).add(context);
-                    super.state.add(context);
-                }
-            });
+            if (!traverserContext.isDeleted()) {
+                Map<String, ? extends List<U>> childrenMap = getChildren.apply(traverserContext.thisNode());
+                childrenMap.keySet().forEach(key -> {
+                    List<U> children = childrenMap.get(key);
+                    for (int i = 0; i < children.size(); i++) {
+                        U child = assertNotNull(children.get(i), "null child for key " + key);
+                        NodePosition nodePosition = new NodePosition(key, i);
+                        DefaultTraverserContext<U> context = super.newContext(child, traverserContext, nodePosition);
+                        childrenContextMap.computeIfAbsent(key, notUsed -> new ArrayList<>());
+                        childrenContextMap.get(key).add(context);
+                        super.state.add(context);
+                    }
+                });
+            }
             EndList<U> endList = new EndList<>();
             endList.childrenContextMap = childrenContextMap;
             super.state.add(endList);

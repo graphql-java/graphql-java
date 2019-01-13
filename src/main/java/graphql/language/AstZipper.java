@@ -53,6 +53,12 @@ public class AstZipper {
         return new AstZipper(newNode, breadcrumbs);
     }
 
+    public AstZipper moveUp() {
+        Node node = getParent();
+        List<AstBreadcrumb> newBreadcrumbs = breadcrumbs.subList(1, breadcrumbs.size());
+        return new AstZipper(node, newBreadcrumbs);
+    }
+
     public Node toRoot() {
         Node curNode = this.curNode;
         for (AstBreadcrumb breadcrumb : breadcrumbs) {

@@ -152,4 +152,116 @@ class AstTransformerTest extends Specification {
 
     }
 
+    def "delete node"() {
+        def document = TestUtil.parseQuery("{root { a(arg: 1) { x y } toDelete { x y } } }")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitField(Field field, TraverserContext<Node> context) {
+                if (field.name == "toDelete") {
+                    return AstTransformerUtil.deleteNode(context);
+                } else {
+                    return TraversalControl.CONTINUE;
+                }
+            }
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {root {a(arg:1) {x y}}}"
+
+    }
+
+    def "delete multiple nodes and change others"() {
+        def document = TestUtil.parseQuery("{root { a(arg: 1) { x1 y1 } b { x2 y2 } } }")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitField(Field field, TraverserContext<Node> context) {
+                if (field.name == "x1" || field.name == "x2") {
+                    return AstTransformerUtil.deleteNode(context);
+                } else if (field.name == "a") {
+                    return changeNode(context, field.transform({ builder -> builder.name("aChanged") }))
+
+                } else if (field.name == "root") {
+                    Field addField = new Field("new")
+                    def newSelectionSet = field.getSelectionSet().transform({ builder -> builder.selection(addField) })
+                    changeNode(context, field.transform({ builder -> builder.selectionSet(newSelectionSet) }))
+                } else {
+                    return TraversalControl.CONTINUE;
+                }
+            }
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+
+        printAstCompact(newDocument) == "query {root {aChanged(arg:1) {y1} b {y2} new}}"
+
+    }
+
+    def "add sibling"() {
+        def document = TestUtil.parseQuery("{foo}")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitField(Field node, TraverserContext<Node> context) {
+                return AstTransformerUtil.changeParentNode(context, { selectionSet ->
+                    selectionSet.transform({ builder -> builder.selection(new Field("foo2")) })
+                })
+            }
+        }
+
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {foo foo2}"
+
+    }
+
+    def "delete node and add sibling"() {
+        def document = TestUtil.parseQuery("{root { a(arg: 1) { x y } toDelete { x y } } }")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitField(Field field, TraverserContext<Node> context) {
+                if (field.name == "toDelete") {
+                    return AstTransformerUtil.deleteNode(context);
+                } else if (field.name == "a") {
+                    return AstTransformerUtil.changeParentNode(context, { selectionSet ->
+                        selectionSet.transform({ builder -> builder.selection(new Field("newOne")) })
+                    })
+                } else {
+                    return TraversalControl.CONTINUE
+                }
+            }
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {root {a(arg:1) {x y} newOne}}"
+
+    }
+
+
 }
