@@ -1,8 +1,9 @@
 package graphql.schema
 
-import graphql.execution.ExecutionContext
+
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionStepInfo
+import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
 class DataFetchingEnvironmentBuilderTest extends Specification {
@@ -20,7 +21,7 @@ class DataFetchingEnvironmentBuilderTest extends Specification {
                 .fragmentsByName(Mock(Map))
                 .executionId(Mock(ExecutionId))
                 .selectionSet(Mock(DataFetchingFieldSelectionSet))
-                .executionContext(Mock(ExecutionContext))
+                .dataLoaderRegistry(new DataLoaderRegistry())
                 .build()
 
         when:
@@ -39,6 +40,6 @@ class DataFetchingEnvironmentBuilderTest extends Specification {
         dfe.getFragmentsByName() == dfeCopy.getFragmentsByName()
         dfe.getExecutionId() == dfeCopy.getExecutionId()
         dfe.getSelectionSet() == dfeCopy.getSelectionSet()
-        dfe.getExecutionContext() == dfeCopy.getExecutionContext()
+        dfe.getDataLoaderRegistry() == dfeCopy.getDataLoaderRegistry()
     }
 }

@@ -24,7 +24,6 @@ class PropertyDataFetcherTest extends Specification {
 
     def env(obj) {
         newDataFetchingEnvironment()
-                .executionContext(Mock(ExecutionContext))
                 .source(obj)
                 .arguments([argument1: "value1", argument2: "value2"])
                 .build()
