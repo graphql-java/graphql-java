@@ -6,6 +6,7 @@ import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
 import graphql.language.FragmentDefinition;
+import org.dataloader.DataLoaderRegistry;
 
 import java.util.Collections;
 import java.util.Map;
@@ -40,7 +41,7 @@ public class DataFetchingEnvironmentBuilder {
                 .fragmentsByName(environment.getFragmentsByName())
                 .executionId(environment.getExecutionId())
                 .selectionSet(environment.getSelectionSet())
-                .executionContext(environment.getExecutionContext())
+                .dataLoaderRegistry(environment.getDataLoaderRegistry())
                 ;
     }
 
@@ -50,9 +51,8 @@ public class DataFetchingEnvironmentBuilder {
                 .root(executionContext.getRoot())
                 .graphQLSchema(executionContext.getGraphQLSchema())
                 .fragmentsByName(executionContext.getFragmentsByName())
-                .executionId(executionContext.getExecutionId())
-                .executionContext(executionContext);
-
+                .dataLoaderRegistry(executionContext.getDataLoaderRegistry())
+                .executionId(executionContext.getExecutionId());
     }
 
 
@@ -70,7 +70,7 @@ public class DataFetchingEnvironmentBuilder {
     private ExecutionId executionId;
     private DataFetchingFieldSelectionSet selectionSet;
     private ExecutionStepInfo executionStepInfo;
-    private ExecutionContext executionContext;
+    private DataLoaderRegistry dataLoaderRegistry;
 
     public DataFetchingEnvironmentBuilder source(Object source) {
         this.source = source;
@@ -142,15 +142,15 @@ public class DataFetchingEnvironmentBuilder {
         return this;
     }
 
-    public DataFetchingEnvironmentBuilder executionContext(ExecutionContext executionContext) {
-        this.executionContext = executionContext;
+    public DataFetchingEnvironmentBuilder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {
+        this.dataLoaderRegistry = dataLoaderRegistry;
         return this;
     }
+
 
     public DataFetchingEnvironment build() {
         return new DataFetchingEnvironmentImpl(source, arguments, context, localContext, root,
                 fieldDefinition, mergedField, fieldType, parentType, graphQLSchema, fragmentsByName, executionId, selectionSet,
-                executionStepInfo,
-                executionContext);
+                executionStepInfo, dataLoaderRegistry);
     }
 }

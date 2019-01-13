@@ -2,20 +2,18 @@ package graphql.schema;
 
 
 import graphql.Internal;
-import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import org.dataloader.DataLoader;
+import org.dataloader.DataLoaderRegistry;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import static graphql.Assert.assertNotNull;
 
 @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
 @Internal
@@ -34,7 +32,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final ExecutionId executionId;
     private final DataFetchingFieldSelectionSet selectionSet;
     private final ExecutionStepInfo executionStepInfo;
-    private final ExecutionContext executionContext;
+    private final DataLoaderRegistry dataLoaderRegistry;
 
     public DataFetchingEnvironmentImpl(Object source,
                                        Map<String, Object> arguments,
@@ -50,7 +48,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                                        ExecutionId executionId,
                                        DataFetchingFieldSelectionSet selectionSet,
                                        ExecutionStepInfo executionStepInfo,
-                                       ExecutionContext executionContext) {
+                                       DataLoaderRegistry dataLoaderRegistry) {
         this.source = source;
         this.arguments = arguments == null ? Collections.emptyMap() : arguments;
         this.localContext = localContext;
@@ -65,7 +63,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.executionId = executionId;
         this.selectionSet = selectionSet;
         this.executionStepInfo = executionStepInfo;
-        this.executionContext = assertNotNull(executionContext);
+        this.dataLoaderRegistry = dataLoaderRegistry;
     }
 
     @Override
@@ -159,13 +157,13 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public ExecutionContext getExecutionContext() {
-        return executionContext;
+    public <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName) {
+        return dataLoaderRegistry.getDataLoader(dataLoaderName);
     }
 
     @Override
-    public <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName) {
-        return executionContext.getDataLoaderRegistry().getDataLoader(dataLoaderName);
+    public DataLoaderRegistry getDataLoaderRegistry() {
+        return dataLoaderRegistry;
     }
 
     @Override

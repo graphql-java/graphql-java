@@ -1,13 +1,13 @@
 package graphql.schema;
 
 import graphql.PublicApi;
-import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import org.dataloader.DataLoader;
+import org.dataloader.DataLoaderRegistry;
 
 import java.util.List;
 import java.util.Map;
@@ -178,11 +178,6 @@ public interface DataFetchingEnvironment {
     DataFetchingFieldSelectionSet getSelectionSet();
 
     /**
-     * @return the current {@link ExecutionContext}. It gives access to the overall schema and other things related to the overall execution of the current request.
-     */
-    ExecutionContext getExecutionContext();
-
-    /**
      * This allows you to retrieve a named dataloader from the underlying {@link org.dataloader.DataLoaderRegistry}
      *
      * @param dataLoaderName the name of the data loader to fetch
@@ -195,4 +190,9 @@ public interface DataFetchingEnvironment {
      * @see org.dataloader.DataLoaderRegistry#getDataLoader(String)
      */
     <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
+
+    /**
+     * @return the {@link org.dataloader.DataLoaderRegistry} backing this field fetch
+     */
+    DataLoaderRegistry getDataLoaderRegistry();
 }

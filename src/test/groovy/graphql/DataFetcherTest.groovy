@@ -56,7 +56,7 @@ class DataFetcherTest extends Specification {
     }
 
     def env(GraphQLOutputType type) {
-        newDataFetchingEnvironment().source(dataHolder).executionContext(Mock(ExecutionContext)).fieldType(type).build()
+        newDataFetchingEnvironment().source(dataHolder).fieldType(type).build()
     }
 
     def "get property value"() {
