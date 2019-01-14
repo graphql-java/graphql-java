@@ -13,7 +13,7 @@ import graphql.util.NodeMultiZipper;
 import graphql.util.NodeZipper;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
-import graphql.util.TraverserVisitor;
+import graphql.util.TraverserVisitorStub;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -147,17 +147,12 @@ public class ResultNodesUtil {
         List<NodeZipper<ExecutionResultNode>> result = new ArrayList<>();
 
         ResultNodeTraverser traverser = ResultNodeTraverser.depthFirst();
-        traverser.traverse(new TraverserVisitor<ExecutionResultNode>() {
+        traverser.traverse(new TraverserVisitorStub<ExecutionResultNode>() {
             @Override
             public TraversalControl enter(TraverserContext<ExecutionResultNode> context) {
                 if (context.thisNode() instanceof UnresolvedObjectResultNode) {
                     result.add(new NodeZipper<>(context.thisNode(), context.getBreadcrumbs(), RESULT_NODE_ADAPTER));
                 }
-                return TraversalControl.CONTINUE;
-            }
-
-            @Override
-            public TraversalControl leave(TraverserContext<ExecutionResultNode> context) {
                 return TraversalControl.CONTINUE;
             }
 
@@ -169,7 +164,6 @@ public class ResultNodesUtil {
         List<NodeZipper<ExecutionResultNode>> unresolvedNodes = getUnresolvedNodes(singleton(root));
         return new NodeMultiZipper<>(root, unresolvedNodes, RESULT_NODE_ADAPTER);
     }
-
 
 
     public static NodeLocation key(String name) {
