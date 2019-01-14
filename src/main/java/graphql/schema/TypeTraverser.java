@@ -1,14 +1,12 @@
 package graphql.schema;
 
 
-import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
 import graphql.util.TraverserContext;
 import graphql.util.TraverserResult;
 import graphql.util.TraverserVisitor;
-
 
 import java.util.Collection;
 import java.util.Collections;
@@ -56,8 +54,8 @@ public class TypeTraverser {
         return Traverser.depthFirst(getChildren);
     }
 
-    private  TraverserResult doTraverse(Traverser<GraphQLType> traverser,  Collection<? extends GraphQLType> roots, TraverserDelegateVisitor traverserDelegateVisitor) {
-        return traverser.traverse(roots,traverserDelegateVisitor);
+    private TraverserResult doTraverse(Traverser<GraphQLType> traverser, Collection<? extends GraphQLType> roots, TraverserDelegateVisitor traverserDelegateVisitor) {
+        return traverser.traverse(roots, traverserDelegateVisitor);
     }
 
     private static class TraverserDelegateVisitor implements TraverserVisitor<GraphQLType> {
@@ -80,7 +78,7 @@ public class TypeTraverser {
 
         @Override
         public TraversalControl backRef(TraverserContext<GraphQLType> context) {
-            return context.thisNode().acceptBackRef(context, before);
+            return before.visitBackRef(context);
         }
     }
 

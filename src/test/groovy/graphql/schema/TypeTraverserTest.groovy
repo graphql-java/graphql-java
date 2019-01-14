@@ -361,7 +361,7 @@ class TypeTraverserTest extends Specification {
         ])
         then:
         visitor.getStack() == ["argument: Test1", "fallback: Test1", "reference: String", "fallback: String",
-                               "argument: Test2", "fallback: Test2", "reference: String", "fallback: String"
+                               "argument: Test2", "fallback: Test2", "backRef: String"
         ]
 
     }
@@ -467,6 +467,12 @@ class TypeTraverserTest extends Specification {
         TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLType> context) {
             stack.add("union: ${node.getName()}")
             return super.visitGraphQLUnionType(node, context)
+        }
+
+        @Override
+        TraversalControl visitBackRef(TraverserContext<GraphQLType> context) {
+            stack.add("backRef: ${context.thisNode().getName()}")
+            return TraversalControl.CONTINUE
         }
 
         def getStack() {
