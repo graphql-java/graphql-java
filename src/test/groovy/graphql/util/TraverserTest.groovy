@@ -379,8 +379,8 @@ class TraverserTest extends Specification {
         def visitor = [
                 enter: { TraverserContext context ->
                     def curAcc = context.getCurrentAccumulate()
-                    if (context.getPosition() != null) {
-                        curAcc.add(context.getPosition().index)
+                    if (context.getLocation() != null) {
+                        curAcc.add(context.getLocation().index)
                     }
                     TraversalControl.CONTINUE
                 },
@@ -415,8 +415,8 @@ class TraverserTest extends Specification {
         def visitor = [
                 enter: { TraverserContext context ->
                     def curAcc = context.getCurrentAccumulate()
-                    if (context.getPosition() != null) {
-                        curAcc.add(context.getPosition())
+                    if (context.getLocation() != null) {
+                        curAcc.add(context.getLocation())
                     }
                     TraversalControl.CONTINUE
                 },
@@ -445,8 +445,8 @@ class TraverserTest extends Specification {
         def visitor = [
                 enter: { TraverserContext context ->
                     def curAcc = context.getCurrentAccumulate()
-                    if (context.getPosition() != null) {
-                        curAcc.add(context.getPosition())
+                    if (context.getLocation() != null) {
+                        curAcc.add(context.getLocation())
                     }
                     TraversalControl.CONTINUE
                 },

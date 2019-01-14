@@ -4,6 +4,14 @@ import graphql.PublicApi;
 
 import java.util.Objects;
 
+/**
+ * A specific {@link NodeLocation} inside a node. This means  {@link #getNode()} returns a Node which has a child
+ * at {@link #getLocation()}
+ * <p/>
+ * A list of Breadcrumbs is used to identify the exact location of a specific node inside a tree.
+ *
+ * @param <T>
+ */
 @PublicApi
 public class Breadcrumb<T> {
 

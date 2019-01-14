@@ -8,16 +8,16 @@ import graphql.Internal;
 import graphql.execution.NonNullableFieldWasNullError;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.nextgen.FetchedValueAnalysis;
-import graphql.util.Breadcrumb;
 import graphql.util.NodeLocation;
 import graphql.util.NodeMultiZipper;
 import graphql.util.NodeZipper;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+import graphql.util.TraverserVisitor;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import static graphql.execution.nextgen.result.ResultNodeAdapter.RESULT_NODE_ADAPTER;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
 
 @Internal
 public class ResultNodesUtil {
@@ -145,70 +146,31 @@ public class ResultNodesUtil {
     public static List<NodeZipper<ExecutionResultNode>> getUnresolvedNodes(Collection<ExecutionResultNode> roots) {
         List<NodeZipper<ExecutionResultNode>> result = new ArrayList<>();
 
-        ResultNodeTraverser resultNodeTraverser = new ResultNodeTraverser(new ResultNodeVisitor() {
+        ResultNodeTraverser traverser = ResultNodeTraverser.depthFirst();
+        traverser.traverse(new TraverserVisitor<ExecutionResultNode>() {
             @Override
-            public void visit(ExecutionResultNode node, List<Breadcrumb<ExecutionResultNode>> breadcrumbs) {
-                if (node instanceof UnresolvedObjectResultNode) {
-                    result.add(new NodeZipper<ExecutionResultNode>(node, breadcrumbs, RESULT_NODE_ADAPTER));
+            public TraversalControl enter(TraverserContext<ExecutionResultNode> context) {
+                if (context.thisNode() instanceof UnresolvedObjectResultNode) {
+                    result.add(new NodeZipper<>(context.thisNode(), context.getBreadcrumbs(), RESULT_NODE_ADAPTER));
                 }
+                return TraversalControl.CONTINUE;
             }
-        });
-        roots.forEach(resultNodeTraverser::traverse);
+
+            @Override
+            public TraversalControl leave(TraverserContext<ExecutionResultNode> context) {
+                return TraversalControl.CONTINUE;
+            }
+
+        }, roots);
         return result;
     }
 
     public static NodeMultiZipper<ExecutionResultNode> getUnresolvedNodes(ExecutionResultNode root) {
-        List<NodeZipper<ExecutionResultNode>> zippers = new ArrayList<>();
-
-        ResultNodeTraverser resultNodeTraverser = new ResultNodeTraverser(new ResultNodeVisitor() {
-            @Override
-            public void visit(ExecutionResultNode node, List<Breadcrumb<ExecutionResultNode>> breadcrumbs) {
-                if (node instanceof UnresolvedObjectResultNode) {
-                    zippers.add(new NodeZipper<>(node, breadcrumbs, RESULT_NODE_ADAPTER));
-                }
-            }
-        });
-        resultNodeTraverser.traverse(root);
-        return new NodeMultiZipper<>(root, zippers, RESULT_NODE_ADAPTER);
+        List<NodeZipper<ExecutionResultNode>> unresolvedNodes = getUnresolvedNodes(singleton(root));
+        return new NodeMultiZipper<>(root, unresolvedNodes, RESULT_NODE_ADAPTER);
     }
 
 
-    public interface ResultNodeVisitor {
-
-        void visit(ExecutionResultNode node, List<Breadcrumb<ExecutionResultNode>> breadcrumbs);
-
-    }
-
-    private static class ResultNodeTraverser {
-
-        ResultNodeVisitor visitor;
-        Deque<Breadcrumb<ExecutionResultNode>> breadCrumbsStack = new ArrayDeque<>();
-
-        public ResultNodeTraverser(ResultNodeVisitor visitor) {
-            this.visitor = visitor;
-        }
-
-        public void traverse(ExecutionResultNode node) {
-            if (node instanceof ObjectExecutionResultNode) {
-                ((ObjectExecutionResultNode) node).getChildrenMap().forEach((name, child) -> {
-                    breadCrumbsStack.push(new Breadcrumb<>(node, key(name)));
-                    traverse(child);
-                    breadCrumbsStack.pop();
-                });
-            }
-            if (node instanceof ListExecutionResultNode) {
-                List<ExecutionResultNode> children = node.getChildren();
-                for (int i = 0; i < children.size(); i++) {
-                    breadCrumbsStack.push(new Breadcrumb<>(node, index(i)));
-                    traverse(children.get(i));
-                    breadCrumbsStack.pop();
-                }
-            }
-            List<Breadcrumb<ExecutionResultNode>> breadcrumbs = new ArrayList<>(breadCrumbsStack);
-            visitor.visit(node, breadcrumbs);
-        }
-
-    }
 
     public static NodeLocation key(String name) {
         return new NodeLocation(name, 0);

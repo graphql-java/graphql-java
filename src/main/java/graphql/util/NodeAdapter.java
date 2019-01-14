@@ -1,8 +1,17 @@
 package graphql.util;
 
+import graphql.PublicApi;
+
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Adapts an arbitrary class to behave as a node.
+ * We are using an Adapter because we don't want to require Nodes to implement a certain Interface.
+ *
+ * @param <T>
+ */
+@PublicApi
 public interface NodeAdapter<T> {
 
     Map<String, List<T>> getNamedChildren(T node);
