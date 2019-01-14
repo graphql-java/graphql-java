@@ -71,14 +71,12 @@ public abstract class NodeVertex<N extends Node, T extends GraphQLType> extends 
             .append(", type=").append(type);
     }
     
-    public <U extends NodeVertex<X, Y>, X extends Node, Y extends GraphQLType> U as (Class<? super U> castTo) {
+    public <U extends NodeVertex<? extends Node, ? extends GraphQLType>> U as (Class<? super U> castTo) {
         if (castTo.isAssignableFrom(getClass()))
             return (U)castTo.cast(this);
         
         throw new IllegalArgumentException(String.format("could not cast to '%s'", castTo.getName()));
     }
-    
-    abstract <U extends NodeVertex<? extends Node, ? extends GraphQLType>> U asNodeVertex ();
     
     abstract <U> U accept (U data, NodeVertexVisitor<? super U> visitor);
     

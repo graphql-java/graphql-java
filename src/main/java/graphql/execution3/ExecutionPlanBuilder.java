@@ -211,8 +211,12 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
         return new FieldVertex(field, fieldDefinition.getType(), parentType, scope);
     }
 
-    private DependencyGraph<? extends NodeVertex<? extends Node, ? extends GraphQLType>> executionPlan (TraverserContext<Node> context) {
-        return (DependencyGraph<NodeVertex<Node, GraphQLType>>)context.getInitialData();
+    private <V extends NodeVertex<? extends Node, ? extends GraphQLType>> DependencyGraph<? super V> executionPlan (TraverserContext<Node> context) {
+        return (DependencyGraph<? super V>)context.getInitialData();
+    }
+    
+    private static <V extends NodeVertex<? extends Node, ? extends GraphQLType>> NodeVertex<? super Node, ? super GraphQLType> toNodeVertex (V vertex) {
+        return (NodeVertex<Node, GraphQLType>)vertex;
     }
     
     private boolean isFieldVertex (NodeVertex<? extends Node, ? extends GraphQLType> vertex) {
@@ -225,8 +229,8 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
     public TraversalControl visitOperationDefinition(OperationDefinition node, TraverserContext<Node> context) {
         switch (context.getVar(LeaveOrEnter.class)) {
             case ENTER: {
-                OperationVertex vertex = (OperationVertex)executionPlan(context)
-                        .addNode(newOperationVertex(node).asNodeVertex());
+                OperationVertex vertex = (OperationVertex)this.<OperationVertex>executionPlan(context)
+                        .addNode(newOperationVertex(node));
                 context.setVar(OperationVertex.class, vertex);
                 
                 // propagate my parent vertex to my children
@@ -306,14 +310,14 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
                 TraverserContext<Node> parentContext = context.getParentContext();
                 NodeVertex<Node, GraphQLType> parentVertex = (NodeVertex<Node, GraphQLType>)parentContext.getResult();
                 
-                FieldVertex vertex = (FieldVertex)executionPlan(parentContext)
-                        .addNode(newFieldVertex(node, (GraphQLObjectType)parentVertex.getType(), parentContext.getVar(NodeVertex.class)).asNodeVertex());
+                FieldVertex vertex = (FieldVertex)this.<FieldVertex>executionPlan(parentContext)
+                        .addNode(newFieldVertex(node, (GraphQLObjectType)parentVertex.getType(), parentContext.getVar(NodeVertex.class)));
                 // FIXME: create a real action
-                vertex.dependsOn(parentVertex.asNodeVertex(), Edge.emptyAction());
+                toNodeVertex(vertex).dependsOn(toNodeVertex(parentVertex), Edge.emptyAction());
                 
                 OperationVertex operationVertex = context.getVar(OperationVertex.class);
                 // FIXME: create a real action
-                operationVertex.dependsOn(vertex.asNodeVertex(), Edge.emptyAction());
+                toNodeVertex(operationVertex).dependsOn(toNodeVertex(vertex), Edge.emptyAction());
 
                 // propagate current scope further to children
                 if (node.getAlias() != null)
@@ -321,7 +325,7 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
                 
                 // propagate my vertex to my children
                 context.setResult(vertex);
-            }
+            }                                                           
         }
         
         return TraversalControl.CONTINUE;

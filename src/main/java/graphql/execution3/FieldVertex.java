@@ -37,11 +37,6 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
     }
 
     @Override
-    <U extends NodeVertex<? extends Node, ? extends GraphQLType>> U asNodeVertex() {
-        return (U)this;
-    }
-
-    @Override
     public int hashCode() {
         int hash = 7;
         hash = 97 * hash + Objects.hashCode(this.node.getName());
