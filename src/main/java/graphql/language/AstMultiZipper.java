@@ -1,6 +1,7 @@
 package graphql.language;
 
 import graphql.PublicApi;
+import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,6 +64,10 @@ public class AstMultiZipper {
 
     public List<AstZipper> getZippers() {
         return new ArrayList<>(zippers);
+    }
+
+    public AstZipper getZipperForNode(Node node) {
+        return FpKit.findOneOrNull(zippers, zipper -> zipper.getCurNode() == node);
     }
 
     public AstMultiZipper withReplacedZippers(List<AstZipper> zippers) {

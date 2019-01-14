@@ -7,6 +7,7 @@ import graphql.execution.nextgen.result.ExecutionResultZipper;
 import graphql.execution.nextgen.result.NamedResultNode;
 import graphql.execution.nextgen.result.ObjectExecutionResultNode;
 import graphql.execution.nextgen.result.ResultNodesUtil;
+import graphql.execution.nextgen.result.RootExecutionResultNode;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -28,9 +29,9 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
      * - get all unresolved result nodes and resolve the sub selection (start again recursively)
      */
     @Override
-    public CompletableFuture<ObjectExecutionResultNode.RootExecutionResultNode> execute(ExecutionContext context, FieldSubSelection fieldSubSelection) {
+    public CompletableFuture<RootExecutionResultNode> execute(ExecutionContext context, FieldSubSelection fieldSubSelection) {
         return resolveSubSelection(context, fieldSubSelection)
-                .thenApply(ObjectExecutionResultNode.RootExecutionResultNode::new);
+                .thenApply(RootExecutionResultNode::new);
     }
 
     private CompletableFuture<List<NamedResultNode>> resolveSubSelection(ExecutionContext executionContext, FieldSubSelection fieldSubSelection) {

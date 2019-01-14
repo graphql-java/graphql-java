@@ -572,6 +572,57 @@ class TraverserTest extends Specification {
         childContextVars == [[1, 2], [3], [4, 5], [], [], []]
     }
 
+    def "delete node depth-first"() {
+        given:
+        def preOrderNodes = []
+        def postOrderNodes = []
+        def visitor = [
+                enter: { TraverserContext context ->
+                    preOrderNodes << context.thisNode().number
+                    if (context.thisNode().number == 2) {
+                        context.deleteNode()
+                    }
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    postOrderNodes << context.originalThisNode().number
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        when:
+        def result = Traverser.depthFirst({ n -> n.children }).traverse(root, visitor)
+
+
+        then:
+        preOrderNodes == [0, 1, 3, 2]
+        postOrderNodes == [3, 1, 2, 0]
+    }
+
+    def "delete nodes breadth-first"() {
+        given:
+        def enterData = []
+        def leaveData = []
+        def visitor = [
+                enter: { TraverserContext context ->
+                    enterData << context.thisNode().number
+                    if (context.thisNode().number == 2) {
+                        context.deleteNode()
+                    }
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    leaveData << context.originalThisNode().number
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        when:
+        def result = Traverser.breadthFirst({ n -> n.children }).traverse(root, visitor)
+
+        then:
+        enterData == [0, 1, 2, 3]
+        leaveData == [0, 1, 2, 3]
+    }
+
 }
 
 

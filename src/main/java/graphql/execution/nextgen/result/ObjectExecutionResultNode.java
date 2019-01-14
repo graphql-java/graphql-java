@@ -34,6 +34,13 @@ public class ObjectExecutionResultNode extends ExecutionResultNode {
     }
 
     @Override
+    public Map<String, List<ExecutionResultNode>> getNamedChildren() {
+        Map<String, List<ExecutionResultNode>> result = new LinkedHashMap<>();
+        children.forEach((key, node) -> result.put(key, Collections.singletonList(node)));
+        return result;
+    }
+
+    @Override
     public ExecutionResultNode withChild(ExecutionResultNode child, ExecutionResultNodePosition position) {
         LinkedHashMap<String, ExecutionResultNode> newChildren = new LinkedHashMap<>(this.children);
         newChildren.put(position.getKey(), child);
@@ -62,48 +69,5 @@ public class ObjectExecutionResultNode extends ExecutionResultNode {
         return new ObjectExecutionResultNode(getFetchedValueAnalysis(), children);
     }
 
-    public static class UnresolvedObjectResultNode extends ObjectExecutionResultNode {
-
-        public UnresolvedObjectResultNode(FetchedValueAnalysis fetchedValueAnalysis) {
-            super(fetchedValueAnalysis, Collections.emptyMap());
-        }
-
-        @Override
-        public String toString() {
-            return "UnresolvedObjectResultNode{" +
-                    "fetchedValueAnalysis=" + getFetchedValueAnalysis() +
-                    '}';
-        }
-    }
-
-    public static class RootExecutionResultNode extends ObjectExecutionResultNode {
-
-        public RootExecutionResultNode(Map<String, ExecutionResultNode> children) {
-            super(null, children);
-        }
-
-        public RootExecutionResultNode(List<NamedResultNode> children) {
-            super(null, children);
-        }
-
-        @Override
-        public FetchedValueAnalysis getFetchedValueAnalysis() {
-            throw new RuntimeException("Root node");
-        }
-
-        @Override
-        public ExecutionResultNode withNewChildren(Map<ExecutionResultNodePosition, ExecutionResultNode> children) {
-            LinkedHashMap<String, ExecutionResultNode> mergedChildren = new LinkedHashMap<>(getChildrenMap());
-            children.entrySet().stream().forEach(entry -> mergedChildren.put(entry.getKey().getKey(), entry.getValue()));
-            return new ObjectExecutionResultNode.RootExecutionResultNode(mergedChildren);
-        }
-
-        @Override
-        public ExecutionResultNode withChild(ExecutionResultNode child, ExecutionResultNodePosition position) {
-            LinkedHashMap<String, ExecutionResultNode> newChildren = new LinkedHashMap<>(getChildrenMap());
-            newChildren.put(position.getKey(), child);
-            return new ObjectExecutionResultNode.RootExecutionResultNode(newChildren);
-        }
-    }
 
 }

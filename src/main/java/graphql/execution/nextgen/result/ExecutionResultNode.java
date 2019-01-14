@@ -37,6 +37,8 @@ public abstract class ExecutionResultNode {
 
     public abstract List<ExecutionResultNode> getChildren();
 
+    public abstract Map<String, List<ExecutionResultNode>> getNamedChildren();
+
     public abstract ExecutionResultNode withChild(ExecutionResultNode child, ExecutionResultNodePosition position);
 
     public abstract ExecutionResultNode withNewChildren(Map<ExecutionResultNodePosition, ExecutionResultNode> children);
