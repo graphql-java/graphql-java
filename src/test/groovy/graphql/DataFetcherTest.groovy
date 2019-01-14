@@ -1,13 +1,13 @@
 package graphql
 
-import graphql.execution.ExecutionContext
+
 import graphql.schema.GraphQLOutputType
 import graphql.schema.PropertyDataFetcher
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLString
-import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment
+import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment
 
 class DataFetcherTest extends Specification {
 

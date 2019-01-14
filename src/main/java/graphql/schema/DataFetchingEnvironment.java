@@ -4,10 +4,11 @@ import graphql.PublicApi;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
+import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
+import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
-import org.dataloader.DataLoaderRegistry;
 
 import java.util.List;
 import java.util.Map;
@@ -192,7 +193,17 @@ public interface DataFetchingEnvironment {
     <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
 
     /**
-     * @return the {@link org.dataloader.DataLoaderRegistry} backing this field fetch
+     * @return the current operation that is being executed
      */
-    DataLoaderRegistry getDataLoaderRegistry();
+    OperationDefinition getOperationDefinition();
+
+    /**
+     * @return the current query Document that is being executed
+     */
+    Document getDocument();
+
+    /**
+     * @return the variables that have been passed to the query that is being executed
+     */
+    Map<String, Object> getVariables();
 }
