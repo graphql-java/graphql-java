@@ -5,6 +5,7 @@ import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.nextgen.FetchedValueAnalysis;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,13 @@ public class ObjectExecutionResultNode extends ExecutionResultNode {
     @Override
     public List<ExecutionResultNode> getChildren() {
         return new ArrayList<>(children.values());
+    }
+
+    @Override
+    public Map<String, List<ExecutionResultNode>> getNamedChildren() {
+        Map<String, List<ExecutionResultNode>> result = new LinkedHashMap<>();
+        children.forEach((key, node) -> result.put(key, Collections.singletonList(node)));
+        return result;
     }
 
     @Override
