@@ -203,6 +203,11 @@ public interface DataFetchingEnvironment {
     Document getDocument();
 
     /**
+     * This returns the variables that have been passed into the query.  Note that this is the raw variables themselves and not the
+     * arguments to the field, which is accessed via {@link #getArguments()}
+     * <p>
+     * The field arguments are created by interpolating any referenced variables and AST literals and resolving them into the arguments
+     *
      * @return the variables that have been passed to the query that is being executed
      */
     Map<String, Object> getVariables();
