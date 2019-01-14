@@ -1,5 +1,6 @@
 package graphql.util;
 
+import graphql.Assert;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import static graphql.Assert.assertNotEmpty;
+import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
@@ -24,7 +26,7 @@ public class NodeMultiZipper<T> {
     private final NodeAdapter<T> nodeAdapter;
 
     public NodeMultiZipper(T commonRoot, List<NodeZipper<T>> zippers, NodeAdapter<T> nodeAdapter) {
-        this.commonRoot = commonRoot;
+        this.commonRoot = assertNotNull(commonRoot);
         this.zippers = new ArrayList<>(zippers);
         this.nodeAdapter = nodeAdapter;
     }
@@ -51,7 +53,7 @@ public class NodeMultiZipper<T> {
             curZippers.addAll(newZippers);
         }
         assertTrue(curZippers.size() == 1, "unexpected state: all zippers must share the same root node");
-        return curZippers.get(0).toRoot();
+        return Assert.assertNotNull(curZippers.get(0).toRoot());
     }
 
     public T getCommonRoot() {
@@ -69,6 +71,7 @@ public class NodeMultiZipper<T> {
     public NodeMultiZipper<T> withReplacedZippers(List<NodeZipper<T>> zippers) {
         return new NodeMultiZipper<>(commonRoot, zippers, this.nodeAdapter);
     }
+
 
     public NodeMultiZipper<T> withNewZipper(NodeZipper<T> newZipper) {
         List<NodeZipper<T>> newZippers = getZippers();

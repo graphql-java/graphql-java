@@ -19,7 +19,7 @@ public class NodeZipper<T> {
 
 
     public NodeZipper(T curNode, List<Breadcrumb<T>> breadcrumbs, NodeAdapter<T> nodeAdapter) {
-        this.curNode = curNode;
+        this.curNode = assertNotNull(curNode);
         this.breadcrumbs = assertNotNull(breadcrumbs);
         this.nodeAdapter = nodeAdapter;
     }

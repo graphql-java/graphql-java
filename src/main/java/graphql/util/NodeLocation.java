@@ -20,6 +20,9 @@ public class NodeLocation {
         this.index = index;
     }
 
+    /**
+     * @return the name or null if there is no name
+     */
     public String getName() {
         return name;
     }
