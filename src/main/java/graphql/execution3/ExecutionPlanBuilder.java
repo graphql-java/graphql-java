@@ -76,6 +76,7 @@ class ExecutionPlanBuilder extends NodeVisitorStub {
                     return TraversalControl.QUIT;
                 }
                 
+                @Override
                 public TraversalControl visitFragmentDefinition(FragmentDefinition node, TraverserContext<Node> context) {
                     fragmentsByName.put(node.getName(), node);
                     return TraversalControl.QUIT;
