@@ -1,12 +1,12 @@
 package graphql.relay
 
-import graphql.execution.ExecutionContext
+
 import graphql.schema.DataFetchingEnvironment
 import spock.lang.Specification
 
 import java.nio.charset.StandardCharsets
 
-import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment
+import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment
 
 class SimpleListConnectionTest extends Specification {
 
@@ -81,7 +81,7 @@ class SimpleListConnectionTest extends Specification {
         connection.getEdges().size() == 3
         connection.getEdges().get(1).getNode() == null
     }
-    
+
     def "can accept an empty list"() {
         given:
         def empty = []

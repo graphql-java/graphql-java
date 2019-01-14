@@ -2,7 +2,6 @@ package graphql.schema
 
 import graphql.ExecutionInput
 import graphql.TestUtil
-import graphql.execution.ExecutionContext
 import graphql.schema.somepackage.ClassWithDFEMethods
 import graphql.schema.somepackage.ClassWithInterfaces
 import graphql.schema.somepackage.ClassWithInteritanceAndInterfaces
@@ -12,7 +11,7 @@ import spock.lang.Specification
 
 import java.util.function.Function
 
-import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment
+import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment
 
 @SuppressWarnings("GroovyUnusedDeclaration")
 class PropertyDataFetcherTest extends Specification {
