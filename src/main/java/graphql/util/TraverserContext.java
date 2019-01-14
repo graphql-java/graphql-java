@@ -88,7 +88,7 @@ public interface TraverserContext<T> {
      *
      * @return the position or null if this node is a root node
      */
-    NodePosition getPosition();
+    NodeLocation getPosition();
 
     /**
      * Informs that the current node has been already "visited"

@@ -27,7 +27,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     private Object newAccValue;
     private boolean hasNewAccValue;
     private Object curAccValue;
-    private final NodePosition position;
+    private final NodeLocation position;
     private final boolean isRootContext;
     private Map<String, List<TraverserContext<T>>> children;
 
@@ -36,7 +36,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
                                    Set<T> visited,
                                    Map<Class<?>, Object> vars,
                                    Object sharedContextData,
-                                   NodePosition position,
+                                   NodeLocation position,
                                    boolean isRootContext) {
         this.curNode = curNode;
         this.parent = parent;
@@ -168,7 +168,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     }
 
     @Override
-    public NodePosition getPosition() {
+    public NodeLocation getPosition() {
         return position;
     }
 

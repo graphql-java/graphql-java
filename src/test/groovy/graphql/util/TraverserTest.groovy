@@ -430,12 +430,12 @@ class TraverserTest extends Specification {
 
 
         then:
-        result.accumulatedResult == [new NodePosition("x", 0),
-                                     new NodePosition("y", 0),
-                                     new NodePosition("a", 0),
-                                     new NodePosition("b", 0),
-                                     new NodePosition("c", 0),
-                                     new NodePosition("d", 0),
+        result.accumulatedResult == [new NodeLocation("x", 0),
+                                     new NodeLocation("y", 0),
+                                     new NodeLocation("a", 0),
+                                     new NodeLocation("b", 0),
+                                     new NodeLocation("c", 0),
+                                     new NodeLocation("d", 0),
         ]
     }
 
@@ -460,12 +460,12 @@ class TraverserTest extends Specification {
 
 
         then:
-        result.accumulatedResult == [new NodePosition("y", 0),
-                                     new NodePosition("d", 0),
-                                     new NodePosition("c", 0),
-                                     new NodePosition("x", 0),
-                                     new NodePosition("b", 0),
-                                     new NodePosition("a", 0),
+        result.accumulatedResult == [new NodeLocation("y", 0),
+                                     new NodeLocation("d", 0),
+                                     new NodeLocation("c", 0),
+                                     new NodeLocation("x", 0),
+                                     new NodeLocation("b", 0),
+                                     new NodeLocation("a", 0),
         ]
     }
 

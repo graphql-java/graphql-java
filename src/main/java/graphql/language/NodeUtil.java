@@ -3,6 +3,7 @@ package graphql.language;
 import graphql.Internal;
 import graphql.execution.UnknownOperationException;
 import graphql.util.FpKit;
+import graphql.util.NodeLocation;
 
 import java.util.LinkedHashMap;
 import java.util.List;

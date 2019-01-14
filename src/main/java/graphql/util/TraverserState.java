@@ -45,8 +45,8 @@ public abstract class TraverserState<T> {
                     List<U> children = childrenMap.get(key);
                     for (int i = children.size() - 1; i >= 0; i--) {
                         U child = assertNotNull(children.get(i), "null child for key " + key);
-                        NodePosition nodePosition = new NodePosition(key, i);
-                        DefaultTraverserContext<U> context = super.newContext(child, traverserContext, nodePosition);
+                        NodeLocation nodeLocation = new NodeLocation(key, i);
+                        DefaultTraverserContext<U> context = super.newContext(child, traverserContext, nodeLocation);
                         super.state.push(context);
                         childrenContextMap.computeIfAbsent(key, notUsed -> new ArrayList<>());
                         childrenContextMap.get(key).add(0, context);
@@ -73,8 +73,8 @@ public abstract class TraverserState<T> {
                     List<U> children = childrenMap.get(key);
                     for (int i = 0; i < children.size(); i++) {
                         U child = assertNotNull(children.get(i), "null child for key " + key);
-                        NodePosition nodePosition = new NodePosition(key, i);
-                        DefaultTraverserContext<U> context = super.newContext(child, traverserContext, nodePosition);
+                        NodeLocation nodeLocation = new NodeLocation(key, i);
+                        DefaultTraverserContext<U> context = super.newContext(child, traverserContext, nodeLocation);
                         childrenContextMap.computeIfAbsent(key, notUsed -> new ArrayList<>());
                         childrenContextMap.get(key).add(context);
                         super.state.add(context);
@@ -130,16 +130,16 @@ public abstract class TraverserState<T> {
         return newContextImpl(null, null, vars, null, true);
     }
 
-    private DefaultTraverserContext<T> newContext(T o, TraverserContext<T> parent, NodePosition position) {
+    private DefaultTraverserContext<T> newContext(T o, TraverserContext<T> parent, NodeLocation position) {
         return newContextImpl(o, parent, new LinkedHashMap<>(), position, false);
     }
 
     private DefaultTraverserContext<T> newContextImpl(T curNode,
                                                       TraverserContext<T> parent,
                                                       Map<Class<?>, Object> vars,
-                                                      NodePosition nodePosition,
+                                                      NodeLocation nodeLocation,
                                                       boolean isRootContext) {
         assertNotNull(vars);
-        return new DefaultTraverserContext<>(curNode, parent, visited, vars, sharedContextData, nodePosition, isRootContext);
+        return new DefaultTraverserContext<>(curNode, parent, visited, vars, sharedContextData, nodeLocation, isRootContext);
     }
 }

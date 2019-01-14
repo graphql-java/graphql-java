@@ -6,7 +6,9 @@ import graphql.util.TraverserContext
 import spock.lang.Specification
 
 import static graphql.language.AstPrinter.printAstCompact
-import static graphql.language.AstTransformerUtil.changeNode
+import static graphql.util.TreeTransformerUtil.changeNode
+import static graphql.util.TreeTransformerUtil.changeParentNode
+import static graphql.util.TreeTransformerUtil.deleteNode
 
 class AstTransformerTest extends Specification {
 
@@ -162,7 +164,7 @@ class AstTransformerTest extends Specification {
             @Override
             TraversalControl visitField(Field field, TraverserContext<Node> context) {
                 if (field.name == "toDelete") {
-                    return AstTransformerUtil.deleteNode(context);
+                    return deleteNode(context);
                 } else {
                     return TraversalControl.CONTINUE;
                 }
@@ -187,7 +189,7 @@ class AstTransformerTest extends Specification {
             @Override
             TraversalControl visitField(Field field, TraverserContext<Node> context) {
                 if (field.name == "x1" || field.name == "x2") {
-                    return AstTransformerUtil.deleteNode(context);
+                    return deleteNode(context);
                 } else if (field.name == "a") {
                     return changeNode(context, field.transform({ builder -> builder.name("aChanged") }))
 
@@ -219,7 +221,7 @@ class AstTransformerTest extends Specification {
 
             @Override
             TraversalControl visitField(Field node, TraverserContext<Node> context) {
-                return AstTransformerUtil.changeParentNode(context, { selectionSet ->
+                return changeParentNode(context, { selectionSet ->
                     selectionSet.transform({ builder -> builder.selection(new Field("foo2")) })
                 })
             }
@@ -244,9 +246,9 @@ class AstTransformerTest extends Specification {
             @Override
             TraversalControl visitField(Field field, TraverserContext<Node> context) {
                 if (field.name == "toDelete") {
-                    return AstTransformerUtil.deleteNode(context);
+                    return deleteNode(context);
                 } else if (field.name == "a") {
-                    return AstTransformerUtil.changeParentNode(context, { selectionSet ->
+                    return changeParentNode(context, { selectionSet ->
                         selectionSet.transform({ builder -> builder.selection(new Field("newOne")) })
                     })
                 } else {

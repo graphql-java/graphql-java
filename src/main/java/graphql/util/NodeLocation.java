@@ -10,12 +10,12 @@ import java.util.Objects;
  * Can be an index or a name with an index.
  */
 @PublicApi
-public class NodePosition {
+public class NodeLocation {
 
     private final String name;
     private final int index;
 
-    public NodePosition(String name, int index) {
+    public NodeLocation(String name, int index) {
         this.name = name;
         this.index = index;
     }
@@ -30,7 +30,7 @@ public class NodePosition {
 
     @Override
     public String toString() {
-        return "NodePosition{" +
+        return "NodeLocation{" +
                 "name='" + name + '\'' +
                 ", index=" + index +
                 '}';
@@ -44,7 +44,7 @@ public class NodePosition {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        NodePosition that = (NodePosition) o;
+        NodeLocation that = (NodeLocation) o;
         return index == that.index &&
                 Objects.equals(name, that.name);
     }
