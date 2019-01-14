@@ -13,8 +13,9 @@ import graphql.execution.nextgen.result.ExecutionResultNode;
 import graphql.execution.nextgen.result.ExecutionResultZipper;
 import graphql.execution.nextgen.result.NamedResultNode;
 import graphql.execution.nextgen.result.ObjectExecutionResultNode;
-import graphql.execution.nextgen.result.ObjectExecutionResultNode.RootExecutionResultNode;
 import graphql.execution.nextgen.result.ResultNodesUtil;
+import graphql.execution.nextgen.result.RootExecutionResultNode;
+import graphql.execution.nextgen.result.UnresolvedObjectResultNode;
 import graphql.util.FpKit;
 
 import java.util.ArrayList;
@@ -126,7 +127,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
     }
 
     private ExecutionResultZipper resolveZipper(ExecutionResultZipper unresolvedNodeZipper, List<FetchedValueAnalysis> fetchedValuesForNode) {
-        ObjectExecutionResultNode.UnresolvedObjectResultNode unresolvedNode = (ObjectExecutionResultNode.UnresolvedObjectResultNode) unresolvedNodeZipper.getCurNode();
+        UnresolvedObjectResultNode unresolvedNode = (UnresolvedObjectResultNode) unresolvedNodeZipper.getCurNode();
         List<NamedResultNode> newChildren = util.fetchedValueAnalysisToNodes(fetchedValuesForNode);
         ObjectExecutionResultNode newNode = unresolvedNode.withChildren(newChildren);
         return unresolvedNodeZipper.withNode(newNode);

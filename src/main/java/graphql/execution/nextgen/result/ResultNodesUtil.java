@@ -8,7 +8,6 @@ import graphql.Internal;
 import graphql.execution.NonNullableFieldWasNullError;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.nextgen.FetchedValueAnalysis;
-import graphql.execution.nextgen.result.ObjectExecutionResultNode.UnresolvedObjectResultNode;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
