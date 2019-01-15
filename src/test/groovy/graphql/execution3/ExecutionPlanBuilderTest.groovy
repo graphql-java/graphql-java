@@ -43,7 +43,7 @@ class ExecutionPlanBuilderTest extends Specification {
         }}
         """)
 
-        def builder = new ExecutionPlanBuilder()
+        def builder = ExecutionPlan.newExecutionPlanBuilder()
             .schema(schema)
             .document(document)
             .operation(null)
@@ -115,7 +115,7 @@ class ExecutionPlanBuilderTest extends Specification {
         }}
         """)
 
-        def builder = new ExecutionPlanBuilder()
+        def builder = ExecutionPlan.newExecutionPlanBuilder()
             .schema(schema)
             .document(document)
             .operation(null)
@@ -202,7 +202,7 @@ class ExecutionPlanBuilderTest extends Specification {
         }}
         """)
 
-        def builder = new ExecutionPlanBuilder()
+        def builder = ExecutionPlan.newExecutionPlanBuilder()
             .schema(schema)
             .document(document)
             .operation(null)
@@ -276,7 +276,7 @@ class ExecutionPlanBuilderTest extends Specification {
         }
         """)
 
-        def builder = new ExecutionPlanBuilder()
+        def builder = ExecutionPlan.newExecutionPlanBuilder()
             .schema(schema)
             .document(document)
             .operation(null)
@@ -365,7 +365,7 @@ class ExecutionPlanBuilderTest extends Specification {
         }
         """)
 
-        def builder = new ExecutionPlanBuilder()
+        def builder = ExecutionPlan.newExecutionPlanBuilder()
             .schema(schema)
             .document(document)
             .operation(null)
@@ -431,7 +431,7 @@ class ExecutionPlanBuilderTest extends Specification {
         }}
         """)
 
-        def builder = new ExecutionPlanBuilder()
+        def builder = ExecutionPlan.newExecutionPlanBuilder()
             .schema(schema)
             .document(document)
             .operation(null)
