@@ -13,9 +13,4 @@ public interface QueryVisitorFragmentSpreadEnvironment {
     FragmentDefinition getFragmentDefinition();
 
     TraverserContext<Node> getTraverserContext();
-
-    /**
-     * @return false if fragment should not be included due to evaluation of conditional directive.
-     */
-    boolean shouldInclude();
 }

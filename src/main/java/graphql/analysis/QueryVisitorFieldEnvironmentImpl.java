@@ -24,7 +24,6 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
     private final QueryVisitorFieldEnvironment parentEnvironment;
     private final SelectionSetContainer selectionSetContainer;
     private final TraverserContext<Node> traverserContext;
-    private final boolean shouldInclude;
 
     public QueryVisitorFieldEnvironmentImpl(boolean typeNameIntrospectionField,
                                             Field field,
@@ -34,8 +33,7 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
                                             QueryVisitorFieldEnvironment parentEnvironment,
                                             Map<String, Object> arguments,
                                             SelectionSetContainer selectionSetContainer,
-                                            TraverserContext<Node> traverserContext,
-                                            boolean shouldInclude) {
+                                            TraverserContext<Node> traverserContext) {
         this.typeNameIntrospectionField = typeNameIntrospectionField;
         this.field = field;
         this.fieldDefinition = fieldDefinition;
@@ -45,7 +43,6 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
         this.arguments = arguments;
         this.selectionSetContainer = selectionSetContainer;
         this.traverserContext = traverserContext;
-        this.shouldInclude = shouldInclude;
     }
 
     @Override
@@ -94,11 +91,6 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
     @Override
     public TraverserContext<Node> getTraverserContext() {
         return traverserContext;
-    }
-
-    @Override
-    public boolean shouldInclude() {
-        return shouldInclude;
     }
 
     @Override
