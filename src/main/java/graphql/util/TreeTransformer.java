@@ -37,8 +37,8 @@ public class TreeTransformer<T> {
             }
         };
 
-        Traverser<T> nodeTraverser = Traverser.depthFirstWithNamedChildren(nodeAdapter::getNamedChildren, null, astMultiZipper);
-        NodeMultiZipper<T> multiZipperResult = (NodeMultiZipper<T>) nodeTraverser.traverse(root, nodeTraverserVisitor).getAccumulatedResult();
+        Traverser<T> traverser = Traverser.depthFirstWithNamedChildren(nodeAdapter::getNamedChildren, null, astMultiZipper);
+        NodeMultiZipper<T> multiZipperResult = (NodeMultiZipper<T>) traverser.traverse(root, nodeTraverserVisitor).getAccumulatedResult();
         return multiZipperResult.toRootNode();
     }
 }
