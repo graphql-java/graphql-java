@@ -5,10 +5,8 @@
  */
 package graphql.execution3;
 
-import graphql.language.Node;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLType;
 import java.util.Objects;
 
 /**
@@ -17,7 +15,7 @@ import java.util.Objects;
  */
 public class OperationVertex extends NodeVertex<OperationDefinition, GraphQLObjectType> {    
     public OperationVertex(OperationDefinition node, GraphQLObjectType type) {
-        super(node, type);
+        super(Objects.requireNonNull(node), Objects.requireNonNull(type));
     }  
 //
 //    @Override

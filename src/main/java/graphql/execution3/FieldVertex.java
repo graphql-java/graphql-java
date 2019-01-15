@@ -6,10 +6,8 @@
 package graphql.execution3;
 
 import graphql.language.Field;
-import graphql.language.Node;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLType;
 import java.util.Objects;
 
 /**
@@ -21,8 +19,8 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
         this(node, type, definedIn, null);
     }    
     
-    public FieldVertex(Field node, GraphQLOutputType type, GraphQLFieldsContainer definedIn, NodeVertex<? super Node, ? super GraphQLType> inScopeOf) {
-        super(node, type);
+    public FieldVertex(Field node, GraphQLOutputType type, GraphQLFieldsContainer definedIn, NodeVertex<?, ?> inScopeOf) {
+        super(Objects.requireNonNull(node), Objects.requireNonNull(type));
         
         this.definedIn = Objects.requireNonNull(definedIn);
         this.inScopeOf = inScopeOf;
@@ -72,5 +70,5 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
     }
 
     private final GraphQLFieldsContainer definedIn;
-    private final NodeVertex<Node, GraphQLType> inScopeOf;
+    private final NodeVertex<?, ?> inScopeOf;
 }

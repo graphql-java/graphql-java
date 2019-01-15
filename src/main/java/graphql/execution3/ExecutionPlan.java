@@ -60,25 +60,22 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
     public Document getDocument() {
         return document;
     }
-
-    public Collection<OperationDefinition> getOperations() {
-        return Collections.unmodifiableCollection(operations);
-    }
     
-    public OperationDefinition getOperation (String name) {
-        return operations
-            .stream()
-            .filter(od -> Objects.equals(od.getName(), name))
-            .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException(String.format("no operation definition for name '%s'", name)));
+    public OperationDefinition getOperation (String operationName) {
+        if (operationName == null && operationsByName.size() > 1)
+            throw new UnknownOperationException("Must provide operation name if query contains multiple operations.");
+        
+        return Optional
+            .ofNullable(operationsByName.get(operationName))
+            .orElseThrow(() -> new UnknownOperationException(String.format("Unknown operation named '%s'.", operationName)));
     }
 
     public Map<String, OperationDefinition> getOperationsByName() {
-        return operationsByName;
+        return Collections.unmodifiableMap(operationsByName);
     }
 
     public Map<String, FragmentDefinition> getFragmentsByName() {
-        return fragmentsByName;
+        return Collections.unmodifiableMap(fragmentsByName);
     }
 
     public Map<String, Object> getVariables() {
@@ -128,15 +125,7 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
         }
 
         public Builder operation (String operationName) {
-            if (operationName == null && executionPlan.operationsByName.size() > 1)
-                throw new UnknownOperationException("Must provide operation name if query contains multiple operations.");
-
-
-            OperationDefinition operation = Optional
-                .ofNullable(executionPlan.operationsByName.get(operationName))
-                .orElseThrow(() -> new UnknownOperationException(String.format("Unknown operation named '%s'.", operationName)));
-            executionPlan.operations.add(operation);
-
+            operations.add(executionPlan.getOperation(operationName));
             return this;
         }
 
@@ -168,21 +157,24 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
             Objects.requireNonNull(executionPlan.schema);
 
             // fix default operation if wasn't provided
-            if (executionPlan.operations.isEmpty())
+            if (operations.isEmpty())
                 operation(null);
 
             // validate variables against all selected operations
             // Note! coerceArgumentValues throws a RuntimeException to be handled later
             ValuesResolver valuesResolver = new ValuesResolver();
-            List<VariableDefinition> variableDefinitions = executionPlan.operations
+            List<VariableDefinition> variableDefinitions = operations
                     .stream()
                     .flatMap(od -> od.getVariableDefinitions().stream())
                     .collect(Collectors.toList());
             executionPlan.variables = valuesResolver.coerceArgumentValues(executionPlan.schema, variableDefinitions, executionPlan.variables);
 
+            NodeVertex<Node, GraphQLType> documentVertex = executionPlan.addNode(toNodeVertex(new DocumentVertex(executionPlan.document)));
+            Map<Class<?>, Object> rootVars = Collections.singletonMap(DocumentVertex.class, documentVertex);
+            
             // walk Operations ASTs to record dependencies between fields
-            NodeTraverser traverser = new NodeTraverser(this::getChildrenOf, executionPlan);
-            traverser.depthFirst(this, executionPlan.operations, Builder::newTraverserState);
+            NodeTraverser traverser = new NodeTraverser(rootVars, this::getChildrenOf, executionPlan);
+            traverser.depthFirst(this, operations, Builder::newTraverserState);
 
             return executionPlan;
         }
@@ -291,12 +283,18 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                     // In order to simplify dependency management between operations,
                     // clear indegrees in this OperationVertex
                     // This will make this vertex the ultimate sink in this sub-graph
-                    OperationVertex vertex = (OperationVertex)context.getResult();
-                    vertex
+                    // In order to simplify propagation of the initial root value to the fields,
+                    // add disconnected field vertices as dependencies to the root DocumentVertex
+                    DocumentVertex documentVertex = context.getVar(DocumentVertex.class);
+                    OperationVertex operationVertex = (OperationVertex)context.getResult();
+                    operationVertex
                         .adjacencySet()
                         .stream()
                         .filter(this::isFieldVertex)
-                        .forEach(v -> v.undependsOn(vertex));
+                        .forEach(v -> { 
+                            v.undependsOn(operationVertex);
+                            toNodeVertex(v).dependsOn(toNodeVertex(documentVertex), Edge.emptyAction());
+                        });
 
                     break;
                 }
@@ -417,6 +415,7 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
         }
 
         private final ExecutionPlan executionPlan;
+        private final Collection<OperationDefinition> operations = new ArrayList<>();
 
         private static final FieldCollectorHelper FIELD_COLLECTOR = new FieldCollectorHelper();
         private static final NodeVertexVisitor<Boolean> IS_FIELD = new NodeVertexVisitor<Boolean>() {
@@ -424,12 +423,11 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
             public Boolean visit(FieldVertex node, Boolean data) {
                 return true;
             }        
-        };
+        };        
     }
 
     private /*final*/ GraphQLSchema schema;
     private /*final*/ Document document;
-    private /*final*/ Collection<OperationDefinition> operations = new ArrayList<>();
     private /*final*/ Map<String, OperationDefinition> operationsByName = Collections.emptyMap();
     private /*final*/ Map<String, FragmentDefinition> fragmentsByName = Collections.emptyMap();
     private /*final*/ Map<String, Object> variables = Collections.emptyMap();    

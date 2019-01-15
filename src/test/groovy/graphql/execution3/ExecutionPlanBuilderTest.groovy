@@ -61,7 +61,7 @@ class ExecutionPlanBuilderTest extends Specification {
         def order = plan.orderDependencies()
 
         then:
-        plan.order() == 6
+        plan.order() == 7
         
         order.hasNext() == true
         order.next() == [Query_foo] as Set
@@ -133,7 +133,7 @@ class ExecutionPlanBuilderTest extends Specification {
         def order = plan.orderDependencies()
 
         then:
-        plan.order() == 6
+        plan.order() == 7
         
         order.hasNext() == true
         order.next() == [Query_foo] as Set
@@ -220,7 +220,7 @@ class ExecutionPlanBuilderTest extends Specification {
         def order = plan.orderDependencies()
 
         then:
-        plan.order() == 6
+        plan.order() == 7
         
         order.hasNext() == true
         order.next() == [Query_foo] as Set
@@ -294,7 +294,7 @@ class ExecutionPlanBuilderTest extends Specification {
         def order = plan.orderDependencies()
 
         then:
-        plan.order() == 6
+        plan.order() == 7
         
         order.hasNext() == true
         order.next() == [Query_foo] as Set
@@ -383,7 +383,7 @@ class ExecutionPlanBuilderTest extends Specification {
         def order = plan.orderDependencies()
 
         then:
-        plan.order() == 6
+        plan.order() == 7
         
         order.hasNext() == true
         order.next() == [Query_foo] as Set
@@ -452,7 +452,7 @@ class ExecutionPlanBuilderTest extends Specification {
         def order = plan.orderDependencies()
 
         then:
-        plan.order() == 9
+        plan.order() == 10
         
         order.hasNext() == true
         order.next() == [Query_foo] as Set

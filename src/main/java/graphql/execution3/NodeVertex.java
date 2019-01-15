@@ -18,8 +18,8 @@ import java.util.Objects;
  */
 public abstract class NodeVertex<N extends Node, T extends GraphQLType> extends Vertex<NodeVertex<N, T>> {
     protected NodeVertex (N node, T type) {
-        this.node = Objects.requireNonNull(node);
-        this.type = Objects.requireNonNull(type);
+        this.node = node;
+        this.type = type;
     }
 
     public N getNode() {
