@@ -2,12 +2,13 @@ package graphql.execution.nextgen;
 
 import graphql.Internal;
 import graphql.execution.ExecutionContext;
-import graphql.execution.nextgen.result.ExecutionResultMultiZipper;
-import graphql.execution.nextgen.result.ExecutionResultZipper;
+import graphql.execution.nextgen.result.ExecutionResultNode;
 import graphql.execution.nextgen.result.NamedResultNode;
 import graphql.execution.nextgen.result.ObjectExecutionResultNode;
 import graphql.execution.nextgen.result.ResultNodesUtil;
 import graphql.execution.nextgen.result.RootExecutionResultNode;
+import graphql.util.NodeMultiZipper;
+import graphql.util.NodeZipper;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -41,24 +42,24 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
     }
 
     private CompletableFuture<NamedResultNode> resolveAllChildNodes(ExecutionContext context, NamedResultNode namedResultNode) {
-        ExecutionResultMultiZipper unresolvedNodes = ResultNodesUtil.getUnresolvedNodes(namedResultNode.getNode());
-        List<CompletableFuture<ExecutionResultZipper>> resolvedNodes = map(unresolvedNodes.getZippers(), unresolvedNode -> resolveNode(context, unresolvedNode));
+        NodeMultiZipper<ExecutionResultNode> unresolvedNodes = ResultNodesUtil.getUnresolvedNodes(namedResultNode.getNode());
+        List<CompletableFuture<NodeZipper<ExecutionResultNode>>> resolvedNodes = map(unresolvedNodes.getZippers(), unresolvedNode -> resolveNode(context, unresolvedNode));
         return resolvedNodesToResultNode(namedResultNode, unresolvedNodes, resolvedNodes);
     }
 
-    private CompletableFuture<ExecutionResultZipper> resolveNode(ExecutionContext executionContext, ExecutionResultZipper unresolvedNode) {
+    private CompletableFuture<NodeZipper<ExecutionResultNode>> resolveNode(ExecutionContext executionContext, NodeZipper<ExecutionResultNode> unresolvedNode) {
         FetchedValueAnalysis fetchedValueAnalysis = unresolvedNode.getCurNode().getFetchedValueAnalysis();
         FieldSubSelection fieldSubSelection = util.createFieldSubSelection(executionContext, fetchedValueAnalysis);
         return resolveSubSelection(executionContext, fieldSubSelection)
-                .thenApply(resolvedChildMap -> unresolvedNode.withNode(new ObjectExecutionResultNode(fetchedValueAnalysis, resolvedChildMap)));
+                .thenApply(resolvedChildMap -> unresolvedNode.withNewNode(new ObjectExecutionResultNode(fetchedValueAnalysis, resolvedChildMap)));
     }
 
     private CompletableFuture<NamedResultNode> resolvedNodesToResultNode(NamedResultNode namedResultNode,
-                                                                         ExecutionResultMultiZipper unresolvedNodes,
-                                                                         List<CompletableFuture<ExecutionResultZipper>> resolvedNodes) {
+                                                                         NodeMultiZipper<ExecutionResultNode> unresolvedNodes,
+                                                                         List<CompletableFuture<NodeZipper<ExecutionResultNode>>> resolvedNodes) {
         return each(resolvedNodes)
-                .thenApply(unresolvedNodes::withZippers)
-                .thenApply(ExecutionResultMultiZipper::toRootNode)
+                .thenApply(unresolvedNodes::withReplacedZippers)
+                .thenApply(NodeMultiZipper::toRootNode)
                 .thenApply(namedResultNode::withNode);
     }
 
