@@ -27,7 +27,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     private Object newAccValue;
     private boolean hasNewAccValue;
     private Object curAccValue;
-    private final NodePosition position;
+    private final NodeLocation location;
     private final boolean isRootContext;
     private Map<String, List<TraverserContext<T>>> children;
 
@@ -36,14 +36,14 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
                                    Set<T> visited,
                                    Map<Class<?>, Object> vars,
                                    Object sharedContextData,
-                                   NodePosition position,
+                                   NodeLocation location,
                                    boolean isRootContext) {
         this.curNode = curNode;
         this.parent = parent;
         this.visited = visited;
         this.vars = vars;
         this.sharedContextData = sharedContextData;
-        this.position = position;
+        this.location = location;
         this.isRootContext = isRootContext;
     }
 
@@ -96,6 +96,19 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
         TraverserContext<T> curContext = parent;
         while (!curContext.isRootContext()) {
             result.add(curContext.thisNode());
+            curContext = curContext.getParentContext();
+        }
+        return result;
+    }
+
+    @Override
+    public List<Breadcrumb<T>> getBreadcrumbs() {
+        List<Breadcrumb<T>> result = new ArrayList<>();
+        TraverserContext<T> curContext = parent;
+        NodeLocation childLocation = this.location;
+        while (!curContext.isRootContext()) {
+            result.add(new Breadcrumb<>(curContext.thisNode(), childLocation));
+            childLocation = curContext.getLocation();
             curContext = curContext.getParentContext();
         }
         return result;
@@ -165,8 +178,8 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     }
 
     @Override
-    public NodePosition getPosition() {
-        return position;
+    public NodeLocation getLocation() {
+        return location;
     }
 
     @Override

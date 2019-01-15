@@ -83,12 +83,20 @@ public interface TraverserContext<T> {
      */
     T getParentNode();
 
+
     /**
-     * The position of the current node regarding to the parent node.
+     * The exact location of this node inside the tree as a list of {@link Breadcrumb}
+     *
+     * @return list of breadcrumbs. the first element is the location inside the parent.
+     */
+    List<Breadcrumb<T>> getBreadcrumbs();
+
+    /**
+     * The location of the current node regarding to the parent node.
      *
      * @return the position or null if this node is a root node
      */
-    NodePosition getPosition();
+    NodeLocation getLocation();
 
     /**
      * Informs that the current node has been already "visited"

@@ -13,7 +13,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static graphql.language.AstTransformerUtil.changeNode;
+import static graphql.util.TreeTransformerUtil.changeNode;
+
 /**
  * This will produce signature query documents that can be used say for logging.
  */

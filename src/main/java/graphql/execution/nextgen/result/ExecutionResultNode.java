@@ -4,6 +4,7 @@ import graphql.Internal;
 import graphql.execution.MergedField;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.nextgen.FetchedValueAnalysis;
+import graphql.util.NodeLocation;
 
 import java.util.List;
 import java.util.Map;
@@ -39,9 +40,9 @@ public abstract class ExecutionResultNode {
 
     public abstract Map<String, List<ExecutionResultNode>> getNamedChildren();
 
-    public abstract ExecutionResultNode withChild(ExecutionResultNode child, ExecutionResultNodePosition position);
+    public abstract ExecutionResultNode withChild(ExecutionResultNode child, NodeLocation position);
 
-    public abstract ExecutionResultNode withNewChildren(Map<ExecutionResultNodePosition, ExecutionResultNode> children);
+    public abstract ExecutionResultNode withNewChildren(Map<NodeLocation, ExecutionResultNode> children);
 
 
 }

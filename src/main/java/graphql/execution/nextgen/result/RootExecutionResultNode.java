@@ -1,6 +1,7 @@
 package graphql.execution.nextgen.result;
 
 import graphql.execution.nextgen.FetchedValueAnalysis;
+import graphql.util.NodeLocation;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,16 +23,16 @@ public class RootExecutionResultNode extends ObjectExecutionResultNode {
     }
 
     @Override
-    public ExecutionResultNode withNewChildren(Map<ExecutionResultNodePosition, ExecutionResultNode> children) {
+    public ExecutionResultNode withNewChildren(Map<NodeLocation, ExecutionResultNode> children) {
         LinkedHashMap<String, ExecutionResultNode> mergedChildren = new LinkedHashMap<>(getChildrenMap());
-        children.entrySet().stream().forEach(entry -> mergedChildren.put(entry.getKey().getKey(), entry.getValue()));
+        children.entrySet().stream().forEach(entry -> mergedChildren.put(entry.getKey().getName(), entry.getValue()));
         return new RootExecutionResultNode(mergedChildren);
     }
 
     @Override
-    public ExecutionResultNode withChild(ExecutionResultNode child, ExecutionResultNodePosition position) {
+    public ExecutionResultNode withChild(ExecutionResultNode child, NodeLocation position) {
         LinkedHashMap<String, ExecutionResultNode> newChildren = new LinkedHashMap<>(getChildrenMap());
-        newChildren.put(position.getKey(), child);
+        newChildren.put(position.getName(), child);
         return new RootExecutionResultNode(newChildren);
     }
 }
