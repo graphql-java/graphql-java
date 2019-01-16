@@ -19,5 +19,6 @@ package graphql.util;
  *
  * @param <T> the type of the operands and result of the operator
  */
+@FunctionalInterface
 public interface TernaryOperator<T> extends TriFunction<Boolean, T, T, T> {    
 }
