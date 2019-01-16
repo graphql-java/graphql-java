@@ -3,14 +3,15 @@ package graphql.analysis
 import graphql.TestUtil
 import graphql.language.Document
 import graphql.language.Field
+import graphql.language.NodeUtil
 import graphql.language.SelectionSet
 import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
 import static graphql.language.AstPrinter.printAstCompact
-import static graphql.language.AstTransformerUtil.*
 import static graphql.language.Field.newField
+import static graphql.util.TreeTransformerUtil.*
 
 class QueryTransformationTraversalTest extends Specification {
     Document createQuery(String query) {
@@ -122,58 +123,119 @@ class QueryTransformationTraversalTest extends Specification {
                 "query {root {fooA {midA {leafA} addedField}}}"
     }
 
-//    def "transform query fragment and inline fragment"() {
-////        def query = TestUtil.parseQuery('''
-////            {
-////                root {
-////                    fooA {
-////                          midA { ...frag }
-////                          midB { ... on MidB {
-////                                    lb: leafB
-////                                   }
-////                               }
-////                        }
-////
-////                    }
-////
-////
-////            }
-////            fragment frag on MidA {
-////                a: leafA
-////            }
-////            ''')
-//        def query = TestUtil.parseQuery('''
-//            {
-//                root {
-//                    ... frag
-//                }
-//            }
-//            fragment frag on FooA {
-//                fooA {
-//                          midA { leafA }
-//                          }
-//            }
-//            ''')
-//
-//        QueryTraversal queryTraversal = createQueryTraversal(query, transfSchema)
-//
-//        def visitor = new QueryVisitorStub() {
-//            @Override
-//            void visitInlineFragment(QueryVisitorInlineFragmentEnvironment env) {
-////                deleteNode(env.getTraverserContext())
-//            }
-//
-//            @Override
-//            void visitField(QueryVisitorFieldEnvironment env) {
-//                changeNode(env.traverserContext, env.traverserContext.thisNode())
-//            }
-//        }
-//
-//        when:
-//        def newDocument = queryTraversal.transform(visitor)
-//
-//        then:
-//        printAstCompact(newDocument) ==
-//                "query {root {fooA {midA {leafA} addedField}}}"
-//    }
+    def "transform query delete fragment spread and inline fragment"() {
+        def query = TestUtil.parseQuery('''
+            {
+                root {
+                    fooA {
+                    ...frag
+                    midB { leafB }
+                    }
+                    
+                    fooB {
+                    ...{
+                      midA { leafA }
+                    }
+                    midB { leafB }
+                    }
+                }
+            }
+            fragment frag on Foo {
+                 midA {leafA}
+            }
+            ''')
+
+        QueryTraversal queryTraversal = createQueryTraversal(query, transfSchema)
+
+        def visitor = new QueryVisitorStub() {
+            @Override
+            void visitInlineFragment(QueryVisitorInlineFragmentEnvironment env) {
+                deleteNode(env.getTraverserContext())
+            }
+
+            @Override
+            void visitFragmentSpread(QueryVisitorFragmentSpreadEnvironment env) {
+                if (env.getFragmentDefinition().getName() == "frag") {
+                    deleteNode(env.getTraverserContext())
+                }
+            }
+        }
+
+        when:
+        def newDocument = queryTraversal.transform(visitor)
+        then:
+
+        printAstCompact(newDocument) ==
+                "query {root {fooA {midB {leafB}} fooB {midB {leafB}}}}"
+    }
+
+    def "transform query does not traverse named fragments "() {
+        def query = TestUtil.parseQuery('''
+            {
+                root {
+                    ...frag
+                }
+            }
+            fragment frag on Root {
+                fooA{ midA {leafA}}
+            }
+            ''')
+
+        QueryTraversal queryTraversal = createQueryTraversal(query, transfSchema)
+
+        def visitor = Mock(QueryVisitor)
+
+
+        when:
+        queryTraversal.transform(visitor)
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "root" && it.fieldDefinition.type.name == "Root" && it.parentType.name == "Query" })
+        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironment it -> it.fragmentSpread.name == "frag" })
+        0 * _
+    }
+
+    def "named fragment is traversed if it is a root and can be transformed"() {
+        def query = TestUtil.parseQuery('''
+            {
+                root {
+                    ...frag
+                }
+            }
+            fragment frag on Root {
+                fooA{ midA {leafA}}
+            }
+            ''')
+        def fragments = NodeUtil.getFragmentsByName(query)
+        QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
+                .schema(transfSchema)
+                .root(fragments["frag"])
+        //parent type is not needed, we need to refactor query traversal so that it does not require parent type
+                .rootParentType(transfSchema.getQueryType())
+                .fragmentsByName(fragments)
+                .variables([:])
+                .build()
+
+        def visitor = new QueryVisitorStub() {
+            @Override
+            void visitField(QueryVisitorFieldEnvironment env) {
+                if (env.fieldDefinition.type.name == "String") {
+                    changeParentNode(env.traverserContext, { node ->
+
+                        node.withNewChildren(node.namedChildren.transform({
+                            it.removeChild(SelectionSet.CHILD_SELECTIONS, 0)
+                            it.child(SelectionSet.CHILD_SELECTIONS, newField("newChild1").build())
+                            it.child(SelectionSet.CHILD_SELECTIONS, newField("newChild2").build())
+                        }))
+                    })
+                }
+            }
+        }
+
+
+        when:
+        def newFragment = queryTraversal.transform(visitor)
+        then:
+        printAstCompact(newFragment) ==
+                "fragment frag on Root {fooA {midA {newChild1 newChild2}}}"
+    }
 }
