@@ -11,7 +11,9 @@ import spock.lang.Specification
 
 import static graphql.language.AstPrinter.printAstCompact
 import static graphql.language.Field.newField
-import static graphql.util.TreeTransformerUtil.*
+import static graphql.util.TreeTransformerUtil.changeNode
+import static graphql.util.TreeTransformerUtil.changeParentNode
+import static graphql.util.TreeTransformerUtil.deleteNode
 
 class QueryTransformationTraversalTest extends Specification {
     Document createQuery(String query) {

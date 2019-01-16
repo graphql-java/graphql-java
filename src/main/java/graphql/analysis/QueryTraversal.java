@@ -121,7 +121,9 @@ public class QueryTraversal {
      * processed explicitly by supplying them as root.
      *
      * @param queryVisitor the query visitor that will be called back.
+     *
      * @return changed root
+     *
      * @throws IllegalArgumentException if there are multiple root nodes.
      */
     public Node transform(QueryVisitor queryVisitor) {
@@ -142,7 +144,7 @@ public class QueryTraversal {
             @Override
             public TraversalControl leave(TraverserContext<Node> context) {
                 context.setVar(LeaveOrEnter.class, LeaveOrEnter.LEAVE);
-                return  context.thisNode().accept(context, nodeVisitor);
+                return context.thisNode().accept(context, nodeVisitor);
             }
         };
         return new TreeTransformer<>(AST_NODE_ADAPTER).transform(root, nodeTraverserVisitor, rootVars);
@@ -154,6 +156,7 @@ public class QueryTraversal {
      * @param queryReducer the query reducer
      * @param initialValue the initial value to pass to the reducer
      * @param <T>          the type of reduced value
+     *
      * @return the calculated overall value
      */
     @SuppressWarnings("unchecked")
@@ -175,6 +178,7 @@ public class QueryTraversal {
      * @param queryReducer the query reducer
      * @param initialValue the initial value to pass to the reducer
      * @param <T>          the type of reduced value
+     *
      * @return the calucalated overall value
      */
     @SuppressWarnings("unchecked")
@@ -381,6 +385,7 @@ public class QueryTraversal {
          * The schema used to identify the types of the query.
          *
          * @param schema the schema to use
+         *
          * @return this builder
          */
         public Builder schema(GraphQLSchema schema) {
@@ -393,6 +398,7 @@ public class QueryTraversal {
          * are more than one operation.
          *
          * @param operationName the operation name to use
+         *
          * @return this builder
          */
         public Builder operationName(String operationName) {
@@ -405,6 +411,7 @@ public class QueryTraversal {
          * If set a {@link Builder#operationName(String)} might be required.
          *
          * @param document the document to use
+         *
          * @return this builder
          */
         public Builder document(Document document) {
@@ -416,6 +423,7 @@ public class QueryTraversal {
          * Variables used in the query.
          *
          * @param variables the variables to use
+         *
          * @return this builder
          */
         public Builder variables(Map<String, Object> variables) {
@@ -428,6 +436,7 @@ public class QueryTraversal {
          * no {@link Builder#document(Document)}.
          *
          * @param root the root node to use
+         *
          * @return this builder
          */
         public Builder root(Node root) {
@@ -439,6 +448,7 @@ public class QueryTraversal {
          * The type of the parent of the root node. (See {@link Builder#root(Node)}
          *
          * @param rootParentType the root parent type
+         *
          * @return this builder
          */
         public Builder rootParentType(GraphQLObjectType rootParentType) {
@@ -450,6 +460,7 @@ public class QueryTraversal {
          * Fragment by name map. Needs to be provided together with a {@link Builder#root(Node)} and {@link Builder#rootParentType(GraphQLObjectType)}
          *
          * @param fragmentsByName the map of fragments
+         *
          * @return this builder
          */
         public Builder fragmentsByName(Map<String, FragmentDefinition> fragmentsByName) {

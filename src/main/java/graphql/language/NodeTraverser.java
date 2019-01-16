@@ -73,7 +73,7 @@ public class NodeTraverser {
             @Override
             public TraversalControl leave(TraverserContext<Node> context) {
                 context.setVar(LeaveOrEnter.class, LeaveOrEnter.LEAVE);
-                return  context.thisNode().accept(context, nodeVisitor);
+                return context.thisNode().accept(context, nodeVisitor);
             }
         };
         return doTraverse(roots, nodeTraverserVisitor);
