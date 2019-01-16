@@ -57,7 +57,10 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
 
     @Override
     public T thisNode() {
-
+        assertFalse(this.nodeDeleted, "node is deleted");
+        if (newNode != null) {
+            return newNode;
+        }
         return curNode;
     }
 

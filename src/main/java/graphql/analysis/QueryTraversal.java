@@ -37,6 +37,7 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.Assert.assertTrue;
 import static graphql.language.AstNodeAdapter.AST_NODE_ADAPTER;
 import static graphql.language.NodeTraverser.LeaveOrEnter.LEAVE;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
@@ -130,9 +131,9 @@ public class QueryTraversal {
         NodeVisitorImpl nodeVisitor = new NodeVisitorImpl(queryVisitor, new QueryVisitorStub());
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
         rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, rootParentType, null, null));
+        assertTrue(roots.size() == 1, "Single root node is required for transformation.");
+        Node root = roots.stream().findFirst().get();
 
-        Node root = roots.stream().findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Single root node is required for transformation."));
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
 
             @Override
@@ -314,9 +315,8 @@ public class QueryTraversal {
             QueryTraversalContext parentEnv = context.getVarFromParents(QueryTraversalContext.class);
 
             GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
-            Assert.assertTrue(typeCondition != null, "Invalid type condition '%s' in fragment '%s'", fragmentDefinition.getTypeCondition().getName(),
+            assertNotNull(typeCondition, "Invalid type condition '%s' in fragment '%s'", fragmentDefinition.getTypeCondition().getName(),
                     fragmentDefinition.getName());
-            //TODO: check if type condition of the fragment is compatible with parent type
             context
                     .setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, typeCondition, parentEnv.getEnvironment(), fragmentDefinition));
             return TraversalControl.CONTINUE;
