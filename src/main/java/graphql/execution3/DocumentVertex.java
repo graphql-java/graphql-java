@@ -7,6 +7,7 @@ package graphql.execution3;
 
 import graphql.language.Document;
 import graphql.schema.GraphQLType;
+import graphql.util.DependencyGraphContext;
 import java.util.Objects;
 
 /**
@@ -19,7 +20,7 @@ public class DocumentVertex extends NodeVertex<Document, GraphQLType> {
     }
 
     @Override
-    public boolean canResolve() {
+    public boolean canResolve(DependencyGraphContext context) {
         return true;
     }
 

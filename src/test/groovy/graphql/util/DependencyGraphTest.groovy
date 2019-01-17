@@ -8,17 +8,34 @@ package graphql.util
 
 import spock.lang.Specification
 
-/**
- *
- * @author gkesler
- */
-class DependencyGraphTest extends Specification {
+class TestVertex extends Vertex<TestVertex> {
+    public int hashCode () {
+        return Objects.hashCode(value)
+    }
+
+    public boolean equals (Object o) {
+        if (o.is(this))
+            return true
+        else if (o == null)
+            return false
+        else if (o instanceof TestVertex) {
+            TestVertex other = (TestVertex)o
+            return this.value == other.value
+        }
+
+        return false
+    }
+
+    String value
+}
+
+class DependencyGraphTest extends Specification {    
     def "test empty graph ordering"() {
         given:
-        def graph = DependencyGraph.<String>simple()
+        def graph = [] as DependencyGraph
             
         when:
-        def ordering = graph.orderDependencies()
+        def ordering = graph.orderDependencies([] as DependencyGraphContext)
             
         then:
             graph.size() == 0
@@ -28,13 +45,13 @@ class DependencyGraphTest extends Specification {
     
     def "test 1 vertex ordering"() {
         given:
-        def v1 = new SimpleVertex<>("v1")
-        def graph = DependencyGraph
-            .<String>simple()
+        def v1 = new TestVertex(value: "v1")
+        def graph = [] as DependencyGraph
+        graph
             .addDependency(v1, v1)
             
         when:
-        def ordering = graph.orderDependencies()
+        def ordering = graph.orderDependencies([] as DependencyGraphContext)
         
         then:
         graph.size() == 0
@@ -46,15 +63,15 @@ class DependencyGraphTest extends Specification {
     
     def "test 2 independent vertices ordering"() {
         given:
-        def v1 = new SimpleVertex<>("v1")
-        def v2 = new SimpleVertex<>("v2")
-        def graph = DependencyGraph
-            .<String>simple()
+        def v1 = new TestVertex(value: "v1")
+        def v2 = new TestVertex(value: "v2")
+        def graph = [] as DependencyGraph
+        graph
             .addDependency(v1, v1)
             .addDependency(v2, v2)
             
         when:
-        def ordering = graph.orderDependencies()
+        def ordering = graph.orderDependencies([] as DependencyGraphContext)
         
         then:
         graph.size() == 0
@@ -66,14 +83,14 @@ class DependencyGraphTest extends Specification {
     
     def "test 2 dependent vertices ordering"() {
         given:
-        def v1 = new SimpleVertex<>("v1")
-        def v2 = new SimpleVertex<>("v2")
-        def graph = DependencyGraph
-            .<String>simple()
+        def v1 = new TestVertex(value: "v1")
+        def v2 = new TestVertex(value: "v2")
+        def graph = [] as DependencyGraph
+        graph
             .addDependency(v1, v2)
             
         when:
-        def ordering = graph.orderDependencies()
+        def ordering = graph.orderDependencies([] as DependencyGraphContext)
         
         then:
         graph.size() == 1
@@ -87,15 +104,15 @@ class DependencyGraphTest extends Specification {
     
     def "test 2 nodes undepend"() {
         given:
-        def v1 = new SimpleVertex<>("v1")
-        def v2 = new SimpleVertex<>("v2")
-        def graph = DependencyGraph
-            .<String>simple()
+        def v1 = new TestVertex(value: "v1")
+        def v2 = new TestVertex(value: "v2")
+        def graph = [] as DependencyGraph
+        graph
             .addDependency(v1, v2)
             
         when:
         v1.undependsOn(v2)
-        def ordering = graph.orderDependencies()
+        def ordering = graph.orderDependencies([] as DependencyGraphContext)
 
         then:
         graph.size() == 0
@@ -109,17 +126,18 @@ class DependencyGraphTest extends Specification {
     
     def "test possible https://en.wikipedia.org/wiki/Dependency_graph example"() {
         given:
-            def a = new SimpleVertex("a")
-            def b = new SimpleVertex("b")
-            def c = new SimpleVertex("c")
-            def d = new SimpleVertex("d")
-            def graph = DependencyGraph.<String>simple()
+            def a = new TestVertex(value: "a")
+            def b = new TestVertex(value: "b")
+            def c = new TestVertex(value: "c")
+            def d = new TestVertex(value: "d")
+            def graph = [] as DependencyGraph
+            graph
                 .addDependency(a, b)
                 .addDependency(a, c)
                 .addDependency(b, d)
                 
         when:
-            def ordering = graph.orderDependencies()
+            def ordering = graph.orderDependencies([] as DependencyGraphContext)
             
         then:
             graph.order() == 4
@@ -135,18 +153,19 @@ class DependencyGraphTest extends Specification {
     
     def "test disconnect https://en.wikipedia.org/wiki/Dependency_graph example"() {
         given:
-            def a = new SimpleVertex("a")
-            def b = new SimpleVertex("b")
-            def c = new SimpleVertex("c")
-            def d = new SimpleVertex("d")
-            def graph = DependencyGraph.<String>simple()
+            def a = new TestVertex(value: "a")
+            def b = new TestVertex(value: "b")
+            def c = new TestVertex(value: "c")
+            def d = new TestVertex(value: "d")
+            def graph = [] as DependencyGraph
+            graph
                 .addDependency(a, b)
                 .addDependency(a, c)
                 .addDependency(b, d)
                 
         when:
             a.disconnect()
-            def ordering = graph.orderDependencies()
+            def ordering = graph.orderDependencies([] as DependencyGraphContext)
             
         then:
             graph.order() == 4
@@ -160,11 +179,12 @@ class DependencyGraphTest extends Specification {
     
     def "test impossible https://en.wikipedia.org/wiki/Dependency_graph example"() {
         given:
-            def a = new SimpleVertex("a")
-            def b = new SimpleVertex("b")
-            def c = new SimpleVertex("c")
-            def d = new SimpleVertex("d")
-            def graph = DependencyGraph.<String>simple()
+            def a = new TestVertex(value: "a")
+            def b = new TestVertex(value: "b")
+            def c = new TestVertex(value: "c")
+            def d = new TestVertex(value: "d")
+            def graph = [] as DependencyGraph
+            graph
                 .addDependency(a, b)
                 .addDependency(b, d)
                 .addDependency(b, c)
@@ -172,7 +192,7 @@ class DependencyGraphTest extends Specification {
                 .addDependency(c, a)
                 
         when:
-            def ordering = graph.orderDependencies()
+            def ordering = graph.orderDependencies([] as DependencyGraphContext)
             ordering.hasNext()
             ordering.next() // [d]
             ordering.hasNext()
@@ -184,17 +204,18 @@ class DependencyGraphTest extends Specification {
     
     def "test illegal next"() {
         given:
-            def a = new SimpleVertex("a")
-            def b = new SimpleVertex("b")
-            def c = new SimpleVertex("c")
-            def d = new SimpleVertex("d")
-            def graph = DependencyGraph.<String>simple()
+            def a = new TestVertex(value: "a")
+            def b = new TestVertex(value: "b")
+            def c = new TestVertex(value: "c")
+            def d = new TestVertex(value: "d")
+            def graph = [] as DependencyGraph
+            graph
                 .addDependency(a, b)
                 .addDependency(a, c)
                 .addDependency(b, d)
                 
         when:
-            def ordering = graph.orderDependencies()
+            def ordering = graph.orderDependencies([] as DependencyGraphContext)
             ordering.hasNext()
             ordering.next()
             ordering.next()
@@ -206,17 +227,18 @@ class DependencyGraphTest extends Specification {
     
     def "test hasNext idempotency"() {
         given:
-            def a = new SimpleVertex("a")
-            def b = new SimpleVertex("b")
-            def c = new SimpleVertex("c")
-            def d = new SimpleVertex("d")
-            def graph = DependencyGraph.<String>simple()
+            def a = new TestVertex(value: "a")
+            def b = new TestVertex(value: "b")
+            def c = new TestVertex(value: "c")
+            def d = new TestVertex(value: "d")
+            def graph = [] as DependencyGraph
+            graph
                 .addDependency(a, b)
                 .addDependency(a, c)
                 .addDependency(b, d)
                 
         when:
-            def ordering = graph.orderDependencies()
+            def ordering = graph.orderDependencies([] as DependencyGraphContext)
             
         then:
             ordering.hasNext() == ordering.hasNext()
@@ -230,74 +252,77 @@ class DependencyGraphTest extends Specification {
     
     def "test close by value"() {
         given:
-            def a = new SimpleVertex("a")
-            def b = new SimpleVertex("b")
-            def c = new SimpleVertex("c")
-            def d = new SimpleVertex("d")
-            def graph = DependencyGraph.<String>simple()
+            def a = new TestVertex(value: "a")
+            def b = new TestVertex(value: "b")
+            def c = new TestVertex(value: "c")
+            def d = new TestVertex(value: "d")
+            def graph = [] as DependencyGraph
+            graph
                 .addDependency(a, b)
                 .addDependency(a, c)
                 .addDependency(b, d)
                 
         when:
-            def ordering = graph.orderDependencies()
+            def ordering = graph.orderDependencies([] as DependencyGraphContext)
             
         then:
             ordering.hasNext() == true
             ordering.next() == [c, d] as Set
-            ordering.close([new SimpleVertex("c"), new SimpleVertex("d")])
+            ordering.close([new TestVertex(value: "c"), new TestVertex(value: "d")])
             ordering.hasNext() == true
             ordering.next() == [b] as Set
-            ordering.close([new SimpleVertex("b")])
+            ordering.close([new TestVertex(value: "b")])
             ordering.hasNext() == true
-            ordering.next() == [new SimpleVertex("a")] as Set
+            ordering.next() == [new TestVertex(value: "a")] as Set
             ordering.close([a])
             ordering.hasNext() == false
     }
         
     def "test close by id"() {
         given:
-            def a = new SimpleVertex("a")
-            def b = new SimpleVertex("b")
-            def c = new SimpleVertex("c")
-            def d = new SimpleVertex("d")
-            def graph = DependencyGraph.<String>simple()
+            def a = new TestVertex(value: "a")
+            def b = new TestVertex(value: "b")
+            def c = new TestVertex(value: "c")
+            def d = new TestVertex(value: "d")
+            def graph = [] as DependencyGraph
+            graph
                 .addDependency(a, b)
                 .addDependency(a, c)
                 .addDependency(b, d)
                 
         when:
-            def ordering = graph.orderDependencies()
+            def ordering = graph.orderDependencies([] as DependencyGraphContext)
             
         then:
             ordering.hasNext() == true
             ordering.next() == [c, d] as Set
-            ordering.close([new SimpleVertex("c").id(c.getId()), new SimpleVertex("d").id(d.getId())])
+            ordering.close([new TestVertex(value: "c").id(c.getId()), new TestVertex(value: "d").id(d.getId())])
             ordering.hasNext() == true
             ordering.next() == [b] as Set
-            ordering.close([new SimpleVertex("b").id(b.getId())])
+            ordering.close([new TestVertex(value: "b").id(b.getId())])
             ordering.hasNext() == true
-            ordering.next() == [new SimpleVertex("a").id(a.getId())] as Set
+            ordering.next() == [new TestVertex(value: "a").id(a.getId())] as Set
             ordering.close([a])
             ordering.hasNext() == false
     }
     
     def "test close by invalid id"() {
         given:
-            def a = new SimpleVertex("a")
-            def b = new SimpleVertex("b")
-            def c = new SimpleVertex("c")
-            def d = new SimpleVertex("d")
-            def graph = DependencyGraph.<String>simple()
+            def a = new TestVertex(value: "a")
+            def b = new TestVertex(value: "b")
+            def c = new TestVertex(value: "c")
+            def d = new TestVertex(value: "d")
+            def graph = [] as DependencyGraph
+            graph
                 .addDependency(a, b)
                 .addDependency(a, c)
                 .addDependency(b, d)
                 
         when:
-            def ordering = graph.orderDependencies()
+            def ordering = graph.orderDependencies([] as DependencyGraphContext)
             ordering.hasNext()
             ordering.next()
-            ordering.close([new SimpleVertex("c").id(c.getId()), new SimpleVertex("d").id(12345)])
+            ordering.close([new TestVertex(value: "c").id(c.getId()), new TestVertex(value: "d").id(12345)])
             
         then:
             java.lang.IllegalArgumentException e = thrown()
@@ -306,20 +331,21 @@ class DependencyGraphTest extends Specification {
     
     def "test close by invalid value"() {
         given:
-            def a = new SimpleVertex("a")
-            def b = new SimpleVertex("b")
-            def c = new SimpleVertex("c")
-            def d = new SimpleVertex("d")
-            def graph = DependencyGraph.<String>simple()
+            def a = new TestVertex(value: "a")
+            def b = new TestVertex(value: "b")
+            def c = new TestVertex(value: "c")
+            def d = new TestVertex(value: "d")
+            def graph = [] as DependencyGraph
+            graph
                 .addDependency(a, b)
                 .addDependency(a, c)
                 .addDependency(b, d)
                 
         when:
-            def ordering = graph.orderDependencies()
+            def ordering = graph.orderDependencies([] as DependencyGraphContext)
             ordering.hasNext()
             ordering.next()
-            ordering.close([new SimpleVertex("c").id(c.getId()), new SimpleVertex("e")])
+            ordering.close([new TestVertex(value: "c").id(c.getId()), new TestVertex(value: "e")])
             
         then:
             java.lang.IllegalArgumentException e = thrown()
@@ -328,18 +354,18 @@ class DependencyGraphTest extends Specification {
     
     def "test possible https://en.wikipedia.org/wiki/Dependency_graph example via addEdge"() {
         given:
-            def graph = DependencyGraph.<String>simple()
-            def a = graph.addNode(new SimpleVertex("a"))
-            def b = graph.addNode(new SimpleVertex("b"))
-            def c = graph.addNode(new SimpleVertex("c"))
-            def d = graph.addNode(new SimpleVertex("d"))
+            def graph = [] as DependencyGraph
+            def a = graph.addNode(new TestVertex(value: "a"))
+            def b = graph.addNode(new TestVertex(value: "b"))
+            def c = graph.addNode(new TestVertex(value: "c"))
+            def d = graph.addNode(new TestVertex(value: "d"))
                 
         when:
             graph
                .addEdge(new Edge<>(b, a))
                .addEdge(new Edge<>(c, a))
                .addEdge(new Edge<>(d, b))
-            def ordering = graph.orderDependencies()
+            def ordering = graph.orderDependencies([] as DependencyGraphContext)
             
         then:
             graph.order() == 4

@@ -41,7 +41,7 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
         hash = 97 * hash + Objects.hashCode(this.node.getAlias());
         hash = 97 * hash + Objects.hashCode(this.type);
         hash = 97 * hash + Objects.hashCode(this.definedIn);
-        hash = 97 * hash + System.identityHashCode(this.inScopeOf);
+        hash = 97 * hash + Objects.hashCode(this.inScopeOf);
         return hash;
     }
 

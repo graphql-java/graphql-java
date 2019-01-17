@@ -7,15 +7,12 @@ package graphql.util;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import java.util.AbstractSet;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -69,18 +66,18 @@ public class DependencyGraph<N extends Vertex<N>> {
             .orElse(null);
     }
     
-    protected DependencyGraph<N> addEdge (Edge<? super N> edge) {
+    protected DependencyGraph<N> addEdge (Edge<? extends N, ?> edge) {
         Objects.requireNonNull(edge);
         
-        edges.add((Edge<N>)edge);
+        edges.add((Edge<N, ?>)edge);
         return this;
     }
   
     public DependencyGraph<N> addDependency (N maybeSink, N maybeSource) {
-        return addDependency(maybeSink, maybeSource, (BiConsumer<N, N>)Edge.EMPTY_ACTION);
+        return addDependency(maybeSink, maybeSource, Edge::emptyAction);
     }
     
-    public DependencyGraph<N> addDependency (N maybeSink, N maybeSource, BiConsumer<? super N, ? super N> edgeAction) {
+    public DependencyGraph<N> addDependency (N maybeSink, N maybeSource, BiConsumer<? super Edge<N, ?>, ? super DependencyGraphContext> edgeAction) {
         // note reverse ordering of Vertex arguments.
         // an Edge points from source - to -> sink, we say "sink depends on source"
         return addEdge(new Edge<>(addNode(maybeSource), addNode(maybeSink), edgeAction));
@@ -101,11 +98,11 @@ public class DependencyGraph<N extends Vertex<N>> {
         return edges.size();
     }
     
-    public DependenciesIterator<N> orderDependencies () {
-        return new DependenciesIteratorImpl();
+    public DependenciesIterator<N> orderDependencies (DependencyGraphContext context) {
+        return new DependenciesIteratorImpl(context);
     }
     
-    protected class DependenciesIteratorImpl implements DependenciesIterator<N>, TraverserVisitor<N> {
+    protected class DependenciesIteratorImpl implements DependenciesIterator<N>, TraverserVisitor<N> {        
         @Override
         public boolean hasNext() {
             if (!lastClosure.isEmpty()) {
@@ -157,12 +154,16 @@ public class DependencyGraph<N extends Vertex<N>> {
             lastClosure = Collections.emptySet();
         }
 
+        private boolean canResolve (N node) {
+            return node.canResolve(context);
+        }
+        
         private void closeNode (N maybeNode) {
             N node = Optional
                 .ofNullable(getNode(maybeNode))
                 .orElseThrow(() -> new IllegalArgumentException("node not found: " + maybeNode));
             
-            node.resolve(maybeNode);
+            node.resolve(context);
             closed.add(node);
             unclosed.remove(node);
         }
@@ -175,7 +176,7 @@ public class DependencyGraph<N extends Vertex<N>> {
                 .setResult(closure);                  // to be returned
             
             N node = context.thisNode();
-            if (node.canResolve()) {
+            if (canResolve(node)) {
                 closeNode(node);
                 return TraversalControl.CONTINUE;
             } else {
@@ -195,35 +196,34 @@ public class DependencyGraph<N extends Vertex<N>> {
             return TraversalControl.QUIT;
         }
         
-        DependenciesIteratorImpl () {
+        DependenciesIteratorImpl (DependencyGraphContext context) {
+            this.context = Objects.requireNonNull(context);
+            
             unclosed.addAll(vertices.values());
         }
         
+        final DependencyGraphContext context;
         final Collection<N> unclosed = Collections.newSetFromMap(new IdentityHashMap<>());
         final Collection<N> closed = Collections.newSetFromMap(new IdentityHashMap<>());
+        final Traverser<N> traverser = Traverser.<N>breadthFirst(Vertex::adjacencySet, null);
         Collection<N> currentClosure = Collections.emptySet();
         Collection<N> lastClosure = Collections.emptySet();
-        final Traverser<N> traverser = Traverser.<N>breadthFirst(Vertex::adjacencySet, null);
-    }
-    
-    public static <T> DependencyGraph<SimpleVertex<T>> simple () {
-        return new DependencyGraph<>();
     }
     
     protected int nextId = 0;
     protected final Map<N, N> vertices;
     protected final Map<Object, N> verticesById;
-    protected final Set<Edge<N>> edges = new AbstractSet<Edge<N>>() {
+    protected final Set<Edge<N, ?>> edges = new AbstractSet<Edge<N, ?>>() {
         @Override
-        public boolean add(Edge<N> e) {
+        public boolean add(Edge<N, ?> e) {
             Objects.requireNonNull(e);
             
             return e.connectEndpoints();
         }
         
         @Override
-        public Iterator<Edge<N>> iterator() {
-            return new Iterator<Edge<N>>() {
+        public Iterator<Edge<N, ?>> iterator() {
+            return new Iterator<Edge<N, ?>>() {
                 @Override
                 public boolean hasNext() {
                     boolean hasNext;
@@ -234,7 +234,7 @@ public class DependencyGraph<N extends Vertex<N>> {
                 }
 
                 @Override
-                public Edge<N> next() {
+                public Edge<N, ?> next() {
                     return (last = current.next());
                 }
 
@@ -244,17 +244,17 @@ public class DependencyGraph<N extends Vertex<N>> {
                     last.disconnectEndpoints();
                 }
                 
-                final Iterator<Iterator<Edge<N>>> partitions = Stream.concat(
+                final Iterator<Iterator<Edge<N, ?>>> partitions = Stream.concat(
                         verticesById
                             .values()
                             .stream()
                             .map(v -> v.indegrees.iterator()),
-                        Stream.of(Collections.<Edge<N>>emptyIterator())
+                        Stream.of(Collections.<Edge<N, ?>>emptyIterator())
                     )
                     .collect(Collectors.toList())
                     .iterator();
-                Iterator<Edge<N>> current = partitions.next();
-                Edge<N> last;
+                Iterator<Edge<N, ?>> current = partitions.next();
+                Edge<N, ?> last;
             };
         }
 

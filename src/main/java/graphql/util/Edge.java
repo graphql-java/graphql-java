@@ -13,19 +13,20 @@ import org.slf4j.LoggerFactory;
 /**
  * Represents an edge between two vertices in the DependencyGraph
  * The direction of edge is from source -- to --&gt; sink
- * This is opposite from the represented dependency direction, e.g. from sink -- to --&gt; source
+ * This is opposite from the represented dependency direction, e.g.from sink -- to --&gt; source
  * 
  * @param <N> the actual Vertex subtype used
+ * @param <E>
  */
-public class Edge<N extends Vertex<N>> {
+public class Edge<N extends Vertex<N>, E extends Edge<N, E>> {
     protected Edge (N source, N sink) {
-        this(source, sink, (BiConsumer<N, N>)EMPTY_ACTION);
+        this(source, sink, Edge::emptyAction);
     }
     
-    protected Edge (N source, N sink, BiConsumer<? super N, ? super N> action) {
+    protected Edge (N source, N sink, BiConsumer<? super E, ? super DependencyGraphContext> action) {
         this.source = Objects.requireNonNull(source, "From Vertex MUST be specified");
         this.sink = Objects.requireNonNull(sink, "To Vertex MUST be specified");
-        this.action = Objects.requireNonNull((BiConsumer<N, N>)action, "Edge action MUST be specified");
+        this.action = Objects.requireNonNull((BiConsumer<E, DependencyGraphContext>)action, "Edge action MUST be specified");
     }  
     
     public N getSource () {
@@ -36,7 +37,7 @@ public class Edge<N extends Vertex<N>> {
         return sink;
     }
 
-    public BiConsumer<N, N> getAction() {
+    public BiConsumer<E, DependencyGraphContext> getAction() {
         return action;
     }
     
@@ -55,12 +56,11 @@ public class Edge<N extends Vertex<N>> {
             sink.outdegrees.remove(this);
     }
     
-    public void fire () {
-        action.accept(source, sink);
+    protected void fire (DependencyGraphContext context) {
+        action.accept((E)this, context);
     }
-
-    public static <N extends Vertex<N>> BiConsumer<N, N> emptyAction () {
-        return (BiConsumer<N, N>)EMPTY_ACTION;
+    
+    public static void emptyAction (Edge<?, ?> edge, DependencyGraphContext context) {
     }
     
     @Override
@@ -82,7 +82,7 @@ public class Edge<N extends Vertex<N>> {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final Edge<?> other = (Edge<?>) obj;
+        final Edge<?, ?> other = (Edge<?, ?>) obj;
         if (!Objects.equals(this.source, other.source)) {
             return false;
         }
@@ -94,13 +94,21 @@ public class Edge<N extends Vertex<N>> {
 
     @Override
     public String toString() {
-        return "Edge{" + "source=" + source + ", sink=" + sink + ", action=" + action + '}';
+        return toString(new StringBuilder(getClass().getSimpleName()).append('{'))
+                .append('}')
+                .toString();
+    }
+    
+    protected StringBuilder toString (StringBuilder builder) {
+        return builder
+                .append("source=").append(source)
+                .append(", sink=").append(sink)
+                .append(", action=").append(action);
     }
     
     protected final N source;
     protected final N sink;
-    protected final BiConsumer<N, N> action;
+    protected final BiConsumer<E, DependencyGraphContext> action;
     
-    public static final BiConsumer<?, ?> EMPTY_ACTION = (from, to) -> {};
     private static final Logger LOGGER = LoggerFactory.getLogger(Edge.class);
 }

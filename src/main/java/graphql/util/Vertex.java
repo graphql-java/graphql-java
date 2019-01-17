@@ -5,6 +5,8 @@
  */
 package graphql.util;
 
+import static graphql.Assert.assertTrue;
+import static graphql.Assert.assertNotNull;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -31,14 +33,19 @@ public abstract class Vertex<N extends Vertex<N>> {
         return (N)this;
     }
     
-    public N dependsOn (N source, BiConsumer<? super N, ? super N> edgeAction) {
-        Objects.requireNonNull(source);
-        Objects.requireNonNull(edgeAction);
+    public N addEdge (Edge<? extends N, ?> edge) {
+        assertNotNull(edge);
+        assertTrue(edge.getSink() == this, "Edge MUST sink to this vertex");
         
-        new Edge<>(source, (N)this, edgeAction)
-            .connectEndpoints();
-        
+        edge.connectEndpoints();
         return (N)this;
+    }
+    
+    public N dependsOn (N source, BiConsumer<? super Edge<N, ?>, ? super DependencyGraphContext> edgeAction) {
+        assertNotNull(source);
+        assertNotNull(edgeAction);
+        
+        return addEdge(new Edge<>(source, (N)this, edgeAction));
     }
     
     public N undependsOn (N source) {
@@ -76,16 +83,16 @@ public abstract class Vertex<N extends Vertex<N>> {
             .collect(Collectors.toList());
     }
     
-    public void fireResolved () {
-        indegrees.forEach(Edge::fire);
-    }
-    
-    public boolean canResolve () {
+    public boolean canResolve (DependencyGraphContext context) {
         return false;
     }
     
-    public void resolve (N resultNode) {
-        fireResolved();
+    public void resolve (DependencyGraphContext context) {
+        fireResolved(context);
+    }
+    
+    protected void fireResolved (DependencyGraphContext context) {
+        indegrees.forEach(edge -> edge.fire(context));
     }
     
     @Override
@@ -108,8 +115,8 @@ public abstract class Vertex<N extends Vertex<N>> {
     }
     
     protected Object id;
-    protected final Set<Edge<N>> outdegrees = new LinkedHashSet<>();
-    protected final Set<Edge<N>> indegrees = new LinkedHashSet<>();
+    protected final Set<Edge<N, ?>> outdegrees = new LinkedHashSet<>();
+    protected final Set<Edge<N, ?>> indegrees = new LinkedHashSet<>();
     
     private static final Logger LOGGER = LoggerFactory.getLogger(Vertex.class);
 }

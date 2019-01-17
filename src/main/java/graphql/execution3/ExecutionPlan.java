@@ -293,7 +293,7 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                         .filter(this::isFieldVertex)
                         .forEach(v -> { 
                             v.undependsOn(operationVertex);
-                            toNodeVertex(v).dependsOn(toNodeVertex(documentVertex), Edge.emptyAction());
+                            toNodeVertex(v).dependsOn(toNodeVertex(documentVertex), Edge::emptyAction);
                         });
 
                     break;
@@ -361,11 +361,11 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                     FieldVertex vertex = (FieldVertex)this.<FieldVertex>executionPlan(parentContext)
                             .addNode(newFieldVertex(node, (GraphQLObjectType)parentVertex.getType(), parentContext.getVar(NodeVertex.class)));
                     // FIXME: create a real action
-                    toNodeVertex(vertex).dependsOn(toNodeVertex(parentVertex), Edge.emptyAction());
+                    toNodeVertex(vertex).dependsOn(toNodeVertex(parentVertex), Edge::emptyAction);
 
                     OperationVertex operationVertex = context.getVar(OperationVertex.class);
                     // FIXME: create a real action
-                    toNodeVertex(operationVertex).dependsOn(toNodeVertex(vertex), Edge.emptyAction());
+                    toNodeVertex(operationVertex).dependsOn(toNodeVertex(vertex), Edge::emptyAction);
 
                     // propagate current scope further to children
                     if (node.getAlias() != null)
