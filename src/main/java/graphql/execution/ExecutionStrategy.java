@@ -771,6 +771,7 @@ public abstract class ExecutionStrategy {
      * @param executionContext the execution context  in play
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param fieldDefinition  the field definition to build type info for
+     * @param fieldContainer   the container of the fields
      *
      * @return a new type info
      */

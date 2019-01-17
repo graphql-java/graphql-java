@@ -30,7 +30,7 @@ import java.util.Map;
  * <p>
  * Also note that graphql specifications says that directives in the one location MUST be unique however because of field merging
  * and the hierarchical ones we can get the same named directive multiple times.  It is therefore up to you
- *  * to decide how to treat that in your {@link graphql.schema.DataFetcher} code.
+ * * to decide how to treat that in your {@link graphql.schema.DataFetcher} code.
  *
  * @see graphql.execution.MergedField
  */
@@ -48,6 +48,8 @@ public interface FieldDirectives {
     /**
      * This will return a list of the named directives that are closest to a field
      *
+     * @param directiveName the named directive
+     *
      * @return a list of the named directives that are closest to a field
      */
     List<GraphQLDirective> getClosestDirective(String directiveName);
@@ -55,6 +57,8 @@ public interface FieldDirectives {
     /**
      * This will return a list of the named directives that are immediately on this field (as opposed to hierarchical ones that might be on an enclosing
      * parent field or fragments)
+     *
+     * @param directiveName the named directive
      *
      * @return a list of the named directives that are immediately on this field
      */

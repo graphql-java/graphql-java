@@ -27,7 +27,6 @@ import java.util.Map;
  *   }
  *   }
  * </pre>
- * <p>
  */
 public interface FieldDirectivesInfo extends Comparable<FieldDirectivesInfo> {
 
