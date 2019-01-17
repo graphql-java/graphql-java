@@ -79,8 +79,6 @@ public class Execution {
             throw rte;
         }
 
-        Map<Field, List<FieldDirectivesInfo>> fieldDirectives = fieldDirectiveCollector.collectFieldDirectives(document, graphQLSchema, coercedVariables, operationDefinition);
-
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
                 .instrumentationState(instrumentationState)
@@ -96,7 +94,6 @@ public class Execution {
                 .document(document)
                 .operationDefinition(operationDefinition)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
-                .fieldDirectives(fieldDirectives)
                 .build();
 
 
@@ -129,6 +126,12 @@ public class Execution {
             }
             throw rte;
         }
+
+        //
+        // since this traverses the query tree, we need to do it here after we are sure the query is valid to be traversed.  If we do it earlier
+        // there are edge cases like not having a mutation type and so on.
+        //
+        executionContext = buildFieldDirectives(executionContext);
 
         FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
                 .schema(executionContext.getGraphQLSchema())
@@ -181,6 +184,12 @@ public class Execution {
         result = result.whenComplete(executeOperationCtx::onCompleted);
 
         return deferSupport(executionContext, result);
+    }
+
+    private ExecutionContext buildFieldDirectives(ExecutionContext executionContext) {
+        Map<Field, List<FieldDirectivesInfo>> fieldDirectives = fieldDirectiveCollector.collectFieldDirectives(
+                executionContext.getDocument(), executionContext.getGraphQLSchema(), executionContext.getVariables(), executionContext.getOperationDefinition());
+        return executionContext.transform(ctx -> ctx.fieldDirectives(fieldDirectives));
     }
 
     /*
