@@ -54,6 +54,8 @@ public interface FieldDirectivesInfo extends Comparable<FieldDirectivesInfo> {
      * This will create a new FieldDirectivesInfo that filters our the list of directives to a specifically named
      * directive and otherwise keeps the other information the same
      *
+     * @param directiveName the named directive
+     *
      * @return a copy that only contains the named directive
      */
     FieldDirectivesInfo restrictTo(String directiveName);
