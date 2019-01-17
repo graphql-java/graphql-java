@@ -4,6 +4,7 @@ package graphql.util;
 import graphql.PublicApi;
 
 import java.util.Collections;
+import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
@@ -17,6 +18,10 @@ public class TreeTransformer<T> {
     }
 
     public T transform(T root, TraverserVisitor<T> traverserVisitor) {
+        return transform(root, traverserVisitor, Collections.emptyMap());
+    }
+
+    public T transform(T root, TraverserVisitor<T> traverserVisitor, Map<Class<?>, Object> rootVars) {
         assertNotNull(root);
 
         NodeMultiZipper<T> astMultiZipper = new NodeMultiZipper<>(root, Collections.emptyList(), nodeAdapter);
@@ -38,6 +43,8 @@ public class TreeTransformer<T> {
         };
 
         Traverser<T> traverser = Traverser.depthFirstWithNamedChildren(nodeAdapter::getNamedChildren, null, astMultiZipper);
+        traverser.rootVars(rootVars);
+
         NodeMultiZipper<T> multiZipperResult = (NodeMultiZipper<T>) traverser.traverse(root, nodeTraverserVisitor).getAccumulatedResult();
         return multiZipperResult.toRootNode();
     }
