@@ -5,10 +5,14 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
+import graphql.execution.directives.FieldDirectives;
+import graphql.execution.directives.FieldDirectivesImpl;
 import graphql.language.FragmentDefinition;
 
-import java.util.Collections;
 import java.util.Map;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 
 /**
  * A builder of {@link DataFetchingEnvironment}s
@@ -40,6 +44,7 @@ public class DataFetchingEnvironmentBuilder {
                 .fragmentsByName(environment.getFragmentsByName())
                 .executionId(environment.getExecutionId())
                 .selectionSet(environment.getSelectionSet())
+                .fieldDirectives(environment.getFieldDirectives())
                 .executionContext(environment.getExecutionContext())
                 ;
     }
@@ -57,7 +62,7 @@ public class DataFetchingEnvironmentBuilder {
 
 
     private Object source;
-    private Map<String, Object> arguments = Collections.emptyMap();
+    private Map<String, Object> arguments = emptyMap();
     private Object context;
     private Object localContext;
     private Object root;
@@ -66,9 +71,10 @@ public class DataFetchingEnvironmentBuilder {
     private GraphQLOutputType fieldType;
     private GraphQLType parentType;
     private GraphQLSchema graphQLSchema;
-    private Map<String, FragmentDefinition> fragmentsByName = Collections.emptyMap();
+    private Map<String, FragmentDefinition> fragmentsByName = emptyMap();
     private ExecutionId executionId;
     private DataFetchingFieldSelectionSet selectionSet;
+    private FieldDirectives fieldDirectives = new FieldDirectivesImpl(emptyList());
     private ExecutionStepInfo executionStepInfo;
     private ExecutionContext executionContext;
 
@@ -137,6 +143,11 @@ public class DataFetchingEnvironmentBuilder {
         return this;
     }
 
+    public DataFetchingEnvironmentBuilder fieldDirectives(FieldDirectives fieldDirectives) {
+        this.fieldDirectives = fieldDirectives;
+        return this;
+    }
+
     public DataFetchingEnvironmentBuilder executionStepInfo(ExecutionStepInfo executionStepInfo) {
         this.executionStepInfo = executionStepInfo;
         return this;
@@ -150,7 +161,7 @@ public class DataFetchingEnvironmentBuilder {
     public DataFetchingEnvironment build() {
         return new DataFetchingEnvironmentImpl(source, arguments, context, localContext, root,
                 fieldDefinition, mergedField, fieldType, parentType, graphQLSchema, fragmentsByName, executionId, selectionSet,
-                executionStepInfo,
+                fieldDirectives, executionStepInfo,
                 executionContext);
     }
 }

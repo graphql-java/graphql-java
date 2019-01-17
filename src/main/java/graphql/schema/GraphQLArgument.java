@@ -183,6 +183,16 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
         return children;
     }
 
+    @Override
+    public String toString() {
+        return "GraphQLArgument{" +
+                "name='" + name + '\'' +
+                ", value=" + value +
+                ", defaultValue=" + defaultValue +
+                ", type=" + type +
+                '}';
+    }
+
     public static class Builder {
 
         private String name;

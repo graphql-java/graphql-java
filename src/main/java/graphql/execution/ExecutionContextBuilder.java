@@ -3,9 +3,11 @@ package graphql.execution;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.execution.directives.FieldDirectivesInfo;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
+import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
@@ -37,6 +39,7 @@ public class ExecutionContextBuilder {
     private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
     private DataLoaderRegistry dataLoaderRegistry;
     private List<GraphQLError> errors = new ArrayList<>();
+    private Map<Field, List<FieldDirectivesInfo>> fieldDirectives = new LinkedHashMap<>();
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -144,6 +147,10 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    public ExecutionContextBuilder fieldDirectives(Map<Field, List<FieldDirectivesInfo>> fieldDirectives) {
+        this.fieldDirectives = fieldDirectives;
+        return this;
+    }
 
     public ExecutionContextBuilder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {
         this.dataLoaderRegistry = assertNotNull(dataLoaderRegistry);
@@ -168,7 +175,10 @@ public class ExecutionContextBuilder {
                 variables,
                 context,
                 root,
-                dataLoaderRegistry, errors
+                fieldDirectives,
+                dataLoaderRegistry,
+                errors
         );
     }
+
 }

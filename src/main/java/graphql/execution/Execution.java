@@ -8,12 +8,15 @@ import graphql.GraphQL;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.defer.DeferSupport;
+import graphql.execution.directives.FieldDirectiveCollector;
+import graphql.execution.directives.FieldDirectivesInfo;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.language.Document;
+import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
@@ -44,6 +47,7 @@ public class Execution {
 
     private final FieldCollector fieldCollector = new FieldCollector();
     private final ValuesResolver valuesResolver = new ValuesResolver();
+    private final FieldDirectiveCollector fieldDirectiveCollector = new FieldDirectiveCollector();
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
@@ -75,6 +79,8 @@ public class Execution {
             throw rte;
         }
 
+        Map<Field, List<FieldDirectivesInfo>> fieldDirectives = fieldDirectiveCollector.collectFieldDirectives(document, graphQLSchema, coercedVariables, operationDefinition);
+
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
                 .instrumentationState(instrumentationState)
@@ -90,6 +96,7 @@ public class Execution {
                 .document(document)
                 .operationDefinition(operationDefinition)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
+                .fieldDirectives(fieldDirectives)
                 .build();
 
 

@@ -16,6 +16,7 @@ import graphql.execution.FetchedValue;
 import graphql.execution.MergedField;
 import graphql.execution.UnboxPossibleOptional;
 import graphql.execution.ValuesResolver;
+import graphql.execution.directives.FieldDirectives;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -116,6 +117,7 @@ public class ValueFetcher {
 
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, sameFields);
+        FieldDirectives fieldDirectives = executionContext.getFieldDirectives(sameFields);
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(source)
@@ -127,6 +129,7 @@ public class ValueFetcher {
                 .executionStepInfo(executionInfo)
                 .parentType(parentType)
                 .selectionSet(fieldCollector)
+                .fieldDirectives(fieldDirectives)
                 .build();
 
         ExecutionId executionId = executionContext.getExecutionId();

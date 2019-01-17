@@ -5,6 +5,7 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
+import graphql.execution.directives.FieldDirectives;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import org.dataloader.DataLoader;
@@ -176,6 +177,11 @@ public interface DataFetchingEnvironment {
      * @return the {@link DataFetchingFieldSelectionSet} for the current data fetch operation
      */
     DataFetchingFieldSelectionSet getSelectionSet();
+
+    /**
+     * @return a {@link graphql.execution.directives.FieldDirectives} for the currently executing field
+     */
+    FieldDirectives getFieldDirectives();
 
     /**
      * @return the current {@link ExecutionContext}. It gives access to the overall schema and other things related to the overall execution of the current request.

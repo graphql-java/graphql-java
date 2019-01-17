@@ -6,6 +6,7 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
+import graphql.execution.directives.FieldDirectives;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import org.dataloader.DataLoader;
@@ -35,6 +36,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final DataFetchingFieldSelectionSet selectionSet;
     private final ExecutionStepInfo executionStepInfo;
     private final ExecutionContext executionContext;
+    private final FieldDirectives fieldDirectives;
 
     public DataFetchingEnvironmentImpl(Object source,
                                        Map<String, Object> arguments,
@@ -49,6 +51,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                                        Map<String, FragmentDefinition> fragmentsByName,
                                        ExecutionId executionId,
                                        DataFetchingFieldSelectionSet selectionSet,
+                                       FieldDirectives fieldDirectives,
                                        ExecutionStepInfo executionStepInfo,
                                        ExecutionContext executionContext) {
         this.source = source;
@@ -64,6 +67,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.selectionSet = selectionSet;
+        this.fieldDirectives = fieldDirectives;
         this.executionStepInfo = executionStepInfo;
         this.executionContext = assertNotNull(executionContext);
     }
@@ -151,6 +155,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public DataFetchingFieldSelectionSet getSelectionSet() {
         return selectionSet;
+    }
+
+    @Override
+    public FieldDirectives getFieldDirectives() {
+        return fieldDirectives;
     }
 
     @Override
