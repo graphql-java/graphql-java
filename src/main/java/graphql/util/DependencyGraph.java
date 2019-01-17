@@ -150,22 +150,32 @@ public class DependencyGraph<N extends Vertex<N>> {
         public void close(Collection<N> resolvedSet) {
             Objects.requireNonNull(resolvedSet);
             
-            resolvedSet.forEach(this::closeNode);
+            resolvedSet.forEach(this::closeResolved);
             lastClosure = Collections.emptySet();
         }
-
-        private boolean canResolve (N node) {
-            return node.canResolve(context);
-        }
         
-        private void closeNode (N maybeNode) {
+        private boolean closeNode (N maybeNode, boolean autoResolve) {
             N node = Optional
                 .ofNullable(getNode(maybeNode))
                 .orElseThrow(() -> new IllegalArgumentException("node not found: " + maybeNode));
             
-            node.resolve(context);
-            closed.add(node);
-            unclosed.remove(node);
+            if (node.resolve(context) || !autoResolve) {
+                closed.add(node);
+                unclosed.remove(node);
+                
+                node.fireResolved(context);
+                return true;
+            }
+            
+            return false;
+        }
+
+        private boolean closeResolved (N maybeNode) {
+            return closeNode(maybeNode, false/*autoClose*/);
+        }
+        
+        private boolean autoClose (N maybeNode) {
+            return closeNode(maybeNode, true/*autoResolve*/);
         }
         
         @Override
@@ -176,8 +186,7 @@ public class DependencyGraph<N extends Vertex<N>> {
                 .setResult(closure);                  // to be returned
             
             N node = context.thisNode();
-            if (canResolve(node)) {
-                closeNode(node);
+            if (autoClose(node)) {
                 return TraversalControl.CONTINUE;
             } else {
                 closure.add(node);

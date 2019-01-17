@@ -20,7 +20,7 @@ public class DocumentVertex extends NodeVertex<Document, GraphQLType> {
     }
 
     @Override
-    public boolean canResolve(DependencyGraphContext context) {
+    public boolean resolve(DependencyGraphContext context) {
         return true;
     }
 

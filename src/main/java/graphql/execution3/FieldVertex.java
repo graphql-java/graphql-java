@@ -44,7 +44,7 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
         hash = 97 * hash + Objects.hashCode(this.inScopeOf);
         return hash;
     }
-
+    
     @Override
     public boolean equals(Object obj) {
         if (super.equals(obj)) {
@@ -70,5 +70,5 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
     }
 
     private final GraphQLFieldsContainer definedIn;
-    private final NodeVertex<?, ?> inScopeOf;
+    private final Object inScopeOf;
 }

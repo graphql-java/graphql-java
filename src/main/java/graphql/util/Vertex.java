@@ -83,12 +83,8 @@ public abstract class Vertex<N extends Vertex<N>> {
             .collect(Collectors.toList());
     }
     
-    public boolean canResolve (DependencyGraphContext context) {
+    public boolean resolve (DependencyGraphContext context) {
         return false;
-    }
-    
-    public void resolve (DependencyGraphContext context) {
-        fireResolved(context);
     }
     
     protected void fireResolved (DependencyGraphContext context) {

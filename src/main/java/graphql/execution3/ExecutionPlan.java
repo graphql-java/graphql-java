@@ -31,7 +31,6 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.util.DependencyGraph;
-import graphql.util.DependencyGraphContext;
 import graphql.util.Edge;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -261,9 +260,9 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
             return new OperationVertex(operationDefinition, operationType);
         }
 
-        private FieldVertex newFieldVertex (Field field, GraphQLObjectType parentType, NodeVertex<? super Node, ? super GraphQLType> scope) {
+        private FieldVertex newFieldVertex (Field field, GraphQLObjectType parentType, FieldVertex inScopeOf) {
             GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(executionPlan.schema, (GraphQLCompositeType)GraphQLTypeUtil.unwrapNonNull(parentType), field.getName());
-            return new FieldVertex(field, fieldDefinition.getType(), parentType, scope);
+            return new FieldVertex(field, fieldDefinition.getType(), parentType, inScopeOf);
         }
 
         private <V extends NodeVertex<? extends Node, ? extends GraphQLType>> DependencyGraph<? super V> executionPlan (TraverserContext<Node> context) {
@@ -372,17 +371,22 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                     NodeVertex<Node, GraphQLType> parentVertex = (NodeVertex<Node, GraphQLType>)parentContext.getResult();
 
                     FieldVertex vertex = (FieldVertex)this.<FieldVertex>executionPlan(parentContext)
-                            .addNode(newFieldVertex(node, (GraphQLObjectType)parentVertex.getType(), parentContext.getVar(NodeVertex.class)));
-                    // FIXME: create a real action
-                    toNodeVertex(vertex).dependsOn(toNodeVertex(parentVertex), executionPlan::prepareResolve);
+                            .addNode(newFieldVertex(node, (GraphQLObjectType)parentVertex.getType(), parentContext.getVar(FieldVertex.class)));
 
+                    // Note! the ordering of the below dependencies is important:
+                    // 1. complete previous resolve
+                    // 2. prepare to the next resolve
                     OperationVertex operationVertex = context.getVar(OperationVertex.class);
-                    // FIXME: create a real action
+                    // action in this dependency will be executed when this vertex is resolved
                     toNodeVertex(operationVertex).dependsOn(toNodeVertex(vertex), executionPlan::whenResolved);
+                    
+                    // action in this dependency will be executed right after the source had been resolve 
+                    // in order to prepare to the next resolve
+                    toNodeVertex(vertex).dependsOn(toNodeVertex(parentVertex), executionPlan::prepareResolve);
 
                     // propagate current scope further to children
                     if (node.getAlias() != null)
-                        context.setVar(NodeVertex.class, vertex);
+                        context.setVar(FieldVertex.class, vertex);
 
                     // propagate my vertex to my children
                     context.setResult(vertex);
