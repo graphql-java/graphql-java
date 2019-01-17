@@ -3,19 +3,29 @@ package graphql.execution3
 import graphql.ExecutionInput
 import graphql.TestUtil
 import graphql.execution.ExecutionId
-import graphql.execution2.Execution
 import graphql.schema.DataFetcher
+import graphql.schema.GraphQLType
 import graphql.language.OperationDefinition
 import graphql.language.OperationDefinition.Operation
 import graphql.language.Field
+import graphql.language.Node
 import graphql.util.DependencyGraphContext
+import graphql.util.Edge
 import spock.lang.Ignore
 import spock.lang.Specification
 
-class ExecutionPlanBuilderTest extends Specification {
-    class TestGraphContext implements DependencyGraphContext {        
+class TestGraphContext implements ExecutionPlanContext {
+    void prepareResolveRoot (Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
     }
     
+    void prepareResolve (Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
+    }
+    
+    void whenResolved (Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
+    }
+}
+
+class ExecutionPlanBuilderTest extends Specification {
     //@Ignore
     def "test simple query"() {
         def fooData = [id: "fooId", bar: [id: "barId", name: "someBar"]]
@@ -62,7 +72,7 @@ class ExecutionPlanBuilderTest extends Specification {
         def Bar_id = plan.getNode new FieldVertex(new Field("id"), schema.getType("ID"), schema.getType("Bar"))    
         def Bar_name = plan.getNode new FieldVertex(new Field("name"), schema.getType("String"), schema.getType("Bar"))    
         
-        def order = plan.orderDependencies([] as TestGraphContext)
+        def order = plan.orderDependencies(new TestGraphContext())
 
         then:
         plan.order() == 7
@@ -134,7 +144,7 @@ class ExecutionPlanBuilderTest extends Specification {
         def Bar_id = plan.getNode new FieldVertex(new Field("id"), schema.getType("ID"), schema.getType("Bar"))    
         def Bar_name = plan.getNode new FieldVertex(new Field("name"), schema.getType("String"), schema.getType("Bar"))    
         
-        def order = plan.orderDependencies([] as TestGraphContext)
+        def order = plan.orderDependencies(new TestGraphContext())
 
         then:
         plan.order() == 7
@@ -221,7 +231,7 @@ class ExecutionPlanBuilderTest extends Specification {
         def Bar_id = plan.getNode new FieldVertex(new Field("id"), schema.getType("ID"), schema.getType("Bar"))    
         def Bar_name = plan.getNode new FieldVertex(new Field("name"), schema.getType("String"), schema.getType("Bar"))    
         
-        def order = plan.orderDependencies([] as TestGraphContext)
+        def order = plan.orderDependencies(new TestGraphContext())
 
         then:
         plan.order() == 7
@@ -295,7 +305,7 @@ class ExecutionPlanBuilderTest extends Specification {
         def Bar_id = plan.getNode new FieldVertex(new Field("id"), schema.getType("ID"), schema.getType("Bar"))    
         def Bar_name = plan.getNode new FieldVertex(new Field("name"), schema.getType("String"), schema.getType("Bar"))    
         
-        def order = plan.orderDependencies([] as TestGraphContext)
+        def order = plan.orderDependencies(new TestGraphContext())
 
         then:
         plan.order() == 7
@@ -384,7 +394,7 @@ class ExecutionPlanBuilderTest extends Specification {
         def Bar_id = plan.getNode new FieldVertex(new Field("id"), schema.getType("ID"), schema.getType("Bar"))    
         def Bar_name = plan.getNode new FieldVertex(new Field("name"), schema.getType("String"), schema.getType("Bar"))    
         
-        def order = plan.orderDependencies([] as TestGraphContext)
+        def order = plan.orderDependencies(new TestGraphContext())
 
         then:
         plan.order() == 7
@@ -453,7 +463,7 @@ class ExecutionPlanBuilderTest extends Specification {
         def Bar1_id = plan.getNode new FieldVertex(new Field("id"), schema.getType("ID"), schema.getType("Bar"), Foo_bar1)    
         def Bar1_name = plan.getNode new FieldVertex(new Field("name"), schema.getType("String"), schema.getType("Bar"), Foo_bar1)    
         
-        def order = plan.orderDependencies([] as TestGraphContext)
+        def order = plan.orderDependencies(new TestGraphContext())
 
         then:
         plan.order() == 10

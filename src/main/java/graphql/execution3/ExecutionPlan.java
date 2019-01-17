@@ -31,6 +31,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.util.DependencyGraph;
+import graphql.util.DependencyGraphContext;
 import graphql.util.Edge;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -80,6 +81,18 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
 
     public Map<String, Object> getVariables() {
         return Collections.unmodifiableMap(variables);
+    }
+
+    protected void prepareResolveRoot (DependencyGraphContext context, Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
+        ((ExecutionPlanContext)context).prepareResolveRoot(edge);
+    }
+
+    protected void prepareResolve (DependencyGraphContext context, Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
+        ((ExecutionPlanContext)context).prepareResolve(edge);
+    }
+
+    protected void whenResolved (DependencyGraphContext context, Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
+        ((ExecutionPlanContext)context).whenResolved(edge);
     }
     
     static Builder newExecutionPlanBuilder () {
@@ -264,7 +277,7 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
         private boolean isFieldVertex (NodeVertex<? extends Node, ? extends GraphQLType> vertex) {
             return vertex.accept(false, IS_FIELD);
         }
-
+        
         // NodeVisitor methods
 
         @Override
@@ -293,7 +306,7 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                         .filter(this::isFieldVertex)
                         .forEach(v -> { 
                             v.undependsOn(operationVertex);
-                            toNodeVertex(v).dependsOn(toNodeVertex(documentVertex), Edge::emptyAction);
+                            toNodeVertex(v).dependsOn(toNodeVertex(documentVertex), executionPlan::prepareResolveRoot);
                         });
 
                     break;
@@ -361,11 +374,11 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                     FieldVertex vertex = (FieldVertex)this.<FieldVertex>executionPlan(parentContext)
                             .addNode(newFieldVertex(node, (GraphQLObjectType)parentVertex.getType(), parentContext.getVar(NodeVertex.class)));
                     // FIXME: create a real action
-                    toNodeVertex(vertex).dependsOn(toNodeVertex(parentVertex), Edge::emptyAction);
+                    toNodeVertex(vertex).dependsOn(toNodeVertex(parentVertex), executionPlan::prepareResolve);
 
                     OperationVertex operationVertex = context.getVar(OperationVertex.class);
                     // FIXME: create a real action
-                    toNodeVertex(operationVertex).dependsOn(toNodeVertex(vertex), Edge::emptyAction);
+                    toNodeVertex(operationVertex).dependsOn(toNodeVertex(vertex), executionPlan::whenResolved);
 
                     // propagate current scope further to children
                     if (node.getAlias() != null)

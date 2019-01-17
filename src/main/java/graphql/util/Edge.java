@@ -16,17 +16,17 @@ import org.slf4j.LoggerFactory;
  * This is opposite from the represented dependency direction, e.g.from sink -- to --&gt; source
  * 
  * @param <N> the actual Vertex subtype used
- * @param <E>
+ * @param <E> the Edge subtype
  */
 public class Edge<N extends Vertex<N>, E extends Edge<N, E>> {
     protected Edge (N source, N sink) {
         this(source, sink, Edge::emptyAction);
     }
     
-    protected Edge (N source, N sink, BiConsumer<? super E, ? super DependencyGraphContext> action) {
+    protected Edge (N source, N sink, BiConsumer<? super DependencyGraphContext, ? super E> action) {
         this.source = Objects.requireNonNull(source, "From Vertex MUST be specified");
         this.sink = Objects.requireNonNull(sink, "To Vertex MUST be specified");
-        this.action = Objects.requireNonNull((BiConsumer<E, DependencyGraphContext>)action, "Edge action MUST be specified");
+        this.action = Objects.requireNonNull((BiConsumer<DependencyGraphContext, E>)action, "Edge action MUST be specified");
     }  
     
     public N getSource () {
@@ -37,7 +37,7 @@ public class Edge<N extends Vertex<N>, E extends Edge<N, E>> {
         return sink;
     }
 
-    public BiConsumer<E, DependencyGraphContext> getAction() {
+    public BiConsumer<DependencyGraphContext, E> getAction() {
         return action;
     }
     
@@ -57,10 +57,10 @@ public class Edge<N extends Vertex<N>, E extends Edge<N, E>> {
     }
     
     protected void fire (DependencyGraphContext context) {
-        action.accept((E)this, context);
+        action.accept(context, (E)this);
     }
     
-    public static void emptyAction (Edge<?, ?> edge, DependencyGraphContext context) {
+    static void emptyAction (DependencyGraphContext context, Edge<?, ?> edge) {
     }
     
     @Override
@@ -108,7 +108,7 @@ public class Edge<N extends Vertex<N>, E extends Edge<N, E>> {
     
     protected final N source;
     protected final N sink;
-    protected final BiConsumer<E, DependencyGraphContext> action;
+    protected final BiConsumer<DependencyGraphContext, E> action;
     
     private static final Logger LOGGER = LoggerFactory.getLogger(Edge.class);
 }

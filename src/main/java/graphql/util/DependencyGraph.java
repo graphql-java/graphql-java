@@ -77,7 +77,7 @@ public class DependencyGraph<N extends Vertex<N>> {
         return addDependency(maybeSink, maybeSource, Edge::emptyAction);
     }
     
-    public DependencyGraph<N> addDependency (N maybeSink, N maybeSource, BiConsumer<? super Edge<N, ?>, ? super DependencyGraphContext> edgeAction) {
+    public DependencyGraph<N> addDependency (N maybeSink, N maybeSource, BiConsumer<? super DependencyGraphContext, ? super Edge<N, ?>> edgeAction) {
         // note reverse ordering of Vertex arguments.
         // an Edge points from source - to -> sink, we say "sink depends on source"
         return addEdge(new Edge<>(addNode(maybeSource), addNode(maybeSink), edgeAction));
