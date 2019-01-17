@@ -23,6 +23,13 @@ class TestGraphContext implements ExecutionPlanContext {
     
     void whenResolved (Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
     }
+    
+    boolean resolve (NodeVertex<? extends Node, ? extends GraphQLType> node) {
+        if (node instanceof DocumentVertex)
+            return true
+            
+        return false
+    }
 }
 
 class ExecutionPlanBuilderTest extends Specification {

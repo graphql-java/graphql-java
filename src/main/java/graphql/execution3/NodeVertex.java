@@ -7,6 +7,7 @@ package graphql.execution3;
 
 import graphql.language.Node;
 import graphql.schema.GraphQLType;
+import graphql.util.DependencyGraphContext;
 import graphql.util.Vertex;
 import java.util.Objects;
 
@@ -28,6 +29,11 @@ public abstract class NodeVertex<N extends Node, T extends GraphQLType> extends 
 
     public T getType() {
         return type;
+    }
+
+    @Override
+    public boolean resolve(DependencyGraphContext context) {
+        return ((ExecutionPlanContext)context).resolve(this);
     }
 
     @Override
