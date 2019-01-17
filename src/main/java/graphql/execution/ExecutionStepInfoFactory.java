@@ -33,6 +33,7 @@ public class ExecutionStepInfoFactory {
                 .parentInfo(parentInfo)
                 .type(fieldType)
                 .fieldDefinition(fieldDefinition)
+                .fieldContainer(parentType)
                 .field(mergedField)
                 .path(newPath)
                 .arguments(argumentValues));

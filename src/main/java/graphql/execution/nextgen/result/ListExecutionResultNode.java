@@ -4,8 +4,10 @@ import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.nextgen.FetchedValueAnalysis;
+import graphql.util.NodeLocation;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,16 +37,23 @@ public class ListExecutionResultNode extends ExecutionResultNode {
     }
 
     @Override
-    public ExecutionResultNode withChild(ExecutionResultNode child, ExecutionResultNodePosition position) {
+    public Map<String, List<ExecutionResultNode>> getNamedChildren() {
+        Map<String, List<ExecutionResultNode>> result = new LinkedHashMap<>();
+        result.put(null, children);
+        return result;
+    }
+
+    @Override
+    public ExecutionResultNode withChild(ExecutionResultNode child, NodeLocation position) {
         List<ExecutionResultNode> newChildren = new ArrayList<>(this.children);
         newChildren.set(position.getIndex(), child);
         return new ListExecutionResultNode(getFetchedValueAnalysis(), newChildren);
     }
 
     @Override
-    public ExecutionResultNode withNewChildren(Map<ExecutionResultNodePosition, ExecutionResultNode> newChildren) {
+    public ExecutionResultNode withNewChildren(Map<NodeLocation, ExecutionResultNode> newChildren) {
         List<ExecutionResultNode> mergedChildren = new ArrayList<>(this.children);
-        newChildren.entrySet().stream().forEach(entry -> mergedChildren.set(entry.getKey().getIndex(), entry.getValue()));
+        newChildren.entrySet().forEach(entry -> mergedChildren.set(entry.getKey().getIndex(), entry.getValue()));
 
         return new ListExecutionResultNode(getFetchedValueAnalysis(), mergedChildren);
     }

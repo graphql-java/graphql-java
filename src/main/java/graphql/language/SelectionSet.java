@@ -108,7 +108,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
 
     public static final class Builder implements NodeBuilder {
 
-        private Collection<? extends Selection> selections = new ArrayList<>();
+        private List<Selection> selections = new ArrayList<>();
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
@@ -124,7 +124,12 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
         }
 
         public Builder selections(Collection<? extends Selection> selections) {
-            this.selections = selections;
+            this.selections = new ArrayList<>(selections);
+            return this;
+        }
+
+        public Builder selection(Selection selection) {
+            this.selections.add(selection);
             return this;
         }
 

@@ -3,9 +3,10 @@ package graphql.execution.nextgen.result;
 import graphql.Internal;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.nextgen.FetchedValueAnalysis;
+import graphql.util.NodeLocation;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,16 +35,23 @@ public class ObjectExecutionResultNode extends ExecutionResultNode {
     }
 
     @Override
-    public ExecutionResultNode withChild(ExecutionResultNode child, ExecutionResultNodePosition position) {
+    public Map<String, List<ExecutionResultNode>> getNamedChildren() {
+        Map<String, List<ExecutionResultNode>> result = new LinkedHashMap<>();
+        children.forEach((key, node) -> result.put(key, Arrays.asList(node)));
+        return result;
+    }
+
+    @Override
+    public ExecutionResultNode withChild(ExecutionResultNode child, NodeLocation position) {
         LinkedHashMap<String, ExecutionResultNode> newChildren = new LinkedHashMap<>(this.children);
-        newChildren.put(position.getKey(), child);
+        newChildren.put(position.getName(), child);
         return new ObjectExecutionResultNode(getFetchedValueAnalysis(), newChildren);
     }
 
     @Override
-    public ExecutionResultNode withNewChildren(Map<ExecutionResultNodePosition, ExecutionResultNode> children) {
+    public ExecutionResultNode withNewChildren(Map<NodeLocation, ExecutionResultNode> children) {
         LinkedHashMap<String, ExecutionResultNode> mergedChildren = new LinkedHashMap<>(this.children);
-        children.entrySet().stream().forEach(entry -> mergedChildren.put(entry.getKey().getKey(), entry.getValue()));
+        children.entrySet().stream().forEach(entry -> mergedChildren.put(entry.getKey().getName(), entry.getValue()));
         return new ObjectExecutionResultNode(getFetchedValueAnalysis(), mergedChildren);
     }
 
@@ -62,48 +70,5 @@ public class ObjectExecutionResultNode extends ExecutionResultNode {
         return new ObjectExecutionResultNode(getFetchedValueAnalysis(), children);
     }
 
-    public static class UnresolvedObjectResultNode extends ObjectExecutionResultNode {
-
-        public UnresolvedObjectResultNode(FetchedValueAnalysis fetchedValueAnalysis) {
-            super(fetchedValueAnalysis, Collections.emptyMap());
-        }
-
-        @Override
-        public String toString() {
-            return "UnresolvedObjectResultNode{" +
-                    "fetchedValueAnalysis=" + getFetchedValueAnalysis() +
-                    '}';
-        }
-    }
-
-    public static class RootExecutionResultNode extends ObjectExecutionResultNode {
-
-        public RootExecutionResultNode(Map<String, ExecutionResultNode> children) {
-            super(null, children);
-        }
-
-        public RootExecutionResultNode(List<NamedResultNode> children) {
-            super(null, children);
-        }
-
-        @Override
-        public FetchedValueAnalysis getFetchedValueAnalysis() {
-            throw new RuntimeException("Root node");
-        }
-
-        @Override
-        public ExecutionResultNode withNewChildren(Map<ExecutionResultNodePosition, ExecutionResultNode> children) {
-            LinkedHashMap<String, ExecutionResultNode> mergedChildren = new LinkedHashMap<>(getChildrenMap());
-            children.entrySet().stream().forEach(entry -> mergedChildren.put(entry.getKey().getKey(), entry.getValue()));
-            return new ObjectExecutionResultNode.RootExecutionResultNode(mergedChildren);
-        }
-
-        @Override
-        public ExecutionResultNode withChild(ExecutionResultNode child, ExecutionResultNodePosition position) {
-            LinkedHashMap<String, ExecutionResultNode> newChildren = new LinkedHashMap<>(getChildrenMap());
-            newChildren.put(position.getKey(), child);
-            return new ObjectExecutionResultNode.RootExecutionResultNode(newChildren);
-        }
-    }
 
 }
