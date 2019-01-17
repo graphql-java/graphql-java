@@ -23,7 +23,7 @@ public class Edge<N extends Vertex<N>, E extends Edge<N, E>> {
         this(source, sink, Edge::emptyAction);
     }
     
-    protected Edge (N source, N sink, BiConsumer<? super DependencyGraphContext, ? super E> action) {
+    protected <C extends DependencyGraphContext> Edge (N source, N sink, BiConsumer<? super C, ? super E> action) {
         this.source = Objects.requireNonNull(source, "From Vertex MUST be specified");
         this.sink = Objects.requireNonNull(sink, "To Vertex MUST be specified");
         this.action = Objects.requireNonNull((BiConsumer<DependencyGraphContext, E>)action, "Edge action MUST be specified");

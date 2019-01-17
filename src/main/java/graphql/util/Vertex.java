@@ -41,7 +41,7 @@ public abstract class Vertex<N extends Vertex<N>> {
         return (N)this;
     }
     
-    public N dependsOn (N source, BiConsumer<? super DependencyGraphContext, ? super Edge<N, ?>> edgeAction) {
+    public <C extends DependencyGraphContext> N dependsOn (N source, BiConsumer<? super C, ? super Edge<N, ?>> edgeAction) {
         assertNotNull(source);
         assertNotNull(edgeAction);
         

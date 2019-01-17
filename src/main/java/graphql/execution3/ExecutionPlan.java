@@ -83,16 +83,16 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
         return Collections.unmodifiableMap(variables);
     }
 
-    protected void prepareResolveRoot (DependencyGraphContext context, Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
-        ((ExecutionPlanContext)context).prepareResolveRoot(edge);
+    protected void prepareResolveRoot (ExecutionPlanContext context, Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
+        context.prepareResolveRoot(edge);
     }
 
-    protected void prepareResolve (DependencyGraphContext context, Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
-        ((ExecutionPlanContext)context).prepareResolve(edge);
+    protected void prepareResolve (ExecutionPlanContext context, Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
+        context.prepareResolve(edge);
     }
 
-    protected void whenResolved (DependencyGraphContext context, Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
-        ((ExecutionPlanContext)context).whenResolved(edge);
+    protected void whenResolved (ExecutionPlanContext context, Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
+        context.whenResolved(edge);
     }
     
     static Builder newExecutionPlanBuilder () {
