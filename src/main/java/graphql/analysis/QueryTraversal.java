@@ -144,8 +144,8 @@ public class QueryTraversal {
 
             @Override
             public TraversalControl leave(TraverserContext<Node> context) {
-                context.setVar(LeaveOrEnter.class, LeaveOrEnter.LEAVE);
-                return context.thisNode().accept(context, nodeVisitor);
+                //Transformations are applied preOrder only
+                return TraversalControl.CONTINUE;
             }
         };
         return new TreeTransformer<>(AST_NODE_ADAPTER).transform(root, nodeTraverserVisitor, rootVars);
