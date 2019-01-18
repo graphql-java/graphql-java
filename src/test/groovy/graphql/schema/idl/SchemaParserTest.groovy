@@ -169,4 +169,41 @@ class SchemaParserTest extends Specification {
         typeRegistry.types().size() == 4
     }
 
+    def "empty types and extensions are allowed"() {
+        def schema = '''
+            type Foo {
+            }
+
+            extend type Foo {
+            }
+            
+            interface InterfaceFoo {
+            }
+
+            extend interface InterfaceFoo {
+            }
+            
+            input InputFoo {
+            }
+
+            extend input InputFoo {
+            }
+            
+            enum EnumFoo {
+            }
+
+            extend enum EnumFoo {
+            }
+            
+        '''
+
+        when:
+        TypeDefinitionRegistry typeRegistry = new SchemaParser().parse(schema)
+        then:
+        typeRegistry.types().size() == 3
+        typeRegistry.interfaceTypeExtensions().size() == 1
+        typeRegistry.objectTypeExtensions().size() == 1
+        typeRegistry.inputObjectTypeExtensions().size() == 1
+
+    }
 }

@@ -72,7 +72,7 @@ unionMembers:
 unionMembers '|' typeName
 ;
 
-enumTypeDefinition : description? ENUM name directives? enumValueDefinitions;
+enumTypeDefinition : description? ENUM name directives? enumValueDefinitions?;
 
 enumTypeExtensionDefinition : EXTEND ENUM name directives? enumValueDefinitions?;
 
@@ -81,11 +81,11 @@ enumValueDefinitions : '{' enumValueDefinition+ '}';
 enumValueDefinition : description? enumValue directives?;
 
 
-inputObjectTypeDefinition : description? INPUT name directives? inputObjectValueDefinitions;
+inputObjectTypeDefinition : description? INPUT name directives? inputObjectValueDefinitions?;
 
 inputObjectTypeExtensionDefinition : EXTEND INPUT name directives? inputObjectValueDefinitions?;
 
-inputObjectValueDefinitions : '{' inputValueDefinition+ '}';
+inputObjectValueDefinitions : '{' inputValueDefinition* '}';
 
 
 directiveDefinition : description? DIRECTIVE '@' name argumentsDefinition? 'on' directiveLocations;
