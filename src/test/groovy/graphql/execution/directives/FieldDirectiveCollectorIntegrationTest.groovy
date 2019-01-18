@@ -1,4 +1,4 @@
-package graphql.execution
+package graphql.execution.directives
 
 import graphql.GraphQL
 import graphql.TestUtil
@@ -9,7 +9,7 @@ import graphql.schema.DataFetcher
 import graphql.schema.GraphQLDirective
 import spock.lang.Specification
 
-class FieldDirectiveCollectorTest extends Specification {
+class FieldDirectiveCollectorIntegrationTest extends Specification {
 
     def sdl = '''
         directive @timeout(afterMillis : Int) on FIELD | FRAGMENT_DEFINITION | FRAGMENT_SPREAD | INLINE_FRAGMENT | QUERY
