@@ -70,8 +70,7 @@ public class UniqueDirectiveNamesPerLocation extends AbstractRule {
         });
     }
 
-
-    static String duplicateDirectiveNameMessage(String directiveName, String location) {
+    private String duplicateDirectiveNameMessage(String directiveName, String location) {
         return String.format("Directives must be uniquely named within a location. The directive '%s' used on a '%s' is not unique.", directiveName, location);
     }
 }
