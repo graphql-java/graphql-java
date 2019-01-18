@@ -39,7 +39,7 @@ class GraphQLErrorTest extends Specification {
         new InvalidSyntaxError(mkLocations(), "Not good syntax m'kay")                                 |
                 [
                         locations: [[line: 666, column: 999], [line: 333, column: 0]],
-                        message  : "Invalid Syntax : Not good syntax m'kay",
+                        message  : "Not good syntax m'kay",
                 ]
 
         new NonNullableFieldWasNullError(new NonNullableFieldWasNullException(mkTypeInfo(), mkPath())) |
