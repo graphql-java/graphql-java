@@ -17,6 +17,7 @@ import java.util.function.Function
 
 import static ExecutionStepInfo.newExecutionStepInfo
 import static graphql.Scalars.GraphQLString
+import static graphql.TestUtil.mergedField
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
@@ -27,6 +28,7 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 class ExecutionStepInfoTest extends Specification {
 
     def field = new Field("someAstField")
+    def mergedField = mergedField(field)
 
     def field1Def = newFieldDefinition().name("field1").type(GraphQLString).build()
 
@@ -49,7 +51,7 @@ class ExecutionStepInfoTest extends Specification {
     def "basic hierarchy"() {
         given:
         def rootTypeInfo = newExecutionStepInfo().type(rootType).build()
-        def fieldTypeInfo = newExecutionStepInfo().type(fieldType).fieldDefinition(field1Def).field(field).parentInfo(rootTypeInfo).build()
+        def fieldTypeInfo = newExecutionStepInfo().type(fieldType).fieldDefinition(field1Def).field(mergedField).parentInfo(rootTypeInfo).build()
         def nonNullFieldTypeInfo = newExecutionStepInfo().type(nonNull(fieldType)).parentInfo(rootTypeInfo).build()
         def listTypeInfo = newExecutionStepInfo().type(list(fieldType)).parentInfo(rootTypeInfo).build()
 
@@ -64,7 +66,7 @@ class ExecutionStepInfoTest extends Specification {
         fieldTypeInfo.parent.type == rootType
         !fieldTypeInfo.isNonNullType()
         fieldTypeInfo.getFieldDefinition() == field1Def
-        fieldTypeInfo.getField() == field
+        fieldTypeInfo.getField() == mergedField
 
         nonNullFieldTypeInfo.getUnwrappedNonNullType() == fieldType
         nonNullFieldTypeInfo.hasParent()

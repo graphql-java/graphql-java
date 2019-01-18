@@ -383,26 +383,45 @@ class BatchedExecutionStrategyTest extends Specification {
     }
 
     def "test list in lists "() {
-        def fooData = [[bar: [[id: "barId1"], [id: "barId2"]]], [bar: null], [bar: [[id: "barId3"], [id: "barId4"], [id: "barId5"]]]]
+        def catsBatchSize
+        def catsCallCount = 0
+        def idsBatchSize
+        def idsCallCount = 0
+
+        def catsDataFetcher = { env ->
+            catsCallCount++
+            catsBatchSize = env.getSource().size()
+            return [["cat1", "cat2"], null, ["cat3", "cat4", "cat5"]]
+        } as BatchedDataFetcher
+
+        def idDataFetcher = { env ->
+            idsCallCount++
+            idsBatchSize = env.getSource().size()
+            return ["catId1", "catId2", "catId3", "catId4", "catId5"]
+        } as BatchedDataFetcher
+
+        def friendsData = ["friend1", "friend2", "friend3"]
         def dataFetchers = [
-                Query: [foo: { env -> fooData } as DataFetcher]
+                Query : [friends: { env -> friendsData } as DataFetcher],
+                Person: [cats: catsDataFetcher],
+                Cat   : [id: idDataFetcher]
         ]
         def schema = TestUtil.schema("""
         type Query {
-            foo: [Foo]
+            friends: [Person]
         }
-        type Foo {
-            bar: [Bar]
+        type Person {
+            cats: [Cat]
         }    
-        type Bar {
+        type Cat {
             id: ID
         }
         """, dataFetchers)
 
 
         def document = graphql.TestUtil.parseQuery("""
-        {foo {
-            bar {
+        {friends { 
+            cats { 
                 id
             }
         }}
@@ -420,7 +439,11 @@ class BatchedExecutionStrategyTest extends Specification {
 
 
         then:
-        result.getData() == [foo: fooData]
+        result.getData() == [friends: [[cats: [[id: "catId1"], [id: "catId2"]]], [cats: null], [cats: [[id: "catId3"], [id: "catId4"], [id: "catId5"]]]]]
+        catsCallCount == 1
+        idsCallCount == 1
+        catsBatchSize == 3
+        idsBatchSize == 5
 
 
     }

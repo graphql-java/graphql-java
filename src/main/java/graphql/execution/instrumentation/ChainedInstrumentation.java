@@ -6,6 +6,7 @@ import graphql.PublicApi;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.FieldValueInfo;
+import graphql.execution.MergedField;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
@@ -16,7 +17,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchPar
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
-import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
@@ -176,12 +176,12 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public Document instrumentDocument(Document document, InstrumentationExecutionParameters parameters) {
+    public DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters) {
         for (Instrumentation instrumentation : instrumentations) {
             InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
-            document = instrumentation.instrumentDocument(document, parameters.withNewState(state));
+            documentAndVariables = instrumentation.instrumentDocumentAndVariables(documentAndVariables, parameters.withNewState(state));
         }
-        return document;
+        return documentAndVariables;
     }
 
     @Override
@@ -279,7 +279,7 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onDeferredField(List<Field> field) {
+        public void onDeferredField(MergedField field) {
             contexts.forEach(context -> context.onDeferredField(field));
         }
     }

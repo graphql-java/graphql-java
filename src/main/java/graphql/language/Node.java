@@ -30,7 +30,7 @@ public interface Node<T extends Node> extends Serializable {
      * Alternative to {@link #getChildren()} where the children are not all in one list regardless of type
      * but grouped by name/type of the child.
      *
-     * @return
+     * @return a container of the child nodes
      */
     NodeChildrenContainer getNamedChildren();
 

@@ -2,10 +2,9 @@ package graphql.execution.nextgen;
 
 import graphql.Internal;
 import graphql.execution.ExecutionStepInfo;
-import graphql.language.Field;
+import graphql.execution.MergedField;
+import graphql.execution.MergedSelectionSet;
 
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 
@@ -16,33 +15,37 @@ import java.util.Map;
 @Internal
 public class FieldSubSelection {
 
-    private Object source;
-    // the type of this must be objectType
-    private ExecutionStepInfo executionInfo;
-    private Map<String, List<Field>> fields = new LinkedHashMap<>();
+    private final Object source;
+    private final Object localContext;
+    // the type of this must be objectType and is the parent executionStepInfo for all mergedSelectionSet
+    private final ExecutionStepInfo executionInfo;
+    private final MergedSelectionSet mergedSelectionSet;
+
+    private FieldSubSelection(Builder builder) {
+        this.source = builder.source;
+        this.localContext = builder.localContext;
+        this.executionInfo = builder.executionInfo;
+        this.mergedSelectionSet = builder.mergedSelectionSet;
+    }
 
     public Object getSource() {
         return source;
     }
 
-    public void setSource(Object source) {
-        this.source = source;
+    public Object getLocalContext() {
+        return localContext;
     }
 
-    public Map<String, List<Field>> getFields() {
-        return fields;
+    public Map<String, MergedField> getSubFields() {
+        return mergedSelectionSet.getSubFields();
     }
 
-    public void setFields(Map<String, List<Field>> fields) {
-        this.fields = fields;
+    public MergedSelectionSet getMergedSelectionSet() {
+        return mergedSelectionSet;
     }
 
     public ExecutionStepInfo getExecutionStepInfo() {
         return executionInfo;
-    }
-
-    public void setExecutionStepInfo(ExecutionStepInfo executionInfo) {
-        this.executionInfo = executionInfo;
     }
 
     @Override
@@ -50,14 +53,45 @@ public class FieldSubSelection {
         return "FieldSubSelection{" +
                 "source=" + source +
                 ", executionInfo=" + executionInfo +
-                ", fields=" + fields +
+                ", mergedSelectionSet" + mergedSelectionSet +
                 '}';
     }
 
-    public String toShortString() {
-        return "FieldSubSelection{" +
-                "fields=" + fields.keySet() +
-                '}';
+    public static Builder newFieldSubSelection() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Object source;
+        private Object localContext;
+        private ExecutionStepInfo executionInfo;
+        private MergedSelectionSet mergedSelectionSet;
+
+        public Builder source(Object source) {
+            this.source = source;
+            return this;
+        }
+
+        public Builder localContext(Object localContext) {
+            this.localContext = localContext;
+            return this;
+        }
+
+        public Builder executionInfo(ExecutionStepInfo executionInfo) {
+            this.executionInfo = executionInfo;
+            return this;
+        }
+
+        public Builder mergedSelectionSet(MergedSelectionSet mergedSelectionSet) {
+            this.mergedSelectionSet = mergedSelectionSet;
+            return this;
+        }
+
+        public FieldSubSelection build() {
+            return new FieldSubSelection(this);
+        }
+
+
     }
 
 }

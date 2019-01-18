@@ -9,6 +9,7 @@ import graphql.execution.ExecutionIdProvider;
 import graphql.execution.ExecutionStrategy;
 import graphql.execution.SubscriptionExecutionStrategy;
 import graphql.execution.instrumentation.ChainedInstrumentation;
+import graphql.execution.instrumentation.DocumentAndVariables;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -39,6 +40,7 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.execution.instrumentation.DocumentAndVariables.newDocumentAndVariables;
 
 /**
  * This class is where all graphql-java query execution begins.  It combines the objects that are needed
@@ -509,7 +511,7 @@ public class GraphQL {
                 transformedQuery -> {
                     // if they change the original query in the pre-parser, then we want to see it downstream from then on
                     executionInputRef.set(executionInput.transform(bldr -> bldr.query(transformedQuery)));
-                    return parseAndValidate(executionInputRef.get(), graphQLSchema, instrumentationState);
+                    return parseAndValidate(executionInputRef, graphQLSchema, instrumentationState);
                 });
         if (preparsedDoc.hasErrors()) {
             return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDoc.getErrors()));
@@ -518,19 +520,26 @@ public class GraphQL {
         return execute(executionInputRef.get(), preparsedDoc.getDocument(), graphQLSchema, instrumentationState);
     }
 
-    private PreparsedDocumentEntry parseAndValidate(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
-        log.debug("Parsing query: '{}'...", executionInput.getQuery());
+    private PreparsedDocumentEntry parseAndValidate(AtomicReference<ExecutionInput> executionInputRef, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+
+        ExecutionInput executionInput = executionInputRef.get();
+        String query = executionInput.getQuery();
+
+        log.debug("Parsing query: '{}'...", query);
         ParseResult parseResult = parse(executionInput, graphQLSchema, instrumentationState);
         if (parseResult.isFailure()) {
             log.warn("Query failed to parse : '{}'", executionInput.getQuery());
             return new PreparsedDocumentEntry(parseResult.getException().toInvalidSyntaxError());
         } else {
             final Document document = parseResult.getDocument();
+            // they may have changed the document and the variables via instrumentation so update the reference to it
+            executionInput = executionInput.transform(builder -> builder.variables(parseResult.getVariables()));
+            executionInputRef.set(executionInput);
 
-            log.debug("Validating query: '{}'", executionInput.getQuery());
+            log.debug("Validating query: '{}'", query);
             final List<ValidationError> errors = validate(executionInput, document, graphQLSchema, instrumentationState);
             if (!errors.isEmpty()) {
-                log.warn("Query failed to validate : '{}'", executionInput.getQuery());
+                log.warn("Query failed to validate : '{}'", query);
                 return new PreparsedDocumentEntry(errors);
             }
 
@@ -544,16 +553,19 @@ public class GraphQL {
 
         Parser parser = new Parser();
         Document document;
+        DocumentAndVariables documentAndVariables;
         try {
             document = parser.parseDocument(executionInput.getQuery());
-            document = instrumentation.instrumentDocument(document, parameters);
+            documentAndVariables = newDocumentAndVariables()
+                    .document(document).variables(executionInput.getVariables()).build();
+            documentAndVariables = instrumentation.instrumentDocumentAndVariables(documentAndVariables, parameters);
         } catch (InvalidSyntaxException e) {
             parseInstrumentation.onCompleted(null, e);
             return ParseResult.ofError(e);
         }
 
-        parseInstrumentation.onCompleted(document, null);
-        return ParseResult.of(document);
+        parseInstrumentation.onCompleted(documentAndVariables.getDocument(), null);
+        return ParseResult.of(documentAndVariables);
     }
 
     private List<ValidationError> validate(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
@@ -592,27 +604,31 @@ public class GraphQL {
     }
 
     private static class ParseResult {
-        private final Document document;
+        private final DocumentAndVariables documentAndVariables;
         private final InvalidSyntaxException exception;
 
-        private ParseResult(Document document, InvalidSyntaxException exception) {
-            this.document = document;
+        private ParseResult(DocumentAndVariables documentAndVariables, InvalidSyntaxException exception) {
+            this.documentAndVariables = documentAndVariables;
             this.exception = exception;
         }
 
         private boolean isFailure() {
-            return document == null;
+            return documentAndVariables == null;
         }
 
         private Document getDocument() {
-            return document;
+            return documentAndVariables.getDocument();
+        }
+
+        private Map<String, Object> getVariables() {
+            return documentAndVariables.getVariables();
         }
 
         private InvalidSyntaxException getException() {
             return exception;
         }
 
-        private static ParseResult of(Document document) {
+        private static ParseResult of(DocumentAndVariables document) {
             return new ParseResult(document, null);
         }
 

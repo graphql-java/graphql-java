@@ -20,7 +20,7 @@ therefore we avoid adding any new dependency.
 access etc is out of scope.
 
 
-If you have any question please open a Issue.
+If you have any question please consider asking in our spectrum chat https://spectrum.chat/graphql-java. For bug reports or specific code related topics create a new issue.
 
 Thanks! 
   

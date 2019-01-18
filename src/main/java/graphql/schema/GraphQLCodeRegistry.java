@@ -1,15 +1,10 @@
 package graphql.schema;
 
 import graphql.PublicApi;
-import graphql.execution.conversion.ArgumentConversions;
-import graphql.execution.conversion.ArgumentConverter;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -35,14 +30,12 @@ public class GraphQLCodeRegistry {
     private final Map<FieldCoordinates, DataFetcherFactory> dataFetcherMap;
     private final Map<String, DataFetcherFactory> systemDataFetcherMap;
     private final Map<String, TypeResolver> typeResolverMap;
-    private final List<ArgumentConverter> argumentConverters;
     private final GraphqlFieldVisibility fieldVisibility;
 
-    private GraphQLCodeRegistry(Map<FieldCoordinates, DataFetcherFactory> dataFetcherMap, Map<String, DataFetcherFactory> systemDataFetcherMap, Map<String, TypeResolver> typeResolverMap, List<ArgumentConverter> argumentConverters, GraphqlFieldVisibility fieldVisibility) {
+    private GraphQLCodeRegistry(Map<FieldCoordinates, DataFetcherFactory> dataFetcherMap, Map<String, DataFetcherFactory> systemDataFetcherMap, Map<String, TypeResolver> typeResolverMap, GraphqlFieldVisibility fieldVisibility) {
         this.dataFetcherMap = dataFetcherMap;
         this.systemDataFetcherMap = systemDataFetcherMap;
         this.typeResolverMap = typeResolverMap;
-        this.argumentConverters = argumentConverters;
         this.fieldVisibility = fieldVisibility;
     }
 
@@ -133,12 +126,6 @@ public class GraphQLCodeRegistry {
         return assertNotNull(typeResolver, "There must be a type resolver for union " + parentType.getName());
     }
 
-    public List<ArgumentConverter> getArgumentConverters() {
-        return new ArrayList<>(argumentConverters);
-    }
-
-
-
     /**
      * This helps you transform the current {@link graphql.schema.GraphQLCodeRegistry} object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
@@ -175,7 +162,6 @@ public class GraphQLCodeRegistry {
         private final Map<FieldCoordinates, DataFetcherFactory> dataFetcherMap = new LinkedHashMap<>();
         private final Map<String, DataFetcherFactory> systemDataFetcherMap = new LinkedHashMap<>();
         private final Map<String, TypeResolver> typeResolverMap = new HashMap<>();
-        private final List<ArgumentConverter> argumentConverters = new ArrayList<>();
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
 
 
@@ -186,7 +172,6 @@ public class GraphQLCodeRegistry {
             this.dataFetcherMap.putAll(codeRegistry.dataFetcherMap);
             this.typeResolverMap.putAll(codeRegistry.typeResolverMap);
             this.fieldVisibility = codeRegistry.fieldVisibility;
-            this.argumentConverters.addAll(codeRegistry.getArgumentConverters());
         }
 
         /**
@@ -342,23 +327,6 @@ public class GraphQLCodeRegistry {
             return this;
         }
 
-        public Builder argumentConverter(ArgumentConverter argumentConverter) {
-            this.argumentConverters.add(assertNotNull(argumentConverter));
-            return this;
-        }
-
-        public Builder argumentConverters(List<ArgumentConverter> argumentConverters) {
-            this.argumentConverters.addAll(assertNotNull(argumentConverters));
-            return this;
-        }
-
-        public Builder argumentConverters(ArgumentConverter... argumentConverters) {
-            return argumentConverters(Arrays.asList(argumentConverters));
-        }
-
-        public Builder argumentConverters(ArgumentConversions.Builder argumentConversions) {
-            return argumentConverter(argumentConversions.build());
-        }
 
         public Builder fieldVisibility(GraphqlFieldVisibility fieldVisibility) {
             this.fieldVisibility = assertNotNull(fieldVisibility);
@@ -376,7 +344,7 @@ public class GraphQLCodeRegistry {
         }
 
         public GraphQLCodeRegistry build() {
-            return new GraphQLCodeRegistry(dataFetcherMap, systemDataFetcherMap, typeResolverMap, argumentConverters, fieldVisibility);
+            return new GraphQLCodeRegistry(dataFetcherMap, systemDataFetcherMap, typeResolverMap, fieldVisibility);
         }
     }
 }

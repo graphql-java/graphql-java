@@ -173,4 +173,16 @@ public class Async {
         return values.thenApply(list -> list.stream().map(mapper).collect(Collectors.toList()));
     }
 
+    public static <U, T> List<CompletableFuture<U>> map(List<CompletableFuture<T>> values, Function<T, U> mapper) {
+        return values
+                .stream()
+                .map(cf -> cf.thenApply(mapper::apply)).collect(Collectors.toList());
+    }
+
+    public static <U, T> List<CompletableFuture<U>> mapCompose(List<CompletableFuture<T>> values, Function<T, CompletableFuture<U>> mapper) {
+        return values
+                .stream()
+                .map(cf -> cf.thenCompose(mapper::apply)).collect(Collectors.toList());
+    }
+
 }

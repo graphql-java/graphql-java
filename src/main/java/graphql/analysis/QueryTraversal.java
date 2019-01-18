@@ -1,5 +1,6 @@
 package graphql.analysis;
 
+import graphql.Assert;
 import graphql.PublicApi;
 import graphql.execution.ConditionalNodes;
 import graphql.execution.ValuesResolver;
@@ -15,7 +16,6 @@ import graphql.language.NodeTraverser.LeaveOrEnter;
 import graphql.language.NodeUtil;
 import graphql.language.NodeVisitorStub;
 import graphql.language.OperationDefinition;
-import graphql.language.Selection;
 import graphql.language.TypeName;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLCompositeType;
@@ -26,6 +26,8 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import graphql.util.TraverserVisitor;
+import graphql.util.TreeTransformer;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -35,8 +37,11 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.Assert.assertTrue;
+import static graphql.language.AstNodeAdapter.AST_NODE_ADAPTER;
 import static graphql.language.NodeTraverser.LeaveOrEnter.LEAVE;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
+import static java.util.Collections.singletonList;
 
 /**
  * Helps to traverse (or reduce) a Document (or parts of it) and tracks at the same time the corresponding Schema types.
@@ -46,6 +51,9 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
  * <p>
  * Further are the built in Directives skip/include automatically evaluated: if parts of the Document should be ignored they will not
  * be visited. But this is not a full evaluation of a Query: every fragment will be visited/followed regardless of the type condition.
+ * <p>
+ * It also doesn't consider field merging, which means for example {@code { user{firstName} user{firstName}} } will result in four
+ * visitField calls.
  */
 @PublicApi
 public class QueryTraversal {
@@ -57,7 +65,6 @@ public class QueryTraversal {
 
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
     private final ValuesResolver valuesResolver = new ValuesResolver();
-    private final ChildrenOfSelectionProvider childrenOfSelectionProvider;
     private final GraphQLObjectType rootParentType;
 
     private QueryTraversal(GraphQLSchema schema,
@@ -69,9 +76,8 @@ public class QueryTraversal {
         this.schema = assertNotNull(schema, "schema can't be null");
         this.variables = assertNotNull(variables, "variables can't be null");
         this.fragmentsByName = getOperationResult.fragmentsByName;
-        this.roots = getOperationResult.operationDefinition.getSelectionSet().getChildren();
+        this.roots = singletonList(getOperationResult.operationDefinition);
         this.rootParentType = getRootTypeFromOperation(getOperationResult.operationDefinition);
-        this.childrenOfSelectionProvider = new ChildrenOfSelectionProvider(fragmentsByName);
     }
 
     private QueryTraversal(GraphQLSchema schema,
@@ -85,7 +91,10 @@ public class QueryTraversal {
         this.roots = Collections.singleton(root);
         this.rootParentType = assertNotNull(rootParentType, "rootParentType can't be null");
         this.fragmentsByName = assertNotNull(fragmentsByName, "fragmentsByName can't be null");
-        this.childrenOfSelectionProvider = new ChildrenOfSelectionProvider(fragmentsByName);
+    }
+
+    public Object visitDepthFirst(QueryVisitor queryVisitor) {
+        return visitImpl(queryVisitor, null);
     }
 
     /**
@@ -104,6 +113,42 @@ public class QueryTraversal {
      */
     public void visitPreOrder(QueryVisitor visitor) {
         visitImpl(visitor, true);
+    }
+
+
+    /**
+     * Visits the Document in pre-order and allows to transform it using {@link graphql.util.TreeTransformerUtil}
+     * methods. This method requires single root element. Please note that fragments are not visited and need to be
+     * processed explicitly by supplying them as root.
+     *
+     * @param queryVisitor the query visitor that will be called back.
+     *
+     * @return changed root
+     *
+     * @throws IllegalArgumentException if there are multiple root nodes.
+     */
+    public Node transform(QueryVisitor queryVisitor) {
+        NodeVisitorImpl nodeVisitor = new NodeVisitorImpl(queryVisitor, new QueryVisitorStub());
+        Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
+        rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, rootParentType, null, null));
+        assertTrue(roots.size() == 1, "Single root node is required for transformation.");
+        Node root = roots.stream().findFirst().get();
+
+        TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
+
+            @Override
+            public TraversalControl enter(TraverserContext<Node> context) {
+                context.setVar(LeaveOrEnter.class, LeaveOrEnter.ENTER);
+                return context.thisNode().accept(context, nodeVisitor);
+            }
+
+            @Override
+            public TraversalControl leave(TraverserContext<Node> context) {
+                //Transformations are applied preOrder only
+                return TraversalControl.CONTINUE;
+            }
+        };
+        return new TreeTransformer<>(AST_NODE_ADAPTER).transform(root, nodeTraverserVisitor, rootVars);
     }
 
     /**
@@ -163,20 +208,31 @@ public class QueryTraversal {
         }
     }
 
-    private List<Node> childrenOf(Node selection) {
-        return childrenOfSelectionProvider.getSelections((Selection) selection);
+    private List<Node> childrenOf(Node<?> node) {
+        if (!(node instanceof FragmentSpread)) {
+            return node.getChildren();
+        }
+        FragmentSpread fragmentSpread = (FragmentSpread) node;
+        return singletonList(fragmentsByName.get(fragmentSpread.getName()));
     }
 
-    private void visitImpl(QueryVisitor visitFieldCallback, boolean preOrder) {
+    private Object visitImpl(QueryVisitor visitFieldCallback, Boolean preOrder) {
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
         rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, rootParentType, null, null));
 
-        QueryVisitor noOp = new QueryVisitorStub();
-        QueryVisitor preOrderCallback = preOrder ? visitFieldCallback : noOp;
-        QueryVisitor postOrderCallback = !preOrder ? visitFieldCallback : noOp;
+        QueryVisitor preOrderCallback;
+        QueryVisitor postOrderCallback;
+        if (preOrder == null) {
+            preOrderCallback = visitFieldCallback;
+            postOrderCallback = visitFieldCallback;
+        } else {
+            QueryVisitor noOp = new QueryVisitorStub();
+            preOrderCallback = preOrder ? visitFieldCallback : noOp;
+            postOrderCallback = !preOrder ? visitFieldCallback : noOp;
+        }
 
         NodeTraverser nodeTraverser = new NodeTraverser(rootVars, this::childrenOf);
-        nodeTraverser.depthFirst(new NodeVisitorImpl(preOrderCallback, postOrderCallback), roots);
+        return nodeTraverser.depthFirst(new NodeVisitorImpl(preOrderCallback, postOrderCallback), roots);
     }
 
     private class NodeVisitorImpl extends NodeVisitorStub {
@@ -191,10 +247,11 @@ public class QueryTraversal {
 
         @Override
         public TraversalControl visitInlineFragment(InlineFragment inlineFragment, TraverserContext<Node> context) {
-            if (!conditionalNodes.shouldInclude(variables, inlineFragment.getDirectives()))
+            if (!conditionalNodes.shouldInclude(variables, inlineFragment.getDirectives())) {
                 return TraversalControl.ABORT;
+            }
 
-            QueryVisitorInlineFragmentEnvironment inlineFragmentEnvironment = new QueryVisitorInlineFragmentEnvironmentImpl(inlineFragment);
+            QueryVisitorInlineFragmentEnvironment inlineFragmentEnvironment = new QueryVisitorInlineFragmentEnvironmentImpl(inlineFragment, context);
 
             if (context.getVar(LeaveOrEnter.class) == LEAVE) {
                 postOrderCallback.visitInlineFragment(inlineFragmentEnvironment);
@@ -204,9 +261,7 @@ public class QueryTraversal {
             preOrderCallback.visitInlineFragment(inlineFragmentEnvironment);
 
             // inline fragments are allowed not have type conditions, if so the parent type counts
-            QueryTraversalContext parentEnv = context
-                    .getParentContext()
-                    .getVar(QueryTraversalContext.class);
+            QueryTraversalContext parentEnv = context.getVarFromParents(QueryTraversalContext.class);
 
             GraphQLCompositeType fragmentCondition;
             if (inlineFragment.getTypeCondition() != null) {
@@ -221,15 +276,35 @@ public class QueryTraversal {
         }
 
         @Override
-        public TraversalControl visitFragmentSpread(FragmentSpread fragmentSpread, TraverserContext<Node> context) {
-            if (!conditionalNodes.shouldInclude(variables, fragmentSpread.getDirectives()))
+        public TraversalControl visitFragmentDefinition(FragmentDefinition node, TraverserContext<Node> context) {
+            if (!conditionalNodes.shouldInclude(variables, node.getDirectives())) {
                 return TraversalControl.ABORT;
+            }
+
+            if (context.getVar(LeaveOrEnter.class) == LEAVE) {
+                return TraversalControl.CONTINUE;
+            }
+
+
+            QueryTraversalContext parentEnv = context.getVarFromParents(QueryTraversalContext.class);
+            GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(node.getTypeCondition().getName());
+            context
+                    .setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, typeCondition, parentEnv.getEnvironment(), node));
+            return TraversalControl.CONTINUE;
+        }
+
+        @Override
+        public TraversalControl visitFragmentSpread(FragmentSpread fragmentSpread, TraverserContext<Node> context) {
+            if (!conditionalNodes.shouldInclude(variables, fragmentSpread.getDirectives())) {
+                return TraversalControl.ABORT;
+            }
 
             FragmentDefinition fragmentDefinition = fragmentsByName.get(fragmentSpread.getName());
-            if (!conditionalNodes.shouldInclude(variables, fragmentDefinition.getDirectives()))
+            if (!conditionalNodes.shouldInclude(variables, fragmentDefinition.getDirectives())) {
                 return TraversalControl.ABORT;
+            }
 
-            QueryVisitorFragmentSpreadEnvironment fragmentSpreadEnvironment = new QueryVisitorFragmentSpreadEnvironmentImpl(fragmentSpread, fragmentDefinition);
+            QueryVisitorFragmentSpreadEnvironment fragmentSpreadEnvironment = new QueryVisitorFragmentSpreadEnvironmentImpl(fragmentSpread, fragmentDefinition, context);
             if (context.getVar(LeaveOrEnter.class) == LEAVE) {
                 postOrderCallback.visitFragmentSpread(fragmentSpreadEnvironment);
                 return TraversalControl.CONTINUE;
@@ -237,12 +312,11 @@ public class QueryTraversal {
 
             preOrderCallback.visitFragmentSpread(fragmentSpreadEnvironment);
 
-            QueryTraversalContext parentEnv = context
-                    .getParentContext()
-                    .getVar(QueryTraversalContext.class);
+            QueryTraversalContext parentEnv = context.getVarFromParents(QueryTraversalContext.class);
 
             GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
-
+            assertNotNull(typeCondition, "Invalid type condition '%s' in fragment '%s'", fragmentDefinition.getTypeCondition().getName(),
+                    fragmentDefinition.getName());
             context
                     .setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, typeCondition, parentEnv.getEnvironment(), fragmentDefinition));
             return TraversalControl.CONTINUE;
@@ -250,9 +324,7 @@ public class QueryTraversal {
 
         @Override
         public TraversalControl visitField(Field field, TraverserContext<Node> context) {
-            QueryTraversalContext parentEnv = context
-                    .getParentContext()
-                    .getVar(QueryTraversalContext.class);
+            QueryTraversalContext parentEnv = context.getVarFromParents(QueryTraversalContext.class);
 
             GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, parentEnv.getRawType(), field.getName());
             boolean isTypeNameIntrospectionField = fieldDefinition == Introspection.TypeNameMetaFieldDef;
@@ -266,7 +338,8 @@ public class QueryTraversal {
                     fieldsContainer,
                     parentEnv.getEnvironment(),
                     argumentValues,
-                    parentEnv.getSelectionSetContainer());
+                    parentEnv.getSelectionSetContainer(),
+                    context);
 
             LeaveOrEnter leaveOrEnter = context.getVar(LeaveOrEnter.class);
             if (leaveOrEnter == LEAVE) {
@@ -274,8 +347,9 @@ public class QueryTraversal {
                 return TraversalControl.CONTINUE;
             }
 
-            if (!conditionalNodes.shouldInclude(variables, field.getDirectives()))
+            if (!conditionalNodes.shouldInclude(variables, field.getDirectives())) {
                 return TraversalControl.ABORT;
+            }
 
             preOrderCallback.visitField(environment);
 

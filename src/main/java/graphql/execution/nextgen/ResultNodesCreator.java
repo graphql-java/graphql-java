@@ -5,7 +5,7 @@ import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.nextgen.result.ExecutionResultNode;
 import graphql.execution.nextgen.result.LeafExecutionResultNode;
 import graphql.execution.nextgen.result.ListExecutionResultNode;
-import graphql.execution.nextgen.result.ObjectExecutionResultNode;
+import graphql.execution.nextgen.result.UnresolvedObjectResultNode;
 
 import java.util.Collection;
 import java.util.List;
@@ -35,7 +35,7 @@ public class ResultNodesCreator {
     }
 
     private ExecutionResultNode createUnresolvedNode(FetchedValueAnalysis fetchedValueAnalysis) {
-        return new ObjectExecutionResultNode.UnresolvedObjectResultNode(fetchedValueAnalysis);
+        return new UnresolvedObjectResultNode(fetchedValueAnalysis);
     }
 
     private Optional<NonNullableFieldWasNullException> getFirstNonNullableException(Collection<ExecutionResultNode> collection) {

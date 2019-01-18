@@ -49,7 +49,7 @@ class DataFetcherSelectionTest extends Specification {
 
             if (!selectionSet.isEmpty()) {
                 for (String fieldName : selectionSet.keySet()) {
-                    String ast = captureFields(selectionSet.get(fieldName))
+                    String ast = captureFields(selectionSet.getSubField(fieldName).getFields())
                     captureMap.put(fieldName, ast)
                 }
             }

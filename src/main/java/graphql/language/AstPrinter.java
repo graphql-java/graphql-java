@@ -293,7 +293,7 @@ public class AstPrinter {
 
     private NodePrinter<OperationTypeDefinition> operationTypeDefinition() {
         String nameTypeSep = compactMode ? ":" : ": ";
-        return (out, node) -> out.printf("%s%s%s", node.getName(), nameTypeSep, type(node.getType()));
+        return (out, node) -> out.printf("%s%s%s", node.getName(), nameTypeSep, type(node.getTypeName()));
     }
 
     private NodePrinter<ObjectTypeDefinition> objectTypeDefinition() {

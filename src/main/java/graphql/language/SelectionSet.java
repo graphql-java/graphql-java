@@ -7,6 +7,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -20,7 +21,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
     public static final String CHILD_SELECTIONS = "selections";
 
     @Internal
-    protected SelectionSet(List<Selection> selections, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+    protected SelectionSet(Collection<? extends Selection> selections, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
         super(sourceLocation, comments, ignoredChars);
         this.selections.addAll(selections);
     }
@@ -30,7 +31,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
      *
      * @param selections the list of selection in this selection set
      */
-    public SelectionSet(List<Selection> selections) {
+    public SelectionSet(Collection<? extends Selection> selections) {
         this(selections, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
@@ -95,7 +96,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
         return new Builder();
     }
 
-    public static Builder newSelectionSet(List<Selection> selections) {
+    public static Builder newSelectionSet(Collection<? extends Selection> selections) {
         return new Builder().selections(selections);
     }
 
@@ -122,8 +123,13 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
             this.ignoredChars = existing.getIgnoredChars();
         }
 
-        public Builder selections(List<Selection> selections) {
-            this.selections = selections;
+        public Builder selections(Collection<? extends Selection> selections) {
+            this.selections = new ArrayList<>(selections);
+            return this;
+        }
+
+        public Builder selection(Selection selection) {
+            this.selections.add(selection);
             return this;
         }
 
