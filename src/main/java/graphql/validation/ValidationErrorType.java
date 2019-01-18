@@ -29,6 +29,6 @@ public enum ValidationErrorType {
     InvalidFragmentType,
     LoneAnonymousOperationViolation,
     NonExecutableDefinition,
-    DuplicateOperationName
-
+    DuplicateOperationName,
+    DuplicateDirectiveName
 }
