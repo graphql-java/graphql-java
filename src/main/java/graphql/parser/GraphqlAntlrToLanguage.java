@@ -93,7 +93,7 @@ public class GraphqlAntlrToLanguage {
     public Document createDocument(GraphqlParser.DocumentContext ctx) {
         Document.Builder document = Document.newDocument();
         addCommonData(document, ctx);
-        document.definitions(ctx.definition().stream().map(definition -> createDefinition(definition))
+        document.definitions(ctx.definition().stream().map(this::createDefinition)
                 .collect(toList()));
         return document.build();
     }
@@ -129,14 +129,15 @@ public class GraphqlAntlrToLanguage {
     }
 
     protected OperationDefinition.Operation parseOperation(GraphqlParser.OperationTypeContext operationTypeContext) {
-        if (operationTypeContext.getText().equals("query")) {
-            return OperationDefinition.Operation.QUERY;
-        } else if (operationTypeContext.getText().equals("mutation")) {
-            return OperationDefinition.Operation.MUTATION;
-        } else if (operationTypeContext.getText().equals("subscription")) {
-            return OperationDefinition.Operation.SUBSCRIPTION;
-        } else {
-            return assertShouldNeverHappen("InternalError: unknown operationTypeContext=%s", operationTypeContext.getText());
+        switch (operationTypeContext.getText()) {
+            case "query":
+                return OperationDefinition.Operation.QUERY;
+            case "mutation":
+                return OperationDefinition.Operation.MUTATION;
+            case "subscription":
+                return OperationDefinition.Operation.SUBSCRIPTION;
+            default:
+                return assertShouldNeverHappen("InternalError: unknown operationTypeContext=%s", operationTypeContext.getText());
         }
     }
 
@@ -429,8 +430,8 @@ public class GraphqlAntlrToLanguage {
             implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
         }
         def.implementz(implementz);
-        if (ctx.fieldsDefinition() != null) {
-            def.fieldDefinitions(createFieldDefinitions(ctx.fieldsDefinition()));
+        if (ctx.extensionFieldsDefinition() != null) {
+            def.fieldDefinitions(createFieldDefinitions(ctx.extensionFieldsDefinition()));
         }
         return def.build();
     }
@@ -441,6 +442,14 @@ public class GraphqlAntlrToLanguage {
         }
         return ctx.fieldDefinition().stream().map(this::createFieldDefinition).collect(toList());
     }
+
+    protected List<FieldDefinition> createFieldDefinitions(GraphqlParser.ExtensionFieldsDefinitionContext ctx) {
+        if (ctx == null) {
+            return new ArrayList<>();
+        }
+        return ctx.fieldDefinition().stream().map(this::createFieldDefinition).collect(toList());
+    }
+
 
     protected FieldDefinition createFieldDefinition(GraphqlParser.FieldDefinitionContext ctx) {
         FieldDefinition.Builder def = FieldDefinition.newFieldDefinition();
@@ -488,7 +497,7 @@ public class GraphqlAntlrToLanguage {
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
         def.directives(createDirectives(ctx.directives()));
-        def.definitions(createFieldDefinitions(ctx.fieldsDefinition()));
+        def.definitions(createFieldDefinitions(ctx.extensionFieldsDefinition()));
         return def.build();
     }
 
@@ -543,9 +552,9 @@ public class GraphqlAntlrToLanguage {
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
         def.directives(createDirectives(ctx.directives()));
-        if (ctx.enumValueDefinitions() != null) {
+        if (ctx.extensionEnumValueDefinitions() != null) {
             def.enumValueDefinitions(
-                    ctx.enumValueDefinitions().enumValueDefinition().stream().map(this::createEnumValueDefinition).collect(toList()));
+                    ctx.extensionEnumValueDefinitions().enumValueDefinition().stream().map(this::createEnumValueDefinition).collect(toList()));
         }
         return def.build();
     }
@@ -576,8 +585,8 @@ public class GraphqlAntlrToLanguage {
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
         def.directives(createDirectives(ctx.directives()));
-        if (ctx.inputObjectValueDefinitions() != null) {
-            def.inputValueDefinitions(createInputValueDefinitions(ctx.inputObjectValueDefinitions().inputValueDefinition()));
+        if (ctx.extensionInputObjectValueDefinitions() != null) {
+            def.inputValueDefinitions(createInputValueDefinitions(ctx.extensionInputObjectValueDefinitions().inputValueDefinition()));
         }
         return def.build();
     }

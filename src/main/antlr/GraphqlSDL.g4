@@ -38,17 +38,23 @@ typeExtension :
 
 scalarTypeDefinition : description? SCALAR name directives?;
 
-scalarTypeExtensionDefinition : EXTEND SCALAR name directives?;
+scalarTypeExtensionDefinition : EXTEND SCALAR name directives;
 
 objectTypeDefinition : description? TYPE name implementsInterfaces? directives? fieldsDefinition?;
 
-objectTypeExtensionDefinition : EXTEND TYPE name implementsInterfaces? directives? fieldsDefinition?;
+objectTypeExtensionDefinition :
+    EXTEND TYPE name implementsInterfaces? directives? extensionFieldsDefinition |
+    EXTEND TYPE name implementsInterfaces? directives |
+    EXTEND TYPE name implementsInterfaces
+;
 
 implementsInterfaces :
     IMPLEMENTS '&'? typeName+ |
     implementsInterfaces '&' typeName ;
 
 fieldsDefinition : '{' fieldDefinition* '}';
+
+extensionFieldsDefinition : '{' fieldDefinition+ '}';
 
 fieldDefinition : description? name argumentsDefinition? ':' type directives?;
 
@@ -58,12 +64,18 @@ inputValueDefinition : description? name ':' type defaultValue? directives?;
 
 interfaceTypeDefinition : description? INTERFACE name directives? fieldsDefinition?;
 
-interfaceTypeExtensionDefinition : EXTEND INTERFACE name directives? fieldsDefinition?;
+interfaceTypeExtensionDefinition :
+    EXTEND INTERFACE name directives? extensionFieldsDefinition |
+    EXTEND INTERFACE name directives
+;
 
 
-unionTypeDefinition : description? UNION name directives? unionMembership;
+unionTypeDefinition : description? UNION name directives? unionMembership?;
 
-unionTypeExtensionDefinition : EXTEND UNION name directives? unionMembership?;
+unionTypeExtensionDefinition :
+    EXTEND UNION name directives? unionMembership |
+    EXTEND UNION name directives
+;
 
 unionMembership : '=' unionMembers;
 
@@ -74,18 +86,28 @@ unionMembers '|' typeName
 
 enumTypeDefinition : description? ENUM name directives? enumValueDefinitions?;
 
-enumTypeExtensionDefinition : EXTEND ENUM name directives? enumValueDefinitions?;
+enumTypeExtensionDefinition :
+    EXTEND ENUM name directives? extensionEnumValueDefinitions |
+    EXTEND ENUM name directives
+;
 
-enumValueDefinitions : '{' enumValueDefinition+ '}';
+enumValueDefinitions : '{' enumValueDefinition* '}';
+
+extensionEnumValueDefinitions : '{' enumValueDefinition+ '}';
 
 enumValueDefinition : description? enumValue directives?;
 
 
 inputObjectTypeDefinition : description? INPUT name directives? inputObjectValueDefinitions?;
 
-inputObjectTypeExtensionDefinition : EXTEND INPUT name directives? inputObjectValueDefinitions?;
+inputObjectTypeExtensionDefinition :
+    EXTEND INPUT name directives? extensionInputObjectValueDefinitions |
+    EXTEND INPUT name directives
+;
 
 inputObjectValueDefinitions : '{' inputValueDefinition* '}';
+
+extensionInputObjectValueDefinitions : '{' inputValueDefinition+ '}';
 
 
 directiveDefinition : description? DIRECTIVE '@' name argumentsDefinition? 'on' directiveLocations;
