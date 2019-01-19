@@ -164,46 +164,101 @@ class SchemaParserTest extends Specification {
 
         """
         when:
-        TypeDefinitionRegistry typeRegistry = new SchemaParser().parse(schema)
+        TypeDefinitionRegistry typeRegistry = read(schema)
         then:
         typeRegistry.types().size() == 4
     }
 
-    def "empty types and extensions are allowed"() {
-        def schema = '''
-            type Foo {
-            }
+    def assertSchemaProblem(String s) {
+        try {
+            read(s)
+            assert false, "Expected a a schema problem for : " + s
+        } catch (SchemaProblem ignored) {
+            true
+        }
+    }
 
-            extend type Foo {
-            }
-            
-            interface InterfaceFoo {
-            }
+    def assertNoSchemaProblem(String s) {
+        try {
+            read(s)
+            true
+        } catch (SchemaProblem problem) {
+            assert false, "Did not expected a schema problem for : " + s + " of : " + problem
+        }
+    }
 
-            extend interface InterfaceFoo {
-            }
-            
-            input InputFoo {
-            }
 
-            extend input InputFoo {
-            }
-            
-            enum EnumFoo {
-            }
+    def "empty types (with and without parentheses) are allowed"() {
+        //
+        // empty parentheses are not quite allowed by the spec but in the name of backwards compatibility
+        // AND general usefulness we are going to allow them.  So in the list below the last two of each section
+        // is not technically allowed by the latest spec
+        //
+        expect:
+        assertNoSchemaProblem(schema)
 
-            extend enum EnumFoo {
-            }
-            
-        '''
+        where:
+        schema                               | _
+        ''' type Foo '''                     | _
+        ''' type Foo @directive '''          | _
+        ''' type Foo { } '''                 | _
+        ''' type Foo @directive { } '''      | _
 
-        when:
-        TypeDefinitionRegistry typeRegistry = new SchemaParser().parse(schema)
-        then:
-        typeRegistry.types().size() == 3
-        typeRegistry.interfaceTypeExtensions().size() == 1
-        typeRegistry.objectTypeExtensions().size() == 1
-        typeRegistry.inputObjectTypeExtensions().size() == 1
+        ''' interface Foo '''                | _
+        ''' interface Foo @directive '''     | _
+        ''' interface Foo { } '''            | _
+        ''' interface Foo @directive { } ''' | _
 
+        ''' input Foo '''                    | _
+        ''' input Foo @directive '''         | _
+        ''' input Foo { } '''                | _
+        ''' input Foo @directive { } '''     | _
+
+        ''' enum Foo '''                     | _
+        ''' enum Foo @directive '''          | _
+        ''' enum Foo { } '''                 | _
+        ''' enum Foo @directive { } '''      | _
+    }
+
+
+    def "extensions are not allowed to be empty"() {
+
+        expect:
+        assertSchemaProblem(schema)
+
+        where:
+        schema                         | _
+        ''' extend type Foo'''         | _
+        ''' extend type Foo {}'''      | _
+        ''' extend interface Foo '''   | _
+        ''' extend interface Foo {}''' | _
+        ''' extend input Foo '''       | _
+        ''' extend input Foo {}'''     | _
+        ''' extend enum Foo '''        | _
+        ''' extend enum Foo {}'''      | _
+    }
+
+    def "extensions must extend with fields or directives"() {
+
+        expect:
+        assertNoSchemaProblem(schema)
+
+        where:
+        schema                                        | _
+        ''' extend type Foo @directive'''             | _
+        ''' extend type Foo { f : Int }'''            | _
+        ''' extend type Foo @directive { f : Int }''' | _
+
+        ''' extend interface Foo @directive '''       | _
+        ''' extend interface Foo { f : Int }'''       | _
+        ''' extend interface Foo { f : Int }'''       | _
+
+        ''' extend input Foo @directive '''           | _
+        ''' extend input Foo { f : Int }'''           | _
+        ''' extend input Foo { f : Int }'''           | _
+
+        ''' extend enum Foo @directive '''            | _
+        ''' extend enum Foo { a,b,c }'''              | _
+        ''' extend enum Foo @directive { a,b,c }'''   | _
     }
 }
