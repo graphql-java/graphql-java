@@ -1166,9 +1166,7 @@ class SchemaTypeCheckerTest extends Specification {
             extend scalar Scales @directive 
 
             
-            extend scalar NonExistent {
-                E
-            }
+            extend scalar NonExistent @directive
             
         """
 
