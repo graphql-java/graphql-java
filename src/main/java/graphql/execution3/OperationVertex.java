@@ -5,8 +5,11 @@
  */
 package graphql.execution3;
 
+import graphql.execution.ExecutionStepInfo;
+import graphql.language.Node;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLType;
 import java.util.Objects;
 
 /**
@@ -17,12 +20,27 @@ public class OperationVertex extends NodeVertex<OperationDefinition, GraphQLObje
     public OperationVertex(OperationDefinition node, GraphQLObjectType type) {
         super(Objects.requireNonNull(node), Objects.requireNonNull(type));
     }  
-//
-//    @Override
-//    public boolean canResolve() {
-//        return true;
-//    }
 
+    @Override
+    public OperationVertex parentExecutionStepInfo(ExecutionStepInfo parentExecutionStepInfo) {
+        return (OperationVertex)super.parentExecutionStepInfo(parentExecutionStepInfo);
+    }
+
+    @Override
+    public OperationVertex executionStepInfo(ExecutionStepInfo value) {
+        return (OperationVertex)super.executionStepInfo(value);
+    }
+
+    @Override
+    public OperationVertex source(Object source) {
+        return (OperationVertex)super.source(source);
+    }
+
+    @Override
+    public OperationVertex result(Object result) {
+        return (OperationVertex)super.result(result);
+    }
+    
     @Override
     public int hashCode() {
         int hash = 7;

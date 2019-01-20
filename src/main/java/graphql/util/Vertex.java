@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -47,13 +48,21 @@ public abstract class Vertex<N extends Vertex<N>> {
         
         return addEdge(new Edge<>(source, (N)this, edgeAction));
     }
+
+    private static void emptyEdgeConsumer (Edge<?, ?> edge) {
+    }
     
     public N undependsOn (N source) {
+        return undependsOn(source, Vertex::emptyEdgeConsumer);
+    }
+    
+    public N undependsOn (N source, Consumer<? super Edge<N, ?>> whenDisconnecting) {
         Objects.requireNonNull(source);
         
         new ArrayList<>(outdegrees)
             .stream()
             .filter(edge -> edge.getSource() == source)
+            .peek(whenDisconnecting)
             .forEach(Edge::disconnectEndpoints);
         
         return (N)this;
@@ -106,7 +115,7 @@ public abstract class Vertex<N extends Vertex<N>> {
                     .stream()
                     .map(Edge::getSource)
                     .map(Vertex::toString)
-                    .collect(Collectors.joining(", ", "on ->", ""))
+                    .collect(Collectors.joining(", ", "on ->", " "))
             );
     }
     

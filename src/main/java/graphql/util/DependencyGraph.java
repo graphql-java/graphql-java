@@ -7,6 +7,7 @@ package graphql.util;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import java.util.AbstractSet;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -120,10 +121,10 @@ public class DependencyGraph<N extends Vertex<N>> {
                 : !isDone;
         }
 
-        Collection<N> calculateNext () {
-            Collection<N> nextClosure = Collections.newSetFromMap(new IdentityHashMap<>());
-            return Optional
-                .ofNullable((Collection<N>)traverser
+        Set<N> calculateNext () {
+            Set<N> nextClosure = Collections.newSetFromMap(new IdentityHashMap<>());
+            return (Set<N>)Optional
+                .ofNullable(traverser
                     .rootVar(Collection.class, nextClosure)
                     .traverse(
                         unclosed
@@ -141,17 +142,14 @@ public class DependencyGraph<N extends Vertex<N>> {
             if (currentClosure.isEmpty())
                 throw new NoSuchElementException("next closure hasn't been calculated yet");
 
-            Collection<N> closure = lastClosure = currentClosure;
+            lastClosure = currentClosure;
             currentClosure = Collections.emptySet();
-            return closure;
+            return lastClosure;
         }
 
         @Override
-        public void close(Collection<N> resolvedSet) {
-            Objects.requireNonNull(resolvedSet);
-            
-            resolvedSet.forEach(this::closeResolved);
-            lastClosure = Collections.emptySet();
+        public void close(N node) {
+            closeResolved(node);
         }
         
         private boolean closeNode (N maybeNode, boolean autoResolve) {
@@ -162,6 +160,7 @@ public class DependencyGraph<N extends Vertex<N>> {
             if (node.resolve(context) || !autoResolve) {
                 closed.add(node);
                 unclosed.remove(node);
+                lastClosure.remove(node);
                 
                 node.fireResolved(context);
                 return true;
@@ -215,8 +214,8 @@ public class DependencyGraph<N extends Vertex<N>> {
         final Collection<N> unclosed = Collections.newSetFromMap(new IdentityHashMap<>());
         final Collection<N> closed = Collections.newSetFromMap(new IdentityHashMap<>());
         final Traverser<N> traverser = Traverser.<N>breadthFirst(Vertex::adjacencySet, null);
-        Collection<N> currentClosure = Collections.emptySet();
-        Collection<N> lastClosure = Collections.emptySet();
+        Set<N> currentClosure = Collections.emptySet();
+        Set<N> lastClosure = Collections.emptySet();
     }
     
     protected int nextId = 0;

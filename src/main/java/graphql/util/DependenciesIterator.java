@@ -7,6 +7,7 @@ package graphql.util;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Objects;
 
 /**
  * Iterator over dependent vertices in their topological order
@@ -20,7 +21,27 @@ public interface DependenciesIterator<N extends Vertex<N>> extends Iterator<Coll
      * 
      * @see java.util.Iterator#next() 
      * 
+     * @param node vertex to be marked as resolved
+     */
+    void close (N node);
+    
+    /**
+     * Marks provided vertices as resolved, so their dependent vertices will be selected
+     * in the next iteration.
+     * 
+     * @see java.util.Iterator#next() 
+     * 
      * @param resolvedSet vertices to be marked as resolved
      */
-    void close (Collection<N> resolvedSet);
+    default void close (Collection<N> resolvedSet) {
+        Objects.requireNonNull(resolvedSet);
+        
+        Iterator<N> closure = resolvedSet.iterator();
+        while (closure.hasNext()) {
+            N vertex = closure.next();
+            closure.remove();
+            
+            close(vertex);
+        }
+    }
 }

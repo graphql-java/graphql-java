@@ -15,9 +15,6 @@ import spock.lang.Ignore
 import spock.lang.Specification
 
 class TestGraphContext implements ExecutionPlanContext {
-    void prepareResolveRoot (Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
-    }
-    
     void prepareResolve (Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
     }
     

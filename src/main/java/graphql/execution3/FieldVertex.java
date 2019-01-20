@@ -5,10 +5,14 @@
  */
 package graphql.execution3;
 
+import graphql.execution.ExecutionStepInfo;
 import graphql.language.Field;
+import graphql.language.Node;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLType;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  *
@@ -32,6 +36,32 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
 
     public Object getScope() {
         return inScopeOf;
+    }
+
+    public String getResponseKey () {
+        return Optional
+            .ofNullable(node.getAlias())
+            .orElseGet(node::getName);
+    }
+    
+    @Override
+    public FieldVertex executionStepInfo(ExecutionStepInfo value) {
+        return (FieldVertex)super.executionStepInfo(value);
+    }
+
+    @Override
+    public FieldVertex source(Object source) {
+        return (FieldVertex)super.source(source);
+    }
+
+    @Override
+    public FieldVertex result(Object result) {
+        return (FieldVertex)super.result(result);
+    }
+
+    @Override
+    public FieldVertex parentExecutionStepInfo(ExecutionStepInfo value) {
+        return (FieldVertex)super.parentExecutionStepInfo(value);
     }
 
     @Override

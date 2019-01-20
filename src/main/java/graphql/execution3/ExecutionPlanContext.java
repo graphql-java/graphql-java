@@ -15,7 +15,6 @@ import graphql.util.Edge;
  * @author gkesler
  */
 public interface ExecutionPlanContext extends DependencyGraphContext {
-    void prepareResolveRoot (Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge);
     void prepareResolve (Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge);
     void whenResolved (Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge);
     boolean resolve (NodeVertex<? extends Node, ? extends GraphQLType> node);

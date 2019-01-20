@@ -5,7 +5,6 @@
  */
 package graphql.execution3;
 
-import graphql.AssertException;
 import graphql.execution.ConditionalNodes;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
@@ -31,6 +30,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.util.DependencyGraph;
+import graphql.util.DependencyGraphContext;
 import graphql.util.Edge;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,10 +81,6 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
 
     public Map<String, Object> getVariables() {
         return Collections.unmodifiableMap(variables);
-    }
-
-    protected void prepareResolveRoot (ExecutionPlanContext context, Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
-        context.prepareResolveRoot(edge);
     }
 
     protected void prepareResolve (ExecutionPlanContext context, Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
@@ -150,11 +147,14 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
             return NodeTraverser.oneVisitWithResult(node, new NodeVisitorStub() {
                 @Override
                 public TraversalControl visitFragmentSpread(FragmentSpread node, TraverserContext<Node> context) {
-                    FragmentDefinition fragmentDefinition = Optional
+                    Collection<Node> children = Optional
                         .ofNullable(executionPlan.fragmentsByName.get(node.getName()))
-                        .orElseThrow(() -> new AssertException(String.format("No fragment definition with name '%s'", node.getName())));
-
-                    return visitNode(fragmentDefinition, context);
+                        .map(Node::getChildren)
+                        // per https://facebook.github.io/graphql/June2018/#sec-Field-Collection d.v.
+                        .orElseGet(Collections::emptyList);
+                    
+                    context.setResult(children);
+                    return TraversalControl.QUIT;
                 }            
 
                 @Override
@@ -304,8 +304,11 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                         .stream()
                         .filter(this::isFieldVertex)
                         .forEach(v -> { 
-                            v.undependsOn(operationVertex);
-                            toNodeVertex(v).dependsOn(toNodeVertex(documentVertex), executionPlan::prepareResolveRoot);
+                            v.undependsOn(operationVertex, 
+                                edge -> toNodeVertex(v).dependsOn(
+                                    toNodeVertex(documentVertex), 
+                                    (ExecutionPlanContext ctx, Edge<?, ?> e) -> executionPlan.prepareResolve(ctx, edge)
+                                ));
                         });
 
                     break;
@@ -378,7 +381,8 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                     // 2. prepare to the next resolve
                     OperationVertex operationVertex = context.getVar(OperationVertex.class);
                     // action in this dependency will be executed when this vertex is resolved
-                    toNodeVertex(operationVertex).dependsOn(toNodeVertex(vertex), executionPlan::whenResolved);
+                    toNodeVertex(operationVertex).dependsOn(toNodeVertex(vertex), 
+                        (ExecutionPlanContext ctx, Edge<?, ?> e) -> executionPlan.whenResolved(ctx, new NodeEdge(vertex, parentVertex)));
                     
                     // action in this dependency will be executed right after the source had been resolve 
                     // in order to prepare to the next resolve

@@ -5,6 +5,7 @@
  */
 package graphql.execution3;
 
+import graphql.execution.ExecutionStepInfo;
 import graphql.language.Node;
 import graphql.schema.GraphQLType;
 import graphql.util.DependencyGraphContext;
@@ -22,7 +23,7 @@ public abstract class NodeVertex<N extends Node, T extends GraphQLType> extends 
         this.node = node;
         this.type = type;
     }
-
+    
     public N getNode() {
         return node;
     }
@@ -31,6 +32,42 @@ public abstract class NodeVertex<N extends Node, T extends GraphQLType> extends 
         return type;
     }
 
+    public ExecutionStepInfo getParentExecutionStepInfo() {
+        return parentExecutionStepInfo;
+    }
+
+    public NodeVertex<? extends Node, ? extends GraphQLType> parentExecutionStepInfo(ExecutionStepInfo parentExecutionStepInfo) {
+        this.parentExecutionStepInfo = Objects.requireNonNull(parentExecutionStepInfo);
+        return this;
+    }
+
+    public ExecutionStepInfo getExecutionStepInfo () {
+        return executionStepInfo;
+    }
+    
+    public NodeVertex<? extends Node, ? extends GraphQLType> executionStepInfo (ExecutionStepInfo value) {
+        this.executionStepInfo = Objects.requireNonNull(value);
+        return this;
+    }
+
+    public Object getSource() {
+        return source;
+    }
+
+    public NodeVertex<? extends Node, ? extends GraphQLType> source(Object source) {
+        this.source = source;
+        return this;
+    }
+
+    public Object getResult() {
+        return result;
+    }
+
+    public NodeVertex<? extends Node, ? extends GraphQLType> result(Object result) {
+        this.result = result;
+        return this;
+    }
+    
     @Override
     public boolean resolve(DependencyGraphContext context) {
         return ((ExecutionPlanContext)context).resolve(this);
@@ -88,4 +125,8 @@ public abstract class NodeVertex<N extends Node, T extends GraphQLType> extends 
     
     protected final N node;
     protected final T type;
+    protected /*final*/ ExecutionStepInfo parentExecutionStepInfo;
+    protected /*final*/ ExecutionStepInfo executionStepInfo;
+    protected /*final*/ Object source;
+    protected /*final*/ Object result;
 }
