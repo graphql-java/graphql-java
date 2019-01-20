@@ -16,6 +16,7 @@ import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLType
 import graphql.schema.TypeResolver
 import graphql.schema.idl.MockedWiringFactory
 import graphql.schema.idl.RuntimeWiring
@@ -28,8 +29,10 @@ import graphql.schema.idl.errors.SchemaProblem
 import java.util.function.Supplier
 import java.util.stream.Collectors
 
+import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLArgument.newArgument
+import static graphql.schema.GraphQLDirective.newDirective
 
 class TestUtil {
 
@@ -217,5 +220,23 @@ class TestUtil {
     static MergedSelectionSet mergedSelectionSet(Map<String, MergedField> subFields) {
         return MergedSelectionSet.newMergedSelectionSet().subFields(subFields).build()
     }
+
+    static GraphQLDirective[] mockDirectivesWithArguments(String... names) {
+        return names.collect { directiveName ->
+            def builder = newDirective().name(directiveName)
+
+            names.each { argName ->
+                builder.argument(newArgument().name(argName).type(GraphQLInt).build())
+            }
+            return builder.build()
+        }.toArray() as GraphQLDirective[]
+    }
+
+    static List<GraphQLArgument> mockArguments(String... names) {
+        return names.collect { newArgument().name(it).type(GraphQLInt).build() }
+    }
+
+    static Comparator<? super GraphQLType> byGreatestLength = Comparator.comparing({ it.name },
+            Comparator.comparing({ it.length() }).reversed())
 
 }
