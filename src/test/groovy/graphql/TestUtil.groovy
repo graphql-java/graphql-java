@@ -209,6 +209,10 @@ class TestUtil {
         new Parser().parseDocument(query)
     }
 
+    static Document toDocument(String query) {
+        parseQuery(query)
+    }
+
     static MergedField mergedField(List<Field> fields) {
         return MergedField.newMergedField(fields).build()
     }

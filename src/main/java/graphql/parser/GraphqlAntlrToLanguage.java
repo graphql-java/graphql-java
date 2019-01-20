@@ -374,7 +374,7 @@ public class GraphqlAntlrToLanguage {
     protected OperationTypeDefinition createOperationTypeDefinition(GraphqlParser.OperationTypeDefinitionContext ctx) {
         OperationTypeDefinition.Builder def = OperationTypeDefinition.newOperationTypeDefinition();
         def.name(ctx.operationType().getText());
-        def.type(createTypeName(ctx.typeName()));
+        def.typeName(createTypeName(ctx.typeName()));
         addCommonData(def, ctx);
         return def.build();
     }

@@ -5,6 +5,7 @@ import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStepInfoFactory;
+import graphql.execution.FetchedValue;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.MergedField;
@@ -39,16 +40,16 @@ public class ExecutionStrategyUtil {
     private List<CompletableFuture<FetchedValueAnalysis>> fetchAndAnalyze(ExecutionContext context, FieldSubSelection fieldSubSelection) {
 
         return FpKit.map(fieldSubSelection.getMergedSelectionSet().getSubFieldsList(),
-                mergedField -> fetchAndAnalyzeField(context, fieldSubSelection.getSource(), mergedField, fieldSubSelection.getExecutionStepInfo()));
+                mergedField -> fetchAndAnalyzeField(context, fieldSubSelection.getSource(), fieldSubSelection.getLocalContext(), mergedField, fieldSubSelection.getExecutionStepInfo()));
 
     }
 
-    private CompletableFuture<FetchedValueAnalysis> fetchAndAnalyzeField(ExecutionContext context, Object source, MergedField mergedField,
+    private CompletableFuture<FetchedValueAnalysis> fetchAndAnalyzeField(ExecutionContext context, Object source, Object localContext, MergedField mergedField,
                                                                          ExecutionStepInfo executionStepInfo) {
 
         ExecutionStepInfo newExecutionStepInfo = executionStepInfoFactory.newExecutionStepInfoForSubField(context, mergedField, executionStepInfo);
         return valueFetcher
-                .fetchValue(context, source, mergedField, newExecutionStepInfo)
+                .fetchValue(context, source, localContext, mergedField, newExecutionStepInfo)
                 .thenApply(fetchValue -> analyseValue(context, fetchValue, newExecutionStepInfo));
     }
 
@@ -76,6 +77,7 @@ public class ExecutionStrategyUtil {
         ExecutionStepInfo executionInfo = analysis.getExecutionStepInfo();
         MergedField field = analysis.getField();
         Object source = analysis.getCompletedValue();
+        Object localContext = analysis.getFetchedValue().getLocalContext();
 
         GraphQLOutputType sourceType = executionInfo.getUnwrappedNonNullType();
         GraphQLObjectType resolvedObjectType = resolveType.resolveType(executionContext, field, source, executionInfo.getArguments(), sourceType);
@@ -91,11 +93,12 @@ public class ExecutionStrategyUtil {
         // it is not really a new step but rather a refinement
         ExecutionStepInfo newExecutionStepInfoWithResolvedType = executionInfo.changeTypeWithPreservedNonNull(resolvedObjectType);
 
-        FieldSubSelection fieldSubSelection = new FieldSubSelection();
-        fieldSubSelection.setSource(source);
-        fieldSubSelection.setExecutionStepInfo(newExecutionStepInfoWithResolvedType);
-        fieldSubSelection.setMergedSelectionSet(subFields);
-        return fieldSubSelection;
+        return FieldSubSelection.newFieldSubSelection()
+                .source(source)
+                .localContext(localContext)
+                .mergedSelectionSet(subFields)
+                .executionInfo(newExecutionStepInfoWithResolvedType)
+                .build();
     }
 
 

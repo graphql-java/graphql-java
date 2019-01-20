@@ -2,18 +2,38 @@ package graphql.schema.idl
 
 import graphql.AssertException
 import graphql.GraphQL
-import graphql.Scalars
+import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
 import graphql.introspection.IntrospectionQuery
 import graphql.introspection.IntrospectionResultToSchema
-import graphql.schema.*
+import graphql.schema.Coercing
+import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLDirective
+import graphql.schema.GraphQLEnumType
+import graphql.schema.GraphQLEnumValueDefinition
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLInputObjectField
+import graphql.schema.GraphQLInputObjectType
+import graphql.schema.GraphQLInputType
+import graphql.schema.GraphQLInterfaceType
+import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLOutputType
+import graphql.schema.GraphQLScalarType
+import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLType
+import graphql.schema.GraphQLUnionType
+import graphql.schema.TypeResolver
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
 
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
-import static graphql.TestUtil.*
+import static graphql.TestUtil.byGreatestLength
+import static graphql.TestUtil.mockArguments
+import static graphql.TestUtil.mockDirectivesWithArguments
+import static graphql.TestUtil.mockScalar
+import static graphql.TestUtil.mockTypeRuntimeWiring
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLEnumType.newEnum
 import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition
@@ -37,7 +57,7 @@ class SchemaPrinterTest extends Specification {
                 .type("Node", { type -> type.typeResolver(resolver) } as UnaryOperator<TypeRuntimeWiring.Builder>)
                 .scalar(ASTEROID)
                 .build()
-        GraphQLSchema schema = schemaFromResource("starWarsSchemaExtended.graphqls", wiring)
+        GraphQLSchema schema = TestUtil.schemaFromResource("starWarsSchemaExtended.graphqls", wiring)
         schema
     }
 
@@ -76,7 +96,7 @@ class SchemaPrinterTest extends Specification {
 
     def "typeString"() {
 
-        GraphQLType type1 = nonNull(list(nonNull(list(nonNull(Scalars.GraphQLInt)))))
+        GraphQLType type1 = nonNull(list(nonNull(list(nonNull(GraphQLInt)))))
 
         def typeStr1 = new SchemaPrinter().typeString(type1)
 
@@ -85,7 +105,7 @@ class SchemaPrinterTest extends Specification {
     }
 
     def "argsString"() {
-        def argument1 = new GraphQLArgument("arg1", null, list(nonNull(Scalars.GraphQLInt)), 10)
+        def argument1 = new GraphQLArgument("arg1", null, list(nonNull(GraphQLInt)), 10)
         def argument2 = new GraphQLArgument("arg2", null, GraphQLString, null)
         def argument3 = new GraphQLArgument("arg3", null, GraphQLString, "default")
         def argStr = new SchemaPrinter().argsString([argument1, argument2, argument3])
@@ -96,7 +116,7 @@ class SchemaPrinterTest extends Specification {
     }
 
     def "argsString_sorts"() {
-        def argument1 = new GraphQLArgument("arg1", null, list(nonNull(Scalars.GraphQLInt)), 10)
+        def argument1 = new GraphQLArgument("arg1", null, list(nonNull(GraphQLInt)), 10)
         def argument2 = new GraphQLArgument("arg2", null, GraphQLString, null)
         def argument3 = new GraphQLArgument("arg3", null, GraphQLString, "default")
         def argStr = new SchemaPrinter().argsString([argument2, argument1, argument3])
@@ -150,7 +170,7 @@ class SchemaPrinterTest extends Specification {
     }
 
     def "default root names are handled"() {
-        def schema = schema("""
+        def schema = TestUtil.schema("""
             type Query {
                 field: String
             }
@@ -183,7 +203,7 @@ type Subscription {
     }
 
     def "schema prints if forced with default root names"() {
-        def schema = schema("""
+        def schema = TestUtil.schema("""
             type Query {
                 field: String
             }
@@ -225,7 +245,7 @@ type Subscription {
 
 
     def "schema is printed if default root names are not ALL present"() {
-        def schema = schema("""
+        def schema = TestUtil.schema("""
             type Query {
                 field: String
             }
@@ -274,7 +294,7 @@ type Subscription {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(GraphQLString).build()
-        def queryType = newObject().name("Query").description("About Query\nSecond Line").field(fieldDefinition).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").description("About Query\nSecond Line").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter().print(schema)
@@ -292,7 +312,7 @@ type Query {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").description("About field\nsecond").type(GraphQLString).build()
-        def queryType = newObject().name("Query").field(fieldDefinition).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter().print(schema)
@@ -310,7 +330,7 @@ type Query {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").description("").type(GraphQLString).build()
-        def queryType = newObject().name("Query").field(fieldDefinition).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter().print(schema)
@@ -324,14 +344,14 @@ type Query {
 
     def "prints enum description as comment"() {
         given:
-        GraphQLEnumType graphQLEnumType = newEnum()
+        GraphQLEnumType graphQLEnumType = GraphQLEnumType.newEnum()
                 .name("Enum")
                 .description("About enum")
                 .value("value", "value", "value desc")
                 .build()
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(graphQLEnumType).build()
-        def queryType = newObject().name("Query").field(fieldDefinition).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter().print(schema)
@@ -354,8 +374,8 @@ enum Enum {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(GraphQLString).build()
-        def possibleType = newObject().name("PossibleType").field(fieldDefinition).build()
-        GraphQLUnionType unionType = newUnionType()
+        def possibleType = GraphQLObjectType.newObject().name("PossibleType").field(fieldDefinition).build()
+        GraphQLUnionType unionType = GraphQLUnionType.newUnionType()
                 .name("Union")
                 .description("About union")
                 .possibleType(possibleType)
@@ -363,7 +383,7 @@ enum Enum {
                 .build()
         GraphQLFieldDefinition fieldDefinition2 = newFieldDefinition()
                 .name("field").type(unionType).build()
-        def queryType = newObject().name("Query").field(fieldDefinition2).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter().print(schema)
@@ -384,13 +404,13 @@ type Query {
     }
 
     def "prints union"() {
-        def possibleType1 = newObject().name("PossibleType1").field(
+        def possibleType1 = GraphQLObjectType.newObject().name("PossibleType1").field(
                 newFieldDefinition().name("field").type(GraphQLString).build()
         ).build()
-        def possibleType2 = newObject().name("PossibleType2").field(
+        def possibleType2 = GraphQLObjectType.newObject().name("PossibleType2").field(
                 newFieldDefinition().name("field").type(GraphQLString).build()
         ).build()
-        GraphQLUnionType unionType = newUnionType()
+        GraphQLUnionType unionType = GraphQLUnionType.newUnionType()
                 .name("Union")
                 .possibleType(possibleType1)
                 .possibleType(possibleType2)
@@ -398,7 +418,7 @@ type Query {
                 .build()
         GraphQLFieldDefinition fieldDefinition2 = newFieldDefinition()
                 .name("field").type(unionType).build()
-        def queryType = newObject().name("Query").field(fieldDefinition2).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter().print(schema)
@@ -423,7 +443,7 @@ type Query {
 
     def "prints input description as comment"() {
         given:
-        GraphQLInputType inputType = newInputObject()
+        GraphQLInputType inputType = GraphQLInputObjectType.newInputObject()
                 .name("Input")
                 .field(newInputObjectField().name("field").description("about field").type(GraphQLString).build())
                 .description("About input")
@@ -432,7 +452,7 @@ type Query {
                 .name("field")
                 .argument(newArgument().name("arg").type(inputType).build())
                 .type(GraphQLString).build()
-        def queryType = newObject().name("Query").field(fieldDefinition2).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter().print(schema)
@@ -461,7 +481,7 @@ input Input {
                 .build()
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(graphQLInterfaceType).build()
-        def queryType = newObject().name("Query").field(fieldDefinition).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter().print(schema)
@@ -499,7 +519,7 @@ type Query {
         })
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(myScalar).build()
-        def queryType = newObject().name("Query").field(fieldDefinition).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true)).print(schema)
@@ -521,7 +541,7 @@ scalar Scalar
                 .argument(newArgument().name("arg2").type(GraphQLString).build())
                 .argument(newArgument().name("arg3").description("about 3\nsecond line").type(GraphQLString).build())
                 .type(GraphQLString).build()
-        def queryType = newObject().name("Query").field(fieldDefinition2).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter().print(schema)
@@ -529,12 +549,14 @@ scalar Scalar
         then:
         result == """type Query {
   field(
-  #about arg1
-  arg1: String, 
-  arg2: String, 
-  #about 3
-  #second line
-  arg3: String
+    #about arg1
+    arg1: String, 
+    arg2: String, 
+    \"\"\"
+    about 3
+    second line
+    \"\"\"
+    arg3: String
   ): String
 }
 """
@@ -570,7 +592,7 @@ type Query {
             scalar CustomScalar
         '''
 
-        def schema = schema(idl, newRuntimeWiring().scalar(mockScalar("CustomScalar")))
+        def schema = TestUtil.schema(idl, newRuntimeWiring().scalar(mockScalar("CustomScalar")))
 
 
         when:
@@ -595,7 +617,7 @@ type Query {
 
 
     def "schema will be sorted"() {
-        def schema = schema("""
+        def schema = TestUtil.schema("""
             type Query {
                 fieldB(argZ : String, argY : Int, argX : String) : String
                 fieldA(argZ : String, argY : Int, argX : String) : String
@@ -710,7 +732,7 @@ enum Episode {
 
 
     def "AST doc string entries are printed if present"() {
-        def schema = schema('''
+        def schema = TestUtil.schema('''
             # comments up here
             """docstring"""
             # and comments as well down here
@@ -733,9 +755,8 @@ type Query {
     }
 
 
-    def "directives will be printed"() {
-        given:
-        def idl = """
+    def idlWithDirectives() {
+        return """
             
             interface SomeInterface @interfaceTypeDirective {
                 fieldA : String @interfaceFieldDirective
@@ -769,7 +790,12 @@ type Query {
                 fieldA : String @inputFieldDirective
             }
         """
-        def registry = new SchemaParser().parse(idl)
+    }
+
+
+    def "directives will be printed with the includeDirectives flag set"() {
+        given:
+        def registry = new SchemaParser().parse(idlWithDirectives())
         def runtimeWiring = newRuntimeWiring()
                 .scalar(mockScalar(registry.scalars().get("SomeScalar")))
                 .type(mockTypeRuntimeWiring("SomeInterface", true))
@@ -813,6 +839,46 @@ scalar SomeScalar @scalarDirective
 
 input SomeInput @inputTypeDirective {
   fieldA: String @inputFieldDirective
+}
+'''
+        when:
+        def resultNoDirectives = new SchemaPrinter(defaultOptions()
+                .includeScalarTypes(true)
+                .includeDirectives(false))
+                .print(schema)
+
+        then:
+        // args and directives are sorted like the rest of the schema printer
+        resultNoDirectives == '''interface SomeInterface {
+  fieldA: String
+}
+
+union SomeUnion = Single | SomeImplementingType
+
+type Query {
+  fieldA: String
+  fieldB(input: SomeInput): SomeScalar
+  fieldC: SomeEnum
+  fieldD: SomeInterface
+  fieldE: SomeUnion
+}
+
+type Single {
+  fieldA: String
+}
+
+type SomeImplementingType implements SomeInterface {
+  fieldA: String
+}
+
+enum SomeEnum {
+  SOME_ENUM_VALUE
+}
+
+scalar SomeScalar
+
+input SomeInput {
+  fieldA: String
 }
 '''
     }

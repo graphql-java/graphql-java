@@ -1,13 +1,13 @@
 package graphql
 
-import graphql.execution.ExecutionContext
+
 import graphql.schema.GraphQLOutputType
 import graphql.schema.PropertyDataFetcher
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLString
-import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment
+import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment
 
 class DataFetcherTest extends Specification {
 
@@ -56,7 +56,7 @@ class DataFetcherTest extends Specification {
     }
 
     def env(GraphQLOutputType type) {
-        newDataFetchingEnvironment().source(dataHolder).executionContext(Mock(ExecutionContext)).fieldType(type).build()
+        newDataFetchingEnvironment().source(dataHolder).fieldType(type).build()
     }
 
     def "get property value"() {

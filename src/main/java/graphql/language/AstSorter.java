@@ -10,7 +10,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 
-import static graphql.language.AstTransformerUtil.changeNode;
+import static graphql.util.TreeTransformerUtil.changeNode;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsLast;
 

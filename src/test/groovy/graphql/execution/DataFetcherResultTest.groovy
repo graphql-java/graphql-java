@@ -12,9 +12,10 @@ class DataFetcherResultTest extends Specification {
         def error2 = new InvalidSyntaxError([], "Boo")
         when:
         def result = DataFetcherResult.newResult().data("hello")
-                .error(error1).errors([error2]).build()
+                .error(error1).errors([error2]).localContext("world").build()
         then:
         result.getData() == "hello"
-        result.errors == [error1, error2]
+        result.getLocalContext() == "world"
+        result.getErrors() == [error1, error2]
     }
 }

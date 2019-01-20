@@ -1,39 +1,34 @@
-package graphql.language;
+package graphql.util;
 
 import graphql.PublicApi;
 
 import java.util.Objects;
 
 /**
- * Used by {@link AstZipper} to identify the position of the current node inside the tree:
- * the breadcrumbs lead you to the root node.
+ * A specific {@link NodeLocation} inside a node. This means  {@link #getNode()} returns a Node which has a child
+ * at {@link #getLocation()}
+ *
+ * A list of Breadcrumbs is used to identify the exact location of a specific node inside a tree.
+ *
+ * @param <T>
  */
 @PublicApi
-public class AstBreadcrumb {
+public class Breadcrumb<T> {
 
-    private final Node node;
+    private final T node;
     private final NodeLocation location;
 
-    public AstBreadcrumb(Node node, NodeLocation location) {
+    public Breadcrumb(T node, NodeLocation location) {
         this.node = node;
         this.location = location;
     }
 
-    public Node getNode() {
+    public T getNode() {
         return node;
     }
 
     public NodeLocation getLocation() {
         return location;
-    }
-
-
-    @Override
-    public String toString() {
-        return "AstBreadcrumb{" +
-                "node=" + node +
-                ", location=" + location +
-                '}';
     }
 
     @Override
@@ -44,7 +39,7 @@ public class AstBreadcrumb {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        AstBreadcrumb that = (AstBreadcrumb) o;
+        Breadcrumb<?> that = (Breadcrumb<?>) o;
         return Objects.equals(node, that.node) &&
                 Objects.equals(location, that.location);
     }
@@ -53,5 +48,9 @@ public class AstBreadcrumb {
     public int hashCode() {
         return Objects.hash(node, location);
     }
-}
 
+    @Override
+    public String toString() {
+        return super.toString();
+    }
+}

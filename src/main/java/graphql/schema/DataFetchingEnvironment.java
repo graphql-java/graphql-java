@@ -1,12 +1,13 @@
 package graphql.schema;
 
 import graphql.PublicApi;
-import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
+import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
+import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
 
 import java.util.List;
@@ -61,13 +62,29 @@ public interface DataFetchingEnvironment {
      * Returns a context argument that is set up when the {@link graphql.GraphQL#execute} method
      * is invoked.
      * <p>
-     * This is a info object which is provided to all DataFetcher, but never used by graphql-java itself.
+     * This is a info object which is provided to all DataFetchers, but never used by graphql-java itself.
      *
      * @param <T> you decide what type it is
      *
      * @return can be null
      */
     <T> T getContext();
+
+    /**
+     * This returns a context object that parent fields may have returned returned
+     * via {@link graphql.execution.DataFetcherResult#getLocalContext()} which can be used to pass down extra information to
+     * fields beyond the normal {@link #getSource()}
+     * <p>
+     * This differs from {@link #getContext()} in that its field specific and passed from parent field to child field,
+     * whilst {@link #getContext()} is global for the whole query.
+     * <p>
+     * If the field is a top level field then 'localContext' equals the global 'context'
+     *
+     * @param <T> you decide what type it is
+     *
+     * @return can be null if no field context objects are passed back by previous parent fields
+     */
+    <T> T getLocalContext();
 
     /**
      * This is the source object for the root query.
@@ -85,7 +102,9 @@ public interface DataFetchingEnvironment {
 
 
     /**
-     * Use {@link #getMergedField()}.
+     * @return the list of fields
+     *
+     * @deprecated Use {@link #getMergedField()}.
      */
     @Deprecated
     List<Field> getFields();
@@ -160,11 +179,6 @@ public interface DataFetchingEnvironment {
     DataFetchingFieldSelectionSet getSelectionSet();
 
     /**
-     * @return the current {@link ExecutionContext}. It gives access to the overall schema and other things related to the overall execution of the current request.
-     */
-    ExecutionContext getExecutionContext();
-
-    /**
      * This allows you to retrieve a named dataloader from the underlying {@link org.dataloader.DataLoaderRegistry}
      *
      * @param dataLoaderName the name of the data loader to fetch
@@ -177,4 +191,24 @@ public interface DataFetchingEnvironment {
      * @see org.dataloader.DataLoaderRegistry#getDataLoader(String)
      */
     <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
+
+    /**
+     * @return the current operation that is being executed
+     */
+    OperationDefinition getOperationDefinition();
+
+    /**
+     * @return the current query Document that is being executed
+     */
+    Document getDocument();
+
+    /**
+     * This returns the variables that have been passed into the query.  Note that this is the raw variables themselves and not the
+     * arguments to the field, which is accessed via {@link #getArguments()}
+     * <p>
+     * The field arguments are created by interpolating any referenced variables and AST literals and resolving them into the arguments
+     *
+     * @return the variables that have been passed to the query that is being executed
+     */
+    Map<String, Object> getVariables();
 }

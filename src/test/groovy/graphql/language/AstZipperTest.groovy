@@ -1,9 +1,13 @@
 package graphql.language
 
+import graphql.util.Breadcrumb
+import graphql.util.NodeLocation
+import graphql.util.NodeZipper
 import graphql.util.TraversalControl
 import graphql.util.TraverserContext
 import spock.lang.Specification
 
+import static graphql.language.AstNodeAdapter.AST_NODE_ADAPTER
 import static java.util.Arrays.asList
 import static java.util.Collections.emptyList
 
@@ -78,6 +82,7 @@ class AstZipperTest extends Specification {
      *
      */
 
+
     def 'modify a child node'() {
         def root = node("root",
                 node("child 1",
@@ -95,12 +100,12 @@ class AstZipperTest extends Specification {
         Node child1 = root.selectChild(0)
         Node child1_2 = child1.selectChild(1)
 
-        List<AstBreadcrumb> breadcrumbs = asList(
-                new AstBreadcrumb(child1, new NodeLocation("children", 1)),
-                new AstBreadcrumb(root, new NodeLocation("children", 0))
+        List<Breadcrumb> breadcrumbs = asList(
+                new Breadcrumb<>(child1, new NodeLocation("children", 1)),
+                new Breadcrumb<>(root, new NodeLocation("children", 0))
         )
 
-        AstZipper zipper = new AstZipper(child1_2, breadcrumbs)
+        NodeZipper zipper = new NodeZipper(child1_2, breadcrumbs, AST_NODE_ADAPTER)
 
         final MyNode rootModified = (MyNode) zipper.modifyNode(
                 { node ->

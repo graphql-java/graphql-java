@@ -2,34 +2,35 @@ package graphql;
 
 
 import graphql.language.SourceLocation;
-import org.antlr.v4.runtime.RecognitionException;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Collections.singletonList;
+
 public class InvalidSyntaxError implements GraphQLError {
 
     private final String message;
+    private final String sourcePreview;
+    private final String offendingToken;
     private final List<SourceLocation> locations = new ArrayList<>();
 
     public InvalidSyntaxError(SourceLocation sourceLocation, String msg) {
-        this.message = mkMessage(msg);
-        if (sourceLocation != null) {
-            this.locations.add(sourceLocation);
-        }
+        this(singletonList(sourceLocation), msg);
     }
 
     public InvalidSyntaxError(List<SourceLocation> sourceLocations, String msg) {
-        this.message = mkMessage(msg);
+        this(sourceLocations, msg, null, null);
+    }
+
+    public InvalidSyntaxError(List<SourceLocation> sourceLocations, String msg, String sourcePreview, String offendingToken) {
+        this.message = msg;
+        this.sourcePreview = sourcePreview;
+        this.offendingToken = offendingToken;
         if (sourceLocations != null) {
             this.locations.addAll(sourceLocations);
         }
     }
-
-    private String mkMessage(String msg) {
-        return "Invalid Syntax" + (msg == null ? "" : " : " + msg);
-    }
-
 
     @Override
     public String getMessage() {
@@ -41,6 +42,14 @@ public class InvalidSyntaxError implements GraphQLError {
         return locations;
     }
 
+    public String getSourcePreview() {
+        return sourcePreview;
+    }
+
+    public String getOffendingToken() {
+        return offendingToken;
+    }
+
     @Override
     public ErrorType getErrorType() {
         return ErrorType.InvalidSyntax;
@@ -50,27 +59,10 @@ public class InvalidSyntaxError implements GraphQLError {
     public String toString() {
         return "InvalidSyntaxError{" +
                 " message=" + message +
+                " ,offendingToken=" + offendingToken +
                 " ,locations=" + locations +
+                " ,sourcePreview=" + sourcePreview +
                 '}';
-    }
-
-
-    /**
-     * Creates an invalid syntax error object from an exception
-     *
-     * @param parseException the parse exception
-     *
-     * @return a new invalid syntax error object
-     */
-    public static InvalidSyntaxError toInvalidSyntaxError(Exception parseException) {
-        String msg = parseException.getMessage();
-        SourceLocation sourceLocation = null;
-        if (parseException.getCause() instanceof RecognitionException) {
-            RecognitionException recognitionException = (RecognitionException) parseException.getCause();
-            msg = recognitionException.getMessage();
-            sourceLocation = new SourceLocation(recognitionException.getOffendingToken().getLine(), recognitionException.getOffendingToken().getCharPositionInLine());
-        }
-        return new InvalidSyntaxError(sourceLocation, msg);
     }
 
 

@@ -46,6 +46,8 @@ public class NodeTraverser {
      *
      * @param nodeVisitor the visitor of the nodes
      * @param root        the root node
+     *
+     * @return the accumulation result of this traversal
      */
     public Object depthFirst(NodeVisitor nodeVisitor, Node root) {
         return depthFirst(nodeVisitor, Collections.singleton(root));
@@ -56,6 +58,8 @@ public class NodeTraverser {
      *
      * @param nodeVisitor the visitor of the nodes
      * @param roots       the root nodes
+     *
+     * @return the accumulation result of this traversal
      */
     public Object depthFirst(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
@@ -71,7 +75,6 @@ public class NodeTraverser {
                 context.setVar(LeaveOrEnter.class, LeaveOrEnter.LEAVE);
                 return context.thisNode().accept(context, nodeVisitor);
             }
-
         };
         return doTraverse(roots, nodeTraverserVisitor);
     }
@@ -81,6 +84,8 @@ public class NodeTraverser {
      *
      * @param nodeVisitor the visitor of the nodes
      * @param root        the root node
+     *
+     * @return the accumulation result of this traversal
      */
     public Object preOrder(NodeVisitor nodeVisitor, Node root) {
         return preOrder(nodeVisitor, Collections.singleton(root));
@@ -91,6 +96,8 @@ public class NodeTraverser {
      *
      * @param nodeVisitor the visitor of the nodes
      * @param roots       the root nodes
+     *
+     * @return the accumulation result of this traversal
      */
     public Object preOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
@@ -115,6 +122,8 @@ public class NodeTraverser {
      *
      * @param nodeVisitor the visitor of the nodes
      * @param root        the root node
+     *
+     * @return the accumulation result of this traversal
      */
     public Object postOrder(NodeVisitor nodeVisitor, Node root) {
         return postOrder(nodeVisitor, Collections.singleton(root));
@@ -125,6 +134,8 @@ public class NodeTraverser {
      *
      * @param nodeVisitor the visitor of the nodes
      * @param roots       the root nodes
+     *
+     * @return the accumulation result of this traversal
      */
     public Object postOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {

@@ -40,7 +40,6 @@ import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FI
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
-
 /**
  * This can print an in memory GraphQL schema back to a logical schema definition
  */
@@ -60,17 +59,21 @@ public class SchemaPrinter {
 
         private final boolean includeSchemaDefinition;
 
+        private final boolean includeDirectives;
+
         private final SchemaPrinterComparatorRegistry comparatorRegistry;
 
         private Options(boolean includeIntrospectionTypes,
                 boolean includeScalars,
                 boolean includeExtendedScalars,
                 boolean includeSchemaDefinition,
+                boolean includeDirectives,
                 SchemaPrinterComparatorRegistry comparatorRegistry) {
             this.includeIntrospectionTypes = includeIntrospectionTypes;
             this.includeScalars = includeScalars;
             this.includeExtendedScalars = includeExtendedScalars;
             this.includeSchemaDefinition = includeSchemaDefinition;
+            this.includeDirectives = includeDirectives;
             this.comparatorRegistry = comparatorRegistry;
         }
 
@@ -90,8 +93,12 @@ public class SchemaPrinter {
             return includeSchemaDefinition;
         }
 
+        public boolean isIncludeDirectives() {
+            return includeDirectives;
+        }
+
         public static Options defaultOptions() {
-            return new Options(false, false, false, false,
+            return new Options(false, false, false, false, true,
                     DefaultSchemaPrinterComparatorRegistry.defaultComparators());
         }
 
@@ -102,7 +109,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeIntrospectionTypes(boolean flag) {
-            return new Options(flag, this.includeScalars, includeExtendedScalars, this.includeSchemaDefinition, this.comparatorRegistry);
+            return new Options(flag, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, this.comparatorRegistry);
         }
 
         /**
@@ -112,7 +119,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, flag, includeExtendedScalars, this.includeSchemaDefinition, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, flag, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, this.comparatorRegistry);
         }
 
         /**
@@ -123,7 +130,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeExtendedScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag, this.includeSchemaDefinition, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag, this.includeSchemaDefinition, this.includeDirectives, this.comparatorRegistry);
         }
 
         /**
@@ -136,7 +143,18 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeSchemaDefintion(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, flag, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, flag, this.includeDirectives, this.comparatorRegistry);
+        }
+
+        /**
+         * Allow to print directives. In some situations, auto-generated schemas contain a lot of directives that
+         * make the printout noisy and having this flag would allow cleaner printout. On by default.
+         *
+         * @param flag whether to print directives
+         * @return new instance of options
+         */
+        public Options includeDirectives(boolean flag) {
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, flag, this.comparatorRegistry);
         }
 
         /**
@@ -146,7 +164,8 @@ public class SchemaPrinter {
          * @return options
          */
         public Options setComparators(SchemaPrinterComparatorRegistry comparatorRegistry) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives,
+                    comparatorRegistry);
         }
 
         public SchemaPrinterComparatorRegistry getComparatorRegistry() {
@@ -464,7 +483,8 @@ public class SchemaPrinter {
 
     String argsString(Class<? extends GraphQLType> parent, List<GraphQLArgument> arguments) {
         boolean hasDescriptions = arguments.stream().anyMatch(arg -> !isNullOrEmpty(arg.getDescription()));
-        String prefix = hasDescriptions ? "  " : "";
+        String halfPrefix = hasDescriptions ? "  " : "";
+        String prefix = hasDescriptions ? "    " : "";
         int count = 0;
         StringBuilder sb = new StringBuilder();
 
@@ -489,8 +509,16 @@ public class SchemaPrinter {
             }
             String description = argument.getDescription();
             if (!isNullOrEmpty(description)) {
-                Stream<String> stream = Arrays.stream(description.split("\n"));
-                stream.map(s -> "  #" + s + "\n").forEach(sb::append);
+                String[] descriptionSplitByNewlines = description.split("\n");
+                Stream<String> stream = Arrays.stream(descriptionSplitByNewlines);
+                if (descriptionSplitByNewlines.length > 1) {
+                    String multiLineComment = "\"\"\"";
+                    stream = Stream.concat(Stream.of(multiLineComment), stream);
+                    stream = Stream.concat(stream, Stream.of(multiLineComment));
+                    stream.map(s -> prefix + s + "\n").forEach(sb::append);
+                } else {
+                    stream.map(s -> prefix + "#" + s + "\n").forEach(sb::append);
+                }
             }
             sb.append(prefix).append(argument.getName()).append(": ").append(typeString(argument.getType()));
             Object defaultValue = argument.getDefaultValue();
@@ -504,12 +532,15 @@ public class SchemaPrinter {
             if (hasDescriptions) {
                 sb.append("\n");
             }
-            sb.append(prefix).append(")");
+            sb.append(halfPrefix).append(")");
         }
         return sb.toString();
     }
 
     String directivesString(Class<? extends GraphQLType> parent, List<GraphQLDirective> directives) {
+        if (!options.includeDirectives) {
+            return "";
+        }
         StringBuilder sb = new StringBuilder();
         if (!directives.isEmpty()) {
             sb.append(" ");

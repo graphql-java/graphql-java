@@ -319,7 +319,7 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(typeInfo)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .source(OptionalLong.empty())
-                .fields(mergedSelectionSet(["fld": []]))
+                .fields(mergedSelectionSet  (["fld": []]))
                 .build()
 
         when:
@@ -557,16 +557,15 @@ class ExecutionStrategyTest extends Specification {
         boolean handlerCalled = false
         ExecutionStrategy overridingStrategy = new AsyncExecutionStrategy(new SimpleDataFetcherExceptionHandler() {
             @Override
-            void accept(DataFetcherExceptionHandlerParameters handlerParameters) {
+            DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
                 handlerCalled = true
                 assert handlerParameters.exception == expectedException
-                assert handlerParameters.executionContext == executionContext
                 assert handlerParameters.fieldDefinition == fieldDefinition
                 assert handlerParameters.field.name == 'someField'
                 assert handlerParameters.path == expectedPath
 
                 // by calling down we are testing the base class as well
-                super.accept(handlerParameters)
+                super.onException(handlerParameters)
             }
         }) {
             @Override
@@ -696,11 +695,14 @@ class ExecutionStrategyTest extends Specification {
 
         def executionData = ["child": [:]]
         when:
-        def executionResult = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters,
-                new DataFetcherResult(executionData, [new DataFetchingErrorGraphQLError("bad foo", ["child", "foo"])]))
+        def fetchedValue = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters,
+                DataFetcherResult.newResult().data(executionData)
+                        .error(new DataFetchingErrorGraphQLError("bad foo", ["child", "foo"]))
+                        .build()
+        )
 
         then:
-        executionResult == executionData
+        fetchedValue.getFetchedValue() == executionData
         executionContext.getErrors()[0].locations == [new SourceLocation(7, 20)]
         executionContext.getErrors()[0].message == "bad foo"
         executionContext.getErrors()[0].path == ["parent", "child", "foo"]
@@ -723,11 +725,12 @@ class ExecutionStrategyTest extends Specification {
 
         def executionData = ["child": [:]]
         when:
-        def executionResult = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters,
-                new DataFetcherResult(executionData, [new DataFetchingErrorGraphQLError("bad foo")]))
-
+        def fetchedValue = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters,
+                DataFetcherResult.newResult().data(executionData)
+                        .error(new DataFetchingErrorGraphQLError("bad foo"))
+                        .build())
         then:
-        executionResult == executionData
+        fetchedValue.getFetchedValue() == executionData
         executionContext.getErrors()[0].locations == null
         executionContext.getErrors()[0].message == "bad foo"
         executionContext.getErrors()[0].path == null
