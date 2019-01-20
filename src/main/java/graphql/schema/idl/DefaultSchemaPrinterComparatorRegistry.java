@@ -25,7 +25,7 @@ public class DefaultSchemaPrinterComparatorRegistry implements SchemaPrinterComp
     }
 
     /**
-     * Search for the most specific to least specific registered {@code Comparator} otherwise a default is returned.
+     * Search for the most to least specific registered {@code Comparator} otherwise a default is returned.
      */
     @Override
     public <T extends GraphQLType> Comparator<? super T> getComparator(SchemaPrinterComparatorEnvironment environment) {

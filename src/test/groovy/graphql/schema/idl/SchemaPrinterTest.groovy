@@ -1099,7 +1099,6 @@ scalar TestScalar @a(a, bb) @bb(a, bb)
         result == ''' @a(a, bb) @bb(a, bb)'''
     }
 
-
     def "SchemaPrinterComparatorEnvironment valid instance"() {
         when:
         environment.build()
@@ -1232,7 +1231,6 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 '''
     }
 
-
     def "unionPrinter uses most specific registered comparators"() {
         given:
         GraphQLUnionType unionType = newUnionType().name("TestUnion")
@@ -1257,7 +1255,6 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 '''
     }
 
-
     def "unionPrinter uses least specific registered comparators"() {
         given:
         GraphQLUnionType unionType = newUnionType().name("TestUnion")
@@ -1281,7 +1278,6 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
 '''
     }
-
 
     def "interfacePrinter uses most specific registered comparators"() {
         given:
