@@ -219,7 +219,7 @@ class QueryTransformerTest extends Specification {
             }
             ''')
         def fragments = NodeUtil.getFragmentsByName(query)
-        QueryTransformer queryTraversal = QueryTransformer.newQueryTransformer()
+        QueryTransformer queryTransformer = QueryTransformer.newQueryTransformer()
                 .schema(transfSchema)
                 .root(fragments["frag"])
                 .rootParentType(transfSchema.getQueryType())
@@ -245,7 +245,7 @@ class QueryTransformerTest extends Specification {
 
 
         when:
-        def newFragment = queryTraversal.transform(visitor)
+        def newFragment = queryTransformer.transform(visitor)
         then:
         printAstCompact(newFragment) ==
                 "fragment frag on Root {fooA {midA {newChild1 newChild2}}}"
