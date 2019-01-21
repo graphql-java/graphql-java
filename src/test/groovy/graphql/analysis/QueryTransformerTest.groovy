@@ -15,19 +15,22 @@ import static graphql.util.TreeTransformerUtil.changeNode
 import static graphql.util.TreeTransformerUtil.changeParentNode
 import static graphql.util.TreeTransformerUtil.deleteNode
 
-class QueryTransformationTraversalTest extends Specification {
+class QueryTransformerTest extends Specification {
     Document createQuery(String query) {
         Parser parser = new Parser()
         parser.parseDocument(query)
     }
 
-    QueryTraversal createQueryTraversal(Document document, GraphQLSchema schema, Map variables = [:]) {
-        QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
+    QueryTransformer createQueryTransformer(Document document, GraphQLSchema schema, Map variables = [:]) {
+        def fragments = NodeUtil.getFragmentsByName(document)
+        QueryTransformer queryTransformer = QueryTransformer.newQueryTransformer()
                 .schema(schema)
-                .document(document)
+                .fragmentsByName(fragments)
+                .root(document)
                 .variables(variables)
+                .rootParentType(schema.getQueryType())
                 .build()
-        return queryTraversal
+        return queryTransformer
     }
 
     def transfSchema = TestUtil.schema("""
@@ -54,7 +57,7 @@ class QueryTransformationTraversalTest extends Specification {
     def "transform query rename query fields based on type information "() {
         def query = TestUtil.parseQuery("{ root { fooA { midA { leafA } midB { leafB } } fooB { midA { leafA } midB { leafB } } } }")
 
-        QueryTraversal queryTraversal = createQueryTraversal(query, transfSchema)
+        QueryTransformer queryTransformer = createQueryTransformer(query, transfSchema)
 
         def visitor = new QueryVisitorStub() {
             @Override
@@ -69,7 +72,7 @@ class QueryTransformationTraversalTest extends Specification {
         }
 
         when:
-        def newDocument = queryTraversal.transform(visitor)
+        def newDocument = queryTransformer.transform(visitor)
 
         then:
         printAstCompact(newDocument) ==
@@ -79,7 +82,7 @@ class QueryTransformationTraversalTest extends Specification {
     def "transform query delete midA nodes"() {
         def query = TestUtil.parseQuery("{ root { fooA { midA { leafA } midB { leafB } } fooB { midA { leafA } midB { leafB } } } }")
 
-        QueryTraversal queryTraversal = createQueryTraversal(query, transfSchema)
+        QueryTransformer queryTransformer = createQueryTransformer(query, transfSchema)
 
         def visitor = new QueryVisitorStub() {
             @Override
@@ -91,7 +94,7 @@ class QueryTransformationTraversalTest extends Specification {
         }
 
         when:
-        def newDocument = queryTraversal.transform(visitor)
+        def newDocument = queryTransformer.transform(visitor)
 
         then:
         printAstCompact(newDocument) ==
@@ -101,7 +104,7 @@ class QueryTransformationTraversalTest extends Specification {
     def "transform query add midA sibling"() {
         def query = TestUtil.parseQuery("{ root { fooA { midA { leafA } } } }")
 
-        QueryTraversal queryTraversal = createQueryTraversal(query, transfSchema)
+        QueryTransformer queryTransformer = createQueryTransformer(query, transfSchema)
 
         def visitor = new QueryVisitorStub() {
             @Override
@@ -118,7 +121,7 @@ class QueryTransformationTraversalTest extends Specification {
         }
 
         when:
-        def newDocument = queryTraversal.transform(visitor)
+        def newDocument = queryTransformer.transform(visitor)
 
         then:
         printAstCompact(newDocument) ==
@@ -147,7 +150,7 @@ class QueryTransformationTraversalTest extends Specification {
             }
             ''')
 
-        QueryTraversal queryTraversal = createQueryTraversal(query, transfSchema)
+        QueryTransformer queryTransformer = createQueryTransformer(query, transfSchema)
 
         def visitor = new QueryVisitorStub() {
             @Override
@@ -164,14 +167,14 @@ class QueryTransformationTraversalTest extends Specification {
         }
 
         when:
-        def newDocument = queryTraversal.transform(visitor)
+        def newDocument = queryTransformer.transform(visitor)
         then:
 
         printAstCompact(newDocument) ==
-                "query {root {fooA {midB {leafB}} fooB {midB {leafB}}}}"
+                "query {root {fooA {midB {leafB}} fooB {midB {leafB}}}} fragment frag on Foo {midA {leafA}}"
     }
 
-    def "transform query does not traverse named fragments "() {
+    def "transform query does not traverse named fragments when started from query"() {
         def query = TestUtil.parseQuery('''
             {
                 root {
@@ -183,13 +186,21 @@ class QueryTransformationTraversalTest extends Specification {
             }
             ''')
 
-        QueryTraversal queryTraversal = createQueryTraversal(query, transfSchema)
+        def operationDefinition = NodeUtil.getOperation(query, null).operationDefinition
+        def fragments = NodeUtil.getFragmentsByName(query)
+        QueryTransformer queryTransformer = QueryTransformer.newQueryTransformer()
+                .schema(transfSchema)
+                .fragmentsByName(fragments)
+                .root(operationDefinition)
+                .variables([:])
+                .rootParentType(transfSchema.getQueryType())
+                .build()
 
         def visitor = Mock(QueryVisitor)
 
 
         when:
-        queryTraversal.transform(visitor)
+        queryTransformer.transform(visitor)
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "root" && it.fieldDefinition.type.name == "Root" && it.parentType.name == "Query" })
         1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironment it -> it.fragmentSpread.name == "frag" })
@@ -208,10 +219,9 @@ class QueryTransformationTraversalTest extends Specification {
             }
             ''')
         def fragments = NodeUtil.getFragmentsByName(query)
-        QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
+        QueryTransformer queryTransformer = QueryTransformer.newQueryTransformer()
                 .schema(transfSchema)
                 .root(fragments["frag"])
-        //parent type is not needed, we need to refactor query traversal so that it does not require parent type
                 .rootParentType(transfSchema.getQueryType())
                 .fragmentsByName(fragments)
                 .variables([:])
@@ -235,7 +245,7 @@ class QueryTransformationTraversalTest extends Specification {
 
 
         when:
-        def newFragment = queryTraversal.transform(visitor)
+        def newFragment = queryTransformer.transform(visitor)
         then:
         printAstCompact(newFragment) ==
                 "fragment frag on Root {fooA {midA {newChild1 newChild2}}}"
