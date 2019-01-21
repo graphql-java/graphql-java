@@ -10,8 +10,7 @@ import java.util.function.UnaryOperator;
 import static graphql.Assert.assertNotNull;
 
 /**
- * Associates a {@code Comparator} for a specific {@code GraphQLType} together with a {@code SchemaPrinterComparatorEnvironment} to control the scope
- * in which the {@code Comparator} can be applied.
+ * Associates a {@code Comparator} with a {@code SchemaPrinterComparatorEnvironment} to control the scope in which the {@code Comparator} can be applied.
  */
 public class DefaultSchemaPrinterComparatorRegistry implements SchemaPrinterComparatorRegistry {
 
@@ -58,12 +57,12 @@ public class DefaultSchemaPrinterComparatorRegistry implements SchemaPrinterComp
         private Map<SchemaPrinterComparatorEnvironment, Comparator<?>> registry = new HashMap<>();
 
         /**
-         * Registers a {@code Comparator} with its permitted scope of operation.
+         * Registers a {@code Comparator} with an environment to control its permitted scope of operation.
          *
          * @param environment Defines the scope to control where the {@code Comparator} can be applied.
-         * @param comparatorClass The {@code Comparator} class for added type safety. It should be the same type as {@code environment.elementType}.
-         * @param comparator The {@code Comparator} for comparing the {@code comparatorClass} to register for the supplied environment scope.
-         * @param <T> The {@code GraphQLType}.
+         * @param comparatorClass The {@code Comparator} class for added type safety. It should match {@code environment.elementType}.
+         * @param comparator The {@code Comparator} of type {@code comparatorClass}.
+         * @param <T> The specific {@code GraphQLType} the {@code Comparator} should operate on.
          * @return The {@code Builder} instance to allow chaining.
          */
         public <T extends GraphQLType> Builder add(SchemaPrinterComparatorEnvironment environment, Class<T> comparatorClass, Comparator<? super T> comparator) {
