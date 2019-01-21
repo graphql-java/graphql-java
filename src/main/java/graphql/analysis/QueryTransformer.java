@@ -23,7 +23,7 @@ import static graphql.language.AstNodeAdapter.AST_NODE_ADAPTER;
  * This is an important distinction to just traversing the Document without any type information: Each field has a clearly
  * defined type. See {@link QueryVisitorFieldEnvironment}.
  * <p>
- * Further are the built in Directives skip/include automatically evaluated: if parts of the Document should be ignored they will not
+ * Furthermore are the built in Directives skip/include automatically evaluated: if parts of the Document should be ignored they will not
  * be visited. But this is not a full evaluation of a Query: every fragment will be visited/followed regardless of the type condition.
  * <p>
  * It also doesn't consider field merging, which means for example {@code { user{firstName} user{firstName}} } will result in four
