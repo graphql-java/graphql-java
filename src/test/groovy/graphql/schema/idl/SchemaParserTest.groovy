@@ -222,6 +222,9 @@ class SchemaParserTest extends Specification {
         ''' enum Foo @directive { } '''      | _
 
         ''' union Foo '''                    | _
+        ''' union Foo @directive  '''        | _
+
+        ''' scalar Foo '''                   | _  // special case - has no innards
     }
 
 
@@ -242,6 +245,7 @@ class SchemaParserTest extends Specification {
         ''' extend enum Foo '''        | _
         ''' extend enum Foo {}'''      | _
         ''' extend union Foo '''       | _
+        ''' extend scalar Foo '''      | _
     }
 
     @Unroll
@@ -257,6 +261,7 @@ class SchemaParserTest extends Specification {
         ''' extend input Foo @d1 @d2 {}'''      | _
         ''' extend enum Foo @d1 @d2 {}'''       | _
         ''' extend union Foo @d1 @d2 '''        | _
+        ''' extend scalar Foo @d1 @d2 '''       | _ // special case - has no innards
     }
 
     @Unroll
@@ -288,5 +293,7 @@ class SchemaParserTest extends Specification {
         ''' extend union Foo = a | b | c'''              | _
         ''' extend union Foo @directive = | a | b | c''' | _
         ''' extend union Foo @directive = a | b | c'''   | _
+
+        ''' extend scalar Foo @directive'''              | _ // special case - has no innards
     }
 }
