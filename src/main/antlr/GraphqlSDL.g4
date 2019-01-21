@@ -35,6 +35,7 @@ typeExtension :
     inputObjectTypeExtensionDefinition
 ;
 
+emptyParentheses : '{' '}';
 
 scalarTypeDefinition : description? SCALAR name directives?;
 
@@ -44,7 +45,7 @@ objectTypeDefinition : description? TYPE name implementsInterfaces? directives? 
 
 objectTypeExtensionDefinition :
     EXTEND TYPE name implementsInterfaces? directives? extensionFieldsDefinition |
-    EXTEND TYPE name implementsInterfaces? directives |
+    EXTEND TYPE name implementsInterfaces? directives emptyParentheses? |
     EXTEND TYPE name implementsInterfaces
 ;
 
@@ -66,7 +67,7 @@ interfaceTypeDefinition : description? INTERFACE name directives? fieldsDefiniti
 
 interfaceTypeExtensionDefinition :
     EXTEND INTERFACE name directives? extensionFieldsDefinition |
-    EXTEND INTERFACE name directives
+    EXTEND INTERFACE name directives emptyParentheses?
 ;
 
 
@@ -88,7 +89,7 @@ enumTypeDefinition : description? ENUM name directives? enumValueDefinitions?;
 
 enumTypeExtensionDefinition :
     EXTEND ENUM name directives? extensionEnumValueDefinitions |
-    EXTEND ENUM name directives
+    EXTEND ENUM name directives emptyParentheses?
 ;
 
 enumValueDefinitions : '{' enumValueDefinition* '}';
@@ -102,7 +103,7 @@ inputObjectTypeDefinition : description? INPUT name directives? inputObjectValue
 
 inputObjectTypeExtensionDefinition :
     EXTEND INPUT name directives? extensionInputObjectValueDefinitions |
-    EXTEND INPUT name directives
+    EXTEND INPUT name directives emptyParentheses?
 ;
 
 inputObjectValueDefinitions : '{' inputValueDefinition* '}';

@@ -508,10 +508,13 @@ public class GraphqlAntlrToLanguage {
         def.description(newDescription(ctx.description()));
         def.directives(createDirectives(ctx.directives()));
         List<Type> members = new ArrayList<>();
-        GraphqlParser.UnionMembersContext unionMembersContext = ctx.unionMembership().unionMembers();
-        while (unionMembersContext != null) {
-            members.add(0, createTypeName(unionMembersContext.typeName()));
-            unionMembersContext = unionMembersContext.unionMembers();
+        GraphqlParser.UnionMembershipContext unionMembership = ctx.unionMembership();
+        if (unionMembership != null) {
+            GraphqlParser.UnionMembersContext unionMembersContext = unionMembership.unionMembers();
+            while (unionMembersContext != null) {
+                members.add(0, createTypeName(unionMembersContext.typeName()));
+                unionMembersContext = unionMembersContext.unionMembers();
+            }
         }
         def.memberTypes(members);
         return def.build();
