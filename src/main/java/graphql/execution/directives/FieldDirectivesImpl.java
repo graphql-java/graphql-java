@@ -4,6 +4,7 @@ import graphql.Internal;
 import graphql.schema.GraphQLDirective;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,6 +23,10 @@ import static java.util.stream.Collectors.toList;
 public class FieldDirectivesImpl implements FieldDirectives {
 
     private final List<FieldDirectivesInfo> directivePositions;
+
+    public FieldDirectivesImpl() {
+        this(Arrays.asList());
+    }
 
     public FieldDirectivesImpl(List<FieldDirectivesInfo> directivesInfos) {
         this.directivePositions = assertNotNull(directivesInfos);

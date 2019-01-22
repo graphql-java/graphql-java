@@ -6,8 +6,9 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
-import graphql.language.Document;
 import graphql.execution.directives.FieldDirectives;
+import graphql.execution.directives.FieldDirectivesImpl;
+import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
@@ -61,6 +62,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.operationDefinition = builder.operationDefinition;
         this.document = builder.document;
         this.variables = builder.variables;
+        this.fieldDirectives = builder.fieldDirectives;
     }
 
     @Override
@@ -229,6 +231,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private final Map<String, Object> arguments = new LinkedHashMap<>();
         private final Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
         private final Map<String, Object> variables = new LinkedHashMap<>();
+        private FieldDirectives fieldDirectives = new FieldDirectivesImpl();
 
         public Builder(DataFetchingEnvironmentImpl env) {
             this.source = env.source;
@@ -344,8 +347,14 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             return this;
         }
 
+        public Builder fieldDirectives(FieldDirectives fieldDirectives) {
+            this.fieldDirectives = fieldDirectives;
+            return this;
+        }
+
         public DataFetchingEnvironment build() {
             return new DataFetchingEnvironmentImpl(this);
         }
+
     }
 }
