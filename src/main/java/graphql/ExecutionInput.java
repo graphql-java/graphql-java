@@ -120,6 +120,17 @@ public class ExecutionInput {
         return new Builder();
     }
 
+    /**
+     * Creates a new builder of ExecutionInput objects with the given query
+     *
+     * @param query the query to execute
+     *
+     * @return a new builder of ExecutionInput objects
+     */
+    public static Builder newExecutionInput(String query) {
+        return new Builder().query(query);
+    }
+
     public static class Builder {
 
         private String query;
