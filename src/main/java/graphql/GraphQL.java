@@ -22,11 +22,11 @@ import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
 import graphql.language.Document;
+import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 import graphql.validation.Validator;
-import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +40,7 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.InvalidSyntaxError.toInvalidSyntaxError;
+import static graphql.execution.ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDER;
 import static graphql.execution.instrumentation.DocumentAndVariables.newDocumentAndVariables;
 
 /**
@@ -80,6 +80,7 @@ import static graphql.execution.instrumentation.DocumentAndVariables.newDocument
  *
  * </ul>
  */
+@SuppressWarnings("Duplicates")
 @PublicApi
 public class GraphQL {
 
@@ -91,7 +92,6 @@ public class GraphQL {
 
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
-    private static final ExecutionIdProvider DEFAULT_EXECUTION_ID_PROVIDER = (query, operationName, context) -> ExecutionId.generate();
 
     private final GraphQLSchema graphQLSchema;
     private final ExecutionStrategy queryStrategy;
@@ -529,8 +529,8 @@ public class GraphQL {
         log.debug("Parsing query: '{}'...", query);
         ParseResult parseResult = parse(executionInput, graphQLSchema, instrumentationState);
         if (parseResult.isFailure()) {
-            log.warn("Query failed to parse : '{}'", query);
-            return new PreparsedDocumentEntry(toInvalidSyntaxError(parseResult.getException()));
+            log.warn("Query failed to parse : '{}'", executionInput.getQuery());
+            return new PreparsedDocumentEntry(parseResult.getException().toInvalidSyntaxError());
         } else {
             final Document document = parseResult.getDocument();
             // they may have changed the document and the variables via instrumentation so update the reference to it
@@ -560,7 +560,7 @@ public class GraphQL {
             documentAndVariables = newDocumentAndVariables()
                     .document(document).variables(executionInput.getVariables()).build();
             documentAndVariables = instrumentation.instrumentDocumentAndVariables(documentAndVariables, parameters);
-        } catch (ParseCancellationException e) {
+        } catch (InvalidSyntaxException e) {
             parseInstrumentation.onCompleted(null, e);
             return ParseResult.ofError(e);
         }
@@ -604,37 +604,4 @@ public class GraphQL {
         return future;
     }
 
-    private static class ParseResult {
-        private final DocumentAndVariables documentAndVariables;
-        private final Exception exception;
-
-        private ParseResult(DocumentAndVariables documentAndVariables, Exception exception) {
-            this.documentAndVariables = documentAndVariables;
-            this.exception = exception;
-        }
-
-        private boolean isFailure() {
-            return documentAndVariables == null;
-        }
-
-        private Document getDocument() {
-            return documentAndVariables.getDocument();
-        }
-
-        private Map<String, Object> getVariables() {
-            return documentAndVariables.getVariables();
-        }
-
-        private Exception getException() {
-            return exception;
-        }
-
-        private static ParseResult of(DocumentAndVariables document) {
-            return new ParseResult(document, null);
-        }
-
-        private static ParseResult ofError(Exception e) {
-            return new ParseResult(null, e);
-        }
-    }
 }

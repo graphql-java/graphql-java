@@ -62,4 +62,11 @@ class ExecutionInputTest extends Specification {
         executionInput.dataLoaderRegistry == registry
         executionInput.query == "new query"
     }
+
+    def "defaults query into builder as expected"() {
+        when:
+        def executionInput = ExecutionInput.newExecutionInput("{ q }").build()
+        then:
+        executionInput.query == "{ q }"
+    }
 }

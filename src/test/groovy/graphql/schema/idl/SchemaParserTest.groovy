@@ -6,6 +6,7 @@ import graphql.language.ObjectTypeDefinition
 import graphql.language.ScalarTypeDefinition
 import graphql.schema.idl.errors.SchemaProblem
 import spock.lang.Specification
+import spock.lang.Unroll
 
 /**
  * We don't want to retest the base GraphQL parser since it has its own testing
@@ -164,9 +165,135 @@ class SchemaParserTest extends Specification {
 
         """
         when:
-        TypeDefinitionRegistry typeRegistry = new SchemaParser().parse(schema)
+        TypeDefinitionRegistry typeRegistry = read(schema)
         then:
         typeRegistry.types().size() == 4
     }
 
+    def assertSchemaProblem(String s) {
+        try {
+            read(s)
+            assert false, "Expected a a schema problem for : " + s
+        } catch (SchemaProblem ignored) {
+            true
+        }
+    }
+
+    def assertNoSchemaProblem(String s) {
+        try {
+            read(s)
+            true
+        } catch (SchemaProblem problem) {
+            assert false, "Did not expected a schema problem for : " + s + " of : " + problem
+        }
+    }
+
+
+    @Unroll
+    def "empty types (with and without parentheses) are allowed in '#schema'"() {
+        //
+        // empty parentheses are not quite allowed by the spec but in the name of backwards compatibility
+        // AND general usefulness we are going to allow them.  So in the list below the last two of each section
+        // is not technically allowed by the latest spec
+        //
+        expect:
+        assertNoSchemaProblem(schema)
+
+        where:
+        schema                               | _
+        ''' type Foo '''                     | _
+        ''' type Foo @directive '''          | _
+        ''' type Foo { } '''                 | _
+        ''' type Foo @directive { } '''      | _
+
+        ''' interface Foo '''                | _
+        ''' interface Foo @directive '''     | _
+        ''' interface Foo { } '''            | _
+        ''' interface Foo @directive { } ''' | _
+
+        ''' input Foo '''                    | _
+        ''' input Foo @directive '''         | _
+        ''' input Foo { } '''                | _
+        ''' input Foo @directive { } '''     | _
+
+        ''' enum Foo '''                     | _
+        ''' enum Foo @directive '''          | _
+        ''' enum Foo { } '''                 | _
+        ''' enum Foo @directive { } '''      | _
+
+        ''' union Foo '''                    | _
+        ''' union Foo @directive  '''        | _
+
+        ''' scalar Foo '''                   | _  // special case - has no innards
+    }
+
+
+    @Unroll
+    def "extensions are not allowed to be empty without directives in '#schema'"() {
+
+        expect:
+        assertSchemaProblem(schema)
+
+        where:
+        schema                         | _
+        ''' extend type Foo'''         | _
+        ''' extend type Foo {}'''      | _
+        ''' extend interface Foo '''   | _
+        ''' extend interface Foo {}''' | _
+        ''' extend input Foo '''       | _
+        ''' extend input Foo {}'''     | _
+        ''' extend enum Foo '''        | _
+        ''' extend enum Foo {}'''      | _
+        ''' extend union Foo '''       | _
+        ''' extend scalar Foo '''      | _
+    }
+
+    @Unroll
+    def "extensions are allowed to be empty with directives in '#schema'"() {
+
+        expect:
+        assertNoSchemaProblem(schema)
+
+        where:
+        schema                                  | _
+        ''' extend type Foo @d1 @d2 {}'''       | _
+        ''' extend interface Foo @d1 @d2  {}''' | _
+        ''' extend input Foo @d1 @d2 {}'''      | _
+        ''' extend enum Foo @d1 @d2 {}'''       | _
+        ''' extend union Foo @d1 @d2 '''        | _
+        ''' extend scalar Foo @d1 @d2 '''       | _ // special case - has no innards
+    }
+
+    @Unroll
+    def "extensions must extend with fields or directives in '#schema'"() {
+
+        expect:
+        assertNoSchemaProblem(schema)
+
+        where:
+        schema                                           | _
+        ''' extend type Foo @directive'''                | _
+        ''' extend type Foo { f : Int }'''               | _
+        ''' extend type Foo @directive { f : Int }'''    | _
+
+        ''' extend interface Foo @directive '''          | _
+        ''' extend interface Foo { f : Int }'''          | _
+        ''' extend interface Foo { f : Int }'''          | _
+
+        ''' extend input Foo @directive '''              | _
+        ''' extend input Foo { f : Int }'''              | _
+        ''' extend input Foo { f : Int }'''              | _
+
+        ''' extend enum Foo @directive '''               | _
+        ''' extend enum Foo { a,b,c }'''                 | _
+        ''' extend enum Foo @directive { a,b,c }'''      | _
+
+        ''' extend union Foo @directive '''              | _
+        ''' extend union Foo = | a | b | c'''            | _
+        ''' extend union Foo = a | b | c'''              | _
+        ''' extend union Foo @directive = | a | b | c''' | _
+        ''' extend union Foo @directive = a | b | c'''   | _
+
+        ''' extend scalar Foo @directive'''              | _ // special case - has no innards
+    }
 }
