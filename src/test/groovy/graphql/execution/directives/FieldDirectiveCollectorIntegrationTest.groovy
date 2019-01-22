@@ -2,7 +2,6 @@ package graphql.execution.directives
 
 import graphql.GraphQL
 import graphql.TestUtil
-import graphql.execution.directives.FieldDirectives
 import graphql.introspection.Introspection
 import graphql.language.Field
 import graphql.schema.DataFetcher
@@ -51,10 +50,10 @@ class FieldDirectiveCollectorIntegrationTest extends Specification {
         }
     '''
 
-    FieldDirectives capturedDirectives
+    EncounteredDirectives capturedDirectives
 
     DataFetcher reviewDF = { env ->
-        capturedDirectives = env.getFieldDirectives()
+        capturedDirectives = env.getEncounteredDirectives()
     }
 
     def schema = TestUtil.schema(sdl, [Book: [review: reviewDF]])

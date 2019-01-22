@@ -9,7 +9,7 @@ import graphql.SerializationError;
 import graphql.TrivialDataFetcher;
 import graphql.TypeMismatchError;
 import graphql.UnresolvedTypeError;
-import graphql.execution.directives.FieldDirectives;
+import graphql.execution.directives.EncounteredDirectives;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
@@ -231,7 +231,7 @@ public abstract class ExecutionStrategy {
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, parameters.getField());
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
-        FieldDirectives fieldDirectives = executionContext.getFieldDirectives(field);
+        EncounteredDirectives encounteredDirectives = executionContext.getEncounteredDirectives(field);
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(parameters.getSource())
@@ -243,7 +243,7 @@ public abstract class ExecutionStrategy {
                 .executionStepInfo(executionStepInfo)
                 .parentType(parentType)
                 .selectionSet(fieldCollector)
-                .fieldDirectives(fieldDirectives)
+                .getEncounteredDirectives(encounteredDirectives)
                 .build();
 
         DataFetcher dataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);

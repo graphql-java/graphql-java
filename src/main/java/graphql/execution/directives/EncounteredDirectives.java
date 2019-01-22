@@ -8,7 +8,7 @@ import java.util.Map;
 
 /**
  * This gives you access to the directives on a field including hierarchical ones that may be on
- * an enclosing parent field or fragment.
+ * an enclosing parent fields or fragments.
  * <p>
  * For example the following (quite pathological) query has a hierarchical list of directives in play.
  * <pre>
@@ -35,7 +35,7 @@ import java.util.Map;
  * @see graphql.execution.MergedField
  */
 @PublicApi
-public interface FieldDirectives {
+public interface EncounteredDirectives {
 
     /**
      * This will return a map of the directives that are immediately on a field (as opposed to hierarchical ones that might be on an enclosing

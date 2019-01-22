@@ -4,7 +4,7 @@ import graphql.PublicApi;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
-import graphql.execution.directives.FieldDirectives;
+import graphql.execution.directives.EncounteredDirectives;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -180,9 +180,9 @@ public interface DataFetchingEnvironment {
     DataFetchingFieldSelectionSet getSelectionSet();
 
     /**
-     * @return a {@link graphql.execution.directives.FieldDirectives} for the currently executing field
+     * @return the {@link graphql.execution.directives.EncounteredDirectives} for the currently executing field
      */
-    FieldDirectives getFieldDirectives();
+    EncounteredDirectives getEncounteredDirectives();
 
     /**
      * This allows you to retrieve a named dataloader from the underlying {@link org.dataloader.DataLoaderRegistry}

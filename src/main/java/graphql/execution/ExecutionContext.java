@@ -6,8 +6,8 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.execution.defer.DeferSupport;
 import graphql.execution.directives.FieldDirectiveCollector;
-import graphql.execution.directives.FieldDirectives;
-import graphql.execution.directives.FieldDirectivesImpl;
+import graphql.execution.directives.EncounteredDirectives;
+import graphql.execution.directives.EncounteredDirectivesImpl;
 import graphql.execution.directives.FieldDirectivesInfo;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -113,9 +113,9 @@ public class ExecutionContext {
         return fragmentsByName.get(name);
     }
 
-    public FieldDirectives getFieldDirectives(MergedField mergedField) {
+    public EncounteredDirectives getEncounteredDirectives(MergedField mergedField) {
         List<FieldDirectivesInfo> directivesInfos = directiveCollector.combineDirectivesForField(mergedField, fieldDirectives);
-        return new FieldDirectivesImpl(directivesInfos);
+        return new EncounteredDirectivesImpl(directivesInfos);
     }
 
     public DataLoaderRegistry getDataLoaderRegistry() {

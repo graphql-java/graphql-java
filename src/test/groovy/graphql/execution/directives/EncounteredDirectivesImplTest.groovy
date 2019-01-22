@@ -12,7 +12,7 @@ import spock.lang.Specification
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLDirective.*
 
-class FieldDirectivesImplTest extends Specification {
+class EncounteredDirectivesImplTest extends Specification {
 
     GraphQLDirective cachedDirective = newDirective().name("cached").build()
     GraphQLDirective cachedDirective2 = newDirective().name("cached").argument({
@@ -51,7 +51,7 @@ class FieldDirectivesImplTest extends Specification {
                 directivePos(0, [cached: cachedDirective, timeOut: timeOutDirective]),
 
         ]
-        def impl = new FieldDirectivesImpl(directivePositions)
+        def impl = new EncounteredDirectivesImpl(directivePositions)
 
         when:
         def directives = impl.getImmediateDirectives()
@@ -74,7 +74,7 @@ class FieldDirectivesImplTest extends Specification {
                 directivePos(0, [timeOut: timeOutDirective]),
 
         ]
-        def impl = new FieldDirectivesImpl(directivePositions)
+        def impl = new EncounteredDirectivesImpl(directivePositions)
 
         when:
         def directives = impl.getClosestDirective("cached")
@@ -106,7 +106,7 @@ class FieldDirectivesImplTest extends Specification {
 
 
     def "get all directive positions"() {
-        def impl = new FieldDirectivesImpl(unsortedDirectivePositions)
+        def impl = new EncounteredDirectivesImpl(unsortedDirectivePositions)
 
         when:
         def directives = impl.getAllDirectives()
@@ -126,7 +126,7 @@ class FieldDirectivesImplTest extends Specification {
     }
 
     def "get all directive positions with a certain name"() {
-        def impl = new FieldDirectivesImpl(unsortedDirectivePositions)
+        def impl = new EncounteredDirectivesImpl(unsortedDirectivePositions)
 
         when:
         def directives = impl.getAllDirectivesNamed("cached")

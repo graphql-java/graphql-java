@@ -6,8 +6,8 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
-import graphql.execution.directives.FieldDirectives;
-import graphql.execution.directives.FieldDirectivesImpl;
+import graphql.execution.directives.EncounteredDirectives;
+import graphql.execution.directives.EncounteredDirectivesImpl;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -41,7 +41,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final OperationDefinition operationDefinition;
     private final Document document;
     private final Map<String, Object> variables;
-    private final FieldDirectives fieldDirectives;
+    private final EncounteredDirectives encounteredDirectives;
 
     private DataFetchingEnvironmentImpl(Builder builder) {
         this.source = builder.source;
@@ -62,7 +62,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.operationDefinition = builder.operationDefinition;
         this.document = builder.document;
         this.variables = builder.variables;
-        this.fieldDirectives = builder.fieldDirectives;
+        this.encounteredDirectives = builder.encounteredDirectives;
     }
 
     @Override
@@ -151,8 +151,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public FieldDirectives getFieldDirectives() {
-        return fieldDirectives;
+    public EncounteredDirectives getEncounteredDirectives() {
+        return encounteredDirectives;
     }
 
     @Override
@@ -231,7 +231,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private final Map<String, Object> arguments = new LinkedHashMap<>();
         private final Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
         private final Map<String, Object> variables = new LinkedHashMap<>();
-        private FieldDirectives fieldDirectives = new FieldDirectivesImpl();
+        private EncounteredDirectives encounteredDirectives = new EncounteredDirectivesImpl();
 
         public Builder(DataFetchingEnvironmentImpl env) {
             this.source = env.source;
@@ -347,8 +347,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             return this;
         }
 
-        public Builder fieldDirectives(FieldDirectives fieldDirectives) {
-            this.fieldDirectives = fieldDirectives;
+        public Builder getEncounteredDirectives(EncounteredDirectives encounteredDirectives) {
+            this.encounteredDirectives = encounteredDirectives;
             return this;
         }
 

@@ -3,7 +3,6 @@ package graphql.execution.batched;
 import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
-import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.TrivialDataFetcher;
 import graphql.execution.Async;
@@ -21,7 +20,7 @@ import graphql.execution.MergedSelectionSet;
 import graphql.execution.NonNullableFieldValidator;
 import graphql.execution.ResolveType;
 import graphql.execution.SimpleDataFetcherExceptionHandler;
-import graphql.execution.directives.FieldDirectives;
+import graphql.execution.directives.EncounteredDirectives;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -253,7 +252,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, fields);
 
-        FieldDirectives fieldDirectives = executionContext.getFieldDirectives(fields);
+        EncounteredDirectives encounteredDirectives = executionContext.getEncounteredDirectives(fields);
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(node.getSources())
@@ -264,7 +263,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .executionStepInfo(parameters.getExecutionStepInfo())
                 .parentType(parentType)
                 .selectionSet(fieldCollector)
-                .fieldDirectives(fieldDirectives)
+                .getEncounteredDirectives(encounteredDirectives)
                 .build();
 
         DataFetcher supplied = codeRegistry.getDataFetcher(parentType, fieldDef);
