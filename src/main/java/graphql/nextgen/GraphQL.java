@@ -22,11 +22,11 @@ import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
 import graphql.language.Document;
+import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 import graphql.validation.Validator;
-import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +37,6 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.InvalidSyntaxError.toInvalidSyntaxError;
 import static graphql.execution.instrumentation.DocumentAndVariables.newDocumentAndVariables;
 
 @SuppressWarnings("Duplicates")
@@ -200,7 +199,7 @@ public class GraphQL {
         ParseResult parseResult = parse(executionInput, graphQLSchema, instrumentationState);
         if (parseResult.isFailure()) {
             log.warn("Query failed to parse : '{}'", executionInput.getQuery());
-            return new PreparsedDocumentEntry(toInvalidSyntaxError(parseResult.getException()));
+            return new PreparsedDocumentEntry(parseResult.getException().toInvalidSyntaxError());
         } else {
             final Document document = parseResult.getDocument();
 
@@ -227,7 +226,7 @@ public class GraphQL {
             documentAndVariables = newDocumentAndVariables()
                     .document(document).variables(executionInput.getVariables()).build();
             documentAndVariables = instrumentation.instrumentDocumentAndVariables(documentAndVariables, parameters);
-        } catch (ParseCancellationException e) {
+        } catch (InvalidSyntaxException e) {
             parseInstrumentation.onCompleted(null, e);
             return ParseResult.ofError(e);
         }

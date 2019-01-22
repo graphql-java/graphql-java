@@ -80,6 +80,7 @@ import static graphql.execution.instrumentation.DocumentAndVariables.newDocument
  *
  * </ul>
  */
+@SuppressWarnings("Duplicates")
 @PublicApi
 public class GraphQL {
 
