@@ -75,7 +75,6 @@ public class NodeTraverser {
                 context.setVar(LeaveOrEnter.class, LeaveOrEnter.LEAVE);
                 return context.thisNode().accept(context, nodeVisitor);
             }
-
         };
         return doTraverse(roots, nodeTraverserVisitor);
     }

@@ -3,6 +3,7 @@ package graphql.language;
 import graphql.Internal;
 import graphql.execution.UnknownOperationException;
 import graphql.util.FpKit;
+import graphql.util.NodeLocation;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -93,5 +94,11 @@ public class NodeUtil {
         if (!newChildren.isEmpty()) {
             throw new IllegalArgumentException("Cannot pass non-empty newChildren to Node that doesn't hold children");
         }
+    }
+
+    public static Node removeChild(Node node, NodeLocation childLocationToRemove) {
+        NodeChildrenContainer namedChildren = node.getNamedChildren();
+        NodeChildrenContainer newChildren = namedChildren.transform(builder -> builder.removeChild(childLocationToRemove.getName(), childLocationToRemove.getIndex()));
+        return node.withNewChildren(newChildren);
     }
 }

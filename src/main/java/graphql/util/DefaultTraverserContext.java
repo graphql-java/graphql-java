@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static graphql.Assert.assertFalse;
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertNull;
 import static graphql.Assert.assertTrue;
 
 @Internal
@@ -15,6 +17,8 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
 
     private final T curNode;
     private T newNode;
+    private boolean nodeDeleted;
+
     private final TraverserContext<T> parent;
     private final Set<T> visited;
     private final Map<Class<?>, Object> vars;
@@ -23,7 +27,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     private Object newAccValue;
     private boolean hasNewAccValue;
     private Object curAccValue;
-    private final NodePosition position;
+    private final NodeLocation location;
     private final boolean isRootContext;
     private Map<String, List<TraverserContext<T>>> children;
 
@@ -32,14 +36,14 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
                                    Set<T> visited,
                                    Map<Class<?>, Object> vars,
                                    Object sharedContextData,
-                                   NodePosition position,
+                                   NodeLocation location,
                                    boolean isRootContext) {
         this.curNode = curNode;
         this.parent = parent;
         this.visited = visited;
         this.vars = vars;
         this.sharedContextData = sharedContextData;
-        this.position = position;
+        this.location = location;
         this.isRootContext = isRootContext;
     }
 
@@ -53,20 +57,36 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
 
     @Override
     public T thisNode() {
+        assertFalse(this.nodeDeleted, "node is deleted");
         if (newNode != null) {
             return newNode;
         }
         return curNode;
     }
 
+    @Override
+    public T originalThisNode() {
+        return curNode;
+    }
 
     @Override
     public void changeNode(T newNode) {
         assertNotNull(newNode);
-        assertTrue(this.newNode == null, "node can only be changed once");
+        assertFalse(this.nodeDeleted, "node is deleted");
         this.newNode = newNode;
     }
 
+    @Override
+    public void deleteNode() {
+        assertNull(this.newNode, "node is already changed");
+        assertFalse(this.nodeDeleted, "node is already deleted");
+        this.nodeDeleted = true;
+    }
+
+    @Override
+    public boolean isDeleted() {
+        return this.nodeDeleted;
+    }
 
     @Override
     public TraverserContext<T> getParentContext() {
@@ -82,6 +102,27 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
             curContext = curContext.getParentContext();
         }
         return result;
+    }
+
+    @Override
+    public List<Breadcrumb<T>> getBreadcrumbs() {
+        List<Breadcrumb<T>> result = new ArrayList<>();
+        TraverserContext<T> curContext = parent;
+        NodeLocation childLocation = this.location;
+        while (!curContext.isRootContext()) {
+            result.add(new Breadcrumb<>(curContext.thisNode(), childLocation));
+            childLocation = curContext.getLocation();
+            curContext = curContext.getParentContext();
+        }
+        return result;
+    }
+
+    @Override
+    public T getParentNode() {
+        if (parent == null) {
+            return null;
+        }
+        return parent.thisNode();
     }
 
     @Override
@@ -140,8 +181,8 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     }
 
     @Override
-    public NodePosition getPosition() {
-        return position;
+    public NodeLocation getLocation() {
+        return location;
     }
 
     @Override

@@ -25,7 +25,7 @@ class ResultNodesUtilTest extends Specification {
                 .fetchedValue(fetchedValue)
                 .build()
         LeafExecutionResultNode leafExecutionResultNode = new LeafExecutionResultNode(leafValue, null)
-        ExecutionResultNode executionResultNode = new ObjectExecutionResultNode.RootExecutionResultNode([foo: leafExecutionResultNode])
+        ExecutionResultNode executionResultNode = new RootExecutionResultNode([foo: leafExecutionResultNode])
 
         when:
         def executionResult = ResultNodesUtil.toExecutionResult(executionResultNode)

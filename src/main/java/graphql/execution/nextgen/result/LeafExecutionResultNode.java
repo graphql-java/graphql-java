@@ -4,7 +4,9 @@ import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.nextgen.FetchedValueAnalysis;
+import graphql.util.NodeLocation;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -18,16 +20,21 @@ public class LeafExecutionResultNode extends ExecutionResultNode {
 
     @Override
     public List<ExecutionResultNode> getChildren() {
-        return Assert.assertShouldNeverHappen();
+        return Collections.emptyList();
     }
 
     @Override
-    public ExecutionResultNode withChild(ExecutionResultNode child, ExecutionResultNodePosition position) {
+    public Map<String, List<ExecutionResultNode>> getNamedChildren() {
+        return Collections.emptyMap();
+    }
+
+    @Override
+    public ExecutionResultNode withChild(ExecutionResultNode child, NodeLocation position) {
         return Assert.assertShouldNeverHappen("Not available for leafs");
     }
 
     @Override
-    public ExecutionResultNode withNewChildren(Map<ExecutionResultNodePosition, ExecutionResultNode> children) {
+    public ExecutionResultNode withNewChildren(Map<NodeLocation, ExecutionResultNode> children) {
         return Assert.assertShouldNeverHappen();
     }
 

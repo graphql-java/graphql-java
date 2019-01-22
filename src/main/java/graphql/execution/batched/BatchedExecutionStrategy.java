@@ -3,11 +3,13 @@ package graphql.execution.batched;
 import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.TrivialDataFetcher;
 import graphql.execution.Async;
 import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
+import graphql.execution.DataFetcherExceptionHandlerResult;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
@@ -57,7 +59,7 @@ import java.util.stream.IntStream;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.UnboxPossibleOptional.unboxPossibleOptional;
-import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
+import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
@@ -283,25 +285,23 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         return fetchedValue
                 .thenApply((result) -> assertResult(parentResults, result))
                 .whenComplete(fetchCtx::onCompleted)
-                .handle(handleResult(executionContext, parameters, parentResults, fields, fieldDef, argumentValues, environment));
+                .handle(handleResult(executionContext, parameters, parentResults, environment));
     }
 
-    private BiFunction<List<Object>, Throwable, FetchedValues> handleResult(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<MapOrList> parentResults, MergedField fields, GraphQLFieldDefinition fieldDef, Map<String, Object> argumentValues, DataFetchingEnvironment environment) {
+    private BiFunction<List<Object>, Throwable, FetchedValues> handleResult(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<MapOrList> parentResults, DataFetchingEnvironment environment) {
         return (result, exception) -> {
             if (exception != null) {
                 if (exception instanceof CompletionException) {
                     exception = exception.getCause();
                 }
                 DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
-                        .executionContext(executionContext)
                         .dataFetchingEnvironment(environment)
-                        .argumentValues(argumentValues)
-                        .field(fields)
-                        .fieldDefinition(fieldDef)
-                        .path(parameters.getPath())
                         .exception(exception)
                         .build();
-                dataFetcherExceptionHandler.accept(handlerParameters);
+
+                DataFetcherExceptionHandlerResult handlerResult = dataFetcherExceptionHandler.onException(handlerParameters);
+                handlerResult.getErrors().forEach(executionContext::addError);
+
                 result = Collections.nCopies(parentResults.size(), null);
             }
             List<Object> values = result;

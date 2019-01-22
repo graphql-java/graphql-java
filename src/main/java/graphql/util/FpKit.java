@@ -10,10 +10,12 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -149,6 +151,17 @@ public class FpKit {
         return listLists.stream()
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
+    }
+
+    public static <T> Optional<T> findOne(List<T> list, Predicate<T> filter) {
+        return list
+                .stream()
+                .filter(filter)
+                .findFirst();
+    }
+
+    public static <T> T findOneOrNull(List<T> list, Predicate<T> filter) {
+        return findOne(list, filter).orElse(null);
     }
 
 }

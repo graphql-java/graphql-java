@@ -19,11 +19,23 @@ import java.util.Set;
 public interface TraverserContext<T> {
 
     /**
-     * Returns current node being visited
+     * Returns current node being visited.
+     * Special cases:
+     * It is null for the root context and it is the changed node after {@link #changeNode(Object)} is called.
+     * Throws Exception if the node is deleted.
      *
-     * @return current node traverser is visiting. Is null for the root context
+     * @return current node traverser is visiting.
+     *
+     * @throws graphql.AssertException if the current node is deleted
      */
     T thisNode();
+
+    /**
+     * Returns the original, unchanged, not deleted Node.
+     *
+     * @return the original node
+     */
+    T originalThisNode();
 
     /**
      * Change the current node to the provided node. Only applicable in enter.
@@ -35,6 +47,16 @@ public interface TraverserContext<T> {
      * @param newNode the new Node
      */
     void changeNode(T newNode);
+
+    /**
+     * Deletes the current node.
+     */
+    void deleteNode();
+
+    /**
+     * @return true if the current node is deleted
+     */
+    boolean isDeleted();
 
     /**
      * Returns parent context.
@@ -55,11 +77,26 @@ public interface TraverserContext<T> {
     List<T> getParentNodes();
 
     /**
-     * The position of the current node regarding to the parent node.
+     * The parent node.
+     *
+     * @return The parent node.
+     */
+    T getParentNode();
+
+
+    /**
+     * The exact location of this node inside the tree as a list of {@link Breadcrumb}
+     *
+     * @return list of breadcrumbs. the first element is the location inside the parent.
+     */
+    List<Breadcrumb<T>> getBreadcrumbs();
+
+    /**
+     * The location of the current node regarding to the parent node.
      *
      * @return the position or null if this node is a root node
      */
-    NodePosition getPosition();
+    NodeLocation getLocation();
 
     /**
      * Informs that the current node has been already "visited"
@@ -155,7 +192,6 @@ public interface TraverserContext<T> {
 
     /**
      * In case of leave returns the children contexts, which have already been visited.
-     *
      *
      * @return the children contexts. If the childs are a simple list the key is null.
      */

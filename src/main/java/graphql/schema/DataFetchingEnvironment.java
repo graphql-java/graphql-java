@@ -1,12 +1,13 @@
 package graphql.schema;
 
 import graphql.PublicApi;
-import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
+import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
+import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
 
 import java.util.List;
@@ -178,11 +179,6 @@ public interface DataFetchingEnvironment {
     DataFetchingFieldSelectionSet getSelectionSet();
 
     /**
-     * @return the current {@link ExecutionContext}. It gives access to the overall schema and other things related to the overall execution of the current request.
-     */
-    ExecutionContext getExecutionContext();
-
-    /**
      * This allows you to retrieve a named dataloader from the underlying {@link org.dataloader.DataLoaderRegistry}
      *
      * @param dataLoaderName the name of the data loader to fetch
@@ -195,4 +191,24 @@ public interface DataFetchingEnvironment {
      * @see org.dataloader.DataLoaderRegistry#getDataLoader(String)
      */
     <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
+
+    /**
+     * @return the current operation that is being executed
+     */
+    OperationDefinition getOperationDefinition();
+
+    /**
+     * @return the current query Document that is being executed
+     */
+    Document getDocument();
+
+    /**
+     * This returns the variables that have been passed into the query.  Note that this is the raw variables themselves and not the
+     * arguments to the field, which is accessed via {@link #getArguments()}
+     * <p>
+     * The field arguments are created by interpolating any referenced variables and AST literals and resolving them into the arguments
+     *
+     * @return the variables that have been passed to the query that is being executed
+     */
+    Map<String, Object> getVariables();
 }
