@@ -459,6 +459,12 @@ public class SchemaPrinter {
                 sb.append(" = ");
                 sb.append(printAst(defaultValue, argument.getType()));
             }
+
+            argument.getDirectives().stream()
+                    .map(this::directiveString)
+                    .filter(it -> !it.isEmpty())
+                    .forEach(directiveString -> sb.append(" ").append(directiveString));
+
             count++;
         }
         if (count > 0) {
@@ -493,6 +499,10 @@ public class SchemaPrinter {
     }
 
     private String directiveString(GraphQLDirective directive) {
+        if (!options.includeDirectives) {
+            return "";
+        }
+
         StringBuilder sb = new StringBuilder();
         sb.append("@").append(directive.getName());
         List<GraphQLArgument> args = directive.getArguments();

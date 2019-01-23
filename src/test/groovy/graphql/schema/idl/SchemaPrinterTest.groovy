@@ -757,6 +757,7 @@ type Query {
                 fieldC : SomeEnum
                 fieldD : SomeInterface
                 fieldE : SomeUnion
+                fieldF(argWithDirective: String @argDirective): String
             }
             
             type Single @single {
@@ -808,6 +809,7 @@ type Query @query1 @query2(arg1 : "x") {
   fieldC: SomeEnum
   fieldD: SomeInterface
   fieldE: SomeUnion
+  fieldF(argWithDirective: String @argDirective): String
 }
 
 type Single @single {
@@ -848,6 +850,7 @@ type Query {
   fieldC: SomeEnum
   fieldD: SomeInterface
   fieldE: SomeUnion
+  fieldF(argWithDirective: String): String
 }
 
 type Single {
