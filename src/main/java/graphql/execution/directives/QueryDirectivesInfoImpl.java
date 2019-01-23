@@ -23,13 +23,13 @@ import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
  * and how far away from the field was those directives.
  */
 @PublicApi
-public class FieldDirectivesInfoImpl implements FieldDirectivesInfo {
+public class QueryDirectivesInfoImpl implements QueryDirectivesInfo {
     private final DirectivesContainer directivesContainer;
     private final Map<String, GraphQLDirective> directives;
     private final int distance;
     private final DirectiveLocation directiveLocation;
 
-    FieldDirectivesInfoImpl(DirectivesContainer directivesContainer, int distance, Map<String, GraphQLDirective> directives) {
+    QueryDirectivesInfoImpl(DirectivesContainer directivesContainer, int distance, Map<String, GraphQLDirective> directives) {
         this.directivesContainer = directivesContainer;
         this.distance = distance;
         this.directives = directives;
@@ -37,11 +37,11 @@ public class FieldDirectivesInfoImpl implements FieldDirectivesInfo {
     }
 
     @Override
-    public FieldDirectivesInfo restrictTo(String directiveName) {
+    public QueryDirectivesInfo restrictTo(String directiveName) {
         Map<String, GraphQLDirective> collect = directives.entrySet().stream()
                 .filter(entry -> directiveName.equals(entry.getKey()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        return new FieldDirectivesInfoImpl(this.directivesContainer, this.distance, collect);
+        return new QueryDirectivesInfoImpl(this.directivesContainer, this.distance, collect);
     }
 
 
@@ -95,7 +95,7 @@ public class FieldDirectivesInfoImpl implements FieldDirectivesInfo {
 
     @Override
     public String toString() {
-        return "FieldDirectivesInfoImpl{" +
+        return "QueryDirectivesInfoImpl{" +
                 ", distance=" + distance +
                 ", directiveLocation=" + directiveLocation +
                 ", directives=" + directives +
@@ -103,7 +103,7 @@ public class FieldDirectivesInfoImpl implements FieldDirectivesInfo {
     }
 
     @Override
-    public int compareTo(FieldDirectivesInfo that) {
+    public int compareTo(QueryDirectivesInfo that) {
         if (this == that) {
             return 0;
         }

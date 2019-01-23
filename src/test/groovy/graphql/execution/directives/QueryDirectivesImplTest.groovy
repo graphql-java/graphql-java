@@ -23,12 +23,12 @@ class QueryDirectivesImplTest extends Specification {
     GraphQLDirective upperDirective = newDirective().name("upper").build()
     GraphQLDirective lowerDirective = newDirective().name("lower").build()
 
-    FieldDirectivesInfoImpl directivePos(int distance, Map<String, GraphQLDirective> directives) {
-        return new FieldDirectivesInfoImpl(new Field("ignored"), distance, directives)
+    QueryDirectivesInfoImpl directivePos(int distance, Map<String, GraphQLDirective> directives) {
+        return new QueryDirectivesInfoImpl(new Field("ignored"), distance, directives)
     }
 
-    FieldDirectivesInfoImpl directivePos(DirectivesContainer container, int distance, Map<String, GraphQLDirective> directives) {
-        return new FieldDirectivesInfoImpl(container, distance, directives)
+    QueryDirectivesInfoImpl directivePos(DirectivesContainer container, int distance, Map<String, GraphQLDirective> directives) {
+        return new QueryDirectivesInfoImpl(container, distance, directives)
     }
 
     FragmentDefinition mkFragDef(String name) {

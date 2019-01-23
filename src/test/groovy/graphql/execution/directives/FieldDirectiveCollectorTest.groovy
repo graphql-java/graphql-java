@@ -1,7 +1,6 @@
 package graphql.execution.directives
 
 
-import graphql.execution.directives.FieldDirectiveCollector
 import graphql.language.DirectivesContainer
 import graphql.language.Field
 import graphql.schema.GraphQLDirective
@@ -19,12 +18,12 @@ class FieldDirectiveCollectorTest extends Specification {
     GraphQLDirective upperDirective = newDirective().name("upper").build()
     GraphQLDirective lowerDirective = newDirective().name("lower").build()
 
-    FieldDirectivesInfo directivePos(int distance, Map<String, GraphQLDirective> directives) {
-        return new FieldDirectivesInfoImpl(new Field("ignored"), distance, directives)
+    QueryDirectivesInfo directivePos(int distance, Map<String, GraphQLDirective> directives) {
+        return new QueryDirectivesInfoImpl(new Field("ignored"), distance, directives)
     }
 
-    FieldDirectivesInfo directivePos(DirectivesContainer container, int distance, Map<String, GraphQLDirective> directives) {
-        return new FieldDirectivesInfoImpl(container, distance, directives)
+    QueryDirectivesInfo directivePos(DirectivesContainer container, int distance, Map<String, GraphQLDirective> directives) {
+        return new QueryDirectivesInfoImpl(container, distance, directives)
     }
 
     def "combine works as expected"() {

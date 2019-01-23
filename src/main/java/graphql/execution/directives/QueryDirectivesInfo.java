@@ -28,7 +28,7 @@ import java.util.Map;
  *   }
  * </pre>
  */
-public interface FieldDirectivesInfo extends Comparable<FieldDirectivesInfo> {
+public interface QueryDirectivesInfo extends Comparable<QueryDirectivesInfo> {
 
     /**
      * @return the query AST node that contained the directives
@@ -51,12 +51,12 @@ public interface FieldDirectivesInfo extends Comparable<FieldDirectivesInfo> {
     Introspection.DirectiveLocation getDirectiveLocation();
 
     /**
-     * This will create a new FieldDirectivesInfo that filters our the list of directives to a specifically named
+     * This will create a new QueryDirectivesInfo that filters our the list of directives to a specifically named
      * directive and otherwise keeps the other information the same
      *
      * @param directiveName the named directive
      *
      * @return a copy that only contains the named directive
      */
-    FieldDirectivesInfo restrictTo(String directiveName);
+    QueryDirectivesInfo restrictTo(String directiveName);
 }

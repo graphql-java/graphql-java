@@ -3,7 +3,7 @@ package graphql.execution;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
-import graphql.execution.directives.FieldDirectivesInfo;
+import graphql.execution.directives.QueryDirectivesInfo;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -39,7 +39,7 @@ public class ExecutionContextBuilder {
     private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
     private DataLoaderRegistry dataLoaderRegistry;
     private List<GraphQLError> errors = new ArrayList<>();
-    private Map<Field, List<FieldDirectivesInfo>> fieldDirectives = new LinkedHashMap<>();
+    private Map<Field, List<QueryDirectivesInfo>> queryDirectivesInfo = new LinkedHashMap<>();
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -147,8 +147,8 @@ public class ExecutionContextBuilder {
         return this;
     }
 
-    public ExecutionContextBuilder fieldDirectives(Map<Field, List<FieldDirectivesInfo>> fieldDirectives) {
-        this.fieldDirectives = fieldDirectives;
+    public ExecutionContextBuilder queryDirectivesInfo(Map<Field, List<QueryDirectivesInfo>> queryDirectivesInfo) {
+        this.queryDirectivesInfo = queryDirectivesInfo;
         return this;
     }
 
@@ -175,7 +175,7 @@ public class ExecutionContextBuilder {
                 variables,
                 context,
                 root,
-                fieldDirectives,
+                queryDirectivesInfo,
                 dataLoaderRegistry,
                 errors
         );

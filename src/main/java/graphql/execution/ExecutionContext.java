@@ -8,7 +8,7 @@ import graphql.execution.defer.DeferSupport;
 import graphql.execution.directives.FieldDirectiveCollector;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
-import graphql.execution.directives.FieldDirectivesInfo;
+import graphql.execution.directives.QueryDirectivesInfo;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -43,12 +43,12 @@ public class ExecutionContext {
     private final Object context;
     private final Instrumentation instrumentation;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
-    private final Map<Field, List<FieldDirectivesInfo>> fieldDirectives;
+    private final Map<Field, List<QueryDirectivesInfo>> queryDirectivesInfo;
     private final DataLoaderRegistry dataLoaderRegistry;
     private final DeferSupport deferSupport = new DeferSupport();
 
     @Internal
-    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, Map<Field, List<FieldDirectivesInfo>> fieldDirectives, DataLoaderRegistry dataLoaderRegistry, List<GraphQLError> startingErrors) {
+    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, Map<Field, List<QueryDirectivesInfo>> queryDirectivesInfo, DataLoaderRegistry dataLoaderRegistry, List<GraphQLError> startingErrors) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.instrumentationState = instrumentationState;
@@ -62,7 +62,7 @@ public class ExecutionContext {
         this.context = context;
         this.root = root;
         this.instrumentation = instrumentation;
-        this.fieldDirectives = fieldDirectives;
+        this.queryDirectivesInfo = queryDirectivesInfo;
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.errors.addAll(startingErrors);
     }
@@ -114,7 +114,7 @@ public class ExecutionContext {
     }
 
     public QueryDirectives getQueryDirectives(MergedField mergedField) {
-        List<FieldDirectivesInfo> directivesInfos = directiveCollector.combineDirectivesForField(mergedField, fieldDirectives);
+        List<QueryDirectivesInfo> directivesInfos = directiveCollector.combineDirectivesForField(mergedField, queryDirectivesInfo);
         return new QueryDirectivesImpl(directivesInfos);
     }
 

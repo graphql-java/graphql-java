@@ -9,7 +9,7 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.defer.DeferSupport;
 import graphql.execution.directives.FieldDirectiveCollector;
-import graphql.execution.directives.FieldDirectivesInfo;
+import graphql.execution.directives.QueryDirectivesInfo;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -187,9 +187,9 @@ public class Execution {
     }
 
     private ExecutionContext buildFieldDirectives(ExecutionContext executionContext) {
-        Map<Field, List<FieldDirectivesInfo>> fieldDirectives = fieldDirectiveCollector.collectFieldDirectives(
+        Map<Field, List<QueryDirectivesInfo>> fieldDirectives = fieldDirectiveCollector.collectDirectivesForAllFields(
                 executionContext.getDocument(), executionContext.getGraphQLSchema(), executionContext.getVariables(), executionContext.getOperationDefinition());
-        return executionContext.transform(ctx -> ctx.fieldDirectives(fieldDirectives));
+        return executionContext.transform(ctx -> ctx.queryDirectivesInfo(fieldDirectives));
     }
 
     /*

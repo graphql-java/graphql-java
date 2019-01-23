@@ -69,20 +69,20 @@ public interface QueryDirectives {
      * <p>
      * The list is sorted in distance order with the closest directives coming first.
      * <p>
-     * {@link FieldDirectivesInfo} tells you their distance from the
+     * {@link QueryDirectivesInfo} tells you their distance from the
      * the field, the AST element that contained this directives and all the directives that are present
      * at that location.
      *
      * @return a map of all the directives on a field sorted in distance order
      */
-    List<FieldDirectivesInfo> getAllDirectives();
+    List<QueryDirectivesInfo> getAllDirectives();
 
     /**
      * This will return all the named directives that are on this field including hierarchical ones.
      * <p>
      * The list is sorted in distance order with the closest directives coming first.
      * <p>
-     * {@link FieldDirectivesInfo} tells you their distance from the
+     * {@link QueryDirectivesInfo} tells you their distance from the
      * the field, the AST element that contained this directives and all the directives that are present
      * at that location but in this case the list of directives is filtered to the named directive
      *
@@ -90,5 +90,5 @@ public interface QueryDirectives {
      *
      * @return a list of directive info with just the named directive in them
      */
-    List<FieldDirectivesInfo> getAllDirectivesNamed(String directiveName);
+    List<QueryDirectivesInfo> getAllDirectivesNamed(String directiveName);
 }

@@ -22,18 +22,18 @@ import static java.util.stream.Collectors.toList;
 @Internal
 public class QueryDirectivesImpl implements QueryDirectives {
 
-    private final List<FieldDirectivesInfo> directivePositions;
+    private final List<QueryDirectivesInfo> directivePositions;
 
     public QueryDirectivesImpl() {
         this(Arrays.asList());
     }
 
-    public QueryDirectivesImpl(List<FieldDirectivesInfo> directivesInfos) {
+    public QueryDirectivesImpl(List<QueryDirectivesInfo> directivesInfos) {
         this.directivePositions = assertNotNull(directivesInfos);
         Collections.sort(directivesInfos);
     }
 
-    private Map<String, List<GraphQLDirective>> toMap(Stream<FieldDirectivesInfo> directivePositions) {
+    private Map<String, List<GraphQLDirective>> toMap(Stream<QueryDirectivesInfo> directivePositions) {
         Map<String, List<GraphQLDirective>> mapOfDirectives = new LinkedHashMap<>();
         directivePositions.forEach(info -> {
             Map<String, GraphQLDirective> positionedDirectives = info.getDirectives();
@@ -45,7 +45,7 @@ public class QueryDirectivesImpl implements QueryDirectives {
         return mapOfDirectives;
     }
 
-    public List<FieldDirectivesInfo> onlyNamed(String directiveName) {
+    public List<QueryDirectivesInfo> onlyNamed(String directiveName) {
         return directivePositions.stream()
                 .map(info -> info.restrictTo(directiveName))
                 .filter(info -> !info.getDirectives().isEmpty())
@@ -65,9 +65,9 @@ public class QueryDirectivesImpl implements QueryDirectives {
 
     @Override
     public List<GraphQLDirective> getClosestDirective(String directiveName) {
-        List<FieldDirectivesInfo> onlyNamed = onlyNamed(directiveName);
+        List<QueryDirectivesInfo> onlyNamed = onlyNamed(directiveName);
 
-        Optional<Integer> minDistance = onlyNamed.stream().map(FieldDirectivesInfo::getDistance).min(Integer::compareTo);
+        Optional<Integer> minDistance = onlyNamed.stream().map(QueryDirectivesInfo::getDistance).min(Integer::compareTo);
         if (minDistance.isPresent()) {
             Map<String, List<GraphQLDirective>> min = toMap(onlyNamed.stream()
                     .filter(info -> info.getDistance() == minDistance.get()));
@@ -78,12 +78,12 @@ public class QueryDirectivesImpl implements QueryDirectives {
     }
 
     @Override
-    public List<FieldDirectivesInfo> getAllDirectives() {
+    public List<QueryDirectivesInfo> getAllDirectives() {
         return new ArrayList<>(directivePositions);
     }
 
     @Override
-    public List<FieldDirectivesInfo> getAllDirectivesNamed(String directiveName) {
+    public List<QueryDirectivesInfo> getAllDirectivesNamed(String directiveName) {
         return onlyNamed(directiveName);
     }
 }

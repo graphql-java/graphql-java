@@ -31,18 +31,18 @@ public class FieldDirectiveCollector {
 
     private final DirectivesResolver directivesResolver = new DirectivesResolver();
 
-    public List<FieldDirectivesInfo> combineDirectivesForField(MergedField mergedField, Map<Field, List<FieldDirectivesInfo>> allDirectives) {
-        List<FieldDirectivesInfo> directives = new ArrayList<>();
+    public List<QueryDirectivesInfo> combineDirectivesForField(MergedField mergedField, Map<Field, List<QueryDirectivesInfo>> allDirectives) {
+        List<QueryDirectivesInfo> directives = new ArrayList<>();
         for (Field field : mergedField.getFields()) {
-            List<FieldDirectivesInfo> fieldDirections = allDirectives.getOrDefault(field, emptyList());
+            List<QueryDirectivesInfo> fieldDirections = allDirectives.getOrDefault(field, emptyList());
             directives.addAll(fieldDirections);
         }
         Collections.sort(directives);
         return directives;
     }
 
-    public Map<Field, List<FieldDirectivesInfo>> collectFieldDirectives(Document document, GraphQLSchema schema, Map<String, Object> variables, OperationDefinition operationDefinition) {
-        Map<Field, List<FieldDirectivesInfo>> fieldDirectives = new LinkedHashMap<>();
+    public Map<Field, List<QueryDirectivesInfo>> collectDirectivesForAllFields(Document document, GraphQLSchema schema, Map<String, Object> variables, OperationDefinition operationDefinition) {
+        Map<Field, List<QueryDirectivesInfo>> fieldDirectives = new LinkedHashMap<>();
         QueryTraversal traversal = QueryTraversal.newQueryTraversal()
                 .schema(schema)
                 .variables(variables)
@@ -54,7 +54,7 @@ public class FieldDirectiveCollector {
             public void visitField(QueryVisitorFieldEnvironment env) {
                 Field field = env.getField();
                 List<Node> parentNodes = env.getTraverserContext().getParentNodes();
-                List<FieldDirectivesInfo> directivesInfos = walkDirectivesFromField(field, parentNodes, schema, variables);
+                List<QueryDirectivesInfo> directivesInfos = walkDirectivesFromField(field, parentNodes, schema, variables);
                 if (!directivesInfos.isEmpty()) {
                     // don't waste memory with empty lists
                     fieldDirectives.put(field, directivesInfos);
@@ -68,12 +68,12 @@ public class FieldDirectiveCollector {
       This code heavily relies on the behaviour that the parent nodes of a field lead upwards to the OperationDefinition
       and includes fragments and fragment spreads etc.. that lead to that field
      */
-    private List<FieldDirectivesInfo> walkDirectivesFromField(Field field, List<Node> parentNodes, GraphQLSchema schema, Map<String, Object> variables) {
+    private List<QueryDirectivesInfo> walkDirectivesFromField(Field field, List<Node> parentNodes, GraphQLSchema schema, Map<String, Object> variables) {
         int distance = 0;
-        List<FieldDirectivesInfo> fieldDirectivePositions = new ArrayList<>();
+        List<QueryDirectivesInfo> fieldDirectivePositions = new ArrayList<>();
         List<Directive> astDirectives = field.getDirectives();
         if (!astDirectives.isEmpty()) {
-            fieldDirectivePositions.add(new FieldDirectivesInfoImpl(field, distance, mkDirectives(astDirectives, schema, variables)));
+            fieldDirectivePositions.add(new QueryDirectivesInfoImpl(field, distance, mkDirectives(astDirectives, schema, variables)));
         }
         for (Node parentNode : parentNodes) {
             if (parentNode instanceof DirectivesContainer) {
@@ -81,7 +81,7 @@ public class FieldDirectiveCollector {
                 DirectivesContainer<?> parentContainer = (DirectivesContainer) parentNode;
                 astDirectives = parentContainer.getDirectives();
                 if (!astDirectives.isEmpty()) {
-                    fieldDirectivePositions.add(new FieldDirectivesInfoImpl(parentContainer, distance, mkDirectives(astDirectives, schema, variables)));
+                    fieldDirectivePositions.add(new QueryDirectivesInfoImpl(parentContainer, distance, mkDirectives(astDirectives, schema, variables)));
                 }
             }
         }
