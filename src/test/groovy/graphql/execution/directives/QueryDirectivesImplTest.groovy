@@ -23,11 +23,11 @@ class QueryDirectivesImplTest extends Specification {
     GraphQLDirective upperDirective = newDirective().name("upper").build()
     GraphQLDirective lowerDirective = newDirective().name("lower").build()
 
-    QueryDirectivesInfoImpl directivePos(int distance, Map<String, GraphQLDirective> directives) {
+    QueryDirectivesInfoImpl info(int distance, Map<String, GraphQLDirective> directives) {
         return new QueryDirectivesInfoImpl(new Field("ignored"), distance, directives)
     }
 
-    QueryDirectivesInfoImpl directivePos(DirectivesContainer container, int distance, Map<String, GraphQLDirective> directives) {
+    QueryDirectivesInfoImpl info(DirectivesContainer container, int distance, Map<String, GraphQLDirective> directives) {
         return new QueryDirectivesInfoImpl(container, distance, directives)
     }
 
@@ -44,14 +44,14 @@ class QueryDirectivesImplTest extends Specification {
 
     def "can get immediate directives that is distance 0"() {
 
-        def directivePositions = [
-                directivePos(0, [cached: cachedDirective, upper: upperDirective]),
-                directivePos(1, [log: logDirective]),
-                directivePos(2, [lower: lowerDirective]),
-                directivePos(0, [cached: cachedDirective, timeOut: timeOutDirective]),
+        def infos = [
+                info(0, [cached: cachedDirective, upper: upperDirective]),
+                info(1, [log: logDirective]),
+                info(2, [lower: lowerDirective]),
+                info(0, [cached: cachedDirective, timeOut: timeOutDirective]),
 
         ]
-        def impl = new QueryDirectivesImpl(directivePositions)
+        def impl = new QueryDirectivesImpl(infos)
 
         when:
         def directives = impl.getImmediateDirectives()
@@ -65,16 +65,16 @@ class QueryDirectivesImplTest extends Specification {
     }
 
     def "can get closest named directives"() {
-        def directivePositions = [
-                directivePos(0, [upper: upperDirective]),
-                directivePos(1, [log: logDirective]),
-                directivePos(2, [lower: lowerDirective, cached: cachedDirective]),
-                directivePos(2, [upper: upperDirective, cached: cachedDirective2]),
-                directivePos(3, [cached: cachedDirective, log: logDirective]),
-                directivePos(0, [timeOut: timeOutDirective]),
+        def infos = [
+                info(0, [upper: upperDirective]),
+                info(1, [log: logDirective]),
+                info(2, [lower: lowerDirective, cached: cachedDirective]),
+                info(2, [upper: upperDirective, cached: cachedDirective2]),
+                info(3, [cached: cachedDirective, log: logDirective]),
+                info(0, [timeOut: timeOutDirective]),
 
         ]
-        def impl = new QueryDirectivesImpl(directivePositions)
+        def impl = new QueryDirectivesImpl(infos)
 
         when:
         def directives = impl.getClosestDirective("cached")
@@ -94,49 +94,49 @@ class QueryDirectivesImplTest extends Specification {
     def fieldG = new Field("g")
     def fieldH = new Field("h")
 
-    def unsortedDirectivePositions = [
-            directivePos(fieldF, 0, [upper: upperDirective]),
-            directivePos(fragmentSpread, 1, [log: logDirective]),
-            directivePos(fragmentDefinition, 1, [lower: lowerDirective, cached: cachedDirective]),
-            directivePos(operationDefinition, 3, [cached: cachedDirective, log: logDirective]),
-            directivePos(fieldG, 2, [upper: upperDirective, cached: cachedDirective2]),
-            directivePos(fieldH, 0, [timeOut: timeOutDirective]),
+    def unsortedInfo = [
+            info(fieldF, 0, [upper: upperDirective]),
+            info(fragmentSpread, 1, [log: logDirective]),
+            info(fragmentDefinition, 1, [lower: lowerDirective, cached: cachedDirective]),
+            info(operationDefinition, 3, [cached: cachedDirective, log: logDirective]),
+            info(fieldG, 2, [upper: upperDirective, cached: cachedDirective2]),
+            info(fieldH, 0, [timeOut: timeOutDirective]),
 
     ]
 
 
     def "get all directive positions"() {
-        def impl = new QueryDirectivesImpl(unsortedDirectivePositions)
+        def impl = new QueryDirectivesImpl(unsortedInfo)
 
         when:
         def directives = impl.getAllDirectives()
         then:
         directives == [
-                directivePos(fieldF, 0, [upper: upperDirective]),
-                directivePos(fieldH, 0, [timeOut: timeOutDirective]),
+                info(fieldF, 0, [upper: upperDirective]),
+                info(fieldH, 0, [timeOut: timeOutDirective]),
 
                 // sorts by name if distance equal
-                directivePos(fragmentDefinition, 1, [lower: lowerDirective, cached: cachedDirective]),
-                directivePos(fragmentSpread, 1, [log: logDirective]),
+                info(fragmentDefinition, 1, [lower: lowerDirective, cached: cachedDirective]),
+                info(fragmentSpread, 1, [log: logDirective]),
 
-                directivePos(fieldG, 2, [upper: upperDirective, cached: cachedDirective2]),
+                info(fieldG, 2, [upper: upperDirective, cached: cachedDirective2]),
 
-                directivePos(operationDefinition, 3, [cached: cachedDirective, log: logDirective]),
+                info(operationDefinition, 3, [cached: cachedDirective, log: logDirective]),
         ]
     }
 
     def "get all directive positions with a certain name"() {
-        def impl = new QueryDirectivesImpl(unsortedDirectivePositions)
+        def impl = new QueryDirectivesImpl(unsortedInfo)
 
         when:
         def directives = impl.getAllDirectivesNamed("cached")
         then:
         directives == [
-                directivePos(fragmentDefinition, 1, [cached: cachedDirective]),
+                info(fragmentDefinition, 1, [cached: cachedDirective]),
 
-                directivePos(fieldG, 2, [cached: cachedDirective2]),
+                info(fieldG, 2, [cached: cachedDirective2]),
 
-                directivePos(operationDefinition, 3, [cached: cachedDirective]),
+                info(operationDefinition, 3, [cached: cachedDirective]),
         ]
     }
 }

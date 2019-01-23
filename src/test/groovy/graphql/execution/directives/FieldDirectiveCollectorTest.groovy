@@ -18,11 +18,11 @@ class FieldDirectiveCollectorTest extends Specification {
     GraphQLDirective upperDirective = newDirective().name("upper").build()
     GraphQLDirective lowerDirective = newDirective().name("lower").build()
 
-    QueryDirectivesInfo directivePos(int distance, Map<String, GraphQLDirective> directives) {
+    QueryDirectivesInfo info(int distance, Map<String, GraphQLDirective> directives) {
         return new QueryDirectivesInfoImpl(new Field("ignored"), distance, directives)
     }
 
-    QueryDirectivesInfo directivePos(DirectivesContainer container, int distance, Map<String, GraphQLDirective> directives) {
+    QueryDirectivesInfo info(DirectivesContainer container, int distance, Map<String, GraphQLDirective> directives) {
         return new QueryDirectivesInfoImpl(container, distance, directives)
     }
 
@@ -33,18 +33,18 @@ class FieldDirectiveCollectorTest extends Specification {
         def mergedField = newMergedField([field1, field2]).build()
         def allInfo = [
                 (field1): [
-                        directivePos(field1, 2, [lower: lowerDirective]),
-                        directivePos(field1, 1, [cached: cachedDirective, log: logDirective]),
+                        info(field1, 2, [lower: lowerDirective]),
+                        info(field1, 1, [cached: cachedDirective, log: logDirective]),
                 ],
 
                 (field2): [
-                        directivePos(field2, 0, [timeOut: timeOutDirective]),
-                        directivePos(field2, 4, [lower: lowerDirective, upper: upperDirective]),
+                        info(field2, 0, [timeOut: timeOutDirective]),
+                        info(field2, 4, [lower: lowerDirective, upper: upperDirective]),
                 ],
 
                 (field3): [
-                        directivePos(field3, 3, [upper: upperDirective, log: logDirective]),
-                        directivePos(field3, 6, [timeOut: timeOutDirective]),
+                        info(field3, 3, [upper: upperDirective, log: logDirective]),
+                        info(field3, 6, [timeOut: timeOutDirective]),
                 ],
         ] as Map
 
@@ -55,10 +55,10 @@ class FieldDirectiveCollectorTest extends Specification {
         directivesForField.size() == 4
         // sorted by distance
         directivesForField == [
-                directivePos(field2, 0, [lower: lowerDirective, upper: upperDirective]),
-                directivePos(field1, 1, [cached: cachedDirective, log: logDirective]),
-                directivePos(field1, 2, [lower: lowerDirective]),
-                directivePos(field2, 4, [timeOut: timeOutDirective]),
+                info(field2, 0, [lower: lowerDirective, upper: upperDirective]),
+                info(field1, 1, [cached: cachedDirective, log: logDirective]),
+                info(field1, 2, [lower: lowerDirective]),
+                info(field2, 4, [timeOut: timeOutDirective]),
         ]
 
     }
