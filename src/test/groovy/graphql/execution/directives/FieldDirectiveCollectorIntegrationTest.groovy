@@ -50,10 +50,10 @@ class FieldDirectiveCollectorIntegrationTest extends Specification {
         }
     '''
 
-    EncounteredDirectives capturedDirectives
+    QueryDirectives capturedDirectives
 
     DataFetcher reviewDF = { env ->
-        capturedDirectives = env.getEncounteredDirectives()
+        capturedDirectives = env.getQueryDirectives()
     }
 
     def schema = TestUtil.schema(sdl, [Book: [review: reviewDF]])

@@ -30,12 +30,12 @@ import java.util.Map;
  * <p>
  * Also note that graphql specifications says that directives in the one location MUST be unique however because of field merging
  * and the hierarchical ones we can get the same named directive multiple times.  It is therefore up to you
- * * to decide how to treat that in your {@link graphql.schema.DataFetcher} code.
+ * to decide how to treat that in your {@link graphql.schema.DataFetcher} code.
  *
  * @see graphql.execution.MergedField
  */
 @PublicApi
-public interface EncounteredDirectives {
+public interface QueryDirectives {
 
     /**
      * This will return a map of the directives that are immediately on a field (as opposed to hierarchical ones that might be on an enclosing

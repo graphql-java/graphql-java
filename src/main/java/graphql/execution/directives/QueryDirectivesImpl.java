@@ -20,15 +20,15 @@ import static java.util.stream.Collectors.toList;
  * These objects are ALWAYS in the context of a single MergedField
  */
 @Internal
-public class EncounteredDirectivesImpl implements EncounteredDirectives {
+public class QueryDirectivesImpl implements QueryDirectives {
 
     private final List<FieldDirectivesInfo> directivePositions;
 
-    public EncounteredDirectivesImpl() {
+    public QueryDirectivesImpl() {
         this(Arrays.asList());
     }
 
-    public EncounteredDirectivesImpl(List<FieldDirectivesInfo> directivesInfos) {
+    public QueryDirectivesImpl(List<FieldDirectivesInfo> directivesInfos) {
         this.directivePositions = assertNotNull(directivesInfos);
         Collections.sort(directivesInfos);
     }
