@@ -7,10 +7,17 @@ package graphql.execution3;
 
 import graphql.execution.ExecutionStepInfo;
 import graphql.language.Field;
-import graphql.language.Node;
+import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLModifiedType;
 import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeVisitorStub;
+import graphql.schema.TypeTraverser;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -25,7 +32,35 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
     
     public FieldVertex(Field node, GraphQLOutputType type, GraphQLFieldsContainer definedIn, NodeVertex<?, ?> inScopeOf) {
         super(Objects.requireNonNull(node), Objects.requireNonNull(type));
+                
+        Object[] results = {Kind.Object, Cardinality.OneToOne};
+        TypeTraverser.oneVisitWithResult(type, new GraphQLTypeVisitorStub() {
+            @Override
+            public TraversalControl visitGraphQLModifiedType(GraphQLModifiedType node, TraverserContext<GraphQLType> context) {
+                return node.getWrappedType().accept(context, this);
+            }
+
+            @Override
+            public TraversalControl visitGraphQLList(GraphQLList node, TraverserContext<GraphQLType> context) {
+                results[1] = Cardinality.OneToMany;
+                return super.visitGraphQLList(node, context);
+            }
+
+            @Override
+            public TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLType> context) {
+                results[0] = Kind.Scalar;
+                return super.visitGraphQLType(node, context);
+            }
+
+            @Override
+            public TraversalControl visitGraphQLEnumType(GraphQLEnumType node, TraverserContext<GraphQLType> context) {
+                results[0] = Kind.Enum;
+                return super.visitGraphQLType(node, context);
+            }            
+        });
         
+        this.kind = (Kind)results[0];
+        this.cardinality = (Cardinality)results[1];
         this.definedIn = Objects.requireNonNull(definedIn);
         this.inScopeOf = inScopeOf;
     }    
@@ -34,8 +69,16 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
         return definedIn;
     }
 
-    public Object getScope() {
+    public Object getInScopeOf() {
         return inScopeOf;
+    }
+
+    public Kind getKind() {
+        return kind;
+    }
+
+    public Cardinality getCardinality() {
+        return cardinality;
     }
 
     public String getResponseKey () {
@@ -64,6 +107,15 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
         return (FieldVertex)super.parentExecutionStepInfo(value);
     }
 
+    public boolean isRoot () {
+        return root;
+    }
+    
+    public FieldVertex root (boolean value) {
+        this.root = value;
+        return this;
+    }
+    
     @Override
     public int hashCode() {
         int hash = 7;
@@ -99,6 +151,20 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
         return (U)visitor.visit(this, data);
     }
 
+    public enum Kind {
+        Scalar,
+        Enum,
+        Object
+    }
+    
+    public enum Cardinality {
+        OneToOne,
+        OneToMany
+    }
+    
+    private final Kind kind;
+    private final Cardinality cardinality;
     private final GraphQLFieldsContainer definedIn;
     private final Object inScopeOf;
+    private /*final*/ boolean root = false;
 }

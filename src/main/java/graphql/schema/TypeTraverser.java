@@ -3,6 +3,9 @@ package graphql.schema;
 
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.language.Node;
+import graphql.language.NodeVisitor;
+import graphql.util.SimpleTraverserContext;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
 import graphql.util.TraverserResult;
@@ -60,6 +63,13 @@ public class TypeTraverser {
         return traverser.traverse(roots,traverserDelegateVisitor);
     }
 
+    @SuppressWarnings("TypeParameterUnusedInFormals")
+    public static <T> T oneVisitWithResult(GraphQLType type, GraphQLTypeVisitor typeVisitor) {
+        SimpleTraverserContext<GraphQLType> context = new SimpleTraverserContext<>(type);
+        type.accept(context, typeVisitor);
+        return (T)context.getResult();
+    }
+    
     private static class TraverserDelegateVisitor implements TraverserVisitor<GraphQLType> {
         private final GraphQLTypeVisitor before;
 

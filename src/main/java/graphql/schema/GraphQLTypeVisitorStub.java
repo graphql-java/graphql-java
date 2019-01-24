@@ -54,12 +54,12 @@ public class GraphQLTypeVisitorStub implements GraphQLTypeVisitor {
 
     @Override
     public TraversalControl visitGraphQLList(GraphQLList node, TraverserContext<GraphQLType> context) {
-        return visitGraphQLType(node, context);
+        return visitGraphQLModifiedType(node, context);
     }
 
     @Override
     public TraversalControl visitGraphQLNonNull(GraphQLNonNull node, TraverserContext<GraphQLType> context) {
-        return visitGraphQLType(node, context);
+        return visitGraphQLModifiedType(node, context);
     }
 
     @Override
@@ -82,6 +82,11 @@ public class GraphQLTypeVisitorStub implements GraphQLTypeVisitor {
         return visitGraphQLType(node, context);
     }
 
+    @Override
+    public TraversalControl visitGraphQLModifiedType (GraphQLModifiedType node, TraverserContext<GraphQLType> context) {
+        return visitGraphQLType(node, context);
+    }
+    
     protected TraversalControl visitGraphQLType(GraphQLType node, TraverserContext<GraphQLType> context) {
         return CONTINUE;
     }

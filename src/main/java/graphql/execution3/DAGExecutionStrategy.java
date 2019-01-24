@@ -7,14 +7,13 @@ package graphql.execution3;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import graphql.execution.ExecutionStepInfoFactory;
-import graphql.execution2.FetchedValueAnalysis;
-import graphql.execution2.FetchedValueAnalyzer;
-import graphql.execution2.ResultNodesCreator;
+import graphql.execution2.FetchedValue;
 import graphql.execution2.ValueFetcher;
 import graphql.language.Field;
 import graphql.language.Node;
@@ -25,10 +24,14 @@ import graphql.util.Edge;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +44,7 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
         this.executionContext = Objects.requireNonNull(executionContext);
         this.executionInfoFactory = new ExecutionStepInfoFactory();
         this.valueFetcher = new ValueFetcher(executionContext);
-        this.fetchedValueAnalyzer = new FetchedValueAnalyzer(executionContext);
+//        this.fetchedValueAnalyzer = new FetchedValueAnalyzer(executionContext);
     }
     
     @Override
@@ -74,43 +77,70 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
             }
 
             // execute fetch&resove asynchronously
-            return CompletableFuture
-                    .allOf(tasks.toArray(EMPTY_STAGES))
-                    .thenApply(noResult -> closure)
-                    .thenCompose(this::resolveClosure);
+            return Async
+                .each(tasks)
+                .thenApply(noResult -> closure)
+                .thenCompose(this::resolveClosure);
         } else {
             return CompletableFuture
-                    .completedFuture(closure);
+                .completedFuture(closure);
         }               
     }
     
     private void provideSource (NodeVertex<Node, GraphQLType> source, FieldVertex sink) {
         LOGGER.info("provideSource: source={}, sink={}", source, sink);
-        source.accept(null, new NodeVertexVisitor<Object>() {
-            @Override
-            public Object visit(FieldVertex node, Object data) {
-                // sub-field
-                return sink
-                    .parentExecutionStepInfo(source.getExecutionStepInfo())
-                    .source(node.getResult());
-            }
-
-            @Override
-            public Object visitNode(NodeVertex<? extends Node, ? extends GraphQLType> node, Object data) {
-                // root field
-                return sink
-                    .parentExecutionStepInfo(newExecutionStepInfo()
-                            .type((GraphQLOutputType)node.getType())
-                            .path(ExecutionPath.rootPath())
-                            .build()
-                    )
-                    .source(executionContext.getRoot());
-            }
-        });
+        source.accept(sink, sourceProvider);
     }
+    
+    private final NodeVertexVisitor<FieldVertex> sourceProvider = new NodeVertexVisitor<FieldVertex>() {
+        @Override
+        public FieldVertex visit(OperationVertex source, FieldVertex sink) {
+            resultCollector.operation(source
+                .executionStepInfo(
+                    newExecutionStepInfo()
+                        .type((GraphQLOutputType)source.getType())
+                        .path(ExecutionPath.rootPath())
+                        .build()
+                )
+                .result(new HashMap<>()));
+            
+            return visitNode(source, sink.root(true));
+        }
+        
+        @Override
+        public FieldVertex visitNode(NodeVertex<? extends Node, ? extends GraphQLType> source, FieldVertex sink) {
+            Object result = source.getResult();
+            return sink
+                .parentExecutionStepInfo(source.getExecutionStepInfo())
+                .source(resultCollector.flatten(asList(source.getResult())));
+        }
+    };
 
-    private void afterResolve (NodeVertex<Node, GraphQLType> source, NodeVertex<Node, GraphQLType> sink) {
+    private static List<Object> asList (Object o) {
+        return (o instanceof List)
+            ? (List<Object>)o
+            : Collections.singletonList(o);
+    }
+    
+    private static Object asObject (Object o) {
+        List<Object> singletonList;
+        return (o instanceof List && (singletonList = (List<Object>)o).size() <= 1)
+            ? singletonList.size() == 1 
+                ? singletonList.get(0) 
+                : null
+            : o;
+    }
+    
+    private void joinResults (FieldVertex source, NodeVertex<Node, GraphQLType> sink) {
         LOGGER.info("afterResolve: source={}, sink={}", source, sink);
+        resultCollector.joinOn(source.getResponseKey(), asList(source.getResult()), (List<Object>)source.getSource());
+//        sink.accept(source, new NodeVertexVisitor<FieldVertex>() {
+//            @Override
+//            public FieldVertex visit(OperationVertex node, FieldVertex field) {
+//                node.result(Collections.singletonMap(field.getResponseKey(), asObject(field.getResult())));
+//                return null;
+//            }            
+//        });
     }
 
     private boolean resolveNode (NodeVertex<Node, GraphQLType> node) {
@@ -127,18 +157,54 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
         LOGGER.info("fetchNode: {}", node);
         
         FieldVertex fieldNode = (FieldVertex)(NodeVertex<? extends Node, ? extends GraphQLType>)node;
+//        Object source = fieldNode.isRoot() ? executionContext.getRoot() : asObject(fieldNode.getSource());
+//        List<Object> sources = fieldNode.isRoot() ? asList(executionContext.getRoot()) : (List<Object>)fieldNode.getSource();
         List<Field> sameFields = Collections.singletonList(fieldNode.getNode());
         ExecutionStepInfo executionStepInfo = executionInfoFactory.newExecutionStepInfoForSubField(executionContext, sameFields, node.getParentExecutionStepInfo());
-        node.executionStepInfo(executionStepInfo);
+//        List<ExecutionStepInfo> executionStepInfos = Stream
+//                .generate(() -> executionStepInfo)
+//                .limit(sources.size())
+//                .collect(Collectors.toList());
+        Supplier<CompletableFuture<List<FetchedValue>>> valuesSupplier = fieldNode.isRoot()
+            ? () -> fetchRootValues(executionContext.getRoot(), sameFields, executionStepInfo)
+            : () -> fetchBatchedValues((List<Object>)fieldNode.getSource(), sameFields, executionStepInfo);
+
+
+        // FIXME: in batch mode source object *always* must be a list
+        // extract the element for now if the list is a singleton
         
+//        return valueFetcher
+//                .fetchValue(source, sameFields, executionStepInfo)
+//                .thenApply(fetchedValue -> asList(fetchedValue.getFetchedValue()))
+//                .thenApply(fetchedValue -> (NodeVertex<Node, GraphQLType>)node
+//                        .executionStepInfo(executionStepInfo)
+//                        .result(fetchedValue));
+        return valuesSupplier.get()
+                .thenApply(fetchedValues -> fetchedValues
+                        .stream()
+                        .map(FetchedValue::getFetchedValue)
+                        .collect(Collectors.toList())
+                )
+                .thenApply(fetchedValues -> (NodeVertex<Node, GraphQLType>)node
+                        .executionStepInfo(executionStepInfo)
+                        .result(fetchedValues)
+                );
+    }
+    
+    private CompletableFuture<List<FetchedValue>> fetchRootValues (Object root, List<Field> sameFields, ExecutionStepInfo executionStepInfo) {
         return valueFetcher
-                .fetchValue(node.getSource(), sameFields, executionStepInfo)
-                .thenApply(fetchedValue -> {
-                    FetchedValueAnalysis fetchedValueAnalysis = fetchedValueAnalyzer.analyzeFetchedValue(fetchedValue.getFetchedValue(), fieldNode.getResponseKey(), sameFields, executionStepInfo);
-                    fetchedValueAnalysis.setFetchedValue(fetchedValue);
-                    return fetchedValueAnalysis;
-                })
-                .thenApply(o -> (NodeVertex<Node, GraphQLType>)node.result(o));
+            .fetchValue(root, sameFields, executionStepInfo)
+            .thenApply(Collections::singletonList);
+    }
+    
+    private CompletableFuture<List<FetchedValue>> fetchBatchedValues (List<Object> sources, List<Field> sameFields, ExecutionStepInfo executionStepInfo) {
+        return valueFetcher
+            .fetchBatchedValues(sources, sameFields, 
+                Stream
+                    .generate(() -> executionStepInfo)
+                    .limit(sources.size())
+                    .collect(Collectors.toList())
+            );
     }
     
     private class ExecutionPlanContextImpl implements ExecutionPlanContext {
@@ -149,7 +215,7 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
 
         @Override
         public void whenResolved(Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
-            afterResolve((NodeVertex<Node, GraphQLType>)edge.getSource(), (NodeVertex<Node, GraphQLType>)edge.getSink());
+            joinResults((FieldVertex)edge.getSource(), (NodeVertex<Node, GraphQLType>)edge.getSink());
         }
 
         @Override
@@ -158,18 +224,15 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
         }
 
         public ExecutionResult getResult() {
-            return result;
+            return new ExecutionResultImpl(resultCollector.getResult(), executionContext.getErrors());
         }
-        
-        // FIXME
-        ExecutionResult result = new ExecutionResultImpl(Collections.emptyList());
     };
     
     private final ExecutionContext executionContext;
     private final ExecutionStepInfoFactory executionInfoFactory;
     private final ValueFetcher valueFetcher;
-    private final FetchedValueAnalyzer fetchedValueAnalyzer;
-    private final ResultNodesCreator resultNodesCreator = new ResultNodesCreator();
+//    private final FetchedValueAnalyzer fetchedValueAnalyzer;
+    private final ResultCollector resultCollector = new ResultCollector();
     
     private static final CompletableFuture<?>[] EMPTY_STAGES = {};
     private static final Logger LOGGER = LoggerFactory.getLogger(DAGExecutionStrategy.class);

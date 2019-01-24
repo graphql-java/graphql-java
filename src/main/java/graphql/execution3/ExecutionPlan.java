@@ -25,6 +25,7 @@ import graphql.language.SelectionSet;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
@@ -260,8 +261,8 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
             return new OperationVertex(operationDefinition, operationType);
         }
 
-        private FieldVertex newFieldVertex (Field field, GraphQLObjectType parentType, FieldVertex inScopeOf) {
-            GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(executionPlan.schema, (GraphQLCompositeType)GraphQLTypeUtil.unwrapNonNull(parentType), field.getName());
+        private FieldVertex newFieldVertex (Field field, GraphQLFieldsContainer parentType, FieldVertex inScopeOf) {
+            GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(executionPlan.schema, parentType, field.getName());
             return new FieldVertex(field, fieldDefinition.getType(), parentType, inScopeOf);
         }
 
@@ -327,7 +328,7 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                     // set up parameters to collect child fields
                     FieldCollectorParameters collectorParams = FieldCollectorParameters.newParameters()
                             .schema(executionPlan.schema)
-                            .objectType((GraphQLObjectType)parentVertex.getType())
+                            .objectType((GraphQLObjectType)GraphQLTypeUtil.unwrapAll(parentVertex.getType()))
                             .fragments(executionPlan.fragmentsByName)
                             .variables(executionPlan.variables)
                             .build();
@@ -374,7 +375,7 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                     NodeVertex<Node, GraphQLType> parentVertex = (NodeVertex<Node, GraphQLType>)parentContext.getResult();
 
                     FieldVertex vertex = (FieldVertex)this.<FieldVertex>executionPlan(parentContext)
-                            .addNode(newFieldVertex(node, (GraphQLObjectType)parentVertex.getType(), parentContext.getVar(FieldVertex.class)));
+                            .addNode(newFieldVertex(node, (GraphQLFieldsContainer)GraphQLTypeUtil.unwrapAll(parentVertex.getType()), parentContext.getVar(FieldVertex.class)));
 
                     // Note! the ordering of the below dependencies is important:
                     // 1. complete previous resolve

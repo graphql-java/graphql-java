@@ -56,7 +56,7 @@ class DAGExecutionStrategyTest extends Specification {
 
     }
 
-    @Ignore
+//    @Ignore
     def "test execution with lists"() {
         def fooData = [[id: "fooId1", bar: [[id: "barId1", name: "someBar1"], [id: "barId2", name: "someBar2"]]],
                        [id: "fooId2", bar: [[id: "barId3", name: "someBar3"], [id: "barId4", name: "someBar4"]]]]
@@ -152,7 +152,7 @@ class DAGExecutionStrategyTest extends Specification {
 
     }
 
-    @Ignore
+//    @Ignore
     def "test execution with null element in list"() {
         def fooData = [[id: "fooId1", bar: [[id: "barId1", name: "someBar1"], null]],
                        [id: "fooId2", bar: [[id: "barId3", name: "someBar3"], [id: "barId4", name: "someBar4"]]]]
@@ -351,7 +351,7 @@ class DAGExecutionStrategyTest extends Specification {
 
     }
 
-    @Ignore
+//    @Ignore
     def "test list"() {
         def fooData = [[id: "fooId1"], [id: "fooId2"], [id: "fooId3"]]
         def dataFetchers = [
@@ -434,7 +434,7 @@ class DAGExecutionStrategyTest extends Specification {
 
     }
 
-    @Ignore
+//    @Ignore
     def "test simple batching with null value in list"() {
         def fooData = [[id: "fooId1"], null, [id: "fooId3"]]
         def dataFetchers = [

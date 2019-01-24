@@ -8,6 +8,7 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.List;
@@ -22,7 +23,8 @@ public class ExecutionStepInfoFactory {
 
     public ExecutionStepInfo newExecutionStepInfoForSubField(ExecutionContext executionContext, List<Field> sameFields, ExecutionStepInfo parentInfo) {
         Field field = sameFields.get(0);
-        GraphQLObjectType parentType = (GraphQLObjectType) parentInfo.getUnwrappedNonNullType();
+//        GraphQLObjectType parentType = (GraphQLObjectType) parentInfo.getUnwrappedNonNullType();
+        GraphQLObjectType parentType = (GraphQLObjectType) GraphQLTypeUtil.unwrapAll(parentInfo.getType());
         GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(executionContext.getGraphQLSchema(), parentType, field.getName());
         GraphQLOutputType fieldType = fieldDefinition.getType();
         List<Argument> fieldArgs = field.getArguments();
