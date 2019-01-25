@@ -9,14 +9,10 @@ import graphql.language.Node;
 import graphql.schema.GraphQLType;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  *
@@ -53,23 +49,6 @@ public class ResultCollector {
             });
         
         return target;
-    }
-    
-    public List<Object> flatten (List<Object> result) {
-        return Optional
-            .ofNullable(result)
-            .map(res -> res
-                .stream()
-                .flatMap(ResultCollector::asStream)
-                .filter(o -> o != null)
-                .collect(Collectors.toList()))
-            .orElseGet(Collections::emptyList);
-    }
-
-    private static Stream<Object> asStream (Object o) {
-        return (o instanceof Collection)
-            ? ((Collection<Object>)o).stream()
-            : Stream.of(o);
     }
     
     public Object getResult () {

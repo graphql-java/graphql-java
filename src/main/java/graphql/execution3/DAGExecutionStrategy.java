@@ -5,6 +5,7 @@
  */
 package graphql.execution3;
 
+import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.execution.Async;
@@ -28,7 +29,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -112,24 +115,9 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
             Object result = source.getResult();
             return sink
                 .parentExecutionStepInfo(source.getExecutionStepInfo())
-                .source(resultCollector.flatten(asList(source.getResult())));
+                .source(flatten(asList(source.getResult())));
         }
     };
-
-    private static List<Object> asList (Object o) {
-        return (o instanceof List)
-            ? (List<Object>)o
-            : Collections.singletonList(o);
-    }
-    
-    private static Object asObject (Object o) {
-        List<Object> singletonList;
-        return (o instanceof List && (singletonList = (List<Object>)o).size() <= 1)
-            ? singletonList.size() == 1 
-                ? singletonList.get(0) 
-                : null
-            : o;
-    }
     
     private void joinResults (FieldVertex source, NodeVertex<Node, GraphQLType> sink) {
         LOGGER.info("afterResolve: source={}, sink={}", source, sink);
@@ -183,6 +171,7 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
                 .thenApply(fetchedValues -> fetchedValues
                         .stream()
                         .map(FetchedValue::getFetchedValue)
+                        .map(fv -> checkAndFixNILs(fv, fieldNode))
                         .collect(Collectors.toList())
                 )
                 .thenApply(fetchedValues -> (NodeVertex<Node, GraphQLType>)node
@@ -205,6 +194,92 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
                     .limit(sources.size())
                     .collect(Collectors.toList())
             );
+    }
+    
+    private Object checkAndFixNILs (Object fetchedValue, FieldVertex fieldNode) {
+        return (isNIL(fetchedValue) || fieldNode.getCardinality() == FieldVertex.Cardinality.OneToOne)
+            ? fixNIL(fetchedValue, fieldNode)
+            : fixNILs((List<Object>)fetchedValue, fieldNode);
+    }
+        
+    private static boolean isNIL (Object value) {
+        return value == null || value == ValueFetcher.NULL_VALUE;
+    }
+    
+    private static Object fixNIL (Object fetchedValue, FieldVertex fieldNode) {
+        if (isNIL(fetchedValue)) {
+            if (fieldNode.isNotNull()) {
+                // FIXME: report error?
+            }
+            
+            return null;
+        }
+        
+        return fetchedValue;
+    }
+
+    private static Object fixNILs (List<Object> fetchedValues, FieldVertex fieldNode) {
+        boolean hasNulls[] = {false};
+        fetchedValues = flatten(fetchedValues, o -> true)
+            .stream()
+            .map(fetchedValue -> {
+                if (isNIL(fetchedValue)) {
+                    hasNulls[0] = true;
+                    return null;
+                } else {
+                    return fetchedValue;
+                }
+            })
+            .collect(Collectors.toList());
+        
+        if (hasNulls[0]) {
+            if (fieldNode.isNotNull()) {
+                return null;
+            }
+        }
+        
+        return fetchedValues;
+    }
+
+    public static List<Object> flatten (List<Object> result) {
+        return flatten(result, o -> o != null);
+    }
+    
+    public static List<Object> flatten (List<Object> result, Predicate<? super Object> filter) {
+        Objects.requireNonNull(filter);
+        
+        return Optional
+            .ofNullable(result)
+            .map(res -> res
+                .stream()
+                .flatMap(DAGExecutionStrategy::asStream)
+                .filter(filter)
+                .collect(Collectors.toList())
+            )
+            .orElseGet(Collections::emptyList);
+    }
+
+    private static Stream<Object> asStream (Object o) {
+        return (o instanceof Collection)
+            ? ((Collection<Object>)o)
+                .stream()
+                .flatMap(DAGExecutionStrategy::asStream)
+            : Stream.of(o);
+    }
+
+    private static List<Object> asList (Object o) {
+        return (o instanceof List)
+            ? (List<Object>)o
+            : Collections.singletonList(o);
+    }
+    
+    private static Object asObject (Object o) {
+        List<Object> singletonList;
+        return (o instanceof List && (singletonList = (List<Object>)o).size() <= 1)
+            ? singletonList.size() == 1 
+                ? singletonList.get(0) 
+                : null
+            : o;
     }
     
     private class ExecutionPlanContextImpl implements ExecutionPlanContext {
