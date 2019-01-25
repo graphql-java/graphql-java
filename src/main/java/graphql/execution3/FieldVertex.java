@@ -34,7 +34,7 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
     public FieldVertex(Field node, GraphQLOutputType type, GraphQLFieldsContainer definedIn, NodeVertex<?, ?> inScopeOf) {
         super(Objects.requireNonNull(node), Objects.requireNonNull(type));
                 
-        Object[] results = {Kind.Object, Cardinality.OneToOne, false/*not null elements*/};
+        Object[] results = {Kind.Object, Cardinality.OneToOne, false/*not null*/, false/*not null elements*/};
         TypeTraverser.oneVisitWithResult(type, new GraphQLTypeVisitorStub() {
             @Override
             public TraversalControl visitGraphQLModifiedType(GraphQLModifiedType node, TraverserContext<GraphQLType> context) {
@@ -43,15 +43,13 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
 
             @Override
             public TraversalControl visitGraphQLNonNull(GraphQLNonNull node, TraverserContext<GraphQLType> context) {
-                results[2] = true;
+                results[results[1] == Cardinality.OneToOne ? 2 : 3] = true;
                 return super.visitGraphQLNonNull(node, context);
             }
 
             @Override
             public TraversalControl visitGraphQLList(GraphQLList node, TraverserContext<GraphQLType> context) {
                 results[1] = Cardinality.OneToMany;
-                // reset nullable flag as we are looking for nullable elements only
-                results[2] = false;
                 return super.visitGraphQLList(node, context);
             }
 
@@ -71,6 +69,7 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
         this.kind = (Kind)results[0];
         this.cardinality = (Cardinality)results[1];
         this.notNull = (boolean)results[2];
+        this.notNullItems = (boolean)results[3];
         this.definedIn = Objects.requireNonNull(definedIn);
         this.inScopeOf = inScopeOf;
     }    
@@ -93,6 +92,10 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
 
     public boolean isNotNull() {
         return notNull;
+    }
+
+    public boolean isNotNullItems() {
+        return notNullItems;
     }
 
     public String getResponseKey () {
@@ -179,7 +182,15 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
     private final Kind kind;
     private final Cardinality cardinality;
     private final boolean notNull;
+    private final boolean notNullItems;
     private final GraphQLFieldsContainer definedIn;
     private final Object inScopeOf;
     private /*final*/ boolean root = false;
+    
+    public static final NodeVertexVisitor<Boolean> IS_FIELD = new NodeVertexVisitor<Boolean>() {
+        @Override
+        public Boolean visit(FieldVertex node, Boolean data) {
+            return true;
+        }        
+    };        
 }

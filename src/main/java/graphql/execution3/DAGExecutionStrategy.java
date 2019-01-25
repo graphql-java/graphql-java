@@ -105,7 +105,7 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
                         .path(ExecutionPath.rootPath())
                         .build()
                 )
-                .result(new HashMap<>()));
+                .result(Collections.singletonList(new HashMap<>())));
             
             return visitNode(source, sink.root(true));
         }
@@ -115,20 +115,14 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
             Object result = source.getResult();
             return sink
                 .parentExecutionStepInfo(source.getExecutionStepInfo())
-                .source(flatten(asList(source.getResult())));
+                .source(flatten((List<Object>)source.getResult()));
         }
     };
     
     private void joinResults (FieldVertex source, NodeVertex<Node, GraphQLType> sink) {
         LOGGER.info("afterResolve: source={}, sink={}", source, sink);
-        resultCollector.joinOn(source.getResponseKey(), asList(source.getResult()), (List<Object>)source.getSource());
-//        sink.accept(source, new NodeVertexVisitor<FieldVertex>() {
-//            @Override
-//            public FieldVertex visit(OperationVertex node, FieldVertex field) {
-//                node.result(Collections.singletonMap(field.getResponseKey(), asObject(field.getResult())));
-//                return null;
-//            }            
-//        });
+//        resultCollector.joinOn(source.getResponseKey(), (List<Object>)source.getResult(), (List<Object>)source.getSource());
+        resultCollector.joinResultsOf(source);
     }
 
     private boolean resolveNode (NodeVertex<Node, GraphQLType> node) {
@@ -233,7 +227,7 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
             .collect(Collectors.toList());
         
         if (hasNulls[0]) {
-            if (fieldNode.isNotNull()) {
+            if (fieldNode.isNotNullItems()) {
                 return null;
             }
         }

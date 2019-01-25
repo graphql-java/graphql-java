@@ -275,7 +275,7 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
         }
 
         private boolean isFieldVertex (NodeVertex<? extends Node, ? extends GraphQLType> vertex) {
-            return vertex.accept(false, IS_FIELD);
+            return vertex.accept(false, FieldVertex.IS_FIELD);
         }
         
         // NodeVisitor methods
@@ -440,12 +440,6 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
         private final Collection<OperationDefinition> operations = new ArrayList<>();
 
         private static final FieldCollectorHelper FIELD_COLLECTOR = new FieldCollectorHelper();
-        private static final NodeVertexVisitor<Boolean> IS_FIELD = new NodeVertexVisitor<Boolean>() {
-            @Override
-            public Boolean visit(FieldVertex node, Boolean data) {
-                return true;
-            }        
-        };        
     }
 
     private /*final*/ GraphQLSchema schema;

@@ -251,7 +251,7 @@ class DAGExecutionStrategyTest extends Specification {
 
     }
 
-    @Ignore
+//    @Ignore
     def "test execution with null element bubbling up because of non null "() {
         def fooData = [[id: "fooId1", bar: [[id: "barId1", name: "someBar1"], null]],
                        [id: "fooId2", bar: [[id: "barId3", name: "someBar3"], [id: "barId4", name: "someBar4"]]]]
