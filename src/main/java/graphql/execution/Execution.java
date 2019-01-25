@@ -8,7 +8,7 @@ import graphql.GraphQL;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.defer.DeferSupport;
-import graphql.execution.directives.FieldDirectiveCollector;
+import graphql.execution.directives.QueryDirectivesCollector;
 import graphql.execution.directives.QueryDirectivesInfo;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -47,7 +47,7 @@ public class Execution {
 
     private final FieldCollector fieldCollector = new FieldCollector();
     private final ValuesResolver valuesResolver = new ValuesResolver();
-    private final FieldDirectiveCollector fieldDirectiveCollector = new FieldDirectiveCollector();
+    private final QueryDirectivesCollector fieldDirectiveCollector = new QueryDirectivesCollector();
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
@@ -131,7 +131,7 @@ public class Execution {
         // since this traverses the query tree, we need to do it here after we are sure the query is valid to be traversed.  If we do it earlier
         // there are edge cases like not having a mutation type and so on.
         //
-        executionContext = buildFieldDirectives(executionContext);
+        executionContext = buildQueryDirectives(executionContext);
 
         FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
                 .schema(executionContext.getGraphQLSchema())
@@ -186,10 +186,10 @@ public class Execution {
         return deferSupport(executionContext, result);
     }
 
-    private ExecutionContext buildFieldDirectives(ExecutionContext executionContext) {
-        Map<Field, List<QueryDirectivesInfo>> fieldDirectives = fieldDirectiveCollector.collectDirectivesForAllFields(
+    private ExecutionContext buildQueryDirectives(ExecutionContext executionContext) {
+        Map<Field, List<QueryDirectivesInfo>> queryDirectivesMap = fieldDirectiveCollector.collectDirectivesForAllFields(
                 executionContext.getDocument(), executionContext.getGraphQLSchema(), executionContext.getVariables(), executionContext.getOperationDefinition());
-        return executionContext.transform(ctx -> ctx.queryDirectivesInfo(fieldDirectives));
+        return executionContext.transform(ctx -> ctx.queryDirectivesInfo(queryDirectivesMap));
     }
 
     /*

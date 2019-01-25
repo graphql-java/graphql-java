@@ -10,7 +10,7 @@ import static graphql.execution.MergedField.newMergedField
 import static graphql.language.Field.newField
 import static graphql.schema.GraphQLDirective.newDirective
 
-class FieldDirectiveCollectorTest extends Specification {
+class QueryDirectivesCollectorTest extends Specification {
 
     GraphQLDirective cachedDirective = newDirective().name("cached").build()
     GraphQLDirective timeOutDirective = newDirective().name("timeout").build()
@@ -50,7 +50,7 @@ class FieldDirectiveCollectorTest extends Specification {
 
 
         when:
-        def directivesForField = new FieldDirectiveCollector().combineDirectivesForField(mergedField, allInfo)
+        def directivesForField = new QueryDirectivesCollector().combineDirectivesForField(mergedField, allInfo)
         then:
         directivesForField.size() == 4
         // sorted by distance

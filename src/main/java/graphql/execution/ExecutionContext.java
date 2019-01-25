@@ -5,7 +5,7 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.execution.defer.DeferSupport;
-import graphql.execution.directives.FieldDirectiveCollector;
+import graphql.execution.directives.QueryDirectivesCollector;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.directives.QueryDirectivesInfo;
@@ -28,7 +28,7 @@ import java.util.function.Consumer;
 @PublicApi
 public class ExecutionContext {
 
-    private final FieldDirectiveCollector directiveCollector = new FieldDirectiveCollector();
+    private final QueryDirectivesCollector directiveCollector = new QueryDirectivesCollector();
     private final GraphQLSchema graphQLSchema;
     private final ExecutionId executionId;
     private final InstrumentationState instrumentationState;

@@ -8,7 +8,7 @@ import graphql.schema.DataFetcher
 import graphql.schema.GraphQLDirective
 import spock.lang.Specification
 
-class FieldDirectiveCollectorIntegrationTest extends Specification {
+class QueryDirectivesCollectorIntegrationTest extends Specification {
 
     def sdl = '''
         directive @timeout(afterMillis : Int) on FIELD | FRAGMENT_DEFINITION | FRAGMENT_SPREAD | INLINE_FRAGMENT | QUERY

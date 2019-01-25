@@ -27,7 +27,7 @@ import static java.util.Collections.emptyList;
  * once at the start of the query and hence only one traversal of the tree is needed for a particular query
  */
 @Internal
-public class FieldDirectiveCollector {
+public class QueryDirectivesCollector {
 
     private final DirectivesResolver directivesResolver = new DirectivesResolver();
 
