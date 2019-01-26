@@ -5,7 +5,6 @@
  */
 package graphql.execution3;
 
-import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.execution.Async;
@@ -23,16 +22,12 @@ import graphql.schema.GraphQLType;
 import graphql.util.DependenciesIterator;
 import graphql.util.Edge;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -48,7 +43,7 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
         this.executionContext = Objects.requireNonNull(executionContext);
         this.executionInfoFactory = new ExecutionStepInfoFactory();
         this.valueFetcher = new ValueFetcher(executionContext);
-//        this.fetchedValueAnalyzer = new FetchedValueAnalyzer(executionContext);
+        this.resultCollector = new ResultCollector();
     }
     
     @Override
@@ -113,19 +108,18 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
                 Object result = source.getResult();
                 return sink
                     .parentExecutionStepInfo(source.getExecutionStepInfo())
-                    .source(flatten((List<Object>)source.getResult()));
+                    .source(ResultCollector.flatten((List<Object>)source.getResult()));
             }
         });
     }
     
     private void joinResults (FieldVertex source, NodeVertex<Node, GraphQLType> sink) {
         LOGGER.info("afterResolve: source={}, sink={}", source, sink);
-//        resultCollector.joinOn(source.getResponseKey(), (List<Object>)source.getResult(), (List<Object>)source.getSource());
         resultCollector.joinResultsOf(source);
     }
 
-    private boolean resolveNode (NodeVertex<Node, GraphQLType> node) {
-        LOGGER.info("resolveNode: {}", node);
+    private boolean tryResolve (NodeVertex<Node, GraphQLType> node) {
+        LOGGER.info("tryResolve: node={}", node);
         return node.accept(true, new NodeVertexVisitor<Boolean>() {
             @Override
             public Boolean visit(FieldVertex node, Boolean data) {
@@ -141,39 +135,28 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
     }
 
     private CompletableFuture<NodeVertex<Node, GraphQLType>> fetchNode (NodeVertex<Node, GraphQLType> node) {  
-        LOGGER.info("fetchNode: {}", node);
+        LOGGER.info("fetchNode: node={}", node);
         
-        FieldVertex fieldNode = (FieldVertex)(NodeVertex<? extends Node, ? extends GraphQLType>)node;
-//        Object source = fieldNode.isRoot() ? executionContext.getRoot() : asObject(fieldNode.getSource());
-//        List<Object> sources = fieldNode.isRoot() ? asList(executionContext.getRoot()) : (List<Object>)fieldNode.getSource();
+        FieldVertex fieldNode = node.as(FieldVertex.class);
         List<Field> sameFields = Collections.singletonList(fieldNode.getNode());
-        ExecutionStepInfo executionStepInfo = executionInfoFactory.newExecutionStepInfoForSubField(executionContext, sameFields, node.getParentExecutionStepInfo());
-//        List<ExecutionStepInfo> executionStepInfos = Stream
-//                .generate(() -> executionStepInfo)
-//                .limit(sources.size())
-//                .collect(Collectors.toList());
+        ExecutionStepInfo executionStepInfo = executionInfoFactory
+            .newExecutionStepInfoForSubField(executionContext, sameFields, node.getParentExecutionStepInfo());
+        
         Supplier<CompletableFuture<List<FetchedValue>>> valuesSupplier = fieldNode.isRoot()
             ? () -> fetchRootValues(executionContext.getRoot(), sameFields, executionStepInfo)
             : () -> fetchBatchedValues((List<Object>)fieldNode.getSource(), sameFields, executionStepInfo);
 
 
-        // FIXME: in batch mode source object *always* must be a list
-        // extract the element for now if the list is a singleton
-        
-//        return valueFetcher
-//                .fetchValue(source, sameFields, executionStepInfo)
-//                .thenApply(fetchedValue -> asList(fetchedValue.getFetchedValue()))
-//                .thenApply(fetchedValue -> (NodeVertex<Node, GraphQLType>)node
-//                        .executionStepInfo(executionStepInfo)
-//                        .result(fetchedValue));
         return valuesSupplier.get()
-                .thenApply(fetchedValues -> fetchedValues
+                .thenApply(fetchedValues -> 
+                    fetchedValues
                         .stream()
                         .map(FetchedValue::getFetchedValue)
-                        .map(fv -> checkAndFixNILs(fv, fieldNode))
+                        .map(fv -> resultCollector.checkAndFixNILs(fv, fieldNode))
                         .collect(Collectors.toList())
                 )
-                .thenApply(fetchedValues -> (NodeVertex<Node, GraphQLType>)node
+                .thenApply(fetchedValues -> 
+                    (NodeVertex<Node, GraphQLType>)node
                         .executionStepInfo(executionStepInfo)
                         .result(fetchedValues)
                 );
@@ -194,93 +177,7 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
                     .collect(Collectors.toList())
             );
     }
-    
-    private Object checkAndFixNILs (Object fetchedValue, FieldVertex fieldNode) {
-        return (isNIL(fetchedValue) || fieldNode.getCardinality() == FieldVertex.Cardinality.OneToOne)
-            ? fixNIL(fetchedValue, fieldNode)
-            : fixNILs((List<Object>)fetchedValue, fieldNode);
-    }
-        
-    private static boolean isNIL (Object value) {
-        return value == null || value == ValueFetcher.NULL_VALUE;
-    }
-    
-    private static Object fixNIL (Object fetchedValue, FieldVertex fieldNode) {
-        if (isNIL(fetchedValue)) {
-            if (fieldNode.isNotNull()) {
-                // FIXME: report error?
-            }
-            
-            return null;
-        }
-        
-        return fetchedValue;
-    }
 
-    private static Object fixNILs (List<Object> fetchedValues, FieldVertex fieldNode) {
-        boolean hasNulls[] = {false};
-        fetchedValues = flatten(fetchedValues, o -> true)
-            .stream()
-            .map(fetchedValue -> {
-                if (isNIL(fetchedValue)) {
-                    hasNulls[0] = true;
-                    return null;
-                } else {
-                    return fetchedValue;
-                }
-            })
-            .collect(Collectors.toList());
-        
-        if (hasNulls[0]) {
-            if (fieldNode.isNotNullItems()) {
-                return null;
-            }
-        }
-        
-        return fetchedValues;
-    }
-
-    public static List<Object> flatten (List<Object> result) {
-        return flatten(result, o -> o != null);
-    }
-    
-    public static List<Object> flatten (List<Object> result, Predicate<? super Object> filter) {
-        Objects.requireNonNull(filter);
-        
-        return Optional
-            .ofNullable(result)
-            .map(res -> res
-                .stream()
-                .flatMap(DAGExecutionStrategy::asStream)
-                .filter(filter)
-                .collect(Collectors.toList())
-            )
-            .orElseGet(Collections::emptyList);
-    }
-
-    private static Stream<Object> asStream (Object o) {
-        return (o instanceof Collection)
-            ? ((Collection<Object>)o)
-                .stream()
-                .flatMap(DAGExecutionStrategy::asStream)
-            : Stream.of(o);
-    }
-
-    private static List<Object> asList (Object o) {
-        return (o instanceof List)
-            ? (List<Object>)o
-            : Collections.singletonList(o);
-    }
-    
-    private static Object asObject (Object o) {
-        List<Object> singletonList;
-        return (o instanceof List && (singletonList = (List<Object>)o).size() <= 1)
-            ? singletonList.size() == 1 
-                ? singletonList.get(0) 
-                : null
-            : o;
-    }
-    
     private class ExecutionPlanContextImpl implements ExecutionPlanContext {
         @Override
         public void prepareResolve(Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
@@ -294,7 +191,7 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
 
         @Override
         public boolean resolve(NodeVertex<? extends Node, ? extends GraphQLType> node) {
-            return resolveNode((NodeVertex<Node, GraphQLType>)node);
+            return tryResolve((NodeVertex<Node, GraphQLType>)node);
         }
 
         public ExecutionResult getResult() {
@@ -305,9 +202,7 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
     private final ExecutionContext executionContext;
     private final ExecutionStepInfoFactory executionInfoFactory;
     private final ValueFetcher valueFetcher;
-//    private final FetchedValueAnalyzer fetchedValueAnalyzer;
-    private final ResultCollector resultCollector = new ResultCollector();
+    private final ResultCollector resultCollector;
     
-    private static final CompletableFuture<?>[] EMPTY_STAGES = {};
     private static final Logger LOGGER = LoggerFactory.getLogger(DAGExecutionStrategy.class);
 }
