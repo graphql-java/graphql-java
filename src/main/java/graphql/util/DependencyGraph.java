@@ -5,21 +5,22 @@
  */
 package graphql.util;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import java.util.AbstractSet;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import static java.util.Collections.newSetFromMap;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,17 +40,17 @@ public class DependencyGraph<N extends Vertex<N>> {
     }
     
     public DependencyGraph (DependencyGraph<? super N> other) {
-        this(new LinkedHashMap<>(Objects.requireNonNull(other).vertices), new HashMap<>(other.verticesById), other.nextId);
+        this(new LinkedHashMap<>(assertNotNull(other).vertices), new HashMap<>(other.verticesById), other.nextId);
     }
     
     private DependencyGraph (Map<? super N, ? super N> vertices, Map<Object, ? super N> verticesById, int startId) {
-        this.vertices = Objects.requireNonNull((Map<N, N>)vertices);
-        this.verticesById = Objects.requireNonNull((Map<Object, N>)verticesById);
+        this.vertices = assertNotNull((Map<N, N>)vertices);
+        this.verticesById = assertNotNull((Map<Object, N>)verticesById);
         this.nextId = startId;
     }
     
     public N addNode (N maybeNode) {
-        Objects.requireNonNull(maybeNode);
+        assertNotNull(maybeNode);
         
         return vertices.computeIfAbsent(maybeNode, 
             node -> {
@@ -68,7 +69,7 @@ public class DependencyGraph<N extends Vertex<N>> {
     }
     
     protected DependencyGraph<N> addEdge (Edge<? extends N, ?> edge) {
-        Objects.requireNonNull(edge);
+        assertNotNull(edge);
         
         edges.add((Edge<N, ?>)edge);
         return this;
@@ -122,7 +123,7 @@ public class DependencyGraph<N extends Vertex<N>> {
         }
 
         Set<N> calculateNext () {
-            Set<N> nextClosure = Collections.newSetFromMap(new IdentityHashMap<>());
+            Set<N> nextClosure = closureCreator.get();
             return (Set<N>)Optional
                 .ofNullable(traverser
                     .rootVar(Collection.class, nextClosure)
@@ -204,15 +205,23 @@ public class DependencyGraph<N extends Vertex<N>> {
             return TraversalControl.QUIT;
         }
         
-        DependenciesIteratorImpl (DependencyGraphContext context) {
-            this.context = Objects.requireNonNull(context);
+        protected DependenciesIteratorImpl (DependencyGraphContext context, Supplier<Set<N>> closureCreator) {
+            this.context = assertNotNull(context);
+            this.closureCreator = assertNotNull(closureCreator);
+            this.unclosed = closureCreator.get();
+            this.closed = closureCreator.get();
             
             unclosed.addAll(vertices.values());
         }
+
+        protected DependenciesIteratorImpl (DependencyGraphContext context) {
+            this(context, () -> newSetFromMap(new IdentityHashMap<>()));
+        }
         
         final DependencyGraphContext context;
-        final Collection<N> unclosed = Collections.newSetFromMap(new IdentityHashMap<>());
-        final Collection<N> closed = Collections.newSetFromMap(new IdentityHashMap<>());
+        final Supplier<Set<N>> closureCreator;
+        final Collection<N> unclosed;
+        final Collection<N> closed;
         final Traverser<N> traverser = Traverser.<N>breadthFirst(Vertex::adjacencySet, null);
         Set<N> currentClosure = Collections.emptySet();
         Set<N> lastClosure = Collections.emptySet();
@@ -224,7 +233,7 @@ public class DependencyGraph<N extends Vertex<N>> {
     protected final Set<Edge<N, ?>> edges = new AbstractSet<Edge<N, ?>>() {
         @Override
         public boolean add(Edge<N, ?> e) {
-            Objects.requireNonNull(e);
+            assertNotNull(e);
             
             return e.connectEndpoints();
         }

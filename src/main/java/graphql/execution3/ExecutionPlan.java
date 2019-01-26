@@ -30,7 +30,9 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
+import graphql.util.DependenciesIterator;
 import graphql.util.DependencyGraph;
+import graphql.util.DependencyGraphContext;
 import graphql.util.Edge;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -38,7 +40,10 @@ import graphql.util.TraverserState;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import static java.util.Collections.newSetFromMap;
+import static java.util.Collections.synchronizedSet;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -88,6 +93,17 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
 
     protected void whenResolved (ExecutionPlanContext context, Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
         context.whenResolved(edge);
+    }
+
+    @Override
+    public DependenciesIterator<NodeVertex<Node, GraphQLType>> orderDependencies(DependencyGraphContext context) {
+        return new IteratorImpl(context);
+    }
+    
+    private class IteratorImpl extends DependenciesIteratorImpl {
+        public IteratorImpl(DependencyGraphContext context) {
+            super(context, () -> synchronizedSet(newSetFromMap(new IdentityHashMap<>())));
+        }        
     }
     
     public ExecutionContextBuilder newExecutionContextBuilder (String operationName) {
