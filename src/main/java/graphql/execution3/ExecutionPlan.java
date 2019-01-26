@@ -102,8 +102,19 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
     
     private class IteratorImpl extends DependenciesIteratorImpl {
         public IteratorImpl(DependencyGraphContext context) {
-            super(context, () -> synchronizedSet(newSetFromMap(new IdentityHashMap<>())));
+            super(context);
         }        
+
+        @Override
+        public synchronized void close(NodeVertex<Node, GraphQLType> node) {
+            super.close(node);
+        }
+
+        @Override
+        public synchronized void close(Collection<NodeVertex<Node, GraphQLType>> resolvedSet) {
+            super.close(resolvedSet);
+        }
+        
     }
     
     public ExecutionContextBuilder newExecutionContextBuilder (String operationName) {
