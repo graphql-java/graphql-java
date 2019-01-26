@@ -69,7 +69,7 @@ public abstract class NodeVertex<N extends Node, T extends GraphQLType> extends 
     }
     
     @Override
-    public boolean resolve(DependencyGraphContext context) {
+    public final boolean resolve(DependencyGraphContext context) {
         return ((ExecutionPlanContext)context).resolve(this);
     }
 

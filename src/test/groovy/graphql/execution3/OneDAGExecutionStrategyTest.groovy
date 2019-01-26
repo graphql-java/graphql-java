@@ -10,7 +10,7 @@ import spock.lang.Ignore
 class OneDAGExecutionStrategyTest extends Specification {
 
 //    @Ignore
-    def "test execution with null element bubbling up because of non null "() {
+    def "test execution with null element bubbling up to top "() {
         def fooData = [[id: "fooId1", bar: [[id: "barId1", name: "someBar1"], null]],
                        [id: "fooId2", bar: [[id: "barId3", name: "someBar3"], [id: "barId4", name: "someBar4"]]]]
         def dataFetchers = [
@@ -18,7 +18,7 @@ class OneDAGExecutionStrategyTest extends Specification {
         ]
         def schema = TestUtil.schema("""
         type Query {
-            foo: [Foo]
+            foo: [Foo!]!
         }
         type Foo {
             id: ID
@@ -41,8 +41,6 @@ class OneDAGExecutionStrategyTest extends Specification {
         }}
         """)
 
-        def expectedFooData = [null,
-                               [id: "fooId2", bar: [[id: "barId3", name: "someBar3"], [id: "barId4", name: "someBar4"]]]]
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .build()
@@ -56,7 +54,7 @@ class OneDAGExecutionStrategyTest extends Specification {
 
 
         then:
-        result.getData() == [foo: expectedFooData]
+        result.getData() == null
 
     }
 }

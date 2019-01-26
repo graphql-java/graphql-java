@@ -42,11 +42,6 @@ public class DocumentVertex extends NodeVertex<Document, GraphQLType> {
     }
 
     @Override
-    public boolean resolve(DependencyGraphContext context) {
-        return true;
-    }
-
-    @Override
     <U> U accept(U data, NodeVertexVisitor<? super U> visitor) {
         return (U)visitor.visit(this, data);
     }    

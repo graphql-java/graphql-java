@@ -93,38 +93,30 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
     
     private void provideSource (NodeVertex<Node, GraphQLType> source, FieldVertex sink) {
         LOGGER.info("provideSource: source={}, sink={}", source, sink);
-        source.accept(sink, sourceProvider);
+        source.accept(sink, new NodeVertexVisitor<FieldVertex>() {
+            @Override
+            public FieldVertex visit(OperationVertex source, FieldVertex sink) {
+                resultCollector.prepareResult(source);
+                source
+                    .executionStepInfo(
+                        newExecutionStepInfo()
+                            .type((GraphQLOutputType)source.getType())
+                            .path(ExecutionPath.rootPath())
+                            .build()
+                    );
+
+                return visitNode(source, sink.root(true));
+            }
+
+            @Override
+            public FieldVertex visitNode(NodeVertex<? extends Node, ? extends GraphQLType> source, FieldVertex sink) {
+                Object result = source.getResult();
+                return sink
+                    .parentExecutionStepInfo(source.getExecutionStepInfo())
+                    .source(flatten((List<Object>)source.getResult()));
+            }
+        });
     }
-    
-    private final NodeVertexVisitor<FieldVertex> sourceProvider = new NodeVertexVisitor<FieldVertex>() {
-        @Override
-        public FieldVertex visit(OperationVertex source, FieldVertex sink) {
-            List<Object> result = Arrays.asList(new HashMap<>());
-            resultCollector.operation(source);
-            
-            source
-                .executionStepInfo(
-                    newExecutionStepInfo()
-                        .type((GraphQLOutputType)source.getType())
-                        .path(ExecutionPath.rootPath())
-                        .build()
-                )
-                .result(result);
-            sink
-                .dependencySet()
-                .forEach(v -> v.result(result));
-            
-            return visitNode(source, sink.root(true));
-        }
-        
-        @Override
-        public FieldVertex visitNode(NodeVertex<? extends Node, ? extends GraphQLType> source, FieldVertex sink) {
-            Object result = source.getResult();
-            return sink
-                .parentExecutionStepInfo(source.getExecutionStepInfo())
-                .source(flatten((List<Object>)source.getResult()));
-        }
-    };
     
     private void joinResults (FieldVertex source, NodeVertex<Node, GraphQLType> sink) {
         LOGGER.info("afterResolve: source={}, sink={}", source, sink);
@@ -139,6 +131,12 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
             public Boolean visit(FieldVertex node, Boolean data) {
                 return false;
             }
+
+            @Override
+            public Boolean visit(DocumentVertex node, Boolean data) {
+                resultCollector.prepareResult(node);
+                return NodeVertexVisitor.super.visit(node, data);
+            }            
         });
     }
 

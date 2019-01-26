@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -23,13 +24,6 @@ import java.util.stream.Collectors;
  * @author gkesler
  */
 public class ResultCollector {
-    public ResultCollector operation (NodeVertex<? extends Node, ? extends GraphQLType> operation) {
-        Objects.requireNonNull(operation);
-        
-        operations.add((NodeVertex<Node, GraphQLType>)operation);        
-        return this;
-    }
-    
     public void joinResultsOf (FieldVertex node) {
         Objects.requireNonNull(node);
         
@@ -109,43 +103,21 @@ public class ResultCollector {
           });
     };
     
-/*    
-    public List<Object> joinOn (String on, List<Object> relation, List<Object> target) {
-        Objects.requireNonNull(on);
-        Objects.requireNonNull(relation);
-        Objects.requireNonNull(target);
-                
-        // will join relation dataset to target dataset
-        // since we don't have any keys to build a cartesian product,
-        // will be assuming that relation and target dataset s are alerady sorted by the
-        // same key, so a pair {target[i], relation[i]} represents that cartesian product
-        // we can use to join them together
-        int[] indexHolder = {0};
-        relation
-            .stream()
-            .limit(Math.min(target.size(), relation.size()))
-            .forEach(o -> {
-                int index = indexHolder[0]++;
-                Map<String, Object> targetMap = (Map<String, Object>)target.get(index);
-                if (targetMap != null) {
-                    targetMap.put(on, relation.get(index));
-                }
-            });
+    public DocumentVertex prepareResult (DocumentVertex document) {
+        Objects.requireNonNull(document);
         
-        return target;
-    }
-*/    
-    public Object getResult () {
-        List<Object> result = operations
-            .stream()
-            .map(NodeVertex::getResult)
-            .map(r -> ((List<Object>)r).get(0))
-            .collect(Collectors.toList());
-        
-        return result.size() > 1
-            ? result
-            : result.get(0);
+        return document.result(result);
     }
     
-    private final Collection<NodeVertex<Node, GraphQLType>> operations = new ArrayList<>();
+    public OperationVertex prepareResult (OperationVertex operation) {
+        Objects.requireNonNull(operation);
+        
+        return operation.result(result);
+    }
+    
+    public Object getResult () {
+        return result.get(0);
+    }
+    
+    private final List<Object> result = Arrays.asList(new HashMap<String, Object>());
 }
