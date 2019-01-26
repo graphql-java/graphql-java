@@ -278,8 +278,8 @@ public class SchemaPrinter {
             }
 
             SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
-                    .withParentType(GraphQLEnumType.class)
-                    .withElementType(GraphQLEnumValueDefinition.class)
+                    .parentType(GraphQLEnumType.class)
+                    .elementType(GraphQLEnumValueDefinition.class)
                     .build();
             Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
 
@@ -304,8 +304,8 @@ public class SchemaPrinter {
             }
 
             SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
-                    .withParentType(GraphQLInterfaceType.class)
-                    .withElementType(GraphQLFieldDefinition.class)
+                    .parentType(GraphQLInterfaceType.class)
+                    .elementType(GraphQLFieldDefinition.class)
                     .build();
             Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
 
@@ -331,8 +331,8 @@ public class SchemaPrinter {
             }
 
             SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
-                    .withParentType(GraphQLUnionType.class)
-                    .withElementType(GraphQLOutputType.class)
+                    .parentType(GraphQLUnionType.class)
+                    .elementType(GraphQLOutputType.class)
                     .build();
             Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
 
@@ -364,8 +364,8 @@ public class SchemaPrinter {
             } else {
 
                 SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
-                        .withParentType(GraphQLObjectType.class)
-                        .withElementType(GraphQLOutputType.class)
+                        .parentType(GraphQLObjectType.class)
+                        .elementType(GraphQLOutputType.class)
                         .build();
                 Comparator<? super GraphQLType> implementsComparator = options.comparatorRegistry.getComparator(environment);
 
@@ -380,8 +380,8 @@ public class SchemaPrinter {
             }
 
             SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
-                    .withParentType(GraphQLObjectType.class)
-                    .withElementType(GraphQLFieldDefinition.class)
+                    .parentType(GraphQLObjectType.class)
+                    .elementType(GraphQLFieldDefinition.class)
                     .build();
             Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
 
@@ -406,8 +406,8 @@ public class SchemaPrinter {
             printComments(out, type, "");
 
             SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
-                    .withParentType(GraphQLInputObjectType.class)
-                    .withElementType(GraphQLInputObjectField.class)
+                    .parentType(GraphQLInputObjectType.class)
+                    .elementType(GraphQLInputObjectField.class)
                     .build();
             Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
 
@@ -489,8 +489,8 @@ public class SchemaPrinter {
         StringBuilder sb = new StringBuilder();
 
         SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
-                .withParentType(parent)
-                .withElementType(GraphQLArgument.class)
+                .parentType(parent)
+                .elementType(GraphQLArgument.class)
                 .build();
         Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
 
@@ -547,8 +547,8 @@ public class SchemaPrinter {
         }
 
         SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
-                .withParentType(parent)
-                .withElementType(GraphQLDirective.class)
+                .parentType(parent)
+                .elementType(GraphQLDirective.class)
                 .build();
         Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
 
@@ -571,8 +571,8 @@ public class SchemaPrinter {
         sb.append("@").append(directive.getName());
 
         SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
-                .withParentType(GraphQLDirective.class)
-                .withElementType(GraphQLArgument.class)
+                .parentType(GraphQLDirective.class)
+                .elementType(GraphQLArgument.class)
                 .build();
         Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
 

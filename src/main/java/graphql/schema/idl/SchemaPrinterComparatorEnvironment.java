@@ -1,7 +1,10 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
+import graphql.PublicApi;
 import graphql.schema.GraphQLType;
+
+import java.util.function.Consumer;
 
 /**
  * Defines the scope to control where the registered {@code Comparator} can be applied.
@@ -9,6 +12,7 @@ import graphql.schema.GraphQLType;
  * {@code elementType}s can be ordered within its {@code parentType} to restrict the {@code Comparator}s scope of operation.
  * Otherwise supplying only the {@code elementType} results in the {@code Comparator} being reused across all matching {@code GraphQLType}s regardless of parent.
  */
+@PublicApi
 public class SchemaPrinterComparatorEnvironment {
 
     private Class<? extends GraphQLType> parentType;
@@ -29,17 +33,23 @@ public class SchemaPrinterComparatorEnvironment {
     }
 
     /**
-     * @return A new environment containing only the element type.
-     */
-    public SchemaPrinterComparatorEnvironment withElementTypeOnly() {
-        return new SchemaPrinterComparatorEnvironment(null, elementType);
-    }
-
-    /**
      * @return The valid element type.
      */
     public Class<? extends GraphQLType> getElementType() {
         return elementType;
+    }
+
+    /**
+     * This helps you transform the current {@code SchemaPrinterComparatorEnvironment} into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
+     *
+     * @param builderConsumer the consumer code that will be given a builder to transform.
+     * @return a new object based on calling build on that builder.
+     */
+    public SchemaPrinterComparatorEnvironment transform(Consumer<SchemaPrinterComparatorEnvironment.Builder> builderConsumer) {
+        Builder builder = newEnvironment(this);
+        builderConsumer.accept(builder);
+        return builder.build();
     }
 
     @Override
@@ -70,18 +80,30 @@ public class SchemaPrinterComparatorEnvironment {
         return new Builder();
     }
 
+    public static Builder newEnvironment(SchemaPrinterComparatorEnvironment existing) {
+        return new Builder(existing);
+    }
+
     public static class Builder {
 
         private Class<? extends GraphQLType> parentType;
 
         private Class<? extends GraphQLType> elementType;
 
-        public <T extends GraphQLType> Builder withParentType(Class<T> parentType) {
+        public Builder() {
+        }
+
+        public Builder(SchemaPrinterComparatorEnvironment existing) {
+            this.parentType = existing.parentType;
+            this.elementType = existing.elementType;
+        }
+
+        public <T extends GraphQLType> Builder parentType(Class<T> parentType) {
             this.parentType = parentType;
             return this;
         }
 
-        public <T extends GraphQLType> Builder withElementType(Class<T> elementType) {
+        public <T extends GraphQLType> Builder elementType(Class<T> elementType) {
             this.elementType = elementType;
             return this;
         }

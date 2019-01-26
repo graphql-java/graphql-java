@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.PublicApi;
 import graphql.schema.GraphQLType;
 
 import java.util.Comparator;
@@ -8,11 +9,15 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.schema.idl.SchemaPrinterComparatorEnvironment.*;
 
 /**
  * Associates a {@code Comparator} with a {@code SchemaPrinterComparatorEnvironment} to control the scope in which the {@code Comparator} can be applied.
  */
+@PublicApi
 public class DefaultSchemaPrinterComparatorRegistry implements SchemaPrinterComparatorRegistry {
+
+    public static final Comparator<GraphQLType> DEFAULT_COMPARATOR = Comparator.comparing(GraphQLType::getName);
 
     private Map<SchemaPrinterComparatorEnvironment, Comparator<?>> registry = new HashMap<>();
 
@@ -33,12 +38,12 @@ public class DefaultSchemaPrinterComparatorRegistry implements SchemaPrinterComp
             //noinspection unchecked
             return (Comparator<? super T>) comparator;
         }
-        comparator = registry.get(environment.withElementTypeOnly());
+        comparator = registry.get(environment.transform(builder -> builder.parentType(null)));
         if (comparator != null) {
             //noinspection unchecked
             return (Comparator<? super T>) comparator;
         }
-        return Comparator.comparing(GraphQLType::getName);
+        return DEFAULT_COMPARATOR;
     }
 
     /**
@@ -65,7 +70,7 @@ public class DefaultSchemaPrinterComparatorRegistry implements SchemaPrinterComp
          * @param <T> The specific {@code GraphQLType} the {@code Comparator} should operate on.
          * @return The {@code Builder} instance to allow chaining.
          */
-        public <T extends GraphQLType> Builder add(SchemaPrinterComparatorEnvironment environment, Class<T> comparatorClass, Comparator<? super T> comparator) {
+        public <T extends GraphQLType> Builder addComparator(SchemaPrinterComparatorEnvironment environment, Class<T> comparatorClass, Comparator<? super T> comparator) {
             assertNotNull(environment, "environment can't be null");
             assertNotNull(comparatorClass, "comparatorClass can't be null");
             assertNotNull(comparator, "comparator can't be null");
@@ -75,15 +80,14 @@ public class DefaultSchemaPrinterComparatorRegistry implements SchemaPrinterComp
 
         /**
          * Convenience method which supplies an environment builder function.
-         * @see #add
+         * @see #addComparator
          */
-        public <T extends GraphQLType> Builder add(UnaryOperator<SchemaPrinterComparatorEnvironment.Builder> builderFunction,
+        public <T extends GraphQLType> Builder addComparator(UnaryOperator<SchemaPrinterComparatorEnvironment.Builder> builderFunction,
                 Class<T> comparatorClass, Comparator<? super T> comparator) {
             assertNotNull(builderFunction, "builderFunction can't be null");
-            assertNotNull(comparatorClass, "comparatorClass can't be null");
-            assertNotNull(comparator, "comparator can't be null");
-            registry.put(builderFunction.apply(SchemaPrinterComparatorEnvironment.newEnvironment()).build(), comparator);
-            return this;
+
+            SchemaPrinterComparatorEnvironment environment = builderFunction.apply(newEnvironment()).build();
+            return addComparator(environment, comparatorClass, comparator);
         }
 
         public DefaultSchemaPrinterComparatorRegistry build() {
