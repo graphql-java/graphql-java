@@ -23,6 +23,7 @@ import graphql.schema.GraphQLType;
 import graphql.util.DependenciesIterator;
 import graphql.util.Edge;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -98,14 +99,20 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
     private final NodeVertexVisitor<FieldVertex> sourceProvider = new NodeVertexVisitor<FieldVertex>() {
         @Override
         public FieldVertex visit(OperationVertex source, FieldVertex sink) {
-            resultCollector.operation(source
+            List<Object> result = Arrays.asList(new HashMap<>());
+            resultCollector.operation(source);
+            
+            source
                 .executionStepInfo(
                     newExecutionStepInfo()
                         .type((GraphQLOutputType)source.getType())
                         .path(ExecutionPath.rootPath())
                         .build()
                 )
-                .result(Collections.singletonList(new HashMap<>())));
+                .result(result);
+            sink
+                .dependencySet()
+                .forEach(v -> v.result(result));
             
             return visitNode(source, sink.root(true));
         }

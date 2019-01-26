@@ -8,12 +8,14 @@ package graphql.execution3;
 import graphql.language.Node;
 import graphql.schema.GraphQLType;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -43,11 +45,11 @@ public class ResultCollector {
         result
             .stream()
             .limit(Math.min(source.size(), result.size()))
-            .forEach(o -> {
+            .forEach(value -> {
                 int index = indexHolder[0]++;
                 Map<String, Object> targetMap = (Map<String, Object>)source.get(index);
-                if (targetMap != null) {
-                    Object value = result.get(index);
+//                if (targetMap != null) {
+//                    Object value = result.get(index);
                     targetMap.put(on, value);
 
                     // Here, verify if the value to join is valid
@@ -55,7 +57,7 @@ public class ResultCollector {
                         // need to set the paren't corresponding value to null
                         bubbleUpNIL(node);
                     }                    
-                }
+//                }
             });
     }
     
@@ -64,13 +66,12 @@ public class ResultCollector {
         node
           .dependencySet()
           .forEach(v -> {
-                if (!v.accept(false, FieldVertex.IS_FIELD))
-                    return;
-                
-                FieldVertex fieldNode = v.as(FieldVertex.class);
+//                if (!v.accept(false, FieldVertex.IS_FIELD))
+//                    return;
+//                
+//                FieldVertex fieldNode = v.as(FieldVertex.class);
                 boolean hasNull = false;
-
-                List<Object> results = (List<Object>)fieldNode.getResult();
+                List<Object> results = (List<Object>)v.getResult();
                 ListIterator resultsIt = results.listIterator();
                 while (resultsIt.hasNext()) {
                     Object o = resultsIt.next();
@@ -80,7 +81,7 @@ public class ResultCollector {
                     
                     List<Object> items = (o instanceof List)
                           ? (List<Object>)o
-                          : Collections.singletonList(o);
+                          : Arrays.asList(o);
 
                     ListIterator itemsIt = items.listIterator();
                     while (itemsIt.hasNext()) {
@@ -92,7 +93,7 @@ public class ResultCollector {
                         }
                     }
                     
-                    if (hasNull && fieldNode.isNotNullItems()) {
+                    if (hasNull && NodeVertexVisitor.whenFieldVertex(v, node.isNotNull(), n -> n.isNotNullItems())/*node.isNotNullItems()*/) {
                         resultsIt.set(null);
                     } else {
                         hasNull = false;
@@ -100,11 +101,15 @@ public class ResultCollector {
                 }
 
                 if (hasNull) {
-                    joinResultsOf(fieldNode);
+                    NodeVertexVisitor.whenFieldVertex(v, null, n -> {
+                        joinResultsOf(n);
+                        return null;
+                    });
                 }
           });
     };
     
+/*    
     public List<Object> joinOn (String on, List<Object> relation, List<Object> target) {
         Objects.requireNonNull(on);
         Objects.requireNonNull(relation);
@@ -129,7 +134,7 @@ public class ResultCollector {
         
         return target;
     }
-    
+*/    
     public Object getResult () {
         List<Object> result = operations
             .stream()
