@@ -12,6 +12,17 @@ import java.util.function.Consumer;
 @PublicApi
 public class SimpleInstrumentationContext<T> implements InstrumentationContext<T> {
 
+    /**
+     * A context that does nothing
+     *
+     * @param <T> the type needed
+     *
+     * @return a context that does nothing
+     */
+    public static <T> InstrumentationContext<T> noOp() {
+        return new SimpleInstrumentationContext<>();
+    }
+
     private final BiConsumer<T, Throwable> codeToRunOnComplete;
     private final Consumer<CompletableFuture<T>> codeToRunOnDispatch;
 

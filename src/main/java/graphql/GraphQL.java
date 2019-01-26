@@ -40,6 +40,7 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.execution.ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDER;
 import static graphql.execution.instrumentation.DocumentAndVariables.newDocumentAndVariables;
 
 /**
@@ -79,6 +80,7 @@ import static graphql.execution.instrumentation.DocumentAndVariables.newDocument
  *
  * </ul>
  */
+@SuppressWarnings("Duplicates")
 @PublicApi
 public class GraphQL {
 
@@ -90,7 +92,6 @@ public class GraphQL {
 
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
-    private static final ExecutionIdProvider DEFAULT_EXECUTION_ID_PROVIDER = (query, operationName, context) -> ExecutionId.generate();
 
     private final GraphQLSchema graphQLSchema;
     private final ExecutionStrategy queryStrategy;
@@ -603,37 +604,4 @@ public class GraphQL {
         return future;
     }
 
-    private static class ParseResult {
-        private final DocumentAndVariables documentAndVariables;
-        private final InvalidSyntaxException exception;
-
-        private ParseResult(DocumentAndVariables documentAndVariables, InvalidSyntaxException exception) {
-            this.documentAndVariables = documentAndVariables;
-            this.exception = exception;
-        }
-
-        private boolean isFailure() {
-            return documentAndVariables == null;
-        }
-
-        private Document getDocument() {
-            return documentAndVariables.getDocument();
-        }
-
-        private Map<String, Object> getVariables() {
-            return documentAndVariables.getVariables();
-        }
-
-        private InvalidSyntaxException getException() {
-            return exception;
-        }
-
-        private static ParseResult of(DocumentAndVariables document) {
-            return new ParseResult(document, null);
-        }
-
-        private static ParseResult ofError(InvalidSyntaxException e) {
-            return new ParseResult(null, e);
-        }
-    }
 }
