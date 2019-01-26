@@ -11,7 +11,6 @@ import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
-import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import graphql.execution.ExecutionId;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
@@ -51,21 +50,17 @@ public class Execution {
             .variables(executionInput.getVariables())
             .build();
         
-        ExecutionContext executionContext = newExecutionContextBuilder()
-            .executionId(executionId)
-            .graphQLSchema(schema)
-            .context(executionInput.getContext())
+        ExecutionContext executionContext = executionPlan
+            .newExecutionContextBuilder(executionInput.getOperationName())
             .root(executionInput.getRoot())
-            .fragmentsByName(executionPlan.getFragmentsByName())
-            .variables(executionPlan.getVariables())
-            .document(document)
-            .operationDefinition(executionPlan.getOperation(executionInput.getOperationName()))
+            .context(executionInput.getContext())
             .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
+            .executionId(executionId)
             .build();
         
         return strategyCreator
-                .apply(executionContext)
-                .execute(executionPlan);
+            .apply(executionContext)
+            .execute(executionPlan);
     }
     
     private static ExecutionStrategy newExecutionStrategy (Class<? extends ExecutionStrategy> strategyClass, ExecutionContext executionContext) {

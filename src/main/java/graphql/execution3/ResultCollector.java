@@ -5,6 +5,7 @@
  */
 package graphql.execution3;
 
+import static graphql.Assert.assertNotNull;
 import graphql.execution2.ValueFetcher;
 import static graphql.execution3.NodeVertexVisitor.whenFieldVertex;
 import java.util.Arrays;
@@ -14,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -27,13 +27,13 @@ import java.util.stream.Stream;
  */
 public class ResultCollector {    
     public DocumentVertex prepareResult (DocumentVertex document) {
-        Objects.requireNonNull(document);
+        assertNotNull(document);
         
         return document.result(result);
     }
     
     public OperationVertex prepareResult (OperationVertex operation) {
-        Objects.requireNonNull(operation);
+        assertNotNull(operation);
         
         return operation.result(result);
     }
@@ -43,11 +43,11 @@ public class ResultCollector {
     }
     
     public void joinResultsOf (FieldVertex node) {
-        Objects.requireNonNull(node);
+        assertNotNull(node);
         
         String on = node.getResponseKey();
-        List<Object> result = (List<Object>)node.getResult();
-        List<Object> source = (List<Object>)node.getSource();
+        List<Object> results = (List<Object>)node.getResult();
+        List<Object> sources = (List<Object>)node.getSource();
         
         // will join relation dataset to target dataset
         // since we don't have any keys to build a cartesian product,
@@ -55,23 +55,22 @@ public class ResultCollector {
         // same key, so a pair {target[i], relation[i]} represents that cartesian product
         // we can use to join them together
         int index[] = {0};
-        result
+        results
             .stream()
-            .limit(Math.min(source.size(), result.size()))
+            .limit(Math.min(sources.size(), results.size()))
             .forEach(value -> {
-                Map<String, Object> targetMap = (Map<String, Object>)source.get(index[0]++);
+                Map<String, Object> targetMap = (Map<String, Object>)sources.get(index[0]++);
                 targetMap.put(on, value);
 
                 // Here, verify if the value to join is valid
                 if (value == null && node.isNotNull()) {
                     // need to set the paren't corresponding value to null
-                    bubbleUpNIL(node);
+                    bubbleUpNIL(node, on);
                 }                    
             });
     }
     
-    private void bubbleUpNIL (FieldVertex node) {
-        String responseKey = node.getResponseKey();
+    private void bubbleUpNIL (FieldVertex node, String responseKey) {
         node
           .dependencySet()
           .forEach(v -> {
@@ -152,7 +151,7 @@ public class ResultCollector {
     }
     
     public static List<Object> flatten (List<Object> result, Predicate<? super Object> filter) {
-        Objects.requireNonNull(filter);
+        assertNotNull(filter);
         
         return Optional
             .ofNullable(result)

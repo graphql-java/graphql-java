@@ -6,6 +6,7 @@
 package graphql.execution3;
 
 import graphql.execution.ConditionalNodes;
+import graphql.execution.ExecutionContextBuilder;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.UnknownOperationException;
@@ -23,7 +24,6 @@ import graphql.language.NodeVisitorStub;
 import graphql.language.OperationDefinition;
 import graphql.language.SelectionSet;
 import graphql.language.VariableDefinition;
-import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLObjectType;
@@ -31,7 +31,6 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.util.DependencyGraph;
-import graphql.util.DependencyGraphContext;
 import graphql.util.Edge;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -45,7 +44,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,6 +88,15 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
 
     protected void whenResolved (ExecutionPlanContext context, Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
         context.whenResolved(edge);
+    }
+    
+    public ExecutionContextBuilder newExecutionContextBuilder (String operationName) {
+        return ExecutionContextBuilder.newExecutionContextBuilder()
+            .graphQLSchema(schema)
+            .document(document)
+            .fragmentsByName(fragmentsByName)
+            .variables(variables)
+            .operationDefinition(getOperation(operationName));
     }
     
     static Builder newExecutionPlanBuilder () {
