@@ -101,7 +101,7 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
                             .build()
                     );
 
-                return visitNode(source, sink.root(true));
+                return visitNode(source, sink);
             }
 
             @Override

@@ -49,10 +49,10 @@ public class DependencyGraph<N extends Vertex<N>> {
         this.nextId = startId;
     }
     
-    public N addNode (N maybeNode) {
+    public <U extends N> U addNode (U maybeNode) {
         assertNotNull(maybeNode);
         
-        return vertices.computeIfAbsent(maybeNode, 
+        return (U)vertices.computeIfAbsent(maybeNode, 
             node -> {
                 int id = nextId++;
                 verticesById.put(id, node.id(id));
@@ -60,8 +60,8 @@ public class DependencyGraph<N extends Vertex<N>> {
             });
     }
     
-    public N getNode (N maybeNode) {
-        return Optional
+    public <U extends N> U getNode (U maybeNode) {
+        return (U)Optional
             .ofNullable(maybeNode.getId())
             .map(id -> Optional.ofNullable(verticesById.get(id)))
             .orElseGet(() -> Optional.ofNullable(vertices.get(maybeNode)))

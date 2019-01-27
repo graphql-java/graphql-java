@@ -40,10 +40,7 @@ import graphql.util.TraverserState;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import static java.util.Collections.newSetFromMap;
-import static java.util.Collections.synchronizedSet;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -216,11 +213,11 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                     .collect(Collectors.toList());
             executionPlan.variables = valuesResolver.coerceArgumentValues(executionPlan.schema, variableDefinitions, executionPlan.variables);
 
-            NodeVertex<Node, GraphQLType> documentVertex = executionPlan.addNode(toNodeVertex(new DocumentVertex(executionPlan.document)));
-            Map<Class<?>, Object> rootVars = Collections.singletonMap(DocumentVertex.class, documentVertex);
-            
+            // make DocumentVertex the universal source in this graph in order to bootstrap
+            // executions in a standartized way through regular DependencyGraph sorting callback mechanizm
+            DocumentVertex documentVertex = executionPlan().addNode(new DocumentVertex(executionPlan.document));
             // walk Operations ASTs to record dependencies between fields
-            NodeTraverser traverser = new NodeTraverser(rootVars, this::getChildrenOf, executionPlan);
+            NodeTraverser traverser = new NodeTraverser(this::getChildrenOf, documentVertex);
             traverser.depthFirst(this, operations, Builder::newTraverserState);
 
             return executionPlan;
@@ -300,16 +297,12 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
             return new FieldVertex(field, fieldDefinition.getType(), parentType, inScopeOf);
         }
 
-        private <V extends NodeVertex<? extends Node, ? extends GraphQLType>> DependencyGraph<? super V> executionPlan (TraverserContext<Node> context) {
-            return (DependencyGraph<? super V>)context.getInitialData();
-        }
-
-        private static <V extends NodeVertex<? extends Node, ? extends GraphQLType>> NodeVertex<? super Node, ? super GraphQLType> toNodeVertex (V vertex) {
-            return (NodeVertex<Node, GraphQLType>)vertex;
+        private <V extends NodeVertex<? extends Node, ? extends GraphQLType>> DependencyGraph<? super V> executionPlan () {
+            return (DependencyGraph<? super V>)executionPlan;
         }
 
         private boolean isFieldVertex (NodeVertex<? extends Node, ? extends GraphQLType> vertex) {
-            return vertex.accept(false, FieldVertex.IS_FIELD);
+            return NodeVertexVisitor.whenFieldVertex(vertex, false, field -> true);
         }
         
         // NodeVisitor methods
@@ -318,8 +311,7 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
         public TraversalControl visitOperationDefinition(OperationDefinition node, TraverserContext<Node> context) {
             switch (context.getVar(NodeTraverser.LeaveOrEnter.class)) {
                 case ENTER: {
-                    OperationVertex vertex = (OperationVertex)this.<OperationVertex>executionPlan(context)
-                            .addNode(newOperationVertex(node));
+                    OperationVertex vertex = executionPlan().addNode(newOperationVertex(node));
                     context.setVar(OperationVertex.class, vertex);
 
                     // propagate my parent vertex to my children
@@ -332,19 +324,22 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                     // This will make this vertex the ultimate sink in this sub-graph
                     // In order to simplify propagation of the initial root value to the fields,
                     // add disconnected field vertices as dependencies to the root DocumentVertex
-                    DocumentVertex documentVertex = context.getVar(DocumentVertex.class);
+                    DocumentVertex documentVertex = (DocumentVertex)context.getInitialData();
                     OperationVertex operationVertex = (OperationVertex)context.getResult();
                     operationVertex
                         .adjacencySet()
                         .stream()
                         .filter(this::isFieldVertex)
-                        .forEach(v -> { 
-                            v.undependsOn(operationVertex, 
-                                edge -> toNodeVertex(v).dependsOn(
-                                    toNodeVertex(documentVertex), 
-                                    (ExecutionPlanContext ctx, Edge<?, ?> e) -> executionPlan.prepareResolve(ctx, edge)
-                                ));
-                        });
+                        .map(v -> v.as(FieldVertex.class).root(true))
+                        .forEach(v ->  
+                            v.asNodeVertex().undependsOn(
+                                operationVertex.asNodeVertex(), 
+                                edge -> 
+                                    v.asNodeVertex().dependsOn(
+                                        documentVertex.asNodeVertex(), 
+                                        (ExecutionPlanContext ctx, Edge<?, ?> e) -> executionPlan.prepareResolve(ctx, edge)
+                                ))
+                        );
 
                     break;
                 }
@@ -408,20 +403,21 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                     TraverserContext<Node> parentContext = context.getParentContext();
                     NodeVertex<Node, GraphQLType> parentVertex = (NodeVertex<Node, GraphQLType>)parentContext.getResult();
 
-                    FieldVertex vertex = (FieldVertex)this.<FieldVertex>executionPlan(parentContext)
-                            .addNode(newFieldVertex(node, (GraphQLFieldsContainer)GraphQLTypeUtil.unwrapAll(parentVertex.getType()), parentContext.getVar(FieldVertex.class)));
+                    FieldVertex vertex = executionPlan().addNode(
+                        newFieldVertex(node, (GraphQLFieldsContainer)GraphQLTypeUtil.unwrapAll(parentVertex.getType()), parentContext.getVar(FieldVertex.class))
+                    );
 
                     // Note! the ordering of the below dependencies is important:
                     // 1. complete previous resolve
                     // 2. prepare to the next resolve
                     OperationVertex operationVertex = context.getVar(OperationVertex.class);
                     // action in this dependency will be executed when this vertex is resolved
-                    toNodeVertex(operationVertex).dependsOn(toNodeVertex(vertex), 
+                    operationVertex.asNodeVertex().dependsOn(vertex.asNodeVertex(), 
                         (ExecutionPlanContext ctx, Edge<?, ?> e) -> executionPlan.whenResolved(ctx, new NodeEdge(vertex, parentVertex)));
                     
                     // action in this dependency will be executed right after the source had been resolve 
                     // in order to prepare to the next resolve
-                    toNodeVertex(vertex).dependsOn(toNodeVertex(parentVertex), executionPlan::prepareResolve);
+                    vertex.asNodeVertex().dependsOn(parentVertex.asNodeVertex(), executionPlan::prepareResolve);
 
                     // propagate current scope further to children
                     if (node.getAlias() != null)

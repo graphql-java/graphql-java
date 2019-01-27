@@ -186,11 +186,4 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
     private final GraphQLFieldsContainer definedIn;
     private final Object inScopeOf;
     private /*final*/ boolean root = false;
-    
-    public static final NodeVertexVisitor<Boolean> IS_FIELD = new NodeVertexVisitor<Boolean>() {
-        @Override
-        public Boolean visit(FieldVertex node, Boolean data) {
-            return true;
-        }        
-    };        
 }
