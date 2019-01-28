@@ -130,8 +130,8 @@ public class DependencyGraph<N extends Vertex<N>> {
                     .traverse(
                         unclosed
                             .stream()
-                            .filter(node -> closed.containsAll(node.dependencySet()))
-                            .collect(Collectors.toList()),
+                            .filter(v -> closed.containsAll(v.dependencySet()))
+                            .collect(Collectors.toList()), 
                         this
                     )            
                     .getResult())
@@ -180,18 +180,26 @@ public class DependencyGraph<N extends Vertex<N>> {
         
         @Override
         public TraversalControl enter(TraverserContext<N> context) {
-            Collection<N> closure = context.getParentContext().getVar(Collection.class);
+            TraverserContext<N> parentContext = context.getParentContext();
+            Collection<N> closure = parentContext.getVar(Collection.class);
             context
                 .setVar(Collection.class, closure)    // to be propagated to children
                 .setResult(closure);                  // to be returned
             
             N node = context.thisNode();
-            if (autoClose(node)) {
-                return TraversalControl.CONTINUE;
+            if (parentContext.thisNode() == null || closed.containsAll(node.dependencySet())) {
+                if (autoClose(node)) {
+                    return TraversalControl.CONTINUE;
+                } else {
+                    closure.add(node);
+                    return TraversalControl.ABORT;
+                }                           
             } else {
-                closure.add(node);
+                context
+                    .visitedNodes()
+                    .remove(node);
                 return TraversalControl.ABORT;
-            }                           
+            }
         }
 
         @Override
@@ -201,7 +209,7 @@ public class DependencyGraph<N extends Vertex<N>> {
 
         @Override
         public TraversalControl backRef(TraverserContext<N> context) {
-            assertShouldNeverHappen("cycle around node", context.thisNode());
+            assertShouldNeverHappen("cycle around node with id={}", context.thisNode().getId());
             return TraversalControl.QUIT;
         }
         

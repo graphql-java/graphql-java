@@ -37,7 +37,7 @@ public abstract class NodeVertex<N extends Node, T extends GraphQLType> extends 
     }
 
     public NodeVertex<? extends Node, ? extends GraphQLType> parentExecutionStepInfo(ExecutionStepInfo parentExecutionStepInfo) {
-        this.parentExecutionStepInfo = Objects.requireNonNull(parentExecutionStepInfo);
+        this.parentExecutionStepInfo = parentExecutionStepInfo;
         return this;
     }
 

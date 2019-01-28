@@ -30,7 +30,7 @@ class TestGraphContext implements ExecutionPlanContext {
 }
 
 class ExecutionPlanBuilderTest extends Specification {
-    //@Ignore
+//    @Ignore
     def "test simple query"() {
         def fooData = [id: "fooId", bar: [id: "barId", name: "someBar"]]
         def dataFetchers = [
@@ -92,7 +92,7 @@ class ExecutionPlanBuilderTest extends Specification {
         order.hasNext() == false
     }
 
-    //@Ignore
+    @Ignore
     def "test simple execution with inline fragments"() {
         def fooData = [id: "fooId", bar: [id: "barId", name: "someBar"]]
         def dataFetchers = [
@@ -164,7 +164,7 @@ class ExecutionPlanBuilderTest extends Specification {
         order.hasNext() == false
     }
 
-    //@Ignore
+    @Ignore
     def "test simple execution with redundant inline fragments"() {
         def fooData = [id: "fooId", bar: [id: "barId", name: "someBar"]]
         def dataFetchers = [
@@ -251,7 +251,7 @@ class ExecutionPlanBuilderTest extends Specification {
         order.hasNext() == false
     }
     
-    //@Ignore
+    @Ignore
     def "test simple execution with fragment spreads"() {
         def fooData = [id: "fooId", bar: [id: "barId", name: "someBar"]]
         def dataFetchers = [
@@ -325,7 +325,7 @@ class ExecutionPlanBuilderTest extends Specification {
         order.hasNext() == false
     }
     
-    //@Ignore
+    @Ignore
     def "test simple execution with redundant fragment spreads"() {
         def fooData = [id: "fooId", bar: [id: "barId", name: "someBar"]]
         def dataFetchers = [
@@ -414,7 +414,7 @@ class ExecutionPlanBuilderTest extends Specification {
         order.hasNext() == false
     }
     
-    //@Ignore
+    @Ignore
     def "test simple query with aliases"() {
         def fooData = [id: "fooId", bar: [id: "barId", name: "someBar"]]
         def dataFetchers = [

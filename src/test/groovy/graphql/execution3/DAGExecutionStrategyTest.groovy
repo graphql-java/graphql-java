@@ -9,7 +9,7 @@ import spock.lang.Ignore
 
 class DAGExecutionStrategyTest extends Specification {
 
-//    @Ignore
+    //@Ignore
     def "test simple execution"() {
         def fooData = [id: "fooId", bar: [id: "barId", name: "someBar"]]
         def dataFetchers = [
@@ -56,7 +56,7 @@ class DAGExecutionStrategyTest extends Specification {
 
     }
 
-//    @Ignore
+    //@Ignore
     def "test execution with lists"() {
         def fooData = [[id: "fooId1", bar: [[id: "barId1", name: "someBar1"], [id: "barId2", name: "someBar2"]]],
                        [id: "fooId2", bar: [[id: "barId3", name: "someBar3"], [id: "barId4", name: "someBar4"]]]]
@@ -104,7 +104,7 @@ class DAGExecutionStrategyTest extends Specification {
 
     }
 
-//    @Ignore
+    //@Ignore
     def "test execution with null element "() {
         def fooData = [[id: "fooId1", bar: null],
                        [id: "fooId2", bar: [[id: "barId3", name: "someBar3"], [id: "barId4", name: "someBar4"]]]]
@@ -152,7 +152,7 @@ class DAGExecutionStrategyTest extends Specification {
 
     }
 
-//    @Ignore
+    //@Ignore
     def "test execution with null element in list"() {
         def fooData = [[id: "fooId1", bar: [[id: "barId1", name: "someBar1"], null]],
                        [id: "fooId2", bar: [[id: "barId3", name: "someBar3"], [id: "barId4", name: "someBar4"]]]]
@@ -200,7 +200,7 @@ class DAGExecutionStrategyTest extends Specification {
 
     }
 
-//    @Ignore
+    //@Ignore
     def "test execution with null element in non null list"() {
         def fooData = [[id: "fooId1", bar: [[id: "barId1", name: "someBar1"], null]],
                        [id: "fooId2", bar: [[id: "barId3", name: "someBar3"], [id: "barId4", name: "someBar4"]]]]
@@ -251,7 +251,7 @@ class DAGExecutionStrategyTest extends Specification {
 
     }
 
-//    @Ignore
+    //@Ignore
     def "test execution with null element bubbling up because of non null "() {
         def fooData = [[id: "fooId1", bar: [[id: "barId1", name: "someBar1"], null]],
                        [id: "fooId2", bar: [[id: "barId3", name: "someBar3"], [id: "barId4", name: "someBar4"]]]]
@@ -302,7 +302,7 @@ class DAGExecutionStrategyTest extends Specification {
 
     }
 
-//    @Ignore
+    //@Ignore
     def "test execution with null element bubbling up to top "() {
         def fooData = [[id: "fooId1", bar: [[id: "barId1", name: "someBar1"], null]],
                        [id: "fooId2", bar: [[id: "barId3", name: "someBar3"], [id: "barId4", name: "someBar4"]]]]
@@ -351,7 +351,7 @@ class DAGExecutionStrategyTest extends Specification {
 
     }
 
-//    @Ignore
+    //@Ignore
     def "test list"() {
         def fooData = [[id: "fooId1"], [id: "fooId2"], [id: "fooId3"]]
         def dataFetchers = [
@@ -390,7 +390,7 @@ class DAGExecutionStrategyTest extends Specification {
 
     }
 
-//    @Ignore
+    //@Ignore
     def "test list in lists "() {
         def fooData = [[bar: [[id: "barId1"], [id: "barId2"]]], [bar: null], [bar: [[id: "barId3"], [id: "barId4"], [id: "barId5"]]]]
         def dataFetchers = [
@@ -434,7 +434,7 @@ class DAGExecutionStrategyTest extends Specification {
 
     }
 
-//    @Ignore
+    //@Ignore
     def "test simple batching with null value in list"() {
         def fooData = [[id: "fooId1"], null, [id: "fooId3"]]
         def dataFetchers = [

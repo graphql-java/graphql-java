@@ -11,7 +11,6 @@ import static graphql.execution3.NodeVertexVisitor.whenFieldVertex;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -25,29 +24,19 @@ import java.util.stream.Stream;
  *
  * @author gkesler
  */
-public class ResultCollector {    
-    public DocumentVertex prepareResult (DocumentVertex document) {
-        assertNotNull(document);
-        
-        return document.result(result);
+public class Results {  
+    private Results () {
+        // disable instantiation
     }
     
-    public OperationVertex prepareResult (OperationVertex operation) {
-        assertNotNull(operation);
-        
-        return operation.result(result);
-    }
-    
-    public Object getResult () {
-        return result.get(0);
-    }
-    
-    public void joinResultsOf (FieldVertex node) {
-        assertNotNull(node);
+    public static void joinResultsOf (FieldVertex node) {
+        assertNotNull(node);        
         
         String on = node.getResponseKey();
-        List<Object> results = (List<Object>)node.getResult();
         List<Object> sources = (List<Object>)node.getSource();
+        List<Object> results = Optional
+            .ofNullable((List<Object>)node.getResult())
+            .orElseGet(Collections::emptyList);
         
         // will join relation dataset to target dataset
         // since we don't have any keys to build a cartesian product,
@@ -70,7 +59,7 @@ public class ResultCollector {
             });
     }
     
-    private void bubbleUpNIL (FieldVertex node, String responseKey) {
+    private static void bubbleUpNIL (FieldVertex node, String responseKey) {
         node
           .dependencySet()
           .forEach(v -> {
@@ -88,7 +77,7 @@ public class ResultCollector {
                     while (items.hasNext()) {
                         Map<String, Object> value = (Map<String, Object>)items.next();
 
-                        if (value.getOrDefault(responseKey, this) == null) {
+                        if (value.getOrDefault(responseKey, ValueFetcher.NULL_VALUE) == null) {
                             items.set(null);
                             hasNullItems = true;
                         }
@@ -109,7 +98,7 @@ public class ResultCollector {
           });
     };
     
-    public Object checkAndFixNILs (Object fetchedValue, FieldVertex fieldNode) {
+    public static Object checkAndFixNILs (Object fetchedValue, FieldVertex fieldNode) {
         return (isNIL(fetchedValue) || isOneToOne(fieldNode))
             ? fixNIL(fetchedValue, () -> null)
             : fixNILs((List<Object>)fetchedValue, fieldNode);
@@ -157,7 +146,7 @@ public class ResultCollector {
             .ofNullable(result)
             .map(res -> res
                 .stream()
-                .flatMap(ResultCollector::asStream)
+                .flatMap(Results::asStream)
                 .filter(filter)
                 .collect(Collectors.toList())
             )
@@ -168,7 +157,7 @@ public class ResultCollector {
         return (o instanceof Collection)
             ? ((Collection<Object>)o)
                 .stream()
-                .flatMap(ResultCollector::asStream)
+                .flatMap(Results::asStream)
             : Stream.of(o);
     }
 
@@ -186,6 +175,4 @@ public class ResultCollector {
                 : null
             : o;
     }
-    
-    private final List<Object> result = Arrays.asList(new HashMap<String, Object>());
 }

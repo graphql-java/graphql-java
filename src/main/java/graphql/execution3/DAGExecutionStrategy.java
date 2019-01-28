@@ -24,9 +24,11 @@ import graphql.util.DependenciesIterator;
 import graphql.util.Edge;
 import graphql.util.TriFunction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -44,7 +46,6 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
         this.executionContext = Objects.requireNonNull(executionContext);
         this.executionInfoFactory = new ExecutionStepInfoFactory();
         this.valueFetcher = new ValueFetcher(executionContext);
-        this.resultCollector = new ResultCollector();
     }
     
     @Override
@@ -87,35 +88,38 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
         }               
     }
     
-    private void provideSource (NodeVertex<Node, GraphQLType> source, FieldVertex sink) {
+    private void provideSource (NodeVertex<Node, GraphQLType> source, NodeVertex<Node, GraphQLType> sink) {
         LOGGER.debug("provideSource: source={}, sink={}", source, sink);
-        source.accept(sink, new NodeVertexVisitor<FieldVertex>() {
+        source.accept(sink, new NodeVertexVisitor<NodeVertex<? extends Node, ? extends GraphQLType>>() {
             @Override
-            public FieldVertex visit(OperationVertex source, FieldVertex sink) {
-                resultCollector.prepareResult(source);
+            public NodeVertex<? extends Node, ? extends GraphQLType> visit(OperationVertex source, NodeVertex<? extends Node, ? extends GraphQLType> sink) {
                 source
                     .executionStepInfo(
                         newExecutionStepInfo()
                             .type((GraphQLOutputType)source.getType())
                             .path(ExecutionPath.rootPath())
                             .build()
-                    );
+                    )
+                    // prepare placeholder for this operation result
+                    // since operation does not have its external reslution,
+                    // it's result is stored in the source object 
+                    .result(source.getSource());
 
                 return visitNode(source, sink);
             }
 
             @Override
-            public FieldVertex visitNode(NodeVertex<? extends Node, ? extends GraphQLType> source, FieldVertex sink) {
+            public NodeVertex<? extends Node, ? extends GraphQLType> visitNode(NodeVertex<? extends Node, ? extends GraphQLType> source, NodeVertex<? extends Node, ? extends GraphQLType> sink) {
                 return sink
                     .parentExecutionStepInfo(source.getExecutionStepInfo())
-                    .source(ResultCollector.flatten((List<Object>)source.getResult()));
+                    .source(Results.flatten((List<Object>)source.getResult()));
             }
         });
     }
     
     private void joinResults (FieldVertex source, NodeVertex<Node, GraphQLType> sink) {
         LOGGER.debug("afterResolve: source={}, sink={}", source, sink);
-        resultCollector.joinResultsOf(source);
+        Results.joinResultsOf(source);
     }
 
     private boolean tryResolve (NodeVertex<Node, GraphQLType> node) {
@@ -126,12 +130,12 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
                 List<Object> sources = (List<Object>)node.getSource();
                 // if sources is empty, no need to fetch data.
                 // even if it is fetched, it won't be joined anyways
-                return sources.isEmpty();
+                return sources == null || sources.isEmpty();
             }
 
             @Override
             public Boolean visit(DocumentVertex node, Boolean data) {
-                resultCollector.prepareResult(node);
+                node.result(result);
                 return true;
             }            
         });
@@ -154,7 +158,7 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
                     fetchedValues
                         .stream()
                         .map(FetchedValue::getFetchedValue)
-                        .map(fv -> resultCollector.checkAndFixNILs(fv, fieldNode))
+                        .map(fv -> Results.checkAndFixNILs(fv, fieldNode))
                         .collect(Collectors.toList())
                 )
                 .thenApply(fetchedValues -> 
@@ -184,7 +188,7 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
     private class ExecutionPlanContextImpl implements ExecutionPlanContext {
         @Override
         public void prepareResolve(Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
-            provideSource((NodeVertex<Node, GraphQLType>)edge.getSource(), (FieldVertex)edge.getSink());
+            provideSource((NodeVertex<Node, GraphQLType>)edge.getSource(), (NodeVertex<Node, GraphQLType>)edge.getSink());
         }
 
         @Override
@@ -198,14 +202,14 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
         }
 
         public ExecutionResult getResult() {
-            return new ExecutionResultImpl(resultCollector.getResult(), executionContext.getErrors());
+            return new ExecutionResultImpl(result.get(0), executionContext.getErrors());
         }
     };
     
     private final ExecutionContext executionContext;
     private final ExecutionStepInfoFactory executionInfoFactory;
     private final ValueFetcher valueFetcher;
-    private final ResultCollector resultCollector;
+    private final List<Object> result = Arrays.asList(new LinkedHashMap<String, Object>());
     
     private static final Logger LOGGER = LoggerFactory.getLogger(DAGExecutionStrategy.class);
 }

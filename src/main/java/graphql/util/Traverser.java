@@ -101,9 +101,12 @@ public class Traverser<T> {
                     break traverseLoop;
                 }
             } else {
+                // Moving marking as visited *before* entering visitor
+                // to give visitir a chance to clear this mark if necessary
+                this.traverserState.addVisited((T) currentContext.thisNode());
+                
                 TraversalControl traversalControl = visitor.enter(currentContext);
                 assertNotNull(traversalControl, "result of enter must not be null");
-                this.traverserState.addVisited((T) currentContext.thisNode());
                 switch (traversalControl) {
                     case QUIT:
                         break traverseLoop;

@@ -312,6 +312,7 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
             switch (context.getVar(NodeTraverser.LeaveOrEnter.class)) {
                 case ENTER: {
                     OperationVertex vertex = executionPlan().addNode(newOperationVertex(node));
+                    // make OperationVertex available for any time access to any of its subordinates
                     context.setVar(OperationVertex.class, vertex);
 
                     // propagate my parent vertex to my children
@@ -326,6 +327,21 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                     // add disconnected field vertices as dependencies to the root DocumentVertex
                     DocumentVertex documentVertex = (DocumentVertex)context.getInitialData();
                     OperationVertex operationVertex = (OperationVertex)context.getResult();
+                    // make this operation a dependency of a document to allow
+                    // standard bootstrapping.
+                    operationVertex.asNodeVertex().dependsOn(documentVertex.asNodeVertex(), executionPlan::prepareResolve);
+                    // change dependencies order by moving all field dependencies from
+                    // this operation vertex up to document vertex that will provide
+                    // a standard bootstrapping.
+                    // the dependencies order will looke like:
+                    //                field_1
+                    //                field_2
+                    // document <-- { field_3 } <-- operation
+                    //                ...
+                    //                field_N
+                    // this will allow to easy add dependencies between operations, since
+                    // an operation now will become "resolved" only after all its fields
+                    // are resolved
                     operationVertex
                         .adjacencySet()
                         .stream()
@@ -335,6 +351,9 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                             v.asNodeVertex().undependsOn(
                                 operationVertex.asNodeVertex(), 
                                 edge -> 
+                                    // record a dependency on document
+                                    // but execute an action bound to the operation->field edge
+                                    // field bootstrap will be available via overarching operation
                                     v.asNodeVertex().dependsOn(
                                         documentVertex.asNodeVertex(), 
                                         (ExecutionPlanContext ctx, Edge<?, ?> e) -> executionPlan.prepareResolve(ctx, edge)
