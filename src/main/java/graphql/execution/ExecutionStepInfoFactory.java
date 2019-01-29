@@ -8,7 +8,6 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.List;
