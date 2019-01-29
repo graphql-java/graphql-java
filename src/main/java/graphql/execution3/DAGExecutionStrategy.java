@@ -20,6 +20,7 @@ import graphql.language.Field;
 import graphql.language.Node;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeUtil;
 import graphql.util.DependenciesIterator;
 import graphql.util.Edge;
 import graphql.util.TriFunction;
@@ -32,6 +33,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -48,6 +51,15 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
         this.valueFetcher = new ValueFetcher(executionContext);
     }
     
+    /**
+     * Executes a graphql request according to the schedule
+     * provided by executionPlan
+     * 
+     * @param executionPlan a {@code graphql.util.DependencyGraph} specialization that provides
+     * order of field resolution requests
+     * 
+     * @return a CompletableFuture holding the result of execution.
+     */
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionPlan executionPlan) {
         assertNotNull(executionPlan);
@@ -146,8 +158,14 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
         
         FieldVertex fieldNode = node.as(FieldVertex.class);
         List<Field> sameFields = Collections.singletonList(fieldNode.getNode());
+        ExecutionStepInfo sourceExecutionStepInfo = node.getParentExecutionStepInfo();
+        GraphQLOutputType parentType = (GraphQLOutputType)GraphQLTypeUtil.unwrapAll(sourceExecutionStepInfo.getType());
+        ExecutionStepInfo parentExecutionStepInfo = sourceExecutionStepInfo
+            .transform(builder -> builder
+                    .parentInfo(sourceExecutionStepInfo.getParent())
+                    .type(parentType));
         ExecutionStepInfo executionStepInfo = executionInfoFactory
-            .newExecutionStepInfoForSubField(executionContext, sameFields, node.getParentExecutionStepInfo());
+            .newExecutionStepInfoForSubField(executionContext, sameFields, parentExecutionStepInfo);
         
         TriFunction<FieldVertex, List<Field>, ExecutionStepInfo, CompletableFuture<List<FetchedValue>>> valuesFetcher = 
             fieldNode.isRoot() ? this::fetchRootValues : this::fetchBatchedValues;

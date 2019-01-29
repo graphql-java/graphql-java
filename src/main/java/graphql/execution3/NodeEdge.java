@@ -12,8 +12,7 @@ import graphql.util.Edge;
 import java.util.function.BiConsumer;
 
 /**
- *
- * @author gkesler
+ * A specialization of Edge class used occasionally wen building ExecutionPlan
  */
 public class NodeEdge extends Edge<NodeVertex<Node, GraphQLType>, NodeEdge> {
     public <N extends NodeVertex<? extends Node, ? extends GraphQLType>> NodeEdge(N source, N sink) {

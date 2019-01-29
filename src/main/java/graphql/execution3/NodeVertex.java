@@ -13,8 +13,8 @@ import graphql.util.Vertex;
 import java.util.Objects;
 
 /**
+ * A base class for ExecutionPlan vertices
  *
- * @author gkesler
  * @param <N>   actual type of Node associated with this Vertex
  * @param <T>   GraphQLType from the GraphQLSchema dictionary that describes the Node 
  */
@@ -24,45 +24,104 @@ public abstract class NodeVertex<N extends Node, T extends GraphQLType> extends 
         this.type = type;
     }
     
+    /**
+     * Retrieves AST node associated with the vertex.
+     * 
+     * @return AST node for this vertex
+     */
     public N getNode() {
         return node;
     }
 
+    /**
+     * Retrieves GraphQL type if any associated with the AST node
+     * 
+     * @return GraphQLType for this vertex
+     */
     public T getType() {
         return type;
     }
 
+    /**
+     * A shortcut to the parent (source) vertex ExecutionStepInfo
+     * 
+     * @return parent's ExecutionStepInfo
+     */
     public ExecutionStepInfo getParentExecutionStepInfo() {
         return parentExecutionStepInfo;
     }
 
+    /**
+     * A shortcut to the parent (source) vertex ExecutionStepInfo
+     * 
+     * @param parentExecutionStepInfo new value
+     * @return parent's ExecutionStepInfo
+     */
     public NodeVertex<? extends Node, ? extends GraphQLType> parentExecutionStepInfo(ExecutionStepInfo parentExecutionStepInfo) {
         this.parentExecutionStepInfo = parentExecutionStepInfo;
         return this;
     }
 
+    /**
+     * ExecutionStepInfo associated with this vertex
+     * 
+     * @return this vertex ExecutionStepInfo
+     */
     public ExecutionStepInfo getExecutionStepInfo () {
         return executionStepInfo;
     }
     
+    /**
+     * ExecutionStepInfo associated with this vertex
+     * 
+     * @param value new value
+     * @return this vertex ExecutionStepInfo
+     */
     public NodeVertex<? extends Node, ? extends GraphQLType> executionStepInfo (ExecutionStepInfo value) {
         this.executionStepInfo = Objects.requireNonNull(value);
         return this;
     }
 
+    /**
+     * A transformed result of parent (source) execution.
+     * Transformation is necessary to filter out results that certainly
+     * cannot be resolved and then joined.
+     * So this property contains source results filtered out nulls
+     * 
+     * @return source objects to use when resolving this vertex
+     */
     public Object getSource() {
         return source;
     }
 
+    /**
+     * A transformed result of parent (source) execution.Transformation is necessary 
+     * to filter out results that certainly cannot be resolved and then joined.
+     * So this property contains source results filtered out nulls
+     * 
+     * @param source new value
+     * @return source objects to use when resolving this vertex
+     */
     public NodeVertex<? extends Node, ? extends GraphQLType> source(Object source) {
         this.source = source;
         return this;
     }
 
+    /**
+     * Contains results of this vertex resolution
+     * 
+     * @return this vertex results
+     */
     public Object getResult() {
         return result;
     }
 
+    /**
+     * Contains results of this vertex resolution
+     * 
+     * @param result new value
+     * @return this vertex results
+     */
     public NodeVertex<? extends Node, ? extends GraphQLType> result(Object result) {
         this.result = result;
         return this;
@@ -114,14 +173,14 @@ public abstract class NodeVertex<N extends Node, T extends GraphQLType> extends 
             .append(", type=").append(type);
     }
     
-    public <U extends NodeVertex<? extends Node, ? extends GraphQLType>> U as (Class<? super U> castTo) {
+    <U extends NodeVertex<? extends Node, ? extends GraphQLType>> U as (Class<? super U> castTo) {
         if (castTo.isAssignableFrom(getClass()))
             return (U)castTo.cast(this);
         
         throw new IllegalArgumentException(String.format("could not cast to '%s'", castTo.getName()));
     }
     
-    public NodeVertex<? super Node, ? super GraphQLType> asNodeVertex () {
+    NodeVertex<? super Node, ? super GraphQLType> asNodeVertex () {
         return (NodeVertex<? super Node, ? super GraphQLType>)this;
     }
     

@@ -21,14 +21,18 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- *
- * @author gkesler
+ * Helper to manipulate with fetched data and collect/join results
  */
 public class Results {  
     private Results () {
         // disable instantiation
     }
     
+    /**
+     * Joins results of the provided vertex to the sources (parent results)
+     * 
+     * @param node a resolved Field vertex 
+     */
     public static void joinResultsOf (FieldVertex node) {
         assertNotNull(node);        
         
@@ -98,6 +102,14 @@ public class Results {
           });
     };
     
+    /**
+     * Takes care of ValueFetcher.NULL_VALUE.
+     * Replaces them to nulls
+     * 
+     * @param fetchedValue fetched result
+     * @param fieldNode destination Field vertex
+     * @return corrected value
+     */
     public static Object checkAndFixNILs (Object fetchedValue, FieldVertex fieldNode) {
         return (isNIL(fetchedValue) || isOneToOne(fieldNode))
             ? fixNIL(fetchedValue, () -> null)
@@ -135,10 +147,25 @@ public class Results {
             : fetchedValues;
     }
 
+    /**
+     * "Flattens" possibly multi-dimensional list into a single-dimensional one
+     * filtering out {@code null} values.
+     * 
+     * @param result multi-dimensional list
+     * @return single-dimensional list
+     */
     public static List<Object> flatten (List<Object> result) {
         return flatten(result, o -> o != null);
     }
     
+    /**
+     * "Flattens" possibly multi-dimensional list into a single-dimensional one
+     * filtering out values that don't match provided predicate.
+     * 
+     * @param filter predicate to filter out result elements
+     * @param result multi-dimensional list
+     * @return single-dimensional list
+     */
     public static List<Object> flatten (List<Object> result, Predicate<? super Object> filter) {
         assertNotNull(filter);
         

@@ -23,8 +23,7 @@ public class ExecutionStepInfoFactory {
 
     public ExecutionStepInfo newExecutionStepInfoForSubField(ExecutionContext executionContext, List<Field> sameFields, ExecutionStepInfo parentInfo) {
         Field field = sameFields.get(0);
-//        GraphQLObjectType parentType = (GraphQLObjectType) parentInfo.getUnwrappedNonNullType();
-        GraphQLObjectType parentType = (GraphQLObjectType) GraphQLTypeUtil.unwrapAll(parentInfo.getType());
+        GraphQLObjectType parentType = (GraphQLObjectType) parentInfo.getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(executionContext.getGraphQLSchema(), parentType, field.getName());
         GraphQLOutputType fieldType = fieldDefinition.getType();
         List<Argument> fieldArgs = field.getArguments();

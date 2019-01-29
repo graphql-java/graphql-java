@@ -19,16 +19,34 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import static graphql.execution3.ExecutionPlan.newExecutionPlanBuilder;
 
-/**
- *
- * @author gkesler
- */
 public class Execution {
+    /**
+     * Executes GraphQL request using {@link graphql.execution3.ExecutionStrategy} class
+     * to instantiate ExecutionStrategy
+     * 
+     * @param strategyClass     ExecutionStrategy class to instantiate
+     * @param document          root of GraphQL AST
+     * @param schema            GraphQL schema
+     * @param executionId       assigned execution id
+     * @param executionInput    input parameters, variables, etc.
+     * @return CompletableFuture that when completes holds result of this execution
+     */
     public CompletableFuture<ExecutionResult> execute (Class<? extends ExecutionStrategy> strategyClass, Document document, 
             GraphQLSchema schema, ExecutionId executionId, ExecutionInput executionInput) {
         return execute(executionContext -> newExecutionStrategy(strategyClass, executionContext), document, schema, executionId, executionInput);
     }
 
+    /**
+     * Executes GraphQL request using {@link graphql.execution3.ExecutionStrategy} class
+     * to instantiate ExecutionStrategy
+     * 
+     * @param strategyCreator   ExecutionStrategy factory
+     * @param document          root of GraphQL AST
+     * @param schema            GraphQL schema
+     * @param executionId       assigned execution id
+     * @param executionInput    input parameters, variables, etc.
+     * @return CompletableFuture that when completes holds result of this execution
+     */
     public CompletableFuture<ExecutionResult> execute (Function<? super ExecutionContext, ? extends ExecutionStrategy> strategyCreator, Document document, 
             GraphQLSchema schema, ExecutionId executionId, ExecutionInput executionInput) {
         try {
@@ -66,8 +84,8 @@ public class Execution {
     private static ExecutionStrategy newExecutionStrategy (Class<? extends ExecutionStrategy> strategyClass, ExecutionContext executionContext) {
         try {
             return strategyClass
-                    .getConstructor(ExecutionContext.class)
-                    .newInstance(executionContext);
+                .getConstructor(ExecutionContext.class)
+                .newInstance(executionContext);
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }

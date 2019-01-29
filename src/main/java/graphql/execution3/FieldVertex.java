@@ -23,8 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- *
- * @author gkesler
+ * A vertex wrapping Field AST node
  */
 public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {    
     public FieldVertex(Field node, GraphQLOutputType type, GraphQLFieldsContainer definedIn) {
@@ -74,30 +73,69 @@ public class FieldVertex extends NodeVertex<Field, GraphQLOutputType> {
         this.inScopeOf = inScopeOf;
     }    
 
+    /**
+     * Parent container where this Field is defined
+     * 
+     * @return parent GraphQL type
+     */
     public GraphQLFieldsContainer getDefinedIn() {
         return definedIn;
     }
 
+    /**
+     * If a direct or indirect parent (source) of this vertex has alias,
+     * retrieves that aliased source.
+     * 
+     * @return aliased direct or indirect aliased source of this vertex
+     */
     public Object getInScopeOf() {
         return inScopeOf;
     }
 
+    /**
+     * Retrieves result of analysis on the kind of object this Field represents
+     * 
+     * @return analysis result of this Field
+     */
     public Kind getKind() {
         return kind;
     }
 
+    /**
+     * Retrieves cardinality of this Field
+     * 
+     * @return cardinality analysis result
+     */
     public Cardinality getCardinality() {
         return cardinality;
     }
 
+    /**
+     * Verifies if this Field value <b>must not</b> be null.
+     * If this constraint is not satisfied, the parent result is null.
+     * 
+     * @return "not null" constraint for this field
+     */
     public boolean isNotNull() {
         return notNull;
     }
 
+    /**
+     * Verifies if this Field element value (if this Field is a GraphQLList) <b>must not</b> be null.
+     * If this constraint is not satisfied, the result for the entire list is null.
+     * 
+     * @return "not null" constraint for a list item
+     */ 
     public boolean isNotNullItems() {
         return notNullItems;
     }
 
+    /**
+     * Key to store this field in the parent result
+     * https://facebook.github.io/graphql/June2018/#CollectFields()
+     * 
+     * @return response key
+     */
     public String getResponseKey () {
         return Optional
             .ofNullable(node.getAlias())

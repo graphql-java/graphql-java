@@ -7,14 +7,11 @@ package graphql.execution3;
 
 import graphql.execution.ExecutionStepInfo;
 import graphql.language.Document;
-import graphql.language.Node;
 import graphql.schema.GraphQLType;
-import graphql.util.DependencyGraphContext;
 import java.util.Objects;
 
 /**
- *
- * @author gkesler
+ * ExecutionPlan Vertex created around Document node
  */
 public class DocumentVertex extends NodeVertex<Document, GraphQLType> {
     public DocumentVertex(Document node) {

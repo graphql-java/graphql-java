@@ -50,19 +50,33 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- *
- * @author gkesler
- */
 class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {    
+    /**
+     * Retrieves GraphQL schema associated with this execution plan
+     * 
+     * @return GraphQL schema
+     */
     public GraphQLSchema getSchema() {
         return schema;
     }
 
+    /**
+     * Retrieves GraphQL AST root Node associated with this execution plan
+     * 
+     * @return  AST root
+     */
     public Document getDocument() {
         return document;
     }
     
+    /**
+     * Locates an OperationDefinition corresponding to the specified openationName
+     * https://facebook.github.io/graphql/June2018/#sec-Executing-Requests
+     * 
+     * @param operationName name of operation to execute, could be null
+     * @return OperationDefinition for the specified operation name
+     * @throws UnknownOperationException if OperationDefinition could not be found
+     */
     public OperationDefinition getOperation (String operationName) {
         if (operationName == null && operationsByName.size() > 1)
             throw new UnknownOperationException("Must provide operation name if query contains multiple operations.");
@@ -72,14 +86,31 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
             .orElseThrow(() -> new UnknownOperationException(String.format("Unknown operation named '%s'.", operationName)));
     }
 
+    /**
+     * Retrieves all OperationDefinitions that exist in the document keyed off 
+     * their operation names
+     * 
+     * @return a map containing OperationDefinitions
+     */
     public Map<String, OperationDefinition> getOperationsByName() {
         return Collections.unmodifiableMap(operationsByName);
     }
 
+    /**
+     * Retrieves all FragmentDefinitions that exist in the document keyed off 
+     * their fragment names
+     * 
+     * @return a map containing FragmentDefinitions
+     */
     public Map<String, FragmentDefinition> getFragmentsByName() {
         return Collections.unmodifiableMap(fragmentsByName);
     }
 
+    /**
+     * After the ExecutionPLan is built, retrieves coerced variables for the selected operation
+     * 
+     * @return variables map
+     */
     public Map<String, Object> getVariables() {
         return Collections.unmodifiableMap(variables);
     }
@@ -114,6 +145,12 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
         
     }
     
+    /**
+     * Creates and initializes ExecutionContextBuilder
+     * 
+     * @param operationName selected operation name for this execution
+     * @return new ExecutionContextBuilder
+     */
     public ExecutionContextBuilder newExecutionContextBuilder (String operationName) {
         return ExecutionContextBuilder.newExecutionContextBuilder()
             .graphQLSchema(schema)
@@ -165,11 +202,25 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
             return this;
         }
 
+        /**
+         * Adds an operation to the list of selected operations
+         * 
+         * @param operationName operation name to select
+         * @return this instance
+         * @throws {@link graphql.execution.UnknownOperationException} in case the operation is not found
+         */
         public Builder operation (String operationName) {
             operations.add(executionPlan.getOperation(operationName));
             return this;
         }
 
+        /**
+         * Stores variables for the coercion.
+         * Note! Coercion happens <b>only</b> at the time of building the execution plan
+         * 
+         * @param variables variables map
+         * @return this instance
+         */
         public Builder variables (Map<String, Object> variables) {
             executionPlan.variables = Objects.requireNonNull(variables);
             return this;
@@ -197,6 +248,12 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
             });
         }
 
+        /**
+         * Builds execution plan according to the input query document,
+         * GraphQL schema, selected operations and provided variables
+         * 
+         * @return execution plan to execute the query document
+         */
         public ExecutionPlan build () {  
             Objects.requireNonNull(executionPlan.schema);
 

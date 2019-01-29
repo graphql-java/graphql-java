@@ -10,10 +10,6 @@ import graphql.schema.GraphQLType;
 import java.util.Objects;
 import java.util.function.Function;
 
-/**
- *
- * @author gkesler
- */
 interface NodeVertexVisitor<U> {
     default U visit (OperationVertex node, U data) {
         return visitNode(node, data);
