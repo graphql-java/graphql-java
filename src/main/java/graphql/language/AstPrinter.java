@@ -211,7 +211,9 @@ public class AstPrinter {
 
     private NodePrinter<InlineFragment> inlineFragment() {
         return (out, node) -> {
-            String typeCondition = wrap("on ", type(node.getTypeCondition()), "");
+            TypeName typeName = node.getTypeCondition();
+            //Inline fragments may not have a type condition
+            String typeCondition = typeName == null ? "" : wrap("on ", type(typeName), "");
             String directives = directives(node.getDirectives());
             String selectionSet = node(node.getSelectionSet());
 
