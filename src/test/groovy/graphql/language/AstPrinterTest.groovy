@@ -524,4 +524,30 @@ extend input Input @directive {
         output == "query { foo { hello } world }"
     }
 
+    def "print ast with inline fragment without type condition"() {
+        def query = '''
+    { 
+        foo {
+            ... {
+                hello
+            }
+        }
+    }
+'''
+        def document = parse(query)
+        String outputCompact = AstPrinter.printAstCompact(document)
+        String outputFull = AstPrinter.printAst(document)
+
+        expect:
+        outputCompact == '''query {foo {... {hello}}}'''
+        outputFull == '''query {
+  foo {
+    ... {
+      hello
+    }
+  }
+}
+'''
+    }
+
 }
