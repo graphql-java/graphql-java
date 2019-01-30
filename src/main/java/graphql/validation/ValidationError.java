@@ -23,6 +23,10 @@ public class ValidationError implements GraphQLError {
         this(validationErrorType, (SourceLocation) null, null);
     }
 
+    public ValidationError(ValidationErrorType validationErrorType, String description) {
+        this(validationErrorType, (SourceLocation) null, description);
+    }
+
     public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description) {
         this(validationErrorType, nullOrList(sourceLocation), description, null);
     }

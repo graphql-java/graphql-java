@@ -30,5 +30,6 @@ public enum ValidationErrorType {
     LoneAnonymousOperationViolation,
     NonExecutableDefinition,
     DuplicateOperationName,
-    DuplicateDirectiveName
+    DuplicateDirectiveName,
+    Custom
 }

@@ -21,6 +21,8 @@ import graphql.execution.instrumentation.parameters.InstrumentationValidationPar
 import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
+import graphql.execution.prevalidated.NoOpPreValidationProvider;
+import graphql.execution.prevalidated.PreValidationProvider;
 import graphql.language.Document;
 import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
@@ -100,6 +102,7 @@ public class GraphQL {
     private final ExecutionIdProvider idProvider;
     private final Instrumentation instrumentation;
     private final PreparsedDocumentProvider preparsedDocumentProvider;
+    private final PreValidationProvider preValidationProvider;
 
 
     /**
@@ -143,7 +146,8 @@ public class GraphQL {
     @Internal
     @Deprecated
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
-        this(graphQLSchema, queryStrategy, mutationStrategy, null, DEFAULT_EXECUTION_ID_PROVIDER, SimpleInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE);
+        this(graphQLSchema, queryStrategy, mutationStrategy, null, DEFAULT_EXECUTION_ID_PROVIDER,
+                SimpleInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE, NoOpPreValidationProvider.INSTANCE);
     }
 
     /**
@@ -159,10 +163,14 @@ public class GraphQL {
     @Internal
     @Deprecated
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy) {
-        this(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, DEFAULT_EXECUTION_ID_PROVIDER, SimpleInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE);
+        this(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, DEFAULT_EXECUTION_ID_PROVIDER,
+                SimpleInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE, NoOpPreValidationProvider.INSTANCE);
     }
 
-    private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation, PreparsedDocumentProvider preparsedDocumentProvider) {
+    private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy,
+                    ExecutionIdProvider idProvider, Instrumentation instrumentation,
+                    PreparsedDocumentProvider preparsedDocumentProvider, PreValidationProvider preValidationProvider
+    ) {
         this.graphQLSchema = assertNotNull(graphQLSchema, "graphQLSchema must be non null");
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
@@ -170,6 +178,7 @@ public class GraphQL {
         this.idProvider = assertNotNull(idProvider, "idProvider must be non null");
         this.instrumentation = checkInstrumentation(assertNotNull(instrumentation));
         this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, "preparsedDocumentProvider must be non null");
+        this.preValidationProvider = assertNotNull(preValidationProvider, "preValidationProvider must be non null");
     }
 
     private Instrumentation checkInstrumentation(Instrumentation instrumentation) {
@@ -214,7 +223,9 @@ public class GraphQL {
                 .subscriptionExecutionStrategy(nvl(this.subscriptionStrategy, builder.subscriptionExecutionStrategy))
                 .executionIdProvider(nvl(this.idProvider, builder.idProvider))
                 .instrumentation(nvl(this.instrumentation, builder.instrumentation))
-                .preparsedDocumentProvider(nvl(this.preparsedDocumentProvider, builder.preparsedDocumentProvider));
+                .preparsedDocumentProvider(nvl(this.preparsedDocumentProvider, builder.preparsedDocumentProvider))
+                .preValidationProvider(nvl(this.preValidationProvider, builder.preValidationProvider))
+        ;
 
         builderConsumer.accept(builder);
 
@@ -234,6 +245,7 @@ public class GraphQL {
         private ExecutionIdProvider idProvider = DEFAULT_EXECUTION_ID_PROVIDER;
         private Instrumentation instrumentation = SimpleInstrumentation.INSTANCE;
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
+        private PreValidationProvider preValidationProvider = NoOpPreValidationProvider.INSTANCE;
 
 
         public Builder(GraphQLSchema graphQLSchema) {
@@ -270,6 +282,11 @@ public class GraphQL {
             return this;
         }
 
+        public Builder preValidationProvider(PreValidationProvider preValidationProvider) {
+            this.preValidationProvider = assertNotNull(preValidationProvider, "preValidationProvider must be non null");
+            return this;
+        }
+
         public Builder executionIdProvider(ExecutionIdProvider executionIdProvider) {
             this.idProvider = assertNotNull(executionIdProvider, "ExecutionIdProvider must be non null");
             return this;
@@ -279,7 +296,8 @@ public class GraphQL {
             assertNotNull(graphQLSchema, "graphQLSchema must be non null");
             assertNotNull(queryExecutionStrategy, "queryStrategy must be non null");
             assertNotNull(idProvider, "idProvider must be non null");
-            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, instrumentation, preparsedDocumentProvider);
+            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, instrumentation,
+                    preparsedDocumentProvider, preValidationProvider);
         }
     }
 
@@ -572,9 +590,10 @@ public class GraphQL {
     private List<ValidationError> validate(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
         InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, graphQLSchema, instrumentationState));
 
-        Validator validator = new Validator();
-        List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
-
+        List<ValidationError> validationErrors = preValidationProvider.get(executionInput, document, graphQLSchema, () -> {
+            Validator validator = new Validator();
+            return validator.validateDocument(graphQLSchema, document);
+        });
         validationCtx.onCompleted(validationErrors, null);
         return validationErrors;
     }

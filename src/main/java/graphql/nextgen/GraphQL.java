@@ -21,6 +21,8 @@ import graphql.execution.nextgen.ExecutionStrategy;
 import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
+import graphql.execution.prevalidated.NoOpPreValidationProvider;
+import graphql.execution.prevalidated.PreValidationProvider;
 import graphql.language.Document;
 import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
@@ -49,6 +51,7 @@ public class GraphQL {
     private final ExecutionIdProvider idProvider;
     private final Instrumentation instrumentation;
     private final PreparsedDocumentProvider preparsedDocumentProvider;
+    private final PreValidationProvider preValidationProvider;
 
     public GraphQL(Builder builder) {
         this.graphQLSchema = builder.graphQLSchema;
@@ -56,6 +59,7 @@ public class GraphQL {
         this.idProvider = builder.idProvider;
         this.preparsedDocumentProvider = builder.preparsedDocumentProvider;
         this.instrumentation = builder.instrumentation;
+        this.preValidationProvider = builder.preValidationProvider;
     }
 
     /**
@@ -238,8 +242,10 @@ public class GraphQL {
     private List<ValidationError> validate(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
         InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, graphQLSchema, instrumentationState));
 
-        Validator validator = new Validator();
-        List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
+        List<ValidationError> validationErrors = preValidationProvider.get(executionInput, document, graphQLSchema, () -> {
+            Validator validator = new Validator();
+            return validator.validateDocument(graphQLSchema, document);
+        });
 
         validationCtx.onCompleted(validationErrors, null);
         return validationErrors;
@@ -303,6 +309,7 @@ public class GraphQL {
         private Instrumentation instrumentation = new Instrumentation() {
         };
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
+        private PreValidationProvider preValidationProvider = NoOpPreValidationProvider.INSTANCE;
 
 
         public Builder(GraphQLSchema graphQLSchema) {
@@ -314,6 +321,8 @@ public class GraphQL {
             this.executionStrategy = graphQL.executionStrategy;
             this.idProvider = graphQL.idProvider;
             this.instrumentation = graphQL.instrumentation;
+            this.preparsedDocumentProvider = graphQL.preparsedDocumentProvider;
+            this.preValidationProvider = graphQL.preValidationProvider;
         }
 
         public Builder schema(GraphQLSchema graphQLSchema) {
@@ -335,6 +344,12 @@ public class GraphQL {
             this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, "PreparsedDocumentProvider must be non null");
             return this;
         }
+
+        public Builder preValidationProvider(PreValidationProvider preValidationProvider) {
+            this.preValidationProvider = assertNotNull(preValidationProvider, "preValidationProvider must be non null");
+            return this;
+        }
+
 
         public Builder executionIdProvider(ExecutionIdProvider executionIdProvider) {
             this.idProvider = assertNotNull(executionIdProvider, "ExecutionIdProvider must be non null");
