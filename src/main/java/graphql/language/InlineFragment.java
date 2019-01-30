@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.directivesByName;
 import graphql.util.TraverserContext;
 
@@ -18,6 +19,10 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     private final TypeName typeCondition;
     private final List<Directive> directives;
     private final SelectionSet selectionSet;
+
+    public static final String CHILD_TYPE_CONDITION = "typeCondition";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_SELECTION_SET = "selectionSet";
 
     @Internal
     protected InlineFragment(TypeName typeCondition,
@@ -55,7 +60,6 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         return typeCondition;
     }
 
-
     public List<Directive> getDirectives() {
         return new ArrayList<>(directives);
     }
@@ -67,7 +71,6 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     public Directive getDirective(String directiveName) {
         return getDirectivesByName().get(directiveName);
     }
-
 
     @Override
     public SelectionSet getSelectionSet() {
@@ -83,6 +86,24 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         result.addAll(directives);
         result.add(selectionSet);
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .child(CHILD_TYPE_CONDITION, typeCondition)
+                .children(CHILD_DIRECTIVES, directives)
+                .child(CHILD_SELECTION_SET, selectionSet)
+                .build();
+    }
+
+    @Override
+    public InlineFragment withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .typeCondition(newChildren.getChildOrNull(CHILD_TYPE_CONDITION))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .selectionSet(newChildren.getChildOrNull(CHILD_SELECTION_SET))
+        );
     }
 
     @Override

@@ -528,7 +528,7 @@ public class SchemaTypeChecker {
 
     private Consumer<OperationTypeDefinition> checkOperationTypesExist(TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors) {
         return op -> {
-            TypeName unwrapped = TypeInfo.typeInfo(op.getType()).getTypeName();
+            TypeName unwrapped = TypeInfo.typeInfo(op.getTypeName()).getTypeName();
             if (!typeRegistry.hasType(unwrapped)) {
                 errors.add(new MissingTypeError("operation", op, op.getName(), unwrapped));
             }
@@ -538,7 +538,7 @@ public class SchemaTypeChecker {
     private Consumer<OperationTypeDefinition> checkOperationTypesAreObjects(TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors) {
         return op -> {
             // make sure it is defined as a ObjectTypeDef
-            Type queryType = op.getType();
+            Type queryType = op.getTypeName();
             Optional<TypeDefinition> type = typeRegistry.getType(queryType);
             type.ifPresent(typeDef -> {
                 if (!(typeDef instanceof ObjectTypeDefinition)) {

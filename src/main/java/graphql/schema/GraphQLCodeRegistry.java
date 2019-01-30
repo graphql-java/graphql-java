@@ -126,7 +126,6 @@ public class GraphQLCodeRegistry {
         return assertNotNull(typeResolver, "There must be a type resolver for union " + parentType.getName());
     }
 
-
     /**
      * This helps you transform the current {@link graphql.schema.GraphQLCodeRegistry} object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
@@ -327,6 +326,7 @@ public class GraphQLCodeRegistry {
             typeResolverMap.put(assertValidName(parentTypeName), typeResolver);
             return this;
         }
+
 
         public Builder fieldVisibility(GraphqlFieldVisibility fieldVisibility) {
             this.fieldVisibility = assertNotNull(fieldVisibility);

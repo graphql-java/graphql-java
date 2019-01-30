@@ -3,7 +3,6 @@ package graphql.execution;
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.language.Field;
 import graphql.language.SourceLocation;
 import graphql.schema.DataFetcher;
 
@@ -44,7 +43,7 @@ public class AbsoluteGraphQLError implements GraphQLError {
         }
     }
 
-    public AbsoluteGraphQLError(List<Field> sameField, ExecutionPath executionPath, GraphQLError relativeError) {
+    public AbsoluteGraphQLError(MergedField sameField, ExecutionPath executionPath, GraphQLError relativeError) {
         this.absolutePath = createAbsolutePath(executionPath, relativeError);
         this.locations = createAbsoluteLocations(relativeError, sameField);
         this.message = relativeError.getMessage();
@@ -116,13 +115,13 @@ public class AbsoluteGraphQLError implements GraphQLError {
      *
      * @return List of locations from the root.
      */
-    private List<SourceLocation> createAbsoluteLocations(GraphQLError relativeError, List<Field> fields) {
-        Optional<SourceLocation> baseLocation;
-        if (!fields.isEmpty()) {
-            baseLocation = Optional.ofNullable(fields.get(0).getSourceLocation());
-        } else {
-            baseLocation = Optional.empty();
-        }
+    private List<SourceLocation> createAbsoluteLocations(GraphQLError relativeError, MergedField fields) {
+        Optional<SourceLocation> baseLocation = Optional.ofNullable(fields.getSingleField().getSourceLocation());
+//        if (!fields.isEmpty()) {
+//            baseLocation = Optional.ofNullable(fields.get(0).getSourceLocation());
+//        } else {
+//            baseLocation = Optional.empty();
+//        }
 
         // relative error empty path should yield an absolute error with the base path
         if (relativeError.getLocations() != null && relativeError.getLocations().isEmpty()) {

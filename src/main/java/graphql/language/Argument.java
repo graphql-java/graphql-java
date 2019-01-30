@@ -10,11 +10,15 @@ import java.util.List;
 import java.util.function.Consumer;
 import graphql.util.TraverserContext;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class Argument extends AbstractNode<Argument> implements NamedNode<Argument> {
 
-    private String name;
-    private Value value;
+    private final String name;
+    private final Value value;
+
+    public static final String CHILD_VALUE = "value";
 
     @Internal
     protected Argument(String name, Value value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
@@ -42,14 +46,6 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
         return value;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setValue(Value value) {
-        this.value = value;
-    }
-
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
@@ -57,6 +53,19 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
         return result;
     }
 
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .child(CHILD_VALUE, value)
+                .build();
+    }
+
+    @Override
+    public Argument withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .value(newChildren.getChildOrNull(CHILD_VALUE))
+        );
+    }
 
     @Override
     public boolean isEqualTo(Node o) {

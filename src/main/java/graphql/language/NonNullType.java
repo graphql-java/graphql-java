@@ -10,10 +10,14 @@ import java.util.List;
 import java.util.function.Consumer;
 import graphql.util.TraverserContext;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNullType> {
 
     private final Type type;
+
+    public static final String CHILD_TYPE = "type";
 
     @Internal
     protected NonNullType(Type type, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
@@ -39,6 +43,20 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
         List<Node> result = new ArrayList<>();
         result.add(type);
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .child(CHILD_TYPE, type)
+                .build();
+    }
+
+    @Override
+    public NonNullType withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .type((Type) newChildren.getChildOrNull(CHILD_TYPE))
+        );
     }
 
     @Override

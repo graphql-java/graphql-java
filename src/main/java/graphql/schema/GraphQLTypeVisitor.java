@@ -34,6 +34,18 @@ public interface GraphQLTypeVisitor {
 
     TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLType> context);
 
+    /**
+     * Called when a node is visited more than once within a context.  {@link graphql.util.TraverserContext#thisNode()} contains
+     * the node
+     *
+     * @param context the traversal context
+     *
+     * @return by default CONTINUE
+     */
+    default TraversalControl visitBackRef(TraverserContext<GraphQLType> context) {
+        return TraversalControl.CONTINUE;
+    }
+
     // Marker interfaces
     default TraversalControl visitGraphQLModifiedType(GraphQLModifiedType node, TraverserContext<GraphQLType> context) {
         throw new UnsupportedOperationException();

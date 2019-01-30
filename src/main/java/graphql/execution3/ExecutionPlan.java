@@ -11,7 +11,7 @@ import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.UnknownOperationException;
 import graphql.execution.ValuesResolver;
-import graphql.execution2.Common;
+import static graphql.execution.nextgen.Common.getOperationRootType;
 import graphql.introspection.Introspection;
 import graphql.language.Document;
 import graphql.language.Field;
@@ -30,6 +30,7 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
+import graphql.util.DefaultTraverserContext;
 import graphql.util.DependenciesIterator;
 import graphql.util.DependencyGraph;
 import graphql.util.DependencyGraphContext;
@@ -236,13 +237,13 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                         // per https://facebook.github.io/graphql/June2018/#sec-Field-Collection d.v.
                         .orElseGet(Collections::emptyList);
                     
-                    context.setResult(children);
+                    context.setAccumulate(children);
                     return TraversalControl.QUIT;
                 }            
 
                 @Override
                 protected TraversalControl visitNode(Node node, TraverserContext<Node> context) {
-                    context.setResult(node.getChildren());
+                    context.setAccumulate(node.getChildren());
                     return TraversalControl.QUIT;
                 }
             });
@@ -284,32 +285,21 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
             return TraverserState.newStackState(initialData, Builder::newTraverserContext);
         }
 
-        private static TraverserContext<Node> newTraverserContext (TraverserState.TraverserContextBuilder<Node> builder) {
+        private static DefaultTraverserContext<Node> newTraverserContext (TraverserState.TraverserContextBuilder<Node> builder) {
             Objects.requireNonNull(builder);
 
-            Node curNode = builder.getNode();
             TraverserContext<Node> parent = builder.getParentContext();
             Map<Class<?>, Object> vars = builder.getVars();
-            Set<Node> visited = builder.getVisited();
-            Object initialData = builder.getInitialData();
-
-            return new TraverserContext<Node>() {
-                Object result;
-
-                @Override
-                public Node thisNode() {
-                    return curNode;
-                }
-
-                @Override
-                public TraverserContext<Node> getParentContext() {
-                    return parent;
-                }
-
-                @Override
-                public Set<Node> visitedNodes() {
-                    return visited;
-                }
+            
+            return new DefaultTraverserContext<Node>(
+                        builder.getNode(), 
+                        parent, 
+                        builder.getVisited(), 
+                        vars, 
+                        builder.getSharedContextData(), 
+                        builder.getNodeLocation(), 
+                        builder.isRootContext()) {
+                Object accumulate;
 
                 @Override
                 public <S> S getVar(Class<? super S> key) {
@@ -326,26 +316,21 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                 }
 
                 @Override
-                public void setResult(Object result) {
-                    this.result = result;
+                public void setAccumulate(Object accumulate) {
+                    this.accumulate = accumulate;
                 }
 
                 @Override
-                public Object getResult() {
-                    return Optional
-                        .ofNullable(result)
-                        .orElseGet(() -> result = getParentResult());
-                }
-
-                @Override
-                public Object getInitialData() {
-                    return initialData;
+                public <U> U getNewAccumulate() {
+                    return (U)Optional
+                        .ofNullable(accumulate)
+                        .orElseGet(() -> accumulate = getParentAccumulate());
                 }
             };
         }
 
         private OperationVertex newOperationVertex (OperationDefinition operationDefinition) {
-            GraphQLObjectType operationType = Common.getOperationRootType(executionPlan.schema, operationDefinition);
+            GraphQLObjectType operationType = getOperationRootType(executionPlan.schema, operationDefinition);
             return new OperationVertex(operationDefinition, operationType);
         }
 
@@ -373,7 +358,7 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                     context.setVar(OperationVertex.class, vertex);
 
                     // propagate my parent vertex to my children
-                    context.setResult(vertex);                
+                    context.setAccumulate(vertex);
                     break;
                 }
                 case LEAVE: {
@@ -382,8 +367,8 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                     // This will make this vertex the ultimate sink in this sub-graph
                     // In order to simplify propagation of the initial root value to the fields,
                     // add disconnected field vertices as dependencies to the root DocumentVertex
-                    DocumentVertex documentVertex = (DocumentVertex)context.getInitialData();
-                    OperationVertex operationVertex = (OperationVertex)context.getResult();
+                    DocumentVertex documentVertex = (DocumentVertex)context.getSharedContextData();
+                    OperationVertex operationVertex = (OperationVertex)context.getNewAccumulate();
                     // make this operation a dependency of a document to allow
                     // standard bootstrapping.
                     operationVertex.asNodeVertex().dependsOn(documentVertex.asNodeVertex(), executionPlan::prepareResolve);
@@ -428,7 +413,7 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
         public TraversalControl visitSelectionSet(SelectionSet node, TraverserContext<Node> context) {
             switch (context.getVar(NodeTraverser.LeaveOrEnter.class)) {
                 case ENTER: {                                
-                    NodeVertex<Node, GraphQLType> parentVertex = (NodeVertex<Node, GraphQLType>)context.getParentResult();
+                    NodeVertex<Node, GraphQLType> parentVertex = (NodeVertex<Node, GraphQLType>)context.getParentAccumulate();
 
                     // set up parameters to collect child fields
                     FieldCollectorParameters collectorParams = FieldCollectorParameters.newParameters()
@@ -477,7 +462,7 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
 
                     // create a vertex for this node and add dependency on the parent one
                     TraverserContext<Node> parentContext = context.getParentContext();
-                    NodeVertex<Node, GraphQLType> parentVertex = (NodeVertex<Node, GraphQLType>)parentContext.getResult();
+                    NodeVertex<Node, GraphQLType> parentVertex = (NodeVertex<Node, GraphQLType>)parentContext.getNewAccumulate();
 
                     FieldVertex vertex = executionPlan().addNode(
                         newFieldVertex(node, (GraphQLFieldsContainer)GraphQLTypeUtil.unwrapAll(parentVertex.getType()), parentContext.getVar(FieldVertex.class))
@@ -500,7 +485,7 @@ class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {
                         context.setVar(FieldVertex.class, vertex);
 
                     // propagate my vertex to my children
-                    context.setResult(vertex);
+                    context.setAccumulate(vertex);
                 }                                                           
             }
 

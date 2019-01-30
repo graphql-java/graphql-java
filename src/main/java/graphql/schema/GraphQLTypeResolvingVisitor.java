@@ -1,12 +1,13 @@
 package graphql.schema;
 
 import graphql.Internal;
-import graphql.util.TraversalControl;
 
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
+import graphql.util.TraversalControl;
+import static graphql.util.TraversalControl.CONTINUE;
 import graphql.util.TraverserContext;
 
 @Internal
@@ -37,13 +38,24 @@ public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {
 
     @Override
     public TraversalControl visitGraphQLTypeReference(GraphQLTypeReference node, TraverserContext<GraphQLType> context) {
+        return handleTypeReference(node, context);
+    }
 
+    public TraversalControl handleTypeReference(GraphQLTypeReference node, TraverserContext<GraphQLType> context) {
         final GraphQLType resolvedType = typeMap.get(node.getName());
         assertNotNull(resolvedType, "type %s not found in schema", node.getName());
         context.getParentContext().thisNode().accept(context, new TypeRefResolvingVisitor(resolvedType));
-        return super.visitGraphQLTypeReference(node, context);
+        return CONTINUE;
     }
 
+    @Override
+    public TraversalControl visitBackRef(TraverserContext<GraphQLType> context) {
+        GraphQLType graphQLType = context.thisNode();
+        if (graphQLType instanceof GraphQLTypeReference) {
+            return handleTypeReference((GraphQLTypeReference) graphQLType, context);
+        }
+        return CONTINUE;
+    }
 
     private class TypeRefResolvingVisitor extends GraphQLTypeVisitorStub {
         protected final GraphQLType resolvedType;

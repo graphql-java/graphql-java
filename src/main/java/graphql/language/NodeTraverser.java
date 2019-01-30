@@ -1,9 +1,10 @@
 package graphql.language;
 
 import graphql.PublicApi;
-import graphql.util.SimpleTraverserContext;
+import graphql.util.DefaultTraverserContext;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
+import static graphql.util.Traverser.newTraverser;
 import graphql.util.TraverserState;
 import graphql.util.TraverserVisitor;
 
@@ -24,7 +25,7 @@ public class NodeTraverser {
 
 
     /**
-     * Used by depthFirst to indicate via {@link TraverserContext#getVar(Class)} if the visit happens inside the ENTER or LEAVE phase.
+     * Used to indicate via {@link TraverserContext#getVar(Class)} if the visit happens inside the ENTER or LEAVE phase.
      */
     public enum LeaveOrEnter {
         LEAVE,
@@ -62,9 +63,11 @@ public class NodeTraverser {
      *
      * @param nodeVisitor the visitor of the nodes
      * @param root        the root node
+     *
+     * @return the accumulation result of this traversal
      */
-    public void depthFirst(NodeVisitor nodeVisitor, Node root) {
-        depthFirst(nodeVisitor, Collections.singleton(root));
+    public Object depthFirst(NodeVisitor nodeVisitor, Node root) {
+        return depthFirst(nodeVisitor, Collections.singleton(root));
     }
 
     /**
@@ -73,9 +76,11 @@ public class NodeTraverser {
      * @param nodeVisitor the visitor of the nodes
      * @param root        the root node
      * @param stateCreator    factory to create TraverserState instance
+     *
+     * @return the accumulation result of this traversal
      */
-    public void depthFirst(NodeVisitor nodeVisitor, Node root, Function<? super Object, ? extends StackTraverserState<Node>> stateCreator) {
-        depthFirst(nodeVisitor, Collections.singleton(root), stateCreator);
+    public Object depthFirst(NodeVisitor nodeVisitor, Node root, Function<? super Object, ? extends StackTraverserState<Node>> stateCreator) {
+        return depthFirst(nodeVisitor, Collections.singleton(root), stateCreator);
     }
 
     /**
@@ -83,9 +88,11 @@ public class NodeTraverser {
      *
      * @param nodeVisitor the visitor of the nodes
      * @param roots       the root nodes
+     *
+     * @return the accumulation result of this traversal
      */
-    public void depthFirst(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
-        depthFirst(nodeVisitor, roots, TraverserState::newStackState);
+    public Object depthFirst(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
+        return depthFirst(nodeVisitor, roots, TraverserState::newStackState);
     }
 
     /**
@@ -94,9 +101,11 @@ public class NodeTraverser {
      * @param nodeVisitor the visitor of the nodes
      * @param roots       the root nodes
      * @param stateCreator    factory to create TraverserState instance
+     *
+     * @return the accumulation result of this traversal
      */
-    public void depthFirst(NodeVisitor nodeVisitor, Collection<? extends Node> roots, Function<? super Object, ? extends StackTraverserState<Node>> stateCreator) {
-        doTraverse(roots, decorate(nodeVisitor), stateCreator);
+    public Object depthFirst(NodeVisitor nodeVisitor, Collection<? extends Node> roots, Function<? super Object, ? extends StackTraverserState<Node>> stateCreator) {
+        return doTraverse(roots, decorate(nodeVisitor), stateCreator);
     }
     
     /**
@@ -154,7 +163,6 @@ public class NodeTraverser {
                 context.setVar(LeaveOrEnter.class, LeaveOrEnter.LEAVE);
                 return context.thisNode().accept(context, nodeVisitor);
             }
-
         };
     }
     
@@ -163,9 +171,11 @@ public class NodeTraverser {
      *
      * @param nodeVisitor the visitor of the nodes
      * @param root        the root node
+     *
+     * @return the accumulation result of this traversal
      */
-    public void preOrder(NodeVisitor nodeVisitor, Node root) {
-        preOrder(nodeVisitor, Collections.singleton(root));
+    public Object preOrder(NodeVisitor nodeVisitor, Node root) {
+        return preOrder(nodeVisitor, Collections.singleton(root));
     }
 
     /**
@@ -173,9 +183,11 @@ public class NodeTraverser {
      *
      * @param nodeVisitor the visitor of the nodes
      * @param roots       the root nodes
+     *
+     * @return the accumulation result of this traversal
      */
-    public void preOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
-        preOrder(nodeVisitor, roots, TraverserState::newStackState);
+    public Object preOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
+        return preOrder(nodeVisitor, roots, TraverserState::newStackState);
     }
     
     /**
@@ -184,8 +196,10 @@ public class NodeTraverser {
      * @param nodeVisitor the visitor of the nodes
      * @param roots       the root nodes
      * @param stateCreator    TraverserState factory
+     *
+     * @return the accumulation result of this traversal
      */
-    public void preOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots, Function<? super Object, ? extends TraverserState<Node>> stateCreator) {
+    public Object preOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots, Function<? super Object, ? extends TraverserState<Node>> stateCreator) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
 
             @Override
@@ -200,8 +214,8 @@ public class NodeTraverser {
             }
 
         };
-        doTraverse(roots, nodeTraverserVisitor, stateCreator);
-
+        return doTraverse(roots, nodeTraverserVisitor);
+        
     }
 
     /**
@@ -209,9 +223,11 @@ public class NodeTraverser {
      *
      * @param nodeVisitor the visitor of the nodes
      * @param root        the root node
+     *
+     * @return the accumulation result of this traversal
      */
-    public void postOrder(NodeVisitor nodeVisitor, Node root) {
-        postOrder(nodeVisitor, Collections.singleton(root));
+    public Object postOrder(NodeVisitor nodeVisitor, Node root) {
+        return postOrder(nodeVisitor, Collections.singleton(root));
     }
     
     /**
@@ -219,9 +235,11 @@ public class NodeTraverser {
      *
      * @param nodeVisitor the visitor of the nodes
      * @param roots       the root nodes
+     *
+     * @return the accumulation result of this traversal
      */
-    public void postOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
-        postOrder(nodeVisitor, roots, TraverserState::newStackState);
+    public Object postOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
+        return postOrder(nodeVisitor, roots, TraverserState::newStackState);
     }
 
     /**
@@ -230,8 +248,10 @@ public class NodeTraverser {
      * @param nodeVisitor the visitor of the nodes
      * @param roots       the root nodes
      * @param stateCreator    TraverserState factory
+     *
+     * @return the accumulation result of this traversal
      */
-    public void postOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots, Function<? super Object, ? extends TraverserState<Node>> stateCreator) {
+    public Object postOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots, Function<? super Object, ? extends TraverserState<Node>> stateCreator) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
 
             @Override
@@ -246,24 +266,24 @@ public class NodeTraverser {
             }
 
         };
-        doTraverse(roots, nodeTraverserVisitor, stateCreator);
+        return doTraverse(roots, nodeTraverserVisitor, stateCreator);
     }
 
-    private void doTraverse(Collection<? extends Node> roots, TraverserVisitor traverserVisitor) {
-        doTraverse(roots, traverserVisitor, TraverserState::newStackState);
+    private Object doTraverse(Collection<? extends Node> roots, TraverserVisitor<Node> traverserVisitor) {
+        return doTraverse(roots, traverserVisitor, TraverserState::newStackState);
     }
     
-    private void doTraverse(Collection<? extends Node> roots, TraverserVisitor traverserVisitor, Function<? super Object, ? extends TraverserState<Node>> stateCreator) {
-        Traverser<Node> nodeTraverser = new Traverser<>(stateCreator.apply(initialData), getChildren);
+    private Object doTraverse(Collection<? extends Node> roots, TraverserVisitor<Node> traverserVisitor, Function<? super Object, ? extends TraverserState<Node>> stateCreator) {
+        Traverser<Node> nodeTraverser = newTraverser(stateCreator.apply(initialData), getChildren, null);
         nodeTraverser.rootVars(rootVars);
-        nodeTraverser.traverse(roots, traverserVisitor);
+        return nodeTraverser.traverse(roots, traverserVisitor).getAccumulatedResult();
     }
 
     @SuppressWarnings("TypeParameterUnusedInFormals")
     public static <T> T oneVisitWithResult(Node node, NodeVisitor nodeVisitor) {
-        SimpleTraverserContext<Node> context = new SimpleTraverserContext<>(node);
+        DefaultTraverserContext<Node> context = DefaultTraverserContext.simple(node);
         node.accept(context, nodeVisitor);
-        return (T) context.getResult();
+        return (T) context.getNewAccumulate();
     }
 
 }

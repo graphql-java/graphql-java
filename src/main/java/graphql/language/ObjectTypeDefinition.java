@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import graphql.util.TraverserContext;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> implements TypeDefinition<ObjectTypeDefinition>, DirectivesContainer<ObjectTypeDefinition> {
     private final String name;
@@ -17,6 +19,10 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
     private final List<Type> implementz;
     private final List<Directive> directives;
     private final List<FieldDefinition> fieldDefinitions;
+
+    public static final String CHILD_IMPLEMENTZ = "implementz";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
 
     @Internal
     protected ObjectTypeDefinition(String name,
@@ -54,7 +60,7 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
     }
 
     public List<FieldDefinition> getFieldDefinitions() {
-        return fieldDefinitions;
+        return new ArrayList<>(fieldDefinitions);
     }
 
     @Override
@@ -73,6 +79,24 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
         result.addAll(directives);
         result.addAll(fieldDefinitions);
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_IMPLEMENTZ, implementz)
+                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_FIELD_DEFINITIONS, fieldDefinitions)
+                .build();
+    }
+
+    @Override
+    public ObjectTypeDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> {
+            builder.implementz(newChildren.getChildren(CHILD_IMPLEMENTZ))
+                    .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                    .fieldDefinitions(newChildren.getChildren(CHILD_FIELD_DEFINITIONS));
+        });
     }
 
     @Override

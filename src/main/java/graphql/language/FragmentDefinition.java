@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import graphql.util.TraverserContext;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 /**
  * Provided to the DataFetcher, therefore public API
  */
@@ -20,6 +22,10 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     private final TypeName typeCondition;
     private final List<Directive> directives;
     private final SelectionSet selectionSet;
+
+    public static final String CHILD_TYPE_CONDITION = "typeCondition";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_SELECTION_SET = "selectionSet";
 
     @Internal
     protected FragmentDefinition(String name,
@@ -64,6 +70,24 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         result.addAll(directives);
         result.add(selectionSet);
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .child(CHILD_TYPE_CONDITION, typeCondition)
+                .children(CHILD_DIRECTIVES, directives)
+                .child(CHILD_SELECTION_SET, selectionSet)
+                .build();
+    }
+
+    @Override
+    public FragmentDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .typeCondition(newChildren.getChildOrNull(CHILD_TYPE_CONDITION))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .selectionSet(newChildren.getChildOrNull(CHILD_SELECTION_SET))
+        );
     }
 
     @Override

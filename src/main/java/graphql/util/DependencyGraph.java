@@ -134,7 +134,7 @@ public class DependencyGraph<N extends Vertex<N>> {
                             .collect(Collectors.toList()), 
                         this
                     )            
-                    .getResult())
+                    .getAccumulatedResult())
                 .orElse(nextClosure);
         }
 
@@ -184,7 +184,7 @@ public class DependencyGraph<N extends Vertex<N>> {
             Collection<N> closure = parentContext.getVar(Collection.class);
             context
                 .setVar(Collection.class, closure)    // to be propagated to children
-                .setResult(closure);                  // to be returned
+                .setAccumulate(closure);                  // to be returned
             
             N node = context.thisNode();
             if (parentContext.thisNode() == null || closed.containsAll(node.dependencySet())) {

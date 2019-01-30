@@ -2,7 +2,6 @@ package graphql.execution;
 
 import graphql.Internal;
 import graphql.TypeResolutionEnvironment;
-import graphql.language.Field;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLType;
@@ -15,7 +14,7 @@ import java.util.Map;
 public class ResolveType {
 
 
-    public GraphQLObjectType resolveType(ExecutionContext executionContext, Field field, Object source, Map<String, Object> arguments, GraphQLType fieldType) {
+    public GraphQLObjectType resolveType(ExecutionContext executionContext, MergedField field, Object source, Map<String, Object> arguments, GraphQLType fieldType) {
         GraphQLObjectType resolvedType;
         if (fieldType instanceof GraphQLInterfaceType) {
             TypeResolutionParameters resolutionParams = TypeResolutionParameters.newParameters()

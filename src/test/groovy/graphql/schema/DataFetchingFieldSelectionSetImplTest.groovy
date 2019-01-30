@@ -11,6 +11,8 @@ import graphql.language.NodeUtil
 import graphql.language.OperationDefinition
 import spock.lang.Specification
 
+import static graphql.TestUtil.mergedField
+
 class DataFetchingFieldSelectionSetImplTest extends Specification {
 
     def starWarsSchema = TestUtil.schemaFile("starWarsSchemaWithArguments.graphqls")
@@ -64,7 +66,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
                 .fragmentsByName(getFragments(document))
                 .graphQLSchema(starWarsSchema).build()
 
-        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, starWarsSchema.getType('Human'), fields)
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, starWarsSchema.getType('Human'), mergedField(fields))
 
         expect:
         !selectionSet.contains(null)
@@ -120,7 +122,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
                 .fragmentsByName(getFragments(document))
                 .graphQLSchema(starWarsSchema).build()
 
-        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, starWarsSchema.getType('Human'), fields)
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, starWarsSchema.getType('Human'), mergedField(fields))
 
         def fieldMap = selectionSet.get()
         expect:
@@ -149,7 +151,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
                 .fragmentsByName(getFragments(document))
                 .graphQLSchema(starWarsSchema).build()
 
-        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, starWarsSchema.getType('Human'), fields)
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, starWarsSchema.getType('Human'), mergedField(fields))
 
         expect:
 
@@ -170,7 +172,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
                 .fragmentsByName(getFragments(document))
                 .graphQLSchema(starWarsSchema).build()
 
-        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, starWarsSchema.getType('Human'), fields)
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, starWarsSchema.getType('Human'), mergedField(fields))
 
         expect:
 
@@ -239,7 +241,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def startingType = replaySchema.getType('ThingConnection')
 
         when:
-        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(replayExecutionContext, startingType, startField)
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(replayExecutionContext, startingType, mergedField(startField))
 
         def selectedNodesField = selectionSet.getField("nodes")
 
@@ -288,7 +290,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def startingType = replaySchema.getType('ThingConnection')
 
         when:
-        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(replayExecutionContext, startingType, startField)
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(replayExecutionContext, startingType, mergedField(startField))
         List<SelectedField> selectedUnderNodesAster = selectionSet.getFields("nodes/*")
 
         then:
@@ -319,7 +321,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def startingType = replaySchema.getType('ThingConnection')
 
         when:
-        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(replayExecutionContext, startingType, startField)
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(replayExecutionContext, startingType, mergedField(startField))
         List<SelectedField> allFieldsViaAsterAster = selectionSet.getFields("**")
         List<SelectedField> allFields = selectionSet.getFields()
 

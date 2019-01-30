@@ -18,8 +18,7 @@ class QueryTraversalContext {
     private final SelectionSetContainer selectionSetContainer;
 
     QueryTraversalContext(GraphQLOutputType outputType,
-                          GraphQLCompositeType rawType
-            ,
+                          GraphQLCompositeType rawType,
                           QueryVisitorFieldEnvironment environment,
                           SelectionSetContainer selectionSetContainer) {
         this.outputType = outputType;

@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import graphql.util.TraverserContext;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> implements TypeDefinition<UnionTypeDefinition>, DirectivesContainer<UnionTypeDefinition> {
 
@@ -17,6 +19,9 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
     private final Description description;
     private final List<Directive> directives;
     private final List<Type> memberTypes;
+
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_MEMBER_TYPES = "memberTypes";
 
     @Internal
     protected UnionTypeDefinition(String name,
@@ -77,6 +82,22 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
         result.addAll(directives);
         result.addAll(memberTypes);
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_MEMBER_TYPES, memberTypes)
+                .build();
+    }
+
+    @Override
+    public UnionTypeDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .memberTypes(newChildren.getChildren(CHILD_MEMBER_TYPES))
+        );
     }
 
     @Override

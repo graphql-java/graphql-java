@@ -6,17 +6,22 @@ import graphql.PublicApi;
 import graphql.util.TraversalControl;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 import graphql.util.TraverserContext;
+
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
 public class SelectionSet extends AbstractNode<SelectionSet> {
 
     private final List<Selection> selections = new ArrayList<>();
 
+    public static final String CHILD_SELECTIONS = "selections";
+
     @Internal
-    protected SelectionSet(List<Selection> selections, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+    protected SelectionSet(Collection<? extends Selection> selections, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
         super(sourceLocation, comments, ignoredChars);
         this.selections.addAll(selections);
     }
@@ -26,20 +31,33 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
      *
      * @param selections the list of selection in this selection set
      */
-    public SelectionSet(List<Selection> selections) {
+    public SelectionSet(Collection<? extends Selection> selections) {
         this(selections, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public List<Selection> getSelections() {
-        return selections;
+        return new ArrayList<>(selections);
     }
-
 
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         result.addAll(selections);
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_SELECTIONS, selections)
+                .build();
+    }
+
+    @Override
+    public SelectionSet withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .selections(newChildren.getChildren(CHILD_SELECTIONS))
+        );
     }
 
     @Override
@@ -78,7 +96,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
         return new Builder();
     }
 
-    public static Builder newSelectionSet(List<Selection> selections) {
+    public static Builder newSelectionSet(Collection<? extends Selection> selections) {
         return new Builder().selections(selections);
     }
 
@@ -105,8 +123,13 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
             this.ignoredChars = existing.getIgnoredChars();
         }
 
-        public Builder selections(List<Selection> selections) {
-            this.selections = selections;
+        public Builder selections(Collection<? extends Selection> selections) {
+            this.selections = new ArrayList<>(selections);
+            return this;
+        }
+
+        public Builder selection(Selection selection) {
+            this.selections.add(selection);
             return this;
         }
 

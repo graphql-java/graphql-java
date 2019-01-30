@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.directivesByName;
 import graphql.util.TraverserContext;
 
@@ -18,6 +19,9 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
 
     private final List<Directive> directives;
     private final List<OperationTypeDefinition> operationTypeDefinitions;
+
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_OPERATION_TYPE_DEFINITIONS = "operationTypeDefinitions";
 
     @Internal
     protected SchemaDefinition(List<Directive> directives,
@@ -44,7 +48,7 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
 
 
     public List<OperationTypeDefinition> getOperationTypeDefinitions() {
-        return operationTypeDefinitions;
+        return new ArrayList<>(operationTypeDefinitions);
     }
 
     @Override
@@ -53,6 +57,22 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
         result.addAll(directives);
         result.addAll(operationTypeDefinitions);
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_OPERATION_TYPE_DEFINITIONS, operationTypeDefinitions)
+                .build();
+    }
+
+    @Override
+    public SchemaDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .operationTypeDefinitions(newChildren.getChildren(CHILD_OPERATION_TYPE_DEFINITIONS))
+        );
     }
 
     @Override

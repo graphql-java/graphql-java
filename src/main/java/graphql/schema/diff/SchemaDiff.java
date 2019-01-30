@@ -184,14 +184,14 @@ public class SchemaDiff {
         OperationTypeDefinition oldOpTypeDefinition = oldOpTypeDef.get();
         OperationTypeDefinition newOpTypeDefinition = newOpTypeDef.get();
 
-        Type oldType = oldOpTypeDefinition.getType();
+        Type oldType = oldOpTypeDefinition.getTypeName();
         //
         // if we have no old op, then it must have been added (which is ok)
         Optional<TypeDefinition> oldTD = ctx.getOldTypeDef(oldType, TypeDefinition.class);
         if (!oldTD.isPresent()) {
             return;
         }
-        checkType(ctx, oldType, newOpTypeDefinition.getType());
+        checkType(ctx, oldType, newOpTypeDefinition.getTypeName());
     }
 
     private void checkType(DiffCtx ctx, Type oldType, Type newType) {
@@ -835,7 +835,7 @@ public class SchemaDiff {
     private Optional<OperationTypeDefinition> synthOperationTypeDefinition(Function<Type, Optional<ObjectTypeDefinition>> typeReteriver, String opName) {
         TypeName type = TypeName.newTypeName().name(capitalize(opName)).build();
         Optional<ObjectTypeDefinition> typeDef = typeReteriver.apply(type);
-        return typeDef.map(objectTypeDefinition -> OperationTypeDefinition.newOperationTypeDefinition().name(opName).type(type).build());
+        return typeDef.map(objectTypeDefinition -> OperationTypeDefinition.newOperationTypeDefinition().name(opName).typeName(type).build());
     }
 
     private <T> Map<String, T> sortedMap(List<T> listOfNamedThings, Function<T, String> nameFunc) {

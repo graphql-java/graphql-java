@@ -3,10 +3,8 @@ package graphql.execution;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.Internal;
-import graphql.language.Field;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -22,21 +20,21 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
 
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        Map<String, List<Field>> fields = parameters.getFields();
+        MergedSelectionSet fields = parameters.getFields();
 
-        Map<String, Object> fetchedValues = new LinkedHashMap<>();
+        Map<String, FetchedValue> fetchedValues = new LinkedHashMap<>();
 
         // first fetch every value
         for (String fieldName : fields.keySet()) {
-            Object fetchedValue = fetchField(executionContext, parameters, fields, fieldName);
+            FetchedValue fetchedValue = fetchField(executionContext, parameters, fields, fieldName);
             fetchedValues.put(fieldName, fetchedValue);
         }
 
         // then for every fetched value, complete it
         Map<String, Object> results = new LinkedHashMap<>();
         for (String fieldName : fetchedValues.keySet()) {
-            List<Field> currentField = fields.get(fieldName);
-            Object fetchedValue = fetchedValues.get(fieldName);
+            MergedField currentField = fields.getSubField(fieldName);
+            FetchedValue fetchedValue = fetchedValues.get(fieldName);
 
             ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
             ExecutionStrategyParameters newParameters = parameters
@@ -53,8 +51,8 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
         return CompletableFuture.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
     }
 
-    private Object fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Map<String, List<Field>> fields, String fieldName) {
-        List<Field> currentField = fields.get(fieldName);
+    private FetchedValue fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, MergedSelectionSet fields, String fieldName) {
+        MergedField currentField = fields.getSubField(fieldName);
 
         ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
         ExecutionStrategyParameters newParameters = parameters
@@ -63,7 +61,7 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
         return fetchField(executionContext, newParameters).join();
     }
 
-    private void completeValue(ExecutionContext executionContext, Map<String, Object> results, String fieldName, Object fetchedValue, ExecutionStrategyParameters newParameters) {
+    private void completeValue(ExecutionContext executionContext, Map<String, Object> results, String fieldName, FetchedValue fetchedValue, ExecutionStrategyParameters newParameters) {
         ExecutionResult resolvedResult = completeField(executionContext, newParameters, fetchedValue).getFieldValue().join();
         results.put(fieldName, resolvedResult != null ? resolvedResult.getData() : null);
     }

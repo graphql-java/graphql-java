@@ -10,10 +10,14 @@ import java.util.List;
 import java.util.function.Consumer;
 import graphql.util.TraverserContext;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class ObjectValue extends AbstractNode<ObjectValue> implements Value<ObjectValue> {
 
     private final List<ObjectField> objectFields = new ArrayList<>();
+
+    public static final String CHILD_OBJECT_FIELDS = "objectFields";
 
     @Internal
     protected ObjectValue(List<ObjectField> objectFields, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
@@ -39,6 +43,20 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
         List<Node> result = new ArrayList<>();
         result.addAll(objectFields);
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_OBJECT_FIELDS, objectFields)
+                .build();
+    }
+
+    @Override
+    public ObjectValue withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .objectFields(newChildren.getChildren(CHILD_OBJECT_FIELDS))
+        );
     }
 
     @Override

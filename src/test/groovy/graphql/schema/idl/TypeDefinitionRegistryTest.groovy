@@ -1,5 +1,6 @@
 package graphql.schema.idl
 
+
 import graphql.language.DirectiveDefinition
 import graphql.language.EnumTypeDefinition
 import graphql.language.EnumTypeExtensionDefinition
@@ -585,5 +586,29 @@ class TypeDefinitionRegistryTest extends Specification {
         registry.remove(definition)
         then:
         !registry.schemaDefinition().isPresent()
+    }
+
+    def "addAll can add multiple things successfully"() {
+        def obj1 = ObjectTypeDefinition.newObjectTypeDefinition().name("foo").build()
+        def obj2 = ObjectTypeDefinition.newObjectTypeDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        when:
+        registry.addAll(Arrays.asList(obj1, obj2))
+        then:
+        registry.getType("foo").isPresent()
+        registry.getType("bar").isPresent()
+    }
+
+    def "addAll will return an error on the first abd thing"() {
+        def obj1 = ObjectTypeDefinition.newObjectTypeDefinition().name("foo").build()
+        def obj2 = ObjectTypeDefinition.newObjectTypeDefinition().name("bar").build()
+        def obj3 = ObjectTypeDefinition.newObjectTypeDefinition().name("bar").build()
+        def obj4 = ObjectTypeDefinition.newObjectTypeDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        when:
+        def error = registry.addAll(Arrays.asList(obj1, obj2, obj3, obj4))
+        then:
+        error.isPresent()
+        error.get().getMessage().contains("tried to redefine existing 'bar' type")
     }
 }

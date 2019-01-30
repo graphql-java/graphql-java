@@ -6,7 +6,7 @@
 package graphql.execution3;
 
 import static graphql.Assert.assertNotNull;
-import graphql.execution2.ValueFetcher;
+import graphql.execution.nextgen.ValueFetcher;
 import static graphql.execution3.NodeVertexVisitor.whenFieldVertex;
 import java.util.Arrays;
 import java.util.Collection;

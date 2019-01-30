@@ -14,8 +14,9 @@ import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import graphql.execution.ExecutionStepInfoFactory;
-import graphql.execution2.FetchedValue;
-import graphql.execution2.ValueFetcher;
+import graphql.execution.FetchedValue;
+import graphql.execution.MergedField;
+import graphql.execution.nextgen.ValueFetcher;
 import graphql.language.Field;
 import graphql.language.Node;
 import graphql.schema.GraphQLOutputType;
@@ -33,8 +34,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -48,7 +47,7 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
     public DAGExecutionStrategy (ExecutionContext executionContext) {
         this.executionContext = Objects.requireNonNull(executionContext);
         this.executionInfoFactory = new ExecutionStepInfoFactory();
-        this.valueFetcher = new ValueFetcher(executionContext);
+        this.valueFetcher = new ValueFetcher();
     }
     
     /**
@@ -157,7 +156,9 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
         LOGGER.debug("fetchNode: node={}", node);
         
         FieldVertex fieldNode = node.as(FieldVertex.class);
-        List<Field> sameFields = Collections.singletonList(fieldNode.getNode());
+        MergedField sameFields = MergedField
+                .newMergedField(fieldNode.getNode())
+                .build();
         ExecutionStepInfo sourceExecutionStepInfo = node.getParentExecutionStepInfo();
         GraphQLOutputType parentType = (GraphQLOutputType)GraphQLTypeUtil.unwrapAll(sourceExecutionStepInfo.getType());
         ExecutionStepInfo parentExecutionStepInfo = sourceExecutionStepInfo
@@ -167,7 +168,7 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
         ExecutionStepInfo executionStepInfo = executionInfoFactory
             .newExecutionStepInfoForSubField(executionContext, sameFields, parentExecutionStepInfo);
         
-        TriFunction<FieldVertex, List<Field>, ExecutionStepInfo, CompletableFuture<List<FetchedValue>>> valuesFetcher = 
+        TriFunction<FieldVertex, MergedField, ExecutionStepInfo, CompletableFuture<List<FetchedValue>>> valuesFetcher = 
             fieldNode.isRoot() ? this::fetchRootValues : this::fetchBatchedValues;
 
 
@@ -186,16 +187,16 @@ public class DAGExecutionStrategy implements ExecutionStrategy {
                 );
     }
     
-    private CompletableFuture<List<FetchedValue>> fetchRootValues (FieldVertex fieldNode, List<Field> sameFields, ExecutionStepInfo executionStepInfo) {
+    private CompletableFuture<List<FetchedValue>> fetchRootValues (FieldVertex fieldNode, MergedField sameFields, ExecutionStepInfo executionStepInfo) {
         return valueFetcher
-            .fetchValue(executionContext.getRoot(), sameFields, executionStepInfo)
+            .fetchValue(executionContext, executionContext.getRoot(), null/*toDoLocalContext*/, sameFields, executionStepInfo)
             .thenApply(Collections::singletonList);
     }
     
-    private CompletableFuture<List<FetchedValue>> fetchBatchedValues (FieldVertex fieldNode, List<Field> sameFields, ExecutionStepInfo executionStepInfo) {
+    private CompletableFuture<List<FetchedValue>> fetchBatchedValues (FieldVertex fieldNode, MergedField sameFields, ExecutionStepInfo executionStepInfo) {
         List<Object> sources = (List<Object>)fieldNode.getSource();
         return valueFetcher
-            .fetchBatchedValues(sources, sameFields, 
+            .fetchBatchedValues(executionContext, sources, sameFields, 
                 Stream
                     .generate(() -> executionStepInfo)
                     .limit(sources.size())

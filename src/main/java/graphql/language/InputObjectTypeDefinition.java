@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import graphql.util.TraverserContext;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefinition> implements TypeDefinition<InputObjectTypeDefinition>, DirectivesContainer<InputObjectTypeDefinition> {
 
@@ -17,6 +19,9 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
     private final Description description;
     private final List<Directive> directives;
     private final List<InputValueDefinition> inputValueDefinitions;
+
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_INPUT_VALUES_DEFINITIONS = "inputValueDefinitions";
 
     @Internal
     protected InputObjectTypeDefinition(String name,
@@ -39,7 +44,7 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
-        return inputValueDefinitions;
+        return new ArrayList<>(inputValueDefinitions);
     }
 
     @Override
@@ -57,6 +62,22 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
         result.addAll(directives);
         result.addAll(inputValueDefinitions);
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_INPUT_VALUES_DEFINITIONS, inputValueDefinitions)
+                .build();
+    }
+
+    @Override
+    public InputObjectTypeDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .inputValueDefinitions(newChildren.getChildren(CHILD_INPUT_VALUES_DEFINITIONS))
+        );
     }
 
     @Override

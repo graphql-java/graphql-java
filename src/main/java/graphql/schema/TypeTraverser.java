@@ -1,16 +1,14 @@
 package graphql.schema;
 
 
-import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.Node;
 import graphql.language.NodeVisitor;
-import graphql.util.SimpleTraverserContext;
+import graphql.util.DefaultTraverserContext;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
 import graphql.util.TraverserResult;
 import graphql.util.TraverserVisitor;
-
 
 import java.util.Collection;
 import java.util.Collections;
@@ -59,15 +57,15 @@ public class TypeTraverser {
         return Traverser.depthFirst(getChildren);
     }
 
-    private  TraverserResult doTraverse(Traverser<GraphQLType> traverser,  Collection<? extends GraphQLType> roots, TraverserDelegateVisitor traverserDelegateVisitor) {
-        return traverser.traverse(roots,traverserDelegateVisitor);
+    private TraverserResult doTraverse(Traverser<GraphQLType> traverser, Collection<? extends GraphQLType> roots, TraverserDelegateVisitor traverserDelegateVisitor) {
+        return traverser.traverse(roots, traverserDelegateVisitor);
     }
 
     @SuppressWarnings("TypeParameterUnusedInFormals")
     public static <T> T oneVisitWithResult(GraphQLType type, GraphQLTypeVisitor typeVisitor) {
-        SimpleTraverserContext<GraphQLType> context = new SimpleTraverserContext<>(type);
+        DefaultTraverserContext<GraphQLType> context = DefaultTraverserContext.simple(type);
         type.accept(context, typeVisitor);
-        return (T)context.getResult();
+        return (T)context.getNewAccumulate();
     }
     
     private static class TraverserDelegateVisitor implements TraverserVisitor<GraphQLType> {
@@ -86,6 +84,11 @@ public class TypeTraverser {
         @Override
         public TraversalControl leave(TraverserContext<GraphQLType> context) {
             return CONTINUE;
+        }
+
+        @Override
+        public TraversalControl backRef(TraverserContext<GraphQLType> context) {
+            return before.visitBackRef(context);
         }
     }
 

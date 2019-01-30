@@ -283,7 +283,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
     }
 
     private Method findViaSetAccessible(Class aClass, String methodName) throws NoSuchMethodException {
-        if (! USE_SET_ACCESSIBLE.get()) {
+        if (!USE_SET_ACCESSIBLE.get()) {
             throw new FastNoSuchMethodException(methodName);
         }
         String key = mkKey(aClass, propertyName);
@@ -335,7 +335,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
             }
             return field.get(object);
         } catch (NoSuchFieldException e) {
-            if (! USE_SET_ACCESSIBLE.get()) {
+            if (!USE_SET_ACCESSIBLE.get()) {
                 return null;
             }
             // if not public fields then try via setAccessible

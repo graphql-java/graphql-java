@@ -10,13 +10,19 @@ import java.util.List;
 import java.util.function.Consumer;
 import graphql.util.TraverserContext;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class FieldDefinition extends AbstractNode<FieldDefinition> implements DirectivesContainer<FieldDefinition> {
-    private String name;
-    private Type type;
+    private final String name;
+    private final Type type;
     private final Description description;
     private final List<InputValueDefinition> inputValueDefinitions;
     private final List<Directive> directives;
+
+    public static final String CHILD_TYPE = "type";
+    public static final String CHILD_INPUT_VALUE_DEFINITION = "inputValueDefinition";
+    public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
     protected FieldDefinition(String name,
@@ -54,7 +60,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
-        return inputValueDefinitions;
+        return new ArrayList<>(inputValueDefinitions);
     }
 
     @Override
@@ -69,6 +75,24 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
         result.addAll(inputValueDefinitions);
         result.addAll(directives);
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .child(CHILD_TYPE, type)
+                .children(CHILD_INPUT_VALUE_DEFINITION, inputValueDefinitions)
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
+    }
+
+    @Override
+    public FieldDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .type(newChildren.getChildOrNull(CHILD_TYPE))
+                .inputValueDefinitions(newChildren.getChildren(CHILD_INPUT_VALUE_DEFINITION))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
     }
 
     @Override
@@ -96,14 +120,6 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
                 getComments(),
                 getIgnoredChars()
         );
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setType(Type type) {
-        this.type = type;
     }
 
     @Override
