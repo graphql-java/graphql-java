@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -130,7 +131,7 @@ public class DependencyGraph<N extends Vertex<N>> {
                     .traverse(
                         unclosed
                             .stream()
-                            .filter(v -> closed.containsAll(v.dependencySet()))
+                            .filter(this::canBeResolved)
                             .collect(Collectors.toList()), 
                         this
                     )            
@@ -187,19 +188,12 @@ public class DependencyGraph<N extends Vertex<N>> {
                 .setAccumulate(closure);                  // to be returned
             
             N node = context.thisNode();
-            if (parentContext.thisNode() == null || closed.containsAll(node.dependencySet())) {
-                if (autoClose(node)) {
-                    return TraversalControl.CONTINUE;
-                } else {
-                    closure.add(node);
-                    return TraversalControl.ABORT;
-                }                           
+            if (autoClose(node)) {
+                return TraversalControl.CONTINUE;
             } else {
-                context
-                    .visitedNodes()
-                    .remove(node);
+                closure.add(node);
                 return TraversalControl.ABORT;
-            }
+            }                           
         }
 
         @Override
@@ -226,11 +220,15 @@ public class DependencyGraph<N extends Vertex<N>> {
             this(context, () -> newSetFromMap(new IdentityHashMap<>()));
         }
         
+        private boolean canBeResolved (N vertex) {
+            return closed.containsAll(vertex.dependencySet());
+        }
+        
         final DependencyGraphContext context;
         final Supplier<Set<N>> closureCreator;
         final Collection<N> unclosed;
         final Collection<N> closed;
-        final Traverser<N> traverser = Traverser.<N>breadthFirst(Vertex::adjacencySet, null);
+        final Traverser<N> traverser = Traverser.<N>breadthFirst(v -> v.adjacencySet(this::canBeResolved), null);
         Set<N> currentClosure = Collections.emptySet();
         Set<N> lastClosure = Collections.emptySet();
     }

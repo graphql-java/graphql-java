@@ -14,6 +14,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -78,17 +79,35 @@ public abstract class Vertex<N extends Vertex<N>> {
         return (N)this;
     }
     
+    private static boolean alwaysTrue (Object v) {
+        return true;
+    }
+    
     public List<N> adjacencySet () {
+        return adjacencySet(Vertex::alwaysTrue);
+    }
+
+    public List<N> adjacencySet (Predicate<? super N> filter) {
+        assertNotNull(filter);
+        
         return indegrees
             .stream()
             .map(Edge::getSink)
+            .filter(filter)
             .collect(Collectors.toList());
     }
-    
+
     public List<N> dependencySet () {
+        return dependencySet(Vertex::alwaysTrue);
+    }
+    
+    public List<N> dependencySet (Predicate<? super N> filter) {
+        assertNotNull(filter);
+        
         return outdegrees
             .stream()
             .map(Edge::getSource)
+            .filter(filter)
             .collect(Collectors.toList());
     }
     
