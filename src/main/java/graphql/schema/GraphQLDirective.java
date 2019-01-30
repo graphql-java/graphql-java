@@ -4,6 +4,7 @@ package graphql.schema;
 import graphql.Assert;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,7 +21,6 @@ import static graphql.introspection.Introspection.DirectiveLocation;
 import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
-import graphql.util.TraverserContext;
 
 /**
  * A directive can be used to modify the behavior of a graphql field or type.

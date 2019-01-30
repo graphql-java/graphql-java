@@ -5,6 +5,7 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.FieldDefinition;
 import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,7 +21,6 @@ import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactor
 import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
-import graphql.util.TraverserContext;
 
 /**
  * Fields are the ways you get data values in graphql and a field definition represents a field, its type, the arguments it takes

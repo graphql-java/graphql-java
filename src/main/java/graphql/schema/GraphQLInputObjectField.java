@@ -5,6 +5,7 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
 import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -17,7 +18,6 @@ import static graphql.Assert.assertValidName;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
-import graphql.util.TraverserContext;
 
 /**
  * Input objects defined via {@link graphql.schema.GraphQLInputObjectType} contains these input fields.

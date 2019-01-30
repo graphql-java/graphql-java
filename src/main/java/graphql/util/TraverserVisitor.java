@@ -26,6 +26,5 @@ public interface TraverserVisitor<T> {
      */
     default TraversalControl backRef(TraverserContext<T> context) {
         return TraversalControl.CONTINUE;
-    }
-    
+    }    
 }

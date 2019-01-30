@@ -4,6 +4,7 @@ package graphql.language;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +13,6 @@ import java.util.function.Consumer;
 
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.directivesByName;
-import graphql.util.TraverserContext;
 
 @PublicApi
 public class InlineFragment extends AbstractNode<InlineFragment> implements Selection<InlineFragment>, SelectionSetContainer<InlineFragment> {

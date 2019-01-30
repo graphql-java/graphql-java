@@ -3,12 +3,12 @@ package graphql.schema;
 import graphql.AssertException;
 import graphql.Internal;
 import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static java.lang.String.format;
-import graphql.util.TraverserContext;
 
 @Internal
 public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {

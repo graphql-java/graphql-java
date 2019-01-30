@@ -6,6 +6,7 @@ import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
 import graphql.util.FpKit;
 import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,7 +18,6 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.util.FpKit.valuesToList;
-import graphql.util.TraverserContext;
 
 /**
  * This defines an argument that can be supplied to a graphql field (via {@link graphql.schema.GraphQLFieldDefinition}.

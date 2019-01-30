@@ -3,10 +3,10 @@ package graphql.schema;
 
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.Collections;
 import java.util.List;
-import graphql.util.TraverserContext;
 
 /**
  * All types in graphql have a name
