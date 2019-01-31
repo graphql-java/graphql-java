@@ -10,7 +10,7 @@ import java.util.Objects;
  *
  * A list of Breadcrumbs is used to identify the exact location of a specific node inside a tree.
  *
- * @param <T>
+ * @param <T> the generic type of object
  */
 @PublicApi
 public class Breadcrumb<T> {
