@@ -743,7 +743,7 @@ type Query {
 
 
     def idlWithDirectives() {
-       return """
+        return """
             
             interface SomeInterface @interfaceTypeDirective {
                 fieldA : String @interfaceFieldDirective
@@ -785,10 +785,10 @@ type Query {
         given:
         def registry = new SchemaParser().parse(idlWithDirectives())
         def runtimeWiring = newRuntimeWiring()
-            .scalar(mockScalar(registry.scalars().get("SomeScalar")))
-            .type(mockTypeRuntimeWiring("SomeInterface", true))
-            .type(mockTypeRuntimeWiring("SomeUnion", true))
-            .build()
+                .scalar(mockScalar(registry.scalars().get("SomeScalar")))
+                .type(mockTypeRuntimeWiring("SomeInterface", true))
+                .type(mockTypeRuntimeWiring("SomeUnion", true))
+                .build()
         def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
@@ -923,4 +923,3 @@ enum Enum {
     }
 
 }
-
