@@ -139,7 +139,7 @@ class GraphQLTest extends Specification {
         then:
         errors.size() == 1
         errors[0].errorType == ErrorType.InvalidSyntax
-        errors[0].locations == [new SourceLocation(1, 8)]
+        errors[0].locations == [new SourceLocation(0, 8)]
     }
 
     def "query with invalid syntax 2"() {
@@ -156,7 +156,7 @@ class GraphQLTest extends Specification {
         then:
         errors.size() == 1
         errors[0].errorType == ErrorType.InvalidSyntax
-        errors[0].locations == [new SourceLocation(1, 7)]
+        errors[0].locations == [new SourceLocation(0, 7)]
     }
 
     def "non null argument is missing"() {
@@ -179,7 +179,7 @@ class GraphQLTest extends Specification {
         then:
         errors.size() == 1
         errors[0].errorType == ErrorType.ValidationError
-        errors[0].locations == [new SourceLocation(1, 3)]
+        errors[0].locations == [new SourceLocation(0, 3)]
         (errors[0] as ValidationError).validationErrorType == ValidationErrorType.MissingFieldArgument
     }
 

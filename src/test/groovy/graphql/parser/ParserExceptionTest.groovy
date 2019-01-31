@@ -6,14 +6,16 @@ import graphql.StarWarsSchema
 import spock.lang.Specification
 
 class ParserExceptionTest extends Specification {
-    def badQuery = '''
+    def badQueryPart1 = '''
 query X {
        field1
        field2
        field3
        field4
        field5
-}
+}'''
+
+    def badQueryPart2 = '''
 
 fragment X on SomeType {
     fragField1
@@ -23,6 +25,8 @@ fragment X on SomeType {
     fragField5
 }
         '''
+
+    def badQuery = badQueryPart1 + badQueryPart2
 
     def "builds specific exception with preview when in error"() {
         when:
@@ -42,6 +46,30 @@ fragment X on SomeType {
 '''
     }
 
+    def "can work with multi source input"() {
+        when:
+        def multiSourceReader = MultiSourceReader.newMultiSourceLineReader()
+                .string(badQueryPart1, "part1")
+                .string(badQueryPart2, "part2")
+                .build()
+
+        new Parser().parseDocument(multiSourceReader)
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 6
+        e.location.column == 4
+        e.location.sourceName == "part2"
+        e.sourcePreview == '''    fragField1
+    fragField2(syntaxErrorHere
+    fragField3
+    fragField4
+    fragField5
+}
+        
+'''
+    }
+
     def "more parsing error tests"() {
         def sdl = '''
             scala Url   # spillin misteak
@@ -51,13 +79,14 @@ fragment X on SomeType {
             }
         '''
         when:
-        new Parser().parseDocument(sdl)
+        new Parser().parseDocument(sdl, "namedSource")
         then:
         def e = thrown(InvalidSyntaxException)
         print e
 
         e.location.line == 2
         e.location.column == 12
+        e.location.sourceName == "namedSource"
     }
 
     def "short query failure is ok"() {
@@ -67,8 +96,9 @@ fragment X on SomeType {
         then:
         def e = thrown(InvalidSyntaxException)
 
-        e.location.line == 1
+        e.location.line == 0
         e.location.column == 39
+        e.location.sourceName == null
     }
 
     def "integration test of parse exception handling "() {

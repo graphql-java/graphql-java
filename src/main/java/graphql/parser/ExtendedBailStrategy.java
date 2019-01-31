@@ -1,25 +1,20 @@
 package graphql.parser;
 
 import graphql.language.SourceLocation;
+import graphql.parser.MultiSourceReader.SourceAndLine;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ExtendedBailStrategy extends BailErrorStrategy {
-    private final String input;
-    private final String sourceName;
+    private final MultiSourceReader multiSourceReader;
 
-    public ExtendedBailStrategy(String input, String sourceName) {
-        this.input = input;
-        this.sourceName = sourceName;
+    public ExtendedBailStrategy(MultiSourceReader multiSourceReader) {
+        this.multiSourceReader = multiSourceReader;
     }
 
     @Override
@@ -41,7 +36,10 @@ public class ExtendedBailStrategy extends BailErrorStrategy {
     }
 
     InvalidSyntaxException mkMoreTokensException(Token token) {
-        SourceLocation sourceLocation = new SourceLocation(token.getLine(), token.getCharPositionInLine());
+        SourceAndLine sourceAndLine = multiSourceReader.getSourceAndLineFromOverallLine(token.getLine());
+        int column = token.getCharPositionInLine();
+
+        SourceLocation sourceLocation = new SourceLocation(sourceAndLine.getLine(), column, sourceAndLine.getSourceName());
         String sourcePreview = mkPreview(token.getLine());
         return new InvalidSyntaxException(sourceLocation,
                 "There are more tokens in the query that have not been consumed",
@@ -55,11 +53,12 @@ public class ExtendedBailStrategy extends BailErrorStrategy {
         SourceLocation sourceLocation = null;
         Token currentToken = recognizer.getCurrentToken();
         if (currentToken != null) {
-            int line = currentToken.getLine();
+            int tokenLine = currentToken.getLine();
             int column = currentToken.getCharPositionInLine();
+            SourceAndLine sourceAndLine = multiSourceReader.getSourceAndLineFromOverallLine(tokenLine);
             offendingToken = currentToken.getText();
-            sourcePreview = mkPreview(line);
-            sourceLocation = new SourceLocation(line, column, sourceName);
+            sourcePreview = mkPreview(tokenLine);
+            sourceLocation = new SourceLocation(sourceAndLine.getLine(), column, sourceAndLine.getSourceName());
         }
         return new InvalidSyntaxException(sourceLocation, null, sourcePreview, offendingToken, cause);
     }
@@ -67,29 +66,15 @@ public class ExtendedBailStrategy extends BailErrorStrategy {
     /* grabs 3 lines before and after the syntax error */
     private String mkPreview(int line) {
         StringBuilder sb = new StringBuilder();
-        BufferedReader reader = new BufferedReader(new StringReader(input));
         int startLine = line - 3;
         int endLine = line + 3;
-        try {
-            List<String> lines = readAllLines(reader);
-            for (int i = 0; i < lines.size(); i++) {
-                if (i >= startLine && i <= endLine) {
-                    sb.append(lines.get(i)).append('\n');
-                }
+        List<String> lines = multiSourceReader.getData();
+        for (int i = 0; i < lines.size(); i++) {
+            if (i >= startLine && i <= endLine) {
+                sb.append(lines.get(i)).append('\n');
             }
-        } catch (IOException ignored) {
-            // this cant happen - its in memory
         }
         return sb.toString();
     }
 
-    private List<String> readAllLines(BufferedReader reader) throws IOException {
-        List<String> lines = new ArrayList<>();
-        String ln;
-        while ((ln = reader.readLine()) != null) {
-            lines.add(ln);
-        }
-        reader.close();
-        return lines;
-    }
 }
