@@ -286,9 +286,13 @@ public abstract class ExecutionStrategy {
         if (result instanceof DataFetcherResult) {
             //noinspection unchecked
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result;
-            dataFetcherResult.getErrors().stream()
-                    .map(relError -> new AbsoluteGraphQLError(parameters, relError))
-                    .forEach(executionContext::addError);
+            if (dataFetcherResult.isMapRelativeErrors()) {
+                dataFetcherResult.getErrors().stream()
+                        .map(relError -> new AbsoluteGraphQLError(parameters, relError))
+                        .forEach(executionContext::addError);
+            } else {
+                dataFetcherResult.getErrors().forEach(executionContext::addError);
+            }
 
             Object localContext = dataFetcherResult.getLocalContext();
             if (localContext == null) {

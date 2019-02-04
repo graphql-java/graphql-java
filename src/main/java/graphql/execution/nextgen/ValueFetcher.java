@@ -19,7 +19,6 @@ import graphql.execution.ValuesResolver;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.DataFetchingEnvironmentImpl;
 import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.DataFetchingFieldSelectionSetImpl;
 import graphql.schema.GraphQLCodeRegistry;
@@ -38,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
-import static graphql.schema.DataFetchingEnvironmentImpl.*;
+import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 import static java.util.Collections.singletonList;
 
 @Internal
@@ -190,11 +189,18 @@ public class ValueFetcher {
 
     private FetchedValue unboxPossibleDataFetcherResult(MergedField sameField, ExecutionPath executionPath, FetchedValue result, Object localContext) {
         if (result.getFetchedValue() instanceof DataFetcherResult) {
+
+            List<GraphQLError> addErrors;
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result.getFetchedValue();
-            List<AbsoluteGraphQLError> addErrors = dataFetcherResult.getErrors().stream()
-                    .map(relError -> new AbsoluteGraphQLError(sameField, executionPath, relError))
-                    .collect(Collectors.toList());
-            List<GraphQLError> newErrors = new ArrayList<>(result.getErrors());
+            if (dataFetcherResult.isMapRelativeErrors()) {
+                addErrors = dataFetcherResult.getErrors().stream()
+                        .map(relError -> new AbsoluteGraphQLError(sameField, executionPath, relError))
+                        .collect(Collectors.toList());
+            } else {
+                addErrors = new ArrayList<>(dataFetcherResult.getErrors());
+            }
+            List<GraphQLError> newErrors;
+            newErrors = new ArrayList<>(result.getErrors());
             newErrors.addAll(addErrors);
 
             Object newLocalContext = dataFetcherResult.getLocalContext();

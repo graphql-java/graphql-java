@@ -697,6 +697,7 @@ class ExecutionStrategyTest extends Specification {
         when:
         def fetchedValue = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters,
                 DataFetcherResult.newResult().data(executionData)
+                        .mapRelativeErrors(true)
                         .error(new DataFetchingErrorGraphQLError("bad foo", ["child", "foo"]))
                         .build()
         )
