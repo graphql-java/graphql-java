@@ -6,7 +6,9 @@ import graphql.language.NodeParentTree;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
+import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphqlElementParentTree;
 
 import java.util.Map;
 
@@ -19,16 +21,20 @@ public class SchemaDirectiveWiringEnvironmentImpl<T extends GraphQLDirectiveCont
     private final TypeDefinitionRegistry typeDefinitionRegistry;
     private final Map<String, Object> context;
     private final GraphQLCodeRegistry.Builder codeRegistry;
+    private final GraphqlElementParentTree elementParentTree;
     private final GraphQLFieldsContainer fieldsContainer;
+    private final GraphQLFieldDefinition fieldDefinition;
 
-    public SchemaDirectiveWiringEnvironmentImpl(T element, GraphQLDirective directive, NodeParentTree<NamedNode> nodeParentTree, TypeDefinitionRegistry typeDefinitionRegistry, Map<String, Object> context, GraphQLCodeRegistry.Builder codeRegistry, GraphQLFieldsContainer fieldsContainer) {
+    public SchemaDirectiveWiringEnvironmentImpl(T element, GraphQLDirective directive, SchemaGeneratorDirectiveHelper.Parameters parameters) {
         this.element = element;
-        this.nodeParentTree = nodeParentTree;
-        this.typeDefinitionRegistry = typeDefinitionRegistry;
+        this.typeDefinitionRegistry = parameters.getTypeRegistry();
         this.directive = directive;
-        this.context = context;
-        this.codeRegistry = codeRegistry;
-        this.fieldsContainer = fieldsContainer;
+        this.context = parameters.getContext();
+        this.codeRegistry = parameters.getCodeRegistry();
+        this.nodeParentTree = parameters.getNodeParentTree();
+        this.elementParentTree = parameters.getElementParentTree();
+        this.fieldsContainer = parameters.getFieldsContainer();
+        this.fieldDefinition = parameters.getFieldsDefinition();
     }
 
     @Override
@@ -64,5 +70,15 @@ public class SchemaDirectiveWiringEnvironmentImpl<T extends GraphQLDirectiveCont
     @Override
     public GraphQLFieldsContainer getFieldsContainer() {
         return fieldsContainer;
+    }
+
+    @Override
+    public GraphqlElementParentTree getElementParentTree() {
+        return elementParentTree;
+    }
+
+    @Override
+    public GraphQLFieldDefinition getFieldDefinition() {
+        return fieldDefinition;
     }
 }

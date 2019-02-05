@@ -4,6 +4,7 @@ import graphql.Internal;
 import graphql.PublicApi;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
@@ -22,7 +23,7 @@ import static graphql.Assert.assertTrue;
 public class NodeParentTree<T extends Node> {
 
     private final T node;
-    private final Optional<NodeParentTree<T>> parent;
+    private final NodeParentTree<T> parent;
     private final List<String> path;
 
     @Internal
@@ -34,9 +35,9 @@ public class NodeParentTree<T extends Node> {
         path = mkPath(copy);
         node = copy.pop();
         if (!copy.isEmpty()) {
-            parent = Optional.of(new NodeParentTree<T>(copy));
+            parent = new NodeParentTree<T>(copy);
         } else {
-            parent = Optional.empty();
+            parent = null;
         }
     }
 
@@ -61,7 +62,7 @@ public class NodeParentTree<T extends Node> {
      * @return a node MAY have an optional parent
      */
     public Optional<NodeParentTree<T>> getParentInfo() {
-        return parent;
+        return Optional.ofNullable(parent);
     }
 
     /**
@@ -71,10 +72,24 @@ public class NodeParentTree<T extends Node> {
         return path;
     }
 
+    /**
+     * @return the tree as a list of T
+     */
+    public List<T> toList() {
+        List<T> nodes = new ArrayList<>();
+        nodes.add(node);
+        Optional<NodeParentTree<T>> parentInfo = this.getParentInfo();
+        while (parentInfo.isPresent()) {
+            nodes.add(parentInfo.get().getNode());
+            parentInfo = parentInfo.get().getParentInfo();
+        }
+        return nodes;
+    }
+
     @Override
     public String toString() {
         return String.valueOf(node) +
                 " - parent : " +
-                parent.isPresent();
+                parent;
     }
 }
