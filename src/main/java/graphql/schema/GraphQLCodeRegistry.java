@@ -244,6 +244,19 @@ public class GraphQLCodeRegistry {
         }
 
         /**
+         * Sets the data fetcher for a specific field inside a container type
+         *
+         * @param parentType      the container type
+         * @param fieldDefinition the field definition
+         * @param dataFetcher     the data fetcher code for that field
+         *
+         * @return this builder
+         */
+        public Builder dataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition, DataFetcher<?> dataFetcher) {
+            return dataFetcher(FieldCoordinates.coordinates(parentType.getName(), fieldDefinition.getName()), dataFetcher);
+        }
+
+        /**
          * Called to place system data fetchers (eg Introspection fields) into the mix
          *
          * @param coordinates the field coordinates
