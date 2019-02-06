@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 
 /**
  * Defines the scope to control where the registered {@code Comparator} can be applied.
- * <p></p>
+ * <p>
  * {@code elementType}s can be ordered within its {@code parentType} to restrict the {@code Comparator}s scope of operation.
  * Otherwise supplying only the {@code elementType} results in the {@code Comparator} being reused across all matching {@code GraphQLType}s regardless of parent.
  */
