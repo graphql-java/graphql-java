@@ -1,10 +1,6 @@
 package graphql.parser
 
-import graphql.ExecutionResult
-import graphql.GraphQL
-import graphql.InvalidSyntaxError
-import graphql.StarWarsSchema
-import graphql.TestUtil
+
 import graphql.language.Argument
 import graphql.language.ArrayValue
 import graphql.language.AstComparator
@@ -689,17 +685,17 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         def field = (document.definitions[0] as OperationDefinition).selectionSet.selections[0]
         then:
         field.getIgnoredChars().getLeft().size() == 3
-        field.getIgnoredChars().getLeft()[0] == new IgnoredChar(",", IgnoredChar.IgnoredCharKind.COMMA, new SourceLocation(1, 2))
-        field.getIgnoredChars().getLeft()[1] == new IgnoredChar("\r", IgnoredChar.IgnoredCharKind.CR, new SourceLocation(1, 3))
-        field.getIgnoredChars().getLeft()[2] == new IgnoredChar(" ", IgnoredChar.IgnoredCharKind.SPACE, new SourceLocation(1, 4))
+        field.getIgnoredChars().getLeft()[0] == new IgnoredChar(",", IgnoredChar.IgnoredCharKind.COMMA, new SourceLocation(2, 2))
+        field.getIgnoredChars().getLeft()[1] == new IgnoredChar("\r", IgnoredChar.IgnoredCharKind.CR, new SourceLocation(2, 3))
+        field.getIgnoredChars().getLeft()[2] == new IgnoredChar(" ", IgnoredChar.IgnoredCharKind.SPACE, new SourceLocation(2, 4))
 
         field.getIgnoredChars().getRight().size() == 2
-        field.getIgnoredChars().getRight()[0] == new IgnoredChar("\n", IgnoredChar.IgnoredCharKind.LF, new SourceLocation(1, 7))
-        field.getIgnoredChars().getRight()[1] == new IgnoredChar("\t", IgnoredChar.IgnoredCharKind.TAB, new SourceLocation(2, 1))
+        field.getIgnoredChars().getRight()[0] == new IgnoredChar("\n", IgnoredChar.IgnoredCharKind.LF, new SourceLocation(2, 7))
+        field.getIgnoredChars().getRight()[1] == new IgnoredChar("\t", IgnoredChar.IgnoredCharKind.TAB, new SourceLocation(3, 1))
 
         document.getIgnoredChars().getRight().size() == 2
-        document.getIgnoredChars().getRight()[0] == new IgnoredChar(" ", IgnoredChar.IgnoredCharKind.SPACE, new SourceLocation(2, 3))
-        document.getIgnoredChars().getRight()[1] == new IgnoredChar(",", IgnoredChar.IgnoredCharKind.COMMA, new SourceLocation(2, 4))
+        document.getIgnoredChars().getRight()[0] == new IgnoredChar(" ", IgnoredChar.IgnoredCharKind.SPACE, new SourceLocation(3, 3))
+        document.getIgnoredChars().getRight()[1] == new IgnoredChar(",", IgnoredChar.IgnoredCharKind.COMMA, new SourceLocation(3, 4))
     }
 
 }

@@ -812,7 +812,9 @@ public class GraphqlAntlrToLanguage {
     protected SourceLocation getSourceLocation(Token token) {
         MultiSourceReader.SourceAndLine sourceAndLine = multiSourceReader.getSourceAndLineFromOverallLine(token.getLine());
         int column = token.getCharPositionInLine() + 1;
-        return new SourceLocation(sourceAndLine.getLine(), column, sourceAndLine.getSourceName());
+        // graphql spec says line numbers start at 1
+        int line = sourceAndLine.getLine() + 1;
+        return new SourceLocation(line, column, sourceAndLine.getSourceName());
     }
 
     protected SourceLocation getSourceLocation(ParserRuleContext parserRuleContext) {
@@ -845,7 +847,9 @@ public class GraphqlAntlrToLanguage {
             text = text.replaceFirst("^#", "");
             MultiSourceReader.SourceAndLine sourceAndLine = multiSourceReader.getSourceAndLineFromOverallLine(refTok.getLine());
             int column = refTok.getCharPositionInLine();
-            comments.add(new Comment(text, new SourceLocation(sourceAndLine.getLine(), column, sourceAndLine.getSourceName())));
+            // graphql spec says line numbers start at 1
+            int line = sourceAndLine.getLine() + 1;
+            comments.add(new Comment(text, new SourceLocation(line, column, sourceAndLine.getSourceName())));
         }
         return comments;
     }

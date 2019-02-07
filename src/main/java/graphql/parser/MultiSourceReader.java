@@ -1,7 +1,7 @@
 package graphql.parser;
 
 import graphql.Assert;
-import graphql.Internal;
+import graphql.PublicApi;
 
 import java.io.IOException;
 import java.io.LineNumberReader;
@@ -19,7 +19,7 @@ import java.util.List;
  * It can also track all data in memory if you want to have all of the previous read data in
  * place at some point in time.
  */
-@Internal
+@PublicApi
 public class MultiSourceReader extends Reader {
 
     private final List<SourcePart> sourceParts;
@@ -81,6 +81,15 @@ public class MultiSourceReader extends Reader {
         }
     }
 
+    /**
+     * This returns the source name and line number given an overall line number
+     *
+     * This is zeroes based like {@link java.io.LineNumberReader#getLineNumber()}
+     *
+     * @param overallLineNumber the over all line number
+     *
+     * @return the source name and relative line number to that source
+     */
     public SourceAndLine getSourceAndLineFromOverallLine(int overallLineNumber) {
         SourceAndLine sourceAndLine = new SourceAndLine();
         if (sourceParts.isEmpty()) {
@@ -120,6 +129,9 @@ public class MultiSourceReader extends Reader {
         return sourceAndLine;
     }
 
+    /**
+     * @return the line number of the current source.  This is zeroes based like {@link java.io.LineNumberReader#getLineNumber()}
+     */
     public int getLineNumber() {
         synchronized (this) {
             if (sourceParts.isEmpty()) {
@@ -132,6 +144,9 @@ public class MultiSourceReader extends Reader {
         }
     }
 
+    /**
+     * @return The name of the current source
+     */
     public String getSourceName() {
         synchronized (this) {
             if (sourceParts.isEmpty()) {
@@ -144,6 +159,9 @@ public class MultiSourceReader extends Reader {
         }
     }
 
+    /**
+     * @return the overall line number of the all the sources.  This is zeroes based like {@link java.io.LineNumberReader#getLineNumber()}
+     */
     public int getOverallLineNumber() {
         return overallLineNumber;
     }
@@ -183,13 +201,16 @@ public class MultiSourceReader extends Reader {
     }
 
 
-    public static Builder newMultiSourceLineReader() {
+    public static Builder newMultiSourceReader() {
         return new Builder();
     }
 
     public static class Builder {
         List<SourcePart> sourceParts = new ArrayList<>();
         boolean trackData = true;
+
+        private Builder() {
+        }
 
         public Builder reader(Reader reader, String sourceName) {
             SourcePart sourcePart = new SourcePart();

@@ -67,7 +67,7 @@ class NullVariableCoercionTest extends Specification {
         varResult.errors.size() == 1
         varResult.errors[0].errorType == ErrorType.ValidationError
         varResult.errors[0].message == "Field 'baz' of variable 'input' has coerced Null value for NonNull type 'String!'"
-        varResult.errors[0].locations == [new SourceLocation(0, 11)]
+        varResult.errors[0].locations == [new SourceLocation(1, 11)]
     }
 }
 
