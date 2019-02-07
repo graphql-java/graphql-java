@@ -11,6 +11,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.List;
 
@@ -22,14 +23,21 @@ public class Parser {
     }
 
     public Document parseDocument(String input, String sourceName) throws InvalidSyntaxException {
-        MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceLineReader()
+        MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
                 .string(input, sourceName)
                 .trackData(true)
                 .build();
         return parseDocument(multiSourceReader);
     }
 
-    public Document parseDocument(MultiSourceReader multiSourceReader) throws InvalidSyntaxException {
+    public Document parseDocument(Reader reader) throws InvalidSyntaxException {
+        MultiSourceReader multiSourceReader;
+        if (reader instanceof MultiSourceReader) {
+            multiSourceReader = (MultiSourceReader) reader;
+        } else {
+            multiSourceReader = MultiSourceReader.newMultiSourceReader()
+                    .reader(reader, null).build();
+        }
         CodePointCharStream charStream;
         try {
             charStream = CharStreams.fromReader(multiSourceReader);

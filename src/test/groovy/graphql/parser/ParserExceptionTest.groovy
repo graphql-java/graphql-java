@@ -34,7 +34,7 @@ fragment X on SomeType {
         then:
         def e = thrown(InvalidSyntaxException)
 
-        e.location.line == 13
+        e.location.line == 14
         e.location.column == 4
         e.sourcePreview == '''    fragField1
     fragField2(syntaxErrorHere
@@ -48,16 +48,16 @@ fragment X on SomeType {
 
     def "can work with multi source input"() {
         when:
-        def multiSourceReader = MultiSourceReader.newMultiSourceLineReader()
+        def multiSource = MultiSourceReader.newMultiSourceReader()
                 .string(badQueryPart1, "part1")
                 .string(badQueryPart2, "part2")
                 .build()
 
-        new Parser().parseDocument(multiSourceReader)
+        new Parser().parseDocument(multiSource)
         then:
         def e = thrown(InvalidSyntaxException)
 
-        e.location.line == 6
+        e.location.line == 7
         e.location.column == 4
         e.location.sourceName == "part2"
         e.sourcePreview == '''    fragField1
@@ -84,7 +84,7 @@ fragment X on SomeType {
         def e = thrown(InvalidSyntaxException)
         print e
 
-        e.location.line == 2
+        e.location.line == 3
         e.location.column == 12
         e.location.sourceName == "namedSource"
     }
@@ -96,7 +96,7 @@ fragment X on SomeType {
         then:
         def e = thrown(InvalidSyntaxException)
 
-        e.location.line == 0
+        e.location.line == 1
         e.location.column == 39
         e.location.sourceName == null
     }

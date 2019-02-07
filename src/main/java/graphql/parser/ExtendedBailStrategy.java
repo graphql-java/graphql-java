@@ -39,7 +39,8 @@ public class ExtendedBailStrategy extends BailErrorStrategy {
         SourceAndLine sourceAndLine = multiSourceReader.getSourceAndLineFromOverallLine(token.getLine());
         int column = token.getCharPositionInLine();
 
-        SourceLocation sourceLocation = new SourceLocation(sourceAndLine.getLine(), column, sourceAndLine.getSourceName());
+        // graphql spec says line numbers start at 1
+        SourceLocation sourceLocation = new SourceLocation(sourceAndLine.getLine()+1, column, sourceAndLine.getSourceName());
         String sourcePreview = mkPreview(token.getLine());
         return new InvalidSyntaxException(sourceLocation,
                 "There are more tokens in the query that have not been consumed",
@@ -58,7 +59,8 @@ public class ExtendedBailStrategy extends BailErrorStrategy {
             SourceAndLine sourceAndLine = multiSourceReader.getSourceAndLineFromOverallLine(tokenLine);
             offendingToken = currentToken.getText();
             sourcePreview = mkPreview(tokenLine);
-            sourceLocation = new SourceLocation(sourceAndLine.getLine(), column, sourceAndLine.getSourceName());
+            // graphql spec says line numbers start at 1
+            sourceLocation = new SourceLocation(sourceAndLine.getLine()+1, column, sourceAndLine.getSourceName());
         }
         return new InvalidSyntaxException(sourceLocation, null, sourcePreview, offendingToken, cause);
     }

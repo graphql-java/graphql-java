@@ -4,56 +4,56 @@ import spock.lang.Specification
 
 class MultiSourceReaderTest extends Specification {
 
-    MultiSourceReader multiSourceLineReader
+    MultiSourceReader multiSource
 
     void cleanup() {
-        multiSourceLineReader.close()
+        multiSource.close()
     }
 
     def "can combine files"() {
         when:
-        multiSourceLineReader = MultiSourceReader.newMultiSourceLineReader()
+        multiSource = MultiSourceReader.newMultiSourceReader()
                 .reader(readerOf("multisource/a.txt"), "PartA")
                 .reader(readerOf("multisource/b.txt"), "PartB")
                 .reader(readerOf("multisource/c.txt"), "PartC")
                 .build()
         then:
-        multiSourceLineReader.getLineNumber() == 0
-        multiSourceLineReader.getOverallLineNumber() == 0
-        multiSourceLineReader.getSourceName() == "PartA"
+        multiSource.getLineNumber() == 0
+        multiSource.getOverallLineNumber() == 0
+        multiSource.getSourceName() == "PartA"
 
         when:
         def line = readNLines(1)
         then:
         line == "A0*******X"
-        multiSourceLineReader.getLineNumber() == 1
-        multiSourceLineReader.getOverallLineNumber() == 1
-        multiSourceLineReader.getSourceName() == "PartA"
+        multiSource.getLineNumber() == 1
+        multiSource.getOverallLineNumber() == 1
+        multiSource.getSourceName() == "PartA"
 
         when:
         line = readNLines(1)
         then:
         line == "A1*******X"
-        multiSourceLineReader.getLineNumber() == 2
-        multiSourceLineReader.getOverallLineNumber() == 2
-        multiSourceLineReader.getSourceName() == "PartA"
+        multiSource.getLineNumber() == 2
+        multiSource.getOverallLineNumber() == 2
+        multiSource.getSourceName() == "PartA"
 
         when:
         line = readNLines(4)
         then:
         line == "A2*******XA3*******XA4*******XA5*******X"
-        multiSourceLineReader.getLineNumber() == 6
-        multiSourceLineReader.getOverallLineNumber() == 6
-        multiSourceLineReader.getSourceName() == "PartA"
+        multiSource.getLineNumber() == 6
+        multiSource.getOverallLineNumber() == 6
+        multiSource.getSourceName() == "PartA"
 
         // jumps into file B
         when:
         line = readNLines(1)
         then:
         line == "B0*******X"
-        multiSourceLineReader.getLineNumber() == 1
-        multiSourceLineReader.getOverallLineNumber() == 7
-        multiSourceLineReader.getSourceName() == "PartB"
+        multiSource.getLineNumber() == 1
+        multiSource.getOverallLineNumber() == 7
+        multiSource.getSourceName() == "PartB"
 
         // jumps into file C
         when:
@@ -61,32 +61,32 @@ class MultiSourceReaderTest extends Specification {
         line = readNLines(1)
         then:
         line == "C1*******X"
-        multiSourceLineReader.getLineNumber() == 2
-        multiSourceLineReader.getOverallLineNumber() == 14
-        multiSourceLineReader.getSourceName() == "PartC"
+        multiSource.getLineNumber() == 2
+        multiSource.getOverallLineNumber() == 14
+        multiSource.getSourceName() == "PartC"
 
         // reads to the end and stays there
         when:
         line = readNLines(100)
         then:
         line == "C2*******XC3*******XC4*******XC5*******X"
-        multiSourceLineReader.getLineNumber() == 6
-        multiSourceLineReader.getOverallLineNumber() == 18
-        multiSourceLineReader.getSourceName() == "PartC"
+        multiSource.getLineNumber() == 6
+        multiSource.getOverallLineNumber() == 18
+        multiSource.getSourceName() == "PartC"
 
         when:
         line = readNLines(100)
         then:
         line == ""
-        multiSourceLineReader.getLineNumber() == 6
-        multiSourceLineReader.getOverallLineNumber() == 18
-        multiSourceLineReader.getSourceName() == "PartC"
+        multiSource.getLineNumber() == 6
+        multiSource.getOverallLineNumber() == 18
+        multiSource.getSourceName() == "PartC"
     }
 
     def "can read all the lines as one"() {
 
         when:
-        multiSourceLineReader = MultiSourceReader.newMultiSourceLineReader()
+        multiSource = MultiSourceReader.newMultiSourceReader()
                 .reader(readerOf("multisource/a.graphql"), "SdlA")
                 .reader(readerOf("multisource/b.graphql"), "SdlB")
                 .reader(readerOf("multisource/c.graphql"), "SdlC")
@@ -94,7 +94,7 @@ class MultiSourceReaderTest extends Specification {
 
         then:
 
-        joinLines(multiSourceLineReader.readLines()) == '''
+        joinLines(multiSource.readLines()) == '''
 type A {
     fieldC : String
 }
@@ -111,25 +111,25 @@ type C {
 
     def "does not track data if told too"() {
         when:
-        multiSourceLineReader = MultiSourceReader.newMultiSourceLineReader()
+        multiSource = MultiSourceReader.newMultiSourceReader()
                 .reader(readerOf("multisource/a.txt"), "PartA")
                 .reader(readerOf("multisource/b.txt"), "PartB")
                 .trackData(false)
                 .build()
         then:
         readNLines(100)
-        multiSourceLineReader.getData() == []
+        multiSource.getData() == []
     }
 
     def "can track data b y default"() {
         when:
-        multiSourceLineReader = MultiSourceReader.newMultiSourceLineReader()
+        multiSource = MultiSourceReader.newMultiSourceReader()
                 .reader(readerOf("multisource/a.txt"), "PartA")
                 .reader(readerOf("multisource/b.txt"), "PartB")
                 .build()
         then:
         readNLines(100)
-        joinLines(multiSourceLineReader.getData()) == '''
+        joinLines(multiSource.getData()) == '''
 A0*******X
 A1*******X
 A2*******X
@@ -147,19 +147,33 @@ B5*******X
 
     def "can handle zero elements"() {
         when:
-        multiSourceLineReader = MultiSourceReader.newMultiSourceLineReader()
+        multiSource = MultiSourceReader.newMultiSourceReader()
                 .build()
-        def lines = multiSourceLineReader.readLines()
+        def lines = multiSource.readLines()
         then:
         lines.isEmpty()
-        multiSourceLineReader.getSourceName() == null
-        multiSourceLineReader.getLineNumber() == 0
-        multiSourceLineReader.getOverallLineNumber() == 0
+        multiSource.getSourceName() == null
+        multiSource.getLineNumber() == 0
+        multiSource.getOverallLineNumber() == 0
+    }
+
+    def "can handle null source name"() {
+        def sr = new StringReader("Hello\nWorld")
+        when:
+        multiSource = MultiSourceReader.newMultiSourceReader()
+                .reader(sr, null)
+                .build()
+        def lines = multiSource.readLines()
+        then:
+        lines == ["Hello", "World"]
+        multiSource.getSourceName() == null
+        multiSource.getLineNumber() == 1
+        multiSource.getOverallLineNumber() == 1
     }
 
     def "can work out relative lines from overall lines"() {
         when:
-        multiSourceLineReader = MultiSourceReader.newMultiSourceLineReader()
+        multiSource = MultiSourceReader.newMultiSourceReader()
                 .reader(readerOf("multisource/a.txt"), "PartA")
                 .reader(readerOf("multisource/b.txt"), "PartB")
                 .reader(readerOf("multisource/b.txt"), "PartC")
@@ -168,21 +182,21 @@ B5*******X
 
         readNLines(100)
 
-        def sAndL = multiSourceLineReader.getSourceAndLineFromOverallLine(7)
+        def sAndL = multiSource.getSourceAndLineFromOverallLine(7)
 
         then:
         sAndL.line == 1
         sAndL.sourceName == "PartB"
 
         when:
-        sAndL = multiSourceLineReader.getSourceAndLineFromOverallLine(3)
+        sAndL = multiSource.getSourceAndLineFromOverallLine(3)
 
         then:
         sAndL.line == 3
         sAndL.sourceName == "PartA"
 
         when:
-        sAndL = multiSourceLineReader.getSourceAndLineFromOverallLine(13)
+        sAndL = multiSource.getSourceAndLineFromOverallLine(13)
 
         then:
         sAndL.line == 1
@@ -190,7 +204,7 @@ B5*******X
 
         when:
         // wont jump past the max lines
-        sAndL = multiSourceLineReader.getSourceAndLineFromOverallLine(100)
+        sAndL = multiSource.getSourceAndLineFromOverallLine(100)
 
         then:
         sAndL.line == 18
@@ -200,7 +214,7 @@ B5*******X
     String readNLines(int count) {
         def line = ""
         for (int i = 0; i < count; i++) {
-            def l = multiSourceLineReader.readLine()
+            def l = multiSource.readLine()
             if (l == null) {
                 return line
             }
