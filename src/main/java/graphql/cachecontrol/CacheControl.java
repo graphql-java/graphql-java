@@ -14,7 +14,7 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
-import static java.util.stream.Collectors.toList;
+import static graphql.util.FpKit.map;
 
 /**
  * This class implements the graphql Cache Control specification as outlined in https://github.com/apollographql/apollo-cache-control
@@ -184,9 +184,7 @@ public class CacheControl {
     }
 
     private void putHintsInExtensionsMap(Map<Object, Object> extensions) {
-        List<Map<String, Object>> recordedHints = hints.stream()
-                .map(Hint::toMap)
-                .collect(toList());
+        List<Map<String, Object>> recordedHints = map(hints, Hint::toMap);
 
         Map<String, Object> cacheControl = new LinkedHashMap<>();
         cacheControl.put("version", 1);
