@@ -743,7 +743,7 @@ type Query {
 
 
     def idlWithDirectives() {
-       return """
+        return """
             
             interface SomeInterface @interfaceTypeDirective {
                 fieldA : String @interfaceFieldDirective
@@ -757,6 +757,7 @@ type Query {
                 fieldC : SomeEnum
                 fieldD : SomeInterface
                 fieldE : SomeUnion
+                fieldF(argWithDirective: String @argDirective): String
             }
             
             type Single @single {
@@ -784,10 +785,10 @@ type Query {
         given:
         def registry = new SchemaParser().parse(idlWithDirectives())
         def runtimeWiring = newRuntimeWiring()
-            .scalar(mockScalar(registry.scalars().get("SomeScalar")))
-            .type(mockTypeRuntimeWiring("SomeInterface", true))
-            .type(mockTypeRuntimeWiring("SomeUnion", true))
-            .build()
+                .scalar(mockScalar(registry.scalars().get("SomeScalar")))
+                .type(mockTypeRuntimeWiring("SomeInterface", true))
+                .type(mockTypeRuntimeWiring("SomeUnion", true))
+                .build()
         def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
@@ -808,6 +809,7 @@ type Query @query1 @query2(arg1 : "x") {
   fieldC: SomeEnum
   fieldD: SomeInterface
   fieldE: SomeUnion
+  fieldF(argWithDirective: String @argDirective): String
 }
 
 type Single @single {
@@ -848,6 +850,7 @@ type Query {
   fieldC: SomeEnum
   fieldD: SomeInterface
   fieldE: SomeUnion
+  fieldF(argWithDirective: String): String
 }
 
 type Single {
@@ -920,4 +923,3 @@ enum Enum {
     }
 
 }
-

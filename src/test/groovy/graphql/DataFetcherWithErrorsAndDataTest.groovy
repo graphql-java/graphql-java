@@ -66,6 +66,7 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
                 .dataFetcher({ env ->
             newResult()
                     .data(new ParentObject())
+                    .mapRelativeErrors(true)
                     .errors([new DataFetchingErrorGraphQLError("badField is bad", ["child", "badField"])])
                     .build()
 
@@ -142,6 +143,7 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
                 .dataFetcher({ env ->
             newResult()
                     .data(["goodField": null, "badField": null])
+                    .mapRelativeErrors(true)
                     .errors([
                     new DataFetchingErrorGraphQLError("goodField is bad", ["goodField"]),
                     new DataFetchingErrorGraphQLError("badField is bad", ["badField"])
@@ -225,7 +227,9 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
                 .field(newFieldDefinition().name("child")
                 .type(childType)
                 .dataFetcher({ env ->
-            newResult().data(null).errors([
+            newResult().data(null)
+                    .mapRelativeErrors(true)
+                    .errors([
                     new DataFetchingErrorGraphQLError("error 1", []),
                     new DataFetchingErrorGraphQLError("error 2", [])
             ]).build()
@@ -300,7 +304,9 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
                 .type(childType)
                 .dataFetcher({ env ->
             CompletableFuture.completedFuture(newResult()
-                    .data(new ChildObject()).error(
+                    .data(new ChildObject())
+                    .mapRelativeErrors(true)
+                    .error(
                     new DataFetchingErrorGraphQLError("badField is bad", ["badField"])
             ).build())
         }))
