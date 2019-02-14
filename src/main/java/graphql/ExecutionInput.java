@@ -1,5 +1,6 @@
 package graphql;
 
+import graphql.cachecontrol.CacheControl;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.Collections;
@@ -20,20 +21,22 @@ public class ExecutionInput {
     private final Object root;
     private final Map<String, Object> variables;
     private final DataLoaderRegistry dataLoaderRegistry;
+    private final CacheControl cacheControl;
 
 
     public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables) {
-        this(query, operationName, context, root, variables, new DataLoaderRegistry());
+        this(query, operationName, context, root, variables, new DataLoaderRegistry(), null);
     }
 
     @Internal
-    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry) {
+    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl) {
         this.query = query;
         this.operationName = operationName;
         this.context = context;
         this.root = root;
         this.variables = variables;
         this.dataLoaderRegistry = dataLoaderRegistry;
+        this.cacheControl = cacheControl;
     }
 
     /**
@@ -79,6 +82,13 @@ public class ExecutionInput {
     }
 
     /**
+     * @return the cache control helper associated with this execution
+     */
+    public CacheControl getCacheControl() {
+        return cacheControl;
+    }
+
+    /**
      * This helps you transform the current ExecutionInput object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
      *
@@ -93,6 +103,7 @@ public class ExecutionInput {
                 .context(this.context)
                 .root(this.root)
                 .dataLoaderRegistry(this.dataLoaderRegistry)
+                .cacheControl(this.cacheControl)
                 .variables(this.variables);
 
         builderConsumer.accept(builder);
@@ -139,6 +150,7 @@ public class ExecutionInput {
         private Object root;
         private Map<String, Object> variables = Collections.emptyMap();
         private DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
+        private CacheControl cacheControl;
 
         public Builder query(String query) {
             this.query = query;
@@ -196,8 +208,13 @@ public class ExecutionInput {
             return this;
         }
 
+        public Builder cacheControl(CacheControl cacheControl) {
+            this.cacheControl = cacheControl;
+            return this;
+        }
+
         public ExecutionInput build() {
-            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry);
+            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry, cacheControl);
         }
     }
 }
