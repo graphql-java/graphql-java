@@ -16,7 +16,7 @@ public class ResultNodeTraverser {
     }
 
     public static ResultNodeTraverser depthFirst() {
-        return new ResultNodeTraverser(Traverser.depthFirstWithNamedChildren(ExecutionResultNode::getNamedChildren, null, null));
+        return new ResultNodeTraverser(Traverser.depthFirst(ExecutionResultNode::getChildren, null, null));
     }
 
     public void traverse(TraverserVisitor<ExecutionResultNode> visitor, ExecutionResultNode root) {

@@ -7,7 +7,7 @@ import java.util.Collections;
 public class UnresolvedObjectResultNode extends ObjectExecutionResultNode {
 
     public UnresolvedObjectResultNode(FetchedValueAnalysis fetchedValueAnalysis) {
-        super(fetchedValueAnalysis, Collections.emptyMap());
+        super(fetchedValueAnalysis, Collections.emptyList());
     }
 
     @Override
