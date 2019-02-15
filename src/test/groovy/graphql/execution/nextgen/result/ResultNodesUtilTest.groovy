@@ -5,6 +5,7 @@ import graphql.SerializationError
 import graphql.execution.ExecutionPath
 import graphql.execution.ExecutionStepInfo
 import graphql.execution.FetchedValue
+import graphql.execution.MergedField
 import graphql.execution.nextgen.FetchedValueAnalysis
 import graphql.schema.CoercingSerializeException
 import spock.lang.Specification
@@ -17,6 +18,9 @@ class ResultNodesUtilTest extends Specification {
         given:
         def error = new SerializationError(ExecutionPath.rootPath(), new CoercingSerializeException())
         ExecutionStepInfo executionStepInfo = Mock(ExecutionStepInfo)
+        MergedField mergedField = Mock(MergedField)
+        mergedField.getResultKey() >> "foo"
+        executionStepInfo.getField() >> mergedField
         FetchedValue fetchedValue = FetchedValue.newFetchedValue().fetchedValue(null).build()
         def leafValue = FetchedValueAnalysis.newFetchedValueAnalysis(SCALAR)
                 .executionStepInfo(executionStepInfo)
@@ -25,7 +29,7 @@ class ResultNodesUtilTest extends Specification {
                 .fetchedValue(fetchedValue)
                 .build()
         LeafExecutionResultNode leafExecutionResultNode = new LeafExecutionResultNode(leafValue, null)
-        ExecutionResultNode executionResultNode = new RootExecutionResultNode([foo: leafExecutionResultNode])
+        ExecutionResultNode executionResultNode = new RootExecutionResultNode([leafExecutionResultNode])
 
         when:
         def executionResult = ResultNodesUtil.toExecutionResult(executionResultNode)

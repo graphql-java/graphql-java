@@ -1,23 +1,31 @@
 package graphql.execution.nextgen.result;
 
+import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.MergedField;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.nextgen.FetchedValueAnalysis;
-import graphql.util.NodeLocation;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
+
+import static graphql.Assert.assertNotNull;
 
 @Internal
 public abstract class ExecutionResultNode {
 
     private final FetchedValueAnalysis fetchedValueAnalysis;
     private final NonNullableFieldWasNullException nonNullableFieldWasNullException;
+    private final List<ExecutionResultNode> children;
 
-    protected ExecutionResultNode(FetchedValueAnalysis fetchedValueAnalysis, NonNullableFieldWasNullException nonNullableFieldWasNullException) {
+    protected ExecutionResultNode(FetchedValueAnalysis fetchedValueAnalysis,
+                                  NonNullableFieldWasNullException nonNullableFieldWasNullException,
+                                  List<ExecutionResultNode> children) {
         this.fetchedValueAnalysis = fetchedValueAnalysis;
         this.nonNullableFieldWasNullException = nonNullableFieldWasNullException;
+        this.children = assertNotNull(children);
+        children.forEach(Assert::assertNotNull);
     }
 
 
@@ -36,13 +44,18 @@ public abstract class ExecutionResultNode {
         return nonNullableFieldWasNullException;
     }
 
-    public abstract List<ExecutionResultNode> getChildren();
+    public List<ExecutionResultNode> getChildren() {
+        return new ArrayList<>(this.children);
+    }
 
-    public abstract Map<String, List<ExecutionResultNode>> getNamedChildren();
+    public abstract ExecutionResultNode withNewChildren(List<ExecutionResultNode> children);
 
-    public abstract ExecutionResultNode withChild(ExecutionResultNode child, NodeLocation position);
-
-    public abstract ExecutionResultNode withNewChildren(Map<NodeLocation, ExecutionResultNode> children);
+    public Optional<NonNullableFieldWasNullException> getChildNonNullableException() {
+        return children.stream()
+                .filter(executionResultNode -> executionResultNode.getNonNullableFieldWasNullException() != null)
+                .map(ExecutionResultNode::getNonNullableFieldWasNullException)
+                .findFirst();
+    }
 
 
 }
