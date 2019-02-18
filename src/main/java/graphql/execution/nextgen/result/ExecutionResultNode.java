@@ -50,6 +50,8 @@ public abstract class ExecutionResultNode {
 
     public abstract ExecutionResultNode withNewChildren(List<ExecutionResultNode> children);
 
+    public abstract ExecutionResultNode withNewFetchedValueAnalysis(FetchedValueAnalysis fetchedValueAnalysis);
+
     public Optional<NonNullableFieldWasNullException> getChildNonNullableException() {
         return children.stream()
                 .filter(executionResultNode -> executionResultNode.getNonNullableFieldWasNullException() != null)

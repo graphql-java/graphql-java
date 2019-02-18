@@ -25,4 +25,9 @@ public class LeafExecutionResultNode extends ExecutionResultNode {
     public ExecutionResultNode withNewChildren(List<ExecutionResultNode> children) {
         return Assert.assertShouldNeverHappen();
     }
+
+    @Override
+    public ExecutionResultNode withNewFetchedValueAnalysis(FetchedValueAnalysis fetchedValueAnalysis) {
+        return new LeafExecutionResultNode(fetchedValueAnalysis, getNonNullableFieldWasNullException());
+    }
 }

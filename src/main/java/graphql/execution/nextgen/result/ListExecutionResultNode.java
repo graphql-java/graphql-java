@@ -18,4 +18,9 @@ public class ListExecutionResultNode extends ExecutionResultNode {
     public ExecutionResultNode withNewChildren(List<ExecutionResultNode> children) {
         return new ListExecutionResultNode(getFetchedValueAnalysis(), children);
     }
+
+    @Override
+    public ExecutionResultNode withNewFetchedValueAnalysis(FetchedValueAnalysis fetchedValueAnalysis) {
+        return new ListExecutionResultNode(fetchedValueAnalysis, getChildren());
+    }
 }

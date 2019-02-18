@@ -20,4 +20,8 @@ public class ObjectExecutionResultNode extends ExecutionResultNode {
         return new ObjectExecutionResultNode(getFetchedValueAnalysis(), children);
     }
 
+    @Override
+    public ExecutionResultNode withNewFetchedValueAnalysis(FetchedValueAnalysis fetchedValueAnalysis) {
+        return new ObjectExecutionResultNode(fetchedValueAnalysis, getChildren());
+    }
 }
