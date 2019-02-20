@@ -8,5 +8,5 @@ package graphql;
  * graphql-java ships with a standard set of error classifications via {@link graphql.ErrorType}
  */
 @PublicApi
-public interface ErrorTypeClassification {
+public interface ErrorClassification {
 }

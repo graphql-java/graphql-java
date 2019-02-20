@@ -21,7 +21,7 @@ public class GraphqlErrorBuilder {
     private String message;
     private List<Object> path;
     private List<SourceLocation> locations = new ArrayList<>();
-    private ErrorTypeClassification errorType = ErrorType.DataFetchingException;
+    private ErrorClassification errorType = ErrorType.DataFetchingException;
     private Map<String, Object> extensions = null;
 
 
@@ -74,7 +74,7 @@ public class GraphqlErrorBuilder {
         return this;
     }
 
-    public GraphqlErrorBuilder errorType(ErrorTypeClassification errorType) {
+    public GraphqlErrorBuilder errorType(ErrorClassification errorType) {
         this.errorType = assertNotNull(errorType);
         return this;
     }
@@ -95,11 +95,11 @@ public class GraphqlErrorBuilder {
     private static class GraphqlErrorImpl implements GraphQLError {
         private final String message;
         private final List<SourceLocation> locations;
-        private final ErrorTypeClassification errorType;
+        private final ErrorClassification errorType;
         private final List<Object> path;
         private final Map<String, Object> extensions;
 
-        public GraphqlErrorImpl(String message, List<SourceLocation> locations, ErrorTypeClassification errorType, List<Object> path, Map<String, Object> extensions) {
+        public GraphqlErrorImpl(String message, List<SourceLocation> locations, ErrorClassification errorType, List<Object> path, Map<String, Object> extensions) {
             this.message = message;
             this.locations = locations;
             this.errorType = errorType;
@@ -118,7 +118,7 @@ public class GraphqlErrorBuilder {
         }
 
         @Override
-        public ErrorTypeClassification getErrorType() {
+        public ErrorClassification getErrorType() {
             return errorType;
         }
 

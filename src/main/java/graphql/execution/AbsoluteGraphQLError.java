@@ -1,7 +1,6 @@
 package graphql.execution;
 
-import graphql.ErrorType;
-import graphql.ErrorTypeClassification;
+import graphql.ErrorClassification;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.language.SourceLocation;
@@ -26,7 +25,7 @@ public class AbsoluteGraphQLError implements GraphQLError {
     private final List<SourceLocation> locations;
     private final List<Object> absolutePath;
     private final String message;
-    private final ErrorTypeClassification errorType;
+    private final ErrorClassification errorType;
     private final Map<String, Object> extensions;
 
     public AbsoluteGraphQLError(ExecutionStrategyParameters executionStrategyParameters, GraphQLError relativeError) {
@@ -69,7 +68,7 @@ public class AbsoluteGraphQLError implements GraphQLError {
     }
 
     @Override
-    public ErrorTypeClassification getErrorType() {
+    public ErrorClassification getErrorType() {
         return errorType;
     }
 
