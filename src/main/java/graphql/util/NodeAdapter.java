@@ -9,7 +9,7 @@ import java.util.Map;
  * Adapts an arbitrary class to behave as a node.
  * We are using an Adapter because we don't want to require Nodes to implement a certain Interface.
  *
- * @param <T> node type of this NodeAdapter
+ * @param <T> the generic type of object
  */
 @PublicApi
 public interface NodeAdapter<T> {

@@ -103,6 +103,10 @@ public class FetchedValueAnalysis {
         return executionStepInfo.getField();
     }
 
+    public String getResultKey() {
+        return executionStepInfo.getResultKey();
+    }
+
     public static final class Builder {
         private FetchedValueType valueType;
         private final List<GraphQLError> errors = new ArrayList<>();

@@ -12,7 +12,6 @@ import graphql.execution.MergedField;
 import graphql.execution.MergedSelectionSet;
 import graphql.execution.ResolveType;
 import graphql.execution.nextgen.result.ExecutionResultNode;
-import graphql.execution.nextgen.result.NamedResultNode;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.util.FpKit;
@@ -32,7 +31,7 @@ public class ExecutionStrategyUtil {
     ResolveType resolveType = new ResolveType();
     FieldCollector fieldCollector = new FieldCollector();
 
-    public List<CompletableFuture<NamedResultNode>> fetchSubSelection(ExecutionContext executionContext, FieldSubSelection fieldSubSelection) {
+    public List<CompletableFuture<ExecutionResultNode>> fetchSubSelection(ExecutionContext executionContext, FieldSubSelection fieldSubSelection) {
         List<CompletableFuture<FetchedValueAnalysis>> fetchedValueAnalysisList = fetchAndAnalyze(executionContext, fieldSubSelection);
         return fetchedValueAnalysisToNodesAsync(fetchedValueAnalysisList);
     }
@@ -53,18 +52,12 @@ public class ExecutionStrategyUtil {
                 .thenApply(fetchValue -> analyseValue(context, fetchValue, newExecutionStepInfo));
     }
 
-    private List<CompletableFuture<NamedResultNode>> fetchedValueAnalysisToNodesAsync(List<CompletableFuture<FetchedValueAnalysis>> list) {
-        return Async.map(list, fetchedValueAnalysis -> {
-            ExecutionResultNode resultNode = resultNodesCreator.createResultNode(fetchedValueAnalysis);
-            return new NamedResultNode(fetchedValueAnalysis.getField().getResultKey(), resultNode);
-        });
+    private List<CompletableFuture<ExecutionResultNode>> fetchedValueAnalysisToNodesAsync(List<CompletableFuture<FetchedValueAnalysis>> list) {
+        return Async.map(list, fetchedValueAnalysis -> resultNodesCreator.createResultNode(fetchedValueAnalysis));
     }
 
-    public List<NamedResultNode> fetchedValueAnalysisToNodes(List<FetchedValueAnalysis> fetchedValueAnalysisList) {
-        return FpKit.map(fetchedValueAnalysisList, fetchedValueAnalysis -> {
-            ExecutionResultNode resultNode = resultNodesCreator.createResultNode(fetchedValueAnalysis);
-            return new NamedResultNode(fetchedValueAnalysis.getField().getResultKey(), resultNode);
-        });
+    public List<ExecutionResultNode> fetchedValueAnalysisToNodes(List<FetchedValueAnalysis> fetchedValueAnalysisList) {
+        return FpKit.map(fetchedValueAnalysisList, fetchedValueAnalysis -> resultNodesCreator.createResultNode(fetchedValueAnalysis));
     }
 
 

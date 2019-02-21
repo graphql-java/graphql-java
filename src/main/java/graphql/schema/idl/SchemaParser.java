@@ -13,6 +13,7 @@ import graphql.schema.idl.errors.SchemaProblem;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -56,7 +57,7 @@ public class SchemaParser {
      */
     public TypeDefinitionRegistry parse(Reader reader) throws SchemaProblem {
         try (Reader input = reader) {
-            return parse(read(input));
+            return parseImpl(input);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -72,6 +73,10 @@ public class SchemaParser {
      * @throws SchemaProblem if there are problems compiling the schema definitions
      */
     public TypeDefinitionRegistry parse(String schemaInput) throws SchemaProblem {
+        return parseImpl(new StringReader(schemaInput));
+    }
+
+    public TypeDefinitionRegistry parseImpl(Reader schemaInput) {
         try {
             Parser parser = new Parser();
             Document document = parser.parseDocument(schemaInput);

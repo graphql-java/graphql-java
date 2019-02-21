@@ -6,14 +6,16 @@ import graphql.StarWarsSchema
 import spock.lang.Specification
 
 class ParserExceptionTest extends Specification {
-    def badQuery = '''
+    def badQueryPart1 = '''
 query X {
        field1
        field2
        field3
        field4
        field5
-}
+}'''
+
+    def badQueryPart2 = '''
 
 fragment X on SomeType {
     fragField1
@@ -24,14 +26,40 @@ fragment X on SomeType {
 }
         '''
 
+    def badQuery = badQueryPart1 + badQueryPart2
+
     def "builds specific exception with preview when in error"() {
         when:
         new Parser().parseDocument(badQuery)
         then:
         def e = thrown(InvalidSyntaxException)
 
-        e.location.line == 13
+        e.location.line == 14
         e.location.column == 4
+        e.sourcePreview == '''    fragField1
+    fragField2(syntaxErrorHere
+    fragField3
+    fragField4
+    fragField5
+}
+        
+'''
+    }
+
+    def "can work with multi source input"() {
+        when:
+        def multiSource = MultiSourceReader.newMultiSourceReader()
+                .string(badQueryPart1, "part1")
+                .string(badQueryPart2, "part2")
+                .build()
+
+        new Parser().parseDocument(multiSource)
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 7
+        e.location.column == 4
+        e.location.sourceName == "part2"
         e.sourcePreview == '''    fragField1
     fragField2(syntaxErrorHere
     fragField3
@@ -51,13 +79,14 @@ fragment X on SomeType {
             }
         '''
         when:
-        new Parser().parseDocument(sdl)
+        new Parser().parseDocument(sdl, "namedSource")
         then:
         def e = thrown(InvalidSyntaxException)
         print e
 
-        e.location.line == 2
+        e.location.line == 3
         e.location.column == 12
+        e.location.sourceName == "namedSource"
     }
 
     def "short query failure is ok"() {
@@ -69,6 +98,7 @@ fragment X on SomeType {
 
         e.location.line == 1
         e.location.column == 39
+        e.location.sourceName == null
     }
 
     def "integration test of parse exception handling "() {

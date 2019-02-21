@@ -68,8 +68,8 @@ class ExecutableDefinitionsTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 2
-        validationErrors[0] == nonExecutableDefinition("Cow", 7, 1)
-        validationErrors[1] == nonExecutableDefinition("Dog", 11, 1)
+        validationErrors[0] == nonExecutableDefinition("Cow", 8, 1)
+        validationErrors[1] == nonExecutableDefinition("Dog", 12, 1)
 
     }
 
@@ -89,8 +89,8 @@ class ExecutableDefinitionsTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 2
-        validationErrors[0] == nonExecutableDefinition("schema", 1, 1)
-        validationErrors[1] == nonExecutableDefinition("QueryRoot", 5, 1)
+        validationErrors[0] == nonExecutableDefinition("schema", 2, 1)
+        validationErrors[1] == nonExecutableDefinition("QueryRoot", 6, 1)
     }
 
     def 'Executable Definitions with input value type definition'() {
@@ -105,7 +105,7 @@ class ExecutableDefinitionsTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        validationErrors[0] == nonExecutableDefinition("QueryRoot", 1, 1)
+        validationErrors[0] == nonExecutableDefinition("QueryRoot", 2, 1)
     }
 
 

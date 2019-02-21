@@ -199,6 +199,10 @@ public class ExecutionStepInfo {
         return builder.build();
     }
 
+    public String getResultKey() {
+        return field.getResultKey();
+    }
+
     /**
      * @return a builder of type info
      */

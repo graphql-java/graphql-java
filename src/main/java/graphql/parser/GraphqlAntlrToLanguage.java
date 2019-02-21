@@ -59,7 +59,6 @@ import graphql.language.VariableReference;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.IntStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
@@ -81,10 +80,12 @@ public class GraphqlAntlrToLanguage {
     private static final int CHANNEL_COMMENTS = 2;
     private static final int CHANNEL_IGNORED_CHARS = 3;
     private final CommonTokenStream tokens;
+    private final MultiSourceReader multiSourceReader;
 
 
-    public GraphqlAntlrToLanguage(CommonTokenStream tokens) {
+    public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
         this.tokens = tokens;
+        this.multiSourceReader = multiSourceReader;
     }
 
     //MARKER START: Here GraphqlOperation.g4 specific methods begin
@@ -809,14 +810,11 @@ public class GraphqlAntlrToLanguage {
     }
 
     protected SourceLocation getSourceLocation(Token token) {
-        String sourceName = token.getTokenSource().getSourceName();
-        if (IntStream.UNKNOWN_SOURCE_NAME.equals(sourceName)) {
-            // UNKNOWN_SOURCE_NAME is Antrl's way of indicating that no source name was given during parsing --
-            // which is the case when queries and other operations are parsed. We don't want this hardcoded
-            // '<unknown>' sourceName to leak to clients when the response is serialized as JSON, so we null it.
-            sourceName = null;
-        }
-        return new SourceLocation(token.getLine(), token.getCharPositionInLine() + 1, sourceName);
+        MultiSourceReader.SourceAndLine sourceAndLine = multiSourceReader.getSourceAndLineFromOverallLine(token.getLine());
+        int column = token.getCharPositionInLine() + 1;
+        // graphql spec says line numbers start at 1
+        int line = sourceAndLine.getLine() + 1;
+        return new SourceLocation(line, column, sourceAndLine.getSourceName());
     }
 
     protected SourceLocation getSourceLocation(ParserRuleContext parserRuleContext) {
@@ -847,7 +845,11 @@ public class GraphqlAntlrToLanguage {
                 continue;
             }
             text = text.replaceFirst("^#", "");
-            comments.add(new Comment(text, new SourceLocation(refTok.getLine(), refTok.getCharPositionInLine())));
+            MultiSourceReader.SourceAndLine sourceAndLine = multiSourceReader.getSourceAndLineFromOverallLine(refTok.getLine());
+            int column = refTok.getCharPositionInLine();
+            // graphql spec says line numbers start at 1
+            int line = sourceAndLine.getLine() + 1;
+            comments.add(new Comment(text, new SourceLocation(line, column, sourceAndLine.getSourceName())));
         }
         return comments;
     }
