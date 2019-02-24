@@ -71,11 +71,11 @@ public class ExecutionResultImpl implements ExecutionResult {
     @Override
     public Map<String, Object> toSpecification() {
         Map<String, Object> result = new LinkedHashMap<>();
-        if (dataPresent) {
-            result.put("data", data);
-        }
         if (errors != null && !errors.isEmpty()) {
             result.put("errors", errorsToSpec(errors));
+        }
+        if (dataPresent) {
+            result.put("data", data);
         }
         if (extensions != null) {
             result.put("extensions", extensions);
@@ -90,8 +90,8 @@ public class ExecutionResultImpl implements ExecutionResult {
     @Override
     public String toString() {
         return "ExecutionResultImpl{" +
-                "data=" + data +
-                ", errors=" + errors +
+                "errors=" + errors +
+                ", data=" + data +
                 ", dataPresent=" + dataPresent +
                 ", extensions=" + extensions +
                 '}';
