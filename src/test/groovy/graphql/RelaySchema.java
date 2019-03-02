@@ -67,5 +67,6 @@ public class RelaySchema {
 
     public static GraphQLSchema Schema = GraphQLSchema.newSchema()
             .query(RelayQueryType)
+            .additionalType(Relay.pageInfoType)
             .build();
 }
