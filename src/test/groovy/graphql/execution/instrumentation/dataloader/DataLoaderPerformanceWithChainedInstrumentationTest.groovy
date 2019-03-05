@@ -10,7 +10,6 @@ import org.awaitility.Awaitility
 import org.dataloader.DataLoaderRegistry
 import org.reactivestreams.Publisher
 import spock.lang.Specification
-import spock.lang.Unroll
 
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getDeferredQuery
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedData
@@ -21,7 +20,6 @@ import static graphql.execution.instrumentation.dataloader.DataLoaderPerformance
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpensiveDeferredQuery
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpensiveQuery
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getQuery
-
 
 class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification {
 
@@ -54,7 +52,6 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
     }
 
-    @Unroll
     def "chainedInstrumentation: 970 ensure data loader is performant for multiple field with lists"() {
 
         when:
@@ -69,8 +66,6 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
 
-        where:
-        i << (1..20)
     }
 
     def "chainedInstrumentation: ensure data loader is performant for lists using async batch loading"() {
