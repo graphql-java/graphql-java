@@ -16,4 +16,8 @@ public interface QueryVisitor {
 
     void visitFragmentSpread(QueryVisitorFragmentSpreadEnvironment queryVisitorFragmentSpreadEnvironment);
 
+    default void visitFragment(QueryVisitorFragmentEnvironment queryVisitorFragmentEnvironment) {
+
+    }
+
 }

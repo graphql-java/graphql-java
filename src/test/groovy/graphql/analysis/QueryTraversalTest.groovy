@@ -7,6 +7,7 @@ import graphql.language.FragmentDefinition
 import graphql.language.FragmentSpread
 import graphql.language.InlineFragment
 import graphql.language.NodeTraverser
+import graphql.language.NodeUtil
 import graphql.parser.Parser
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
@@ -300,6 +301,54 @@ class QueryTraversalTest extends Specification {
         then:
         1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironmentImpl env -> env.fragmentSpread == fragmentSpreadRoot && env.fragmentDefinition == fragmentF1 })
 
+    }
+
+
+    def "test preOrder and postOrder order for fragments"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+                {
+                    ...F1
+                }
+                
+                fragment F1 on Query {
+                    foo {
+                        subFoo
+                    }
+                }
+                """)
+
+        def fragments = NodeUtil.getFragmentsByName(query)
+
+        QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
+                .schema(schema)
+                .root(fragments["F1"])
+                .rootParentType(schema.getQueryType())
+                .fragmentsByName(fragments)
+                .variables([:])
+                .build()
+
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        1 * visitor.visitFragment({ QueryVisitorFragmentEnvironment env -> env.fragmentDefinition == fragments["F1"] })
+
+        when:
+        queryTraversal.visitPostOrder(visitor)
+
+        then:
+        1 * visitor.visitFragment({ QueryVisitorFragmentEnvironment env -> env.fragmentDefinition == fragments["F1"] })
     }
 
     def "works for mutations()"() {
