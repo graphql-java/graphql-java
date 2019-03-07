@@ -13,10 +13,10 @@ import static java.util.stream.Collectors.toList;
 @Internal
 public class ExecutionResultImpl implements ExecutionResult {
 
-    private final Object data;
     private final List<GraphQLError> errors;
-    private final transient boolean dataPresent;
+    private final Object data;
     private final transient Map<Object, Object> extensions;
+    private final transient boolean dataPresent;
 
     public ExecutionResultImpl(GraphQLError error) {
         this(false, null, Collections.singletonList(error), null);
@@ -52,15 +52,15 @@ public class ExecutionResultImpl implements ExecutionResult {
     }
 
     @Override
+    public List<GraphQLError> getErrors() {
+        return errors;
+    }
+
+    @Override
     @SuppressWarnings("TypeParameterUnusedInFormals")
     public <T> T getData() {
         //noinspection unchecked
         return (T) data;
-    }
-
-    @Override
-    public List<GraphQLError> getErrors() {
-        return errors;
     }
 
     @Override
