@@ -99,7 +99,7 @@ IntegerPart : '0' | NonZeroDigit | NonZeroDigit Digit+;
 
 NonZeroDigit: '1'.. '9';
 
-ExponentPart : ('e'|'E') Sign? Digit+;
+ExponentPart : ('e'|'E') ('+'|'-')? Digit+;
 
 Digit : '0'..'9';
 
