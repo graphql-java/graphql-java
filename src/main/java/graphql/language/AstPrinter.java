@@ -1,8 +1,6 @@
 package graphql.language;
 
-import static graphql.Assert.assertTrue;
-import static java.lang.String.valueOf;
-import static java.util.stream.Collectors.joining;
+import graphql.AssertException;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -13,7 +11,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import graphql.AssertException;
+import static graphql.Assert.assertTrue;
+import static java.lang.String.valueOf;
+import static java.util.stream.Collectors.joining;
 
 /**
  * This can take graphql language AST and print it out as a string
@@ -195,7 +195,9 @@ public class AstPrinter {
 
     private static NodePrinter<InlineFragment> inlineFragment() {
         return (out, node) -> {
-            String typeCondition = wrap("on ", type(node.getTypeCondition()), "");
+            TypeName typeName = node.getTypeCondition();
+            //Inline fragments may not have a type condition
+            String typeCondition = typeName == null ? "" : wrap("on ", type(typeName), "");
             String directives = directives(node.getDirectives());
             String selectionSet = node(node.getSelectionSet());
 
