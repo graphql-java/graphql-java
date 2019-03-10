@@ -539,7 +539,7 @@ extend input Input @directive {
         String outputFull = AstPrinter.printAst(document)
 
         expect:
-        outputCompact == '''query {foo {... {hello}}}'''
+        outputCompact == '''query { foo { ... { hello } } }'''
         outputFull == '''query {
   foo {
     ... {
