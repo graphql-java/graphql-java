@@ -6,7 +6,7 @@ import graphql.language.Node;
 import graphql.util.TraverserContext;
 
 @PublicApi
-public interface QueryVisitorFragmentEnvironment {
+public interface QueryVisitorFragmentDefinitionEnvironment {
     FragmentDefinition getFragmentDefinition();
 
     TraverserContext<Node> getTraverserContext();

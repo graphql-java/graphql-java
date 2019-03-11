@@ -208,7 +208,7 @@ class QueryTransformerTest extends Specification {
         0 * _
     }
 
-    def "fragment is traversed if it is a root and can be transformed"() {
+    def "fragment definition is traversed if it is a root and can be transformed"() {
         def query = TestUtil.parseQuery('''
             {
                 root {
@@ -244,7 +244,7 @@ class QueryTransformerTest extends Specification {
             }
 
             @Override
-            void visitFragment(QueryVisitorFragmentEnvironment env) {
+            void visitFragmentDefinition(QueryVisitorFragmentDefinitionEnvironment env) {
                 def changed = env.fragmentDefinition.transform({ builder ->
                     builder.typeCondition(TypeName.newTypeName("newTypeName").build())
                             .name("newFragName")

@@ -21,7 +21,7 @@ import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
 import static java.util.Collections.emptyMap
 
-class QueryTraversalTest extends Specification {
+class QueryTrqaversalTest extends Specification {
 
 
     Document createQuery(String query) {
@@ -304,7 +304,7 @@ class QueryTraversalTest extends Specification {
     }
 
 
-    def "test preOrder and postOrder order for fragments"() {
+    def "test preOrder and postOrder order for fragment definitions"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -342,13 +342,13 @@ class QueryTraversalTest extends Specification {
         queryTraversal.visitPreOrder(visitor)
 
         then:
-        1 * visitor.visitFragment({ QueryVisitorFragmentEnvironment env -> env.fragmentDefinition == fragments["F1"] })
+        1 * visitor.visitFragmentDefinition({ QueryVisitorFragmentDefinitionEnvironment env -> env.fragmentDefinition == fragments["F1"] })
 
         when:
         queryTraversal.visitPostOrder(visitor)
 
         then:
-        1 * visitor.visitFragment({ QueryVisitorFragmentEnvironment env -> env.fragmentDefinition == fragments["F1"] })
+        1 * visitor.visitFragmentDefinition({ QueryVisitorFragmentDefinitionEnvironment env -> env.fragmentDefinition == fragments["F1"] })
     }
 
     def "works for mutations()"() {

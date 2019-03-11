@@ -89,13 +89,13 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
             return TraversalControl.ABORT;
         }
 
-        QueryVisitorFragmentEnvironment fragmentEnvironment = new QueryVisitorFragmentEnvironmentImpl(node, context);
+        QueryVisitorFragmentDefinitionEnvironment fragmentEnvironment = new QueryVisitorFragmentDefinitionEnvironmentImpl(node, context);
 
         if (context.getVar(NodeTraverser.LeaveOrEnter.class) == LEAVE) {
-            postOrderCallback.visitFragment(fragmentEnvironment);
+            postOrderCallback.visitFragmentDefinition(fragmentEnvironment);
             return TraversalControl.CONTINUE;
         }
-        preOrderCallback.visitFragment(fragmentEnvironment);
+        preOrderCallback.visitFragmentDefinition(fragmentEnvironment);
 
         QueryTraversalContext parentEnv = context.getVarFromParents(QueryTraversalContext.class);
         GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(node.getTypeCondition().getName());

@@ -8,13 +8,13 @@ import graphql.util.TraverserContext;
 import java.util.Objects;
 
 @Internal
-public class QueryVisitorFragmentEnvironmentImpl implements QueryVisitorFragmentEnvironment {
+public class QueryVisitorFragmentDefinitionEnvironmentImpl implements QueryVisitorFragmentDefinitionEnvironment {
 
     private final FragmentDefinition fragmentDefinition;
     private final TraverserContext<Node> traverserContext;
 
 
-    public QueryVisitorFragmentEnvironmentImpl(FragmentDefinition fragmentDefinition, TraverserContext<Node> traverserContext) {
+    public QueryVisitorFragmentDefinitionEnvironmentImpl(FragmentDefinition fragmentDefinition, TraverserContext<Node> traverserContext) {
         this.fragmentDefinition = fragmentDefinition;
         this.traverserContext = traverserContext;
     }
@@ -37,7 +37,7 @@ public class QueryVisitorFragmentEnvironmentImpl implements QueryVisitorFragment
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        QueryVisitorFragmentEnvironmentImpl that = (QueryVisitorFragmentEnvironmentImpl) o;
+        QueryVisitorFragmentDefinitionEnvironmentImpl that = (QueryVisitorFragmentDefinitionEnvironmentImpl) o;
         return Objects.equals(fragmentDefinition, that.fragmentDefinition);
     }
 
