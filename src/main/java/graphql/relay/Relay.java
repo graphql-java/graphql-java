@@ -27,6 +27,7 @@ import static graphql.schema.GraphQLInterfaceType.newInterface;
 import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
+import static graphql.schema.GraphQLTypeReference.typeRef;
 
 /**
  * This can be used to compose graphql runtime types that implement
@@ -39,7 +40,7 @@ public class Relay {
 
     public static final String NODE = "Node";
 
-    private final GraphQLObjectType pageInfoType = newObject()
+    public static final GraphQLObjectType pageInfoType = newObject()
             .name("PageInfo")
             .description("Information about pagination in a connection.")
             .field(newFieldDefinition()
@@ -167,7 +168,7 @@ public class Relay {
                 .field(newFieldDefinition()
                         .name("pageInfo")
                         .description("details about this specific page")
-                        .type(nonNull(pageInfoType)))
+                        .type(nonNull(typeRef("PageInfo"))))
                 .fields(connectionFields)
                 .build();
     }

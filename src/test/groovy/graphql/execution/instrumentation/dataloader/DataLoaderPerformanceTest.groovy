@@ -19,18 +19,19 @@ import static graphql.execution.instrumentation.dataloader.DataLoaderPerformance
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpensiveDeferredQuery
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpensiveQuery
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getQuery
-import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.setupDataLoaderRegistry
-import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.setupGraphQL
 
 class DataLoaderPerformanceTest extends Specification {
 
     GraphQL graphQL
     DataLoaderRegistry dataLoaderRegistry
+    BatchCompareDataFetchers batchCompareDataFetchers
 
     void setup() {
-        dataLoaderRegistry = setupDataLoaderRegistry()
+        batchCompareDataFetchers = new BatchCompareDataFetchers()
+        DataLoaderPerformanceData dataLoaderPerformanceData = new DataLoaderPerformanceData(batchCompareDataFetchers)
+        dataLoaderRegistry = dataLoaderPerformanceData.setupDataLoaderRegistry()
         Instrumentation instrumentation = new DataLoaderDispatcherInstrumentation()
-        graphQL = setupGraphQL(instrumentation)
+        graphQL = dataLoaderPerformanceData.setupGraphQL(instrumentation)
     }
 
     def "760 ensure data loader is performant for lists"() {
@@ -42,8 +43,8 @@ class DataLoaderPerformanceTest extends Specification {
         result.data == expectedData
         //
         //  eg 1 for shops-->departments and one for departments --> products
-        BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
-        BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
+        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
+        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
     }
 
     def "970 ensure data loader is performant for multiple field with lists"() {
@@ -56,15 +57,15 @@ class DataLoaderPerformanceTest extends Specification {
         then:
         result.data == expectedExpensiveData
 
-        BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
-        BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
+        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
+        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
     }
 
     def "ensure data loader is performant for lists using async batch loading"() {
 
         when:
 
-        BatchCompareDataFetchers.useAsyncBatchLoading(true)
+        batchCompareDataFetchers.useAsyncBatchLoading(true)
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(dataLoaderRegistry).build()
         def result = graphQL.execute(executionInput)
@@ -73,8 +74,8 @@ class DataLoaderPerformanceTest extends Specification {
         result.data == expectedData
         //
         //  eg 1 for shops-->departments and one for departments --> products
-        BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
-        BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
+        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
+        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
 
     }
 
@@ -82,7 +83,7 @@ class DataLoaderPerformanceTest extends Specification {
 
         when:
 
-        BatchCompareDataFetchers.useAsyncBatchLoading(true)
+        batchCompareDataFetchers.useAsyncBatchLoading(true)
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveQuery).dataLoaderRegistry(dataLoaderRegistry).build()
         def result = graphQL.execute(executionInput)
@@ -90,8 +91,8 @@ class DataLoaderPerformanceTest extends Specification {
         then:
         result.data == expectedExpensiveData
 
-        BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
-        BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
+        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
+        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
     }
 
     def "data loader will work with deferred queries"() {
@@ -117,8 +118,8 @@ class DataLoaderPerformanceTest extends Specification {
 
         //
         //  with deferred results, we don't achieve the same efficiency
-        BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
-        BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
+        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
+        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
     }
 
     def "data loader will work with deferred queries on multiple levels deep"() {
@@ -144,7 +145,7 @@ class DataLoaderPerformanceTest extends Specification {
 
         //
         //  with deferred results, we don't achieve the same efficiency
-        BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
-        BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
+        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
+        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
     }
 }

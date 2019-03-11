@@ -21,7 +21,7 @@ public class GraphqlErrorBuilder {
     private String message;
     private List<Object> path;
     private List<SourceLocation> locations = new ArrayList<>();
-    private ErrorType errorType = ErrorType.DataFetchingException;
+    private ErrorClassification errorType = ErrorType.DataFetchingException;
     private Map<String, Object> extensions = null;
 
 
@@ -74,7 +74,7 @@ public class GraphqlErrorBuilder {
         return this;
     }
 
-    public GraphqlErrorBuilder errorType(ErrorType errorType) {
+    public GraphqlErrorBuilder errorType(ErrorClassification errorType) {
         this.errorType = assertNotNull(errorType);
         return this;
     }
@@ -89,32 +89,48 @@ public class GraphqlErrorBuilder {
      */
     public GraphQLError build() {
         assertNotNull(message, "You must provide error message");
-        return new GraphQLError() {
-            @Override
-            public String getMessage() {
-                return message;
-            }
+        return new GraphqlErrorImpl(message, locations, errorType, path, extensions);
+    }
 
-            @Override
-            public List<SourceLocation> getLocations() {
-                return locations;
-            }
+    private static class GraphqlErrorImpl implements GraphQLError {
+        private final String message;
+        private final List<SourceLocation> locations;
+        private final ErrorClassification errorType;
+        private final List<Object> path;
+        private final Map<String, Object> extensions;
 
-            @Override
-            public ErrorType getErrorType() {
-                return errorType;
-            }
+        public GraphqlErrorImpl(String message, List<SourceLocation> locations, ErrorClassification errorType, List<Object> path, Map<String, Object> extensions) {
+            this.message = message;
+            this.locations = locations;
+            this.errorType = errorType;
+            this.path = path;
+            this.extensions = extensions;
+        }
 
-            @Override
-            public List<Object> getPath() {
-                return path;
-            }
+        @Override
+        public String getMessage() {
+            return message;
+        }
 
-            @Override
-            public Map<String, Object> getExtensions() {
-                return extensions;
-            }
-        };
+        @Override
+        public List<SourceLocation> getLocations() {
+            return locations;
+        }
+
+        @Override
+        public ErrorClassification getErrorType() {
+            return errorType;
+        }
+
+        @Override
+        public List<Object> getPath() {
+            return path;
+        }
+
+        @Override
+        public Map<String, Object> getExtensions() {
+            return extensions;
+        }
     }
 
     /**
