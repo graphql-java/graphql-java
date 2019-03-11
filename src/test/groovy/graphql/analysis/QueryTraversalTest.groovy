@@ -21,7 +21,7 @@ import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
 import static java.util.Collections.emptyMap
 
-class QueryTrqaversalTest extends Specification {
+class QueryTraversalTest extends Specification {
 
 
     Document createQuery(String query) {
