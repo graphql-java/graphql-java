@@ -45,5 +45,12 @@ public class QueryVisitorFragmentDefinitionEnvironmentImpl implements QueryVisit
     public int hashCode() {
         return Objects.hash(fragmentDefinition);
     }
+
+    @Override
+    public String toString() {
+        return "QueryVisitorFragmentDefinitionEnvironmentImpl{" +
+                "fragmentDefinition=" + fragmentDefinition +
+                '}';
+    }
 }
 
