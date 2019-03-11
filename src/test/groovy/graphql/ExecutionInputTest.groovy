@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.cachecontrol.CacheControl
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
@@ -9,6 +10,7 @@ class ExecutionInputTest extends Specification {
 
     def query = "query { hello }"
     def registry = new DataLoaderRegistry()
+    def cacheControl = CacheControl.newCacheControl()
     def root = "root"
     def context = "context"
     def variables = [key: "value"]
@@ -17,6 +19,7 @@ class ExecutionInputTest extends Specification {
         when:
         def executionInput = ExecutionInput.newExecutionInput().query(query)
                 .dataLoaderRegistry(registry)
+                .cacheControl(cacheControl)
                 .variables(variables)
                 .root(root)
                 .context(context)
@@ -26,6 +29,7 @@ class ExecutionInputTest extends Specification {
         executionInput.root == root
         executionInput.variables == variables
         executionInput.dataLoaderRegistry == registry
+        executionInput.cacheControl == cacheControl
         executionInput.query == query
     }
 
@@ -49,6 +53,7 @@ class ExecutionInputTest extends Specification {
         when:
         def executionInputOld = ExecutionInput.newExecutionInput().query(query)
                 .dataLoaderRegistry(registry)
+                .cacheControl(cacheControl)
                 .variables(variables)
                 .root(root)
                 .context(context)
@@ -60,6 +65,7 @@ class ExecutionInputTest extends Specification {
         executionInput.root == root
         executionInput.variables == variables
         executionInput.dataLoaderRegistry == registry
+        executionInput.cacheControl == cacheControl
         executionInput.query == "new query"
     }
 

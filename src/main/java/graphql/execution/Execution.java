@@ -90,6 +90,7 @@ public class Execution {
                 .document(document)
                 .operationDefinition(operationDefinition)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
+                .cacheControl(executionInput.getCacheControl())
                 .build();
 
 
