@@ -5,6 +5,7 @@ import graphql.language.Document
 import graphql.language.Field
 import graphql.language.NodeUtil
 import graphql.language.SelectionSet
+import graphql.language.TypeName
 import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
@@ -207,7 +208,7 @@ class QueryTransformerTest extends Specification {
         0 * _
     }
 
-    def "named fragment is traversed if it is a root and can be transformed"() {
+    def "fragment definition is traversed if it is a root and can be transformed"() {
         def query = TestUtil.parseQuery('''
             {
                 root {
@@ -241,6 +242,15 @@ class QueryTransformerTest extends Specification {
                     })
                 }
             }
+
+            @Override
+            void visitFragmentDefinition(QueryVisitorFragmentDefinitionEnvironment env) {
+                def changed = env.fragmentDefinition.transform({ builder ->
+                    builder.typeCondition(TypeName.newTypeName("newTypeName").build())
+                            .name("newFragName")
+                })
+                changeNode(env.traverserContext, changed)
+            }
         }
 
 
@@ -248,6 +258,6 @@ class QueryTransformerTest extends Specification {
         def newFragment = queryTransformer.transform(visitor)
         then:
         printAstCompact(newFragment) ==
-                "fragment frag on Root {fooA {midA {newChild1 newChild2}}}"
+                "fragment newFragName on newTypeName {fooA {midA {newChild1 newChild2}}}"
     }
 }
