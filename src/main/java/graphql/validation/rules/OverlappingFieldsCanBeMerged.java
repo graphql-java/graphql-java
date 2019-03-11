@@ -305,14 +305,14 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             return;
         }
         visitedFragmentSpreads.add(fragment.getName());
-        GraphQLOutputType graphQLType = (GraphQLOutputType) TypeFromAST.getTypeFromAST(getValidationContext().getSchema(),
+        GraphQLType graphQLType = TypeFromAST.getTypeFromAST(getValidationContext().getSchema(),
                 fragment.getTypeCondition());
         collectFields(fieldMap, fragment.getSelectionSet(), graphQLType, visitedFragmentSpreads);
     }
 
     private void collectFieldsForInlineFragment(Map<String, List<FieldAndType>> fieldMap, Set<String> visitedFragmentSpreads, GraphQLType parentType, InlineFragment inlineFragment) {
         GraphQLType graphQLType = inlineFragment.getTypeCondition() != null
-                ? (GraphQLOutputType) TypeFromAST.getTypeFromAST(getValidationContext().getSchema(), inlineFragment.getTypeCondition())
+                ? TypeFromAST.getTypeFromAST(getValidationContext().getSchema(), inlineFragment.getTypeCondition())
                 : parentType;
         collectFields(fieldMap, inlineFragment.getSelectionSet(), graphQLType, visitedFragmentSpreads);
     }
