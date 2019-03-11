@@ -698,4 +698,23 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         document.getIgnoredChars().getRight()[1] == new IgnoredChar(",", IgnoredChar.IgnoredCharKind.COMMA, new SourceLocation(3, 4))
     }
 
+    def "parsed float with positive exponent"() {
+        given:
+        def input = """
+            {
+                getEmployee (sal:1.7976931348155E+308){
+                    sal
+                }
+            }
+        """
+        when:
+        Document document = new Parser().parseDocument(input)
+        Field getEmployee = (document.definitions[0] as OperationDefinition).selectionSet.selections[0]
+        def argumentValue = getEmployee.getArguments().get(0).getValue()
+
+        then:
+        argumentValue instanceof FloatValue
+        ((FloatValue) argumentValue).value.toString() == "1.7976931348155E+308"
+    }
+
 }

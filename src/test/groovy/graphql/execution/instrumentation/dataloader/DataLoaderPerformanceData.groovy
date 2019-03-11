@@ -9,15 +9,20 @@ import org.dataloader.DataLoaderRegistry
 
 class DataLoaderPerformanceData {
 
-    static DataLoaderRegistry setupDataLoaderRegistry() {
-        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
-        dataLoaderRegistry.register("departments", BatchCompareDataFetchers.departmentsForShopDataLoader)
-        dataLoaderRegistry.register("products", BatchCompareDataFetchers.productsForDepartmentDataLoader)
+    private final BatchCompareDataFetchers batchCompareDataFetchers;
+
+    DataLoaderPerformanceData(BatchCompareDataFetchers batchCompareDataFetchers) {
+        this.batchCompareDataFetchers = batchCompareDataFetchers;
     }
 
-    static GraphQL setupGraphQL(Instrumentation instrumentation) {
-        BatchCompareDataFetchers.resetState()
-        GraphQLSchema schema = new BatchCompare().buildDataLoaderSchema()
+    DataLoaderRegistry setupDataLoaderRegistry() {
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
+        dataLoaderRegistry.register("departments", batchCompareDataFetchers.departmentsForShopDataLoader)
+        dataLoaderRegistry.register("products", batchCompareDataFetchers.productsForDepartmentDataLoader)
+    }
+
+    GraphQL setupGraphQL(Instrumentation instrumentation) {
+        GraphQLSchema schema = new BatchCompare().buildDataLoaderSchema(batchCompareDataFetchers)
         schema = schema.transform({ bldr -> bldr.additionalDirective(Directives.DeferDirective) })
 
         GraphQL.newGraphQL(schema)
