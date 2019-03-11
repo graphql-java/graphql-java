@@ -57,7 +57,7 @@ class Issue1440 extends Specification {
 
         executionResult.data == null
         executionResult.errors.size() == 1
-        (executionResult.errors[0] as ValidationError).validationErrorType == ValidationErrorType.InlineFragmentTypeConditionInvalid
+        (executionResult.errors[0] as ValidationError).validationErrorType == ValidationErrorType.FragmentTypeConditionInvalid
     }
 
     def "#1440 when inline fragment type condition is input type it should return validation error - not classCastException"() {
