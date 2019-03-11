@@ -55,8 +55,8 @@ class DataLoaderPerformanceTest extends Specification {
         then:
         result.data == expectedExpensiveData
 
-        BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
-        BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
+        BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() <= 2
+        BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() <= 2
     }
 
     def "ensure data loader is performant for lists using async batch loading"() {
