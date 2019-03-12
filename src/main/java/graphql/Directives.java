@@ -4,16 +4,14 @@ package graphql;
 import graphql.schema.GraphQLDirective;
 
 import static graphql.Scalars.GraphQLBoolean;
-import static graphql.Scalars.GraphQLString;
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD;
-import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_SPREAD;
 import static graphql.introspection.Introspection.DirectiveLocation.INLINE_FRAGMENT;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLNonNull.nonNull;
 
 /**
- * The query directives that are under stood by graphql-java
+ * The directives that are understood by graphql-java
  */
 public class Directives {
 
@@ -38,19 +36,9 @@ public class Directives {
             .build();
 
     /**
-     * @deprecated - this is no longer needed and will be removed in a future version
+     * The @defer directive can be used to defer sending data for a field till later in the query.  This is an opt in
+     * directive that is not available unless it is explicitly put into the schema.
      */
-    @Deprecated
-    public static final GraphQLDirective FetchDirective = GraphQLDirective.newDirective()
-            .name("fetch")
-            .description("Directs the SDL type generation to create a data fetcher that uses this `from` argument as the property name")
-            .argument(newArgument()
-                    .name("from")
-                    .type(nonNull(GraphQLString))
-                    .description("The `name` used to fetch values from the underlying object"))
-            .validLocations(FIELD_DEFINITION)
-            .build();
-
     public static final GraphQLDirective DeferDirective = GraphQLDirective.newDirective()
             .name("defer")
             .description("This directive allows results to be deferred during execution")
