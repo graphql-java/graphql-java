@@ -3,6 +3,8 @@ package readme;
 import graphql.Scalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.FieldCoordinates;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.PropertyDataFetcher;
 
@@ -10,6 +12,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static graphql.schema.FieldCoordinates.coordinates;
 
 @SuppressWarnings({"Convert2Lambda", "unused", "ClassCanBeStatic"})
 public class MappingExamples {
@@ -132,7 +136,12 @@ public class MappingExamples {
         GraphQLFieldDefinition descriptionField = GraphQLFieldDefinition.newFieldDefinition()
                 .name("description")
                 .type(Scalars.GraphQLString)
-                .dataFetcher(PropertyDataFetcher.fetching("desc"))
+                .build();
+
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(
+                        coordinates("ObjectType", "description"),
+                        PropertyDataFetcher.fetching("desc"))
                 .build();
 
     }
