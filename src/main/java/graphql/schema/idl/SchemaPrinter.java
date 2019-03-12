@@ -652,9 +652,7 @@ public class SchemaPrinter {
         StringBuilder sb = new StringBuilder();
 
         StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-
-        printComments(pw, directive, "");
+        printComments(new PrintWriter(sw), directive, "");
 
         sb.append(sw.toString());
 
