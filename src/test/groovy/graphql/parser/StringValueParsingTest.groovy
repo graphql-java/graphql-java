@@ -2,10 +2,8 @@ package graphql.parser
 
 import spock.lang.Specification
 
-import java.util.stream.Collectors
-
 import static java.util.Arrays.asList
-import static java.util.stream.Collectors.*
+import static java.util.stream.Collectors.joining
 
 class StringValueParsingTest extends Specification {
 
