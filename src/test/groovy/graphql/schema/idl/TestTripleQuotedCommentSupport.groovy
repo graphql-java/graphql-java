@@ -57,7 +57,7 @@ enum Language {
         queryType["description"] == """A simple GraphQL schema which is well described.\nAnd has multiple lines of description"""
 
         def translateField = named(queryType["fields"], "translate")
-        translateField["description"] == " Translates a string from a given language into a different language.\n "
+        translateField["description"] == "Translates a string from a given language into a different language."
 
         def fromLanguage = named(translateField["args"], "fromLanguage")
         fromLanguage["description"] == "The original language that `text` is provided in."
