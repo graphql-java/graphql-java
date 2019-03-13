@@ -2,6 +2,11 @@ package graphql.parser
 
 import spock.lang.Specification
 
+import java.util.stream.Collectors
+
+import static java.util.Arrays.asList
+import static java.util.stream.Collectors.*
+
 class StringValueParsingTest extends Specification {
 
     def "parsing quoted string should work"() {
@@ -95,36 +100,129 @@ class StringValueParsingTest extends Specification {
         parsed == '''| inner quoted """ part but with all others left as they are \\n with slash escaped chars \\b\\ud83c\\udf7a\\r\\t\\n |'''
     }
 
-    def "remove common indentation works as per spec"() {
+    def joinLines(String... args) {
+        asList(args).stream().collect(joining('\n'))
+    }
+
+    def "removes uniform indentation from a string"() {
         given:
-        def input = '''
-
-
-        line A
-       line B
-      line C
-     line D
-     line E
-      line F
-       line G
-        line H
-
-
-''' // 2 empty lines at the start and end
+        def input = joinLines(
+                '',
+                '    Hello,',
+                '      World!',
+                '',
+                '    Yours,',
+                '      GraphQL.',
+        )
 
         when:
         String parsed = StringValueParsing.removeIndentation(input)
 
         then:
-        def expected = '''    line A
-   line B
-  line C
- line D
- line E
-  line F
-   line G
-    line H'''
+        def expected = joinLines('Hello,', '  World!', '', 'Yours,', '  GraphQL.')
         parsed == expected
+    }
 
+    def "removes empty leading and trailing lines"() {
+        given:
+        def input = joinLines(
+                '',
+                '',
+                '    Hello,',
+                '      World!',
+                '',
+                '    Yours,',
+                '      GraphQL.',
+                '',
+                '',
+        )
+
+        when:
+        String parsed = StringValueParsing.removeIndentation(input)
+
+        then:
+        def expected = joinLines('Hello,', '  World!', '', 'Yours,', '  GraphQL.')
+        parsed == expected
+    }
+
+    def "removes blank leading and trailing lines"() {
+        given:
+        def input = joinLines(
+                '  ',
+                '        ',
+                '    Hello,',
+                '      World!',
+                '',
+                '    Yours,',
+                '      GraphQL.',
+                '        ',
+                '  ',
+        )
+
+        when:
+        String parsed = StringValueParsing.removeIndentation(input)
+
+        then:
+        def expected = joinLines('Hello,', '  World!', '', 'Yours,', '  GraphQL.')
+        parsed == expected
+    }
+
+    def "retains indentation from first line"() {
+        given:
+        def input = joinLines(
+                '    Hello,',
+                '      World!',
+                '',
+                '    Yours,',
+                '      GraphQL.',
+        )
+
+        when:
+        String parsed = StringValueParsing.removeIndentation(input)
+
+        then:
+        def expected = joinLines('    Hello,', '  World!', '', 'Yours,', '  GraphQL.')
+        parsed == expected
+    }
+
+    def "does not alter trailing spaces"() {
+        given:
+        def input = joinLines(
+                '               ',
+                '    Hello,     ',
+                '      World!   ',
+                '               ',
+                '    Yours,     ',
+                '      GraphQL. ',
+                '               ',
+        )
+
+        when:
+        String parsed = StringValueParsing.removeIndentation(input)
+
+        then:
+        def expected = joinLines(
+                'Hello,     ',
+                '  World!   ',
+                '           ',
+                'Yours,     ',
+                '  GraphQL. ',
+        )
+        parsed == expected
+    }
+
+    def "1438 - losing one character when followed by a space is fixed"() {
+        given:
+        def input = '''L1
+L 2
+L 3'''
+        when:
+        String parsed = StringValueParsing.removeIndentation(input)
+
+        then:
+        def expected = '''L1
+L 2
+L 3'''
+        parsed == expected
     }
 }
