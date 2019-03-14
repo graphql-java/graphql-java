@@ -8,13 +8,13 @@ import graphql.language.Document;
 import graphql.language.SDLDefinition;
 import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
+import graphql.schema.idl.errors.NonSDLDefinitionError;
 import graphql.schema.idl.errors.SchemaProblem;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.StringWriter;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -108,6 +108,8 @@ public class SchemaParser {
         for (Definition definition : definitions) {
             if (definition instanceof SDLDefinition) {
                 typeRegistry.add((SDLDefinition) definition).ifPresent(errors::add);
+            } else {
+                errors.add(new NonSDLDefinitionError(definition));
             }
         }
         if (errors.size() > 0) {
@@ -115,15 +117,5 @@ public class SchemaParser {
         } else {
             return typeRegistry;
         }
-    }
-
-    private String read(Reader reader) throws IOException {
-        char[] buffer = new char[1024 * 4];
-        StringWriter sw = new StringWriter();
-        int n;
-        while (-1 != (n = reader.read(buffer))) {
-            sw.write(buffer, 0, n);
-        }
-        return sw.toString();
     }
 }
