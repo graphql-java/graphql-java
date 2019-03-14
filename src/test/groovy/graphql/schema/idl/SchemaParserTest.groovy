@@ -296,4 +296,45 @@ class SchemaParserTest extends Specification {
 
         ''' extend scalar Foo @directive'''              | _ // special case - has no innards
     }
+
+    def "1447 - non schema elements are detected"() {
+        def schema = '''     
+
+        type Query {
+            allUsers: [User!]!
+        }
+
+        type User {
+            name: String!
+            age: Int!
+        }
+
+        {
+            allUsers {
+                ... addressDetails
+            }
+        }
+
+        fragment addressDetails on User {
+            name
+            age
+        }
+
+        mutation CreateReviewForEpisode($ep: Episode!, $review: ReviewInput!) {
+            createReview(episode: $ep, review: $review) {
+                stars
+                commentary
+            }
+        }
+
+        '''
+        when:
+        read(schema)
+        then:
+        def schemaProblem = thrown(SchemaProblem)
+        schemaProblem.getErrors().size() == 3
+        schemaProblem.getErrors()[0].getMessage().contains("OperationDefinition")
+        schemaProblem.getErrors()[1].getMessage().contains("FragmentDefinition")
+        schemaProblem.getErrors()[2].getMessage().contains("OperationDefinition")
+    }
 }
