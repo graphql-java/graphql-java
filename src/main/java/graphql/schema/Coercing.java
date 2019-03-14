@@ -25,13 +25,16 @@ public interface Coercing<I, O> {
 
     /**
      * Called to convert a Java object result of a DataFetcher to a valid runtime value for the scalar type.
-     *
+     * <p>
+     * Note : Throw {@link graphql.schema.CoercingSerializeException} if there is fundamental
+     * problem during serialisation, don't return null to indicate failure.
+     * <p>
      * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your serialize method, but rather
      * catch them and fire them as {@link graphql.schema.CoercingSerializeException} instead as per the method contract.
      *
      * @param dataFetcherResult is never null
      *
-     * @return a serialized value which is never null
+     * @return a serialized value which may be null.
      *
      * @throws graphql.schema.CoercingSerializeException if value input can't be serialized
      */
@@ -39,7 +42,7 @@ public interface Coercing<I, O> {
 
     /**
      * Called to resolve a input from a query variable into a Java object acceptable for the scalar type.
-     *
+     * <p>
      * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseValue method, but rather
      * catch them and fire them as {@link graphql.schema.CoercingSerializeException} instead as per the method contract.
      *
@@ -54,7 +57,7 @@ public interface Coercing<I, O> {
     /**
      * Called during query validation to convert an query input AST node into a Java object acceptable for the scalar type.  The input
      * object will be an instance of {@link graphql.language.Value}.
-     *
+     * <p>
      * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseLiteral method, but rather
      * catch them and fire them as {@link graphql.schema.CoercingParseLiteralException} instead as per the method contract.
      *
@@ -69,11 +72,11 @@ public interface Coercing<I, O> {
     /**
      * Called during query execution to convert an query input AST node into a Java object acceptable for the scalar type.  The input
      * object will be an instance of {@link graphql.language.Value}.
-     *
+     * <p>
      * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseLiteral method, but rather
      * catch them and fire them as {@link graphql.schema.CoercingParseLiteralException} instead as per the method contract.
-     *
-     * Many scalar types don't need to implement this method because they do'nt take AST {@link graphql.language.VariableReference}
+     * <p>
+     * Many scalar types don't need to implement this method because they don't take AST {@link graphql.language.VariableReference}
      * objects and convert them into actual values.  But for those scalar types that want to do this, then this
      * method should be implemented.
      *
