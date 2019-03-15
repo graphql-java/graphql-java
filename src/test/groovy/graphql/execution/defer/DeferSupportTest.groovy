@@ -194,7 +194,7 @@ class DeferSupportTest extends Specification {
         def directivePresent = deferSupport.checkForDeferDirective(mergedField([
                 Field.newField("a").directives([new Directive("defer")]).build(),
                 new Field("b")
-        ], [:])
+        ]), [:])
 
         then:
         directivePresent
@@ -206,40 +206,40 @@ class DeferSupportTest extends Specification {
 
         when:
         def ifArg = new Argument("if", new BooleanValue(false))
-        def directivePresent = deferSupport.checkForDeferDirective([
+        def directivePresent = deferSupport.checkForDeferDirective(mergedField([
                 Field.newField("a").directives([new Directive("defer", [ifArg])]).build(),
                 new Field("b")
-        ], [:])
+        ]), [:])
 
         then:
         !directivePresent
 
         when:
         ifArg = new Argument("if", new BooleanValue(true))
-        directivePresent = deferSupport.checkForDeferDirective([
+        directivePresent = deferSupport.checkForDeferDirective(mergedField([
                 Field.newField("a").directives([new Directive("defer", [ifArg])]).build(),
                 new Field("b")
-        ], [:])
+        ]), [:])
 
         then:
         directivePresent
 
         when:
         ifArg = new Argument("if", new VariableReference("varRef"))
-        directivePresent = deferSupport.checkForDeferDirective([
+        directivePresent = deferSupport.checkForDeferDirective(mergedField([
                 Field.newField("a").directives([new Directive("defer", [ifArg])]).build(),
                 new Field("b")
-        ], [varRef: false])
+        ]), [varRef: false])
 
         then:
         !directivePresent
 
         when:
         ifArg = new Argument("if", new VariableReference("varRef"))
-        directivePresent = deferSupport.checkForDeferDirective([
+        directivePresent = deferSupport.checkForDeferDirective(mergedField([
                 Field.newField("a").directives([new Directive("defer", [ifArg])]).build(),
                 new Field("b")
-        ], [varRef: true])
+        ]), [varRef: true])
 
         then:
         directivePresent

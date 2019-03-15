@@ -32,7 +32,7 @@ public class DeferSupport {
     private final SingleSubscriberPublisher<DeferredExecutionResult> publisher = new SingleSubscriberPublisher<>();
     private final ValuesResolver valuesResolver = new ValuesResolver();
 
-    public boolean checkForDeferDirective(MergedField currentField) {
+    public boolean checkForDeferDirective(MergedField currentField, Map<String,Object> variables) {
         for (Field field : currentField.getFields()) {
             Directive directive = field.getDirective(DeferDirective.getName());
             if (directive != null) {

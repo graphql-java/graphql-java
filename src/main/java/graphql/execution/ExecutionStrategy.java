@@ -206,7 +206,8 @@ public abstract class ExecutionStrategy {
     }
 
     protected CompletableFuture<FieldValueInfo> resolveFieldWithInfoToNull(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        FieldValueInfo fieldValueInfo = completeField(executionContext, parameters, null);
+        FetchedValue fetchedValue = FetchedValue.newFetchedValue().build();
+        FieldValueInfo fieldValueInfo = completeField(executionContext, parameters, fetchedValue);
         return CompletableFuture.completedFuture(fieldValueInfo);
     }
 
@@ -787,7 +788,8 @@ public abstract class ExecutionStrategy {
                                                         GraphQLFieldDefinition fieldDefinition,
                                                         GraphQLObjectType fieldContainer) {
         GraphQLOutputType fieldType = fieldDefinition.getType();
-        List<Argument> fieldArgs = parameters.getField().getArguments();
+        MergedField field = parameters.getField();
+        List<Argument> fieldArgs = field.getArguments();
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables());
 
@@ -795,7 +797,7 @@ public abstract class ExecutionStrategy {
                 .type(fieldType)
                 .fieldDefinition(fieldDefinition)
                 .fieldContainer(fieldContainer)
-                .field(parameters.getField())
+                .field(field)
                 .path(parameters.getPath())
                 .parentInfo(parameters.getExecutionStepInfo())
                 .arguments(argumentValues)

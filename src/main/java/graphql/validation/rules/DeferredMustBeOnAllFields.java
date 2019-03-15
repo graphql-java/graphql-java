@@ -58,7 +58,7 @@ public class DeferredMustBeOnAllFields extends AbstractRule {
 
     private void recordBadDeferredFields(List<String> path, String fieldName, List<Field> fields) {
         String message = String.format("If any of the multiple declarations of a field within the query (via fragments and field selections) contain the @defer directive, then all of them have to contain the @defer directive - field '%s' at '%s'", fieldName, path);
-        getValidationErrorCollector().addError(new ValidationError(ValidationErrorType.DeferredMustBeOnAllFields, fields.get(0).getSourceLocation(), message, path));
+        getValidationErrorCollector().addError(new ValidationError(ValidationErrorType.DeferMustBeOnAllFields, fields.get(0).getSourceLocation(), message, path));
     }
 
     @Override
