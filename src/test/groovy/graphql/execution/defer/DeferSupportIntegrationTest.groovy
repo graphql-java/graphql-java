@@ -185,7 +185,7 @@ class DeferSupportIntegrationTest extends Specification {
         Publisher<DeferredExecutionResult> deferredResultStream = initialResult.extensions[GraphQL.DEFERRED_RESULTS] as Publisher<DeferredExecutionResult>
 
         def subscriber = new CapturingSubscriber()
-        subscriber.subscribeTo(deferredResultStream);
+        subscriber.subscribeTo(deferredResultStream)
         Awaitility.await().untilTrue(subscriber.finished)
 
         List<ExecutionResult> resultList = subscriber.executionResults
@@ -245,7 +245,7 @@ class DeferSupportIntegrationTest extends Specification {
 
         when:
 
-        Publisher<ExecutionResult> deferredResultStream = initialResult.extensions[GraphQL.DEFERRED_RESULTS] as Publisher<ExecutionResult>
+        Publisher<DeferredExecutionResult> deferredResultStream = initialResult.extensions[GraphQL.DEFERRED_RESULTS] as Publisher<DeferredExecutionResult>
 
         def subscriber = new CapturingSubscriber()
         subscriber.subscribeTo(deferredResultStream);
