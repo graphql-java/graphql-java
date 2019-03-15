@@ -31,8 +31,7 @@ class EchoingWiringFactoryTest extends Specification {
             }
             
         """
-        def schema = TestUtil.schema(idl, EchoingWiringFactory.newEchoingWiring())
-        def graphQL = GraphQL.newGraphQL(schema).build()
+        def graphQL = TestUtil.graphQL(idl, EchoingWiringFactory.newEchoingWiring()).build()
 
         when:
         def result = graphQL.execute("""

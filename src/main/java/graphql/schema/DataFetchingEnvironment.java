@@ -1,11 +1,15 @@
 package graphql.schema;
 
 import graphql.PublicApi;
-import graphql.execution.ExecutionContext;
+import graphql.cachecontrol.CacheControl;
 import graphql.execution.ExecutionId;
-import graphql.execution.ExecutionTypeInfo;
+import graphql.execution.ExecutionStepInfo;
+import graphql.execution.MergedField;
+import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
+import graphql.language.OperationDefinition;
+import org.dataloader.DataLoader;
 
 import java.util.List;
 import java.util.Map;
@@ -59,13 +63,29 @@ public interface DataFetchingEnvironment {
      * Returns a context argument that is set up when the {@link graphql.GraphQL#execute} method
      * is invoked.
      * <p>
-     * This is a info object which is provided to all DataFetcher, but never used by graphql-java itself.
+     * This is a info object which is provided to all DataFetchers, but never used by graphql-java itself.
      *
      * @param <T> you decide what type it is
      *
      * @return can be null
      */
     <T> T getContext();
+
+    /**
+     * This returns a context object that parent fields may have returned returned
+     * via {@link graphql.execution.DataFetcherResult#getLocalContext()} which can be used to pass down extra information to
+     * fields beyond the normal {@link #getSource()}
+     * <p>
+     * This differs from {@link #getContext()} in that its field specific and passed from parent field to child field,
+     * whilst {@link #getContext()} is global for the whole query.
+     * <p>
+     * If the field is a top level field then 'localContext' equals the global 'context'
+     *
+     * @param <T> you decide what type it is
+     *
+     * @return can be null if no field context objects are passed back by previous parent fields
+     */
+    <T> T getLocalContext();
 
     /**
      * This is the source object for the root query.
@@ -83,6 +103,14 @@ public interface DataFetchingEnvironment {
 
 
     /**
+     * @return the list of fields
+     *
+     * @deprecated Use {@link #getMergedField()}.
+     */
+    @Deprecated
+    List<Field> getFields();
+
+    /**
      * It can happen that a query has overlapping fields which are
      * are querying the same data. If this is the case they get merged
      * together and fetched only once, but this method returns all of the Fields
@@ -92,22 +120,26 @@ public interface DataFetchingEnvironment {
      *
      * Example query with more than one Field returned:
      *
-     *  query Foo {
-     *      bar
-     *      ...BarFragment
-     *  }
+     * <pre>
+     * {@code
      *
-     *  fragment BarFragment on Query {
-     *      bar
-     *  }
+     *      query Foo {
+     *          bar
+     *          ...BarFragment
+     *      }
      *
+     *      fragment BarFragment on Query {
+     *          bar
+     *      }
+     * }
+     * </pre>
      *
      * @return the list of fields currently queried
      */
-    List<Field> getFields();
+    MergedField getMergedField();
 
     /**
-     * @return returns the field which is currently queried. See also {@link #getFields()}
+     * @return returns the field which is currently queried. See also {@link #getMergedField()}.
      */
     Field getField();
 
@@ -118,9 +150,9 @@ public interface DataFetchingEnvironment {
 
 
     /**
-     * @return the field {@link ExecutionTypeInfo} for the current data fetch operation
+     * @return the field {@link ExecutionStepInfo} for the current data fetch operation
      */
-    ExecutionTypeInfo getFieldTypeInfo();
+    ExecutionStepInfo getExecutionStepInfo();
 
     /**
      * @return the type of the parent of the current field
@@ -148,7 +180,41 @@ public interface DataFetchingEnvironment {
     DataFetchingFieldSelectionSet getSelectionSet();
 
     /**
-     * @return the current {@link ExecutionContext}. It gives access to the overall schema and other things related to the overall execution of the current request.
+     * This allows you to retrieve a named dataloader from the underlying {@link org.dataloader.DataLoaderRegistry}
+     *
+     * @param dataLoaderName the name of the data loader to fetch
+     * @param <K>            the key type
+     * @param <V>            the value type
+     *
+     * @return the named data loader or null
+     *
+     * @see graphql.execution.ExecutionContext#getDataLoaderRegistry()
+     * @see org.dataloader.DataLoaderRegistry#getDataLoader(String)
      */
-    ExecutionContext getExecutionContext();
+    <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
+
+    /**
+     * @return the current {@link CacheControl} instance used to add cache hints to the response
+     */
+    CacheControl getCacheControl();
+
+    /**
+     * @return the current operation that is being executed
+     */
+    OperationDefinition getOperationDefinition();
+
+    /**
+     * @return the current query Document that is being executed
+     */
+    Document getDocument();
+
+    /**
+     * This returns the variables that have been passed into the query.  Note that this is the raw variables themselves and not the
+     * arguments to the field, which is accessed via {@link #getArguments()}
+     * <p>
+     * The field arguments are created by interpolating any referenced variables and AST literals and resolving them into the arguments
+     *
+     * @return the variables that have been passed to the query that is being executed
+     */
+    Map<String, Object> getVariables();
 }

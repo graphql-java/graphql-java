@@ -1,5 +1,6 @@
 package graphql.parser
 
+
 import graphql.language.Argument
 import graphql.language.ArrayValue
 import graphql.language.AstComparator
@@ -13,6 +14,7 @@ import graphql.language.Field
 import graphql.language.FloatValue
 import graphql.language.FragmentDefinition
 import graphql.language.FragmentSpread
+import graphql.language.IgnoredChar
 import graphql.language.InlineFragment
 import graphql.language.InputObjectTypeDefinition
 import graphql.language.IntValue
@@ -28,12 +30,12 @@ import graphql.language.OperationDefinition
 import graphql.language.ScalarTypeDefinition
 import graphql.language.Selection
 import graphql.language.SelectionSet
+import graphql.language.SourceLocation
 import graphql.language.StringValue
 import graphql.language.TypeName
 import graphql.language.UnionTypeDefinition
 import graphql.language.VariableDefinition
 import graphql.language.VariableReference
-import org.antlr.v4.runtime.misc.ParseCancellationException
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -396,10 +398,10 @@ class ParserTest extends Specification {
             { hello(arg: 4.) }
             """
         when:
-        def document = new Parser().parseDocument(input)
+        new Parser().parseDocument(input)
 
         then:
-        thrown(ParseCancellationException)
+        thrown(InvalidSyntaxException)
     }
 
     def "extraneous input is an exception"() {
@@ -410,7 +412,7 @@ class ParserTest extends Specification {
         when:
         new Parser().parseDocument(input)
         then:
-        thrown(ParseCancellationException)
+        thrown(InvalidSyntaxException)
     }
 
     def "invalid syntax is an error"() {
@@ -421,7 +423,7 @@ class ParserTest extends Specification {
         when:
         new Parser().parseDocument(input)
         then:
-        thrown(ParseCancellationException)
+        thrown(InvalidSyntaxException)
     }
 
     def "mutation without a name"() {
@@ -486,7 +488,7 @@ class ParserTest extends Specification {
         new Parser().parseDocument(input)
 
         then:
-        def exception = thrown(ParseCancellationException)
+        def exception = thrown(InvalidSyntaxException)
         exception != null
     }
 
@@ -498,7 +500,7 @@ class ParserTest extends Specification {
         new Parser().parseDocument(input)
 
         then:
-        def exception = thrown(ParseCancellationException)
+        def exception = thrown(InvalidSyntaxException)
         exception != null
     }
 
@@ -672,4 +674,47 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         }
         true
     }
+
+
+    def "parse ignored chars"() {
+        given:
+        def input = "{,\r me\n\t} ,"
+
+        when:
+        Document document = new Parser().parseDocument(input)
+        def field = (document.definitions[0] as OperationDefinition).selectionSet.selections[0]
+        then:
+        field.getIgnoredChars().getLeft().size() == 3
+        field.getIgnoredChars().getLeft()[0] == new IgnoredChar(",", IgnoredChar.IgnoredCharKind.COMMA, new SourceLocation(2, 2))
+        field.getIgnoredChars().getLeft()[1] == new IgnoredChar("\r", IgnoredChar.IgnoredCharKind.CR, new SourceLocation(2, 3))
+        field.getIgnoredChars().getLeft()[2] == new IgnoredChar(" ", IgnoredChar.IgnoredCharKind.SPACE, new SourceLocation(2, 4))
+
+        field.getIgnoredChars().getRight().size() == 2
+        field.getIgnoredChars().getRight()[0] == new IgnoredChar("\n", IgnoredChar.IgnoredCharKind.LF, new SourceLocation(2, 7))
+        field.getIgnoredChars().getRight()[1] == new IgnoredChar("\t", IgnoredChar.IgnoredCharKind.TAB, new SourceLocation(3, 1))
+
+        document.getIgnoredChars().getRight().size() == 2
+        document.getIgnoredChars().getRight()[0] == new IgnoredChar(" ", IgnoredChar.IgnoredCharKind.SPACE, new SourceLocation(3, 3))
+        document.getIgnoredChars().getRight()[1] == new IgnoredChar(",", IgnoredChar.IgnoredCharKind.COMMA, new SourceLocation(3, 4))
+    }
+
+    def "parsed float with positive exponent"() {
+        given:
+        def input = """
+            {
+                getEmployee (sal:1.7976931348155E+308){
+                    sal
+                }
+            }
+        """
+        when:
+        Document document = new Parser().parseDocument(input)
+        Field getEmployee = (document.definitions[0] as OperationDefinition).selectionSet.selections[0]
+        def argumentValue = getEmployee.getArguments().get(0).getValue()
+
+        then:
+        argumentValue instanceof FloatValue
+        ((FloatValue) argumentValue).value.toString() == "1.7976931348155E+308"
+    }
+
 }

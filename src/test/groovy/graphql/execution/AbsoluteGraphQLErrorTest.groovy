@@ -6,6 +6,8 @@ import graphql.language.SourceLocation
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
+import static graphql.TestUtil.mergedField
+import static graphql.TestUtil.mergedSelectionSet
 import static graphql.execution.ExecutionStrategyParameters.newParameters
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
@@ -27,10 +29,10 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def field = Field.newField().name("test").sourceLocation(new SourceLocation(4, 5)).build()
 
         def parameters = newParameters()
-                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
+                .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": [Field.newField().build()]])
-                .field([field])
+                .fields(mergedSelectionSet(["fld": mergedField([Field.newField().build()])]))
+                .field(mergedField(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
 
@@ -62,10 +64,10 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def field = Field.newField().name("test").sourceLocation(new SourceLocation(4, 5)).build()
 
         def parameters = newParameters()
-                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
+                .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": [Field.newField().build()]])
-                .field([field])
+                .fields(mergedSelectionSet(["fld": mergedField(Field.newField().build())]))
+                .field(mergedField(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
 
@@ -86,10 +88,10 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def field = Field.newField().name("test").sourceLocation(new SourceLocation(4, 5)).build()
 
         def parameters = newParameters()
-                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
+                .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": [Field.newField().build()]])
-                .field([field])
+                .fields(mergedSelectionSet(["fld": mergedField(Field.newField().build())]))
+                .field(mergedField(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
 
@@ -111,10 +113,10 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def field = Field.newField().name("test").build()
 
         def parameters = newParameters()
-                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
+                .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": [Field.newField().build()]])
-                .field([field])
+                .fields(mergedSelectionSet(["fld": mergedField(Field.newField().build())]))
+                .field(mergedField(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
 
@@ -136,10 +138,10 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def field = Field.newField().name("test").sourceLocation(expectedSourceLocation).build()
 
         def parameters = newParameters()
-                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
+                .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": [Field.newField().build()]])
-                .field([field])
+                .fields(mergedSelectionSet(["fld": mergedField(Field.newField().build())]))
+                .field(mergedField(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
 
@@ -160,10 +162,10 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def field = Field.newField().name("test").sourceLocation(new SourceLocation(4, 5)).build()
 
         def parameters = newParameters()
-                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
+                .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": [Field.newField().build()]])
-                .field([field])
+                .fields(mergedSelectionSet(["fld": mergedField(Field.newField().build())]))
+                .field(mergedField(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
 

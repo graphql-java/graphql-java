@@ -34,7 +34,7 @@ class Issue739 extends Specification {
                 .build()
 
 
-        def schema = TestUtil.schema("""
+        def graphQL = TestUtil.graphQL("""
             schema {
               query: Query
             }
@@ -56,11 +56,8 @@ class Issue739 extends Specification {
             type Foo implements Node {
               id: String
             }
-        """, runtimeWiring)
+        """, runtimeWiring).build()
 
-
-        GraphQL graphQL = GraphQL.newGraphQL(schema)
-                .build()
 
         ExecutionInput noVarInput = ExecutionInput.newExecutionInput()
                 .query('{ bar(input: 123) { id } } ')

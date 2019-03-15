@@ -12,17 +12,19 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
 
     @Internal
     protected UnionTypeExtensionDefinition(String name,
-                                         List<Directive> directives,
-                                         List<Type> memberTypes,
-                                         Description description,
-                                         SourceLocation sourceLocation,
-                                         List<Comment> comments) {
+                                           List<Directive> directives,
+                                           List<Type> memberTypes,
+                                           Description description,
+                                           SourceLocation sourceLocation,
+                                           List<Comment> comments,
+                                           IgnoredChars ignoredChars) {
         super(name,
                 directives,
                 memberTypes,
                 description,
                 sourceLocation,
-                comments);
+                comments,
+                ignoredChars);
     }
 
     @Override
@@ -32,7 +34,8 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
                 deepCopy(getMemberTypes()),
                 getDescription(),
                 getSourceLocation(),
-                getComments());
+                getComments(),
+                getIgnoredChars());
     }
 
     @Override
@@ -61,6 +64,7 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
         private Description description;
         private List<Directive> directives = new ArrayList<>();
         private List<Type> memberTypes = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -73,6 +77,7 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
             this.memberTypes = existing.getMemberTypes();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -105,13 +110,19 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public UnionTypeExtensionDefinition build() {
             UnionTypeExtensionDefinition unionTypeDefinition = new UnionTypeExtensionDefinition(name,
                     directives,
                     memberTypes,
                     description,
                     sourceLocation,
-                    comments
+                    comments,
+                    ignoredChars
             );
             return unionTypeDefinition;
         }

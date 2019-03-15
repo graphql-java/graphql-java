@@ -3,7 +3,6 @@ package graphql.execution
 import graphql.ErrorType
 import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionInput
-import graphql.GraphQL
 import graphql.GraphQLError
 import graphql.TestUtil
 import graphql.language.SourceLocation
@@ -80,8 +79,7 @@ class ExceptionWhileDataFetchingTest extends Specification {
                 .dataFetcher("bangCF", bangDataFetcher))
                 .build()
 
-        def schema = TestUtil.schema(spec, runtimeWiring)
-        def graphQL = GraphQL.newGraphQL(schema).build()
+        def graphQL = TestUtil.graphQL(spec, runtimeWiring).build()
 
         def executionInput = ExecutionInput.newExecutionInput().query('''
             {

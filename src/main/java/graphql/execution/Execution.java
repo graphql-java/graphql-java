@@ -15,7 +15,6 @@ import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.language.Document;
-import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
@@ -33,8 +32,8 @@ import java.util.concurrent.CompletableFuture;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
+import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
-import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
 import static graphql.language.OperationDefinition.Operation.MUTATION;
 import static graphql.language.OperationDefinition.Operation.QUERY;
 import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
@@ -45,6 +44,7 @@ public class Execution {
     private static final Logger log = LoggerFactory.getLogger(Execution.class);
 
     private final FieldCollector fieldCollector = new FieldCollector();
+    private final ValuesResolver valuesResolver = new ValuesResolver();
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
@@ -63,7 +63,6 @@ public class Execution {
         Map<String, FragmentDefinition> fragmentsByName = getOperationResult.fragmentsByName;
         OperationDefinition operationDefinition = getOperationResult.operationDefinition;
 
-        ValuesResolver valuesResolver = new ValuesResolver();
         Map<String, Object> inputVariables = executionInput.getVariables();
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
 
@@ -91,6 +90,8 @@ public class Execution {
                 .variables(coercedVariables)
                 .document(document)
                 .operationDefinition(operationDefinition)
+                .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
+                .cacheControl(executionInput.getCacheControl())
                 .build();
 
 
@@ -131,15 +132,16 @@ public class Execution {
                 .variables(executionContext.getVariables())
                 .build();
 
-        Map<String, List<Field>> fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
+        MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
 
         ExecutionPath path = ExecutionPath.rootPath();
-        ExecutionTypeInfo typeInfo = newTypeInfo().type(operationRootType).path(path).build();
-        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo);
+        ExecutionStepInfo executionStepInfo = newExecutionStepInfo().type(operationRootType).path(path).build();
+        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
 
         ExecutionStrategyParameters parameters = newParameters()
-                .typeInfo(typeInfo)
+                .executionStepInfo(executionStepInfo)
                 .source(root)
+                .localContext(executionContext.getContext())
                 .fields(fields)
                 .nonNullFieldValidator(nonNullableFieldValidator)
                 .path(path)

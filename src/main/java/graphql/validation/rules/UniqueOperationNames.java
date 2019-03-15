@@ -6,7 +6,7 @@ import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -15,7 +15,7 @@ import java.util.Set;
  */
 public class UniqueOperationNames extends AbstractRule {
 
-    private Set<String> operationNames = new HashSet<>();
+    private Set<String> operationNames = new LinkedHashSet<>();
 
     public UniqueOperationNames(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);

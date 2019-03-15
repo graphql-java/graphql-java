@@ -17,6 +17,8 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
@@ -75,12 +77,30 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
     };
 
 
+    /**
+     * @param name        the name
+     * @param description the description
+     * @param values      the values
+     *
+     * @deprecated use the {@link #newEnum()}  builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values) {
         this(name, description, values, emptyList(), null);
     }
 
+    /**
+     * @param name        the name
+     * @param description the description
+     * @param values      the values
+     * @param directives  the directives on this type element
+     * @param definition  the AST definition
+     *
+     * @deprecated use the {@link #newEnum()}  builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values, List<GraphQLDirective> directives, EnumTypeDefinition definition) {
         assertValidName(name);
         assertNotNull(directives, "directives cannot be null");
@@ -89,7 +109,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         this.description = description;
         this.definition = definition;
         this.directives = directives;
-        buildMap(values);
+        buildMap(sortGraphQLTypes(values));
     }
 
     public List<GraphQLEnumValueDefinition> getValues() {
@@ -184,7 +204,9 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
     @Override
     public List<GraphQLType> getChildren() {
-        return new ArrayList<>(valueDefinitionMap.values());
+        List<GraphQLType> children = new ArrayList<>(valueDefinitionMap.values());
+        children.addAll(directives);
+        return children;
     }
 
     public static Builder newEnum() {
@@ -231,21 +253,31 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
 
         public Builder value(String name, Object value, String description, String deprecationReason) {
-            value(new GraphQLEnumValueDefinition(name, description, value, deprecationReason));
-            return this;
+            return value(newEnumValueDefinition().name(name)
+                    .description(description).value(value)
+                    .deprecationReason(deprecationReason).build());
         }
 
         public Builder value(String name, Object value, String description) {
-            return value(new GraphQLEnumValueDefinition(name, description, value));
+            return value(newEnumValueDefinition().name(name)
+                    .description(description).value(value).build());
         }
 
         public Builder value(String name, Object value) {
             assertNotNull(value, "value can't be null");
-            return value(new GraphQLEnumValueDefinition(name, null, value));
+            return value(newEnumValueDefinition().name(name)
+                    .value(value).build());
         }
 
+
         public Builder value(String name) {
-            return value(new GraphQLEnumValueDefinition(name, null, name));
+            return value(newEnumValueDefinition().name(name)
+                    .value(name).build());
+        }
+
+        public Builder values(List<GraphQLEnumValueDefinition> valueDefinitions) {
+            valueDefinitions.forEach(this::value);
+            return this;
         }
 
         public Builder value(GraphQLEnumValueDefinition enumValueDefinition) {

@@ -3,6 +3,8 @@ package graphql.schema;
 
 import graphql.Assert;
 import graphql.PublicApi;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,6 +18,7 @@ import java.util.function.UnaryOperator;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.introspection.Introspection.DirectiveLocation;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 
@@ -26,7 +29,7 @@ import static graphql.util.FpKit.valuesToList;
  */
 @SuppressWarnings("DeprecatedIsStillUsed") // because the graphql spec still has some of these deprecated fields
 @PublicApi
-public class GraphQLDirective {
+public class GraphQLDirective implements GraphQLType {
 
     private final String name;
     private final String description;
@@ -43,12 +46,13 @@ public class GraphQLDirective {
         this.name = name;
         this.description = description;
         this.locations = locations;
-        this.arguments.addAll(arguments);
+        this.arguments.addAll(sortGraphQLTypes(arguments));
         this.onOperation = onOperation;
         this.onFragment = onFragment;
         this.onField = onField;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -125,6 +129,15 @@ public class GraphQLDirective {
         return builder.build();
     }
 
+    @Override
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+        return visitor.visitGraphQLDirective(this, context);
+    }
+
+    @Override
+    public List<GraphQLType> getChildren() {
+        return new ArrayList<>(arguments);
+    }
 
     public static Builder newDirective() {
         return new Builder();

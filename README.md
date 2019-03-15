@@ -1,8 +1,6 @@
 # graphql-java
 
-[![Join the chat at https://gitter.im/graphql-java/graphql-java](https://badges.gitter.im/graphql-java/graphql-java.svg)](https://gitter.im/graphql-java/graphql-java?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-![logo](https://avatars1.githubusercontent.com/u/14289921?s=200&v=4)
+Join our spectrum chat: [Spectrum GraphQL Java](https://spectrum.chat/graphql-java)
 
 This is a [GraphQL](https://github.com/facebook/graphql) Java implementation.
  
@@ -14,9 +12,10 @@ This is a [GraphQL](https://github.com/facebook/graphql) Java implementation.
 
 ### Documentation
 
-For details how to use `graphql-java` please look at the documentation: http://graphql-java.readthedocs.io/
+We have a tutorial for beginners: [Getting started with GraphQL Java and Spring Boot](https://www.graphql-java.com/tutorials/getting-started-with-spring-boot/)
 
-There is also an [out-of-date](https://github.com/graphql-java/graphql-java/issues/934) tutorial here : https://www.howtographql.com/graphql-java/0-introduction/
+For details how to use `graphql-java` please look at the documentation: https://www.graphql-java.com/documentation 
+
 
 Please take a look at our [list of releases](https://github.com/graphql-java/graphql-java/releases) if you want to learn more about new releases and the changelog.
 

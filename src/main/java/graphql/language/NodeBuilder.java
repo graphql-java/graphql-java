@@ -10,4 +10,7 @@ public interface NodeBuilder {
     NodeBuilder sourceLocation(SourceLocation sourceLocation);
 
     NodeBuilder comments(List<Comment> comments);
+
+    NodeBuilder ignoredChars(IgnoredChars ignoredChars);
+
 }

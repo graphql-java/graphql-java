@@ -5,6 +5,9 @@ package graphql.execution;
  */
 public interface ExecutionIdProvider {
 
+    ExecutionIdProvider DEFAULT_EXECUTION_ID_PROVIDER = (query, operationName, context) -> ExecutionId.generate();
+
+
     /**
      * Allows provision of a unique identifier per query execution.
      *

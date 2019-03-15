@@ -19,6 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 
 import static graphql.Scalars.GraphQLString
+import static graphql.TestUtil.mergedField
+import static graphql.TestUtil.mergedSelectionSet
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
@@ -70,7 +72,7 @@ class AsyncExecutionStrategyTest extends Specification {
         def document = new Parser().parseDocument(query)
         def operation = document.definitions[0] as OperationDefinition
 
-        def typeInfo = ExecutionTypeInfo.newTypeInfo()
+        def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
                 .build()
 
@@ -82,8 +84,8 @@ class AsyncExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .typeInfo(typeInfo)
-                .fields(['hello': [Field.newField('hello').build()], 'hello2': [Field.newField('hello2').build()]])
+                .executionStepInfo(typeInfo)
+                .fields(mergedSelectionSet(['hello': mergedField([Field.newField('hello').build()]), 'hello2': mergedField([Field.newField('hello2').build()])]))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -108,7 +110,7 @@ class AsyncExecutionStrategyTest extends Specification {
         def document = new Parser().parseDocument(query)
         def operation = document.definitions[0] as OperationDefinition
 
-        def typeInfo = ExecutionTypeInfo.newTypeInfo()
+        def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
                 .build()
 
@@ -120,8 +122,8 @@ class AsyncExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .typeInfo(typeInfo)
-                .fields(['hello': [Field.newField('hello').build()], 'hello2': [Field.newField('hello2').build()]])
+                .executionStepInfo(typeInfo)
+                .fields(mergedSelectionSet(['hello': mergedField([Field.newField('hello').build()]), 'hello2': mergedField([Field.newField('hello2').build()])]))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -148,7 +150,7 @@ class AsyncExecutionStrategyTest extends Specification {
         def document = new Parser().parseDocument(query)
         def operation = document.definitions[0] as OperationDefinition
 
-        def typeInfo = ExecutionTypeInfo.newTypeInfo()
+        def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
                 .build()
 
@@ -160,8 +162,8 @@ class AsyncExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .typeInfo(typeInfo)
-                .fields(['hello': [Field.newField('hello').build()], 'hello2': [Field.newField('hello2').build()]])
+                .executionStepInfo(typeInfo)
+                .fields(mergedSelectionSet(['hello': mergedField([Field.newField('hello').build()]), 'hello2': mergedField([Field.newField('hello2').build()])]))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -187,7 +189,7 @@ class AsyncExecutionStrategyTest extends Specification {
         def document = new Parser().parseDocument(query)
         def operation = document.definitions[0] as OperationDefinition
 
-        def typeInfo = ExecutionTypeInfo.newTypeInfo()
+        def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
                 .build()
 
@@ -199,8 +201,8 @@ class AsyncExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .typeInfo(typeInfo)
-                .fields(['hello': [Field.newField('hello').build()], 'hello2': [Field.newField('hello2').build()]])
+                .executionStepInfo(typeInfo)
+                .fields(mergedSelectionSet(['hello': mergedField([Field.newField('hello').build()]), 'hello2': mergedField([Field.newField('hello2').build()])]))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -225,7 +227,7 @@ class AsyncExecutionStrategyTest extends Specification {
         def document = new Parser().parseDocument(query)
         def operation = document.definitions[0] as OperationDefinition
 
-        def typeInfo = ExecutionTypeInfo.newTypeInfo()
+        def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
                 .build()
 
@@ -258,8 +260,8 @@ class AsyncExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .typeInfo(typeInfo)
-                .fields(['hello': [new Field('hello')], 'hello2': [new Field('hello2')]])
+                .executionStepInfo(typeInfo)
+                .fields(mergedSelectionSet(['hello': mergedField([new Field('hello')]), 'hello2': mergedField([new Field('hello2')])]))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()

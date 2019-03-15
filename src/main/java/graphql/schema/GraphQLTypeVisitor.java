@@ -16,6 +16,8 @@ public interface GraphQLTypeVisitor {
 
     TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLType> context);
 
+    TraversalControl visitGraphQLDirective(GraphQLDirective node, TraverserContext<GraphQLType> context);
+
     TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField node, TraverserContext<GraphQLType> context);
 
     TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType node, TraverserContext<GraphQLType> context);
@@ -31,6 +33,18 @@ public interface GraphQLTypeVisitor {
     TraversalControl visitGraphQLTypeReference(GraphQLTypeReference node, TraverserContext<GraphQLType> context);
 
     TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLType> context);
+
+    /**
+     * Called when a node is visited more than once within a context.  {@link graphql.util.TraverserContext#thisNode()} contains
+     * the node
+     *
+     * @param context the traversal context
+     *
+     * @return by default CONTINUE
+     */
+    default TraversalControl visitBackRef(TraverserContext<GraphQLType> context) {
+        return TraversalControl.CONTINUE;
+    }
 
     // Marker interfaces
     default TraversalControl visitGraphQLModifiedType(GraphQLModifiedType node, TraverserContext<GraphQLType> context) {

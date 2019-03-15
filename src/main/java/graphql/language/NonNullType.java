@@ -10,27 +10,28 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNullType> {
 
     private final Type type;
 
-    @Internal
-    protected NonNullType(Type type, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    public static final String CHILD_TYPE = "type";
 
+    @Internal
+    protected NonNullType(Type type, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.type = type;
     }
 
     /**
      * alternative to using a Builder for convenience
      *
-     * @param type
+     * @param type the wrapped type
      */
     public NonNullType(Type type) {
-        super(null, new ArrayList<>());
-
-        this.type = type;
+        this(type, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public Type getType() {
@@ -45,9 +46,27 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .child(CHILD_TYPE, type)
+                .build();
+    }
+
+    @Override
+    public NonNullType withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .type((Type) newChildren.getChildOrNull(CHILD_TYPE))
+        );
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         return true;
 
@@ -55,7 +74,7 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
 
     @Override
     public NonNullType deepCopy() {
-        return new NonNullType(deepCopy(type), getSourceLocation(), getComments());
+        return new NonNullType(deepCopy(type), getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -88,6 +107,7 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
         private SourceLocation sourceLocation;
         private Type type;
         private List<Comment> comments = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -96,6 +116,7 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.type = existing.getType();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
 
@@ -127,8 +148,13 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public NonNullType build() {
-            NonNullType nonNullType = new NonNullType(type, sourceLocation, comments);
+            NonNullType nonNullType = new NonNullType(type, sourceLocation, comments, ignoredChars);
             return nonNullType;
         }
     }

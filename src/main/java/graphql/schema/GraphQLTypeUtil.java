@@ -1,26 +1,32 @@
 package graphql.schema;
 
-import graphql.Internal;
+import graphql.PublicApi;
 
-@Internal
+import java.util.Stack;
+
+import static graphql.Assert.assertNotNull;
+
+/**
+ * A utility class that helps work with {@link graphql.schema.GraphQLType}s
+ */
+@PublicApi
 public class GraphQLTypeUtil {
 
     /**
-     * This will get the unwrapped type name that includes the non null and list wrappers
-     * so it might be '[typeName!]'
+     * This will return the type in graphql SDL format, eg [typeName!]!
      *
      * @param type the type in play
      *
-     * @return the unwrapped type name
+     * @return the type in graphql SDL format, eg [typeName!]!
      */
-    public static String getUnwrappedTypeName(GraphQLType type) {
+    public static String simplePrint(GraphQLType type) {
         StringBuilder sb = new StringBuilder();
         if (isNonNull(type)) {
-            sb.append(getUnwrappedTypeName(unwrapOne(type)));
+            sb.append(simplePrint(unwrapOne(type)));
             sb.append("!");
         } else if (isList(type)) {
             sb.append("[");
-            sb.append(getUnwrappedTypeName(unwrapOne(type)));
+            sb.append(simplePrint(unwrapOne(type)));
             sb.append("]");
         } else {
             sb.append(type.getName());
@@ -166,4 +172,32 @@ public class GraphQLTypeUtil {
         }
     }
 
+    public static GraphQLType unwrapNonNull(GraphQLType type) {
+        while (isNonNull(type)) {
+            type = unwrapOne(type);
+        }
+        return type;
+    }
+
+    /**
+     * graphql types can be wrapped in {@link GraphQLNonNull} and {@link GraphQLList} type wrappers
+     * so this method will unwrap the type down to the raw unwrapped type and return that wrapping
+     * as a stack, with the top of the stack being the raw underling type.
+     *
+     * @param type the type to unwrap
+     *
+     * @return a stack of the type wrapping which will be at least 1 later deep
+     */
+    public static Stack<GraphQLType> unwrapType(GraphQLType type) {
+        type = assertNotNull(type);
+        Stack<GraphQLType> decoration = new Stack<>();
+        while (true) {
+            decoration.push(type);
+            if (isNotWrapped(type)) {
+                break;
+            }
+            type = unwrapOne(type);
+        }
+        return decoration;
+    }
 }

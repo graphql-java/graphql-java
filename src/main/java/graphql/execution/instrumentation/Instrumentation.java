@@ -3,6 +3,7 @@ package graphql.execution.instrumentation;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.execution.ExecutionContext;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -18,6 +19,8 @@ import graphql.validation.ValidationError;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.noOp;
 
 /**
  * Provides the capability to instrument the execution steps of a GraphQL query.
@@ -42,6 +45,18 @@ public interface Instrumentation {
      */
     default InstrumentationState createState() {
         return null;
+    }
+
+    /**
+     * This will be called just before execution to create an object that is given back to all instrumentation methods
+     * to allow them to have per execution request state
+     *
+     * @param parameters the parameters to this step
+     *
+     * @return a state object that is passed to each method
+     */
+    default InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
+        return createState();
     }
 
     /**
@@ -126,7 +141,7 @@ public interface Instrumentation {
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
     default InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters) {
-        return new SimpleInstrumentationContext<>();
+        return noOp();
     }
 
     /**
@@ -137,7 +152,7 @@ public interface Instrumentation {
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
     default InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
-        return new SimpleInstrumentationContext<>();
+        return noOp();
     }
 
     /**
@@ -151,6 +166,18 @@ public interface Instrumentation {
      */
     default ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters) {
         return executionInput;
+    }
+
+    /**
+     * This is called to instrument a {@link graphql.language.Document} and variables before it is used allowing you to adjust the query AST if you so desire
+     *
+     * @param documentAndVariables the document and variables to be used
+     * @param parameters           the parameters describing the execution
+     *
+     * @return a non null instrumented DocumentAndVariables, the default is to return to the same objects
+     */
+    default DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters) {
+        return documentAndVariables;
     }
 
     /**

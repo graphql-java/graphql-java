@@ -35,8 +35,7 @@ class Issue921 extends Specification {
 
         def typeRuntimeWiring = newTypeWiring('ThreadSort').enumValues(new NaturalEnumValuesProvider(ThreadSort)).build()
         def runtimeWiring = newRuntimeWiring().type(typeRuntimeWiring).build()
-        def qLSchema = TestUtil.schema(spec, runtimeWiring)
-        def graphql = GraphQL.newGraphQL(qLSchema).build()
+        def graphql = TestUtil.graphQL(spec, runtimeWiring).build()
 
         when:
         def result = graphql.execute('''

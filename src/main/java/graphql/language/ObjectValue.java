@@ -10,22 +10,28 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class ObjectValue extends AbstractNode<ObjectValue> implements Value<ObjectValue> {
 
     private final List<ObjectField> objectFields = new ArrayList<>();
 
+    public static final String CHILD_OBJECT_FIELDS = "objectFields";
+
     @Internal
-    protected ObjectValue(List<ObjectField> objectFields, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected ObjectValue(List<ObjectField> objectFields, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.objectFields.addAll(objectFields);
     }
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param objectFields the list of field that make up this object value
      */
     public ObjectValue(List<ObjectField> objectFields) {
-        this(objectFields, null, new ArrayList<>());
+        this(objectFields, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public List<ObjectField> getObjectFields() {
@@ -40,9 +46,27 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_OBJECT_FIELDS, objectFields)
+                .build();
+    }
+
+    @Override
+    public ObjectValue withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .objectFields(newChildren.getChildren(CHILD_OBJECT_FIELDS))
+        );
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ObjectValue that = (ObjectValue) o;
 
@@ -52,7 +76,7 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
 
     @Override
     public ObjectValue deepCopy() {
-        return new ObjectValue(deepCopy(objectFields), getSourceLocation(), getComments());
+        return new ObjectValue(deepCopy(objectFields), getSourceLocation(), getComments(), getIgnoredChars());
     }
 
 
@@ -83,6 +107,7 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
         private SourceLocation sourceLocation;
         private List<ObjectField> objectFields = new ArrayList<>();
         private List<Comment> comments = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -113,8 +138,13 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public ObjectValue build() {
-            ObjectValue objectValue = new ObjectValue(objectFields, sourceLocation, comments);
+            ObjectValue objectValue = new ObjectValue(objectFields, sourceLocation, comments, ignoredChars);
             return objectValue;
         }
     }

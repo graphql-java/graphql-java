@@ -1,7 +1,7 @@
 package graphql
 
 import graphql.execution.ExecutionPath
-import graphql.execution.ExecutionTypeInfo
+import graphql.execution.ExecutionStepInfo
 import graphql.execution.MissingRootTypeException
 import graphql.execution.NonNullableFieldWasNullError
 import graphql.execution.NonNullableFieldWasNullException
@@ -39,7 +39,7 @@ class GraphQLErrorTest extends Specification {
         new InvalidSyntaxError(mkLocations(), "Not good syntax m'kay")                                 |
                 [
                         locations: [[line: 666, column: 999], [line: 333, column: 0]],
-                        message  : "Invalid Syntax : Not good syntax m'kay",
+                        message  : "Not good syntax m'kay",
                 ]
 
         new NonNullableFieldWasNullError(new NonNullableFieldWasNullException(mkTypeInfo(), mkPath())) |
@@ -116,8 +116,8 @@ class GraphQLErrorTest extends Specification {
                 .segment(4)
     }
 
-    ExecutionTypeInfo mkTypeInfo() {
-        return ExecutionTypeInfo.newTypeInfo()
+    ExecutionStepInfo mkTypeInfo() {
+        return ExecutionStepInfo.newExecutionStepInfo()
                 .type(Introspection.__Schema)
                 .path(mkPath())
                 .build()

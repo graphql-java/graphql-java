@@ -9,6 +9,7 @@ import graphql.execution.ExecutionIdProvider
 import graphql.execution.ExecutionStrategyParameters
 import graphql.execution.MissingRootTypeException
 import graphql.execution.batched.BatchedExecutionStrategy
+import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.language.SourceLocation
@@ -17,7 +18,6 @@ import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInterfaceType
-import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
@@ -870,7 +870,8 @@ class GraphQLTest extends Specification {
         then:
         result == [hello: 'world']
         queryStrategy.executionId == hello
-        queryStrategy.instrumentation == instrumentation
+        queryStrategy.instrumentation instanceof ChainedInstrumentation
+        (queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(instrumentation)
 
         when:
 
@@ -892,7 +893,9 @@ class GraphQLTest extends Specification {
         then:
         result == [hello: 'world']
         queryStrategy.executionId == goodbye
-        queryStrategy.instrumentation == newInstrumentation
+        queryStrategy.instrumentation instanceof ChainedInstrumentation
+        (queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(newInstrumentation)
+        ! (queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(instrumentation)
     }
 
     def "query with triple quoted multi line strings"() {

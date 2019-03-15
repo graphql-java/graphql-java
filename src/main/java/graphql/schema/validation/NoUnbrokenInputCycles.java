@@ -8,10 +8,9 @@ import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLTypeUtil;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -36,7 +35,7 @@ public class NoUnbrokenInputCycles implements SchemaValidationRule {
             if (argumentType instanceof GraphQLInputObjectType) {
                 List<String> path = new ArrayList<>();
                 path.add(argumentType.getName());
-                check((GraphQLInputObjectType) argumentType, new HashSet<>(), path, validationErrorCollector);
+                check((GraphQLInputObjectType) argumentType, new LinkedHashSet<>(), path, validationErrorCollector);
             }
         }
     }
@@ -54,7 +53,7 @@ public class NoUnbrokenInputCycles implements SchemaValidationRule {
                 if (unwrapped instanceof GraphQLInputObjectType) {
                     path = new ArrayList<>(path);
                     path.add(field.getName() + "!");
-                    check((GraphQLInputObjectType) unwrapped, new HashSet<>(seen), path, validationErrorCollector);
+                    check((GraphQLInputObjectType) unwrapped, new LinkedHashSet<>(seen), path, validationErrorCollector);
                 }
             }
         }

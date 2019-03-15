@@ -4,6 +4,7 @@ import graphql.DeferredExecutionResult;
 import graphql.Directives;
 import graphql.ExecutionResult;
 import graphql.Internal;
+import graphql.execution.MergedField;
 import graphql.execution.ValuesResolver;
 import graphql.execution.reactive.SingleSubscriberPublisher;
 import graphql.language.Directive;
@@ -17,6 +18,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static graphql.Directives.*;
+
 /**
  * This provides support for @defer directives on fields that mean that results will be sent AFTER
  * the main result is sent via a Publisher stream.
@@ -29,11 +32,11 @@ public class DeferSupport {
     private final SingleSubscriberPublisher<DeferredExecutionResult> publisher = new SingleSubscriberPublisher<>();
     private final ValuesResolver valuesResolver = new ValuesResolver();
 
-    public boolean checkForDeferDirective(List<Field> currentField, Map<String, Object> variables) {
-        for (Field field : currentField) {
-            Directive directive = field.getDirective(Directives.DeferDirective.getName());
+    public boolean checkForDeferDirective(MergedField currentField) {
+        for (Field field : currentField.getFields()) {
+            Directive directive = field.getDirective(DeferDirective.getName());
             if (directive != null) {
-                Map<String, Object> argumentValues = valuesResolver.getArgumentValues(Directives.DeferDirective.getArguments(), directive.getArguments(), variables);
+                Map<String, Object> argumentValues = valuesResolver.getArgumentValues(DeferDirective.getArguments(), directive.getArguments(), variables);
                 return (Boolean) argumentValues.get("if");
             }
         }

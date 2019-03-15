@@ -10,23 +10,30 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class FieldDefinition extends AbstractNode<FieldDefinition> implements DirectivesContainer<FieldDefinition> {
-    private String name;
-    private Type type;
+    private final String name;
+    private final Type type;
     private final Description description;
     private final List<InputValueDefinition> inputValueDefinitions;
     private final List<Directive> directives;
 
+    public static final String CHILD_TYPE = "type";
+    public static final String CHILD_INPUT_VALUE_DEFINITION = "inputValueDefinition";
+    public static final String CHILD_DIRECTIVES = "directives";
+
     @Internal
     protected FieldDefinition(String name,
-                            Type type,
-                            List<InputValueDefinition> inputValueDefinitions,
-                            List<Directive> directives,
-                            Description description,
-                            SourceLocation sourceLocation,
-                            List<Comment> comments) {
-        super(sourceLocation, comments);
+                              Type type,
+                              List<InputValueDefinition> inputValueDefinitions,
+                              List<Directive> directives,
+                              Description description,
+                              SourceLocation sourceLocation,
+                              List<Comment> comments,
+                              IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.description = description;
         this.name = name;
         this.type = type;
@@ -36,7 +43,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
 
     public FieldDefinition(String name,
                            Type type) {
-        this(name, type, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+        this(name, type, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public Type getType() {
@@ -53,7 +60,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
-        return inputValueDefinitions;
+        return new ArrayList<>(inputValueDefinitions);
     }
 
     @Override
@@ -71,9 +78,31 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .child(CHILD_TYPE, type)
+                .children(CHILD_INPUT_VALUE_DEFINITION, inputValueDefinitions)
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
+    }
+
+    @Override
+    public FieldDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .type(newChildren.getChildOrNull(CHILD_TYPE))
+                .inputValueDefinitions(newChildren.getChildren(CHILD_INPUT_VALUE_DEFINITION))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         FieldDefinition that = (FieldDefinition) o;
 
@@ -88,16 +117,9 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
                 deepCopy(directives),
                 description,
                 getSourceLocation(),
-                getComments()
+                getComments(),
+                getIgnoredChars()
         );
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setType(Type type) {
-        this.type = type;
     }
 
     @Override
@@ -133,6 +155,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
         private Description description;
         private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -145,6 +168,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
             this.description = existing.getDescription();
             this.inputValueDefinitions = existing.getInputValueDefinitions();
             this.directives = existing.getDirectives();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
 
@@ -193,8 +217,13 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public FieldDefinition build() {
-            FieldDefinition fieldDefinition = new FieldDefinition(name, type, inputValueDefinitions, directives, description, sourceLocation, comments);
+            FieldDefinition fieldDefinition = new FieldDefinition(name, type, inputValueDefinitions, directives, description, sourceLocation, comments, ignoredChars);
             return fieldDefinition;
         }
     }

@@ -2,7 +2,6 @@ package graphql.execution.instrumentation.dataloader
 
 import graphql.ExecutionInput
 import graphql.ExecutionResult
-import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.AsyncSerialExecutionStrategy
@@ -61,18 +60,18 @@ class DataLoaderCompanyProductMutationTest extends Specification {
                 }))
                 .build()
 
-        def schema = TestUtil.schema(spec, wiring)
         def registry = new DataLoaderRegistry()
         registry.register("projects-dl", backend.getProjectsLoader())
 
-        def graphQL = GraphQL.newGraphQL(schema)
+        def graphQL = TestUtil.graphQL(spec, wiring)
                 .queryExecutionStrategy(queryES)
                 .mutationExecutionStrategy(mutationES)
-                .instrumentation(new DataLoaderDispatcherInstrumentation(registry))
+                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
+                .dataLoaderRegistry(registry)
                 .build()
 
         when:

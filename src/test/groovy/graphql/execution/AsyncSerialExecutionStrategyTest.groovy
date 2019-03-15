@@ -1,5 +1,6 @@
 package graphql.execution
 
+
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.language.Field
 import graphql.language.OperationDefinition
@@ -14,6 +15,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 
 import static graphql.Scalars.GraphQLString
+import static graphql.TestUtil.mergedField
+import static graphql.TestUtil.mergedSelectionSet
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
@@ -73,7 +76,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
         def document = new Parser().parseDocument(query)
         def operation = document.definitions[0] as OperationDefinition
 
-        def typeInfo = ExecutionTypeInfo.newTypeInfo()
+        def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
                 .build()
 
@@ -85,8 +88,8 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .typeInfo(typeInfo)
-                .fields(['hello': [new Field('hello')], 'hello2': [new Field('hello2')], 'hello3': [new Field('hello3')]])
+                .executionStepInfo(typeInfo)
+                .fields(mergedSelectionSet(['hello': mergedField(new Field('hello')), 'hello2': mergedField(new Field('hello2')), 'hello3': mergedField(new Field('hello3'))]))
                 .build()
 
         AsyncSerialExecutionStrategy strategy = new AsyncSerialExecutionStrategy()
@@ -116,7 +119,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
         def document = new Parser().parseDocument(query)
         def operation = document.definitions[0] as OperationDefinition
 
-        def typeInfo = ExecutionTypeInfo.newTypeInfo()
+        def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
                 .build()
 
@@ -128,8 +131,8 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .typeInfo(typeInfo)
-                .fields(['hello': [new Field('hello')], 'hello2': [new Field('hello2')], 'hello3': [new Field('hello3')]])
+                .executionStepInfo(typeInfo)
+                .fields(mergedSelectionSet(['hello': mergedField(new Field('hello')), 'hello2': mergedField(new Field('hello2')), 'hello3': mergedField(new Field('hello3'))]))
                 .build()
 
         AsyncSerialExecutionStrategy strategy = new AsyncSerialExecutionStrategy()

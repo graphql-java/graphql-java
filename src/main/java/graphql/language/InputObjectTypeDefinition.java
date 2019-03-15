@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefinition> implements TypeDefinition<InputObjectTypeDefinition>, DirectivesContainer<InputObjectTypeDefinition> {
 
@@ -18,14 +20,18 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
     private final List<Directive> directives;
     private final List<InputValueDefinition> inputValueDefinitions;
 
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_INPUT_VALUES_DEFINITIONS = "inputValueDefinitions";
+
     @Internal
     protected InputObjectTypeDefinition(String name,
-                              List<Directive> directives,
-                              List<InputValueDefinition> inputValueDefinitions,
-                              Description description,
-                              SourceLocation sourceLocation,
-                              List<Comment> comments) {
-        super(sourceLocation, comments);
+                                        List<Directive> directives,
+                                        List<InputValueDefinition> inputValueDefinitions,
+                                        Description description,
+                                        SourceLocation sourceLocation,
+                                        List<Comment> comments,
+                                        IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.description = description;
         this.directives = directives;
@@ -38,7 +44,7 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
-        return inputValueDefinitions;
+        return new ArrayList<>(inputValueDefinitions);
     }
 
     @Override
@@ -59,9 +65,29 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_INPUT_VALUES_DEFINITIONS, inputValueDefinitions)
+                .build();
+    }
+
+    @Override
+    public InputObjectTypeDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .inputValueDefinitions(newChildren.getChildren(CHILD_INPUT_VALUES_DEFINITIONS))
+        );
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         InputObjectTypeDefinition that = (InputObjectTypeDefinition) o;
 
@@ -75,7 +101,8 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
                 deepCopy(inputValueDefinitions),
                 description,
                 getSourceLocation(),
-                getComments());
+                getComments(),
+                getIgnoredChars());
     }
 
     @Override
@@ -110,6 +137,7 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
         private Description description;
         private List<Directive> directives = new ArrayList<>();
         private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -164,13 +192,19 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public InputObjectTypeDefinition build() {
             InputObjectTypeDefinition inputObjectTypeDefinition = new InputObjectTypeDefinition(name,
                     directives,
                     inputValueDefinitions,
                     description,
                     sourceLocation,
-                    comments);
+                    comments,
+                    ignoredChars);
             return inputObjectTypeDefinition;
         }
     }

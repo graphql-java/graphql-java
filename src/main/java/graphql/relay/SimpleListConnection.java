@@ -1,6 +1,7 @@
 package graphql.relay;
 
 import graphql.PublicApi;
+import graphql.TrivialDataFetcher;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
@@ -16,7 +17,7 @@ import static java.util.Base64.getDecoder;
 import static java.util.Base64.getEncoder;
 
 @PublicApi
-public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
+public class SimpleListConnection<T> implements DataFetcher<Connection<T>>, TrivialDataFetcher<Connection<T>> {
 
     static final String DUMMY_CURSOR_PREFIX = "simple-cursor";
     private final String prefix;

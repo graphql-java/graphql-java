@@ -14,6 +14,7 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
+import graphql.util.FpKit;
 
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
@@ -24,7 +25,7 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -142,8 +143,9 @@ public class AstValueHelper {
 
     private static Value handleList(Object _value, GraphQLList type) {
         GraphQLType itemType = type.getWrappedType();
-        if (_value instanceof Iterable) {
-            Iterable iterable = (Iterable) _value;
+        boolean isIterable = _value instanceof Iterable;
+        if (isIterable || (_value != null && _value.getClass().isArray())) {
+            Iterable iterable = isIterable ? (Iterable) _value : FpKit.toCollection(_value);
             List<Value> valuesNodes = new ArrayList<>();
             for (Object item : iterable) {
                 Value itemNode = astFromValue(item, itemType);
@@ -223,7 +225,7 @@ public class AstValueHelper {
             return (Map) value;
         }
         // java bean inspector
-        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> result = new LinkedHashMap<>();
         try {
             BeanInfo info = Introspector.getBeanInfo(value.getClass());
             for (PropertyDescriptor pd : info.getPropertyDescriptors()) {

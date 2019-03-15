@@ -44,7 +44,7 @@ import graphql.schema.idl.errors.SchemaProblem;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -208,7 +208,7 @@ public class SchemaTypeChecker {
                     errors.add(new DirectiveIllegalLocationError(directiveDefinition, locationName));
                 }
             });
-            });
+        });
     }
 
     private void checkScalarImplementationsArePresent(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
@@ -373,7 +373,7 @@ public class SchemaTypeChecker {
      * @param errorFunction     the function producing an error
      */
     static <T, E extends GraphQLError> void checkNamedUniqueness(List<GraphQLError> errors, List<T> listOfNamedThings, Function<T, String> namer, BiFunction<String, T, E> errorFunction) {
-        Set<String> names = new HashSet<>();
+        Set<String> names = new LinkedHashSet<>();
         listOfNamedThings.forEach(thing -> {
             String name = namer.apply(thing);
             if (names.contains(name)) {
@@ -528,7 +528,7 @@ public class SchemaTypeChecker {
 
     private Consumer<OperationTypeDefinition> checkOperationTypesExist(TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors) {
         return op -> {
-            TypeName unwrapped = TypeInfo.typeInfo(op.getType()).getTypeName();
+            TypeName unwrapped = TypeInfo.typeInfo(op.getTypeName()).getTypeName();
             if (!typeRegistry.hasType(unwrapped)) {
                 errors.add(new MissingTypeError("operation", op, op.getName(), unwrapped));
             }
@@ -538,7 +538,7 @@ public class SchemaTypeChecker {
     private Consumer<OperationTypeDefinition> checkOperationTypesAreObjects(TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors) {
         return op -> {
             // make sure it is defined as a ObjectTypeDef
-            Type queryType = op.getType();
+            Type queryType = op.getTypeName();
             Optional<TypeDefinition> type = typeRegistry.getType(queryType);
             type.ifPresent(typeDef -> {
                 if (!(typeDef instanceof ObjectTypeDefinition)) {

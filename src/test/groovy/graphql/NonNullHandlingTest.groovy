@@ -338,8 +338,8 @@ class NonNullHandlingTest extends Specification {
         where:
 
         strategyName  | executionStrategy
-        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
-        'async'       | new AsyncExecutionStrategy()
+//        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
+//        'async'       | new AsyncExecutionStrategy()
         'asyncSerial' | new AsyncSerialExecutionStrategy()
 
     }

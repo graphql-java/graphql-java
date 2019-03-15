@@ -5,6 +5,7 @@ import graphql.Internal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,16 +21,25 @@ import static graphql.util.TraversalControl.QUIT;
 public class Traverser<T> {
 
     private final TraverserState<T> traverserState;
-    private final Function<? super T, ? extends List<T>> getChildren;
+    private final Function<? super T, Map<String, ? extends List<T>>> getChildren;
+    private final Object initialAccumulate;
     private final Map<Class<?>, Object> rootVars = new ConcurrentHashMap<>();
-
-    private final TraverserContext<T> BARRIER = new SimpleTraverserContext<>(null);
 
     private static final List<TraversalControl> CONTINUE_OR_QUIT = Arrays.asList(CONTINUE, QUIT);
 
-    private Traverser(TraverserState<T> traverserState, Function<? super T, ? extends List<T>> getChildren) {
+    private Traverser(TraverserState<T> traverserState, Function<? super T, Map<String, ? extends List<T>>> getChildren, Object initialAccumulate) {
         this.traverserState = assertNotNull(traverserState);
         this.getChildren = assertNotNull(getChildren);
+        this.initialAccumulate = initialAccumulate;
+    }
+
+    private static <T> Function<? super T, Map<String, ? extends List<T>>> wrapListFunction(Function<? super T, ? extends List<T>> listFn) {
+        return node -> {
+            List<T> childs = listFn.apply(node);
+            Map<String, List<T>> result = new LinkedHashMap<>();
+            result.put(null, childs);
+            return result;
+        };
     }
 
     public Traverser<T> rootVars(Map<Class<?>, Object> rootVars) {
@@ -43,22 +53,38 @@ public class Traverser<T> {
     }
 
     public static <T> Traverser<T> depthFirst(Function<? super T, ? extends List<T>> getChildren) {
-        return depthFirst(getChildren, null);
+        return depthFirst(getChildren, null, null);
     }
 
-    public static <T> Traverser<T> depthFirst(Function<? super T, ? extends List<T>> getChildren, Object initialData) {
-        return new Traverser<>(TraverserState.newStackState(initialData), getChildren);
+    public static <T> Traverser<T> depthFirst(Function<? super T, ? extends List<T>> getChildren, Object sharedContextData) {
+        return depthFirst(getChildren, sharedContextData, null);
     }
 
+    public static <T> Traverser<T> depthFirst(Function<? super T, ? extends List<T>> getChildren, Object sharedContextData, Object initialAccumulate) {
+        Function<? super T, Map<String, ? extends List<T>>> mapFunction = wrapListFunction(getChildren);
+        return new Traverser<>(TraverserState.newStackState(sharedContextData), mapFunction, initialAccumulate);
+    }
+
+    public static <T> Traverser<T> depthFirstWithNamedChildren(Function<? super T, Map<String, ? extends List<T>>> getNamedChildren, Object sharedContextData, Object initialAccumulate) {
+        return new Traverser<>(TraverserState.newStackState(sharedContextData), getNamedChildren, initialAccumulate);
+    }
 
     public static <T> Traverser<T> breadthFirst(Function<? super T, ? extends List<T>> getChildren) {
-        return breadthFirst(getChildren, null);
+        return breadthFirst(getChildren, null, null);
     }
 
-    public static <T> Traverser<T> breadthFirst(Function<? super T, ? extends List<T>> getChildren, Object initialData) {
-        return new Traverser<>(TraverserState.newQueueState(initialData), getChildren);
+    public static <T> Traverser<T> breadthFirst(Function<? super T, ? extends List<T>> getChildren, Object sharedContextData) {
+        return breadthFirst(getChildren, sharedContextData, null);
     }
 
+    public static <T> Traverser<T> breadthFirst(Function<? super T, ? extends List<T>> getChildren, Object sharedContextData, Object initialAccumulate) {
+        Function<? super T, Map<String, ? extends List<T>>> mapFunction = wrapListFunction(getChildren);
+        return new Traverser<>(TraverserState.newQueueState(sharedContextData), mapFunction, initialAccumulate);
+    }
+
+    public static <T> Traverser<T> breadthFirstWithNamedChildren(Function<? super T, Map<String, ? extends List<T>>> getNamedChildren, Object sharedContextData, Object initialAccumulate) {
+        return new Traverser<>(TraverserState.newQueueState(sharedContextData), getNamedChildren, initialAccumulate);
+    }
 
     public TraverserResult traverse(T root, TraverserVisitor<? super T> visitor) {
         return traverse(Collections.singleton(root), visitor);
@@ -68,21 +94,29 @@ public class Traverser<T> {
         assertNotNull(roots);
         assertNotNull(visitor);
 
-        traverserState.addNewContexts(roots, traverserState.newContext(null, null, rootVars));
 
-        TraverserContext currentContext = BARRIER;
+        // "artificial" parent context for all roots with rootVars
+        DefaultTraverserContext<T> rootContext = traverserState.newRootContext(rootVars);
+        traverserState.addNewContexts(roots, rootContext);
+
+        DefaultTraverserContext currentContext;
+        Object currentAccValue = initialAccumulate;
         traverseLoop:
         while (!traverserState.isEmpty()) {
             Object top = traverserState.pop();
 
-            if (top == TraverserState.Marker.END_LIST) {
+            if (top instanceof TraverserState.EndList) {
+                Map<String, List<TraverserContext<T>>> childrenContextMap = ((TraverserState.EndList<T>) top).childrenContextMap;
                 // end-of-list marker, we are done recursing children,
                 // mark the current node as fully visited
-                TraverserContext contextForLeave = (TraverserContext) traverserState.pop();
-                currentContext = contextForLeave;
-                TraversalControl traversalControl = visitor.leave(contextForLeave);
+                currentContext = (DefaultTraverserContext) traverserState.pop();
+                currentContext.setCurAccValue(currentAccValue);
+                currentContext.setChildrenContexts(childrenContextMap);
+                TraversalControl traversalControl = visitor.leave(currentContext);
+                currentAccValue = currentContext.getNewAccumulate();
                 assertNotNull(traversalControl, "result of leave must not be null");
                 assertTrue(CONTINUE_OR_QUIT.contains(traversalControl), "result can only return CONTINUE or QUIT");
+
                 switch (traversalControl) {
                     case QUIT:
                         break traverseLoop;
@@ -93,19 +127,24 @@ public class Traverser<T> {
                 }
             }
 
-            currentContext = (TraverserContext) top;
+            currentContext = (DefaultTraverserContext) top;
 
             if (currentContext.isVisited()) {
+                currentContext.setCurAccValue(currentAccValue);
                 TraversalControl traversalControl = visitor.backRef(currentContext);
+                currentAccValue = currentContext.getNewAccumulate();
                 assertNotNull(traversalControl, "result of backRef must not be null");
                 assertTrue(CONTINUE_OR_QUIT.contains(traversalControl), "backRef can only return CONTINUE or QUIT");
                 if (traversalControl == QUIT) {
                     break traverseLoop;
                 }
             } else {
+                currentContext.setCurAccValue(currentAccValue);
+                Object nodeBeforeEnter = currentContext.thisNode();
                 TraversalControl traversalControl = visitor.enter(currentContext);
+                currentAccValue = currentContext.getNewAccumulate();
                 assertNotNull(traversalControl, "result of enter must not be null");
-                this.traverserState.addVisited((T) currentContext.thisNode());
+                this.traverserState.addVisited((T) nodeBeforeEnter);
                 switch (traversalControl) {
                     case QUIT:
                         break traverseLoop;
@@ -119,7 +158,7 @@ public class Traverser<T> {
                 }
             }
         }
-        TraverserResult traverserResult = new TraverserResult(currentContext.getResult());
+        TraverserResult traverserResult = new TraverserResult(currentAccValue);
         return traverserResult;
     }
 

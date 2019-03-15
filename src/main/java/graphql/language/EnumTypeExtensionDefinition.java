@@ -12,13 +12,14 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
 
     @Internal
     protected EnumTypeExtensionDefinition(String name,
-                                        List<EnumValueDefinition> enumValueDefinitions,
-                                        List<Directive> directives,
-                                        Description description,
-                                        SourceLocation sourceLocation,
-                                        List<Comment> comments) {
+                                          List<EnumValueDefinition> enumValueDefinitions,
+                                          List<Directive> directives,
+                                          Description description,
+                                          SourceLocation sourceLocation,
+                                          List<Comment> comments,
+                                          IgnoredChars ignoredChars) {
         super(name, enumValueDefinitions, directives, description,
-                sourceLocation, comments);
+                sourceLocation, comments, ignoredChars);
     }
 
     @Override
@@ -28,7 +29,8 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
                 deepCopy(getDirectives()),
                 getDescription(),
                 getSourceLocation(),
-                getComments());
+                getComments(),
+                getIgnoredChars());
     }
 
     @Override
@@ -57,6 +59,7 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
         private Description description;
         private List<EnumValueDefinition> enumValueDefinitions;
         private List<Directive> directives;
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -68,6 +71,7 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
             this.enumValueDefinitions = existing.getEnumValueDefinitions();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -100,13 +104,19 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public EnumTypeExtensionDefinition build() {
             EnumTypeExtensionDefinition enumTypeDefinition = new EnumTypeExtensionDefinition(name,
                     enumValueDefinitions,
                     directives,
                     description,
                     sourceLocation,
-                    comments);
+                    comments,
+                    ignoredChars);
             return enumTypeDefinition;
         }
     }

@@ -17,7 +17,7 @@ public class DeferredErrorSupport {
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
 
     public void onFetchingException(ExecutionStrategyParameters parameters, Throwable e) {
-        ExceptionWhileDataFetching error = new ExceptionWhileDataFetching(parameters.getPath(), e, parameters.getField().get(0).getSourceLocation());
+        ExceptionWhileDataFetching error = new ExceptionWhileDataFetching(parameters.getPath(), e, parameters.getField().getSingleField().getSourceLocation());
         onError(error);
     }
 

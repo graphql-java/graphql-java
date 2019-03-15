@@ -10,28 +10,35 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinition> implements NamedNode<OperationTypeDefinition> {
 
     private final String name;
-    private final Type type;
+    private final TypeName typeName;
+
+    public static final String CHILD_TYPE_NAME = "typeName";
 
     @Internal
-    protected OperationTypeDefinition(String name, Type type, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected OperationTypeDefinition(String name, TypeName typeName, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
-        this.type = type;
+        this.typeName = typeName;
     }
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the operation
+     * @param typeName the type in play
      */
-    public OperationTypeDefinition(String name, Type type) {
-        this(name, type, null, new ArrayList<>());
+    public OperationTypeDefinition(String name, TypeName typeName) {
+        this(name, typeName, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
-    public Type getType() {
-        return type;
+    public TypeName getTypeName() {
+        return typeName;
     }
 
     @Override
@@ -42,14 +49,32 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
-        result.add(type);
+        result.add(typeName);
         return result;
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .child(CHILD_TYPE_NAME, typeName)
+                .build();
+    }
+
+    @Override
+    public OperationTypeDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .typeName(newChildren.getChildOrNull(CHILD_TYPE_NAME))
+        );
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         OperationTypeDefinition that = (OperationTypeDefinition) o;
 
@@ -58,14 +83,14 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
 
     @Override
     public OperationTypeDefinition deepCopy() {
-        return new OperationTypeDefinition(name, deepCopy(type), getSourceLocation(), getComments());
+        return new OperationTypeDefinition(name, deepCopy(typeName), getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
     public String toString() {
         return "OperationTypeDefinition{" +
                 "name='" + name + "'" +
-                ", type=" + type +
+                ", typeName=" + typeName +
                 "}";
     }
 
@@ -88,7 +113,8 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private String name;
-        private Type type;
+        private TypeName typeName;
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -98,7 +124,8 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.name = existing.getName();
-            this.type = existing.getType();
+            this.typeName = existing.getTypeName();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
 
@@ -117,13 +144,18 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
             return this;
         }
 
-        public Builder type(Type type) {
-            this.type = type;
+        public Builder typeName(TypeName type) {
+            this.typeName = type;
+            return this;
+        }
+
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
             return this;
         }
 
         public OperationTypeDefinition build() {
-            OperationTypeDefinition operationTypeDefinition = new OperationTypeDefinition(name, type, sourceLocation, comments);
+            OperationTypeDefinition operationTypeDefinition = new OperationTypeDefinition(name, typeName, sourceLocation, comments, ignoredChars);
             return operationTypeDefinition;
         }
     }

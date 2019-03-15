@@ -2,6 +2,7 @@ package graphql.execution.defer
 
 import graphql.DeferredExecutionResult
 import graphql.ErrorType
+import graphql.Directives
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
@@ -139,9 +140,10 @@ class DeferSupportIntegrationTest extends Specification {
                 .type(newTypeWiring("Comment").dataFetcher("comments", commentsFetcher))
                 .type(newTypeWiring("Review").dataFetcher("comments", commentsFetcher))
                 .build()
-        def schema = TestUtil.schema(schemaSpec, runtimeWiring)
 
-        graphQL = GraphQL.newGraphQL(schema).build()
+        def schema = TestUtil.schema(schemaSpec, runtimeWiring)
+                .transform({ builder -> builder.additionalDirective(Directives.DeferDirective) })
+        this.graphQL = GraphQL.newGraphQL(schema).build()
     }
 
     def "test defer support end to end"() {

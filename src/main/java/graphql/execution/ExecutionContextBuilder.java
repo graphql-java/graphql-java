@@ -3,15 +3,18 @@ package graphql.execution;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.cachecontrol.CacheControl;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
+import org.dataloader.DataLoaderRegistry;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,8 +34,10 @@ public class ExecutionContextBuilder {
     private Object root;
     private Document document;
     private OperationDefinition operationDefinition;
-    private Map<String, Object> variables = new HashMap<>();
-    private Map<String, FragmentDefinition> fragmentsByName = new HashMap<>();
+    private Map<String, Object> variables = new LinkedHashMap<>();
+    private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
+    private DataLoaderRegistry dataLoaderRegistry;
+    private CacheControl cacheControl;
     private List<GraphQLError> errors = new ArrayList<>();
 
     /**
@@ -72,6 +77,8 @@ public class ExecutionContextBuilder {
         operationDefinition = other.getOperationDefinition();
         variables = new HashMap<>(other.getVariables());
         fragmentsByName = new HashMap<>(other.getFragmentsByName());
+        dataLoaderRegistry = other.getDataLoaderRegistry();
+        cacheControl = other.getCacheControl();
         errors = new ArrayList<>(other.getErrors());
     }
 
@@ -141,6 +148,16 @@ public class ExecutionContextBuilder {
     }
 
 
+    public ExecutionContextBuilder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {
+        this.dataLoaderRegistry = assertNotNull(dataLoaderRegistry);
+        return this;
+    }
+
+    public ExecutionContextBuilder cacheControl(CacheControl cacheControl) {
+        this.cacheControl = cacheControl;
+        return this;
+    }
+
     public ExecutionContext build() {
         // preconditions
         assertNotNull(executionId, "You must provide a query identifier");
@@ -159,6 +176,9 @@ public class ExecutionContextBuilder {
                 variables,
                 context,
                 root,
-                errors);
+                dataLoaderRegistry,
+                cacheControl,
+                errors
+        );
     }
 }

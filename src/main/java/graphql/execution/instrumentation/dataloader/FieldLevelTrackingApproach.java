@@ -5,6 +5,7 @@ import graphql.ExecutionResult;
 import graphql.Internal;
 import graphql.execution.ExecutionPath;
 import graphql.execution.FieldValueInfo;
+import graphql.execution.MergedField;
 import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -12,7 +13,6 @@ import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
-import graphql.language.Field;
 import org.dataloader.DataLoaderRegistry;
 import org.slf4j.Logger;
 
@@ -94,13 +94,13 @@ public class FieldLevelTrackingApproach {
                     '}';
         }
 
-        public void dispatchIfNotDispatchedBefore(int level, Runnable dispatch) {
+        public boolean dispatchIfNotDispatchedBefore(int level) {
             if (dispatchedLevels.contains(level)) {
                 Assert.assertShouldNeverHappen("level " + level + " already dispatched");
-                return;
+                return false;
             }
             dispatchedLevels.add(level);
-            dispatch.run();
+            return true;
         }
 
         public void clearAndMarkCurrentLevelAsReady(int level) {
@@ -151,17 +151,25 @@ public class FieldLevelTrackingApproach {
 
             @Override
             public void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
+                boolean dispatchNeeded;
                 synchronized (callStack) {
-                    handleOnFieldValuesInfo(fieldValueInfoList, callStack, curLevel);
+                    dispatchNeeded = handleOnFieldValuesInfo(fieldValueInfoList, callStack, curLevel);
+                }
+                if (dispatchNeeded) {
+                    dispatch();
                 }
             }
 
             @Override
-            public void onDeferredField(List<Field> field) {
+            public void onDeferredField(MergedField field) {
+                boolean dispatchNeeded;
                 // fake fetch count for this field
                 synchronized (callStack) {
                     callStack.increaseFetchCount(curLevel);
-                    dispatchIfNeeded(callStack, curLevel);
+                    dispatchNeeded = dispatchIfNeeded(callStack, curLevel);
+                }
+                if (dispatchNeeded) {
+                    dispatch();
                 }
             }
         };
@@ -170,7 +178,7 @@ public class FieldLevelTrackingApproach {
     //
     // thread safety : called with synchronised(callStack)
     //
-    private void handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, CallStack callStack, int curLevel) {
+    private boolean handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, CallStack callStack, int curLevel) {
         callStack.increaseHappenedOnFieldValueCalls(curLevel);
         int expectedStrategyCalls = 0;
         for (FieldValueInfo fieldValueInfo : fieldValueInfoList) {
@@ -181,7 +189,7 @@ public class FieldLevelTrackingApproach {
             }
         }
         callStack.increaseExpectedStrategyCalls(curLevel + 1, expectedStrategyCalls);
-        dispatchIfNeeded(callStack, curLevel + 1);
+        return dispatchIfNeeded(callStack, curLevel + 1);
     }
 
     private int getCountForList(FieldValueInfo fieldValueInfo) {
@@ -215,8 +223,12 @@ public class FieldLevelTrackingApproach {
 
             @Override
             public void onFieldValueInfo(FieldValueInfo fieldValueInfo) {
+                boolean dispatchNeeded;
                 synchronized (callStack) {
-                    handleOnFieldValuesInfo(Collections.singletonList(fieldValueInfo), callStack, level);
+                    dispatchNeeded = handleOnFieldValuesInfo(Collections.singletonList(fieldValueInfo), callStack, level);
+                }
+                if (dispatchNeeded) {
+                    dispatch();
                 }
             }
         };
@@ -224,16 +236,21 @@ public class FieldLevelTrackingApproach {
 
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
-        ExecutionPath path = parameters.getEnvironment().getFieldTypeInfo().getPath();
+        ExecutionPath path = parameters.getEnvironment().getExecutionStepInfo().getPath();
         int level = path.getLevel();
         return new InstrumentationContext<Object>() {
 
             @Override
             public void onDispatched(CompletableFuture result) {
+                boolean dispatchNeeded;
                 synchronized (callStack) {
                     callStack.increaseFetchCount(level);
-                    dispatchIfNeeded(callStack, level);
+                    dispatchNeeded = dispatchIfNeeded(callStack, level);
                 }
+                if (dispatchNeeded) {
+                    dispatch();
+                }
+
             }
 
             @Override
@@ -246,10 +263,11 @@ public class FieldLevelTrackingApproach {
     //
     // thread safety : called with synchronised(callStack)
     //
-    private void dispatchIfNeeded(CallStack callStack, int level) {
+    private boolean dispatchIfNeeded(CallStack callStack, int level) {
         if (levelReady(callStack, level)) {
-            callStack.dispatchIfNotDispatchedBefore(level, this::dispatch);
+            return callStack.dispatchIfNotDispatchedBefore(level);
         }
+        return false;
     }
 
     //

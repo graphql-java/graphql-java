@@ -10,14 +10,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
+
 @PublicApi
 public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValue>, NamedNode<EnumValue> {
 
     private final String name;
 
     @Internal
-    protected EnumValue(String name, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected EnumValue(String name, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
     }
 
@@ -25,11 +28,10 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
     /**
      * alternative to using a Builder for convenience
      *
-     * @param name
+     * @param name of the enum value
      */
     public EnumValue(String name) {
-        super(null, new ArrayList<>());
-        this.name = name;
+        this(name, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     @Override
@@ -44,9 +46,24 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer().build();
+    }
+
+    @Override
+    public EnumValue withNewChildren(NodeChildrenContainer newChildren) {
+        assertNewChildrenAreEmpty(newChildren);
+        return this;
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         EnumValue that = (EnumValue) o;
 
@@ -55,7 +72,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
 
     @Override
     public EnumValue deepCopy() {
-        return new EnumValue(name, getSourceLocation(), getComments());
+        return new EnumValue(name, getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -88,6 +105,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
         private SourceLocation sourceLocation;
         private String name;
         private List<Comment> comments = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -114,8 +132,13 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public EnumValue build() {
-            EnumValue enumValue = new EnumValue(name, sourceLocation, comments);
+            EnumValue enumValue = new EnumValue(name, sourceLocation, comments, ignoredChars);
             return enumValue;
         }
     }

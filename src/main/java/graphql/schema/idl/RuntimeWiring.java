@@ -2,11 +2,15 @@ package graphql.schema.idl;
 
 import graphql.PublicApi;
 import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.SchemaTransformer;
 import graphql.schema.TypeResolver;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.UnaryOperator;
@@ -15,7 +19,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 
 /**
- * A runtime wiring is a specification of data fetchers, type resolves and custom scalars that are needed
+ * A runtime wiring is a specification of data fetchers, type resolvers and custom scalars that are needed
  * to wire together a functional {@link GraphQLSchema}
  */
 @PublicApi
@@ -28,9 +32,11 @@ public class RuntimeWiring {
     private final Map<String, SchemaDirectiveWiring> directiveWiring;
     private final WiringFactory wiringFactory;
     private final Map<String, EnumValuesProvider> enumValuesProviders;
+    private final Collection<SchemaTransformer> schemaTransformers;
     private final GraphqlFieldVisibility fieldVisibility;
+    private final GraphQLCodeRegistry codeRegistry;
 
-    private RuntimeWiring(Map<String, Map<String, DataFetcher>> dataFetchers, Map<String, DataFetcher> defaultDataFetchers, Map<String, GraphQLScalarType> scalars, Map<String, TypeResolver> typeResolvers, Map<String, SchemaDirectiveWiring> directiveWiring, Map<String, EnumValuesProvider> enumValuesProviders, WiringFactory wiringFactory, GraphqlFieldVisibility fieldVisibility) {
+    private RuntimeWiring(Map<String, Map<String, DataFetcher>> dataFetchers, Map<String, DataFetcher> defaultDataFetchers, Map<String, GraphQLScalarType> scalars, Map<String, TypeResolver> typeResolvers, Map<String, SchemaDirectiveWiring> directiveWiring, Map<String, EnumValuesProvider> enumValuesProviders, WiringFactory wiringFactory, Collection<SchemaTransformer> schemaTransformers, GraphqlFieldVisibility fieldVisibility, GraphQLCodeRegistry codeRegistry) {
         this.dataFetchers = dataFetchers;
         this.defaultDataFetchers = defaultDataFetchers;
         this.scalars = scalars;
@@ -38,7 +44,9 @@ public class RuntimeWiring {
         this.directiveWiring = directiveWiring;
         this.wiringFactory = wiringFactory;
         this.enumValuesProviders = enumValuesProviders;
+        this.schemaTransformers = schemaTransformers;
         this.fieldVisibility = fieldVisibility;
+        this.codeRegistry = codeRegistry;
     }
 
     /**
@@ -46,6 +54,10 @@ public class RuntimeWiring {
      */
     public static Builder newRuntimeWiring() {
         return new Builder();
+    }
+
+    public GraphQLCodeRegistry getCodeRegistry() {
+        return codeRegistry;
     }
 
     public Map<String, GraphQLScalarType> getScalars() {
@@ -84,6 +96,10 @@ public class RuntimeWiring {
         return directiveWiring;
     }
 
+    public Collection<SchemaTransformer> getSchemaTransformers() {
+        return schemaTransformers;
+    }
+
     @PublicApi
     public static class Builder {
         private final Map<String, Map<String, DataFetcher>> dataFetchers = new LinkedHashMap<>();
@@ -92,8 +108,10 @@ public class RuntimeWiring {
         private final Map<String, TypeResolver> typeResolvers = new LinkedHashMap<>();
         private final Map<String, EnumValuesProvider> enumValuesProviders = new LinkedHashMap<>();
         private final Map<String, SchemaDirectiveWiring> directiveWiring = new LinkedHashMap<>();
+        private final Collection<SchemaTransformer> schemaTransformers = new ArrayList<>();
         private WiringFactory wiringFactory = new NoopWiringFactory();
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
+        private GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().build();
 
         private Builder() {
             ScalarInfo.STANDARD_SCALARS.forEach(this::scalar);
@@ -111,6 +129,30 @@ public class RuntimeWiring {
         public Builder wiringFactory(WiringFactory wiringFactory) {
             assertNotNull(wiringFactory, "You must provide a wiring factory");
             this.wiringFactory = wiringFactory;
+            return this;
+        }
+
+        /**
+         * This allows you to seed in your own {@link graphql.schema.GraphQLCodeRegistry} instance
+         *
+         * @param codeRegistry the code registry to use
+         *
+         * @return this outer builder
+         */
+        public Builder codeRegistry(GraphQLCodeRegistry codeRegistry) {
+            this.codeRegistry = assertNotNull(codeRegistry);
+            return this;
+        }
+
+        /**
+         * This allows you to seed in your own {@link graphql.schema.GraphQLCodeRegistry} instance
+         *
+         * @param codeRegistry the code registry to use
+         *
+         * @return this outer builder
+         */
+        public Builder codeRegistry(GraphQLCodeRegistry.Builder codeRegistry) {
+            this.codeRegistry = assertNotNull(codeRegistry).build();
             return this;
         }
 
@@ -204,14 +246,24 @@ public class RuntimeWiring {
         }
 
         /**
+         * Adds a schema transformer into the mix
+         *
+         * @param schemaTransformer the non null schema transformer to add
+         *
+         * @return the runtime wiring builder
+         */
+        public Builder transformer(SchemaTransformer schemaTransformer) {
+            this.schemaTransformers.add(assertNotNull(schemaTransformer));
+            return this;
+        }
+
+        /**
          * @return the built runtime wiring
          */
         public RuntimeWiring build() {
-            return new RuntimeWiring(dataFetchers, defaultDataFetchers, scalars, typeResolvers, directiveWiring, enumValuesProviders, wiringFactory, fieldVisibility);
+            return new RuntimeWiring(dataFetchers, defaultDataFetchers, scalars, typeResolvers, directiveWiring, enumValuesProviders, wiringFactory, schemaTransformers, fieldVisibility, codeRegistry);
         }
 
     }
-
-
 }
 

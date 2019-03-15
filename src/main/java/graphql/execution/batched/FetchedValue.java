@@ -1,5 +1,6 @@
 package graphql.execution.batched;
 
+@Deprecated
 public class FetchedValue {
 
     private final MapOrList mapOrList;

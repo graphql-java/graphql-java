@@ -10,14 +10,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
+
 @PublicApi
 public class NullValue extends AbstractNode<NullValue> implements Value<NullValue> {
 
-    public static final NullValue Null = new NullValue(null, Collections.emptyList());
+    public static final NullValue Null = new NullValue(null, Collections.emptyList(), IgnoredChars.EMPTY);
 
     @Internal
-    protected NullValue(SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected NullValue(SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
     }
 
     @Override
@@ -26,9 +29,24 @@ public class NullValue extends AbstractNode<NullValue> implements Value<NullValu
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer().build();
+    }
+
+    @Override
+    public NullValue withNewChildren(NodeChildrenContainer newChildren) {
+        assertNewChildrenAreEmpty(newChildren);
+        return this;
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         return true;
 
@@ -58,6 +76,7 @@ public class NullValue extends AbstractNode<NullValue> implements Value<NullValu
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -72,8 +91,13 @@ public class NullValue extends AbstractNode<NullValue> implements Value<NullValu
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public NullValue build() {
-            NullValue nullValue = new NullValue(sourceLocation, comments);
+            NullValue nullValue = new NullValue(sourceLocation, comments, ignoredChars);
             return nullValue;
         }
     }

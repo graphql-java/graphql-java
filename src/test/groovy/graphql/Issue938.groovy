@@ -74,8 +74,7 @@ class Issue938 extends Specification {
                         .dataFetcher("User", userDataFetcher)
                         .build())
                 .build()
-        def schema = TestUtil.schema(schemaSDL, runtimeWiring)
-        def graphql = GraphQL.newGraphQL(schema).build();
+        def graphql = TestUtil.graphQL(schemaSDL, runtimeWiring).build()
 
         when:
         def input = ExecutionInput.newExecutionInput()

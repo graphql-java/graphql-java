@@ -8,7 +8,6 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,17 +37,44 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
     private final InputValueDefinition definition;
     private final List<GraphQLDirective> directives;
 
+    /**
+     * @param name the name
+     * @param type the field type
+     *
+     * @deprecated use the {@link #newInputObjectField()} builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLInputObjectField(String name, GraphQLInputType type) {
         this(name, null, type, null, emptyList(), null);
     }
 
+    /**
+     * @param name         the name
+     * @param description  the description
+     * @param type         the field type
+     * @param defaultValue the default value
+     *
+     * @deprecated use the {@link #newInputObjectField()} builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue) {
         this(name, description, type, defaultValue, emptyList(), null);
     }
 
+    /**
+     * @param name         the name
+     * @param description  the description
+     * @param type         the field type
+     * @param defaultValue the default value
+     * @param directives   the directives on this type element
+     * @param definition   the AST definition
+     *
+     * @deprecated use the {@link #newInputObjectField()} builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue, List<GraphQLDirective> directives, InputValueDefinition definition) {
         assertValidName(name);
         assertNotNull(type, "type can't be null");
@@ -113,7 +139,10 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
 
     @Override
     public List<GraphQLType> getChildren() {
-        return Collections.singletonList(type);
+        List<GraphQLType> children = new ArrayList<>();
+        children.add(type);
+        children.addAll(directives);
+        return children;
     }
 
     public static Builder newInputObjectField(GraphQLInputObjectField existing) {

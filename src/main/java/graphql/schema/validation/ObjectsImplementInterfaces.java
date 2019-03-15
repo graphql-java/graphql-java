@@ -11,7 +11,7 @@ import graphql.schema.GraphQLUnionType;
 import java.util.List;
 import java.util.Objects;
 
-import static graphql.schema.GraphQLTypeUtil.getUnwrappedTypeName;
+import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
@@ -61,8 +61,8 @@ public class ObjectsImplementInterfaces implements SchemaValidationRule {
     }
 
     private void checkFieldTypeCompatibility(GraphQLObjectType objectType, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector, GraphQLFieldDefinition interfaceFieldDef, GraphQLFieldDefinition objectFieldDef) {
-        String interfaceFieldDefStr = getUnwrappedTypeName(interfaceFieldDef.getType());
-        String objectFieldDefStr = getUnwrappedTypeName(objectFieldDef.getType());
+        String interfaceFieldDefStr = simplePrint(interfaceFieldDef.getType());
+        String objectFieldDefStr = simplePrint(objectFieldDef.getType());
 
         if (!isCompatible(interfaceFieldDef.getType(), objectFieldDef.getType())) {
             validationErrorCollector.addError(
@@ -109,7 +109,7 @@ public class ObjectsImplementInterfaces implements SchemaValidationRule {
         // we don't do default value checking because toString of getDefaultValue is not guaranteed to be stable
         return argument.getName() +
                 ":" +
-                getUnwrappedTypeName(argument.getType());
+                simplePrint(argument.getType());
 
     }
 
@@ -146,8 +146,8 @@ public class ObjectsImplementInterfaces implements SchemaValidationRule {
     }
 
     boolean isSameType(GraphQLOutputType a, GraphQLOutputType b) {
-        String aDefString = getUnwrappedTypeName(a);
-        String bDefString = getUnwrappedTypeName(b);
+        String aDefString = simplePrint(a);
+        String bDefString = simplePrint(b);
         return aDefString.equals(bDefString);
     }
 

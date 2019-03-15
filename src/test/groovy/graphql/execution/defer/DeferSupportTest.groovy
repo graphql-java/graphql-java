@@ -14,6 +14,8 @@ import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
 
+import static graphql.TestUtil.mergedField
+
 class DeferSupportTest extends Specification {
 
 
@@ -180,16 +182,16 @@ class DeferSupportTest extends Specification {
         def deferSupport = new DeferSupport()
 
         when:
-        def noDirectivePresent = deferSupport.checkForDeferDirective([
+        def noDirectivePresent = deferSupport.checkForDeferDirective(mergedField([
                 new Field("a"),
                 new Field("b")
-        ], [:])
+        ]), [:])
 
         then:
         !noDirectivePresent
 
         when:
-        def directivePresent = deferSupport.checkForDeferDirective([
+        def directivePresent = deferSupport.checkForDeferDirective(mergedField([
                 Field.newField("a").directives([new Directive("defer")]).build(),
                 new Field("b")
         ], [:])

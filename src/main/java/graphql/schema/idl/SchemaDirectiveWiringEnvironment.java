@@ -3,8 +3,12 @@ package graphql.schema.idl;
 import graphql.PublicApi;
 import graphql.language.NamedNode;
 import graphql.language.NodeParentTree;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphqlElementParentTree;
 
 import java.util.Map;
 
@@ -37,6 +41,15 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
     NodeParentTree<NamedNode> getNodeParentTree();
 
     /**
+     * The type hierarchy depends on the element in question.  For example {@link graphql.schema.GraphQLObjectType} elements
+     * have no parent, however a {@link graphql.schema.GraphQLArgument} might be on a {@link graphql.schema.GraphQLFieldDefinition}
+     * which in turn might be on a {@link graphql.schema.GraphQLObjectType} say
+     *
+     * @return hierarchical graphql type information
+     */
+    GraphqlElementParentTree getElementParentTree();
+
+    /**
      * @return the type registry
      */
     TypeDefinitionRegistry getRegistry();
@@ -44,6 +57,21 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
     /**
      * @return a mpa that can be used by implementors to hold context during the SDL build process
      */
-    Map<String,Object> getBuildContext();
+    Map<String, Object> getBuildContext();
+
+    /**
+     * @return a builder of the current code registry builder
+     */
+    GraphQLCodeRegistry.Builder getCodeRegistry();
+
+    /**
+     * @return a {@link graphql.schema.GraphQLFieldsContainer} when the element is contained with a fields container
+     */
+    GraphQLFieldsContainer getFieldsContainer();
+
+    /**
+     * @return a {@link GraphQLFieldDefinition} when the element is one or is contained within one
+     */
+    GraphQLFieldDefinition getFieldDefinition();
 
 }

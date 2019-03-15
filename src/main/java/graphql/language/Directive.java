@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.argumentsByName;
 
 @PublicApi
@@ -18,26 +19,33 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     private final String name;
     private final List<Argument> arguments = new ArrayList<>();
 
+    public static final String CHILD_ARGUMENTS = "arguments";
+
     @Internal
-    protected Directive(String name, List<Argument> arguments, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected Directive(String name, List<Argument> arguments, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.arguments.addAll(arguments);
     }
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name      of the directive
+     * @param arguments of the directive
      */
     public Directive(String name, List<Argument> arguments) {
-        this(name, arguments, null, new ArrayList<>());
+        this(name, arguments, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the directive
      */
     public Directive(String name) {
-        this(name, new ArrayList<>(), null, new ArrayList<>());
+        this(name, new ArrayList<>(), null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public List<Argument> getArguments() {
@@ -65,9 +73,27 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_ARGUMENTS, arguments)
+                .build();
+    }
+
+    @Override
+    public Directive withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .arguments(newChildren.getChildren(CHILD_ARGUMENTS))
+        );
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         Directive that = (Directive) o;
 
@@ -77,7 +103,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
 
     @Override
     public Directive deepCopy() {
-        return new Directive(name, deepCopy(arguments), getSourceLocation(), getComments());
+        return new Directive(name, deepCopy(arguments), getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -108,6 +134,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
         private List<Comment> comments = new ArrayList<>();
         private String name;
         private List<Argument> arguments = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -117,6 +144,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
             this.comments = existing.getComments();
             this.name = existing.getName();
             this.arguments = existing.getArguments();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
 
@@ -140,8 +168,13 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public Directive build() {
-            Directive directive = new Directive(name, arguments, sourceLocation, comments);
+            Directive directive = new Directive(name, arguments, sourceLocation, comments, ignoredChars);
             return directive;
         }
     }

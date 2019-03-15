@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static graphql.DirectivesUtil.directiveWithArg;
+import static graphql.schema.FieldCoordinates.coordinates;
 
 /**
  * This adds ' @fetch(from : "otherName") ' support so you can rename what property is read for a given field
@@ -26,7 +27,8 @@ public class FetchSchemaDirectiveWiring implements SchemaDirectiveWiring {
         String fetchName = atFetchFromSupport(field.getName(), field.getDirectives());
         DataFetcher dataFetcher = new PropertyDataFetcher(fetchName);
 
-        return field.transform(builder -> builder.dataFetcher(dataFetcher));
+        environment.getCodeRegistry().dataFetcher(coordinates(environment.getFieldsContainer(), field), dataFetcher);
+        return field;
     }
 
 

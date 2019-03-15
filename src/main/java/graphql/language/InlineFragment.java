@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.directivesByName;
 
 @PublicApi
@@ -19,13 +20,18 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     private final List<Directive> directives;
     private final SelectionSet selectionSet;
 
+    public static final String CHILD_TYPE_CONDITION = "typeCondition";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_SELECTION_SET = "selectionSet";
+
     @Internal
     protected InlineFragment(TypeName typeCondition,
-                           List<Directive> directives,
-                           SelectionSet selectionSet,
-                           SourceLocation sourceLocation,
-                           List<Comment> comments) {
-        super(sourceLocation, comments);
+                             List<Directive> directives,
+                             SelectionSet selectionSet,
+                             SourceLocation sourceLocation,
+                             List<Comment> comments,
+                             IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.typeCondition = typeCondition;
         this.directives = directives;
         this.selectionSet = selectionSet;
@@ -33,22 +39,26 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param typeCondition the type condition of the inline fragment
      */
     public InlineFragment(TypeName typeCondition) {
-        this(typeCondition, new ArrayList<>(), null, null, new ArrayList<>());
+        this(typeCondition, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param typeCondition the type condition of the inline fragment
+     * @param selectionSet  of the inline fragment
      */
     public InlineFragment(TypeName typeCondition, SelectionSet selectionSet) {
-        this(typeCondition, new ArrayList<>(), selectionSet, null, new ArrayList<>());
+        this(typeCondition, new ArrayList<>(), selectionSet, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public TypeName getTypeCondition() {
         return typeCondition;
     }
-
 
     public List<Directive> getDirectives() {
         return new ArrayList<>(directives);
@@ -61,7 +71,6 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     public Directive getDirective(String directiveName) {
         return getDirectivesByName().get(directiveName);
     }
-
 
     @Override
     public SelectionSet getSelectionSet() {
@@ -80,9 +89,31 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .child(CHILD_TYPE_CONDITION, typeCondition)
+                .children(CHILD_DIRECTIVES, directives)
+                .child(CHILD_SELECTION_SET, selectionSet)
+                .build();
+    }
+
+    @Override
+    public InlineFragment withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .typeCondition(newChildren.getChildOrNull(CHILD_TYPE_CONDITION))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .selectionSet(newChildren.getChildOrNull(CHILD_SELECTION_SET))
+        );
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         return true;
     }
@@ -94,7 +125,8 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
                 deepCopy(directives),
                 deepCopy(selectionSet),
                 getSourceLocation(),
-                getComments()
+                getComments(),
+                getIgnoredChars()
         );
     }
 
@@ -128,6 +160,7 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         private TypeName typeCondition;
         private List<Directive> directives = new ArrayList<>();
         private SelectionSet selectionSet;
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -139,6 +172,7 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
             this.typeCondition = existing.getTypeCondition();
             this.directives = existing.getDirectives();
             this.selectionSet = existing.getSelectionSet();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
 
@@ -167,8 +201,13 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public InlineFragment build() {
-            InlineFragment inlineFragment = new InlineFragment(typeCondition, directives, selectionSet, sourceLocation, comments);
+            InlineFragment inlineFragment = new InlineFragment(typeCondition, directives, selectionSet, sourceLocation, comments, ignoredChars);
             return inlineFragment;
         }
     }

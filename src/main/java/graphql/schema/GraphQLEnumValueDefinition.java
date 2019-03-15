@@ -4,6 +4,7 @@ package graphql.schema;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.language.EnumValueDefinition;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -34,19 +35,51 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
     private final Object value;
     private final String deprecationReason;
     private final List<GraphQLDirective> directives;
+    private final EnumValueDefinition definition;
 
+    /**
+     * @param name        the name
+     * @param description the description
+     * @param value       the value
+     *
+     * @deprecated use the {@link #newEnumValueDefinition()}   builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLEnumValueDefinition(String name, String description, Object value) {
         this(name, description, value, null, emptyList());
     }
 
+    /**
+     * @param name              the name
+     * @param description       the description
+     * @param value             the value
+     * @param deprecationReason the deprecation reasons
+     *
+     * @deprecated use the {@link #newEnumValueDefinition()}   builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLEnumValueDefinition(String name, String description, Object value, String deprecationReason) {
         this(name, description, value, deprecationReason, emptyList());
     }
 
+    /**
+     * @param name              the name
+     * @param description       the description
+     * @param value             the value
+     * @param deprecationReason the deprecation reasons
+     * @param directives        the directives on this type element
+     *
+     * @deprecated use the {@link #newEnumValueDefinition()}   builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLEnumValueDefinition(String name, String description, Object value, String deprecationReason, List<GraphQLDirective> directives) {
+        this(name, description, value, deprecationReason, directives, null);
+    }
+
+    private GraphQLEnumValueDefinition(String name, String description, Object value, String deprecationReason, List<GraphQLDirective> directives, EnumValueDefinition definition) {
         assertValidName(name);
         assertNotNull(directives, "directives cannot be null");
 
@@ -55,6 +88,7 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
         this.value = value;
         this.deprecationReason = deprecationReason;
         this.directives = directives;
+        this.definition = definition;
     }
 
     @Override
@@ -93,6 +127,10 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
         return getDirectivesByName().get(directiveName);
     }
 
+    public EnumValueDefinition getDefinition() {
+        return definition;
+    }
+
     /**
      * This helps you transform the current GraphQLEnumValueDefinition into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
@@ -112,6 +150,10 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
         return visitor.visitGraphQLEnumValueDefinition(this, context);
     }
 
+    @Override
+    public List<GraphQLType> getChildren() {
+        return new ArrayList<>(directives);
+    }
 
     public static Builder newEnumValueDefinition() {
         return new Builder();
@@ -127,6 +169,7 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
         private String description;
         private Object value;
         private String deprecationReason;
+        private EnumValueDefinition definition;
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
 
         public Builder() {
@@ -160,6 +203,11 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
             return this;
         }
 
+        public Builder definition(EnumValueDefinition definition) {
+            this.definition = definition;
+            return this;
+        }
+
         public Builder withDirectives(GraphQLDirective... directives) {
             assertNotNull(directives, "directives can't be null");
             for (GraphQLDirective directive : directives) {
@@ -189,7 +237,7 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
         }
 
         public GraphQLEnumValueDefinition build() {
-            return new GraphQLEnumValueDefinition(name, description, value, deprecationReason, valuesToList(directives));
+            return new GraphQLEnumValueDefinition(name, description, value, deprecationReason, valuesToList(directives), definition);
         }
     }
 }

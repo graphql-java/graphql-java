@@ -28,7 +28,7 @@ class GraphQLSchemaTest extends Specification {
         then:
         objectTypes.size() == 2
         objectTypes == [
-                humanType, droidType
+                droidType, humanType
         ]
 
     }
@@ -130,7 +130,7 @@ class GraphQLSchemaTest extends Specification {
         when: "no additional directives have been specified"
         def schema = schemaBuilder.build()
         then:
-        schema.directives.size() == 3
+        schema.directives.size() == 2
 
         when: "clear directives is called"
         schema = schemaBuilder.clearDirectives().build()

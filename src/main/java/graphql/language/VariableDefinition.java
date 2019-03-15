@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class VariableDefinition extends AbstractNode<VariableDefinition> implements NamedNode<VariableDefinition> {
 
@@ -17,13 +19,17 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     private final Type type;
     private final Value defaultValue;
 
+    public static final String CHILD_TYPE = "type";
+    public static final String CHILD_DEFAULT_VALUE = "defaultValue";
+
     @Internal
     protected VariableDefinition(String name,
-                               Type type,
-                               Value defaultValue,
-                               SourceLocation sourceLocation,
-                               List<Comment> comments) {
-        super(sourceLocation, comments);
+                                 Type type,
+                                 Value defaultValue,
+                                 SourceLocation sourceLocation,
+                                 List<Comment> comments,
+                                 IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;
@@ -31,19 +37,26 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name         of the variable
+     * @param type         of the variable
+     * @param defaultValue of the variable
      */
     public VariableDefinition(String name,
                               Type type,
                               Value defaultValue) {
-        this(name, type, defaultValue, null, new ArrayList<>());
+        this(name, type, defaultValue, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the variable
+     * @param type of the variable
      */
     public VariableDefinition(String name,
                               Type type) {
-        this(name, type, null, null, new ArrayList<>());
+        this(name, type, null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
 
@@ -63,14 +76,36 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         result.add(type);
-        if (defaultValue != null) result.add(defaultValue);
+        if (defaultValue != null) {
+            result.add(defaultValue);
+        }
         return result;
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .child(CHILD_TYPE, type)
+                .child(CHILD_DEFAULT_VALUE, defaultValue)
+                .build();
+    }
+
+    @Override
+    public VariableDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .type(newChildren.getChildOrNull(CHILD_TYPE))
+                .defaultValue(newChildren.getChildOrNull(CHILD_DEFAULT_VALUE))
+        );
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         VariableDefinition that = (VariableDefinition) o;
 
@@ -84,7 +119,8 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
                 deepCopy(type),
                 deepCopy(defaultValue),
                 getSourceLocation(),
-                getComments()
+                getComments(),
+                getIgnoredChars()
         );
     }
 
@@ -131,6 +167,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         private List<Comment> comments = new ArrayList<>();
         private Type type;
         private Value defaultValue;
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -141,6 +178,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
             this.name = existing.getName();
             this.type = existing.getType();
             this.defaultValue = existing.getDefaultValue();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -168,13 +206,19 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public VariableDefinition build() {
             VariableDefinition variableDefinition = new VariableDefinition(
                     name,
                     type,
                     defaultValue,
                     sourceLocation,
-                    comments
+                    comments,
+                    ignoredChars
             );
             return variableDefinition;
         }

@@ -11,6 +11,8 @@ import graphql.language.NodeUtil
 import graphql.language.OperationDefinition
 import spock.lang.Specification
 
+import static graphql.TestUtil.mergedField
+
 class DataFetchingFieldSelectionSetImplTest extends Specification {
 
     def starWarsSchema = TestUtil.schemaFile("starWarsSchemaWithArguments.graphqls")
@@ -64,7 +66,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
                 .fragmentsByName(getFragments(document))
                 .graphQLSchema(starWarsSchema).build()
 
-        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, starWarsSchema.getType('Human'), fields)
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, starWarsSchema.getType('Human'), mergedField(fields))
 
         expect:
         !selectionSet.contains(null)
@@ -120,7 +122,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
                 .fragmentsByName(getFragments(document))
                 .graphQLSchema(starWarsSchema).build()
 
-        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, starWarsSchema.getType('Human'), fields)
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, starWarsSchema.getType('Human'), mergedField(fields))
 
         def fieldMap = selectionSet.get()
         expect:
@@ -149,7 +151,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
                 .fragmentsByName(getFragments(document))
                 .graphQLSchema(starWarsSchema).build()
 
-        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, starWarsSchema.getType('Human'), fields)
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, starWarsSchema.getType('Human'), mergedField(fields))
 
         expect:
 
@@ -170,7 +172,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
                 .fragmentsByName(getFragments(document))
                 .graphQLSchema(starWarsSchema).build()
 
-        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, starWarsSchema.getType('Human'), fields)
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, starWarsSchema.getType('Human'), mergedField(fields))
 
         expect:
 
@@ -239,13 +241,13 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def startingType = replaySchema.getType('ThingConnection')
 
         when:
-        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(replayExecutionContext, startingType, startField)
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(replayExecutionContext, startingType, mergedField(startField))
 
         def selectedNodesField = selectionSet.getField("nodes")
 
         then:
         selectedNodesField.getName() == "nodes"
-        GraphQLTypeUtil.getUnwrappedTypeName(selectedNodesField.fieldDefinition.type) == "[Thing]"
+        GraphQLTypeUtil.simplePrint(selectedNodesField.fieldDefinition.type) == "[Thing]"
         selectedNodesField.getSelectionSet().contains("key")
         selectedNodesField.getSelectionSet().contains("summary")
         selectedNodesField.getSelectionSet().contains("status")
@@ -262,14 +264,14 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         then:
         selectedKeyField.getName() == "key"
-        GraphQLTypeUtil.getUnwrappedTypeName(selectedKeyField.fieldDefinition.type) == "String"
+        GraphQLTypeUtil.simplePrint(selectedKeyField.fieldDefinition.type) == "String"
 
         when:
         def selectedStatusField = selectedNodesField.getSelectionSet().getField("status")
 
         then:
         selectedStatusField.getName() == "status"
-        GraphQLTypeUtil.getUnwrappedTypeName(selectedStatusField.fieldDefinition.type) == "Status"
+        GraphQLTypeUtil.simplePrint(selectedStatusField.fieldDefinition.type) == "Status"
         selectedStatusField.getSelectionSet().contains("name")
 
         // jump straight to compound fq name (which is 2 down from 'nodes')
@@ -278,7 +280,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         then:
         selectedStatusNameField.getName() == "name"
-        GraphQLTypeUtil.getUnwrappedTypeName(selectedStatusNameField.fieldDefinition.type) == "String"
+        GraphQLTypeUtil.simplePrint(selectedStatusNameField.fieldDefinition.type) == "String"
 
     }
 
@@ -288,7 +290,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def startingType = replaySchema.getType('ThingConnection')
 
         when:
-        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(replayExecutionContext, startingType, startField)
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(replayExecutionContext, startingType, mergedField(startField))
         List<SelectedField> selectedUnderNodesAster = selectionSet.getFields("nodes/*")
 
         then:
@@ -299,10 +301,10 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def fieldNames = sortedSelectedUnderNodesAster.collect({ sf -> sf.name })
         fieldNames == ["key", "status", "stuff", "summary"]
 
-        GraphQLTypeUtil.getUnwrappedTypeName(sortedSelectedUnderNodesAster[0].fieldDefinition.type) == "String"
-        GraphQLTypeUtil.getUnwrappedTypeName(sortedSelectedUnderNodesAster[1].fieldDefinition.type) == "Status"
-        GraphQLTypeUtil.getUnwrappedTypeName(sortedSelectedUnderNodesAster[2].fieldDefinition.type) == "Stuff"
-        GraphQLTypeUtil.getUnwrappedTypeName(sortedSelectedUnderNodesAster[3].fieldDefinition.type) == "String"
+        GraphQLTypeUtil.simplePrint(sortedSelectedUnderNodesAster[0].fieldDefinition.type) == "String"
+        GraphQLTypeUtil.simplePrint(sortedSelectedUnderNodesAster[1].fieldDefinition.type) == "Status"
+        GraphQLTypeUtil.simplePrint(sortedSelectedUnderNodesAster[2].fieldDefinition.type) == "Stuff"
+        GraphQLTypeUtil.simplePrint(sortedSelectedUnderNodesAster[3].fieldDefinition.type) == "String"
 
         // descend one down from here Status.name which has not further sub selection
         when:
@@ -310,7 +312,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         then:
         statusName.name == "name"
-        GraphQLTypeUtil.getUnwrappedTypeName(statusName.fieldDefinition.type) == "String"
+        GraphQLTypeUtil.simplePrint(statusName.fieldDefinition.type) == "String"
         statusName.getSelectionSet().get().isEmpty()
     }
 
@@ -319,7 +321,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def startingType = replaySchema.getType('ThingConnection')
 
         when:
-        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(replayExecutionContext, startingType, startField)
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(replayExecutionContext, startingType, mergedField(startField))
         List<SelectedField> allFieldsViaAsterAster = selectionSet.getFields("**")
         List<SelectedField> allFields = selectionSet.getFields()
 

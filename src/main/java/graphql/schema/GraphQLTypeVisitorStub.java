@@ -38,6 +38,11 @@ public class GraphQLTypeVisitorStub implements GraphQLTypeVisitor {
     }
 
     @Override
+    public TraversalControl visitGraphQLDirective(GraphQLDirective node, TraverserContext<GraphQLType> context) {
+        return visitGraphQLType(node, context);
+    }
+
+    @Override
     public TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField node, TraverserContext<GraphQLType> context) {
         return visitGraphQLType(node, context);
     }

@@ -26,8 +26,7 @@ class IssueNonNullDefaultAttribute extends Specification {
 
     def typeRuntimeWiring = newTypeWiring('Query').dataFetcher("name", nameFetcher).build()
     def runtimeWiring = newRuntimeWiring().type(typeRuntimeWiring).build()
-    def qLSchema = TestUtil.schema(spec, runtimeWiring)
-    def graphql = GraphQL.newGraphQL(qLSchema).build()
+    def graphql = TestUtil.graphQL(spec, runtimeWiring).build()
 
     def "Can omit non-null attributes that have default values"() {
         when:
@@ -55,7 +54,7 @@ class IssueNonNullDefaultAttribute extends Specification {
         result.errors.size() == 1
         result.errors[0].errorType == ErrorType.ValidationError
         result.errors[0].message == "Validation error of type WrongType: argument 'characterNumber' with value 'NullValue{}' must not be null @ 'name'"
-        result.errors[0].locations == [new SourceLocation(3, 26)]
+        result.errors[0].locations == [new SourceLocation(4, 26)]
         result.data == null
 
     }

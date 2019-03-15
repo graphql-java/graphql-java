@@ -1,6 +1,6 @@
 package graphql.execution.instrumentation.dataloader
 
-import graphql.GraphQL
+import graphql.ExecutionInput
 import graphql.TestUtil
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -44,7 +44,7 @@ class Issue1178DataLoaderDispatchTest extends Specification {
             @Override
             CompletionStage<List<Object>> load(List<Object> keys) {
                 return CompletableFuture.supplyAsync({
-                    return keys.collect({ [id: 'r'+ it]})
+                    return keys.collect({ [id: 'r' + it] })
                 }, executor)
             }
         })
@@ -52,7 +52,7 @@ class Issue1178DataLoaderDispatchTest extends Specification {
             @Override
             CompletionStage<List<Object>> load(List<Object> keys) {
                 return CompletableFuture.supplyAsync({
-                    return keys.collect({ [id: 'r'+ it]})
+                    return keys.collect({ [id: 'r' + it] })
                 }, executor)
             }
         })
@@ -72,16 +72,17 @@ class Issue1178DataLoaderDispatchTest extends Specification {
                 .dataFetcher("related2", relatedDf2))
                 .build()
 
-        def schema = TestUtil.schema(sdl, wiring)
 
         when:
-        def graphql = GraphQL.newGraphQL(schema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation(dataLoaderRegistry))
+        def graphql = TestUtil.graphQL(sdl, wiring)
+                .instrumentation(new DataLoaderDispatcherInstrumentation())
+                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         then: "execution shouldn't error"
         for (int i = 0; i < NUM_OF_REPS; i++) {
-            def result = graphql.execute("""
+            def result = graphql.execute(ExecutionInput.newExecutionInput().dataLoaderRegistry(dataLoaderRegistry)
+                    .query("""
                 query { 
                     getTodos { __typename id 
                         related { id __typename 
@@ -113,7 +114,7 @@ class Issue1178DataLoaderDispatchTest extends Specification {
                             } 
                         }
                     } 
-                }""")
+                }""").build())
             assert result.errors.empty
         }
     }
@@ -122,7 +123,7 @@ class Issue1178DataLoaderDispatchTest extends Specification {
 
         private final DataLoader dataLoader
 
-        public MyDataFetcher(DataLoader dataLoader) {
+        MyDataFetcher(DataLoader dataLoader) {
             this.dataLoader = dataLoader
         }
 

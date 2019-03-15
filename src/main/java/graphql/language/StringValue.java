@@ -10,25 +10,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
+
 @PublicApi
 public class StringValue extends AbstractNode<StringValue> implements ScalarValue<StringValue> {
 
     private final String value;
 
     @Internal
-    protected StringValue(String value, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected StringValue(String value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.value = value;
     }
 
     /**
      * alternative to using a Builder for convenience
      *
-     * @param value
+     * @param value of the String
      */
     public StringValue(String value) {
-        super(null, new ArrayList<>());
-        this.value = value;
+        this(value, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public String getValue() {
@@ -42,6 +44,17 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer().build();
+    }
+
+    @Override
+    public StringValue withNewChildren(NodeChildrenContainer newChildren) {
+        assertNewChildrenAreEmpty(newChildren);
+        return this;
+    }
+
+    @Override
     public String toString() {
         return "StringValue{" +
                 "value='" + value + '\'' +
@@ -50,8 +63,12 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         StringValue that = (StringValue) o;
 
@@ -61,7 +78,7 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
 
     @Override
     public StringValue deepCopy() {
-        return new StringValue(value, getSourceLocation(), getComments());
+        return new StringValue(value, getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -87,6 +104,7 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
         private SourceLocation sourceLocation;
         private String value;
         private List<Comment> comments = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -95,6 +113,7 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.value = existing.getValue();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
 
@@ -113,8 +132,13 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public StringValue build() {
-            StringValue stringValue = new StringValue(value, sourceLocation, comments);
+            StringValue stringValue = new StringValue(value, sourceLocation, comments, ignoredChars);
             return stringValue;
         }
     }
