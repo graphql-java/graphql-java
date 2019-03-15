@@ -1,5 +1,6 @@
 package graphql.validation.rules
 
+import graphql.Directives
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.validation.ValidationError
@@ -22,7 +23,7 @@ class DeferredMustBeOnAllFieldsTest extends Specification {
                 text : String
             }
            
-        ''')
+        ''').transform({ it.additionalDirective(Directives.DeferDirective) })
 
 
     def "all fields MUST contain @defer on all declarations"() {
@@ -57,7 +58,7 @@ class DeferredMustBeOnAllFieldsTest extends Specification {
         def er = graphQL.execute(query)
         then:
         er.errors.size() == 1
-        (er.errors[0] as ValidationError).validationErrorType == ValidationErrorType.DeferredMustBeOnAllFields
+        (er.errors[0] as ValidationError).validationErrorType == ValidationErrorType.DeferMustBeOnAllFields
         (er.errors[0] as ValidationError).queryPath == ["newsFeed", "stories"]
 
         when:
@@ -88,7 +89,7 @@ class DeferredMustBeOnAllFieldsTest extends Specification {
 
         then:
         er.errors.size() == 1
-        (er.errors[0] as ValidationError).validationErrorType == ValidationErrorType.DeferredMustBeOnAllFields
+        (er.errors[0] as ValidationError).validationErrorType == ValidationErrorType.DeferMustBeOnAllFields
         (er.errors[0] as ValidationError).queryPath == ["newsFeed", "stories"]
 
         when:
@@ -119,7 +120,7 @@ class DeferredMustBeOnAllFieldsTest extends Specification {
 
         then:
         er.errors.size() == 1
-        (er.errors[0] as ValidationError).validationErrorType == ValidationErrorType.DeferredMustBeOnAllFields
+        (er.errors[0] as ValidationError).validationErrorType == ValidationErrorType.DeferMustBeOnAllFields
         (er.errors[0] as ValidationError).queryPath == ["newsFeed", "stories"]
 
     }
