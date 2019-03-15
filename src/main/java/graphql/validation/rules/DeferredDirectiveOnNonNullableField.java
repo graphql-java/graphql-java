@@ -1,5 +1,6 @@
 package graphql.validation.rules;
 
+import graphql.Internal;
 import graphql.language.Directive;
 import graphql.language.Node;
 import graphql.schema.GraphQLCompositeType;
@@ -12,6 +13,7 @@ import graphql.validation.ValidationErrorType;
 
 import java.util.List;
 
+@Internal
 public class DeferredDirectiveOnNonNullableField extends DeferredDirectiveAbstractRule {
 
 

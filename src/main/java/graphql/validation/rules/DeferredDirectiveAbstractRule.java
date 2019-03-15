@@ -1,6 +1,7 @@
 package graphql.validation.rules;
 
 import graphql.Directives;
+import graphql.Internal;
 import graphql.language.Directive;
 import graphql.language.Node;
 import graphql.schema.GraphQLCompositeType;
@@ -11,6 +12,7 @@ import graphql.validation.ValidationErrorCollector;
 
 import java.util.List;
 
+@Internal
 public abstract class DeferredDirectiveAbstractRule extends AbstractRule {
 
     public DeferredDirectiveAbstractRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {

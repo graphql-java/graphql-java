@@ -1,5 +1,6 @@
 package graphql.validation.rules;
 
+import graphql.Internal;
 import graphql.language.Directive;
 import graphql.language.Node;
 import graphql.language.OperationDefinition;
@@ -12,6 +13,7 @@ import graphql.validation.ValidationErrorType;
 import java.util.List;
 import java.util.Optional;
 
+@Internal
 public class DeferredDirectiveOnQueryOperation extends DeferredDirectiveAbstractRule {
 
     public DeferredDirectiveOnQueryOperation(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {

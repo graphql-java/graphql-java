@@ -1,6 +1,7 @@
 package graphql.validation.rules;
 
 import graphql.Directives;
+import graphql.Internal;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -17,14 +18,16 @@ import graphql.validation.ValidationErrorType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static java.util.stream.Collectors.groupingBy;
 
+@Internal
 public class DeferredMustBeOnAllFields extends AbstractRule {
 
-    private final Map<List<String>, List<Field>> fieldsByPath = new HashMap<>();
+    private final Map<List<String>, List<Field>> fieldsByPath = new LinkedHashMap<>();
 
     public DeferredMustBeOnAllFields(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
