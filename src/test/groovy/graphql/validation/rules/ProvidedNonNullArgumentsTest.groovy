@@ -21,9 +21,10 @@ class ProvidedNonNullArgumentsTest extends Specification {
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     ProvidedNonNullArguments providedNonNullArguments = new ProvidedNonNullArguments(validationContext, errorCollector)
 
-    def "not provided field argument"() {
+    def "not provided and not defaulted non null field argument"() {
         given:
-        def fieldArg = GraphQLArgument.newArgument().name("arg").type(GraphQLNonNull.nonNull(GraphQLString))
+        def fieldArg = GraphQLArgument.newArgument().name("arg")
+                .type(GraphQLNonNull.nonNull(GraphQLString))
         def fieldDef = GraphQLFieldDefinition.newFieldDefinition()
                 .name("field")
                 .type(GraphQLString)
@@ -40,10 +41,32 @@ class ProvidedNonNullArgumentsTest extends Specification {
         errorCollector.containsValidationError(ValidationErrorType.MissingFieldArgument)
     }
 
+    def "not provided and but defaulted non null field argument"() {
+        given:
+        def fieldArg = GraphQLArgument.newArgument().name("arg")
+                .type(GraphQLNonNull.nonNull(GraphQLString))
+                .defaultValue("defaultVal")
+        def fieldDef = GraphQLFieldDefinition.newFieldDefinition()
+                .name("field")
+                .type(GraphQLString)
+                .argument(fieldArg)
+                .build()
+        validationContext.getFieldDef() >> fieldDef
+
+        def field = new Field("field")
+
+        when:
+        providedNonNullArguments.checkField(field)
+
+        then:
+        errorCollector.getErrors().isEmpty()
+    }
+
 
     def "all field arguments are provided"() {
         given:
-        def fieldArg = GraphQLArgument.newArgument().name("arg").type(GraphQLNonNull.nonNull(GraphQLString))
+        def fieldArg = GraphQLArgument.newArgument().name("arg")
+                .type(GraphQLNonNull.nonNull(GraphQLString))
         def fieldDef = GraphQLFieldDefinition.newFieldDefinition()
                 .name("field")
                 .type(GraphQLString)
@@ -60,9 +83,10 @@ class ProvidedNonNullArgumentsTest extends Specification {
         errorCollector.getErrors().isEmpty()
     }
 
-    def "not provided directive argument"() {
+    def "not provided not defaulted directive argument"() {
         given:
-        def directiveArg = GraphQLArgument.newArgument().name("arg").type(GraphQLNonNull.nonNull(GraphQLString))
+        def directiveArg = GraphQLArgument.newArgument()
+                .name("arg").type(GraphQLNonNull.nonNull(GraphQLString))
         def graphQLDirective = GraphQLDirective.newDirective()
                 .name("directive")
                 .argument(directiveArg)
@@ -76,6 +100,26 @@ class ProvidedNonNullArgumentsTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.MissingDirectiveArgument)
+    }
+
+    def "not provided but defaulted directive argument"() {
+        given:
+        def directiveArg = GraphQLArgument.newArgument()
+                .name("arg").type(GraphQLNonNull.nonNull(GraphQLString))
+                .defaultValue("defaultVal")
+        def graphQLDirective = GraphQLDirective.newDirective()
+                .name("directive")
+                .argument(directiveArg)
+                .build()
+        validationContext.getDirective() >> graphQLDirective
+
+        def directive = new Directive("directive")
+
+        when:
+        providedNonNullArguments.checkDirective(directive, [])
+
+        then:
+        errorCollector.getErrors().isEmpty()
     }
 
 
