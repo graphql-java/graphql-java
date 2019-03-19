@@ -33,21 +33,13 @@ public class ProvidedNonNullArguments extends AbstractRule {
 
         for (GraphQLArgument graphQLArgument : fieldDef.getArguments()) {
             Argument argument = argumentMap.get(graphQLArgument.getName());
-            if (argument == null
-                    && (isNonNull(graphQLArgument.getType()))
-                    && (graphQLArgument.getDefaultValue() == null)) {
+            boolean nonNullType = isNonNull(graphQLArgument.getType());
+            boolean noDefaultValue = graphQLArgument.getDefaultValue() == null;
+            if (argument == null && nonNullType && noDefaultValue) {
                 String message = String.format("Missing field argument %s", graphQLArgument.getName());
                 addError(ValidationErrorType.MissingFieldArgument, field.getSourceLocation(), message);
             }
         }
-    }
-
-    private Map<String, Argument> argumentMap(List<Argument> arguments) {
-        Map<String, Argument> result = new LinkedHashMap<>();
-        for (Argument argument : arguments) {
-            result.put(argument.getName(), argument);
-        }
-        return result;
     }
 
 
@@ -59,11 +51,20 @@ public class ProvidedNonNullArguments extends AbstractRule {
 
         for (GraphQLArgument graphQLArgument : graphQLDirective.getArguments()) {
             Argument argument = argumentMap.get(graphQLArgument.getName());
-            if (argument == null
-                    && (isNonNull(graphQLArgument.getType()))) {
+            boolean nonNullType = isNonNull(graphQLArgument.getType());
+            boolean noDefaultValue = graphQLArgument.getDefaultValue() == null;
+            if (argument == null && nonNullType && noDefaultValue) {
                 String message = String.format("Missing directive argument %s", graphQLArgument.getName());
                 addError(ValidationErrorType.MissingDirectiveArgument, directive.getSourceLocation(), message);
             }
         }
+    }
+
+    private Map<String, Argument> argumentMap(List<Argument> arguments) {
+        Map<String, Argument> result = new LinkedHashMap<>();
+        for (Argument argument : arguments) {
+            result.put(argument.getName(), argument);
+        }
+        return result;
     }
 }
