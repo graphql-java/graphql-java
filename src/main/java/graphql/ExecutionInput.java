@@ -146,7 +146,7 @@ public class ExecutionInput {
 
         private String query;
         private String operationName;
-        private Object context = GraphQLContext.newContext();
+        private Object context = GraphQLContext.newContext().build();
         private Object root;
         private Map<String, Object> variables = Collections.emptyMap();
         private DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
