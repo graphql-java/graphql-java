@@ -44,7 +44,7 @@ public class Directives {
             .description("This directive allows results to be deferred during execution")
             .argument(newArgument()
                     .name("if")
-                    .type(GraphQLBoolean)
+                    .type(nonNull(GraphQLBoolean))
                     .description("Deferred behaviour is controlled by this argument")
                     .defaultValue(true)
             )
