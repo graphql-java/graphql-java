@@ -11,10 +11,10 @@ import spock.lang.Specification
 
 import static graphql.language.Field.newField
 
-class ScalarLeafsTest extends Specification {
+class ScalarLeafsTest extends ValidationRuleTest {
 
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-    ValidationContext validationContext = Mock(ValidationContext)
+    ValidationContext validationContext = mockValidationContext()
     ScalarLeafs scalarLeafs = new ScalarLeafs(validationContext, errorCollector)
 
     def "sub selection not allowed"() {
@@ -27,7 +27,7 @@ class ScalarLeafsTest extends Specification {
         then:
         errorCollector.containsValidationError(
                 ValidationErrorType.SubSelectionNotAllowed,
-                "Sub selection not allowed on leaf type String of field hello"
+                "Sub selection not allowed on leaf type 'String' of field 'hello'"
         )
     }
 
@@ -41,7 +41,7 @@ class ScalarLeafsTest extends Specification {
         then:
         errorCollector.containsValidationError(
                 ValidationErrorType.SubSelectionRequired,
-                "Sub selection required for type objectType of field hello"
+                "Sub selection required for type 'objectType' of field 'hello'"
         )
     }
 }

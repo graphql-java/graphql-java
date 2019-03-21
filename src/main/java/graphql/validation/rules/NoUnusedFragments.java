@@ -59,7 +59,7 @@ public class NoUnusedFragments extends AbstractRule {
 
         for (FragmentDefinition fragmentDefinition : allDeclaredFragments) {
             if (!allUsedFragments.contains(fragmentDefinition.getName())) {
-                String message = String.format("Unused fragment %s", fragmentDefinition.getName());
+                String message = i18n("NoUnusedFragments.unusedFragments", fragmentDefinition.getName());
                 addError(ValidationErrorType.UnusedFragment, fragmentDefinition.getSourceLocation(), message);
             }
         }

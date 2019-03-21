@@ -8,9 +8,8 @@ import graphql.validation.RulesVisitor
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
-import spock.lang.Specification
 
-class NoUnusedVariablesTest extends Specification {
+class NoUnusedVariablesTest extends ValidationRuleTest {
 
 
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
@@ -18,7 +17,7 @@ class NoUnusedVariablesTest extends Specification {
 
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
-        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document)
+        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document, assertingI18N())
         NoUnusedVariables noUnusedVariables = new NoUnusedVariables(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
 

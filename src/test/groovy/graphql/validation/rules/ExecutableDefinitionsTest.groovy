@@ -9,7 +9,7 @@ import spock.lang.Specification
 
 import static graphql.validation.rules.ExecutableDefinitions.nonExecutableDefinitionMessage
 
-class ExecutableDefinitionsTest extends Specification {
+class ExecutableDefinitionsTest extends ValidationRuleTest {
 
     def 'Executable Definitions with only operation'() {
         def query = """\
@@ -117,6 +117,6 @@ class ExecutableDefinitionsTest extends Specification {
 
     List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
-        return new Validator().validateDocument(Harness.Schema, document)
+        return new Validator().validateDocument(Harness.Schema, document, Locale.getDefault())
     }
 }

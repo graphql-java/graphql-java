@@ -61,16 +61,14 @@ public class UniqueDirectiveNamesPerLocation extends AbstractRule {
         directives.forEach(directive -> {
             String name = directive.getName();
             if (names.contains(name)) {
+                String message = i18n("UniqueDirectiveNamesPerLocation.uniqueDirectives", name, directivesContainer.getClass().getSimpleName());
                 addError(ValidationErrorType.DuplicateDirectiveName,
                         directive.getSourceLocation(),
-                        duplicateDirectiveNameMessage(name, directivesContainer.getClass().getSimpleName()));
+                        message);
             } else {
                 names.add(name);
             }
         });
     }
 
-    private String duplicateDirectiveNameMessage(String directiveName, String location) {
-        return String.format("Directives must be uniquely named within a location. The directive '%s' used on a '%s' is not unique.", directiveName, location);
-    }
 }

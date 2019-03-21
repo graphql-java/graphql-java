@@ -1,16 +1,13 @@
 package graphql.validation.rules
 
-import graphql.language.SourceLocation
+
 import graphql.parser.Parser
 import graphql.validation.SpecValidationSchema
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import graphql.validation.Validator
-import spock.lang.Specification
 
-import static graphql.validation.rules.UniqueOperationNames.duplicateOperationNameMessage
-
-class UniqueOperationNamesTest extends Specification {
+class UniqueOperationNamesTest extends ValidationRuleTest {
 
     def '5.1.1.1 Operation Name Uniqueness Not Valid'() {
         def query = """\
@@ -34,7 +31,7 @@ class UniqueOperationNamesTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        validationErrors[0] == duplicateOperationName("getName", 8, 1)
+        validationErrors[0].validationErrorType == ValidationErrorType.DuplicateOperationName
     }
 
     def '5.1.1.1 Operation Name Uniqueness Not Valid Different Operations'() {
@@ -57,17 +54,11 @@ class UniqueOperationNamesTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        validationErrors[0] == duplicateOperationName("dogOperation", 8, 1)
-    }
-
-    ValidationError duplicateOperationName(String defName, int line, int column) {
-        return new ValidationError(ValidationErrorType.DuplicateOperationName,
-                [new SourceLocation(line, column)],
-                duplicateOperationNameMessage(defName))
+        validationErrors[0].validationErrorType == ValidationErrorType.DuplicateOperationName
     }
 
     List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
-        return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document)
+        return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.getDefault())
     }
 }

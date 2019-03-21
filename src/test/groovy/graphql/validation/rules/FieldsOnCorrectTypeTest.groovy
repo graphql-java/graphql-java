@@ -8,10 +8,10 @@ import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
-class FieldsOnCorrectTypeTest extends Specification {
+class FieldsOnCorrectTypeTest extends ValidationRuleTest {
 
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-    ValidationContext validationContext = Mock(ValidationContext)
+    ValidationContext validationContext = mockValidationContext()
     FieldsOnCorrectType fieldsOnCorrectType = new FieldsOnCorrectType(validationContext, errorCollector)
 
 

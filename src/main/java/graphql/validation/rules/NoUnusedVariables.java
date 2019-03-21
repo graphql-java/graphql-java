@@ -6,7 +6,6 @@ import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
-import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
@@ -29,7 +28,7 @@ public class NoUnusedVariables extends AbstractRule {
     public void leaveOperationDefinition(OperationDefinition operationDefinition) {
         for (VariableDefinition variableDefinition : variableDefinitions) {
             if (!usedVariables.contains(variableDefinition.getName())) {
-                String message = String.format("Unused variable %s", variableDefinition.getName());
+                String message = i18n("NoUnusedVariables.unusedVariable", variableDefinition.getName());
                 addError(ValidationErrorType.UnusedVariable, variableDefinition.getSourceLocation(), message);
             }
         }

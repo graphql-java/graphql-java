@@ -8,15 +8,14 @@ import graphql.validation.RulesVisitor
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
-import spock.lang.Specification
 
-class NoFragmentCyclesTest extends Specification {
+class NoFragmentCyclesTest extends ValidationRuleTest {
 
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
 
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
-        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document)
+        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document, assertingI18N())
         NoFragmentCycles noFragmentCycles = new NoFragmentCycles(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
 

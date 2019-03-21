@@ -8,11 +8,10 @@ import graphql.validation.TraversalContext
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
-import spock.lang.Specification
 
-class NoUnusedFragmentsTest extends Specification {
+class NoUnusedFragmentsTest extends ValidationRuleTest {
 
-    ValidationContext validationContext = Mock(ValidationContext)
+    ValidationContext validationContext = mockValidationContext()
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     NoUnusedFragments noUnusedFragments = new NoUnusedFragments(validationContext, errorCollector)
 

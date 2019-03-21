@@ -76,7 +76,7 @@ public class NoFragmentCycles extends AbstractRule {
         for (FragmentSpread fragmentSpread : fragmentSpreads) {
 
             if (fragmentSpread.getName().equals(initialName)) {
-                String message = "Fragment cycles not allowed";
+                String message = i18n("NoFragmentCycles.cyclesNotAllowed");
                 addError(ValidationErrorType.FragmentCycle, spreadPath, message);
                 continue;
             }

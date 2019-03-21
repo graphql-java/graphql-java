@@ -13,9 +13,9 @@ import spock.lang.Specification
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLNonNull.nonNull
 
-class VariableDefaultValuesOfCorrectTypeTest extends Specification {
+class VariableDefaultValuesOfCorrectTypeTest extends ValidationRuleTest {
 
-    ValidationContext validationContext = Mock(ValidationContext)
+    ValidationContext validationContext = mockValidationContext()
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     VariableDefaultValuesOfCorrectType defaultValuesOfCorrectType = new VariableDefaultValuesOfCorrectType(validationContext, errorCollector)
 

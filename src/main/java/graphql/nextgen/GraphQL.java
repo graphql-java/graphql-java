@@ -239,7 +239,7 @@ public class GraphQL {
         InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, graphQLSchema, instrumentationState));
 
         Validator validator = new Validator();
-        List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
+        List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document, executionInput.getLocale());
 
         validationCtx.onCompleted(validationErrors, null);
         return validationErrors;

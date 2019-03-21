@@ -24,7 +24,7 @@ public class VariablesAreInputTypes extends AbstractRule {
         GraphQLType type = getValidationContext().getSchema().getType(unmodifiedAstType.getName());
         if (type == null) return;
         if (!isInput(type)) {
-            String message = "Wrong type for a variable";
+            String message = i18n("VariablesAreInputTypes.wrongType");
             addError(ValidationErrorType.NonInputTypeOnVariable, variableDefinition.getSourceLocation(), message);
         }
     }

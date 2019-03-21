@@ -22,12 +22,12 @@ public class ScalarLeafs extends AbstractRule {
         if (type == null) return;
         if (isLeaf(type)) {
             if (field.getSelectionSet() != null) {
-                String message = String.format("Sub selection not allowed on leaf type %s of field %s", type.getName(), field.getName());
+                String message = i18n("ScalarLeafs.subSelectionOnLeaf", type.getName(), field.getName());
                 addError(ValidationErrorType.SubSelectionNotAllowed, field.getSourceLocation(), message);
             }
         } else {
             if (field.getSelectionSet() == null) {
-                String message = String.format("Sub selection required for type %s of field %s", type.getName(), field.getName());
+                String message = i18n("ScalarLeafs.subSelectionRequired", type.getName(), field.getName());
                 addError(ValidationErrorType.SubSelectionRequired, field.getSourceLocation(), message);
             }
         }

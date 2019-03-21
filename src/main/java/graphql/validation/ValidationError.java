@@ -4,12 +4,13 @@ package graphql.validation;
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorHelper;
+import graphql.i18n.I18N;
 import graphql.language.SourceLocation;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Locale;
 
 public class ValidationError implements GraphQLError {
 
@@ -19,28 +20,37 @@ public class ValidationError implements GraphQLError {
     private final ValidationErrorType validationErrorType;
     private final List<String> queryPath;
 
+    @Deprecated
     public ValidationError(ValidationErrorType validationErrorType) {
         this(validationErrorType, (SourceLocation) null, null);
     }
 
+    @Deprecated
     public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description) {
-        this(validationErrorType, nullOrList(sourceLocation), description, null);
+        this(validationErrorType, nullOrList(sourceLocation), description, null, defaultedI18n());
     }
 
+    @Deprecated
     public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description, List<String> queryPath) {
-        this(validationErrorType, nullOrList(sourceLocation), description, queryPath);
+        this(validationErrorType, nullOrList(sourceLocation), description, queryPath, defaultedI18n());
     }
 
+    @Deprecated
     public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description) {
-        this(validationErrorType, sourceLocations, description, null);
+        this(validationErrorType, sourceLocations, description, null, defaultedI18n());
     }
 
-    public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description, List<String> queryPath) {
+    private static I18N defaultedI18n() {
+        return I18N.i18n(I18N.BundleType.Validation, Locale.getDefault());
+    }
+
+    public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description, List<String> queryPath, I18N i18n) {
         this.validationErrorType = validationErrorType;
-        if (sourceLocations != null)
+        if (sourceLocations != null) {
             this.locations.addAll(sourceLocations);
+        }
         this.description = description;
-        this.message = mkMessage(validationErrorType, description, queryPath);
+        this.message = mkMessage(i18n, validationErrorType, description, queryPath);
         this.queryPath = queryPath;
     }
 
@@ -48,15 +58,12 @@ public class ValidationError implements GraphQLError {
         return sourceLocation == null ? null : Collections.singletonList(sourceLocation);
     }
 
-    private String mkMessage(ValidationErrorType validationErrorType, String description, List<String> queryPath) {
-        return String.format("Validation error of type %s: %s%s", validationErrorType, description, toPath(queryPath));
-    }
-
-    private String toPath(List<String> queryPath) {
+    private String mkMessage(I18N i18n, ValidationErrorType validationErrorType, String description, List<String> queryPath) {
         if (queryPath == null) {
-            return "";
+            return i18n.msg("ValidationError.coveringMsgNoPath", validationErrorType, description);
+        } else {
+            return i18n.msg("ValidationError.coveringMsg", validationErrorType, description, String.join("/", queryPath));
         }
-        return String.format(" @ '%s'", queryPath.stream().collect(Collectors.joining("/")));
     }
 
     public ValidationErrorType getValidationErrorType() {

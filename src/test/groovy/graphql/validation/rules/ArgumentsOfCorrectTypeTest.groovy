@@ -23,10 +23,10 @@ import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLString
 import static graphql.StarWarsSchema.starWarsSchema
 
-class ArgumentsOfCorrectTypeTest extends Specification {
+class ArgumentsOfCorrectTypeTest extends ValidationRuleTest {
 
     ArgumentsOfCorrectType argumentsOfCorrectType
-    ValidationContext validationContext = Mock(ValidationContext)
+    ValidationContext validationContext = mockValidationContext()
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
 
     def setup() {

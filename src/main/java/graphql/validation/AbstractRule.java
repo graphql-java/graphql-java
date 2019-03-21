@@ -1,9 +1,6 @@
 package graphql.validation;
 
 
-import java.util.ArrayList;
-import java.util.List;
-
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.Directive;
@@ -20,6 +17,11 @@ import graphql.language.TypeName;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import static java.util.Collections.singletonList;
+
 @Internal
 public class AbstractRule {
 
@@ -34,6 +36,18 @@ public class AbstractRule {
     public AbstractRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         this.validationContext = validationContext;
         this.validationErrorCollector = validationErrorCollector;
+    }
+
+    /**
+     * Creates an I18N message using the key and arguments
+     *
+     * @param msgKey  the key in the underlying message bundle
+     * @param msgArgs the message arguments
+     *
+     * @return the formatted I18N message
+     */
+    public String i18n(String msgKey, Object... msgArgs) {
+        return validationContext.i18n(msgKey, msgArgs);
     }
 
     public boolean isVisitFragmentSpreads() {
@@ -58,11 +72,15 @@ public class AbstractRule {
         for (Node node : locations) {
             locationList.add(node.getSourceLocation());
         }
-        validationErrorCollector.addError(new ValidationError(validationErrorType, locationList, description, getQueryPath()));
+        validationErrorCollector.addError(
+                new ValidationError(validationErrorType, locationList, description, getQueryPath(), validationContext.getI18n())
+        );
     }
 
     public void addError(ValidationErrorType validationErrorType, SourceLocation location, String description) {
-        validationErrorCollector.addError(new ValidationError(validationErrorType, location, description, getQueryPath()));
+        validationErrorCollector.addError(
+                new ValidationError(validationErrorType, singletonList(location), description, getQueryPath(), validationContext.getI18n())
+        );
     }
 
     public List<ValidationError> getErrors() {

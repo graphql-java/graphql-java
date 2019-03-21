@@ -23,12 +23,12 @@ public class VariableDefaultValuesOfCorrectType extends AbstractRule {
         GraphQLInputType inputType = getValidationContext().getInputType();
         if (inputType == null) return;
         if (isNonNull(inputType) && variableDefinition.getDefaultValue() != null) {
-            String message = "Missing value for non null type";
+            String message = i18n("VariableDefaultValuesOfCorrectType.missingValue");
             addError(ValidationErrorType.DefaultForNonNullArgument, variableDefinition.getSourceLocation(), message);
         }
         if (variableDefinition.getDefaultValue() != null
                 && !getValidationUtil().isValidLiteralValue(variableDefinition.getDefaultValue(), inputType, getValidationContext().getSchema())) {
-            String message = String.format("Bad default value %s for type %s", variableDefinition.getDefaultValue(), inputType.getName());
+            String message = i18n("VariableDefaultValuesOfCorrectType.badDefault", variableDefinition.getDefaultValue(), inputType.getName());
             addError(ValidationErrorType.BadValueForDefaultArg, variableDefinition.getSourceLocation(), message);
         }
     }

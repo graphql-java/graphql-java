@@ -32,13 +32,10 @@ public class UniqueOperationNames extends AbstractRule {
         }
 
         if (operationNames.contains(name)) {
-            addError(ValidationErrorType.DuplicateOperationName, operationDefinition.getSourceLocation(), duplicateOperationNameMessage(name));
+            String message = i18n("UniqueOperationNames.oneOperation", name);
+            addError(ValidationErrorType.DuplicateOperationName, operationDefinition.getSourceLocation(), message);
         } else {
             operationNames.add(name);
         }
-    }
-
-    static String duplicateOperationNameMessage(String definitionName) {
-        return String.format("There can be only one operation named '%s'", definitionName);
     }
 }

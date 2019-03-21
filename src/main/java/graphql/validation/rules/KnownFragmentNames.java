@@ -18,7 +18,7 @@ public class KnownFragmentNames extends AbstractRule {
     public void checkFragmentSpread(FragmentSpread fragmentSpread) {
         FragmentDefinition fragmentDefinition = getValidationContext().getFragment(fragmentSpread.getName());
         if (fragmentDefinition == null) {
-            String message = String.format("Undefined fragment %s", fragmentSpread.getName());
+            String message = i18n("KnownFragmentNames.undefinedFragment", fragmentSpread.getName());
             addError(ValidationErrorType.UndefinedFragment, fragmentSpread.getSourceLocation(), message);
         }
     }

@@ -1,6 +1,8 @@
 package graphql.validation
 
 import graphql.TestUtil
+import graphql.i18n.AssertingI18N
+import graphql.i18n.I18N
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.rules.NoUnusedVariables
@@ -11,7 +13,7 @@ class RulesVisitorTest extends Specification {
 
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
-        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document)
+        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document, AssertingI18N.validationBundle())
         LanguageTraversal languageTraversal = new LanguageTraversal()
         // this is one of the rules which checks inside fragment spreads, so it's needed to test this
         NoUnusedVariables noUnusedVariables = new NoUnusedVariables(validationContext, errorCollector)

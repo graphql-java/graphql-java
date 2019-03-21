@@ -2,6 +2,7 @@ package graphql.validation;
 
 
 import graphql.Internal;
+import graphql.i18n.I18N;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.rules.ArgumentsOfCorrectType;
@@ -29,12 +30,14 @@ import graphql.validation.rules.VariablesAreInputTypes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Internal
 public class Validator {
 
-    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document) {
-        ValidationContext validationContext = new ValidationContext(schema, document);
+    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document, Locale locale) {
+        I18N i18n = I18N.i18n(I18N.BundleType.Validation, locale);
+        ValidationContext validationContext = new ValidationContext(schema, document, i18n);
 
 
         ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector();
