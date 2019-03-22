@@ -32,11 +32,14 @@ import static java.util.Collections.singleton;
 @Internal
 public class ResultNodesUtil {
 
-    public static ExecutionResult toExecutionResult(ExecutionResultNode root) {
+    public static ExecutionResult toExecutionResult(RootExecutionResultNode root) {
         ExecutionResultData executionResultData = toDataImpl(root);
+        List<GraphQLError> allErrors = new ArrayList<>();
+        allErrors.addAll(executionResultData.errors);
+        allErrors.addAll(root.getErrors());
         return ExecutionResultImpl.newExecutionResult()
                 .data(executionResultData.data)
-                .errors(executionResultData.errors)
+                .errors(allErrors)
                 .build();
     }
 
