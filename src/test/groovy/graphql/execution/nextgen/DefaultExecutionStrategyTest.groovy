@@ -14,6 +14,31 @@ import static graphql.execution.DataFetcherResult.newResult
 
 class DefaultExecutionStrategyTest extends Specification {
 
+    def "test simple execution with one scalar field"() {
+        def fooData = "hello"
+        def dataFetchers = [
+                Query: [foo: { env -> fooData } as DataFetcher]
+        ]
+        def schema = schema("""
+        type Query {
+            foo: String
+        }
+        """, dataFetchers)
+
+
+        def query = """
+        {foo} 
+        """
+
+
+        when:
+        def graphQL = GraphQL.newGraphQL(schema).executionStrategy(new DefaultExecutionStrategy()).build()
+        def result = graphQL.execute(newExecutionInput().query(query))
+
+        then:
+        result.getData() == [foo: fooData]
+
+    }
 
     def "test simple execution"() {
         def fooData = [id: "fooId", bar: [id: "barId", name: "someBar"]]
@@ -376,6 +401,7 @@ class DefaultExecutionStrategyTest extends Specification {
 
         then:
         result.getData() == null
+        result.getErrors().size() > 0
     }
 
     def "test list"() {
