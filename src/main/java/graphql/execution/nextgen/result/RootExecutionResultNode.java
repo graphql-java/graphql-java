@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static graphql.Assert.assertShouldNeverHappen;
+
 public class RootExecutionResultNode extends ObjectExecutionResultNode {
 
     private final List<GraphQLError> errors;
@@ -23,13 +25,19 @@ public class RootExecutionResultNode extends ObjectExecutionResultNode {
 
     @Override
     public FetchedValueAnalysis getFetchedValueAnalysis() {
-        throw new RuntimeException("Root node");
+        return assertShouldNeverHappen("not supported at root node");
     }
 
     @Override
-    public ObjectExecutionResultNode withNewChildren(List<ExecutionResultNode> children) {
-        return new RootExecutionResultNode(children);
+    public RootExecutionResultNode withNewChildren(List<ExecutionResultNode> children) {
+        return new RootExecutionResultNode(children, errors);
     }
+
+    @Override
+    public RootExecutionResultNode withNewFetchedValueAnalysis(FetchedValueAnalysis fetchedValueAnalysis) {
+        return assertShouldNeverHappen("not supported at root node");
+    }
+
 
     public List<GraphQLError> getErrors() {
         return new ArrayList<>(errors);
