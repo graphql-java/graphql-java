@@ -4,6 +4,7 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.nextgen.FetchedValueAnalysis;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -32,5 +33,10 @@ public class ObjectExecutionResultNode extends ExecutionResultNode {
     @Override
     public ExecutionResultNode withNewFetchedValueAnalysis(FetchedValueAnalysis fetchedValueAnalysis) {
         return new ObjectExecutionResultNode(fetchedValueAnalysis, getChildren(), getErrors());
+    }
+
+    @Override
+    public ExecutionResultNode withNewErrors(List<GraphQLError> errors) {
+        return new ObjectExecutionResultNode(getFetchedValueAnalysis(), getChildren(), new ArrayList<>(errors));
     }
 }

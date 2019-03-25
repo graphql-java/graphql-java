@@ -55,10 +55,6 @@ public abstract class ExecutionResultNode {
         return new ArrayList<>(this.children);
     }
 
-    public abstract ExecutionResultNode withNewChildren(List<ExecutionResultNode> children);
-
-    public abstract ExecutionResultNode withNewFetchedValueAnalysis(FetchedValueAnalysis fetchedValueAnalysis);
-
     public Optional<NonNullableFieldWasNullException> getChildNonNullableException() {
         return children.stream()
                 .filter(executionResultNode -> executionResultNode.getNonNullableFieldWasNullException() != null)
@@ -66,5 +62,30 @@ public abstract class ExecutionResultNode {
                 .findFirst();
     }
 
+    /**
+     * Creates a new ExecutionResultNode of the same specific type with the new set of result children
+     *
+     * @param children the new children for this result node
+     *
+     * @return a new ExecutionResultNode with the new result children
+     */
+    public abstract ExecutionResultNode withNewChildren(List<ExecutionResultNode> children);
 
+    /**
+     * Creates a new ExecutionResultNode of the same specific type with the new {@link graphql.execution.nextgen.FetchedValueAnalysis}
+     *
+     * @param fetchedValueAnalysis the {@link graphql.execution.nextgen.FetchedValueAnalysis} for this result node
+     *
+     * @return a new ExecutionResultNode with the new {@link graphql.execution.nextgen.FetchedValueAnalysis}
+     */
+    public abstract ExecutionResultNode withNewFetchedValueAnalysis(FetchedValueAnalysis fetchedValueAnalysis);
+
+    /**
+     * Creates a new ExecutionResultNode of the same specific type with the new error collection
+     *
+     * @param errors the new errors for this result node
+     *
+     * @return a new ExecutionResultNode with the new errors
+     */
+    public abstract ExecutionResultNode withNewErrors(List<GraphQLError> errors);
 }
