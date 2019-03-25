@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.validation.ValidationErrorType.MissingFieldArgument;
 
 public class ProvidedNonNullArguments extends AbstractRule {
 
@@ -36,8 +37,9 @@ public class ProvidedNonNullArguments extends AbstractRule {
             if (argument == null
                     && (isNonNull(graphQLArgument.getType()))
                     && (graphQLArgument.getDefaultValue() == null)) {
-                String message = i18n("ProvidedNonNullArguments.missingFieldArg", graphQLArgument.getName());
-                addError(ValidationErrorType.MissingFieldArgument, field.getSourceLocation(), message);
+                String message = i18n("ProvidedNonNullArguments.missingFieldArg",
+                        MissingFieldArgument, graphQLArgument.getName());
+                addError(MissingFieldArgument, field.getSourceLocation(), message);
             }
         }
     }

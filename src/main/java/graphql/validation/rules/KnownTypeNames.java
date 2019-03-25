@@ -7,6 +7,8 @@ import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
+import static graphql.validation.ValidationErrorType.UnknownType;
+
 public class KnownTypeNames extends AbstractRule {
 
 
@@ -17,8 +19,8 @@ public class KnownTypeNames extends AbstractRule {
     @Override
     public void checkTypeName(TypeName typeName) {
         if ((getValidationContext().getSchema().getType(typeName.getName())) == null) {
-            String message = i18n("KnownTypeNames.unknownType", typeName.getName());
-            addError(ValidationErrorType.UnknownType, typeName.getSourceLocation(), message);
+            String message = i18n("KnownTypeNames.unknownType", UnknownType, typeName.getName());
+            addError(UnknownType, typeName.getSourceLocation(), message);
         }
     }
 }

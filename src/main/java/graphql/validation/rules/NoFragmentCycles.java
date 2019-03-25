@@ -17,6 +17,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.validation.ValidationErrorType.FragmentCycle;
+
 public class NoFragmentCycles extends AbstractRule {
 
     private final Map<String, List<FragmentSpread>> fragmentSpreads = new LinkedHashMap<>();
@@ -76,8 +78,8 @@ public class NoFragmentCycles extends AbstractRule {
         for (FragmentSpread fragmentSpread : fragmentSpreads) {
 
             if (fragmentSpread.getName().equals(initialName)) {
-                String message = i18n("NoFragmentCycles.cyclesNotAllowed");
-                addError(ValidationErrorType.FragmentCycle, spreadPath, message);
+                String message = i18n("NoFragmentCycles.cyclesNotAllowed", FragmentCycle);
+                addError(FragmentCycle, spreadPath, message);
                 continue;
             }
             for (FragmentSpread spread : spreadPath) {

@@ -5,7 +5,8 @@ import graphql.language.OperationDefinition;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
+
+import static graphql.validation.ValidationErrorType.LoneAnonymousOperationViolation;
 
 public class LoneAnonymousOperation extends AbstractRule {
 
@@ -25,16 +26,16 @@ public class LoneAnonymousOperation extends AbstractRule {
         if (name == null) {
             hasAnonymousOp = true;
             if (count > 0) {
-                message = i18n("LoneAnonymousOperation.withOthers");
+                message = i18n("LoneAnonymousOperation.withOthers", LoneAnonymousOperationViolation);
             }
         } else {
             if (hasAnonymousOp) {
-                message = i18n("LoneAnonymousOperation.namedOperation", name);
+                message = i18n("LoneAnonymousOperation.namedOperation", LoneAnonymousOperationViolation, name);
             }
         }
         count++;
         if (message != null) {
-            addError(ValidationErrorType.LoneAnonymousOperationViolation, operationDefinition.getSourceLocation(), message);
+            addError(LoneAnonymousOperationViolation, operationDefinition.getSourceLocation(), message);
         }
     }
 

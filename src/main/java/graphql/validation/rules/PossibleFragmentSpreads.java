@@ -20,6 +20,8 @@ import graphql.validation.ValidationErrorType;
 import java.util.Collections;
 import java.util.List;
 
+import static graphql.validation.ValidationErrorType.InvalidFragmentType;
+
 public class PossibleFragmentSpreads extends AbstractRule {
 
     public PossibleFragmentSpreads(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
@@ -34,8 +36,8 @@ public class PossibleFragmentSpreads extends AbstractRule {
         if (fragType == null || parentType == null) return;
 
         if (isValidTargetCompositeType(fragType) && isValidTargetCompositeType(parentType) && !doTypesOverlap(fragType, parentType)) {
-            String message = i18n("PossibleFragmentSpreads.inlineIncompatibleTypes", parentType.getName(), fragType.getName());
-            addError(ValidationErrorType.InvalidFragmentType, inlineFragment.getSourceLocation(), message);
+            String message = i18n("PossibleFragmentSpreads.inlineIncompatibleTypes", InvalidFragmentType, parentType.getName(), fragType.getName());
+            addError(InvalidFragmentType, inlineFragment.getSourceLocation(), message);
         }
     }
 
@@ -48,8 +50,8 @@ public class PossibleFragmentSpreads extends AbstractRule {
         if (typeCondition == null || parentType == null) return;
 
         if (isValidTargetCompositeType(typeCondition) && isValidTargetCompositeType(parentType) && !doTypesOverlap(typeCondition, parentType)) {
-            String message = i18n("PossibleFragmentSpreads.fragmentIncompatibleTypes", fragmentSpread.getName(), parentType.getName(), typeCondition.getName());
-            addError(ValidationErrorType.InvalidFragmentType, fragmentSpread.getSourceLocation(), message);
+            String message = i18n("PossibleFragmentSpreads.fragmentIncompatibleTypes", InvalidFragmentType, fragmentSpread.getName(), parentType.getName(), typeCondition.getName());
+            addError(InvalidFragmentType, fragmentSpread.getSourceLocation(), message);
         }
     }
 

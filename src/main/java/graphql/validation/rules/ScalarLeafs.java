@@ -9,6 +9,8 @@ import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
 import static graphql.schema.GraphQLTypeUtil.isLeaf;
+import static graphql.validation.ValidationErrorType.SubSelectionNotAllowed;
+import static graphql.validation.ValidationErrorType.SubSelectionRequired;
 
 public class ScalarLeafs extends AbstractRule {
 
@@ -22,13 +24,13 @@ public class ScalarLeafs extends AbstractRule {
         if (type == null) return;
         if (isLeaf(type)) {
             if (field.getSelectionSet() != null) {
-                String message = i18n("ScalarLeafs.subSelectionOnLeaf", type.getName(), field.getName());
-                addError(ValidationErrorType.SubSelectionNotAllowed, field.getSourceLocation(), message);
+                String message = i18n("ScalarLeafs.subSelectionOnLeaf", SubSelectionNotAllowed, type.getName(), field.getName());
+                addError(SubSelectionNotAllowed, field.getSourceLocation(), message);
             }
         } else {
             if (field.getSelectionSet() == null) {
-                String message = i18n("ScalarLeafs.subSelectionRequired", type.getName(), field.getName());
-                addError(ValidationErrorType.SubSelectionRequired, field.getSourceLocation(), message);
+                String message = i18n("ScalarLeafs.subSelectionRequired", SubSelectionRequired, type.getName(), field.getName());
+                addError(SubSelectionRequired, field.getSourceLocation(), message);
             }
         }
     }

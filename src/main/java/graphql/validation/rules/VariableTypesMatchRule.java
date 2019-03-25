@@ -16,6 +16,8 @@ import graphql.validation.ValidationErrorType;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static graphql.validation.ValidationErrorType.VariableTypeMismatch;
+
 public class VariableTypesMatchRule extends AbstractRule {
 
     final VariablesTypesMatcher variablesTypesMatcher;
@@ -60,9 +62,10 @@ public class VariableTypesMatchRule extends AbstractRule {
         if (!variablesTypesMatcher.doesVariableTypesMatch(variableType, variableDefinition.getDefaultValue(), expectedType)) {
             GraphQLType effectiveType = variablesTypesMatcher.effectiveType(variableType, variableDefinition.getDefaultValue());
             String message = i18n("VariableTypesMatchRule.unexpectedType",
+                    VariableTypeMismatch,
                     GraphQLTypeUtil.simplePrint(effectiveType),
                     GraphQLTypeUtil.simplePrint(expectedType));
-            addError(ValidationErrorType.VariableTypeMismatch, variableReference.getSourceLocation(), message);
+            addError(VariableTypeMismatch, variableReference.getSourceLocation(), message);
         }
     }
 

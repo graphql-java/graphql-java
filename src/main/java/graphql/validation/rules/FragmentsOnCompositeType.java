@@ -10,6 +10,9 @@ import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
+import static graphql.validation.ValidationErrorType.FragmentTypeConditionInvalid;
+import static graphql.validation.ValidationErrorType.InlineFragmentTypeConditionInvalid;
+
 public class FragmentsOnCompositeType extends AbstractRule {
 
 
@@ -25,8 +28,8 @@ public class FragmentsOnCompositeType extends AbstractRule {
         GraphQLType type = getValidationContext().getSchema().getType(inlineFragment.getTypeCondition().getName());
         if (type == null) return;
         if (!(type instanceof GraphQLCompositeType)) {
-            String message = i18n("FragmentsOnCompositeType.invalidInlineTypeCondition");
-            addError(ValidationErrorType.InlineFragmentTypeConditionInvalid, inlineFragment.getSourceLocation(), message);
+            String message = i18n("FragmentsOnCompositeType.invalidInlineTypeCondition", InlineFragmentTypeConditionInvalid);
+            addError(InlineFragmentTypeConditionInvalid, inlineFragment.getSourceLocation(), message);
         }
     }
 
@@ -35,9 +38,9 @@ public class FragmentsOnCompositeType extends AbstractRule {
         GraphQLType type = getValidationContext().getSchema().getType(fragmentDefinition.getTypeCondition().getName());
         if (type == null) return;
         if (!(type instanceof GraphQLCompositeType)) {
-            String message = i18n("FragmentsOnCompositeType.invalidFragmentTypeCondition");
+            String message = i18n("FragmentsOnCompositeType.invalidFragmentTypeCondition", FragmentTypeConditionInvalid);
 
-            addError(ValidationErrorType.FragmentTypeConditionInvalid, fragmentDefinition.getSourceLocation(), message);
+            addError(FragmentTypeConditionInvalid, fragmentDefinition.getSourceLocation(), message);
         }
     }
 }

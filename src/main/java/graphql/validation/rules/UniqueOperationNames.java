@@ -9,6 +9,8 @@ import graphql.validation.ValidationErrorType;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import static graphql.validation.ValidationErrorType.DuplicateOperationName;
+
 /**
  * A GraphQL document is only valid if all defined operations have unique names.
  * http://facebook.github.io/graphql/October2016/#sec-Operation-Name-Uniqueness
@@ -32,8 +34,8 @@ public class UniqueOperationNames extends AbstractRule {
         }
 
         if (operationNames.contains(name)) {
-            String message = i18n("UniqueOperationNames.oneOperation", name);
-            addError(ValidationErrorType.DuplicateOperationName, operationDefinition.getSourceLocation(), message);
+            String message = i18n("UniqueOperationNames.oneOperation", DuplicateOperationName, name);
+            addError(DuplicateOperationName, operationDefinition.getSourceLocation(), message);
         } else {
             operationNames.add(name);
         }

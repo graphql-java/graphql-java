@@ -8,6 +8,8 @@ import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.validation.ValidationErrorType.BadValueForDefaultArg;
+import static graphql.validation.ValidationErrorType.DefaultForNonNullArgument;
 
 
 public class VariableDefaultValuesOfCorrectType extends AbstractRule {
@@ -23,13 +25,14 @@ public class VariableDefaultValuesOfCorrectType extends AbstractRule {
         GraphQLInputType inputType = getValidationContext().getInputType();
         if (inputType == null) return;
         if (isNonNull(inputType) && variableDefinition.getDefaultValue() != null) {
-            String message = i18n("VariableDefaultValuesOfCorrectType.missingValue");
-            addError(ValidationErrorType.DefaultForNonNullArgument, variableDefinition.getSourceLocation(), message);
+            String message = i18n("VariableDefaultValuesOfCorrectType.missingValue", DefaultForNonNullArgument);
+            addError(DefaultForNonNullArgument, variableDefinition.getSourceLocation(), message);
         }
         if (variableDefinition.getDefaultValue() != null
                 && !getValidationUtil().isValidLiteralValue(variableDefinition.getDefaultValue(), inputType, getValidationContext().getSchema())) {
-            String message = i18n("VariableDefaultValuesOfCorrectType.badDefault", variableDefinition.getDefaultValue(), inputType.getName());
-            addError(ValidationErrorType.BadValueForDefaultArg, variableDefinition.getSourceLocation(), message);
+            String message = i18n("VariableDefaultValuesOfCorrectType.badDefault",
+                    BadValueForDefaultArg, variableDefinition.getDefaultValue(), inputType.getName());
+            addError(BadValueForDefaultArg, variableDefinition.getSourceLocation(), message);
         }
     }
 }

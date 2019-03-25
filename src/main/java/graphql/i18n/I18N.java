@@ -5,9 +5,11 @@ import graphql.VisibleForTesting;
 
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertShouldNeverHappen;
 
 @Internal
 public class I18N {
@@ -17,7 +19,8 @@ public class I18N {
      */
     public enum BundleType {
         Validation,
-        Execution;
+        Execution,
+        General;
 
         private final String baseName;
 
@@ -54,8 +57,12 @@ public class I18N {
      */
     @SuppressWarnings("UnnecessaryLocalVariable")
     public String msg(String msgKey, Object... msgArgs) {
-        String msgPattern = resourceBundle.getString(msgKey);
-        assertNotNull(msgPattern, "There must be a resource bundle key called " + msgKey);
+        String msgPattern = null;
+        try {
+            msgPattern = resourceBundle.getString(msgKey);
+        } catch (MissingResourceException e) {
+            assertShouldNeverHappen("There must be a resource bundle key called %s", msgKey);
+        }
 
         String formattedMsg = new MessageFormat(msgPattern).format(msgArgs);
         return formattedMsg;

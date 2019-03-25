@@ -8,6 +8,8 @@ import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
+import static graphql.validation.ValidationErrorType.UndefinedFragment;
+
 public class KnownFragmentNames extends AbstractRule {
 
     public KnownFragmentNames(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
@@ -18,8 +20,8 @@ public class KnownFragmentNames extends AbstractRule {
     public void checkFragmentSpread(FragmentSpread fragmentSpread) {
         FragmentDefinition fragmentDefinition = getValidationContext().getFragment(fragmentSpread.getName());
         if (fragmentDefinition == null) {
-            String message = i18n("KnownFragmentNames.undefinedFragment", fragmentSpread.getName());
-            addError(ValidationErrorType.UndefinedFragment, fragmentSpread.getSourceLocation(), message);
+            String message = i18n("KnownFragmentNames.undefinedFragment", UndefinedFragment, fragmentSpread.getName());
+            addError(UndefinedFragment, fragmentSpread.getSourceLocation(), message);
         }
     }
 }

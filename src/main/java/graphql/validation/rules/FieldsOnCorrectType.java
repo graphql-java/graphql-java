@@ -9,6 +9,8 @@ import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
+import static graphql.validation.ValidationErrorType.FieldUndefined;
+
 public class FieldsOnCorrectType extends AbstractRule {
 
 
@@ -24,8 +26,8 @@ public class FieldsOnCorrectType extends AbstractRule {
         if (parentType == null) return;
         GraphQLFieldDefinition fieldDef = getValidationContext().getFieldDef();
         if (fieldDef == null) {
-            String message = i18n("FieldsOnCorrectType.unknownField", field.getName(), parentType.getName());
-            addError(ValidationErrorType.FieldUndefined, field.getSourceLocation(), message);
+            String message = i18n("FieldsOnCorrectType.unknownField", FieldUndefined, field.getName(), parentType.getName());
+            addError(FieldUndefined, field.getSourceLocation(), message);
         }
 
     }

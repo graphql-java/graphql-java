@@ -9,6 +9,9 @@ import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
+import static graphql.validation.ValidationErrorType.UnknownArgument;
+import static graphql.validation.ValidationErrorType.UnknownDirective;
+
 
 public class KnownArgumentNames extends AbstractRule {
 
@@ -23,8 +26,8 @@ public class KnownArgumentNames extends AbstractRule {
         if (directiveDef != null) {
             GraphQLArgument directiveArgument = directiveDef.getArgument(argument.getName());
             if (directiveArgument == null) {
-                String message = i18n("KnownArgumentNames.unknownDirectiveArg", argument.getName());
-                addError(ValidationErrorType.UnknownDirective, argument.getSourceLocation(), message);
+                String message = i18n("KnownArgumentNames.unknownDirectiveArg", UnknownDirective, argument.getName());
+                addError(UnknownDirective, argument.getSourceLocation(), message);
             }
 
             return;
@@ -34,9 +37,9 @@ public class KnownArgumentNames extends AbstractRule {
         if (fieldDef == null) return;
         GraphQLArgument fieldArgument = fieldDef.getArgument(argument.getName());
         if (fieldArgument == null) {
-            String message = i18n("KnownArgumentNames.unknownFieldArg", argument.getName());
+            String message = i18n("KnownArgumentNames.unknownFieldArg", UnknownArgument, argument.getName());
 
-            addError(ValidationErrorType.UnknownArgument, argument.getSourceLocation(), message);
+            addError(UnknownArgument, argument.getSourceLocation(), message);
         }
     }
 }

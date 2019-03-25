@@ -15,6 +15,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.validation.ValidationErrorType.UnusedFragment;
+
 public class NoUnusedFragments extends AbstractRule {
 
 
@@ -59,8 +61,8 @@ public class NoUnusedFragments extends AbstractRule {
 
         for (FragmentDefinition fragmentDefinition : allDeclaredFragments) {
             if (!allUsedFragments.contains(fragmentDefinition.getName())) {
-                String message = i18n("NoUnusedFragments.unusedFragments", fragmentDefinition.getName());
-                addError(ValidationErrorType.UnusedFragment, fragmentDefinition.getSourceLocation(), message);
+                String message = i18n("NoUnusedFragments.unusedFragments", UnusedFragment, fragmentDefinition.getName());
+                addError(UnusedFragment, fragmentDefinition.getSourceLocation(), message);
             }
         }
 
