@@ -3,6 +3,7 @@ package graphql.execution.nextgen.result;
 import graphql.GraphQLError;
 import graphql.execution.nextgen.FetchedValueAnalysis;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -35,5 +36,8 @@ public class RootExecutionResultNode extends ObjectExecutionResultNode {
         return assertShouldNeverHappen("not supported at root node");
     }
 
-
+    @Override
+    public ExecutionResultNode withNewErrors(List<GraphQLError> errors) {
+        return new RootExecutionResultNode(getChildren(), new ArrayList<>(errors));
+    }
 }

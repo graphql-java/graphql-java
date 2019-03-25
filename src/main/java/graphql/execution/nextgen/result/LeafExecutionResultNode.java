@@ -6,6 +6,7 @@ import graphql.Internal;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.nextgen.FetchedValueAnalysis;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -36,5 +37,10 @@ public class LeafExecutionResultNode extends ExecutionResultNode {
     @Override
     public ExecutionResultNode withNewFetchedValueAnalysis(FetchedValueAnalysis fetchedValueAnalysis) {
         return new LeafExecutionResultNode(fetchedValueAnalysis, getNonNullableFieldWasNullException(), getErrors());
+    }
+
+    @Override
+    public ExecutionResultNode withNewErrors(List<GraphQLError> errors) {
+        return new LeafExecutionResultNode(getFetchedValueAnalysis(), getNonNullableFieldWasNullException(), new ArrayList<>(errors));
     }
 }
