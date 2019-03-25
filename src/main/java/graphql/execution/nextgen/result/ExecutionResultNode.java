@@ -1,6 +1,7 @@
 package graphql.execution.nextgen.result;
 
 import graphql.Assert;
+import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.MergedField;
 import graphql.execution.NonNullableFieldWasNullException;
@@ -18,16 +19,22 @@ public abstract class ExecutionResultNode {
     private final FetchedValueAnalysis fetchedValueAnalysis;
     private final NonNullableFieldWasNullException nonNullableFieldWasNullException;
     private final List<ExecutionResultNode> children;
+    private final List<GraphQLError> errors;
 
     protected ExecutionResultNode(FetchedValueAnalysis fetchedValueAnalysis,
                                   NonNullableFieldWasNullException nonNullableFieldWasNullException,
-                                  List<ExecutionResultNode> children) {
+                                  List<ExecutionResultNode> children,
+                                  List<GraphQLError> errors) {
         this.fetchedValueAnalysis = fetchedValueAnalysis;
         this.nonNullableFieldWasNullException = nonNullableFieldWasNullException;
         this.children = assertNotNull(children);
         children.forEach(Assert::assertNotNull);
+        this.errors = new ArrayList<>(errors);
     }
 
+    public List<GraphQLError> getErrors() {
+        return new ArrayList<>(errors);
+    }
 
     /*
      * can be null for the RootExecutionResultNode

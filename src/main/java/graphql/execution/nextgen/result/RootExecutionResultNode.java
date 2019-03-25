@@ -3,7 +3,6 @@ package graphql.execution.nextgen.result;
 import graphql.GraphQLError;
 import graphql.execution.nextgen.FetchedValueAnalysis;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -11,17 +10,15 @@ import static graphql.Assert.assertShouldNeverHappen;
 
 public class RootExecutionResultNode extends ObjectExecutionResultNode {
 
-    private final List<GraphQLError> errors;
 
     public RootExecutionResultNode(List<ExecutionResultNode> children, List<GraphQLError> errors) {
-        super(null, children);
-        this.errors = new ArrayList<>(errors);
+        super(null, children, errors);
     }
 
     public RootExecutionResultNode(List<ExecutionResultNode> children) {
-        super(null, children);
-        this.errors = Collections.emptyList();
+        super(null, children, Collections.emptyList());
     }
+
 
     @Override
     public FetchedValueAnalysis getFetchedValueAnalysis() {
@@ -30,7 +27,7 @@ public class RootExecutionResultNode extends ObjectExecutionResultNode {
 
     @Override
     public RootExecutionResultNode withNewChildren(List<ExecutionResultNode> children) {
-        return new RootExecutionResultNode(children, errors);
+        return new RootExecutionResultNode(children, getErrors());
     }
 
     @Override
@@ -39,7 +36,4 @@ public class RootExecutionResultNode extends ObjectExecutionResultNode {
     }
 
 
-    public List<GraphQLError> getErrors() {
-        return new ArrayList<>(errors);
-    }
 }
