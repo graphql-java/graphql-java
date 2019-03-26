@@ -39,6 +39,7 @@ public class ExecutionContextBuilder {
     private DataLoaderRegistry dataLoaderRegistry;
     private CacheControl cacheControl;
     private List<GraphQLError> errors = new ArrayList<>();
+    private Map<Object, Object> extensions;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -80,6 +81,7 @@ public class ExecutionContextBuilder {
         dataLoaderRegistry = other.getDataLoaderRegistry();
         cacheControl = other.getCacheControl();
         errors = new ArrayList<>(other.getErrors());
+        extensions = (other.getExtensions() == null ? null : new LinkedHashMap<>(other.getExtensions()));
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -178,7 +180,8 @@ public class ExecutionContextBuilder {
                 root,
                 dataLoaderRegistry,
                 cacheControl,
-                errors
+                errors,
+                extensions
         );
     }
 }

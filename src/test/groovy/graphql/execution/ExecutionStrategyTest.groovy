@@ -63,7 +63,7 @@ class ExecutionStrategyTest extends Specification {
         new ExecutionContext(SimpleInstrumentation.INSTANCE, executionId, schema ?: StarWarsSchema.starWarsSchema, null,
                 executionStrategy, executionStrategy, executionStrategy,
                 null, null, null,
-                variables, "context", "root", new DataLoaderRegistry(), null, Collections.emptyList())
+                variables, "context", "root", new DataLoaderRegistry(), null, Collections.emptyList(), null)
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")
@@ -699,6 +699,7 @@ class ExecutionStrategyTest extends Specification {
                 DataFetcherResult.newResult().data(executionData)
                         .mapRelativeErrors(true)
                         .error(new DataFetchingErrorGraphQLError("bad foo", ["child", "foo"]))
+                        .extensions([ext1: 42, ext2: "fish fingers and custard"])
                         .build()
         )
 
@@ -707,6 +708,9 @@ class ExecutionStrategyTest extends Specification {
         executionContext.getErrors()[0].locations == [new SourceLocation(7, 20)]
         executionContext.getErrors()[0].message == "bad foo"
         executionContext.getErrors()[0].path == ["parent", "child", "foo"]
+        executionContext.getExtensions() != null
+        executionContext.getExtensions().get("ext1") == 42
+        executionContext.getExtensions().get("ext2") == "fish fingers and custard"
     }
 
     def "#820 processes DataFetcherResult just message"() {
@@ -729,12 +733,16 @@ class ExecutionStrategyTest extends Specification {
         def fetchedValue = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters,
                 DataFetcherResult.newResult().data(executionData)
                         .error(new DataFetchingErrorGraphQLError("bad foo"))
+                        .extensions([ext1: 42, ext2: "fish fingers and custard"])
                         .build())
         then:
         fetchedValue.getFetchedValue() == executionData
         executionContext.getErrors()[0].locations == null
         executionContext.getErrors()[0].message == "bad foo"
         executionContext.getErrors()[0].path == null
+        executionContext.getExtensions() != null
+        executionContext.getExtensions().get("ext1") == 42
+        executionContext.getExtensions().get("ext2") == "fish fingers and custard"
     }
 
     def "completes value for an iterable"() {

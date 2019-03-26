@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -86,6 +87,7 @@ public class ValueFetcher {
                     .fetchedValue(list.get(i))
                     .rawFetchedValue(fetchedValueContainingList.getRawFetchedValue())
                     .errors(errors)
+                    .extensions(fetchedValueContainingList.getExtensions())
                     .localContext(fetchedValueContainingList.getLocalContext())
                     .build();
             result.add(fetchedValue);
@@ -203,6 +205,17 @@ public class ValueFetcher {
             newErrors = new ArrayList<>(result.getErrors());
             newErrors.addAll(addErrors);
 
+            Map<Object, Object> newExtensions = new LinkedHashMap<>();
+            if (result.getExtensions() != null) {
+                newExtensions.putAll(result.getExtensions());
+            }
+            if (dataFetcherResult.getExtensions() != null) {
+                newExtensions.putAll(dataFetcherResult.getExtensions());
+            }
+            if (newExtensions.isEmpty()) {
+                newExtensions = null;
+            }
+
             Object newLocalContext = dataFetcherResult.getLocalContext();
             if (newLocalContext == null) {
                 // if the field returns nothing then they get the context of their parent field
@@ -212,6 +225,7 @@ public class ValueFetcher {
                     .fetchedValue(dataFetcherResult.getData())
                     .rawFetchedValue(result.getRawFetchedValue())
                     .errors(newErrors)
+                    .extensions(newExtensions)
                     .localContext(newLocalContext)
                     .build();
         } else {

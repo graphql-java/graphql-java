@@ -144,7 +144,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                              CompletableFuture<ExecutionResult> overallResult) {
 
         if (!curFieldNames.hasNext() && queueOfNodes.isEmpty()) {
-            overallResult.complete(new ExecutionResultImpl(root.getParentResults().get(0).toObject(), executionContext.getErrors()));
+            overallResult.complete(new ExecutionResultImpl(root.getParentResults().get(0).toObject(), executionContext.getErrors(), executionContext.getExtensions()));
             return;
         }
 

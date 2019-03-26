@@ -8,7 +8,9 @@ import graphql.execution.MergedField;
 import graphql.schema.GraphQLObjectType;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -26,6 +28,7 @@ public class FetchedValueAnalysis {
 
     private final FetchedValueType valueType;
     private final List<GraphQLError> errors;
+    private final Map<Object, Object> extensions;
     // not applicable for LIST
     private final Object completedValue;
     private final boolean nullValue;
@@ -40,6 +43,7 @@ public class FetchedValueAnalysis {
     private FetchedValueAnalysis(Builder builder) {
         this.errors = new ArrayList<>(builder.errors);
         this.errors.addAll(builder.fetchedValue.getErrors());
+        this.extensions = (builder.extensions == null ? null : new LinkedHashMap<>(builder.extensions));
         this.valueType = assertNotNull(builder.valueType);
         this.completedValue = builder.completedValue;
         this.nullValue = builder.nullValue;
@@ -55,6 +59,10 @@ public class FetchedValueAnalysis {
 
     public List<GraphQLError> getErrors() {
         return errors;
+    }
+
+    public Map<Object, Object> getExtensions() {
+        return extensions;
     }
 
     public Object getCompletedValue() {
@@ -110,6 +118,7 @@ public class FetchedValueAnalysis {
     public static final class Builder {
         private FetchedValueType valueType;
         private final List<GraphQLError> errors = new ArrayList<>();
+        private Map<Object, Object> extensions;
         private Object completedValue;
         private FetchedValue fetchedValue;
         private List<FetchedValueAnalysis> children;
@@ -123,6 +132,7 @@ public class FetchedValueAnalysis {
         private Builder(FetchedValueAnalysis existing) {
             valueType = existing.getValueType();
             errors.addAll(existing.getErrors());
+            extensions = existing.extensions;
             completedValue = existing.getCompletedValue();
             fetchedValue = existing.getFetchedValue();
             children = existing.getChildren();

@@ -32,7 +32,7 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
                 String fieldName = fieldNames.get(ix++);
                 resolvedValuesByField.put(fieldName, executionResult.getData());
             }
-            overallResult.complete(new ExecutionResultImpl(resolvedValuesByField, executionContext.getErrors()));
+            overallResult.complete(new ExecutionResultImpl(resolvedValuesByField, executionContext.getErrors(), executionContext.getExtensions()));
         };
     }
 }

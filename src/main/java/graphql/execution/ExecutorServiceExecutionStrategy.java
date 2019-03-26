@@ -102,7 +102,7 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
                 results.put(fieldName, executionResult != null ? executionResult.getData() : null);
             }
 
-            ExecutionResultImpl executionResult = new ExecutionResultImpl(results, executionContext.getErrors());
+            ExecutionResultImpl executionResult = new ExecutionResultImpl(results, executionContext.getErrors(), executionContext.getExtensions());
             overallResult.complete(executionResult);
 
             overallResult = overallResult.whenComplete(executionStrategyCtx::onCompleted);

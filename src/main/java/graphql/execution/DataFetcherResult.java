@@ -6,10 +6,13 @@ import graphql.PublicApi;
 import graphql.schema.DataFetcher;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableMap;
 
 
 /**
@@ -28,6 +31,7 @@ public class DataFetcherResult<T> {
 
     private final T data;
     private final List<GraphQLError> errors;
+    private final Map<Object, Object> extensions;
     private final Object localContext;
     private final boolean mapRelativeErrors;
 
@@ -42,12 +46,13 @@ public class DataFetcherResult<T> {
     @Internal
     @Deprecated
     public DataFetcherResult(T data, List<GraphQLError> errors) {
-        this(data, errors, null, false);
+        this(data, errors, null, null, false);
     }
 
-    private DataFetcherResult(T data, List<GraphQLError> errors, Object localContext, boolean mapRelativeErrors) {
+    private DataFetcherResult(T data, List<GraphQLError> errors, Map<Object, Object> extensions, Object localContext, boolean mapRelativeErrors) {
         this.data = data;
         this.errors = unmodifiableList(assertNotNull(errors));
+        this.extensions = (extensions == null ? null : unmodifiableMap(extensions));
         this.localContext = localContext;
         this.mapRelativeErrors = mapRelativeErrors;
     }
@@ -71,6 +76,16 @@ public class DataFetcherResult<T> {
      */
     public boolean hasErrors() {
         return !errors.isEmpty();
+    }
+
+    /**
+     * @return extensions added while fetching data. May be null.
+     */
+    public Map<Object, Object> getExtensions() {
+        if (this.extensions == null || this.extensions.isEmpty()) {
+            return null;
+        }
+        return this.extensions;
     }
 
     /**
@@ -111,6 +126,7 @@ public class DataFetcherResult<T> {
         private T data;
         private Object localContext;
         private final List<GraphQLError> errors = new ArrayList<>();
+        private Map<Object, Object> extensions;
         private boolean mapRelativeErrors = false;
 
         public Builder(T data) {
@@ -135,6 +151,20 @@ public class DataFetcherResult<T> {
             return this;
         }
 
+        public Builder<T> extensions(Map<Object, Object> extensions) {
+          if (extensions != null) {
+              this.extensions = (this.extensions == null ? new LinkedHashMap<>() : this.extensions);
+              this.extensions.putAll(extensions);
+          }
+          return this;
+        }
+
+        public Builder<T> extension(Object key, Object value) {
+          this.extensions = (this.extensions == null ? new LinkedHashMap<>() : this.extensions);
+          this.extensions.put(key, value);
+          return this;
+        }
+
         public Builder<T> mapRelativeErrors(boolean mapRelativeErrors) {
             this.mapRelativeErrors = mapRelativeErrors;
             return this;
@@ -153,7 +183,7 @@ public class DataFetcherResult<T> {
         }
 
         public DataFetcherResult<T> build() {
-            return new DataFetcherResult<>(data, errors, localContext, mapRelativeErrors);
+            return new DataFetcherResult<>(data, errors, extensions, localContext, mapRelativeErrors);
         }
     }
 }

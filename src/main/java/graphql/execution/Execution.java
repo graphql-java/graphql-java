@@ -166,7 +166,7 @@ public class Execution {
             //
             // http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability
             //
-            result = completedFuture(new ExecutionResultImpl(null, executionContext.getErrors()));
+            result = completedFuture(new ExecutionResultImpl(null, executionContext.getErrors(), executionContext.getExtensions()));
         }
 
         // note this happens NOW - not when the result completes

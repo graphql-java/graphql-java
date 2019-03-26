@@ -294,6 +294,8 @@ public abstract class ExecutionStrategy {
                 dataFetcherResult.getErrors().forEach(executionContext::addError);
             }
 
+            executionContext.addExtensions(dataFetcherResult.getExtensions());
+
             Object localContext = dataFetcherResult.getLocalContext();
             if (localContext == null) {
                 // if the field returns nothing then they get the context of their parent field
@@ -303,6 +305,7 @@ public abstract class ExecutionStrategy {
                     .fetchedValue(UnboxPossibleOptional.unboxPossibleOptional(dataFetcherResult.getData()))
                     .rawFetchedValue(dataFetcherResult.getData())
                     .errors(dataFetcherResult.getErrors())
+                    .extensions(dataFetcherResult.getExtensions())
                     .localContext(localContext)
                     .build();
         } else {
@@ -752,7 +755,7 @@ public abstract class ExecutionStrategy {
         if (underlyingException instanceof NonNullableFieldWasNullException) {
             assertNonNullFieldPrecondition((NonNullableFieldWasNullException) underlyingException, result);
             if (!result.isDone()) {
-                executionResult = new ExecutionResultImpl(null, errors);
+                executionResult = new ExecutionResultImpl(null, errors, executionContext.getExtensions());
                 result.complete(executionResult);
             }
         } else if (underlyingException instanceof AbortExecutionException) {

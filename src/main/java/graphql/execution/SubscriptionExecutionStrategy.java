@@ -40,13 +40,13 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         // when the upstream source event stream completes, subscribe to it and wire in our adapter
         return sourceEventStream.thenApply((publisher) -> {
             if (publisher == null) {
-                return new ExecutionResultImpl(null, executionContext.getErrors());
+                return new ExecutionResultImpl(null, executionContext.getErrors(), executionContext.getExtensions());
             }
             CompletionStageMappingPublisher<ExecutionResult, Object> mapSourceToResponse = new CompletionStageMappingPublisher<>(
                     publisher,
                     eventPayload -> executeSubscriptionEvent(executionContext, parameters, eventPayload)
             );
-            return new ExecutionResultImpl(mapSourceToResponse, executionContext.getErrors());
+            return new ExecutionResultImpl(mapSourceToResponse, executionContext.getErrors(), executionContext.getExtensions());
         });
     }
 

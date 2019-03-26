@@ -15,6 +15,7 @@ import graphql.schema.GraphQLSchema;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -38,12 +39,13 @@ public class ExecutionContext {
     private final Object context;
     private final Instrumentation instrumentation;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
+    private final Map<Object, Object> extensions = new LinkedHashMap<>();
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
     private final DeferSupport deferSupport = new DeferSupport();
 
     @Internal
-    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, List<GraphQLError> startingErrors) {
+    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, List<GraphQLError> startingErrors, Map<Object, Object> startingExtensions) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.instrumentationState = instrumentationState;
@@ -60,6 +62,10 @@ public class ExecutionContext {
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.cacheControl = cacheControl;
         this.errors.addAll(startingErrors);
+
+        if (startingExtensions != null) {
+            this.extensions.putAll(startingExtensions);
+        }
     }
 
 
@@ -157,6 +163,25 @@ public class ExecutionContext {
      */
     public List<GraphQLError> getErrors() {
         return Collections.unmodifiableList(errors);
+    }
+
+    public void addExtensions(Map<Object, Object> newExts) {
+        if (newExts == null) {
+            return;
+        }
+
+        extensions.putAll(newExts);
+    }
+
+    public void addExtension(Object key, Object value) {
+        this.extensions.put(key, value);
+    }
+
+    /**
+     * @return the map of extensions for this execution context
+     */
+    public Map<Object, Object> getExtensions() {
+        return (extensions.isEmpty() ? null : Collections.unmodifiableMap(extensions));
     }
 
     public ExecutionStrategy getQueryStrategy() {
