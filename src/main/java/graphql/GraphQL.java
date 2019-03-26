@@ -531,7 +531,7 @@ public class GraphQL {
         if (parseResult.isFailure()) {
             log.warn("Query failed to parse : '{}'", executionInput.getQuery());
             return new PreparsedDocumentEntry(parseResult.getException().toInvalidSyntaxError());
-        } else {
+        } else if(executionInput.isValidate()){
             final Document document = parseResult.getDocument();
             // they may have changed the document and the variables via instrumentation so update the reference to it
             executionInput = executionInput.transform(builder -> builder.variables(parseResult.getVariables()));

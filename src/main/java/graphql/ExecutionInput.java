@@ -22,14 +22,18 @@ public class ExecutionInput {
     private final Map<String, Object> variables;
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
-
+    private final boolean validate;
 
     public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables) {
-        this(query, operationName, context, root, variables, new DataLoaderRegistry(), null);
+        this(query, operationName, context, root, variables, new DataLoaderRegistry(),true);
+    }
+
+    public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables,boolean validate) {
+        this(query, operationName, context, root, variables, new DataLoaderRegistry(), null,validate);
     }
 
     @Internal
-    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl) {
+    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl,boolean validate) {
         this.query = query;
         this.operationName = operationName;
         this.context = context;
@@ -37,6 +41,7 @@ public class ExecutionInput {
         this.variables = variables;
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.cacheControl = cacheControl;
+        this.validate=validate;
     }
 
     /**
@@ -88,6 +93,14 @@ public class ExecutionInput {
         return cacheControl;
     }
 
+
+    /**
+     * @return If the query validation should be performed. Default value is true
+     */
+    public boolean isValidate() {
+        return validate;
+    }
+
     /**
      * This helps you transform the current ExecutionInput object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
@@ -104,7 +117,8 @@ public class ExecutionInput {
                 .root(this.root)
                 .dataLoaderRegistry(this.dataLoaderRegistry)
                 .cacheControl(this.cacheControl)
-                .variables(this.variables);
+                .variables(this.variables)
+                .validate(this.validate);
 
         builderConsumer.accept(builder);
 
@@ -151,6 +165,7 @@ public class ExecutionInput {
         private Map<String, Object> variables = Collections.emptyMap();
         private DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
         private CacheControl cacheControl;
+        private boolean validate = true;
 
         public Builder query(String query) {
             this.query = query;
@@ -192,6 +207,12 @@ public class ExecutionInput {
 
         public Builder variables(Map<String, Object> variables) {
             this.variables = variables;
+            return this;
+        }
+
+
+        public Builder validate(boolean validate) {
+            this.validate = validate;
             return this;
         }
 
