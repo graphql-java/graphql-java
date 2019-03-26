@@ -546,6 +546,7 @@ public class GraphQL {
 
             return new PreparsedDocumentEntry(document);
         }
+        return new PreparsedDocumentEntry(parseResult.getDocument());
     }
 
     private ParseResult parse(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {

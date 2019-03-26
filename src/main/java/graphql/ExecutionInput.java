@@ -25,7 +25,7 @@ public class ExecutionInput {
     private final boolean validate;
 
     public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables) {
-        this(query, operationName, context, root, variables, new DataLoaderRegistry(),true);
+        this(query, operationName, context, root, variables, true);
     }
 
     public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables,boolean validate) {
@@ -235,7 +235,7 @@ public class ExecutionInput {
         }
 
         public ExecutionInput build() {
-            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry, cacheControl);
+            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry, cacheControl,validate);
         }
     }
 }
