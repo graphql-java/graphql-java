@@ -186,13 +186,15 @@ class PreparsedDocumentProviderTest extends Specification {
               """
 
         def documentProvider = new PreparsedDocumentProvider() {
+
             @Override
-            PreparsedDocumentEntry get(String query, Function<String, PreparsedDocumentEntry> computeFunction) {
-                if (query == "#A") {
-                    return computeFunction.apply(queryA)
+            PreparsedDocumentEntry getDocument(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> computeFunction) {
+                if (executionInput.getQuery() == "#A") {
+                    executionInput = executionInput.transform({ it.query(queryA) })
                 } else {
-                    return computeFunction.apply(queryB)
+                    executionInput = executionInput.transform({ it.query(queryB) })
                 }
+                return computeFunction.apply(executionInput)
             }
         }
 
