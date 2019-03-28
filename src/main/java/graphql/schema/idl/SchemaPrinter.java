@@ -33,7 +33,9 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
@@ -64,11 +66,11 @@ public class SchemaPrinter {
         private final SchemaPrinterComparatorRegistry comparatorRegistry;
 
         private Options(boolean includeIntrospectionTypes,
-                boolean includeScalars,
-                boolean includeExtendedScalars,
-                boolean includeSchemaDefinition,
-                boolean includeDirectives,
-                SchemaPrinterComparatorRegistry comparatorRegistry) {
+                        boolean includeScalars,
+                        boolean includeExtendedScalars,
+                        boolean includeSchemaDefinition,
+                        boolean includeDirectives,
+                        SchemaPrinterComparatorRegistry comparatorRegistry) {
             this.includeIntrospectionTypes = includeIntrospectionTypes;
             this.includeScalars = includeScalars;
             this.includeExtendedScalars = includeExtendedScalars;
@@ -106,6 +108,7 @@ public class SchemaPrinter {
          * This will allow you to include introspection types that are contained in a schema
          *
          * @param flag whether to include them
+         *
          * @return options
          */
         public Options includeIntrospectionTypes(boolean flag) {
@@ -116,6 +119,7 @@ public class SchemaPrinter {
          * This will allow you to include scalar types that are contained in a schema
          *
          * @param flag whether to include them
+         *
          * @return options
          */
         public Options includeScalarTypes(boolean flag) {
@@ -127,6 +131,7 @@ public class SchemaPrinter {
          * GraphQLBigDecimal or GraphQLBigInteger
          *
          * @param flag whether to include them
+         *
          * @return options
          */
         public Options includeExtendedScalarTypes(boolean flag) {
@@ -140,6 +145,7 @@ public class SchemaPrinter {
          * types do not use the default names.
          *
          * @param flag whether to force include the schema definition
+         *
          * @return options
          */
         public Options includeSchemaDefintion(boolean flag) {
@@ -151,6 +157,7 @@ public class SchemaPrinter {
          * make the printout noisy and having this flag would allow cleaner printout. On by default.
          *
          * @param flag whether to print directives
+         *
          * @return new instance of options
          */
         public Options includeDirectives(boolean flag) {
@@ -161,6 +168,7 @@ public class SchemaPrinter {
          * The comparator registry controls the printing order for registered {@code GraphQLType}s.
          *
          * @param comparatorRegistry The registry containing the {@code Comparator} and environment scoping rules.
+         *
          * @return options
          */
         public Options setComparators(SchemaPrinterComparatorRegistry comparatorRegistry) {
@@ -199,6 +207,7 @@ public class SchemaPrinter {
      * first to get the {@link graphql.language.Document} and then print that.
      *
      * @param schemaIDL the parsed schema IDL
+     *
      * @return the logical schema definition
      */
     public String print(Document schemaIDL) {
@@ -210,6 +219,7 @@ public class SchemaPrinter {
      * This can print an in memory GraphQL schema back to a logical schema definition
      *
      * @param schema the schema in play
+     *
      * @return the logical schema definition
      */
     public String print(GraphQLSchema schema) {
@@ -436,10 +446,10 @@ public class SchemaPrinter {
     }
 
     private TypePrinter<GraphQLSchema> schemaPrinter() {
-        return (out, type, visibility) -> {
-            GraphQLObjectType queryType = type.getQueryType();
-            GraphQLObjectType mutationType = type.getMutationType();
-            GraphQLObjectType subscriptionType = type.getSubscriptionType();
+        return (out, schema, visibility) -> {
+            GraphQLObjectType queryType = schema.getQueryType();
+            GraphQLObjectType mutationType = schema.getMutationType();
+            GraphQLObjectType subscriptionType = schema.getSubscriptionType();
 
             // when serializing a GraphQL schema using the type system language, a
             // schema definition should be omitted if only uses the default root type names.
@@ -470,7 +480,24 @@ public class SchemaPrinter {
                 }
                 out.format("}\n\n");
             }
+
+            if (options.includeDirectives) {
+                out.format("%s", directiveDefinitions(getDirectives(schema)));
+            }
         };
+    }
+
+    private List<GraphQLDirective> getDirectives(GraphQLSchema schema) {
+
+        // we don't print the standard directives that always ship with graphql-java
+        List<String> standardDirectives = Arrays.asList(
+                "skip",
+                "include",
+                "defer",
+                "deprecated");
+
+        Predicate<GraphQLDirective> standard = directive -> standardDirectives.contains(directive.getName());
+        return schema.getDirectives().stream().filter(standard.negate()).collect(Collectors.toList());
     }
 
     String typeString(GraphQLType rawType) {
@@ -612,6 +639,48 @@ public class SchemaPrinter {
         return sb.toString();
     }
 
+    private String directiveDefinitions(List<GraphQLDirective> directives) {
+        StringBuilder sb = new StringBuilder();
+        for (GraphQLDirective directive : directives) {
+            sb.append(directiveDefinition(directive));
+            sb.append("\n\n");
+        }
+        return sb.toString();
+    }
+
+    private String directiveDefinition(GraphQLDirective directive) {
+        StringBuilder sb = new StringBuilder();
+
+        StringWriter sw = new StringWriter();
+        printComments(new PrintWriter(sw), directive, "");
+
+        sb.append(sw.toString());
+
+        sb.append("directive @").append(directive.getName());
+
+        SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
+                .parentType(GraphQLDirective.class)
+                .elementType(GraphQLArgument.class)
+                .build();
+        Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
+
+        List<GraphQLArgument> args = directive.getArguments();
+        args = args
+                .stream()
+                .sorted(comparator)
+                .collect(toList());
+
+        sb.append(argsString(GraphQLDirective.class, args));
+
+        sb.append(" on ");
+
+        String locations = directive.validLocations().stream().map(Enum::name).collect(Collectors.joining(" | "));
+        sb.append(locations);
+
+        return sb.toString();
+    }
+
+
     @SuppressWarnings("unchecked")
     private <T> TypePrinter<T> printer(Class<?> clazz) {
         TypePrinter typePrinter = printers.computeIfAbsent(clazz, k -> {
@@ -732,13 +801,16 @@ public class SchemaPrinter {
         } else if (descriptionHolder instanceof GraphQLArgument) {
             GraphQLArgument type = (GraphQLArgument) descriptionHolder;
             return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+        } else if (descriptionHolder instanceof GraphQLDirective) {
+            GraphQLDirective type = (GraphQLDirective) descriptionHolder;
+            return descriptionAndComments(type::getDescription, () -> null, () -> null);
         } else {
             return Assert.assertShouldNeverHappen();
         }
     }
 
-    AstDescriptionAndComments descriptionAndComments(Supplier<String> stringSupplier, Supplier<Node> nodeSupplier, Supplier<Description> descriptionSupplier) {
-        String runtimeDesc = stringSupplier.get();
+    AstDescriptionAndComments descriptionAndComments(Supplier<String> runtimeDescriptionSupplier, Supplier<Node> nodeSupplier, Supplier<Description> descriptionSupplier) {
+        String runtimeDesc = runtimeDescriptionSupplier.get();
         Node node = nodeSupplier.get();
         Description description = null;
         List<Comment> comments = null;

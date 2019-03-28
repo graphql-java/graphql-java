@@ -11,12 +11,14 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
+import graphql.validation.ValidationErrorType;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.validation.ValidationErrorType.*;
 import static graphql.validation.ValidationErrorType.MissingDirectiveArgument;
 import static graphql.validation.ValidationErrorType.MissingFieldArgument;
 
@@ -34,22 +36,14 @@ public class ProvidedNonNullArguments extends AbstractRule {
 
         for (GraphQLArgument graphQLArgument : fieldDef.getArguments()) {
             Argument argument = argumentMap.get(graphQLArgument.getName());
-            if (argument == null
-                    && (isNonNull(graphQLArgument.getType()))
-                    && (graphQLArgument.getDefaultValue() == null)) {
+            boolean nonNullType = isNonNull(graphQLArgument.getType());
+            boolean noDefaultValue = graphQLArgument.getDefaultValue() == null;
+            if (argument == null && nonNullType && noDefaultValue) {
                 String message = i18n(MissingFieldArgument, "ProvidedNonNullArguments.missingFieldArg",
                         graphQLArgument.getName());
                 addError(MissingFieldArgument, field.getSourceLocation(), message);
             }
         }
-    }
-
-    private Map<String, Argument> argumentMap(List<Argument> arguments) {
-        Map<String, Argument> result = new LinkedHashMap<>();
-        for (Argument argument : arguments) {
-            result.put(argument.getName(), argument);
-        }
-        return result;
     }
 
 
@@ -61,11 +55,20 @@ public class ProvidedNonNullArguments extends AbstractRule {
 
         for (GraphQLArgument graphQLArgument : graphQLDirective.getArguments()) {
             Argument argument = argumentMap.get(graphQLArgument.getName());
-            if (argument == null
-                    && (isNonNull(graphQLArgument.getType()))) {
+            boolean nonNullType = isNonNull(graphQLArgument.getType());
+            boolean noDefaultValue = graphQLArgument.getDefaultValue() == null;
+            if (argument == null && nonNullType && noDefaultValue) {
                 String message = i18n(MissingDirectiveArgument, "ProvidedNonNullArguments.missingDirectiveArg", graphQLArgument.getName());
                 addError(MissingDirectiveArgument, directive.getSourceLocation(), message);
             }
         }
+    }
+
+    private Map<String, Argument> argumentMap(List<Argument> arguments) {
+        Map<String, Argument> result = new LinkedHashMap<>();
+        for (Argument argument : arguments) {
+            result.put(argument.getName(), argument);
+        }
+        return result;
     }
 }

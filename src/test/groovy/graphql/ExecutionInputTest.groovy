@@ -49,6 +49,14 @@ class ExecutionInputTest extends Specification {
         (executionInput.context as GraphQLContext).get("k2") == "v2"
     }
 
+    def "context is defaulted"() {
+        when:
+        def executionInput = ExecutionInput.newExecutionInput().query(query)
+                .build()
+        then:
+        executionInput.context instanceof GraphQLContext
+    }
+
     def "transform works and copies values"() {
         when:
         def executionInputOld = ExecutionInput.newExecutionInput().query(query)
