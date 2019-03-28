@@ -36,7 +36,7 @@ public class NoUndefinedVariables extends AbstractRule {
     @Override
     public void checkVariable(VariableReference variableReference) {
         if (!variableNames.contains(variableReference.getName())) {
-            String message = i18n("NoUndefinedVariables.undefinedVariable", UndefinedVariable, variableReference.getName());
+            String message = i18n(UndefinedVariable, "NoUndefinedVariables.undefinedVariable", variableReference.getName());
             addError(UndefinedVariable, variableReference.getSourceLocation(), message);
         }
     }

@@ -50,7 +50,7 @@ query {
         then:
         validationErrors.size() == 1
         validationErrors.get(0).getValidationErrorType() == ValidationErrorType.UnknownDirective
-        validationErrors.get(0).getDescription() == "Unknown directive argument 'dummy'"
+        validationErrors.get(0).getDescription().contains("Unknown directive argument 'dummy'")
     }
 
     List<ValidationError> validate(String query) {

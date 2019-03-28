@@ -2,6 +2,7 @@ package graphql.validation;
 
 
 import graphql.Internal;
+import graphql.i18n.I18nMsg;
 import graphql.language.Argument;
 import graphql.language.Directive;
 import graphql.language.Document;
@@ -20,6 +21,7 @@ import graphql.language.VariableReference;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.lang.System.arraycopy;
 import static java.util.Collections.singletonList;
 
 @Internal
@@ -27,27 +29,53 @@ public class AbstractRule {
 
     private final ValidationContext validationContext;
     private final ValidationErrorCollector validationErrorCollector;
-
+    private final ValidationUtil validationUtil;
 
     private boolean visitFragmentSpreads;
-
-    private ValidationUtil validationUtil = new ValidationUtil();
 
     public AbstractRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         this.validationContext = validationContext;
         this.validationErrorCollector = validationErrorCollector;
+        this.validationUtil = new ValidationUtil();
+    }
+
+    /**
+     * Creates an I18N message using the {@link graphql.i18n.I18nMsg}
+     *
+     * @param validationErrorType the type of validation failure
+     * @param i18nMsg             the i18n message object
+     *
+     * @return the formatted I18N message
+     */
+    public String i18n(ValidationErrorType validationErrorType, I18nMsg i18nMsg) {
+        return i18n(validationErrorType, i18nMsg.getMsgKey(), i18nMsg.getMsgArguments());
     }
 
     /**
      * Creates an I18N message using the key and arguments
      *
-     * @param msgKey  the key in the underlying message bundle
-     * @param msgArgs the message arguments
+     * @param validationErrorType the type of validation failure
+     * @param msgKey              the key in the underlying message bundle
+     * @param msgArgs             the message arguments
      *
      * @return the formatted I18N message
      */
-    public String i18n(String msgKey, Object... msgArgs) {
-        return validationContext.i18n(msgKey, msgArgs);
+    public String i18n(ValidationErrorType validationErrorType, String msgKey, Object... msgArgs) {
+        Object[] params = new Object[msgArgs.length + 1];
+        params[0] = mkTypeAndPath(validationErrorType);
+        arraycopy(msgArgs, 0, params, 1, msgArgs.length);
+
+        return validationContext.i18n(msgKey, params);
+    }
+
+    private String mkTypeAndPath(ValidationErrorType validationErrorType) {
+        List<String> queryPath = getQueryPath();
+        StringBuilder sb = new StringBuilder();
+        sb.append(validationErrorType);
+        if (queryPath != null) {
+            sb.append("@[").append(String.join("/", queryPath)).append("]");
+        }
+        return sb.toString();
     }
 
     public boolean isVisitFragmentSpreads() {
@@ -63,23 +91,19 @@ public class AbstractRule {
         return validationUtil;
     }
 
-    public void setValidationUtil(ValidationUtil validationUtil) {
-        this.validationUtil = validationUtil;
-    }
-
     public void addError(ValidationErrorType validationErrorType, List<? extends Node> locations, String description) {
         List<SourceLocation> locationList = new ArrayList<>();
         for (Node node : locations) {
             locationList.add(node.getSourceLocation());
         }
         validationErrorCollector.addError(
-                new ValidationError(validationErrorType, locationList, description, getQueryPath(), validationContext.getI18n())
+                new ValidationError(validationErrorType, locationList, description, getQueryPath())
         );
     }
 
     public void addError(ValidationErrorType validationErrorType, SourceLocation location, String description) {
         validationErrorCollector.addError(
-                new ValidationError(validationErrorType, singletonList(location), description, getQueryPath(), validationContext.getI18n())
+                new ValidationError(validationErrorType, singletonList(location), description, getQueryPath())
         );
     }
 

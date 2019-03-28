@@ -39,8 +39,6 @@ class I18NTest extends Specification {
         }
     }
 
-
-
     static quotesAreBalanced(String msgKey, String msg, String c) {
         def quoteCount = msg.count(c)
         assert quoteCount % 2 == 0, "The I18N message $msgKey quotes are unbalanced : $msg"

@@ -5,8 +5,8 @@ import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLObjectType
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
-import graphql.validation.ValidationErrorType
-import spock.lang.Specification
+
+import static graphql.validation.ValidationErrorType.FieldUndefined
 
 class FieldsOnCorrectTypeTest extends ValidationRuleTest {
 
@@ -26,9 +26,8 @@ class FieldsOnCorrectTypeTest extends ValidationRuleTest {
         fieldsOnCorrectType.checkField(field)
 
         then:
-        errorCollector.containsValidationError(ValidationErrorType.FieldUndefined)
+        errorCollector.containsValidationError(FieldUndefined, "Field 'name' in type 'parentType' is undefined")
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message == "Validation error of type FieldUndefined: Field 'name' in type 'parentType' is undefined"
     }
 
     def "should results in no error when field definition is filled"() {

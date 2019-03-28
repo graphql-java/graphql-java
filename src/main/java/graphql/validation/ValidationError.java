@@ -27,43 +27,31 @@ public class ValidationError implements GraphQLError {
 
     @Deprecated
     public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description) {
-        this(validationErrorType, nullOrList(sourceLocation), description, null, defaultedI18n());
+        this(validationErrorType, nullOrList(sourceLocation), description, null);
     }
 
     @Deprecated
     public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description, List<String> queryPath) {
-        this(validationErrorType, nullOrList(sourceLocation), description, queryPath, defaultedI18n());
+        this(validationErrorType, nullOrList(sourceLocation), description, queryPath);
     }
 
     @Deprecated
     public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description) {
-        this(validationErrorType, sourceLocations, description, null, defaultedI18n());
+        this(validationErrorType, sourceLocations, description, null);
     }
 
-    private static I18N defaultedI18n() {
-        return I18N.i18n(I18N.BundleType.Validation, Locale.getDefault());
-    }
-
-    public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description, List<String> queryPath, I18N i18n) {
+    public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description, List<String> queryPath) {
         this.validationErrorType = validationErrorType;
         if (sourceLocations != null) {
             this.locations.addAll(sourceLocations);
         }
         this.description = description;
-        this.message = mkMessage(i18n, validationErrorType, description, queryPath);
+        this.message = description;
         this.queryPath = queryPath;
     }
 
     private static List<SourceLocation> nullOrList(SourceLocation sourceLocation) {
         return sourceLocation == null ? null : Collections.singletonList(sourceLocation);
-    }
-
-    private String mkMessage(I18N i18n, ValidationErrorType validationErrorType, String description, List<String> queryPath) {
-        if (queryPath == null) {
-            return i18n.msg("ValidationError.coveringMsgNoPath", validationErrorType, description);
-        } else {
-            return i18n.msg("ValidationError.coveringMsg", validationErrorType, description, String.join("/", queryPath));
-        }
     }
 
     public ValidationErrorType getValidationErrorType() {

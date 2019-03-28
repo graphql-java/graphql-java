@@ -56,7 +56,7 @@ class ArgumentsOfCorrectTypeTest extends ValidationRuleTest {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message == "Validation error of type WrongType: argument 'arg' with value 'StringValue{value='string'}' is not a valid 'Boolean'"
+        errorCollector.errors[0].message == "Validation error (WrongType) : argument 'arg' with value 'StringValue{value='string'}' is not a valid 'Boolean'"
     }
 
     def "invalid input object type results in error"() {
@@ -72,7 +72,7 @@ class ArgumentsOfCorrectTypeTest extends ValidationRuleTest {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message == "Validation error of type WrongType: argument 'arg.foo' with value 'StringValue{value='string'}' is not a valid 'Boolean'"
+        errorCollector.errors[0].message == "Validation error (WrongType) : argument 'arg.foo' with value 'StringValue{value='string'}' is not a valid 'Boolean'"
     }
 
     def "invalid list object type results in error"() {
@@ -92,7 +92,7 @@ class ArgumentsOfCorrectTypeTest extends ValidationRuleTest {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message == "Validation error of type WrongType: argument 'arg[1].foo' with value 'StringValue{value='string'}' is not a valid 'Boolean'"
+        errorCollector.errors[0].message == "Validation error (WrongType) : argument 'arg[1].foo' with value 'StringValue{value='string'}' is not a valid 'Boolean'"
     }
 
     def "invalid list inside object type results in error"() {
@@ -112,7 +112,7 @@ class ArgumentsOfCorrectTypeTest extends ValidationRuleTest {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message == "Validation error of type WrongType: argument 'arg[0].foo[1]' with value 'StringValue{value='string'}' is not a valid 'Boolean'"
+        errorCollector.errors[0].message == "Validation error (WrongType) : argument 'arg[0].foo[1]' with value 'StringValue{value='string'}' is not a valid 'Boolean'"
     }
 
     def "invalid list simple type results in error"() {
@@ -130,7 +130,7 @@ class ArgumentsOfCorrectTypeTest extends ValidationRuleTest {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message == "Validation error of type WrongType: argument 'arg[1]' with value 'StringValue{value='string'}' is not a valid 'Boolean'"
+        errorCollector.errors[0].message == "Validation error (WrongType) : argument 'arg[1]' with value 'StringValue{value='string'}' is not a valid 'Boolean'"
     }
 
     def "type missing fields results in error"() {
@@ -152,7 +152,7 @@ class ArgumentsOfCorrectTypeTest extends ValidationRuleTest {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message == "Validation error of type WrongType: argument 'arg' with value 'ObjectValue{objectFields=[ObjectField{name='foo', value=StringValue{value='string'}}]}' is missing required fields '[bar]'"
+        errorCollector.errors[0].message == "Validation error (WrongType) : argument 'arg' with value 'ObjectValue{objectFields=[ObjectField{name='foo', value=StringValue{value='string'}}]}' is missing required fields '[bar]'"
     }
 
     def "type not object results in error"() {
@@ -172,7 +172,7 @@ class ArgumentsOfCorrectTypeTest extends ValidationRuleTest {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message == "Validation error of type WrongType: argument 'arg' with value 'StringValue{value='string'}' must be an object type"
+        errorCollector.errors[0].message == "Validation error (WrongType) : argument 'arg' with value 'StringValue{value='string'}' must be an object type"
     }
 
     def "type null fields results in error"() {
@@ -194,7 +194,7 @@ class ArgumentsOfCorrectTypeTest extends ValidationRuleTest {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message == "Validation error of type WrongType: argument 'arg.bar' with value 'NullValue{}' must not be null"
+        errorCollector.errors[0].message == "Validation error (WrongType) : argument 'arg.bar' with value 'NullValue{}' must not be null"
     }
 
     def "type with extra fields results in error"() {
@@ -216,7 +216,7 @@ class ArgumentsOfCorrectTypeTest extends ValidationRuleTest {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message == "Validation error of type WrongType: argument 'arg' with value 'ObjectValue{objectFields=[ObjectField{name='foo', value=StringValue{value='string'}}, ObjectField{name='bar', value=StringValue{value='string'}}, ObjectField{name='fooBar', value=BooleanValue{value=true}}]}' contains a field not in 'ArgumentObjectType': 'fooBar'"
+        errorCollector.errors[0].message == "Validation error (WrongType) : argument 'arg' with value 'ObjectValue{objectFields=[ObjectField{name='foo', value=StringValue{value='string'}}, ObjectField{name='bar', value=StringValue{value='string'}}, ObjectField{name='fooBar', value=BooleanValue{value=true}}]}' contains a field not in 'ArgumentObjectType': 'fooBar'"
     }
 
     def "current null argument from context is no error"() {

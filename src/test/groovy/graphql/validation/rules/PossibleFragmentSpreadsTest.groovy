@@ -5,7 +5,9 @@ import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
 import graphql.validation.RulesVisitor
 import graphql.validation.ValidationContext
+import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorCollector
+import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
 class PossibleFragmentSpreadsTest extends ValidationRuleTest {
@@ -179,7 +181,7 @@ class PossibleFragmentSpreadsTest extends ValidationRuleTest {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors().get(0).message == "Validation error of type InvalidFragmentType: Fragment cannot be spread here as objects of type 'Cat' can never be of type 'Dog' @ 'invalidObjectWithinObjectAnon'"
+        (errorCollector.getErrors().get(0) as ValidationError).validationErrorType == ValidationErrorType.InvalidFragmentType
     }
 
     def 'object into not implementing interface'() {
@@ -192,7 +194,7 @@ class PossibleFragmentSpreadsTest extends ValidationRuleTest {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors().get(0).message == "Validation error of type InvalidFragmentType: Fragment 'humanFragment' cannot be spread here as objects of type 'Pet' can never be of type 'Human' @ 'invalidObjectWithinInterface'"
+        (errorCollector.getErrors().get(0) as ValidationError).validationErrorType == ValidationErrorType.InvalidFragmentType
     }
 
     def 'object into not containing union'() {

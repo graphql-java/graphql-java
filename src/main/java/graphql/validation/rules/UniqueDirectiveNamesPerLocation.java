@@ -11,7 +11,6 @@ import graphql.language.OperationDefinition;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -63,8 +62,8 @@ public class UniqueDirectiveNamesPerLocation extends AbstractRule {
         directives.forEach(directive -> {
             String name = directive.getName();
             if (names.contains(name)) {
-                String message = i18n("UniqueDirectiveNamesPerLocation.uniqueDirectives",
-                        DuplicateDirectiveName, name, directivesContainer.getClass().getSimpleName());
+                String message = i18n(DuplicateDirectiveName, "UniqueDirectiveNamesPerLocation.uniqueDirectives",
+                        name, directivesContainer.getClass().getSimpleName());
                 addError(DuplicateDirectiveName,
                         directive.getSourceLocation(),
                         message);

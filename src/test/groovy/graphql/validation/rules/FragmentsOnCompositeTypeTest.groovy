@@ -7,7 +7,6 @@ import graphql.language.TypeName
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
-import spock.lang.Specification
 
 class FragmentsOnCompositeTypeTest extends ValidationRuleTest {
 
@@ -24,9 +23,8 @@ class FragmentsOnCompositeTypeTest extends ValidationRuleTest {
         fragmentsOnCompositeType.checkInlineFragment(inlineFragment)
 
         then:
-        errorCollector.containsValidationError(ValidationErrorType.InlineFragmentTypeConditionInvalid)
+        errorCollector.containsValidationError(ValidationErrorType.InlineFragmentTypeConditionInvalid, "Inline fragment type condition is invalid, must be on Object/Interface/Union")
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message == "Validation error of type InlineFragmentTypeConditionInvalid: Inline fragment type condition is invalid, must be on Object/Interface/Union"
     }
 
     def "should results in no error"(InlineFragment inlineFragment) {

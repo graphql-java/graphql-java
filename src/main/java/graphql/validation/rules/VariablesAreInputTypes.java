@@ -7,7 +7,6 @@ import graphql.schema.GraphQLType;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
 
 import static graphql.schema.GraphQLTypeUtil.isInput;
 import static graphql.validation.ValidationErrorType.NonInputTypeOnVariable;
@@ -25,7 +24,7 @@ public class VariablesAreInputTypes extends AbstractRule {
         GraphQLType type = getValidationContext().getSchema().getType(unmodifiedAstType.getName());
         if (type == null) return;
         if (!isInput(type)) {
-            String message = i18n("VariablesAreInputTypes.wrongType", NonInputTypeOnVariable);
+            String message = i18n(NonInputTypeOnVariable, "VariablesAreInputTypes.wrongType");
             addError(NonInputTypeOnVariable, variableDefinition.getSourceLocation(), message);
         }
     }

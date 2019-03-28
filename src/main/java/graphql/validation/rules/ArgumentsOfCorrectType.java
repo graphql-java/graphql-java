@@ -1,13 +1,15 @@
 package graphql.validation.rules;
 
 
+import graphql.i18n.I18nMsg;
 import graphql.language.Argument;
 import graphql.schema.GraphQLArgument;
 import graphql.validation.AbstractRule;
 import graphql.validation.ArgumentValidationUtil;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
+
+import static graphql.validation.ValidationErrorType.WrongType;
 
 public class ArgumentsOfCorrectType extends AbstractRule {
 
@@ -21,7 +23,8 @@ public class ArgumentsOfCorrectType extends AbstractRule {
         if (fieldArgument == null) return;
         ArgumentValidationUtil validationUtil = new ArgumentValidationUtil(argument);
         if (!validationUtil.isValidLiteralValue(argument.getValue(), fieldArgument.getType(), getValidationContext().getSchema())) {
-            addError(ValidationErrorType.WrongType, argument.getSourceLocation(), validationUtil.getMessage());
+            String formattedMsg = i18n(WrongType, validationUtil.getMsgAndArgs());
+            addError(WrongType, argument.getSourceLocation(), formattedMsg);
         }
     }
 }

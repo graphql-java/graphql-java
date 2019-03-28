@@ -4,7 +4,6 @@ import graphql.language.OperationDefinition;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -34,7 +33,7 @@ public class UniqueOperationNames extends AbstractRule {
         }
 
         if (operationNames.contains(name)) {
-            String message = i18n("UniqueOperationNames.oneOperation", DuplicateOperationName, name);
+            String message = i18n(DuplicateOperationName, "UniqueOperationNames.oneOperation", name);
             addError(DuplicateOperationName, operationDefinition.getSourceLocation(), message);
         } else {
             operationNames.add(name);

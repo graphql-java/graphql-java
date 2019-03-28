@@ -8,7 +8,6 @@ import graphql.language.OperationDefinition;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -61,7 +60,7 @@ public class NoUnusedFragments extends AbstractRule {
 
         for (FragmentDefinition fragmentDefinition : allDeclaredFragments) {
             if (!allUsedFragments.contains(fragmentDefinition.getName())) {
-                String message = i18n("NoUnusedFragments.unusedFragments", UnusedFragment, fragmentDefinition.getName());
+                String message = i18n(UnusedFragment, "NoUnusedFragments.unusedFragments", fragmentDefinition.getName());
                 addError(UnusedFragment, fragmentDefinition.getSourceLocation(), message);
             }
         }

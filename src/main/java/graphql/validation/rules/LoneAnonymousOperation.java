@@ -26,11 +26,11 @@ public class LoneAnonymousOperation extends AbstractRule {
         if (name == null) {
             hasAnonymousOp = true;
             if (count > 0) {
-                message = i18n("LoneAnonymousOperation.withOthers", LoneAnonymousOperationViolation);
+                message = i18n(LoneAnonymousOperationViolation, "LoneAnonymousOperation.withOthers");
             }
         } else {
             if (hasAnonymousOp) {
-                message = i18n("LoneAnonymousOperation.namedOperation", LoneAnonymousOperationViolation, name);
+                message = i18n(LoneAnonymousOperationViolation, "LoneAnonymousOperation.namedOperation", name);
             }
         }
         count++;

@@ -10,7 +10,6 @@ import graphql.validation.DocumentVisitor;
 import graphql.validation.LanguageTraversal;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -78,7 +77,7 @@ public class NoFragmentCycles extends AbstractRule {
         for (FragmentSpread fragmentSpread : fragmentSpreads) {
 
             if (fragmentSpread.getName().equals(initialName)) {
-                String message = i18n("NoFragmentCycles.cyclesNotAllowed", FragmentCycle);
+                String message = i18n(FragmentCycle, "NoFragmentCycles.cyclesNotAllowed");
                 addError(FragmentCycle, spreadPath, message);
                 continue;
             }

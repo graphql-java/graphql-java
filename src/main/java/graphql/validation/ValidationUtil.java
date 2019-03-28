@@ -2,6 +2,7 @@ package graphql.validation;
 
 
 import graphql.Assert;
+import graphql.i18n.I18N;
 import graphql.language.ArrayValue;
 import graphql.language.ListType;
 import graphql.language.NonNullType;
