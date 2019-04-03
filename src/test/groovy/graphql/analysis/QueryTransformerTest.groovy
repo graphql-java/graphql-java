@@ -330,7 +330,7 @@ class QueryTransformerTest extends Specification {
                     a
                   }
                   ... on B {
-                    a
+                   b 
                   }
                 }
             }
@@ -361,7 +361,7 @@ class QueryTransformerTest extends Specification {
 
     }
 
-    def "transform starting in a selectionSet node"() {
+    def "transform starting in a selectionSet node belonging to an interface"() {
         def schema = TestUtil.schema("""
             type Query {
                 root: SomeInterface
@@ -402,6 +402,58 @@ class QueryTransformerTest extends Specification {
         def newNode = queryTransformer.transform(visitor)
         then:
         printAstCompact(newNode) == "{field1X field2}"
+
+    }
+
+    def "transform starting in a selectionSet node belonging to an union"() {
+        def schema = TestUtil.schema("""
+        type Query {
+            root: SomeUnion
+        }
+        union SomeUnion = A | B
+        type A  {
+            a: String
+        }
+        type B  {
+            b: String
+        }
+        """)
+        def query = TestUtil.parseQuery('''
+            {
+                root {
+                  __typename
+                  ... on A {
+                    a
+                  }
+                  ... on B {
+                    b
+                  }
+                }
+            }
+            ''')
+        def rootField = (query.children[0] as OperationDefinition).selectionSet.selections[0] as Field
+        QueryTransformer queryTransformer = QueryTransformer.newQueryTransformer()
+                .schema(schema)
+                .root(rootField.getSelectionSet())
+                .rootParentType(schema.getType("SomeUnion") as GraphQLFieldsContainer)
+                .fragmentsByName([:])
+                .variables([:])
+                .build()
+
+        def visitor = new QueryVisitorStub() {
+            @Override
+            void visitField(QueryVisitorFieldEnvironment env) {
+                if (env.field.name == "a") {
+                    changeNode(env.traverserContext, env.field.transform({ builder -> builder.name("aX") }))
+                }
+            }
+        }
+
+
+        when:
+        def newNode = queryTransformer.transform(visitor)
+        then:
+        printAstCompact(newNode) == "{__typename ... on A {aX} ... on B {b}}"
 
     }
 }
