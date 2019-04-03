@@ -4,6 +4,7 @@ import graphql.PublicApi;
 import graphql.language.FragmentDefinition;
 import graphql.language.Node;
 import graphql.language.NodeTraverser.LeaveOrEnter;
+import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.util.TraversalControl;
@@ -37,12 +38,12 @@ public class QueryTransformer {
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final Map<String, Object> variables;
 
-    private final GraphQLObjectType rootParentType;
+    private final GraphQLFieldsContainer rootParentType;
 
 
     private QueryTransformer(GraphQLSchema schema,
                              Node root,
-                             GraphQLObjectType rootParentType,
+                             GraphQLFieldsContainer rootParentType,
                              Map<String, FragmentDefinition> fragmentsByName,
                              Map<String, Object> variables) {
         this.schema = assertNotNull(schema, "schema can't be null");
@@ -97,7 +98,7 @@ public class QueryTransformer {
         private Map<String, Object> variables;
 
         private Node root;
-        private GraphQLObjectType rootParentType;
+        private GraphQLFieldsContainer rootParentType;
         private Map<String, FragmentDefinition> fragmentsByName;
 
 
@@ -144,7 +145,7 @@ public class QueryTransformer {
          *
          * @return this builder
          */
-        public Builder rootParentType(GraphQLObjectType rootParentType) {
+        public Builder rootParentType(GraphQLFieldsContainer rootParentType) {
             this.rootParentType = rootParentType;
             return this;
         }
@@ -162,7 +163,7 @@ public class QueryTransformer {
         }
 
         /**
-         * @return a built {@link QueryTransformer} object
+
          */
         public QueryTransformer build() {
             return new QueryTransformer(schema, root, rootParentType, fragmentsByName, variables);

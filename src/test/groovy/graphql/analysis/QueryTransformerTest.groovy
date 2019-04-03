@@ -4,9 +4,11 @@ import graphql.TestUtil
 import graphql.language.Document
 import graphql.language.Field
 import graphql.language.NodeUtil
+import graphql.language.OperationDefinition
 import graphql.language.SelectionSet
 import graphql.language.TypeName
 import graphql.parser.Parser
+import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
@@ -259,5 +261,50 @@ class QueryTransformerTest extends Specification {
         then:
         printAstCompact(newFragment) ==
                 "fragment newFragName on newTypeName {fooA {midA {newChild1 newChild2}}}"
+    }
+
+    def "transform interfaces fields"() {
+        def schema = TestUtil.schema("""
+            type Query {
+                root: SomeInterface
+            }
+            interface SomeInterface {
+                field1: String
+                field2: String
+            }
+        """)
+        def query = TestUtil.parseQuery('''
+            {
+                root {
+                   field1
+                   field2 
+                }
+            }
+            ''')
+        def rootField = (query.children[0] as OperationDefinition).selectionSet.selections[0] as Field
+        def field1 = rootField.selectionSet.selections[0] as Field
+        QueryTransformer queryTransformer = QueryTransformer.newQueryTransformer()
+                .schema(schema)
+                .root(field1)
+                .rootParentType(schema.getType("SomeInterface") as GraphQLFieldsContainer)
+                .fragmentsByName([:])
+                .variables([:])
+                .build()
+
+        def visitor = new QueryVisitorStub() {
+            @Override
+            void visitField(QueryVisitorFieldEnvironment env) {
+                if (env.field.name == "field1") {
+                    changeNode(env.traverserContext, env.field.transform({ builder -> builder.name("field1X") }))
+                }
+            }
+        }
+
+
+        when:
+        def newFragment = queryTransformer.transform(visitor)
+        then:
+        printAstCompact(newFragment) == "field1X"
+
     }
 }
