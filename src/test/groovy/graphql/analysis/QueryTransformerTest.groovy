@@ -360,4 +360,48 @@ class QueryTransformerTest extends Specification {
         visitedTypeNameField
 
     }
+
+    def "transform starting in a selectionSet node"() {
+        def schema = TestUtil.schema("""
+            type Query {
+                root: SomeInterface
+            }
+            interface SomeInterface {
+                field1: String
+                field2: String
+            }
+        """)
+        def query = TestUtil.parseQuery('''
+            {
+                root {
+                   field1
+                   field2 
+                }
+            }
+            ''')
+        def rootField = (query.children[0] as OperationDefinition).selectionSet.selections[0] as Field
+        QueryTransformer queryTransformer = QueryTransformer.newQueryTransformer()
+                .schema(schema)
+                .root(rootField.getSelectionSet())
+                .rootParentType(schema.getType("SomeInterface") as GraphQLFieldsContainer)
+                .fragmentsByName([:])
+                .variables([:])
+                .build()
+
+        def visitor = new QueryVisitorStub() {
+            @Override
+            void visitField(QueryVisitorFieldEnvironment env) {
+                if (env.field.name == "field1") {
+                    changeNode(env.traverserContext, env.field.transform({ builder -> builder.name("field1X") }))
+                }
+            }
+        }
+
+
+        when:
+        def newNode = queryTransformer.transform(visitor)
+        then:
+        printAstCompact(newNode) == "{field1X field2}"
+
+    }
 }
