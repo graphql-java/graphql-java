@@ -76,10 +76,10 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
             TypeName typeCondition = inlineFragment.getTypeCondition();
             fragmentCondition = (GraphQLCompositeType) schema.getType(typeCondition.getName());
         } else {
-            fragmentCondition = parentEnv.getRawType();
+            fragmentCondition = parentEnv.getUnwrappedOutputType();
         }
         // for unions we only have other fragments inside
-        context.setVar(QueryTraversalContext.class, new QueryTraversalContext(fragmentCondition, fragmentCondition, parentEnv.getEnvironment(), inlineFragment));
+        context.setVar(QueryTraversalContext.class, new QueryTraversalContext(fragmentCondition, parentEnv.getEnvironment(), inlineFragment));
         return TraversalControl.CONTINUE;
     }
 
@@ -100,7 +100,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         QueryTraversalContext parentEnv = context.getVarFromParents(QueryTraversalContext.class);
         GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(node.getTypeCondition().getName());
         context
-                .setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, typeCondition, parentEnv.getEnvironment(), node));
+                .setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, parentEnv.getEnvironment(), node));
         return TraversalControl.CONTINUE;
     }
 
@@ -129,7 +129,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         assertNotNull(typeCondition, "Invalid type condition '%s' in fragment '%s'", fragmentDefinition.getTypeCondition().getName(),
                 fragmentDefinition.getName());
         context
-                .setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, typeCondition, parentEnv.getEnvironment(), fragmentDefinition));
+                .setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, parentEnv.getEnvironment(), fragmentDefinition));
         return TraversalControl.CONTINUE;
     }
 
@@ -137,7 +137,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
     public TraversalControl visitField(Field field, TraverserContext<Node> context) {
         QueryTraversalContext parentEnv = context.getVarFromParents(QueryTraversalContext.class);
 
-        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, parentEnv.getRawType(), field.getName());
+        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, (GraphQLCompositeType) unwrapAll(parentEnv.getOutputType()), field.getName());
         boolean isTypeNameIntrospectionField = fieldDefinition == Introspection.TypeNameMetaFieldDef;
         GraphQLFieldsContainer fieldsContainer = !isTypeNameIntrospectionField ? (GraphQLFieldsContainer) unwrapAll(parentEnv.getOutputType()) : null;
         GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry();
@@ -166,8 +166,8 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
 
         GraphQLUnmodifiedType unmodifiedType = unwrapAll(fieldDefinition.getType());
         QueryTraversalContext fieldEnv = (unmodifiedType instanceof GraphQLCompositeType)
-                ? new QueryTraversalContext(fieldDefinition.getType(), (GraphQLCompositeType) unmodifiedType, environment, field)
-                : new QueryTraversalContext(null, null, environment, field);// Terminal (scalar) node, EMPTY FRAME
+                ? new QueryTraversalContext(fieldDefinition.getType(), environment, field)
+                : new QueryTraversalContext(null, environment, field);// Terminal (scalar) node, EMPTY FRAME
 
 
         context.setVar(QueryTraversalContext.class, fieldEnv);

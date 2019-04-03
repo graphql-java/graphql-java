@@ -10,6 +10,7 @@ import graphql.language.TypeName
 import graphql.parser.Parser
 import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLUnionType
 import spock.lang.Specification
 
 import static graphql.language.AstPrinter.printAstCompact
@@ -263,7 +264,7 @@ class QueryTransformerTest extends Specification {
                 "fragment newFragName on newTypeName {fooA {midA {newChild1 newChild2}}}"
     }
 
-    def "transform interfaces fields"() {
+    def "transform starting in a interface field"() {
         def schema = TestUtil.schema("""
             type Query {
                 root: SomeInterface
@@ -302,9 +303,61 @@ class QueryTransformerTest extends Specification {
 
 
         when:
-        def newFragment = queryTransformer.transform(visitor)
+        def newNode = queryTransformer.transform(visitor)
         then:
-        printAstCompact(newFragment) == "field1X"
+        printAstCompact(newNode) == "field1X"
+
+    }
+
+    def "transform starting in a union field"() {
+        def schema = TestUtil.schema("""
+            type Query {
+                root: SomeUnion
+            }
+            union SomeUnion = A | B
+            type A  {
+                a: String
+            }
+            type B  {
+                b: String
+            }
+        """)
+        def query = TestUtil.parseQuery('''
+            {
+                root {
+                  __typename
+                  ... on A {
+                    a
+                  }
+                  ... on B {
+                    a
+                  }
+                }
+            }
+            ''')
+        def rootField = (query.children[0] as OperationDefinition).selectionSet.selections[0] as Field
+        def typeNameField = rootField.selectionSet.selections[0] as Field
+        QueryTransformer queryTransformer = QueryTransformer.newQueryTransformer()
+                .schema(schema)
+                .root(typeNameField)
+                .rootParentType(schema.getType("SomeUnion") as GraphQLUnionType)
+                .fragmentsByName([:])
+                .variables([:])
+                .build()
+
+        boolean visitedTypeNameField
+        def visitor = new QueryVisitorStub() {
+            @Override
+            void visitField(QueryVisitorFieldEnvironment env) {
+                visitedTypeNameField = env.isTypeNameIntrospectionField()
+            }
+        }
+
+
+        when:
+        queryTransformer.transform(visitor)
+        then:
+        visitedTypeNameField
 
     }
 }

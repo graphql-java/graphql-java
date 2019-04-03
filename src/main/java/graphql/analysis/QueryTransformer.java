@@ -4,8 +4,7 @@ import graphql.PublicApi;
 import graphql.language.FragmentDefinition;
 import graphql.language.Node;
 import graphql.language.NodeTraverser.LeaveOrEnter;
-import graphql.schema.GraphQLFieldsContainer;
-import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLSchema;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -38,12 +37,12 @@ public class QueryTransformer {
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final Map<String, Object> variables;
 
-    private final GraphQLFieldsContainer rootParentType;
+    private final GraphQLCompositeType rootParentType;
 
 
     private QueryTransformer(GraphQLSchema schema,
                              Node root,
-                             GraphQLFieldsContainer rootParentType,
+                             GraphQLCompositeType rootParentType,
                              Map<String, FragmentDefinition> fragmentsByName,
                              Map<String, Object> variables) {
         this.schema = assertNotNull(schema, "schema can't be null");
@@ -69,7 +68,7 @@ public class QueryTransformer {
         NodeVisitorWithTypeTracking nodeVisitor = new NodeVisitorWithTypeTracking(queryVisitor, noOp, variables, schema, fragmentsByName);
 
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
-        rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, rootParentType, null, null));
+        rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, null, null));
 
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
 
@@ -98,7 +97,7 @@ public class QueryTransformer {
         private Map<String, Object> variables;
 
         private Node root;
-        private GraphQLFieldsContainer rootParentType;
+        private GraphQLCompositeType rootParentType;
         private Map<String, FragmentDefinition> fragmentsByName;
 
 
@@ -145,13 +144,13 @@ public class QueryTransformer {
          *
          * @return this builder
          */
-        public Builder rootParentType(GraphQLFieldsContainer rootParentType) {
+        public Builder rootParentType(GraphQLCompositeType rootParentType) {
             this.rootParentType = rootParentType;
             return this;
         }
 
         /**
-         * Fragment by name map. Needs to be provided together with a {@link Builder#root(Node)} and {@link Builder#rootParentType(GraphQLObjectType)}
+         * Fragment by name map. Needs to be provided together with a {@link Builder#root(Node)} and {@link Builder#rootParentType(GraphQLCompositeType)}
          *
          * @param fragmentsByName the map of fragments
          *
