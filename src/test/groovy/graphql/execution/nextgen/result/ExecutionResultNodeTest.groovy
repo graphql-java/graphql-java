@@ -1,16 +1,12 @@
 package graphql.execution.nextgen.result
 
-import graphql.Scalars
-import graphql.execution.nextgen.FetchedValueAnalysis
+
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
 import static graphql.GraphqlErrorBuilder.newError
-import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo
-import static graphql.execution.FetchedValue.newFetchedValue
-import static graphql.execution.nextgen.FetchedValueAnalysis.FetchedValueType.SCALAR
-import static graphql.execution.nextgen.FetchedValueAnalysis.newFetchedValueAnalysis
+import static graphql.execution.nextgen.result.ExecutionResultNodeTestUtils.fvaForValue
 
 class ExecutionResultNodeTest extends Specification {
 
@@ -18,23 +14,10 @@ class ExecutionResultNodeTest extends Specification {
     def startingErrors = [newError().message("Starting").build()]
 
     @Shared
-    def startingFetchValueAnalysis = fetchedValueAnalysis("Starting")
+    def startingFetchValueAnalysis = fvaForValue("Starting")
 
     @Shared
     def startingChildren = [new LeafExecutionResultNode(startingFetchValueAnalysis, null)]
-
-    static FetchedValueAnalysis fetchedValueAnalysis(String value) {
-        def executionStepInfo = newExecutionStepInfo().type(Scalars.GraphQLString).build()
-        def fetchedValue = newFetchedValue()
-                .fetchedValue(value)
-                .rawFetchedValue(value).build()
-        newFetchedValueAnalysis()
-                .executionStepInfo(executionStepInfo)
-                .valueType(SCALAR)
-                .fetchedValue(fetchedValue)
-                .completedValue(value)
-                .build()
-    }
 
     @Unroll
     def "construction of objects with new errors works"() {
@@ -61,7 +44,7 @@ class ExecutionResultNodeTest extends Specification {
     def "construction of objects with new fetched value analysis  works"() {
 
         given:
-        def newFetchValueAnalysis = fetchedValueAnalysis("hi")
+        def newFetchValueAnalysis = fvaForValue("hi")
 
         expect:
         ExecutionResultNode nodeUnderTest = node

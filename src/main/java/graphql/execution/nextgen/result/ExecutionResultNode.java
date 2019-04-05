@@ -88,4 +88,15 @@ public abstract class ExecutionResultNode {
      * @return a new ExecutionResultNode with the new errors
      */
     public abstract ExecutionResultNode withNewErrors(List<GraphQLError> errors);
+
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" +
+                "fva=" + fetchedValueAnalysis +
+                ", children=" + children +
+                ", errors=" + errors +
+                ", nonNullableEx=" + nonNullableFieldWasNullException +
+                '}';
+    }
 }
