@@ -113,7 +113,7 @@ public class ExecutionResultImpl implements ExecutionResult {
         private List<GraphQLError> errors = new ArrayList<>();
         private Map<Object, Object> extensions;
 
-        public Builder from(ExecutionResultImpl executionResult) {
+        public Builder from(ExecutionResult executionResult) {
             dataPresent = executionResult.isDataPresent();
             data = executionResult.getData();
             errors = new ArrayList<>(executionResult.getErrors());
