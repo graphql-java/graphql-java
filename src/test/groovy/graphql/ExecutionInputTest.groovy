@@ -82,5 +82,8 @@ class ExecutionInputTest extends Specification {
         def executionInput = ExecutionInput.newExecutionInput("{ q }").build()
         then:
         executionInput.query == "{ q }"
+        executionInput.cacheControl != null
+        executionInput.dataLoaderRegistry != null
+        executionInput.variables == [:]
     }
 }

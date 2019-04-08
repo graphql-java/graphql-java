@@ -193,10 +193,10 @@ class WiringFactoryTest extends Specification {
 
         GraphQLObjectType humanType = schema.getType("Human") as GraphQLObjectType
 
-        def friendsDataFetcher = schema.getCodeRegistry().getDataFetcher(humanType,humanType.getFieldDefinition("friends")) as NamedDataFetcher
+        def friendsDataFetcher = schema.getCodeRegistry().getDataFetcher(humanType, humanType.getFieldDefinition("friends")) as NamedDataFetcher
         friendsDataFetcher.name == "friends"
 
-        def cyborgDataFetcher = schema.getCodeRegistry().getDataFetcher(humanType,humanType.getFieldDefinition("cyborg")) as NamedDataFetcher
+        def cyborgDataFetcher = schema.getCodeRegistry().getDataFetcher(humanType, humanType.getFieldDefinition("cyborg")) as NamedDataFetcher
         cyborgDataFetcher.name == "cyborg"
 
         GraphQLScalarType longScalar = schema.getType("Long") as GraphQLScalarType
@@ -314,7 +314,7 @@ class WiringFactoryTest extends Specification {
         GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
 
         expect:
-        def fetcher = schema.getCodeRegistry().getDataFetcher(type,type.getFieldDefinition("homePlanet"))
+        def fetcher = schema.getCodeRegistry().getDataFetcher(type, type.getFieldDefinition("homePlanet"))
         fetcher instanceof PropertyDataFetcher
 
         PropertyDataFetcher propertyDataFetcher = fetcher as PropertyDataFetcher
@@ -328,5 +328,29 @@ class WiringFactoryTest extends Specification {
         PropertyDataFetcher propertyDataFetcher2 = fetcher2 as PropertyDataFetcher
         propertyDataFetcher2.getPropertyName() == "name"
 
+    }
+
+    def "Name"() {
+        WiringFactory wf = new WiringFactory() {
+            @Override
+            boolean providesDataFetcherFactory(FieldWiringEnvironment environment) {
+                def fieldDef = environment.getFieldDefinition();
+                if (fieldDef.getName() == "class") {
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
+                return new DataFetcher() {
+                    @Override
+                    Object get(DataFetchingEnvironment env) throws Exception {
+                        def sourceObject = env.getSource()
+                        return sourceObject.getClass().getSimpleName()
+                    }
+                }
+            }
+        }
     }
 }
