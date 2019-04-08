@@ -179,7 +179,7 @@ public class CacheControl {
 
         putHintsInExtensionsMap(currentExtensions);
 
-        return ExecutionResultImpl.newExecutionResult().from((ExecutionResultImpl) executionResult)
+        return ExecutionResultImpl.newExecutionResult().from(executionResult)
                 .extensions(currentExtensions).build();
     }
 
