@@ -6,7 +6,7 @@ import spock.lang.Specification
 class ExecutionResultImplTest extends Specification {
 
     def KNOWN_ERRORS = [new InvalidSyntaxError(new SourceLocation(666, 664), "Yikes")]
-    def EXPECTED_SPEC_ERRORS = [['message': 'Yikes', 'locations': [[line: 666, column: 664]]]]
+    def EXPECTED_SPEC_ERRORS = [['message': 'Yikes', 'locations': [[line: 666, column: 664]], extensions:[classification:"InvalidSyntax"]]]
 
 
     def "data with no errors"() {
@@ -152,8 +152,8 @@ class ExecutionResultImplTest extends Specification {
 
         specMap.size() == 1
         specMap["errors"] == [
-                ['message': 'Yikes', 'locations': [[line: 666, column: 664]]],
-                ['message': 'Yowza', 'locations': [[line: 966, column: 964]]]
+                ['message': 'Yikes', 'locations': [[line: 666, column: 664]], extensions:[classification:"InvalidSyntax"]],
+                ['message': 'Yowza', 'locations': [[line: 966, column: 964]], extensions:[classification:"InvalidSyntax"]]
         ]
     }
 

@@ -24,8 +24,23 @@ public class GraphqlErrorHelper {
         if (error.getPath() != null) {
             errorMap.put("path", error.getPath());
         }
-        if (error.getExtensions() != null) {
-            errorMap.put("extensions", error.getExtensions());
+
+        Map<String, Object> extensions = error.getExtensions();
+        ErrorClassification errorClassification = error.getErrorType();
+        //
+        // we move the ErrorClassification into extensions which allows
+        // downstream people to see them but still be spec compliant
+        if (errorClassification != null) {
+            if (extensions != null) {
+                extensions = new LinkedHashMap<>(extensions);
+            } else {
+                extensions = new LinkedHashMap<>();
+            }
+            extensions.put("classification", errorClassification.toSpecification(error));
+        }
+
+        if (extensions != null) {
+            errorMap.put("extensions", extensions);
         }
         return errorMap;
     }
