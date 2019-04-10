@@ -4,10 +4,11 @@ import graphql.language.OperationDefinition;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import static graphql.validation.ValidationErrorType.DuplicateOperationName;
 
 /**
  * A GraphQL document is only valid if all defined operations have unique names.
@@ -32,13 +33,10 @@ public class UniqueOperationNames extends AbstractRule {
         }
 
         if (operationNames.contains(name)) {
-            addError(ValidationErrorType.DuplicateOperationName, operationDefinition.getSourceLocation(), duplicateOperationNameMessage(name));
+            String message = i18n(DuplicateOperationName, "UniqueOperationNames.oneOperation", name);
+            addError(DuplicateOperationName, operationDefinition.getSourceLocation(), message);
         } else {
             operationNames.add(name);
         }
-    }
-
-    static String duplicateOperationNameMessage(String definitionName) {
-        return String.format("There can be only one operation named '%s'", definitionName);
     }
 }

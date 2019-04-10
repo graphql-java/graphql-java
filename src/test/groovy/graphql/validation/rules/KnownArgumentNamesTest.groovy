@@ -14,9 +14,9 @@ import spock.lang.Specification
 import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLString
 
-class KnownArgumentNamesTest extends Specification {
+class KnownArgumentNamesTest extends ValidationRuleTest {
 
-    ValidationContext validationContext = Mock(ValidationContext)
+    ValidationContext validationContext = mockValidationContext()
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     KnownArgumentNames knownArgumentNames = new KnownArgumentNames(validationContext, errorCollector)
 

@@ -10,12 +10,13 @@ import graphql.validation.DocumentVisitor;
 import graphql.validation.LanguageTraversal;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static graphql.validation.ValidationErrorType.FragmentCycle;
 
 public class NoFragmentCycles extends AbstractRule {
 
@@ -76,8 +77,8 @@ public class NoFragmentCycles extends AbstractRule {
         for (FragmentSpread fragmentSpread : fragmentSpreads) {
 
             if (fragmentSpread.getName().equals(initialName)) {
-                String message = "Fragment cycles not allowed";
-                addError(ValidationErrorType.FragmentCycle, spreadPath, message);
+                String message = i18n(FragmentCycle, "NoFragmentCycles.cyclesNotAllowed");
+                addError(FragmentCycle, spreadPath, message);
                 continue;
             }
             for (FragmentSpread spread : spreadPath) {

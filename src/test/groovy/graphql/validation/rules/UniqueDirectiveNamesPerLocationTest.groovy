@@ -8,7 +8,7 @@ import graphql.validation.ValidationErrorType
 import graphql.validation.Validator
 import spock.lang.Specification
 
-class UniqueDirectiveNamesPerLocationTest extends Specification {
+class UniqueDirectiveNamesPerLocationTest extends ValidationRuleTest {
 
     def '5.7.3 Directives Are Unique Per Location - FragmentDefinition'() {
         def query = '''
@@ -148,6 +148,6 @@ class UniqueDirectiveNamesPerLocationTest extends Specification {
 
     List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
-        return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document)
+        return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.getDefault())
     }
 }

@@ -12,9 +12,9 @@ import graphql.validation.ValidationErrorType
 import graphql.validation.Validator
 import spock.lang.Specification
 
-class VariablesAreInputTypesTest extends Specification {
+class VariablesAreInputTypesTest extends ValidationRuleTest {
 
-    ValidationContext validationContext = Mock(ValidationContext)
+    ValidationContext validationContext = mockValidationContext()
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     VariablesAreInputTypes variablesAreInputTypes = new VariablesAreInputTypes(validationContext, errorCollector)
 
@@ -65,7 +65,7 @@ class VariablesAreInputTypesTest extends Specification {
         def validator = new Validator()
 
         when:
-        def validationErrors = validator.validateDocument(graphQlSchema, document)
+        def validationErrors = validator.validateDocument(graphQlSchema, document, Locale.getDefault())
 
         then:
         !validationErrors.empty

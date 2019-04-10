@@ -11,11 +11,12 @@ import graphql.language.OperationDefinition;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
 
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+
+import static graphql.validation.ValidationErrorType.DuplicateDirectiveName;
 
 /**
  * https://facebook.github.io/graphql/June2018/#sec-Directives-Are-Unique-Per-Location
@@ -61,16 +62,15 @@ public class UniqueDirectiveNamesPerLocation extends AbstractRule {
         directives.forEach(directive -> {
             String name = directive.getName();
             if (names.contains(name)) {
-                addError(ValidationErrorType.DuplicateDirectiveName,
+                String message = i18n(DuplicateDirectiveName, "UniqueDirectiveNamesPerLocation.uniqueDirectives",
+                        name, directivesContainer.getClass().getSimpleName());
+                addError(DuplicateDirectiveName,
                         directive.getSourceLocation(),
-                        duplicateDirectiveNameMessage(name, directivesContainer.getClass().getSimpleName()));
+                        message);
             } else {
                 names.add(name);
             }
         });
     }
 
-    private String duplicateDirectiveNameMessage(String directiveName, String location) {
-        return String.format("Directives must be uniquely named within a location. The directive '%s' used on a '%s' is not unique.", directiveName, location);
-    }
 }

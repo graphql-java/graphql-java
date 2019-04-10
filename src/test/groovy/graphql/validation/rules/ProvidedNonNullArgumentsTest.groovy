@@ -15,9 +15,9 @@ import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
 
-class ProvidedNonNullArgumentsTest extends Specification {
+class ProvidedNonNullArgumentsTest extends ValidationRuleTest {
 
-    ValidationContext validationContext = Mock(ValidationContext)
+    ValidationContext validationContext = mockValidationContext()
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     ProvidedNonNullArguments providedNonNullArguments = new ProvidedNonNullArguments(validationContext, errorCollector)
 

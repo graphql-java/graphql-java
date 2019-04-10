@@ -16,9 +16,9 @@ import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
-class VariableTypesMatchRuleTest extends Specification {
+class VariableTypesMatchRuleTest extends ValidationRuleTest {
 
-    ValidationContext validationContext = Mock(ValidationContext)
+    ValidationContext validationContext = mockValidationContext()
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     VariableTypesMatchRule variableTypesMatchRule
     VariablesTypesMatcher variablesTypeMatcher
@@ -71,6 +71,6 @@ class VariableTypesMatchRuleTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.VariableTypeMismatch)
-        errorCollector.errors[0].message.contains("Variable type '[String]!' doesn't match expected type '[String!]'")
+        errorCollector.errors[0].message.contains("Variable type '[String]!' does not match expected type '[String!]'")
     }
 }

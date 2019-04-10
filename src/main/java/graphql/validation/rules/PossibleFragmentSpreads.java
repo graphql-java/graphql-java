@@ -15,10 +15,11 @@ import graphql.schema.GraphQLUnionType;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
 
 import java.util.Collections;
 import java.util.List;
+
+import static graphql.validation.ValidationErrorType.InvalidFragmentType;
 
 public class PossibleFragmentSpreads extends AbstractRule {
 
@@ -34,9 +35,8 @@ public class PossibleFragmentSpreads extends AbstractRule {
         if (fragType == null || parentType == null) return;
 
         if (isValidTargetCompositeType(fragType) && isValidTargetCompositeType(parentType) && !doTypesOverlap(fragType, parentType)) {
-            String message = String.format("Fragment cannot be spread here as objects of " +
-                    "type %s can never be of type %s", parentType.getName(), fragType.getName());
-            addError(ValidationErrorType.InvalidFragmentType, inlineFragment.getSourceLocation(), message);
+            String message = i18n(InvalidFragmentType, "PossibleFragmentSpreads.inlineIncompatibleTypes", parentType.getName(), fragType.getName());
+            addError(InvalidFragmentType, inlineFragment.getSourceLocation(), message);
         }
     }
 
@@ -49,9 +49,8 @@ public class PossibleFragmentSpreads extends AbstractRule {
         if (typeCondition == null || parentType == null) return;
 
         if (isValidTargetCompositeType(typeCondition) && isValidTargetCompositeType(parentType) && !doTypesOverlap(typeCondition, parentType)) {
-            String message = String.format("Fragment %s cannot be spread here as objects of " +
-                    "type %s can never be of type %s", fragmentSpread.getName(), parentType.getName(), typeCondition.getName());
-            addError(ValidationErrorType.InvalidFragmentType, fragmentSpread.getSourceLocation(), message);
+            String message = i18n(InvalidFragmentType, "PossibleFragmentSpreads.fragmentIncompatibleTypes", fragmentSpread.getName(), parentType.getName(), typeCondition.getName());
+            addError(InvalidFragmentType, fragmentSpread.getSourceLocation(), message);
         }
     }
 

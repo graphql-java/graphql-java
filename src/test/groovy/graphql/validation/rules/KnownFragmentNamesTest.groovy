@@ -6,9 +6,9 @@ import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
-class KnownFragmentNamesTest extends Specification {
+class KnownFragmentNamesTest extends ValidationRuleTest {
 
-    ValidationContext validationContext = Mock(ValidationContext)
+    ValidationContext validationContext = mockValidationContext()
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     KnownFragmentNames knownFragmentNames = new KnownFragmentNames(validationContext, errorCollector)
 

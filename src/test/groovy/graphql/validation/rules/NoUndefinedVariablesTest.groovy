@@ -10,7 +10,7 @@ import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
-class NoUndefinedVariablesTest extends Specification {
+class NoUndefinedVariablesTest extends ValidationRuleTest {
 
 
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
@@ -18,7 +18,7 @@ class NoUndefinedVariablesTest extends Specification {
 
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
-        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document)
+        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document, assertingI18N())
         NoUndefinedVariables noUndefinedVariables = new NoUndefinedVariables(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
 

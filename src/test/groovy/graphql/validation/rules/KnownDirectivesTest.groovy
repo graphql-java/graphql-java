@@ -11,9 +11,9 @@ import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
-class KnownDirectivesTest extends Specification {
+class KnownDirectivesTest extends ValidationRuleTest {
 
-    ValidationContext validationContext = Mock(ValidationContext)
+    ValidationContext validationContext = mockValidationContext()
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     KnownDirectives knownDirectives = new KnownDirectives(validationContext, errorCollector)
 

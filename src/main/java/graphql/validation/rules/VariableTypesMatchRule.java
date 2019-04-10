@@ -11,10 +11,11 @@ import graphql.schema.GraphQLTypeUtil;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static graphql.validation.ValidationErrorType.VariableTypeMismatch;
 
 public class VariableTypesMatchRule extends AbstractRule {
 
@@ -59,10 +60,10 @@ public class VariableTypesMatchRule extends AbstractRule {
         }
         if (!variablesTypesMatcher.doesVariableTypesMatch(variableType, variableDefinition.getDefaultValue(), expectedType)) {
             GraphQLType effectiveType = variablesTypesMatcher.effectiveType(variableType, variableDefinition.getDefaultValue());
-            String message = String.format("Variable type '%s' doesn't match expected type '%s'",
+            String message = i18n(VariableTypeMismatch, "VariableTypesMatchRule.unexpectedType",
                     GraphQLTypeUtil.simplePrint(effectiveType),
                     GraphQLTypeUtil.simplePrint(expectedType));
-            addError(ValidationErrorType.VariableTypeMismatch, variableReference.getSourceLocation(), message);
+            addError(VariableTypeMismatch, variableReference.getSourceLocation(), message);
         }
     }
 

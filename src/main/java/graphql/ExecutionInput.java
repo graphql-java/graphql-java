@@ -4,6 +4,7 @@ import graphql.cachecontrol.CacheControl;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
@@ -22,14 +23,15 @@ public class ExecutionInput {
     private final Map<String, Object> variables;
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
+    private final Locale locale;
 
 
     public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables) {
-        this(query, operationName, context, root, variables, new DataLoaderRegistry(), null);
+        this(query, operationName, context, root, variables, new DataLoaderRegistry(), null, Locale.getDefault());
     }
 
     @Internal
-    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl) {
+    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, Locale locale) {
         this.query = query;
         this.operationName = operationName;
         this.context = context;
@@ -37,6 +39,7 @@ public class ExecutionInput {
         this.variables = variables;
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.cacheControl = cacheControl;
+        this.locale = locale;
     }
 
     /**
@@ -89,6 +92,13 @@ public class ExecutionInput {
     }
 
     /**
+     * @return the {@link java.util.Locale} that the query is executing within
+     */
+    public Locale getLocale() {
+        return locale;
+    }
+
+    /**
      * This helps you transform the current ExecutionInput object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
      *
@@ -104,7 +114,8 @@ public class ExecutionInput {
                 .root(this.root)
                 .dataLoaderRegistry(this.dataLoaderRegistry)
                 .cacheControl(this.cacheControl)
-                .variables(this.variables);
+                .variables(this.variables)
+                .locale(this.locale);
 
         builderConsumer.accept(builder);
 
@@ -151,6 +162,7 @@ public class ExecutionInput {
         private Map<String, Object> variables = Collections.emptyMap();
         private DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
         private CacheControl cacheControl;
+        private Locale locale =  Locale.getDefault();
 
         public Builder query(String query) {
             this.query = query;
@@ -213,8 +225,20 @@ public class ExecutionInput {
             return this;
         }
 
+        /**
+         * This sets the locale that the query is executing in.
+         *
+         * @param locale the locale to use
+         *
+         * @return this builder
+         */
+        public Builder locale(Locale locale) {
+            this.locale = locale;
+            return this;
+        }
+
         public ExecutionInput build() {
-            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry, cacheControl);
+            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry, cacheControl, locale);
         }
     }
 }

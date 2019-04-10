@@ -37,7 +37,7 @@ class AssertTest extends Specification {
 
         where:
         value | format     | arg   || expectedMessage
-        null  | "error %s" | "msg" || "error msg"
+        null  | "error %s" | "i18n" || "error i18n"
         null  | "code %d"  | 1     || "code 1"
         null  | "code"     | null  || "code"
     }
@@ -70,7 +70,7 @@ class AssertTest extends Specification {
 
         where:
         format     | arg   || expectedMessage
-        "error %s" | "msg" || "error msg"
+        "error %s" | "i18n" || "error i18n"
         "code %d"  | 1     || "code 1"
         "code"     | null  || "code"
     }
@@ -85,7 +85,7 @@ class AssertTest extends Specification {
 
         where:
         value | format     | arg   || expectedMessage
-        null  | "error %s" | "msg" || "error msg"
+        null  | "error %s" | "i18n" || "error i18n"
         []    | "code %d"  | 1     || "code 1"
     }
 
@@ -115,7 +115,7 @@ class AssertTest extends Specification {
 
         where:
         format     | arg   || expectedMessage
-        "error %s" | "msg" || "error msg"
+        "error %s" | "i18n" || "error i18n"
         "code %d"  | 1     || "code 1"
         "code"     | null  || "code"
     }
@@ -129,7 +129,7 @@ class AssertTest extends Specification {
 
         where:
         name     | _
-        "msg"    | _
+        "i18n"    | _
         "__"     | _
         "_01"    | _
         "_a01b1" | _
@@ -147,7 +147,7 @@ class AssertTest extends Specification {
         where:
         name   | _
         "0abc" | _
-        "едц"  | _
+        "пїЅпїЅпїЅ"  | _
         "_()"  | _
     }
 }

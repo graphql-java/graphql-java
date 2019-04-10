@@ -5,6 +5,9 @@ import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
+import static graphql.validation.ValidationErrorType.FieldUndefined
+import static graphql.validation.ValidationErrorType.FieldsConflict
+import static graphql.validation.ValidationErrorType.MissingFieldArgument
 import static java.util.concurrent.CompletableFuture.completedFuture
 
 class DeferCallTest extends Specification {
@@ -28,7 +31,7 @@ class DeferCallTest extends Specification {
         errorSupport.onError(new ValidationError(ValidationErrorType.FieldsConflict))
 
         DeferredCall call = new DeferredCall({
-            completedFuture(new ExecutionResultImpl("some data", [new ValidationError(ValidationErrorType.FieldUndefined)]))
+            completedFuture(new ExecutionResultImpl("some data", [new ValidationError(FieldUndefined)]))
         }, errorSupport)
 
         when:
@@ -37,9 +40,8 @@ class DeferCallTest extends Specification {
 
         then:
         er.errors.size() == 3
-        er.errors[0].message.contains("Validation error of type FieldUndefined")
-        er.errors[1].message.contains("Validation error of type MissingFieldArgument")
-        er.errors[2].message.contains("Validation error of type FieldsConflict")
-
+        (er.errors[0] as ValidationError).validationErrorType == FieldUndefined
+        (er.errors[1] as ValidationError).validationErrorType == MissingFieldArgument
+        (er.errors[2] as ValidationError).validationErrorType == FieldsConflict
     }
 }

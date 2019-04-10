@@ -5,12 +5,11 @@ import graphql.language.TypeName
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
-import spock.lang.Specification
 
-class KnownTypeNamesTest extends Specification {
+class KnownTypeNamesTest extends ValidationRuleTest {
 
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-    ValidationContext validationContext = Mock(ValidationContext)
+    ValidationContext validationContext = mockValidationContext()
     KnownTypeNames knownTypeNames = new KnownTypeNames(validationContext, errorCollector)
 
     def "unknown types is an error"() {

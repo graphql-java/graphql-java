@@ -26,7 +26,7 @@ public class ValidationErrorCollector {
     public boolean containsValidationError(ValidationErrorType validationErrorType, String description) {
         for (ValidationError validationError : errors) {
             if (validationError.getValidationErrorType() == validationErrorType) {
-                return description == null || validationError.getDescription().equals(description);
+                return description == null || validationError.getDescription().contains(description);
             }
         }
         return false;

@@ -3,6 +3,8 @@ package graphql
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import graphql.validation.ValidationError
+import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
@@ -53,7 +55,7 @@ class IssueNonNullDefaultAttribute extends Specification {
         then:
         result.errors.size() == 1
         result.errors[0].errorType == ErrorType.ValidationError
-        result.errors[0].message == "Validation error of type WrongType: argument 'characterNumber' with value 'NullValue{}' must not be null @ 'name'"
+        (result.errors[0] as ValidationError).validationErrorType == ValidationErrorType.WrongType
         result.errors[0].locations == [new SourceLocation(4, 26)]
         result.data == null
 
