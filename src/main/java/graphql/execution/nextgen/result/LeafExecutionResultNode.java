@@ -21,7 +21,14 @@ public class LeafExecutionResultNode extends ExecutionResultNode {
     public LeafExecutionResultNode(FetchedValueAnalysis fetchedValueAnalysis,
                                    NonNullableFieldWasNullException nonNullableFieldWasNullException,
                                    List<GraphQLError> errors) {
-        super(fetchedValueAnalysis, nonNullableFieldWasNullException, Collections.emptyList(), errors);
+        this(fetchedValueAnalysis, nonNullableFieldWasNullException, errors, null);
+    }
+
+    private LeafExecutionResultNode(FetchedValueAnalysis fetchedValueAnalysis,
+                                    NonNullableFieldWasNullException nonNullableFieldWasNullException,
+                                    List<GraphQLError> errors,
+                                    Object context) {
+        super(fetchedValueAnalysis, nonNullableFieldWasNullException, Collections.emptyList(), errors, context);
     }
 
 
@@ -36,11 +43,16 @@ public class LeafExecutionResultNode extends ExecutionResultNode {
 
     @Override
     public ExecutionResultNode withNewFetchedValueAnalysis(FetchedValueAnalysis fetchedValueAnalysis) {
-        return new LeafExecutionResultNode(fetchedValueAnalysis, getNonNullableFieldWasNullException(), getErrors());
+        return new LeafExecutionResultNode(fetchedValueAnalysis, getNonNullableFieldWasNullException(), getErrors(), getContext());
     }
 
     @Override
     public ExecutionResultNode withNewErrors(List<GraphQLError> errors) {
-        return new LeafExecutionResultNode(getFetchedValueAnalysis(), getNonNullableFieldWasNullException(), new ArrayList<>(errors));
+        return new LeafExecutionResultNode(getFetchedValueAnalysis(), getNonNullableFieldWasNullException(), new ArrayList<>(errors), getContext());
+    }
+
+    @Override
+    public ExecutionResultNode withNewContext(Object context) {
+        return new LeafExecutionResultNode(getFetchedValueAnalysis(), getNonNullableFieldWasNullException(), getErrors(), context);
     }
 }

@@ -20,20 +20,34 @@ public abstract class ExecutionResultNode {
     private final NonNullableFieldWasNullException nonNullableFieldWasNullException;
     private final List<ExecutionResultNode> children;
     private final List<GraphQLError> errors;
+    private final Object context;
 
     protected ExecutionResultNode(FetchedValueAnalysis fetchedValueAnalysis,
                                   NonNullableFieldWasNullException nonNullableFieldWasNullException,
                                   List<ExecutionResultNode> children,
-                                  List<GraphQLError> errors) {
+                                  List<GraphQLError> errors,
+                                  Object context
+    ) {
         this.fetchedValueAnalysis = fetchedValueAnalysis;
         this.nonNullableFieldWasNullException = nonNullableFieldWasNullException;
         this.children = assertNotNull(children);
+        this.context = context;
         children.forEach(Assert::assertNotNull);
         this.errors = new ArrayList<>(errors);
     }
 
     public List<GraphQLError> getErrors() {
         return new ArrayList<>(errors);
+    }
+
+    /**
+     * Each node has a context object associated with it
+     *
+     * @return the context associated with this node
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getContext() {
+        return (T) context;
     }
 
     /*
@@ -89,6 +103,15 @@ public abstract class ExecutionResultNode {
      */
     public abstract ExecutionResultNode withNewErrors(List<GraphQLError> errors);
 
+    /**
+     * Creates a new ExecutionResultNode of the same specific type with a new context associated with it
+     *
+     * @param context the new context for this result node
+     *
+     * @return a new ExecutionResultNode with the new context
+     */
+    public abstract ExecutionResultNode withNewContext(Object context);
+
 
     @Override
     public String toString() {
@@ -96,6 +119,7 @@ public abstract class ExecutionResultNode {
                 "fva=" + fetchedValueAnalysis +
                 ", children=" + children +
                 ", errors=" + errors +
+                ", ctx=" + context +
                 ", nonNullableEx=" + nonNullableFieldWasNullException +
                 '}';
     }

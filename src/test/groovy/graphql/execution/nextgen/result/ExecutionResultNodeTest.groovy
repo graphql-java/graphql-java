@@ -86,4 +86,25 @@ class ExecutionResultNodeTest extends Specification {
         new ObjectExecutionResultNode(startingFetchValueAnalysis, startingChildren, startingErrors) | _
         new ListExecutionResultNode(startingFetchValueAnalysis, startingChildren, startingErrors)   | _
     }
+
+
+    @Unroll
+    def "construction of objects with new context works"() {
+
+        expect:
+        ExecutionResultNode nodeUnderTest = node
+        def className = node.getClass().getSimpleName()
+        node.getContext() == null
+        def newNode = nodeUnderTest.withNewContext(className)
+        newNode != nodeUnderTest
+        newNode.getContext() == className
+
+        where:
+
+        node                                                                                        | expectedValue
+        new RootExecutionResultNode(startingChildren, startingErrors)                               | _
+        new ObjectExecutionResultNode(startingFetchValueAnalysis, startingChildren, startingErrors) | _
+        new ListExecutionResultNode(startingFetchValueAnalysis, startingChildren, startingErrors)   | _
+        new LeafExecutionResultNode(startingFetchValueAnalysis, null, [])                           | _
+    }
 }

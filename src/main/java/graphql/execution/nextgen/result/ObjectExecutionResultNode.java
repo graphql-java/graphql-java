@@ -21,22 +21,34 @@ public class ObjectExecutionResultNode extends ExecutionResultNode {
     public ObjectExecutionResultNode(FetchedValueAnalysis fetchedValueAnalysis,
                                      List<ExecutionResultNode> children,
                                      List<GraphQLError> errors) {
-        super(fetchedValueAnalysis, ResultNodesUtil.newNullableException(fetchedValueAnalysis, children), children, errors);
+        this(fetchedValueAnalysis, children, errors, null);
+    }
+
+    protected ObjectExecutionResultNode(FetchedValueAnalysis fetchedValueAnalysis,
+                                        List<ExecutionResultNode> children,
+                                        List<GraphQLError> errors,
+                                        Object context) {
+        super(fetchedValueAnalysis, ResultNodesUtil.newNullableException(fetchedValueAnalysis, children), children, errors, context);
     }
 
 
     @Override
     public ObjectExecutionResultNode withNewChildren(List<ExecutionResultNode> children) {
-        return new ObjectExecutionResultNode(getFetchedValueAnalysis(), children, getErrors());
+        return new ObjectExecutionResultNode(getFetchedValueAnalysis(), children, getErrors(), getContext());
     }
 
     @Override
     public ExecutionResultNode withNewFetchedValueAnalysis(FetchedValueAnalysis fetchedValueAnalysis) {
-        return new ObjectExecutionResultNode(fetchedValueAnalysis, getChildren(), getErrors());
+        return new ObjectExecutionResultNode(fetchedValueAnalysis, getChildren(), getErrors(), getContext());
     }
 
     @Override
     public ExecutionResultNode withNewErrors(List<GraphQLError> errors) {
-        return new ObjectExecutionResultNode(getFetchedValueAnalysis(), getChildren(), new ArrayList<>(errors));
+        return new ObjectExecutionResultNode(getFetchedValueAnalysis(), getChildren(), new ArrayList<>(errors), getContext());
+    }
+
+    @Override
+    public ExecutionResultNode withNewContext(Object context) {
+        return new ObjectExecutionResultNode(getFetchedValueAnalysis(), getChildren(), getErrors(), context);
     }
 }

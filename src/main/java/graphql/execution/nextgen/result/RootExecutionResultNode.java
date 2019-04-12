@@ -11,13 +11,16 @@ import static graphql.Assert.assertShouldNeverHappen;
 
 public class RootExecutionResultNode extends ObjectExecutionResultNode {
 
-
-    public RootExecutionResultNode(List<ExecutionResultNode> children, List<GraphQLError> errors) {
-        super(null, children, errors);
+    public RootExecutionResultNode(List<ExecutionResultNode> children) {
+        this(children, Collections.emptyList());
     }
 
-    public RootExecutionResultNode(List<ExecutionResultNode> children) {
-        super(null, children, Collections.emptyList());
+    public RootExecutionResultNode(List<ExecutionResultNode> children, List<GraphQLError> errors) {
+        this(children, errors, null);
+    }
+
+    private RootExecutionResultNode(List<ExecutionResultNode> children, List<GraphQLError> errors, Object context) {
+        super(null, children, errors, context);
     }
 
 
@@ -28,7 +31,7 @@ public class RootExecutionResultNode extends ObjectExecutionResultNode {
 
     @Override
     public RootExecutionResultNode withNewChildren(List<ExecutionResultNode> children) {
-        return new RootExecutionResultNode(children, getErrors());
+        return new RootExecutionResultNode(children, getErrors(), getContext());
     }
 
     @Override
@@ -38,6 +41,11 @@ public class RootExecutionResultNode extends ObjectExecutionResultNode {
 
     @Override
     public ExecutionResultNode withNewErrors(List<GraphQLError> errors) {
-        return new RootExecutionResultNode(getChildren(), new ArrayList<>(errors));
+        return new RootExecutionResultNode(getChildren(), new ArrayList<>(errors), getContext());
+    }
+
+    @Override
+    public ExecutionResultNode withNewContext(Object context) {
+        return new RootExecutionResultNode(getChildren(), getErrors(), context);
     }
 }
