@@ -13,6 +13,7 @@ import graphql.language.VariableReference;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
@@ -106,10 +107,15 @@ public class ValuesResolver {
     }
 
     public Map<String, Object> getArgumentValues(List<GraphQLArgument> argumentTypes, List<Argument> arguments, Map<String, Object> variables) {
-        return getArgumentValues(DEFAULT_FIELD_VISIBILITY, argumentTypes, arguments, variables);
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().fieldVisibility(DEFAULT_FIELD_VISIBILITY).build();
+        return getArgumentValuesImpl(codeRegistry, argumentTypes, arguments, variables);
     }
 
-    public Map<String, Object> getArgumentValues(GraphqlFieldVisibility fieldVisibility, List<GraphQLArgument> argumentTypes, List<Argument> arguments, Map<String, Object> variables) {
+    public Map<String, Object> getArgumentValues(GraphQLCodeRegistry codeRegistry, List<GraphQLArgument> argumentTypes, List<Argument> arguments, Map<String, Object> variables) {
+        return getArgumentValuesImpl(codeRegistry, argumentTypes, arguments, variables);
+    }
+
+    private Map<String, Object> getArgumentValuesImpl(GraphQLCodeRegistry codeRegistry, List<GraphQLArgument> argumentTypes, List<Argument> arguments, Map<String, Object> variables) {
         if (argumentTypes.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -121,7 +127,7 @@ public class ValuesResolver {
             Argument argument = argumentMap.get(argName);
             Object value;
             if (argument != null) {
-                value = coerceValueAst(fieldVisibility, fieldArgument.getType(), argument.getValue(), variables);
+                value = coerceValueAst(codeRegistry.getFieldVisibility(), fieldArgument.getType(), argument.getValue(), variables);
             } else {
                 value = fieldArgument.getDefaultValue();
             }
@@ -265,7 +271,7 @@ public class ValuesResolver {
 
     private Object parseLiteral(Value inputValue, Coercing coercing, Map<String, Object> variables) {
         // the CoercingParseLiteralException exception that could happen here has been validated earlier via ValidationUtil
-        return coercing.parseLiteral(inputValue,variables);
+        return coercing.parseLiteral(inputValue, variables);
     }
 
     private Object coerceValueAstForList(GraphqlFieldVisibility fieldVisibility, GraphQLList graphQLList, Value value, Map<String, Object> variables) {

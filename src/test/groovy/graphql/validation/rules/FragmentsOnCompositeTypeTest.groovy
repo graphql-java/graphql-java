@@ -68,7 +68,7 @@ class FragmentsOnCompositeTypeTest extends Specification {
         fragmentsOnCompositeType.checkFragmentDefinition(fragmentDefinition)
 
         then:
-        errorCollector.containsValidationError(ValidationErrorType.InlineFragmentTypeConditionInvalid)
+        errorCollector.containsValidationError(ValidationErrorType.FragmentTypeConditionInvalid)
     }
 
 

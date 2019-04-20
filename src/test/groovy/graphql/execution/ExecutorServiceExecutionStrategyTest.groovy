@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 @Deprecated
 class ExecutorServiceExecutionStrategyTest extends Specification {
 
-    def 'Example usage of ExecutorServiceExecutionStrategy.'() {
+    def 'Example usage of ExecutorServiceExecutionStrategy'() {
         given:
         def query = """
         query HeroNameAndFriendsQuery {

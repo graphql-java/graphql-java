@@ -4,6 +4,7 @@ package graphql.execution;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.cachecontrol.CacheControl;
 import graphql.execution.defer.DeferSupport;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -38,10 +39,11 @@ public class ExecutionContext {
     private final Instrumentation instrumentation;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
     private final DataLoaderRegistry dataLoaderRegistry;
+    private final CacheControl cacheControl;
     private final DeferSupport deferSupport = new DeferSupport();
 
     @Internal
-    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, List<GraphQLError> startingErrors) {
+    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, List<GraphQLError> startingErrors) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.instrumentationState = instrumentationState;
@@ -56,6 +58,7 @@ public class ExecutionContext {
         this.root = root;
         this.instrumentation = instrumentation;
         this.dataLoaderRegistry = dataLoaderRegistry;
+        this.cacheControl = cacheControl;
         this.errors.addAll(startingErrors);
     }
 
@@ -107,6 +110,10 @@ public class ExecutionContext {
 
     public DataLoaderRegistry getDataLoaderRegistry() {
         return dataLoaderRegistry;
+    }
+
+    public CacheControl getCacheControl() {
+        return cacheControl;
     }
 
     /**

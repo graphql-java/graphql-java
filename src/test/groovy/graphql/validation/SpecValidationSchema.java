@@ -3,6 +3,7 @@ package graphql.validation;
 import graphql.Scalars;
 import graphql.TypeResolutionEnvironment;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
@@ -18,6 +19,11 @@ import graphql.validation.SpecValidationSchemaPojos.Human;
 import java.util.HashSet;
 import java.util.Set;
 
+import static graphql.introspection.Introspection.DirectiveLocation.FIELD;
+import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_DEFINITION;
+import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_SPREAD;
+import static graphql.introspection.Introspection.DirectiveLocation.INLINE_FRAGMENT;
+import static graphql.introspection.Introspection.DirectiveLocation.QUERY;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLNonNull.nonNull;
 import static java.util.Collections.singletonList;
@@ -169,10 +175,22 @@ public class SpecValidationSchema {
         add(dogOrHuman);
         add(humanOrAlien);
     }};
+
+    public static final GraphQLDirective upperDirective = GraphQLDirective.newDirective()
+            .name("upper")
+            .validLocations(FIELD, FRAGMENT_SPREAD, FRAGMENT_DEFINITION, INLINE_FRAGMENT, QUERY)
+            .build();
+
+    public static final GraphQLDirective lowerDirective = GraphQLDirective.newDirective()
+            .name("lower")
+            .validLocations(FIELD, FRAGMENT_SPREAD, FRAGMENT_DEFINITION, INLINE_FRAGMENT, QUERY)
+            .build();
+
     public static final GraphQLSchema specValidationSchema = GraphQLSchema.newSchema()
             .query(queryRoot)
-            .additionalTypes(specValidationDictionary)
-            .build();
+            .additionalDirective(upperDirective)
+            .additionalDirective(lowerDirective)
+            .build(specValidationDictionary);
 
 
 }

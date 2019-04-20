@@ -10,15 +10,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class FragmentSpread extends AbstractNode<FragmentSpread> implements Selection<FragmentSpread>, DirectivesContainer<FragmentSpread> {
 
     private final String name;
     private final List<Directive> directives;
 
+    public static final String CHILD_DIRECTIVES = "directives";
+
     @Internal
-    protected FragmentSpread(String name, List<Directive> directives, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected FragmentSpread(String name, List<Directive> directives, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.directives = new ArrayList<>(directives);
     }
@@ -29,7 +33,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
      * @param name of the fragment
      */
     public FragmentSpread(String name) {
-        this(name, new ArrayList<>(), null, new ArrayList<>());
+        this(name, new ArrayList<>(), null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     @Override
@@ -44,8 +48,12 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         FragmentSpread that = (FragmentSpread) o;
 
@@ -61,8 +69,22 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
+    }
+
+    @Override
+    public FragmentSpread withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
+    }
+
+    @Override
     public FragmentSpread deepCopy() {
-        return new FragmentSpread(name, deepCopy(directives), getSourceLocation(), getComments());
+        return new FragmentSpread(name, deepCopy(directives), getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -98,6 +120,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
         private List<Comment> comments = new ArrayList<>();
         private String name;
         private List<Directive> directives = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -107,6 +130,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
             this.comments = existing.getComments();
             this.name = existing.getName();
             this.directives = existing.getDirectives();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -129,8 +153,13 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public FragmentSpread build() {
-            FragmentSpread fragmentSpread = new FragmentSpread(name, directives, sourceLocation, comments);
+            FragmentSpread fragmentSpread = new FragmentSpread(name, directives, sourceLocation, comments, ignoredChars);
             return fragmentSpread;
         }
     }

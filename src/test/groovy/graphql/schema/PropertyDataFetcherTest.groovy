@@ -2,7 +2,6 @@ package graphql.schema
 
 import graphql.ExecutionInput
 import graphql.TestUtil
-import graphql.execution.ExecutionContext
 import graphql.schema.somepackage.ClassWithDFEMethods
 import graphql.schema.somepackage.ClassWithInterfaces
 import graphql.schema.somepackage.ClassWithInteritanceAndInterfaces
@@ -12,14 +11,18 @@ import spock.lang.Specification
 
 import java.util.function.Function
 
-import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment
+import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment
 
 @SuppressWarnings("GroovyUnusedDeclaration")
 class PropertyDataFetcherTest extends Specification {
 
+    void setup() {
+        PropertyDataFetcher.setUseSetAccessible(true)
+        PropertyDataFetcher.clearReflectionCache()
+    }
+
     def env(obj) {
         newDataFetchingEnvironment()
-                .executionContext(Mock(ExecutionContext))
                 .source(obj)
                 .arguments([argument1: "value1", argument2: "value2"])
                 .build()
@@ -82,6 +85,15 @@ class PropertyDataFetcherTest extends Specification {
         result == "privateValue"
     }
 
+    def "fetch via method that is private with setAccessible OFF"() {
+        PropertyDataFetcher.setUseSetAccessible(false)
+        def environment = env(new TestClass())
+        def fetcher = new PropertyDataFetcher("privateProperty")
+        def result = fetcher.get(environment)
+        expect:
+        result == null
+    }
+
     def "fetch via public method"() {
         def environment = env(new TestClass())
         def fetcher = new PropertyDataFetcher("publicProperty")
@@ -121,6 +133,15 @@ class PropertyDataFetcherTest extends Specification {
         def result = fetcher.get(environment)
         expect:
         result == "privateFieldValue"
+    }
+
+    def "fetch via private field when setAccessible OFF"() {
+        PropertyDataFetcher.setUseSetAccessible(false)
+        def environment = env(new TestClass())
+        def fetcher = new PropertyDataFetcher("privateField")
+        def result = fetcher.get(environment)
+        expect:
+        result == null
     }
 
     def "fetch when caching is in place has no bad effects"() {

@@ -1,24 +1,25 @@
 package graphql.execution;
 
-import graphql.language.Field;
+import graphql.PublicApi;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
 
 import java.util.Map;
 
+@PublicApi
 public class TypeResolutionParameters {
 
     private final GraphQLInterfaceType graphQLInterfaceType;
     private final GraphQLUnionType graphQLUnionType;
-    private final Field field;
+    private final MergedField field;
     private final Object value;
     private final Map<String, Object> argumentValues;
     private final GraphQLSchema schema;
     private final Object context;
 
     private TypeResolutionParameters(GraphQLInterfaceType graphQLInterfaceType, GraphQLUnionType graphQLUnionType,
-                                     Field field, Object value, Map<String, Object> argumentValues, GraphQLSchema schema, final Object context) {
+                                     MergedField field, Object value, Map<String, Object> argumentValues, GraphQLSchema schema, final Object context) {
         this.graphQLInterfaceType = graphQLInterfaceType;
         this.graphQLUnionType = graphQLUnionType;
         this.field = field;
@@ -36,7 +37,7 @@ public class TypeResolutionParameters {
         return graphQLUnionType;
     }
 
-    public Field getField() {
+    public MergedField getField() {
         return field;
     }
 
@@ -62,7 +63,7 @@ public class TypeResolutionParameters {
 
     public static class Builder {
 
-        private Field field;
+        private MergedField field;
         private GraphQLInterfaceType graphQLInterfaceType;
         private GraphQLUnionType graphQLUnionType;
         private Object value;
@@ -70,7 +71,7 @@ public class TypeResolutionParameters {
         private GraphQLSchema schema;
         private Object context;
 
-        public Builder field(Field field) {
+        public Builder field(MergedField field) {
             this.field = field;
             return this;
         }

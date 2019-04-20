@@ -1,16 +1,17 @@
 package graphql.execution;
 
 import graphql.PublicApi;
-import graphql.language.Field;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNonNull;
-import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLTypeUtil;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
@@ -26,21 +27,41 @@ import static graphql.schema.GraphQLTypeUtil.isList;
 @PublicApi
 public class ExecutionStepInfo {
 
-    private final GraphQLType type;
-    private final Field field;
-    private final GraphQLFieldDefinition fieldDefinition;
+    private final GraphQLOutputType type;
     private final ExecutionPath path;
-    private final Map<String, Object> arguments;
     private final ExecutionStepInfo parent;
 
-    private ExecutionStepInfo(GraphQLType type, GraphQLFieldDefinition fieldDefinition, Field field, ExecutionPath path, ExecutionStepInfo parent, Map<String, Object> arguments) {
+    // field, fieldDefinition, fieldContainer and arguments stay the same for steps inside a list field
+    private final MergedField field;
+    private final GraphQLFieldDefinition fieldDefinition;
+    private final GraphQLObjectType fieldContainer;
+    private final Map<String, Object> arguments;
+
+    private ExecutionStepInfo(GraphQLOutputType type,
+                              GraphQLFieldDefinition fieldDefinition,
+                              MergedField field,
+                              ExecutionPath path,
+                              ExecutionStepInfo parent,
+                              Map<String, Object> arguments,
+                              GraphQLObjectType fieldsContainer) {
         this.fieldDefinition = fieldDefinition;
         this.field = field;
         this.path = path;
         this.parent = parent;
         this.type = assertNotNull(type, "you must provide a graphql type");
         this.arguments = arguments;
+        this.fieldContainer = fieldsContainer;
+    }
 
+    /**
+     * The GraphQLObjectType where fieldDefinition is defined.
+     * Note:
+     * For the Introspection field __typename the returned object type doesn't actually contain the fieldDefinition.
+     *
+     * @return GraphQLObjectType defining {@link #getFieldDefinition()}
+     */
+    public GraphQLObjectType getFieldContainer() {
+        return fieldContainer;
     }
 
     /**
@@ -48,7 +69,7 @@ public class ExecutionStepInfo {
      *
      * @return the graphql type in question
      */
-    public GraphQLType getType() {
+    public GraphQLOutputType getType() {
         return type;
     }
 
@@ -57,8 +78,8 @@ public class ExecutionStepInfo {
      *
      * @return the graphql type in question
      */
-    public GraphQLType getUnwrappedNonNullType() {
-        return GraphQLTypeUtil.unwrapNonNull(this.type);
+    public GraphQLOutputType getUnwrappedNonNullType() {
+        return (GraphQLOutputType) GraphQLTypeUtil.unwrapNonNull(this.type);
     }
 
     /**
@@ -72,11 +93,11 @@ public class ExecutionStepInfo {
     }
 
     /**
-     * This returns the AST field that matches the {@link #getFieldDefinition()} during execution
+     * This returns the AST fields that matches the {@link #getFieldDefinition()} during execution
      *
-     * @return the field
+     * @return the  merged fields
      */
-    public Field getField() {
+    public MergedField getField() {
         return field;
     }
 
@@ -145,12 +166,12 @@ public class ExecutionStepInfo {
      *
      * @return a new type info with the same
      */
-    public ExecutionStepInfo changeTypeWithPreservedNonNull(GraphQLType newType) {
+    public ExecutionStepInfo changeTypeWithPreservedNonNull(GraphQLOutputType newType) {
         assertTrue(!GraphQLTypeUtil.isNonNull(newType), "newType can't be non null");
         if (isNonNullType()) {
-            return new ExecutionStepInfo(GraphQLNonNull.nonNull(newType), fieldDefinition, field, path, this.parent, arguments);
+            return new ExecutionStepInfo(GraphQLNonNull.nonNull(newType), fieldDefinition, field, path, this.parent, arguments, this.fieldContainer);
         } else {
-            return new ExecutionStepInfo(newType, fieldDefinition, field, path, this.parent, arguments);
+            return new ExecutionStepInfo(newType, fieldDefinition, field, path, this.parent, arguments, this.fieldContainer);
         }
     }
 
@@ -172,6 +193,15 @@ public class ExecutionStepInfo {
                 '}';
     }
 
+    public ExecutionStepInfo transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
+    public String getResultKey() {
+        return field.getResultKey();
+    }
 
     /**
      * @return a builder of type info
@@ -180,12 +210,17 @@ public class ExecutionStepInfo {
         return new Builder();
     }
 
+    public static ExecutionStepInfo.Builder newExecutionStepInfo(ExecutionStepInfo existing) {
+        return new Builder(existing);
+    }
+
     public static class Builder {
-        GraphQLType type;
+        GraphQLOutputType type;
         ExecutionStepInfo parentInfo;
         GraphQLFieldDefinition fieldDefinition;
-        Field field;
-        ExecutionPath executionPath;
+        GraphQLObjectType fieldContainer;
+        MergedField field;
+        ExecutionPath path;
         Map<String, Object> arguments = new LinkedHashMap<>();
 
         /**
@@ -194,7 +229,17 @@ public class ExecutionStepInfo {
         private Builder() {
         }
 
-        public Builder type(GraphQLType type) {
+        private Builder(ExecutionStepInfo existing) {
+            this.type = existing.type;
+            this.parentInfo = existing.parent;
+            this.fieldDefinition = existing.fieldDefinition;
+            this.fieldContainer = existing.fieldContainer;
+            this.field = existing.field;
+            this.path = existing.path;
+            this.arguments = existing.getArguments();
+        }
+
+        public Builder type(GraphQLOutputType type) {
             this.type = type;
             return this;
         }
@@ -209,13 +254,13 @@ public class ExecutionStepInfo {
             return this;
         }
 
-        public Builder field(Field field) {
+        public Builder field(MergedField field) {
             this.field = field;
             return this;
         }
 
         public Builder path(ExecutionPath executionPath) {
-            this.executionPath = executionPath;
+            this.path = executionPath;
             return this;
         }
 
@@ -224,8 +269,13 @@ public class ExecutionStepInfo {
             return this;
         }
 
+        public Builder fieldContainer(GraphQLObjectType fieldContainer) {
+            this.fieldContainer = fieldContainer;
+            return this;
+        }
+
         public ExecutionStepInfo build() {
-            return new ExecutionStepInfo(type, fieldDefinition, field, executionPath, parentInfo, arguments);
+            return new ExecutionStepInfo(type, fieldDefinition, field, path, parentInfo, arguments, fieldContainer);
         }
     }
 }

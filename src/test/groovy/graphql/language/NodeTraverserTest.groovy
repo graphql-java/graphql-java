@@ -36,6 +36,27 @@ class NodeTraverserTest extends Specification {
         0 * nodeVisitor._
     }
 
+    def "traverse nodes returns accumulate"() {
+        given:
+        Field leaf = new Field("leaf")
+        SelectionSet rootSelectionSet = SelectionSet.newSelectionSet().selections(Arrays.asList(leaf)).build()
+        Field root = Field.newField().name("root").selectionSet(rootSelectionSet).build()
+
+        NodeTraverser nodeTraverser = new NodeTraverser()
+        NodeVisitor nodeVisitor = new NodeVisitorStub() {
+            @Override
+            TraversalControl visitField(Field node, TraverserContext<Node> context) {
+                context.setAccumulate("RESULT")
+                return TraversalControl.CONTINUE
+            }
+        }
+        when:
+        def result = nodeTraverser.depthFirst(nodeVisitor, root)
+
+        then:
+        result == "RESULT"
+    }
+
     def "traverse nodes in pre-order"() {
         given:
         Field leaf = Field.newField().name("leaf").build()
@@ -115,7 +136,7 @@ class NodeTraverserTest extends Specification {
         def visitor = new NodeVisitorStub() {
             @Override
             TraversalControl visitField(Field node, TraverserContext<Node> context) {
-                context.setResult(node)
+                context.setAccumulate(node)
             }
         }
         def field = Field.newField().build()

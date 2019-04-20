@@ -10,15 +10,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<ObjectField> {
 
     private final String name;
     private final Value value;
 
+    public static final String CHILD_VALUE = "value";
+
     @Internal
-    protected ObjectField(String name, Value value, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected ObjectField(String name, Value value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.value = value;
     }
@@ -30,7 +34,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
      * @param value of the field
      */
     public ObjectField(String name, Value value) {
-        this(name, value, null, new ArrayList<>());
+        this(name, value, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     @Override
@@ -50,9 +54,27 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .child(CHILD_VALUE, value)
+                .build();
+    }
+
+    @Override
+    public ObjectField withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .value(newChildren.getChildOrNull(CHILD_VALUE))
+        );
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ObjectField that = (ObjectField) o;
 
@@ -62,7 +84,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
 
     @Override
     public ObjectField deepCopy() {
-        return new ObjectField(name, deepCopy(this.value), getSourceLocation(), getComments());
+        return new ObjectField(name, deepCopy(this.value), getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -93,6 +115,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
         private String name;
         private List<Comment> comments = new ArrayList<>();
         private Value value;
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -126,8 +149,13 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public ObjectField build() {
-            ObjectField objectField = new ObjectField(name, value, sourceLocation, comments);
+            ObjectField objectField = new ObjectField(name, value, sourceLocation, comments, ignoredChars);
             return objectField;
         }
     }

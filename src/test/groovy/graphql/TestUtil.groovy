@@ -1,7 +1,10 @@
 package graphql
 
+import graphql.execution.MergedField
+import graphql.execution.MergedSelectionSet
 import graphql.introspection.Introspection.DirectiveLocation
 import graphql.language.Document
+import graphql.language.Field
 import graphql.language.ScalarTypeDefinition
 import graphql.parser.Parser
 import graphql.schema.Coercing
@@ -13,6 +16,7 @@ import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLType
 import graphql.schema.TypeResolver
 import graphql.schema.idl.MockedWiringFactory
 import graphql.schema.idl.RuntimeWiring
@@ -25,8 +29,10 @@ import graphql.schema.idl.errors.SchemaProblem
 import java.util.function.Supplier
 import java.util.stream.Collectors
 
+import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLArgument.newArgument
+import static graphql.schema.GraphQLDirective.newDirective
 
 class TestUtil {
 
@@ -202,5 +208,39 @@ class TestUtil {
     static Document parseQuery(String query) {
         new Parser().parseDocument(query)
     }
+
+    static Document toDocument(String query) {
+        parseQuery(query)
+    }
+
+    static MergedField mergedField(List<Field> fields) {
+        return MergedField.newMergedField(fields).build()
+    }
+
+    static MergedField mergedField(Field field) {
+        return MergedField.newMergedField(field).build()
+    }
+
+    static MergedSelectionSet mergedSelectionSet(Map<String, MergedField> subFields) {
+        return MergedSelectionSet.newMergedSelectionSet().subFields(subFields).build()
+    }
+
+    static GraphQLDirective[] mockDirectivesWithArguments(String... names) {
+        return names.collect { directiveName ->
+            def builder = newDirective().name(directiveName)
+
+            names.each { argName ->
+                builder.argument(newArgument().name(argName).type(GraphQLInt).build())
+            }
+            return builder.build()
+        }.toArray() as GraphQLDirective[]
+    }
+
+    static List<GraphQLArgument> mockArguments(String... names) {
+        return names.collect { newArgument().name(it).type(GraphQLInt).build() }
+    }
+
+    static Comparator<? super GraphQLType> byGreatestLength = Comparator.comparing({ it.name },
+            Comparator.comparing({ it.length() }).reversed())
 
 }

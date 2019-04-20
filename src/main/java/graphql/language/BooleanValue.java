@@ -10,14 +10,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
+
 @PublicApi
 public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarValue<BooleanValue> {
 
     private final boolean value;
 
     @Internal
-    protected BooleanValue(boolean value, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected BooleanValue(boolean value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.value = value;
     }
 
@@ -27,8 +30,7 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarVa
      * @param value of the Boolean
      */
     public BooleanValue(boolean value) {
-        super(null, new ArrayList<>());
-        this.value = value;
+        this(value, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public boolean isValue() {
@@ -41,9 +43,24 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarVa
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer().build();
+    }
+
+    @Override
+    public BooleanValue withNewChildren(NodeChildrenContainer newChildren) {
+        assertNewChildrenAreEmpty(newChildren);
+        return this;
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         BooleanValue that = (BooleanValue) o;
 
@@ -53,7 +70,7 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarVa
 
     @Override
     public BooleanValue deepCopy() {
-        return new BooleanValue(value, getSourceLocation(), getComments());
+        return new BooleanValue(value, getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -87,6 +104,7 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarVa
         private SourceLocation sourceLocation;
         private boolean value;
         private List<Comment> comments = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -95,6 +113,7 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarVa
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.value = existing.isValue();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
 
@@ -113,8 +132,13 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarVa
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public BooleanValue build() {
-            BooleanValue booleanValue = new BooleanValue(value, sourceLocation, comments);
+            BooleanValue booleanValue = new BooleanValue(value, sourceLocation, comments, ignoredChars);
             return booleanValue;
         }
     }

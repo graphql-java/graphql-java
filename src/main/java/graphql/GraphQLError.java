@@ -32,9 +32,9 @@ public interface GraphQLError extends Serializable {
     List<SourceLocation> getLocations();
 
     /**
-     * @return an enum classifying this error
+     * @return an object classifying this error
      */
-    ErrorType getErrorType();
+    ErrorClassification getErrorType();
 
     /**
      * The graphql spec says that the (optional) path field of any error should be a list

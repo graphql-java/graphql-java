@@ -2,17 +2,19 @@ package graphql.schema.idl
 
 import graphql.ExecutionInput
 import graphql.GraphQL
-import graphql.language.ObjectTypeDefinition
 import graphql.schema.Coercing
 import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
 import graphql.schema.DataFetcher
+import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLEnumValueDefinition
 import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInterfaceType
@@ -47,6 +49,12 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         }
     })
 
+    def assertCallHierarchy(elementHierarchy, astHierarchy, String name, List<String> l) {
+        assert elementHierarchy[name] == l, "unexpected elementHierarchy"
+        assert astHierarchy[name] == l, "unexpected astHierarchy"
+        true
+    }
+
 
     def "will trace down into each directive callback"() {
 
@@ -65,6 +73,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             interface InterfaceType @interfaceDirective(target : "InterfaceType") {
                 interfaceField1 : String @fieldDirective(target : "interfaceField1")
                 interfaceField2 : String @fieldDirective(target : "interfaceField2")
+                interfaceField3(iArgument1 : String @argumentDirective(target : "iArgument1") iArgument2 : String @argumentDirective(target : "iArgument2")) : Int   
             }
             
             type Foo {
@@ -91,76 +100,92 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             
         '''
 
+        //`this contains the name of the element that was asked to be directive wired
         def targetList = []
+        // this contains the names of the elements that presented as the runtime type hierarchy
+        Map<String, List<String>> elementHierarchy = [:]
+        // this contains the names of the elements that presented as the ast bide hierarchy
+        Map<String, List<String>> astHierarchy = [:]
+        // contains the name of the fields container
+        Map<String, String> fieldsContainers = [:]
+        // contains the name of the field
+        Map<String, String> fieldDefinitions = [:]
 
         def schemaDirectiveWiring = new SchemaDirectiveWiring() {
 
-            def assertDirectiveTarget(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> environment, String name) {
+            def assertDirectiveTarget(SchemaDirectiveWiringEnvironment environment, String name) {
+                def element = environment.getElement()
+
                 targetList.add(name)
+                elementHierarchy[name] = environment.elementParentTree.toList().collect { type -> type.getName() }
+                astHierarchy[name] = environment.nodeParentTree.toList().collect { namedNode -> namedNode.getName() }
+                fieldsContainers[name] = environment.getFieldsContainer()?.getName()
+                fieldDefinitions[name] = environment.getFieldDefinition()?.getName()
+
                 GraphQLDirective directive = environment.getDirective()
                 String target = directive.getArgument("target").getValue()
                 assert name == target, " The target $target is not equal to the object name $name"
-                return environment.getElement()
+                return element
             }
 
             @Override
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> environment) {
                 String name = environment.getElement().getName()
-                return assertDirectiveTarget(environment, name)
+                return assertDirectiveTarget(environment, name) as GraphQLFieldDefinition
             }
 
             @Override
             GraphQLArgument onArgument(SchemaDirectiveWiringEnvironment<GraphQLArgument> environment) {
                 String name = environment.getElement().getName()
-                return assertDirectiveTarget(environment, name)
+                return assertDirectiveTarget(environment, name) as GraphQLArgument
             }
 
             @Override
             GraphQLObjectType onObject(SchemaDirectiveWiringEnvironment<GraphQLObjectType> environment) {
                 String name = environment.getElement().getName()
-                return assertDirectiveTarget(environment, name)
+                return assertDirectiveTarget(environment, name) as GraphQLObjectType
             }
 
             @Override
             GraphQLInterfaceType onInterface(SchemaDirectiveWiringEnvironment<GraphQLInterfaceType> environment) {
                 String name = environment.getElement().getName()
-                return assertDirectiveTarget(environment, name)
+                return assertDirectiveTarget(environment, name) as GraphQLInterfaceType
             }
 
             @Override
             GraphQLUnionType onUnion(SchemaDirectiveWiringEnvironment<GraphQLUnionType> environment) {
                 String name = environment.getElement().getName()
-                return assertDirectiveTarget(environment, name)
+                return assertDirectiveTarget(environment, name) as GraphQLUnionType
             }
 
             @Override
             GraphQLEnumType onEnum(SchemaDirectiveWiringEnvironment<GraphQLEnumType> environment) {
                 String name = environment.getElement().getName()
-                return assertDirectiveTarget(environment, name)
+                return assertDirectiveTarget(environment, name) as GraphQLEnumType
             }
 
             @Override
             GraphQLEnumValueDefinition onEnumValue(SchemaDirectiveWiringEnvironment<GraphQLEnumValueDefinition> environment) {
                 String name = environment.getElement().getName()
-                return assertDirectiveTarget(environment, name)
+                return assertDirectiveTarget(environment, name) as GraphQLEnumValueDefinition
             }
 
             @Override
             GraphQLScalarType onScalar(SchemaDirectiveWiringEnvironment<GraphQLScalarType> environment) {
                 String name = environment.getElement().getName()
-                return assertDirectiveTarget(environment, name)
+                return assertDirectiveTarget(environment, name) as GraphQLScalarType
             }
 
             @Override
             GraphQLInputObjectType onInputObjectType(SchemaDirectiveWiringEnvironment<GraphQLInputObjectType> environment) {
                 String name = environment.getElement().getName()
-                return assertDirectiveTarget(environment, name)
+                return assertDirectiveTarget(environment, name) as GraphQLInputObjectType
             }
 
             @Override
             GraphQLInputObjectField onInputObjectField(SchemaDirectiveWiringEnvironment<GraphQLInputObjectField> environment) {
                 String name = environment.getElement().getName()
-                return assertDirectiveTarget(environment, name)
+                return assertDirectiveTarget(environment, name) as GraphQLInputObjectField
             }
         }
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
@@ -202,7 +227,50 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         targetList.contains("enumVal2")
 
         targetList.contains("ScalarType")
+
+        !targetList.contains("Query") // it has no directives
+
+        // are the element tree as expected
+
+        assertCallHierarchy(elementHierarchy, astHierarchy, "ObjectType", ["ObjectType"])
+        assertCallHierarchy(elementHierarchy, astHierarchy, "field1", ["field1", "ObjectType"])
+        assertCallHierarchy(elementHierarchy, astHierarchy, "field3", null) // it has no directives but its innards do
+        assertCallHierarchy(elementHierarchy, astHierarchy, "argument1", ["argument1", "field3", "ObjectType"])
+        assertCallHierarchy(elementHierarchy, astHierarchy, "argument2", ["argument2", "field3", "ObjectType"])
+
+        assertCallHierarchy(elementHierarchy, astHierarchy, "InterfaceType", ["InterfaceType"])
+        assertCallHierarchy(elementHierarchy, astHierarchy, "interfaceField1", ["interfaceField1", "InterfaceType"])
+        assertCallHierarchy(elementHierarchy, astHierarchy, "interfaceField3", null) // it has no directives but its innards do
+        assertCallHierarchy(elementHierarchy, astHierarchy, "iArgument1", ["iArgument1", "interfaceField3", "InterfaceType"])
+        assertCallHierarchy(elementHierarchy, astHierarchy, "iArgument2", ["iArgument2", "interfaceField3", "InterfaceType"])
+
+        assertCallHierarchy(elementHierarchy, astHierarchy, "EnumType", ["EnumType"])
+        assertCallHierarchy(elementHierarchy, astHierarchy, "enumVal1", ["enumVal1", "EnumType"])
+        assertCallHierarchy(elementHierarchy, astHierarchy, "enumVal2", ["enumVal2", "EnumType"])
+
+        assertCallHierarchy(elementHierarchy, astHierarchy, "InputType", ["InputType"])
+        assertCallHierarchy(elementHierarchy, astHierarchy, "inputField1", ["inputField1", "InputType"])
+        assertCallHierarchy(elementHierarchy, astHierarchy, "inputField2", ["inputField2", "InputType"])
+
+        assertCallHierarchy(elementHierarchy, astHierarchy, "UnionType", ["UnionType"])
+        assertCallHierarchy(elementHierarchy, astHierarchy, "ScalarType", ["ScalarType"])
+
+        assertCallHierarchy(elementHierarchy, astHierarchy, "Query", null) // it has no directives
+
+        //
+        fieldDefinitions["argument1"] == "field3"
+        fieldsContainers["argument1"] == "ObjectType"
+
+        fieldDefinitions["argument2"] == "field3"
+        fieldsContainers["argument2"] == "ObjectType"
+
+        fieldDefinitions["field2"] == "field2"
+        fieldsContainers["field2"] == "ObjectType"
+
+        fieldDefinitions["ObjectType"] == null
+        fieldsContainers["ObjectType"] == "ObjectType"
     }
+
 
     def "can modify the existing behaviour"() {
         def spec = '''
@@ -228,7 +296,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             @Override
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> directiveEnv) {
                 GraphQLFieldDefinition field = directiveEnv.getElement()
-                def newFetcher = wrapDataFetcher(field.getDataFetcher(), { dfEnv, value ->
+                def fetcher = directiveEnv.getCodeRegistry().getDataFetcher(directiveEnv.fieldsContainer, field)
+                def newFetcher = wrapDataFetcher(fetcher, { dfEnv, value ->
                     def directiveName = directiveEnv.directive.name
                     if (directiveName == "uppercase") {
                         return String.valueOf(value).toUpperCase()
@@ -240,7 +309,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                         return String.valueOf(value).reverse()
                     }
                 })
-                field = field.transform({ builder -> builder.dataFetcher(newFetcher) })
+                def coordinates = FieldCoordinates.coordinates(directiveEnv.getFieldsContainer(), field)
+                directiveEnv.getCodeRegistry().dataFetcher(coordinates, newFetcher)
                 return field
             }
 
@@ -260,9 +330,10 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 def fieldName = field.getName()
                 DataFetcher echoDF = { dfEnv ->
                     return fieldName
-                 }
-                GraphQLFieldDefinition newField = field.transform({ builder -> builder.dataFetcher(echoDF) })
-                return newField
+                }
+                def coordinates = FieldCoordinates.coordinates(env.fieldsContainer, field)
+                env.codeRegistry.dataFetcher(coordinates, echoDF)
+                return field
             }
         }
 
@@ -374,7 +445,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 def definitions = objectType.getFieldDefinitions()
                 def contextMap = environment.getBuildContext()
 
-                definitions = definitions.collect { fld -> wrapField(fld, objectType.getName(), contextMap) }
+                definitions = definitions.collect { fld -> wrapField(environment.getElement(), fld, contextMap, environment.getCodeRegistry()) }
 
                 return objectType.transform({ builder -> builder.clearFields().fields(definitions) })
             }
@@ -382,17 +453,13 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             @Override
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> environment) {
                 GraphQLFieldDefinition element = environment.getElement()
-                def tree = environment.getNodeParentTree()
-                ObjectTypeDefinition objectTypeDef = tree.parentInfo.get().node
-                def contextMap = environment.getBuildContext()
-
-                return wrapField(element, objectTypeDef.getName(), contextMap)
+                return wrapField(environment.fieldsContainer, element, environment.getBuildContext(), environment.getCodeRegistry())
             }
 
-            private GraphQLFieldDefinition wrapField(GraphQLFieldDefinition field, String objectTypeName, Map<String, Object> contextMap) {
-                def originalFetcher = field.getDataFetcher()
+            private GraphQLFieldDefinition wrapField(GraphQLFieldsContainer parentType, GraphQLFieldDefinition field, Map<String, Object> contextMap, GraphQLCodeRegistry.Builder codeRegistry) {
+                def originalFetcher = codeRegistry.getDataFetcher(parentType, field)
 
-                String key = mkFieldKey(objectTypeName, field.getName())
+                String key = mkFieldKey(parentType.getName(), field.getName())
 
                 // are we already wrapped
                 if (contextMap.containsKey(key)) {
@@ -407,7 +474,9 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                     }
                     return null
                 }
-                return field.transform({ builder -> builder.dataFetcher(wrapper) })
+                def coordinates = FieldCoordinates.coordinates(parentType, field)
+                codeRegistry.dataFetcher(coordinates, wrapper)
+                return field
             }
 
             String mkFieldKey(String objectName, String fieldName) {

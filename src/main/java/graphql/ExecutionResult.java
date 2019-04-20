@@ -12,16 +12,16 @@ import java.util.Map;
 public interface ExecutionResult {
 
     /**
+     * @return the errors that occurred during execution or empty list if there is none
+     */
+    List<GraphQLError> getErrors();
+
+    /**
      * @param <T> allows type coercion
      *
      * @return the data in the result or null if there is none
      */
     <T> T getData();
-
-    /**
-     * @return the errors that occurred during execution or empty list if there is none
-     */
-    List<GraphQLError> getErrors();
 
     /**
      * @return a map of extensions or null if there are none

@@ -5,6 +5,8 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.TypeResolver
 import spock.lang.Specification
 
+import static graphql.TestUtil.mergedField
+
 class TypeResolutionEnvironmentTest extends Specification {
 
     def idl = """
@@ -37,7 +39,7 @@ class TypeResolutionEnvironmentTest extends Specification {
     def "basic operations"() {
         given:
 
-        def environment = new TypeResolutionEnvironment("source", [:], new Field("field"), Scalars.GraphQLString, schema, "FooBar")
+        def environment = new TypeResolutionEnvironment("source", [:], mergedField(new Field("field")), Scalars.GraphQLString, schema, "FooBar")
 
         when:
 
@@ -91,14 +93,14 @@ class TypeResolutionEnvironmentTest extends Specification {
         }
 
         when:
-        def environmentFooBar = new TypeResolutionEnvironment("source", [:], new Field("field"), Scalars.GraphQLString, schema, "FooBar")
+        def environmentFooBar = new TypeResolutionEnvironment("source", [:], mergedField(new Field("field")), Scalars.GraphQLString, schema, "FooBar")
         def objTypeFooBar = resolverWithContext.getType(environmentFooBar)
 
         then:
         objTypeFooBar.name == "FooBar"
 
         when:
-        def environmentFooImpl = new TypeResolutionEnvironment("source", [:], new Field("field"), Scalars.GraphQLString, schema, "Foo")
+        def environmentFooImpl = new TypeResolutionEnvironment("source", [:], mergedField(new Field("field")), Scalars.GraphQLString, schema, "Foo")
         def objTypeFooImpl = resolverWithContext.getType(environmentFooImpl)
 
         then:

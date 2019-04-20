@@ -1,12 +1,16 @@
 package graphql.execution.instrumentation
 
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.batched.BatchedExecutionStrategy
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
+import graphql.language.AstPrinter
+import graphql.parser.Parser
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.PropertyDataFetcher
@@ -278,5 +282,51 @@ class InstrumentationTest extends Specification {
         then:
 
         er.data == [artoo: [id: '2001'], r2d2: [name: 'R2-D2']]
+    }
+
+    def "document and variables can be intercepted by instrumentation and changed"() {
+
+        given:
+
+        def query = '''query Q($var: String!) {
+  human(id: $var) {
+    id
+  }
+}
+'''
+        def newQuery = '''query Q($var: String!) {
+  human(id: $var) {
+    id
+    name
+  }
+}
+'''
+
+        def instrumentation = new TestingInstrumentation() {
+
+            @Override
+            DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters) {
+                this.capturedData["originalDoc"] = AstPrinter.printAst(documentAndVariables.getDocument())
+                this.capturedData["originalVariables"] = documentAndVariables.getVariables()
+                def newDoc = new Parser().parseDocument(newQuery)
+                def newVars = [var: "1001"]
+                documentAndVariables.transform({ builder -> builder.document(newDoc).variables(newVars) })
+            }
+
+        }
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .instrumentation(instrumentation)
+                .build()
+
+        when:
+        def variables = [var: "1000"]
+        def er = graphQL.execute(ExecutionInput.newExecutionInput().query(query).variables(variables)) // Luke
+
+        then:
+        er.data == [human: [id : "1001", name: 'Darth Vader']]
+        instrumentation.capturedData["originalDoc"] == query
+        instrumentation.capturedData["originalVariables"] == variables
     }
 }

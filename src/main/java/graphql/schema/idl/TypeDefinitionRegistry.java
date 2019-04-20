@@ -26,6 +26,7 @@ import graphql.schema.idl.errors.TypeRedefinitionError;
 import graphql.util.FpKit;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -133,6 +134,23 @@ public class TypeDefinitionRegistry {
         });
 
         return this;
+    }
+
+    /**
+     * Adds a a collections of definitions to the registry
+     *
+     * @param definitions the definitions to add
+     *
+     * @return an optional error for the first problem, typically type redefinition
+     */
+    public Optional<GraphQLError> addAll(Collection<SDLDefinition> definitions) {
+        for (SDLDefinition definition : definitions) {
+            Optional<GraphQLError> error = add(definition);
+            if (error.isPresent()) {
+                return error;
+            }
+        }
+        return Optional.empty();
     }
 
     /**

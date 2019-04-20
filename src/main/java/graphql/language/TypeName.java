@@ -10,14 +10,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
+
 @PublicApi
-public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
+public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, NamedNode<TypeName> {
 
     private final String name;
 
     @Internal
-    protected TypeName(String name, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected TypeName(String name, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
     }
 
@@ -27,8 +30,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
      * @param name of the type
      */
     public TypeName(String name) {
-        super(null, new ArrayList<>());
-        this.name = name;
+        this(name, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
 
@@ -42,9 +44,24 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer().build();
+    }
+
+    @Override
+    public TypeName withNewChildren(NodeChildrenContainer newChildren) {
+        assertNewChildrenAreEmpty(newChildren);
+        return this;
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         TypeName that = (TypeName) o;
 
@@ -53,7 +70,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
 
     @Override
     public TypeName deepCopy() {
-        return new TypeName(name, getSourceLocation(), getComments());
+        return new TypeName(name, getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -87,6 +104,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
         private String name;
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -113,8 +131,13 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public TypeName build() {
-            TypeName typeName = new TypeName(name, sourceLocation, comments);
+            TypeName typeName = new TypeName(name, sourceLocation, comments, ignoredChars);
             return typeName;
         }
     }

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.directivesByName;
 
 @PublicApi
@@ -19,12 +20,16 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
     private final List<Directive> directives;
     private final List<OperationTypeDefinition> operationTypeDefinitions;
 
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_OPERATION_TYPE_DEFINITIONS = "operationTypeDefinitions";
+
     @Internal
     protected SchemaDefinition(List<Directive> directives,
-                             List<OperationTypeDefinition> operationTypeDefinitions,
-                             SourceLocation sourceLocation,
-                             List<Comment> comments) {
-        super(sourceLocation, comments);
+                               List<OperationTypeDefinition> operationTypeDefinitions,
+                               SourceLocation sourceLocation,
+                               List<Comment> comments,
+                               IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.directives = directives;
         this.operationTypeDefinitions = operationTypeDefinitions;
     }
@@ -43,7 +48,7 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
 
 
     public List<OperationTypeDefinition> getOperationTypeDefinitions() {
-        return operationTypeDefinitions;
+        return new ArrayList<>(operationTypeDefinitions);
     }
 
     @Override
@@ -55,9 +60,29 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_OPERATION_TYPE_DEFINITIONS, operationTypeDefinitions)
+                .build();
+    }
+
+    @Override
+    public SchemaDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .operationTypeDefinitions(newChildren.getChildren(CHILD_OPERATION_TYPE_DEFINITIONS))
+        );
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         SchemaDefinition that = (SchemaDefinition) o;
 
@@ -66,7 +91,8 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
 
     @Override
     public SchemaDefinition deepCopy() {
-        return new SchemaDefinition(deepCopy(directives), deepCopy(operationTypeDefinitions), getSourceLocation(), getComments());
+        return new SchemaDefinition(deepCopy(directives), deepCopy(operationTypeDefinitions), getSourceLocation(), getComments(),
+                getIgnoredChars());
     }
 
     @Override
@@ -97,6 +123,7 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
         private List<Comment> comments = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
         private List<OperationTypeDefinition> operationTypeDefinitions = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -106,6 +133,7 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
             this.comments = existing.getComments();
             this.directives = existing.getDirectives();
             this.operationTypeDefinitions = existing.getOperationTypeDefinitions();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
 
@@ -139,11 +167,17 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public SchemaDefinition build() {
             SchemaDefinition schemaDefinition = new SchemaDefinition(directives,
                     operationTypeDefinitions,
                     sourceLocation,
-                    comments);
+                    comments,
+                    ignoredChars);
             return schemaDefinition;
         }
     }

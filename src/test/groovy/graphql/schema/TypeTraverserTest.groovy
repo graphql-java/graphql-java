@@ -6,6 +6,9 @@ import graphql.util.TraversalControl
 import graphql.util.TraverserContext
 import spock.lang.Specification
 
+import static graphql.schema.GraphQLArgument.newArgument
+import static graphql.schema.GraphQLTypeReference.typeRef
+
 class TypeTraverserTest extends Specification {
 
 
@@ -27,7 +30,7 @@ class TypeTraverserTest extends Specification {
         when:
         def visitor = new GraphQLTestingVisitor()
 
-        new TypeTraverser().depthFirst(visitor, GraphQLArgument.newArgument()
+        new TypeTraverser().depthFirst(visitor, newArgument()
                 .name("Test")
                 .type(Scalars.GraphQLString)
                 .build())
@@ -38,7 +41,7 @@ class TypeTraverserTest extends Specification {
     def "reachable number argument type"() {
         when:
         def visitor = new GraphQLTestingVisitor()
-        new TypeTraverser().depthFirst(visitor, GraphQLArgument.newArgument()
+        new TypeTraverser().depthFirst(visitor, newArgument()
                 .name("Test")
                 .type(Scalars.GraphQLInt)
                 .build())
@@ -58,8 +61,8 @@ class TypeTraverserTest extends Specification {
                 .build())
         then:
         visitor.getStack() == ["enum: foo", "fallback: foo",
-                               "enum value: bar", "fallback: bar",
-                               "enum value: abc", "fallback: abc"]
+                               "enum value: abc", "fallback: abc",
+                               "enum value: bar", "fallback: bar"]
 
     }
 
@@ -164,7 +167,7 @@ class TypeTraverserTest extends Specification {
     def "reachable reference type"() {
         when:
         def visitor = new GraphQLTestingVisitor()
-        new TypeTraverser().depthFirst(visitor, GraphQLTypeReference.typeRef("something"))
+        new TypeTraverser().depthFirst(visitor, typeRef("something"))
         then:
         visitor.getStack() == ["reference: something", "fallback: something"]
     }
@@ -175,7 +178,7 @@ class TypeTraverserTest extends Specification {
         new TypeTraverser().depthFirst(visitor, GraphQLUnionType.newUnionType()
                 .name("foo")
                 .possibleType(GraphQLObjectType.newObject().name("dummy").build())
-                .possibleType(GraphQLTypeReference.typeRef("dummyRef"))
+                .possibleType(typeRef("dummyRef"))
                 .typeResolver(NOOP_RESOLVER)
                 .build())
         then:
@@ -246,7 +249,7 @@ class TypeTraverserTest extends Specification {
     def "reachable argument directive"() {
         when:
         def visitor = new GraphQLTestingVisitor()
-        def argument = GraphQLArgument.newArgument()
+        def argument = newArgument()
                 .name("foo")
                 .type(Scalars.GraphQLString)
                 .withDirective(GraphQLDirective.newDirective()
@@ -339,6 +342,30 @@ class TypeTraverserTest extends Specification {
         then:
         visitor.getStack() == ["input object field: foo", "fallback: foo", "scalar: String", "fallback: String", "directive: bar", "fallback: bar"]
     }
+
+    def "back references is are called when a type reference node is visited more than once"() {
+        when:
+        def visitor = new GraphQLTestingVisitor()
+
+        def typeRef = typeRef("String")
+
+        new TypeTraverser().depthFirst(visitor, [
+                newArgument()
+                        .name("Test1")
+                        .type(typeRef)
+                        .build(),
+                newArgument()
+                        .name("Test2")
+                        .type(typeRef)
+                        .build()
+        ])
+        then:
+        visitor.getStack() == ["argument: Test1", "fallback: Test1", "reference: String", "fallback: String",
+                               "argument: Test2", "fallback: Test2", "backRef: String"
+        ]
+
+    }
+
 
     def NOOP_RESOLVER = new TypeResolver() {
         @Override
@@ -440,6 +467,12 @@ class TypeTraverserTest extends Specification {
         TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLType> context) {
             stack.add("union: ${node.getName()}")
             return super.visitGraphQLUnionType(node, context)
+        }
+
+        @Override
+        TraversalControl visitBackRef(TraverserContext<GraphQLType> context) {
+            stack.add("backRef: ${context.thisNode().getName()}")
+            return TraversalControl.CONTINUE
         }
 
         def getStack() {

@@ -18,6 +18,7 @@ import java.util.function.UnaryOperator;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactoryEnvironment;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 
@@ -44,15 +45,37 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
     private final FieldDefinition definition;
 
 
-    @Deprecated
+    /**
+     * @param name              the name
+     * @param description       the description
+     * @param type              the field type
+     * @param dataFetcher       the field data fetcher
+     * @param arguments         the field arguments
+     * @param deprecationReason the deprecation reason
+     *
+     * @deprecated use the {@link #newFieldDefinition()} builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher<?> dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
         this(name, description, type, DataFetcherFactories.useDataFetcher(dataFetcher), arguments, deprecationReason, Collections.emptyList(), null);
     }
 
+    /**
+     * @param name               the name
+     * @param description        the description
+     * @param type               the field type
+     * @param dataFetcherFactory the field data fetcher factory
+     * @param arguments          the field arguments
+     * @param deprecationReason  the deprecation reason
+     * @param directives         the directives on this type element
+     * @param definition         the AST definition
+     *
+     * @deprecated use the {@link #newFieldDefinition()} builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcherFactory dataFetcherFactory, List<GraphQLArgument> arguments, String deprecationReason, List<GraphQLDirective> directives, FieldDefinition definition) {
-        this.directives = directives;
         assertValidName(name);
         assertNotNull(dataFetcherFactory, "you have to provide a DataFetcher (or DataFetcherFactory)");
         assertNotNull(type, "type can't be null");
@@ -61,7 +84,8 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         this.description = description;
         this.type = type;
         this.dataFetcherFactory = dataFetcherFactory;
-        this.arguments = Collections.unmodifiableList(new ArrayList<>(arguments));
+        this.arguments = Collections.unmodifiableList(sortGraphQLTypes(arguments));
+        this.directives = directives;
         this.deprecationReason = deprecationReason;
         this.definition = definition;
     }
@@ -80,7 +104,8 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         return type;
     }
 
-    public DataFetcher getDataFetcher() {
+    // to be removed in a future version when all code is in the code registry
+    DataFetcher getDataFetcher() {
         return dataFetcherFactory.get(newDataFetchingFactoryEnvironment()
                 .fieldDefinition(this)
                 .build());
@@ -152,7 +177,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
 
     @Override
     public List<GraphQLType> getChildren() {
-        List<GraphQLType> children =  new ArrayList<>();
+        List<GraphQLType> children = new ArrayList<>();
         children.add(type);
         children.addAll(arguments);
         children.addAll(directives);
@@ -233,7 +258,10 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
          * @param dataFetcher the data fetcher to use
          *
          * @return this builder
+         *
+         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
+        @Deprecated
         public Builder dataFetcher(DataFetcher<?> dataFetcher) {
             assertNotNull(dataFetcher, "dataFetcher must be not null");
             this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(dataFetcher);
@@ -243,10 +271,13 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         /**
          * Sets the {@link graphql.schema.DataFetcherFactory} to use with this field.
          *
-         * @param dataFetcherFactory the factory to use
+         * @param dataFetcherFactory the data fetcher factory
          *
          * @return this builder
+         *
+         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
+        @Deprecated
         public Builder dataFetcherFactory(DataFetcherFactory dataFetcherFactory) {
             assertNotNull(dataFetcherFactory, "dataFetcherFactory must be not null");
             this.dataFetcherFactory = dataFetcherFactory;
@@ -259,7 +290,10 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
          * @param value the value to always return
          *
          * @return this builder
+         *
+         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
+        @Deprecated
         public Builder staticValue(final Object value) {
             this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(environment -> value);
             return this;
@@ -303,7 +337,28 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
             return this;
         }
 
+        /**
+         * This adds the list of arguments to the field.
+         *
+         * @param arguments the arguments to add
+         *
+         * @return this
+         *
+         * @deprecated This is a badly named method and is replaced by {@link #arguments(java.util.List)}
+         */
+        @Deprecated
         public Builder argument(List<GraphQLArgument> arguments) {
+            return arguments(arguments);
+        }
+
+        /**
+         * This adds the list of arguments to the field.
+         *
+         * @param arguments the arguments to add
+         *
+         * @return this
+         */
+        public Builder arguments(List<GraphQLArgument> arguments) {
             assertNotNull(arguments, "arguments can't be null");
             for (GraphQLArgument argument : arguments) {
                 argument(argument);

@@ -18,6 +18,7 @@ import java.util.function.UnaryOperator;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.introspection.Introspection.DirectiveLocation;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 
@@ -45,7 +46,7 @@ public class GraphQLDirective implements GraphQLType {
         this.name = name;
         this.description = description;
         this.locations = locations;
-        this.arguments.addAll(arguments);
+        this.arguments.addAll(sortGraphQLTypes(arguments));
         this.onOperation = onOperation;
         this.onFragment = onFragment;
         this.onField = onField;

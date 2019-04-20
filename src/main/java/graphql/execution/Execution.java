@@ -14,7 +14,6 @@ import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.language.Document;
-import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
@@ -44,6 +43,7 @@ public class Execution {
     private static final Logger log = LoggerFactory.getLogger(Execution.class);
 
     private final FieldCollector fieldCollector = new FieldCollector();
+    private final ValuesResolver valuesResolver = new ValuesResolver();
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
@@ -62,7 +62,6 @@ public class Execution {
         Map<String, FragmentDefinition> fragmentsByName = getOperationResult.fragmentsByName;
         OperationDefinition operationDefinition = getOperationResult.operationDefinition;
 
-        ValuesResolver valuesResolver = new ValuesResolver();
         Map<String, Object> inputVariables = executionInput.getVariables();
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
 
@@ -91,6 +90,7 @@ public class Execution {
                 .document(document)
                 .operationDefinition(operationDefinition)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
+                .cacheControl(executionInput.getCacheControl())
                 .build();
 
 
@@ -131,7 +131,7 @@ public class Execution {
                 .variables(executionContext.getVariables())
                 .build();
 
-        Map<String, List<Field>> fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
+        MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
 
         ExecutionPath path = ExecutionPath.rootPath();
         ExecutionStepInfo executionStepInfo = newExecutionStepInfo().type(operationRootType).path(path).build();
@@ -140,6 +140,7 @@ public class Execution {
         ExecutionStrategyParameters parameters = newParameters()
                 .executionStepInfo(executionStepInfo)
                 .source(root)
+                .localContext(executionContext.getContext())
                 .fields(fields)
                 .nonNullFieldValidator(nonNullableFieldValidator)
                 .path(path)

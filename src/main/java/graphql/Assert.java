@@ -9,13 +9,31 @@ import static java.lang.String.format;
 public class Assert {
 
     public static <T> T assertNotNull(T object, String format, Object... args) {
-        if (object != null) return object;
+        if (object != null) {
+            return object;
+        }
         throw new AssertException(format(format, args));
     }
 
     public static <T> T assertNotNull(T object) {
-        if (object != null) return object;
+        if (object != null) {
+            return object;
+        }
         throw new AssertException("Object required to be not null");
+    }
+
+    public static <T> void assertNull(T object, String format, Object... args) {
+        if (object == null) {
+            return;
+        }
+        throw new AssertException(format(format, args));
+    }
+
+    public static <T> void assertNull(T object) {
+        if (object == null) {
+            return;
+        }
+        throw new AssertException("Object required to be null");
     }
 
     public static <T> T assertNeverCalled() {
@@ -30,14 +48,38 @@ public class Assert {
         throw new AssertException("Internal error: should never happen");
     }
 
-    public static <T> Collection<T> assertNotEmpty(Collection<T> c, String format, Object... args) {
-        if (c == null || c.isEmpty())
+    public static <T> Collection<T> assertNotEmpty(Collection<T> collection) {
+        if (collection == null || collection.isEmpty()) {
+            throw new AssertException("collection must be not null and not empty");
+        }
+        return collection;
+    }
+
+    public static <T> Collection<T> assertNotEmpty(Collection<T> collection, String format, Object... args) {
+        if (collection == null || collection.isEmpty()) {
             throw new AssertException(format(format, args));
-        return c;
+        }
+        return collection;
     }
 
     public static void assertTrue(boolean condition, String format, Object... args) {
-        if (condition) return;
+        if (condition) {
+            return;
+        }
+        throw new AssertException(format(format, args));
+    }
+
+    public static void assertTrue(boolean condition) {
+        if (condition) {
+            return;
+        }
+        throw new AssertException("condition expected to be true");
+    }
+
+    public static void assertFalse(boolean condition, String format, Object... args) {
+        if (!condition) {
+            return;
+        }
         throw new AssertException(format(format, args));
     }
 
@@ -55,7 +97,7 @@ public class Assert {
         if (name != null && !name.isEmpty() && name.matches("[_A-Za-z][_0-9A-Za-z]*")) {
             return name;
         }
-        throw new AssertException(String.format(invalidNameErrorMessage,name));
+        throw new AssertException(String.format(invalidNameErrorMessage, name));
     }
 
 }

@@ -3,17 +3,12 @@ package graphql.language;
 
 import graphql.PublicApi;
 
-import java.util.List;
-
+/**
+ * All type definitions in a SDL.
+ *
+ * @param <T> the actual Node type
+ */
 @PublicApi
-public interface TypeDefinition<T extends TypeDefinition> extends SDLDefinition<T> {
-    /**
-     * @return the name of the type being defined.
-     */
-    String getName();
+public interface TypeDefinition<T extends TypeDefinition> extends SDLDefinition<T>, DirectivesContainer<T>, NamedNode<T> {
 
-    /**
-     * @return the directives of this type being defined
-     */
-    List<Directive> getDirectives();
 }

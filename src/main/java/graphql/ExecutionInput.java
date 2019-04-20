@@ -1,10 +1,12 @@
 package graphql;
 
+import graphql.cachecontrol.CacheControl;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 
@@ -19,20 +21,22 @@ public class ExecutionInput {
     private final Object root;
     private final Map<String, Object> variables;
     private final DataLoaderRegistry dataLoaderRegistry;
+    private final CacheControl cacheControl;
 
 
     public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables) {
-        this(query, operationName, context, root, variables, new DataLoaderRegistry());
+        this(query, operationName, context, root, variables, new DataLoaderRegistry(), null);
     }
 
     @Internal
-    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry) {
+    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl) {
         this.query = query;
         this.operationName = operationName;
         this.context = context;
         this.root = root;
         this.variables = variables;
         this.dataLoaderRegistry = dataLoaderRegistry;
+        this.cacheControl = cacheControl;
     }
 
     /**
@@ -78,6 +82,13 @@ public class ExecutionInput {
     }
 
     /**
+     * @return the cache control helper associated with this execution
+     */
+    public CacheControl getCacheControl() {
+        return cacheControl;
+    }
+
+    /**
      * This helps you transform the current ExecutionInput object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
      *
@@ -92,6 +103,7 @@ public class ExecutionInput {
                 .context(this.context)
                 .root(this.root)
                 .dataLoaderRegistry(this.dataLoaderRegistry)
+                .cacheControl(this.cacheControl)
                 .variables(this.variables);
 
         builderConsumer.accept(builder);
@@ -119,14 +131,26 @@ public class ExecutionInput {
         return new Builder();
     }
 
+    /**
+     * Creates a new builder of ExecutionInput objects with the given query
+     *
+     * @param query the query to execute
+     *
+     * @return a new builder of ExecutionInput objects
+     */
+    public static Builder newExecutionInput(String query) {
+        return new Builder().query(query);
+    }
+
     public static class Builder {
 
         private String query;
         private String operationName;
-        private Object context;
+        private Object context = GraphQLContext.newContext().build();
         private Object root;
         private Map<String, Object> variables = Collections.emptyMap();
         private DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
+        private CacheControl cacheControl;
 
         public Builder query(String query) {
             this.query = query;
@@ -138,9 +162,27 @@ public class ExecutionInput {
             return this;
         }
 
+        /**
+         * By default you will get a {@link GraphQLContext} object but you can set your own.
+         *
+         * @param context the context object to use
+         *
+         * @return this builder
+         */
         public Builder context(Object context) {
             this.context = context;
             return this;
+        }
+
+        public Builder context(GraphQLContext.Builder contextBuilder) {
+            this.context = contextBuilder.build();
+            return this;
+        }
+
+        public Builder context(UnaryOperator<GraphQLContext.Builder> contextBuilderFunction) {
+            GraphQLContext.Builder builder = GraphQLContext.newContext();
+            builder = contextBuilderFunction.apply(builder);
+            return context(builder.build());
         }
 
         public Builder root(Object root) {
@@ -166,8 +208,13 @@ public class ExecutionInput {
             return this;
         }
 
+        public Builder cacheControl(CacheControl cacheControl) {
+            this.cacheControl = cacheControl;
+            return this;
+        }
+
         public ExecutionInput build() {
-            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry);
+            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry, cacheControl);
         }
     }
 }

@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> implements TypeDefinition<ScalarTypeDefinition>, DirectivesContainer<ScalarTypeDefinition> {
 
@@ -17,9 +19,16 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
     private final Description description;
     private final List<Directive> directives;
 
+    public static final String CHILD_DIRECTIVES = "directives";
+
     @Internal
-    protected ScalarTypeDefinition(String name, List<Directive> directives, Description description, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected ScalarTypeDefinition(String name,
+                                   List<Directive> directives,
+                                   Description description,
+                                   SourceLocation sourceLocation,
+                                   List<Comment> comments,
+                                   IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.directives = directives;
         this.description = description;
@@ -31,7 +40,7 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
      * @param name of the scalar
      */
     public ScalarTypeDefinition(String name) {
-        this(name, new ArrayList<>(), null, null, new ArrayList<>());
+        this(name, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     @Override
@@ -57,9 +66,27 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
+    }
+
+    @Override
+    public ScalarTypeDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ScalarTypeDefinition that = (ScalarTypeDefinition) o;
 
@@ -68,7 +95,7 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
 
     @Override
     public ScalarTypeDefinition deepCopy() {
-        return new ScalarTypeDefinition(name, deepCopy(directives), description, getSourceLocation(), getComments());
+        return new ScalarTypeDefinition(name, deepCopy(directives), description, getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -100,6 +127,7 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
         private String name;
         private Description description;
         private List<Directive> directives = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -110,6 +138,7 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
             this.name = existing.getName();
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
 
@@ -143,12 +172,18 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public ScalarTypeDefinition build() {
             ScalarTypeDefinition scalarTypeDefinition = new ScalarTypeDefinition(name,
                     directives,
                     description,
                     sourceLocation,
-                    comments);
+                    comments,
+                    ignoredChars);
             return scalarTypeDefinition;
         }
     }

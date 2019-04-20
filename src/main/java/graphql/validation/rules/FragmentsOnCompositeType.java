@@ -36,7 +36,7 @@ public class FragmentsOnCompositeType extends AbstractRule {
         if (type == null) return;
         if (!(type instanceof GraphQLCompositeType)) {
             String message = "Fragment type condition is invalid, must be on Object/Interface/Union";
-            addError(ValidationErrorType.InlineFragmentTypeConditionInvalid, fragmentDefinition.getSourceLocation(), message);
+            addError(ValidationErrorType.FragmentTypeConditionInvalid, fragmentDefinition.getSourceLocation(), message);
         }
     }
 }

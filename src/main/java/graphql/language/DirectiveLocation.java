@@ -10,6 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
+
 // This should probably be an enum... but the grammar
 // doesn't enforce the names. These are the current names:
 //    QUERY
@@ -23,8 +26,8 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
     private final String name;
 
     @Internal
-    protected DirectiveLocation(String name, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected DirectiveLocation(String name, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
     }
 
@@ -34,7 +37,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
      * @param name of the directive location
      */
     public DirectiveLocation(String name) {
-        this(name, null, new ArrayList<>());
+        this(name, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     @Override
@@ -48,9 +51,24 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
     }
 
     @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer().build();
+    }
+
+    @Override
+    public DirectiveLocation withNewChildren(NodeChildrenContainer newChildren) {
+        assertNewChildrenAreEmpty(newChildren);
+        return this;
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         DirectiveLocation that = (DirectiveLocation) o;
 
@@ -59,7 +77,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
 
     @Override
     public DirectiveLocation deepCopy() {
-        return new DirectiveLocation(name, getSourceLocation(), getComments());
+        return new DirectiveLocation(name, getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -88,6 +106,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private String name;
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -113,8 +132,13 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public DirectiveLocation build() {
-            DirectiveLocation directiveLocation = new DirectiveLocation(name, sourceLocation, comments);
+            DirectiveLocation directiveLocation = new DirectiveLocation(name, sourceLocation, comments, ignoredChars);
             return directiveLocation;
         }
     }

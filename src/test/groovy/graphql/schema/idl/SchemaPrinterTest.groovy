@@ -8,7 +8,6 @@ import graphql.introspection.IntrospectionQuery
 import graphql.introspection.IntrospectionResultToSchema
 import graphql.schema.Coercing
 import graphql.schema.GraphQLArgument
-import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputObjectType
@@ -23,11 +22,9 @@ import graphql.schema.GraphQLUnionType
 import graphql.schema.TypeResolver
 import spock.lang.Specification
 
-import java.util.Collections
 import java.util.function.UnaryOperator
 
 import static graphql.Scalars.GraphQLString
-import static graphql.TestUtil.mockDirective
 import static graphql.TestUtil.mockScalar
 import static graphql.TestUtil.mockTypeRuntimeWiring
 import static graphql.schema.GraphQLArgument.newArgument
@@ -539,12 +536,14 @@ scalar Scalar
         then:
         result == """type Query {
   field(
-  #about arg1
-  arg1: String, 
-  arg2: String, 
-  #about 3
-  #second line
-  arg3: String
+    #about arg1
+    arg1: String, 
+    arg2: String, 
+    \"\"\"
+    about 3
+    second line
+    \"\"\"
+    arg3: String
   ): String
 }
 """
@@ -743,9 +742,8 @@ type Query {
     }
 
 
-    def "directives will be printed"() {
-        given:
-        def idl = """
+    def idlWithDirectives() {
+        return """
             
             interface SomeInterface @interfaceTypeDirective {
                 fieldA : String @interfaceFieldDirective
@@ -759,6 +757,7 @@ type Query {
                 fieldC : SomeEnum
                 fieldD : SomeInterface
                 fieldE : SomeUnion
+                fieldF(argWithDirective: String @argDirective): String
             }
             
             type Single @single {
@@ -779,12 +778,17 @@ type Query {
                 fieldA : String @inputFieldDirective
             }
         """
-        def registry = new SchemaParser().parse(idl)
+    }
+
+
+    def "directives will be printed with the includeDirectives flag set"() {
+        given:
+        def registry = new SchemaParser().parse(idlWithDirectives())
         def runtimeWiring = newRuntimeWiring()
-            .scalar(mockScalar(registry.scalars().get("SomeScalar")))
-            .type(mockTypeRuntimeWiring("SomeInterface", true))
-            .type(mockTypeRuntimeWiring("SomeUnion", true))
-            .build()
+                .scalar(mockScalar(registry.scalars().get("SomeScalar")))
+                .type(mockTypeRuntimeWiring("SomeInterface", true))
+                .type(mockTypeRuntimeWiring("SomeUnion", true))
+                .build()
         def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
@@ -805,6 +809,7 @@ type Query @query1 @query2(arg1 : "x") {
   fieldC: SomeEnum
   fieldD: SomeInterface
   fieldE: SomeUnion
+  fieldF(argWithDirective: String @argDirective): String
 }
 
 type Single @single {
@@ -823,6 +828,47 @@ scalar SomeScalar @scalarDirective
 
 input SomeInput @inputTypeDirective {
   fieldA: String @inputFieldDirective
+}
+'''
+        when:
+        def resultNoDirectives = new SchemaPrinter(defaultOptions()
+                .includeScalarTypes(true)
+                .includeDirectives(false))
+                .print(schema)
+
+        then:
+        // args and directives are sorted like the rest of the schema printer
+        resultNoDirectives == '''interface SomeInterface {
+  fieldA: String
+}
+
+union SomeUnion = Single | SomeImplementingType
+
+type Query {
+  fieldA: String
+  fieldB(input: SomeInput): SomeScalar
+  fieldC: SomeEnum
+  fieldD: SomeInterface
+  fieldE: SomeUnion
+  fieldF(argWithDirective: String): String
+}
+
+type Single {
+  fieldA: String
+}
+
+type SomeImplementingType implements SomeInterface {
+  fieldA: String
+}
+
+enum SomeEnum {
+  SOME_ENUM_VALUE
+}
+
+scalar SomeScalar
+
+input SomeInput {
+  fieldA: String
 }
 '''
     }
@@ -876,5 +922,48 @@ enum Enum {
 '''
     }
 
-}
 
+    def "directives are printed as top level types when the includeDirectives flag is set"() {
+        def simpleIdlWithDirective = '''
+                directive @example on FIELD_DEFINITION
+                
+                directive @moreComplex(arg1 : String = "default", arg2 : Int) 
+                    on FIELD_DEFINITION | 
+                        INPUT_FIELD_DEFINITION
+               
+                type Query {
+                    fieldA : String @example @moreComplex(arg2 : 666)
+                }
+            '''
+        given:
+        def registry = new SchemaParser().parse(simpleIdlWithDirective)
+        def runtimeWiring = newRuntimeWiring().build()
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+
+        when:
+        def resultWithNoDirectives = new SchemaPrinter(defaultOptions().includeDirectives(false)).print(schema)
+
+        then:
+        resultWithNoDirectives == '''\
+type Query {
+  fieldA: String
+}
+'''
+
+        when:
+        def resultWithDirectives = new SchemaPrinter(defaultOptions().includeDirectives(true)).print(schema)
+
+        then:
+        resultWithDirectives == '''\
+directive @example on FIELD_DEFINITION
+
+directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+type Query {
+  fieldA: String @example @moreComplex(arg1 : "default", arg2 : 666)
+}
+'''
+    }
+
+}

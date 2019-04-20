@@ -13,6 +13,7 @@ import graphql.language.TypeDefinition;
 import graphql.schema.Coercing;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInterfaceType;
@@ -49,7 +50,9 @@ import static graphql.MutationSchema.mutationType;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
 import static graphql.StarWarsSchema.queryType;
+import static graphql.schema.FieldCoordinates.coordinates;
 import static graphql.schema.GraphQLArgument.newArgument;
+import static graphql.schema.GraphQLCodeRegistry.newCodeRegistry;
 import static graphql.schema.GraphQLEnumType.newEnum;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField;
@@ -143,23 +146,28 @@ public class ReadmeExamples {
     }
 
     void unionType() {
+        TypeResolver typeResolver = new TypeResolver() {
+            @Override
+            public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                if (env.getObject() instanceof Cat) {
+                    return CatType;
+                }
+                if (env.getObject() instanceof Dog) {
+                    return DogType;
+                }
+                return null;
+            }
+        };
         GraphQLUnionType PetType = newUnionType()
                 .name("Pet")
                 .possibleType(CatType)
                 .possibleType(DogType)
-                .typeResolver(new TypeResolver() {
-                    @Override
-                    public GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                        if (env.getObject() instanceof Cat) {
-                            return CatType;
-                        }
-                        if (env.getObject() instanceof Dog) {
-                            return DogType;
-                        }
-                        return null;
-                    }
-                })
                 .build();
+
+        GraphQLCodeRegistry codeRegistry = newCodeRegistry()
+                .typeResolver("Pet", typeResolver)
+                .build();
+
     }
 
 
@@ -207,7 +215,13 @@ public class ReadmeExamples {
                 .field(newFieldDefinition()
                         .name("foo")
                         .type(GraphQLString)
-                        .dataFetcher(fooDataFetcher))
+                )
+                .build();
+
+        GraphQLCodeRegistry codeRegistry = newCodeRegistry()
+                .dataFetcher(
+                        coordinates("ObjectType", "foo"),
+                        fooDataFetcher)
                 .build();
 
     }
@@ -242,14 +256,14 @@ public class ReadmeExamples {
 
     void mutationExample() {
 
-        GraphQLInputObjectType episodeType = GraphQLInputObjectType.newInputObject()
+        GraphQLInputObjectType episodeType = newInputObject()
                 .name("Episode")
                 .field(newInputObjectField()
                         .name("episodeNumber")
                         .type(Scalars.GraphQLInt))
                 .build();
 
-        GraphQLInputObjectType reviewInputType = GraphQLInputObjectType.newInputObject()
+        GraphQLInputObjectType reviewInputType = newInputObject()
                 .name("ReviewInput")
                 .field(newInputObjectField()
                         .name("stars")
@@ -281,13 +295,21 @@ public class ReadmeExamples {
                                 .name("review")
                                 .type(reviewInputType)
                         )
-                        .dataFetcher(mutationDataFetcher())
                 )
                 .build();
+
+        GraphQLCodeRegistry codeRegistry = newCodeRegistry()
+                .dataFetcher(
+                        coordinates("CreateReviewForEpisodeMutation", "createReview"),
+                        mutationDataFetcher()
+                )
+                .build();
+
 
         GraphQLSchema schema = GraphQLSchema.newSchema()
                 .query(queryType)
                 .mutation(createReviewForEpisodeMutation)
+                .codeRegistry(codeRegistry)
                 .build();
     }
 
@@ -467,7 +489,7 @@ public class ReadmeExamples {
     }
 
 
-    public static GraphQLScalarType CustomScalar = new GraphQLScalarType("Custom", "Custom Scalar", new Coercing<Integer, Integer>() {
+    public static GraphQLScalarType CustomScalar = GraphQLScalarType.newScalar().name("Custom").description("Custom Scalar").coercing(new Coercing<Integer, Integer>() {
         @Override
         public Integer serialize(Object input) {
             throw new UnsupportedOperationException("Not implemented");
@@ -482,7 +504,7 @@ public class ReadmeExamples {
         public Integer parseLiteral(Object input) {
             throw new UnsupportedOperationException("Not implemented");
         }
-    });
+    }).build();
 
     private File loadSchema(String s) {
         return null;

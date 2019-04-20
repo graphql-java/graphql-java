@@ -5,16 +5,14 @@ import graphql.Internal;
 @Internal
 public class TraverserResult {
 
-    private final Object result;
+    private final Object accumulatedResult;
 
-
-    public TraverserResult(Object result) {
-        this.result = result;
+    public TraverserResult(Object accumulatedResult) {
+        this.accumulatedResult = accumulatedResult;
     }
 
-
-    public Object getResult() {
-        return result;
+    public Object getAccumulatedResult() {
+        return accumulatedResult;
     }
 
 }

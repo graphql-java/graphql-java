@@ -6,14 +6,15 @@ import graphql.PublicApi;
 import graphql.language.Definition;
 import graphql.language.Document;
 import graphql.language.SDLDefinition;
+import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
+import graphql.schema.idl.errors.NonSDLDefinitionError;
 import graphql.schema.idl.errors.SchemaProblem;
-import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.StringWriter;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,7 +57,7 @@ public class SchemaParser {
      */
     public TypeDefinitionRegistry parse(Reader reader) throws SchemaProblem {
         try (Reader input = reader) {
-            return parse(read(input));
+            return parseImpl(input);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -72,18 +73,21 @@ public class SchemaParser {
      * @throws SchemaProblem if there are problems compiling the schema definitions
      */
     public TypeDefinitionRegistry parse(String schemaInput) throws SchemaProblem {
+        return parseImpl(new StringReader(schemaInput));
+    }
+
+    public TypeDefinitionRegistry parseImpl(Reader schemaInput) {
         try {
             Parser parser = new Parser();
             Document document = parser.parseDocument(schemaInput);
 
             return buildRegistry(document);
-        } catch (ParseCancellationException e) {
-            throw handleParseException(e);
+        } catch (InvalidSyntaxException e) {
+            throw handleParseException(e.toInvalidSyntaxError());
         }
     }
 
-    private SchemaProblem handleParseException(ParseCancellationException e) throws RuntimeException {
-        InvalidSyntaxError invalidSyntaxError = InvalidSyntaxError.toInvalidSyntaxError(e);
+    private SchemaProblem handleParseException(InvalidSyntaxError invalidSyntaxError) throws RuntimeException {
         return new SchemaProblem(Collections.singletonList(invalidSyntaxError));
     }
 
@@ -104,6 +108,8 @@ public class SchemaParser {
         for (Definition definition : definitions) {
             if (definition instanceof SDLDefinition) {
                 typeRegistry.add((SDLDefinition) definition).ifPresent(errors::add);
+            } else {
+                errors.add(new NonSDLDefinitionError(definition));
             }
         }
         if (errors.size() > 0) {
@@ -111,15 +117,5 @@ public class SchemaParser {
         } else {
             return typeRegistry;
         }
-    }
-
-    private String read(Reader reader) throws IOException {
-        char[] buffer = new char[1024 * 4];
-        StringWriter sw = new StringWriter();
-        int n;
-        while (-1 != (n = reader.read(buffer))) {
-            sw.write(buffer, 0, n);
-        }
-        return sw.toString();
     }
 }
