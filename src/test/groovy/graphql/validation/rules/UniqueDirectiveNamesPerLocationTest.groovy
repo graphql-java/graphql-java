@@ -32,7 +32,7 @@ class UniqueDirectiveNamesPerLocationTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        assertDuplicateDirectiveName("upper", "FragmentDefinition", 13, 39, validationErrors[0])
+        assertDuplicateDirectiveName("upper", "FragmentDefinition", 12, 39, validationErrors[0])
     }
 
     def '5.7.3 Directives Are Unique Per Location - OperationDefinition'() {
@@ -57,7 +57,7 @@ class UniqueDirectiveNamesPerLocationTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        assertDuplicateDirectiveName("upper", "OperationDefinition", 3, 29, validationErrors[0])
+        assertDuplicateDirectiveName("upper", "OperationDefinition", 2, 29, validationErrors[0])
     }
 
     def '5.7.3 Directives Are Unique Per Location - Field'() {
@@ -82,7 +82,7 @@ class UniqueDirectiveNamesPerLocationTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        assertDuplicateDirectiveName("upper", "Field", 5, 28, validationErrors[0])
+        assertDuplicateDirectiveName("upper", "Field", 4, 28, validationErrors[0])
     }
 
     def '5.7.3 Directives Are Unique Per Location - FragmentSpread'() {
@@ -107,7 +107,7 @@ class UniqueDirectiveNamesPerLocationTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        assertDuplicateDirectiveName("upper", "FragmentSpread", 6, 35, validationErrors[0])
+        assertDuplicateDirectiveName("upper", "FragmentSpread", 5, 35, validationErrors[0])
     }
 
     def '5.7.3 Directives Are Unique Per Location - InlineFragment'() {
@@ -132,7 +132,7 @@ class UniqueDirectiveNamesPerLocationTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        assertDuplicateDirectiveName("upper", "InlineFragment", 7, 27, validationErrors[0])
+        assertDuplicateDirectiveName("upper", "InlineFragment", 6, 27, validationErrors[0])
     }
 
 

@@ -13,7 +13,7 @@ import static graphql.validation.rules.UniqueOperationNames.duplicateOperationNa
 class UniqueOperationNamesTest extends Specification {
 
     def '5.1.1.1 Operation Name Uniqueness Not Valid'() {
-        def query = """\
+        def query = """
         query getName {
             dog {
                 name
@@ -38,7 +38,7 @@ class UniqueOperationNamesTest extends Specification {
     }
 
     def '5.1.1.1 Operation Name Uniqueness Not Valid Different Operations'() {
-        def query = """\
+        def query = """
         query dogOperation {
             dog {
                 name

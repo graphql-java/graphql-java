@@ -1,7 +1,6 @@
 package graphql.parser;
 
 import graphql.language.SourceLocation;
-import graphql.parser.MultiSourceReader.SourceAndLine;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.RecognitionException;
@@ -9,6 +8,8 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.List;
+
+import static graphql.parser.SourceLocationHelper.mkSourceLocation;
 
 public class ExtendedBailStrategy extends BailErrorStrategy {
     private final MultiSourceReader multiSourceReader;
@@ -36,12 +37,8 @@ public class ExtendedBailStrategy extends BailErrorStrategy {
     }
 
     InvalidSyntaxException mkMoreTokensException(Token token) {
-        SourceAndLine sourceAndLine = multiSourceReader.getSourceAndLineFromOverallLine(token.getLine());
-        int column = token.getCharPositionInLine();
-
-        // graphql spec says line numbers start at 1
-        SourceLocation sourceLocation = new SourceLocation(sourceAndLine.getLine()+1, column, sourceAndLine.getSourceName());
-        String sourcePreview = mkPreview(token.getLine());
+        SourceLocation sourceLocation = mkSourceLocation(multiSourceReader, token);
+        String sourcePreview = mkPreview(token);
         return new InvalidSyntaxException(sourceLocation,
                 "There are more tokens in the query that have not been consumed",
                 sourcePreview, token.getText(), null);
@@ -54,19 +51,16 @@ public class ExtendedBailStrategy extends BailErrorStrategy {
         SourceLocation sourceLocation = null;
         Token currentToken = recognizer.getCurrentToken();
         if (currentToken != null) {
-            int tokenLine = currentToken.getLine();
-            int column = currentToken.getCharPositionInLine();
-            SourceAndLine sourceAndLine = multiSourceReader.getSourceAndLineFromOverallLine(tokenLine);
+            sourceLocation = mkSourceLocation(multiSourceReader, currentToken);
             offendingToken = currentToken.getText();
-            sourcePreview = mkPreview(tokenLine);
-            // graphql spec says line numbers start at 1
-            sourceLocation = new SourceLocation(sourceAndLine.getLine()+1, column, sourceAndLine.getSourceName());
+            sourcePreview = mkPreview(currentToken);
         }
         return new InvalidSyntaxException(sourceLocation, null, sourcePreview, offendingToken, cause);
     }
 
     /* grabs 3 lines before and after the syntax error */
-    private String mkPreview(int line) {
+    private String mkPreview(Token token) {
+        int line = token.getLine() - 1;
         StringBuilder sb = new StringBuilder();
         int startLine = line - 3;
         int endLine = line + 3;
