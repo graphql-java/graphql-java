@@ -63,7 +63,7 @@ class ExecutionStrategyTest extends Specification {
         new ExecutionContext(SimpleInstrumentation.INSTANCE, executionId, schema ?: StarWarsSchema.starWarsSchema, null,
                 executionStrategy, executionStrategy, executionStrategy,
                 null, null, null,
-                variables, "context", "root", [:], new DataLoaderRegistry(), Collections.emptyList())
+                variables, "context", "root", new DataLoaderRegistry(), null, Collections.emptyList())
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")
@@ -697,6 +697,7 @@ class ExecutionStrategyTest extends Specification {
         when:
         def fetchedValue = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters,
                 DataFetcherResult.newResult().data(executionData)
+                        .mapRelativeErrors(true)
                         .error(new DataFetchingErrorGraphQLError("bad foo", ["child", "foo"]))
                         .build()
         )

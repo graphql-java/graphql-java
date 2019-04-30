@@ -1,5 +1,6 @@
 package graphql.execution.directives;
 
+import graphql.Internal;
 import graphql.introspection.Introspection;
 import graphql.language.DirectivesContainer;
 import graphql.schema.GraphQLDirective;
@@ -27,7 +28,10 @@ import java.util.Map;
  *   }
  *   }
  * </pre>
+ *
+ * @apiNote This class is internal and highly like to change in a future version.  Use it at your own peril
  */
+@Internal
 public interface QueryDirectivesInfo extends Comparable<QueryDirectivesInfo> {
 
     /**

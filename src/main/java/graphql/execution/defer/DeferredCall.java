@@ -33,8 +33,7 @@ public class DeferredCall {
         if (errorsEncountered.isEmpty()) {
             return executionResult;
         }
-        ExecutionResultImpl sourceResult = (ExecutionResultImpl) executionResult;
-        ExecutionResultImpl.Builder builder = ExecutionResultImpl.newExecutionResult().from(sourceResult);
+        ExecutionResultImpl.Builder builder = ExecutionResultImpl.newExecutionResult().from(executionResult);
         builder.addErrors(errorsEncountered);
         return builder.build();
     }

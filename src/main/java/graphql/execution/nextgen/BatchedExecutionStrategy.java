@@ -9,7 +9,6 @@ import graphql.execution.FetchedValue;
 import graphql.execution.MergedField;
 import graphql.execution.MergedSelectionSet;
 import graphql.execution.nextgen.result.ExecutionResultNode;
-import graphql.execution.nextgen.result.NamedResultNode;
 import graphql.execution.nextgen.result.ObjectExecutionResultNode;
 import graphql.execution.nextgen.result.ResultNodesUtil;
 import graphql.execution.nextgen.result.RootExecutionResultNode;
@@ -129,8 +128,8 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
 
     private NodeZipper<ExecutionResultNode> resolveZipper(NodeZipper<ExecutionResultNode> unresolvedNodeZipper, List<FetchedValueAnalysis> fetchedValuesForNode) {
         UnresolvedObjectResultNode unresolvedNode = (UnresolvedObjectResultNode) unresolvedNodeZipper.getCurNode();
-        List<NamedResultNode> newChildren = util.fetchedValueAnalysisToNodes(fetchedValuesForNode);
-        ObjectExecutionResultNode newNode = unresolvedNode.withChildren(newChildren);
+        List<ExecutionResultNode> newChildren = util.fetchedValueAnalysisToNodes(fetchedValuesForNode);
+        ObjectExecutionResultNode newNode = unresolvedNode.withNewChildren(newChildren);
         return unresolvedNodeZipper.withNewNode(newNode);
     }
 

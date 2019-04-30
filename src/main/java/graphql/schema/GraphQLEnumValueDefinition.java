@@ -4,6 +4,7 @@ package graphql.schema;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.language.EnumValueDefinition;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -15,7 +16,6 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
-import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
@@ -35,6 +35,7 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
     private final Object value;
     private final String deprecationReason;
     private final List<GraphQLDirective> directives;
+    private final EnumValueDefinition definition;
 
     /**
      * @param name        the name
@@ -75,6 +76,10 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
     @Internal
     @Deprecated
     public GraphQLEnumValueDefinition(String name, String description, Object value, String deprecationReason, List<GraphQLDirective> directives) {
+        this(name, description, value, deprecationReason, directives, null);
+    }
+
+    private GraphQLEnumValueDefinition(String name, String description, Object value, String deprecationReason, List<GraphQLDirective> directives, EnumValueDefinition definition) {
         assertValidName(name);
         assertNotNull(directives, "directives cannot be null");
 
@@ -83,6 +88,7 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
         this.value = value;
         this.deprecationReason = deprecationReason;
         this.directives = directives;
+        this.definition = definition;
     }
 
     @Override
@@ -119,6 +125,10 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
     @Override
     public GraphQLDirective getDirective(String directiveName) {
         return getDirectivesByName().get(directiveName);
+    }
+
+    public EnumValueDefinition getDefinition() {
+        return definition;
     }
 
     /**
@@ -159,6 +169,7 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
         private String description;
         private Object value;
         private String deprecationReason;
+        private EnumValueDefinition definition;
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
 
         public Builder() {
@@ -192,6 +203,11 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
             return this;
         }
 
+        public Builder definition(EnumValueDefinition definition) {
+            this.definition = definition;
+            return this;
+        }
+
         public Builder withDirectives(GraphQLDirective... directives) {
             assertNotNull(directives, "directives can't be null");
             for (GraphQLDirective directive : directives) {
@@ -221,7 +237,7 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
         }
 
         public GraphQLEnumValueDefinition build() {
-            return new GraphQLEnumValueDefinition(name, description, value, deprecationReason, valuesToList(directives));
+            return new GraphQLEnumValueDefinition(name, description, value, deprecationReason, valuesToList(directives), definition);
         }
     }
 }

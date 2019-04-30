@@ -69,6 +69,13 @@ public class Assert {
         throw new AssertException(format(format, args));
     }
 
+    public static void assertTrue(boolean condition) {
+        if (condition) {
+            return;
+        }
+        throw new AssertException("condition expected to be true");
+    }
+
     public static void assertFalse(boolean condition, String format, Object... args) {
         if (!condition) {
             return;

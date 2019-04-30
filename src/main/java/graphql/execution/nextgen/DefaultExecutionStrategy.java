@@ -3,7 +3,6 @@ package graphql.execution.nextgen;
 import graphql.Internal;
 import graphql.execution.ExecutionContext;
 import graphql.execution.nextgen.result.ExecutionResultNode;
-import graphql.execution.nextgen.result.NamedResultNode;
 import graphql.execution.nextgen.result.ObjectExecutionResultNode;
 import graphql.execution.nextgen.result.ResultNodesUtil;
 import graphql.execution.nextgen.result.RootExecutionResultNode;
@@ -35,16 +34,16 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
                 .thenApply(RootExecutionResultNode::new);
     }
 
-    private CompletableFuture<List<NamedResultNode>> resolveSubSelection(ExecutionContext executionContext, FieldSubSelection fieldSubSelection) {
-        List<CompletableFuture<NamedResultNode>> namedNodesCFList =
+    private CompletableFuture<List<ExecutionResultNode>> resolveSubSelection(ExecutionContext executionContext, FieldSubSelection fieldSubSelection) {
+        List<CompletableFuture<ExecutionResultNode>> namedNodesCFList =
                 mapCompose(util.fetchSubSelection(executionContext, fieldSubSelection), node -> resolveAllChildNodes(executionContext, node));
         return each(namedNodesCFList);
     }
 
-    private CompletableFuture<NamedResultNode> resolveAllChildNodes(ExecutionContext context, NamedResultNode namedResultNode) {
-        NodeMultiZipper<ExecutionResultNode> unresolvedNodes = ResultNodesUtil.getUnresolvedNodes(namedResultNode.getNode());
+    private CompletableFuture<ExecutionResultNode> resolveAllChildNodes(ExecutionContext context, ExecutionResultNode node) {
+        NodeMultiZipper<ExecutionResultNode> unresolvedNodes = ResultNodesUtil.getUnresolvedNodes(node);
         List<CompletableFuture<NodeZipper<ExecutionResultNode>>> resolvedNodes = map(unresolvedNodes.getZippers(), unresolvedNode -> resolveNode(context, unresolvedNode));
-        return resolvedNodesToResultNode(namedResultNode, unresolvedNodes, resolvedNodes);
+        return resolvedNodesToResultNode(unresolvedNodes, resolvedNodes);
     }
 
     private CompletableFuture<NodeZipper<ExecutionResultNode>> resolveNode(ExecutionContext executionContext, NodeZipper<ExecutionResultNode> unresolvedNode) {
@@ -54,13 +53,12 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
                 .thenApply(resolvedChildMap -> unresolvedNode.withNewNode(new ObjectExecutionResultNode(fetchedValueAnalysis, resolvedChildMap)));
     }
 
-    private CompletableFuture<NamedResultNode> resolvedNodesToResultNode(NamedResultNode namedResultNode,
-                                                                         NodeMultiZipper<ExecutionResultNode> unresolvedNodes,
-                                                                         List<CompletableFuture<NodeZipper<ExecutionResultNode>>> resolvedNodes) {
+    private CompletableFuture<ExecutionResultNode> resolvedNodesToResultNode(
+            NodeMultiZipper<ExecutionResultNode> unresolvedNodes,
+            List<CompletableFuture<NodeZipper<ExecutionResultNode>>> resolvedNodes) {
         return each(resolvedNodes)
                 .thenApply(unresolvedNodes::withReplacedZippers)
-                .thenApply(NodeMultiZipper::toRootNode)
-                .thenApply(namedResultNode::withNode);
+                .thenApply(NodeMultiZipper::toRootNode);
     }
 
 

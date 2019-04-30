@@ -290,7 +290,7 @@ public class GraphQLSchema {
         private Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
         // we default these in
         private Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>(
-                asList(Directives.IncludeDirective, Directives.SkipDirective, Directives.DeferDirective)
+                asList(Directives.IncludeDirective, Directives.SkipDirective)
         );
 
         private SchemaUtil schemaUtil = new SchemaUtil();

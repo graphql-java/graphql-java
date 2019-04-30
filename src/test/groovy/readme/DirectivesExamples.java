@@ -64,8 +64,7 @@ public class DirectivesExamples {
             };
             //
             // now change the field definition to have the new authorising data fetcher
-            FieldCoordinates coordinates = FieldCoordinates.coordinates(parentType, field);
-            environment.getCodeRegistry().dataFetcher(coordinates, authDataFetcher);
+            environment.getCodeRegistry().dataFetcher(parentType, field, authDataFetcher);
             return field;
         }
     }

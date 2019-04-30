@@ -1,60 +1,40 @@
 package graphql.execution.nextgen.result;
 
-import graphql.Assert;
+import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.nextgen.FetchedValueAnalysis;
-import graphql.util.NodeLocation;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @Internal
 public class ListExecutionResultNode extends ExecutionResultNode {
 
-    private final List<ExecutionResultNode> children;
-
     public ListExecutionResultNode(FetchedValueAnalysis fetchedValueAnalysis,
                                    List<ExecutionResultNode> children) {
-        super(fetchedValueAnalysis, ResultNodesUtil.newNullableException(fetchedValueAnalysis, children));
-        this.children = Assert.assertNotNull(children);
-        children.forEach(Assert::assertNotNull);
+        this(fetchedValueAnalysis, children, Collections.emptyList());
+
     }
 
-    public Optional<NonNullableFieldWasNullException> getChildNonNullableException() {
-        return children.stream()
-                .filter(executionResultNode -> executionResultNode.getNonNullableFieldWasNullException() != null)
-                .map(ExecutionResultNode::getNonNullableFieldWasNullException)
-                .findFirst();
-    }
-
-    @Override
-    public List<ExecutionResultNode> getChildren() {
-        return children;
+    public ListExecutionResultNode(FetchedValueAnalysis fetchedValueAnalysis,
+                                   List<ExecutionResultNode> children,
+                                   List<GraphQLError> errors) {
+        super(fetchedValueAnalysis, ResultNodesUtil.newNullableException(fetchedValueAnalysis, children), children, errors);
     }
 
     @Override
-    public Map<String, List<ExecutionResultNode>> getNamedChildren() {
-        Map<String, List<ExecutionResultNode>> result = new LinkedHashMap<>();
-        result.put(null, children);
-        return result;
+    public ExecutionResultNode withNewChildren(List<ExecutionResultNode> children) {
+        return new ListExecutionResultNode(getFetchedValueAnalysis(), children, getErrors());
     }
 
     @Override
-    public ExecutionResultNode withChild(ExecutionResultNode child, NodeLocation position) {
-        List<ExecutionResultNode> newChildren = new ArrayList<>(this.children);
-        newChildren.set(position.getIndex(), child);
-        return new ListExecutionResultNode(getFetchedValueAnalysis(), newChildren);
+    public ExecutionResultNode withNewFetchedValueAnalysis(FetchedValueAnalysis fetchedValueAnalysis) {
+        return new ListExecutionResultNode(fetchedValueAnalysis, getChildren(), getErrors());
     }
 
     @Override
-    public ExecutionResultNode withNewChildren(Map<NodeLocation, ExecutionResultNode> newChildren) {
-        List<ExecutionResultNode> mergedChildren = new ArrayList<>(this.children);
-        newChildren.entrySet().forEach(entry -> mergedChildren.set(entry.getKey().getIndex(), entry.getValue()));
-
-        return new ListExecutionResultNode(getFetchedValueAnalysis(), mergedChildren);
+    public ExecutionResultNode withNewErrors(List<GraphQLError> errors) {
+        return new ListExecutionResultNode(getFetchedValueAnalysis(), getChildren(), new ArrayList<>(errors));
     }
 }

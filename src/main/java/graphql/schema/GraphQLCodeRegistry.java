@@ -244,6 +244,19 @@ public class GraphQLCodeRegistry {
         }
 
         /**
+         * Sets the data fetcher for a specific field inside a container type
+         *
+         * @param parentType      the container type
+         * @param fieldDefinition the field definition
+         * @param dataFetcher     the data fetcher code for that field
+         *
+         * @return this builder
+         */
+        public Builder dataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition, DataFetcher<?> dataFetcher) {
+            return dataFetcher(FieldCoordinates.coordinates(parentType.getName(), fieldDefinition.getName()), dataFetcher);
+        }
+
+        /**
          * Called to place system data fetchers (eg Introspection fields) into the mix
          *
          * @param coordinates the field coordinates
@@ -302,28 +315,28 @@ public class GraphQLCodeRegistry {
             return this;
         }
 
-        public Builder typeResolver(GraphQLInterfaceType parentType, TypeResolver typeResolver) {
-            typeResolverMap.put(parentType.getName(), typeResolver);
+        public Builder typeResolver(GraphQLInterfaceType interfaceType, TypeResolver typeResolver) {
+            typeResolverMap.put(interfaceType.getName(), typeResolver);
             return this;
         }
 
-        public Builder typeResolverIfAbsent(GraphQLInterfaceType parentType, TypeResolver typeResolver) {
-            typeResolverMap.putIfAbsent(parentType.getName(), typeResolver);
+        public Builder typeResolverIfAbsent(GraphQLInterfaceType interfaceType, TypeResolver typeResolver) {
+            typeResolverMap.putIfAbsent(interfaceType.getName(), typeResolver);
             return this;
         }
 
-        public Builder typeResolver(GraphQLUnionType parentType, TypeResolver typeResolver) {
-            typeResolverMap.put(parentType.getName(), typeResolver);
+        public Builder typeResolver(GraphQLUnionType unionType, TypeResolver typeResolver) {
+            typeResolverMap.put(unionType.getName(), typeResolver);
             return this;
         }
 
-        public Builder typeResolverIfAbsent(GraphQLUnionType parentType, TypeResolver typeResolver) {
-            typeResolverMap.putIfAbsent(parentType.getName(), typeResolver);
+        public Builder typeResolverIfAbsent(GraphQLUnionType unionType, TypeResolver typeResolver) {
+            typeResolverMap.putIfAbsent(unionType.getName(), typeResolver);
             return this;
         }
 
-        public Builder typeResolver(String parentTypeName, TypeResolver typeResolver) {
-            typeResolverMap.put(assertValidName(parentTypeName), typeResolver);
+        public Builder typeResolver(String typeName, TypeResolver typeResolver) {
+            typeResolverMap.put(assertValidName(typeName), typeResolver);
             return this;
         }
 

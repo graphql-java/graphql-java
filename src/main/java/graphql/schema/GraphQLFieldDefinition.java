@@ -272,6 +272,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
          * Sets the {@link graphql.schema.DataFetcherFactory} to use with this field.
          *
          * @param dataFetcherFactory the data fetcher factory
+         *
          * @return this builder
          *
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
@@ -336,7 +337,28 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
             return this;
         }
 
+        /**
+         * This adds the list of arguments to the field.
+         *
+         * @param arguments the arguments to add
+         *
+         * @return this
+         *
+         * @deprecated This is a badly named method and is replaced by {@link #arguments(java.util.List)}
+         */
+        @Deprecated
         public Builder argument(List<GraphQLArgument> arguments) {
+            return arguments(arguments);
+        }
+
+        /**
+         * This adds the list of arguments to the field.
+         *
+         * @param arguments the arguments to add
+         *
+         * @return this
+         */
+        public Builder arguments(List<GraphQLArgument> arguments) {
             assertNotNull(arguments, "arguments can't be null");
             for (GraphQLArgument argument : arguments) {
                 argument(argument);

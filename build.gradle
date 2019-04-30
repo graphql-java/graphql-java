@@ -49,11 +49,11 @@ jar {
 }
 
 dependencies {
-    compile 'org.antlr:antlr4-runtime:4.7.1'
+    compile 'org.antlr:antlr4-runtime:4.7.2'
     compile 'org.slf4j:slf4j-api:' + slf4jVersion
     compile 'com.graphql-java:java-dataloader:2.1.1'
     compile 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
-    antlr "org.antlr:antlr4:4.7.1"
+    antlr "org.antlr:antlr4:4.7.2"
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
     testCompile 'org.codehaus.groovy:groovy-all:2.4.13'
@@ -68,6 +68,10 @@ dependencies {
 
     testCompile 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
     testCompile "io.reactivex.rxjava2:rxjava:2.1.5"
+
+
+    testCompile 'org.openjdk.jmh:jmh-core:1.21'
+    testCompile 'org.openjdk.jmh:jmh-generator-annprocess:1.21'
 }
 
 compileJava.source file("build/generated-src"), sourceSets.main.java

@@ -1,6 +1,7 @@
 package graphql.execution
 
 import graphql.ExecutionInput
+import graphql.Scalars
 import graphql.TestUtil
 import graphql.language.Field
 import graphql.schema.DataFetcher
@@ -213,5 +214,19 @@ class ExecutionStepInfoTest extends Specification {
             assert executionTypeInfos[i].parent.field.name == "friends"
             assert (unwrapAll(executionTypeInfos[i].parent.type) as GraphQLObjectType).name == "User"
         }
+    }
+
+
+    def "transform copies fieldContainer"() {
+        given:
+        ExecutionStepInfo executionStepInfo = newExecutionStepInfo()
+                .type(Scalars.GraphQLString)
+                .fieldContainer(GraphQLObjectType.newObject().name("foo").build())
+                .build()
+        when:
+        def transformed = executionStepInfo.transform({ builder -> builder })
+
+        then:
+        transformed.getFieldContainer() == executionStepInfo.getFieldContainer()
     }
 }

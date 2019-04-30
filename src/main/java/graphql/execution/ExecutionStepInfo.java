@@ -199,6 +199,10 @@ public class ExecutionStepInfo {
         return builder.build();
     }
 
+    public String getResultKey() {
+        return field.getResultKey();
+    }
+
     /**
      * @return a builder of type info
      */
@@ -229,6 +233,7 @@ public class ExecutionStepInfo {
             this.type = existing.type;
             this.parentInfo = existing.parent;
             this.fieldDefinition = existing.fieldDefinition;
+            this.fieldContainer = existing.fieldContainer;
             this.field = existing.field;
             this.path = existing.path;
             this.arguments = existing.getArguments();

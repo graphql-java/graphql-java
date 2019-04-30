@@ -1,5 +1,6 @@
 package graphql.execution
 
+import graphql.cachecontrol.CacheControl
 import graphql.execution.instrumentation.Instrumentation
 import graphql.language.Document
 import graphql.language.FragmentDefinition
@@ -53,7 +54,10 @@ class ExecutionContextBuilderTest extends Specification {
         executionContextBuilder.variables([var: 'value'])
 
         def dataLoaderRegistry = new DataLoaderRegistry()
-        executionContextBuilder.dataLoaderRegistry(dataLoaderRegistry);
+        executionContextBuilder.dataLoaderRegistry(dataLoaderRegistry)
+
+        def cacheControl = CacheControl.newCacheControl()
+        executionContextBuilder.cacheControl(cacheControl)
 
         when:
         def executionContext = executionContextBuilder.build()
@@ -71,5 +75,6 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.getFragmentsByName() == [MyFragment: fragment]
         executionContext.operationDefinition == operation
         executionContext.dataLoaderRegistry == dataLoaderRegistry
+        executionContext.cacheControl == cacheControl
     }
 }

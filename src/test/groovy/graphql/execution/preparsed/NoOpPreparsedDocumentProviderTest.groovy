@@ -1,8 +1,10 @@
 package graphql.execution.preparsed
 
+
 import graphql.language.Document
 import spock.lang.Specification
 
+import static graphql.ExecutionInput.newExecutionInput
 
 class NoOpPreparsedDocumentProviderTest extends Specification {
     def "NoOp always returns result of compute function"() {
@@ -11,7 +13,7 @@ class NoOpPreparsedDocumentProviderTest extends Specification {
         def documentEntry = new PreparsedDocumentEntry(Document.newDocument().build())
 
         when:
-        def actual = provider.get("{}", { return documentEntry })
+        def actual = provider.getDocument(newExecutionInput("{}").build(), { return documentEntry })
 
         then:
         actual == documentEntry

@@ -1,6 +1,6 @@
 package graphql.schema
 
-
+import graphql.cachecontrol.CacheControl
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionStepInfo
 import graphql.language.FragmentDefinition
@@ -30,6 +30,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
     def fragmentByName = [frag: frag]
     def variables = [var: "able"]
     def dataLoaderRegistry = new DataLoaderRegistry().register("dataLoader", dataLoader)
+    def cacheControl = CacheControl.newCacheControl()
 
     def executionContext = newExecutionContextBuilder()
             .root("root")
@@ -41,6 +42,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
             .graphQLSchema(starWarsSchema)
             .fragmentsByName(fragmentByName)
             .dataLoaderRegistry(dataLoaderRegistry)
+            .cacheControl(cacheControl)
             .build()
 
 
@@ -92,6 +94,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
                 .document(document)
                 .variables(variables)
                 .dataLoaderRegistry(dataLoaderRegistry)
+                .cacheControl(cacheControl)
                 .build()
 
         when:
@@ -114,6 +117,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
         dfe.getOperationDefinition() == dfeCopy.getOperationDefinition()
         dfe.getVariables() == dfeCopy.getVariables()
         dfe.getDataLoader("dataLoader") == dataLoader
+        dfe.getCacheControl() == cacheControl
     }
 
 }

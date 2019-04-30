@@ -12,7 +12,10 @@ This is a [GraphQL](https://github.com/facebook/graphql) Java implementation.
 
 ### Documentation
 
+We have a tutorial for beginners: [Getting started with GraphQL Java and Spring Boot](https://www.graphql-java.com/tutorials/getting-started-with-spring-boot/)
+
 For details how to use `graphql-java` please look at the documentation: https://www.graphql-java.com/documentation 
+
 
 Please take a look at our [list of releases](https://github.com/graphql-java/graphql-java/releases) if you want to learn more about new releases and the changelog.
 

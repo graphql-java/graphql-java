@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import graphql.cachecontrol.CacheControl;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
@@ -202,6 +203,11 @@ public interface DataFetchingEnvironment {
      * @see org.dataloader.DataLoaderRegistry#getDataLoader(String)
      */
     <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
+
+    /**
+     * @return the current {@link CacheControl} instance used to add cache hints to the response
+     */
+    CacheControl getCacheControl();
 
     /**
      * @return the current operation that is being executed

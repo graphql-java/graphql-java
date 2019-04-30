@@ -8,8 +8,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.execution.nextgen.result.ResultNodesUtil.index;
-import static graphql.execution.nextgen.result.ResultNodesUtil.key;
+import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertTrue;
 
 @PublicApi
 public class ResultNodeAdapter implements NodeAdapter<ExecutionResultNode> {
@@ -21,35 +21,26 @@ public class ResultNodeAdapter implements NodeAdapter<ExecutionResultNode> {
     }
 
     @Override
-    public Map<String, List<ExecutionResultNode>> getNamedChildren(ExecutionResultNode node) {
-        return node.getNamedChildren();
+    public Map<String, List<ExecutionResultNode>> getNamedChildren(ExecutionResultNode parentNode) {
+        Map<String, List<ExecutionResultNode>> result = new LinkedHashMap<>();
+        result.put(null, parentNode.getChildren());
+        return result;
     }
 
     @Override
-    public ExecutionResultNode withNewChildren(ExecutionResultNode node, Map<String, List<ExecutionResultNode>> newChildren) {
-        Map<NodeLocation, ExecutionResultNode> adaptedChildren = new LinkedHashMap<>();
-        if (newChildren.size() == 1) {
-            String key = newChildren.keySet().iterator().next();
-            if (key == null) {
-                List<ExecutionResultNode> list = newChildren.get(null);
-                for (int i = 0; i < list.size(); i++) {
-                    adaptedChildren.put(index(i), list.get(i));
-                }
-            } else {
-                newChildren.forEach((name, list) -> {
-                    adaptedChildren.put(key(name), list.get(0));
-                });
-            }
-        } else {
-            newChildren.forEach((name, list) -> {
-                adaptedChildren.put(key(name), list.get(0));
-            });
-        }
-        return node.withNewChildren(adaptedChildren);
+    public ExecutionResultNode withNewChildren(ExecutionResultNode parentNode, Map<String, List<ExecutionResultNode>> newChildren) {
+        assertTrue(newChildren.size() == 1);
+        List<ExecutionResultNode> childrenList = newChildren.get(null);
+        assertNotNull(childrenList);
+        return parentNode.withNewChildren(childrenList);
     }
 
     @Override
-    public ExecutionResultNode removeChild(ExecutionResultNode node, NodeLocation location) {
-        throw new UnsupportedOperationException();
+    public ExecutionResultNode removeChild(ExecutionResultNode parentNode, NodeLocation location) {
+        int index = location.getIndex();
+        List<ExecutionResultNode> childrenList = parentNode.getChildren();
+        assertTrue(index >= 0 && index < childrenList.size(), "The remove index MUST be within the range of the children");
+        childrenList.remove(index);
+        return parentNode.withNewChildren(childrenList);
     }
 }

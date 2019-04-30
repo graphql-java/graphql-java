@@ -34,7 +34,7 @@ class UniqueOperationNamesTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        validationErrors[0] == duplicateOperationName("getName", 7, 1)
+        validationErrors[0] == duplicateOperationName("getName", 8, 1)
     }
 
     def '5.1.1.1 Operation Name Uniqueness Not Valid Different Operations'() {
@@ -57,7 +57,7 @@ class UniqueOperationNamesTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        validationErrors[0] == duplicateOperationName("dogOperation", 7, 1)
+        validationErrors[0] == duplicateOperationName("dogOperation", 8, 1)
     }
 
     ValidationError duplicateOperationName(String defName, int line, int column) {

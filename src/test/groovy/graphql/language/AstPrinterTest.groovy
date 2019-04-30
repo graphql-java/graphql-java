@@ -536,4 +536,30 @@ extend input Input @directive {
         output == '''query {aliasOfFoo:foo(arg1:"val1",args2:"val2") @isCached {hello} world @neverCache @okThenCache} fragment FX on SomeType {aliased:field(withArgs:"argVal",andMoreArgs:"andMoreVals")}'''
     }
 
+    def "print ast with inline fragment without type condition"() {
+        def query = '''
+    { 
+        foo {
+            ... {
+                hello
+            }
+        }
+    }
+'''
+        def document = parse(query)
+        String outputCompact = AstPrinter.printAstCompact(document)
+        String outputFull = AstPrinter.printAst(document)
+
+        expect:
+        outputCompact == '''query {foo {... {hello}}}'''
+        outputFull == '''query {
+  foo {
+    ... {
+      hello
+    }
+  }
+}
+'''
+    }
+
 }

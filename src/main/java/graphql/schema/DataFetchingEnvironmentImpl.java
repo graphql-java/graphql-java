@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.Internal;
+import graphql.cachecontrol.CacheControl;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
@@ -38,6 +39,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final DataFetchingFieldSelectionSet selectionSet;
     private final ExecutionStepInfo executionStepInfo;
     private final DataLoaderRegistry dataLoaderRegistry;
+    private final CacheControl cacheControl;
     private final OperationDefinition operationDefinition;
     private final Document document;
     private final Map<String, Object> variables;
@@ -59,6 +61,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.selectionSet = builder.selectionSet;
         this.executionStepInfo = builder.executionStepInfo;
         this.dataLoaderRegistry = builder.dataLoaderRegistry;
+        this.cacheControl = builder.cacheControl;
         this.operationDefinition = builder.operationDefinition;
         this.document = builder.document;
         this.variables = builder.variables;
@@ -166,6 +169,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
+    public CacheControl getCacheControl() {
+        return cacheControl;
+    }
+
+    @Override
     public OperationDefinition getOperationDefinition() {
         return operationDefinition;
     }
@@ -205,6 +213,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                 .graphQLSchema(executionContext.getGraphQLSchema())
                 .fragmentsByName(executionContext.getFragmentsByName())
                 .dataLoaderRegistry(executionContext.getDataLoaderRegistry())
+                .cacheControl(executionContext.getCacheControl())
                 .document(executionContext.getDocument())
                 .operationDefinition(executionContext.getOperationDefinition())
                 .variables(executionContext.getVariables())
@@ -226,6 +235,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private DataFetchingFieldSelectionSet selectionSet;
         private ExecutionStepInfo executionStepInfo;
         private DataLoaderRegistry dataLoaderRegistry;
+        private CacheControl cacheControl;
         private OperationDefinition operationDefinition;
         private Document document;
         private final Map<String, Object> arguments = new LinkedHashMap<>();
@@ -249,6 +259,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.selectionSet = env.selectionSet;
             this.executionStepInfo = env.executionStepInfo;
             this.dataLoaderRegistry = env.dataLoaderRegistry;
+            this.cacheControl = env.cacheControl;
             this.operationDefinition = env.operationDefinition;
             this.document = env.document;
             this.variables.putAll(env.variables);
@@ -329,6 +340,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
         public Builder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {
             this.dataLoaderRegistry = dataLoaderRegistry;
+            return this;
+        }
+
+        public Builder cacheControl(CacheControl cacheControl) {
+            this.cacheControl = cacheControl;
             return this;
         }
 

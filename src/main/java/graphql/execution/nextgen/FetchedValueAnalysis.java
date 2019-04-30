@@ -103,6 +103,24 @@ public class FetchedValueAnalysis {
         return executionStepInfo.getField();
     }
 
+    public String getResultKey() {
+        return executionStepInfo.getResultKey();
+    }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "valueType=" + valueType +
+                ", completedValue=" + completedValue +
+                ", errors=" + errors +
+                ", children=" + children +
+                ", stepInfo=" + executionStepInfo +
+                ", nullValue=" + nullValue +
+                ", resolvedType=" + resolvedType +
+                ", fetchedValue=" + fetchedValue +
+                '}';
+    }
+
     public static final class Builder {
         private FetchedValueType valueType;
         private final List<GraphQLError> errors = new ArrayList<>();

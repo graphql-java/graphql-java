@@ -8,6 +8,7 @@ import graphql.language.Node;
 import graphql.language.NodeTraverser;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
+import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
@@ -41,7 +42,7 @@ public class QueryTraversal {
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final Map<String, Object> variables;
 
-    private final GraphQLObjectType rootParentType;
+    private final GraphQLCompositeType rootParentType;
 
     private QueryTraversal(GraphQLSchema schema,
                            Document document,
@@ -58,7 +59,7 @@ public class QueryTraversal {
 
     private QueryTraversal(GraphQLSchema schema,
                            Node root,
-                           GraphQLObjectType rootParentType,
+                           GraphQLCompositeType rootParentType,
                            Map<String, FragmentDefinition> fragmentsByName,
                            Map<String, Object> variables) {
         this.schema = assertNotNull(schema, "schema can't be null");
@@ -159,7 +160,7 @@ public class QueryTraversal {
 
     private Object visitImpl(QueryVisitor visitFieldCallback, Boolean preOrder) {
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
-        rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, rootParentType, null, null));
+        rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, null, null));
 
         QueryVisitor preOrderCallback;
         QueryVisitor postOrderCallback;
@@ -189,7 +190,7 @@ public class QueryTraversal {
         private Map<String, Object> variables;
 
         private Node root;
-        private GraphQLObjectType rootParentType;
+        private GraphQLCompositeType rootParentType;
         private Map<String, FragmentDefinition> fragmentsByName;
 
 
@@ -263,13 +264,13 @@ public class QueryTraversal {
          *
          * @return this builder
          */
-        public Builder rootParentType(GraphQLObjectType rootParentType) {
+        public Builder rootParentType(GraphQLCompositeType rootParentType) {
             this.rootParentType = rootParentType;
             return this;
         }
 
         /**
-         * Fragment by name map. Needs to be provided together with a {@link Builder#root(Node)} and {@link Builder#rootParentType(GraphQLObjectType)}
+         * Fragment by name map. Needs to be provided together with a {@link Builder#root(Node)} and {@link Builder#rootParentType(GraphQLCompositeType)}
          *
          * @param fragmentsByName the map of fragments
          *

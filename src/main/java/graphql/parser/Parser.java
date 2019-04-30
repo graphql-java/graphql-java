@@ -4,12 +4,15 @@ import graphql.Internal;
 import graphql.language.Document;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
-import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CodePointCharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.util.List;
 
 @Internal
@@ -20,12 +23,26 @@ public class Parser {
     }
 
     public Document parseDocument(String input, String sourceName) throws InvalidSyntaxException {
+        MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
+                .string(input, sourceName)
+                .trackData(true)
+                .build();
+        return parseDocument(multiSourceReader);
+    }
 
-        CharStream charStream;
-        if (sourceName == null) {
-            charStream = CharStreams.fromString(input);
+    public Document parseDocument(Reader reader) throws InvalidSyntaxException {
+        MultiSourceReader multiSourceReader;
+        if (reader instanceof MultiSourceReader) {
+            multiSourceReader = (MultiSourceReader) reader;
         } else {
-            charStream = CharStreams.fromString(input, sourceName);
+            multiSourceReader = MultiSourceReader.newMultiSourceReader()
+                    .reader(reader, null).build();
+        }
+        CodePointCharStream charStream;
+        try {
+            charStream = CharStreams.fromReader(multiSourceReader);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
 
         GraphqlLexer lexer = new GraphqlLexer(charStream);
@@ -36,10 +53,10 @@ public class Parser {
         parser.removeErrorListeners();
         parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
 
-        ExtendedBailStrategy bailStrategy = new ExtendedBailStrategy(input, sourceName);
+        ExtendedBailStrategy bailStrategy = new ExtendedBailStrategy(multiSourceReader);
         parser.setErrorHandler(bailStrategy);
 
-        GraphqlAntlrToLanguage toLanguage = new GraphqlAntlrToLanguage(tokens);
+        GraphqlAntlrToLanguage toLanguage = new GraphqlAntlrToLanguage(tokens, multiSourceReader);
         GraphqlParser.DocumentContext documentContext = parser.document();
 
         Document doc = toLanguage.createDocument(documentContext);

@@ -12,6 +12,11 @@ import java.util.Map;
 public interface ExecutionResult {
 
     /**
+     * @return the errors that occurred during execution or empty list if there is none
+     */
+    List<GraphQLError> getErrors();
+
+    /**
      * @param <T> allows type coercion
      *
      * @return the data in the result or null if there is none
@@ -19,9 +24,19 @@ public interface ExecutionResult {
     <T> T getData();
 
     /**
-     * @return the errors that occurred during execution or empty list if there is none
+     * The graphql specification specifies:
+     *
+     * "If an error was encountered before execution begins, the data entry should not be present in the result.
+     * If an error was encountered during the execution that prevented a valid response, the data entry in the response should be null."
+     *
+     * This allows to distinguish between the cases where {@link #getData()} returns null.
+     *
+     * See : <a href="https://graphql.github.io/graphql-spec/June2018/#sec-Data">https://graphql.github.io/graphql-spec/June2018/#sec-Data</a>
+     *
+     * @return <code>true</code> if the entry "data" should be present in the result
+     *         <code>false</code> otherwise
      */
-    List<GraphQLError> getErrors();
+    boolean isDataPresent();
 
     /**
      * @return a map of extensions or null if there are none

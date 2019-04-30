@@ -48,7 +48,7 @@ public class NodeZipper<T> {
         return new NodeZipper<T>(newNode, breadcrumbs, nodeAdapter);
     }
 
-    public NodeZipper moveUp() {
+    public NodeZipper<T> moveUp() {
         T node = getParent();
         List<Breadcrumb<T>> newBreadcrumbs = breadcrumbs.subList(1, breadcrumbs.size());
         return new NodeZipper<>(node, newBreadcrumbs, nodeAdapter);

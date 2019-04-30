@@ -25,13 +25,14 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static graphql.execution.nextgen.result.ResultNodeAdapter.RESULT_NODE_ADAPTER;
+import static graphql.util.FpKit.map;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 
 @Internal
 public class ResultNodesUtil {
 
-    public static ExecutionResult toExecutionResult(ExecutionResultNode root) {
+    public static ExecutionResult toExecutionResult(RootExecutionResultNode root) {
         ExecutionResultData executionResultData = toDataImpl(root);
         return ExecutionResultImpl.newExecutionResult()
                 .data(executionResultData.data)
@@ -41,12 +42,8 @@ public class ResultNodesUtil {
 
     private static class ExecutionResultData {
         Object data;
-        List<GraphQLError> errors = new ArrayList<>();
+        List<GraphQLError> errors;
 
-
-        public ExecutionResultData(Object data) {
-            this.data = data;
-        }
 
         public ExecutionResultData(Object data, List<GraphQLError> errors) {
             this.data = data;
@@ -56,7 +53,10 @@ public class ResultNodesUtil {
 
 
     private static ExecutionResultData data(Object data, ExecutionResultNode executionResultNode) {
-        return new ExecutionResultData(data, executionResultNode.getFetchedValueAnalysis().getErrors());
+        List<GraphQLError> allErrors = new ArrayList<>();
+        allErrors.addAll(executionResultNode.getFetchedValueAnalysis().getErrors());
+        allErrors.addAll(executionResultNode.getErrors());
+        return new ExecutionResultData(data, allErrors);
     }
 
     private static ExecutionResultData data(Object data, List<GraphQLError> errors) {
@@ -72,17 +72,15 @@ public class ResultNodesUtil {
             return root.getFetchedValueAnalysis().isNullValue() ? data(null, root) : data(((LeafExecutionResultNode) root).getValue(), root);
         }
         if (root instanceof ListExecutionResultNode) {
-            Optional<NonNullableFieldWasNullException> childNonNullableException = ((ListExecutionResultNode) root).getChildNonNullableException();
+            Optional<NonNullableFieldWasNullException> childNonNullableException = root.getChildNonNullableException();
             if (childNonNullableException.isPresent()) {
                 return data(null, childNonNullableException.get());
             }
-            List<ExecutionResultData> list = root.getChildren().stream().map(ResultNodesUtil::toDataImpl).collect(Collectors.toList());
-            List<Object> data = list
-                    .stream()
-                    .map(erd -> erd.data)
-                    .collect(Collectors.toList());
+            List<ExecutionResultData> list = map(root.getChildren(), ResultNodesUtil::toDataImpl);
+            List<Object> data = map(list, erd -> erd.data);
             List<GraphQLError> errors = new ArrayList<>();
             list.forEach(erd -> errors.addAll(erd.errors));
+            errors.addAll(root.getErrors());
             return data(data, errors);
         }
 
@@ -91,17 +89,18 @@ public class ResultNodesUtil {
             return data("Not resolved : " + fetchedValueAnalysis.getExecutionStepInfo().getPath() + " with field " + fetchedValueAnalysis.getField(), emptyList());
         }
         if (root instanceof ObjectExecutionResultNode) {
-            Optional<NonNullableFieldWasNullException> childrenNonNullableException = ((ObjectExecutionResultNode) root).getChildrenNonNullableException();
+            Optional<NonNullableFieldWasNullException> childrenNonNullableException = root.getChildNonNullableException();
             if (childrenNonNullableException.isPresent()) {
                 return data(null, childrenNonNullableException.get());
             }
             Map<String, Object> resultMap = new LinkedHashMap<>();
             List<GraphQLError> errors = new ArrayList<>();
-            ((ObjectExecutionResultNode) root).getChildrenMap().forEach((key, value) -> {
-                ExecutionResultData executionResultData = toDataImpl(value);
-                resultMap.put(key, executionResultData.data);
+            root.getChildren().forEach(child -> {
+                ExecutionResultData executionResultData = toDataImpl(child);
+                resultMap.put(child.getMergedField().getResultKey(), executionResultData.data);
                 errors.addAll(executionResultData.errors);
             });
+            errors.addAll(root.getErrors());
             return data(resultMap, errors);
         }
         throw new RuntimeException("Unexpected root " + root);
