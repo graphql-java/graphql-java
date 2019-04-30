@@ -34,6 +34,8 @@ public class Traverser<T> {
     }
 
     private static <T> Function<? super T, Map<String, ? extends List<T>>> wrapListFunction(Function<? super T, ? extends List<T>> listFn) {
+        assertNotNull(listFn);
+        
         return node -> {
             List<T> childs = listFn.apply(node);
             Map<String, List<T>> result = new LinkedHashMap<>();
@@ -42,6 +44,10 @@ public class Traverser<T> {
         };
     }
 
+    public static <T> Traverser<T> newTraverser (TraverserState<T> traverserState, Function<? super T, ? extends List<T>> getChildren, Object initialAccumulate) {
+        return new Traverser<>(traverserState, wrapListFunction(getChildren), initialAccumulate);
+    }
+    
     public Traverser<T> rootVars(Map<Class<?>, Object> rootVars) {
         this.rootVars.putAll(assertNotNull(rootVars));
         return this;
@@ -90,17 +96,19 @@ public class Traverser<T> {
         return traverse(Collections.singleton(root), visitor);
     }
 
-    public TraverserResult traverse(Collection<? extends T> roots, TraverserVisitor<? super T> visitor) {
+    public TraverserResult traverse(Collection<? extends T> roots, TraverserVisitor<? super T> v) {
+        TraverserVisitor<T> visitor = (TraverserVisitor<T>)v;
+
         assertNotNull(roots);
         assertNotNull(visitor);
 
-
         // "artificial" parent context for all roots with rootVars
-        DefaultTraverserContext<T> rootContext = traverserState.newRootContext(rootVars);
+        DefaultTraverserContext<T> rootContext = (DefaultTraverserContext<T>)traverserState.newRootContext(rootVars);
         traverserState.addNewContexts(roots, rootContext);
 
-        DefaultTraverserContext currentContext;
+        DefaultTraverserContext<T> currentContext = rootContext;
         Object currentAccValue = initialAccumulate;
+
         traverseLoop:
         while (!traverserState.isEmpty()) {
             Object top = traverserState.pop();
@@ -109,7 +117,7 @@ public class Traverser<T> {
                 Map<String, List<TraverserContext<T>>> childrenContextMap = ((TraverserState.EndList<T>) top).childrenContextMap;
                 // end-of-list marker, we are done recursing children,
                 // mark the current node as fully visited
-                currentContext = (DefaultTraverserContext) traverserState.pop();
+                currentContext = (DefaultTraverserContext<T>)traverserState.pop();
                 currentContext.setCurAccValue(currentAccValue);
                 currentContext.setChildrenContexts(childrenContextMap);
                 TraversalControl traversalControl = visitor.leave(currentContext);
@@ -158,6 +166,7 @@ public class Traverser<T> {
                 }
             }
         }
+        
         TraverserResult traverserResult = new TraverserResult(currentAccValue);
         return traverserResult;
     }

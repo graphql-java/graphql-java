@@ -1,0 +1,543 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package graphql.execution3;
+
+import graphql.execution.ConditionalNodes;
+import graphql.execution.ExecutionContextBuilder;
+import graphql.execution.FieldCollector;
+import graphql.execution.FieldCollectorParameters;
+import graphql.execution.UnknownOperationException;
+import graphql.execution.ValuesResolver;
+import static graphql.execution.nextgen.Common.getOperationRootType;
+import graphql.introspection.Introspection;
+import graphql.language.Document;
+import graphql.language.Field;
+import graphql.language.FragmentDefinition;
+import graphql.language.FragmentSpread;
+import graphql.language.InlineFragment;
+import graphql.language.Node;
+import graphql.language.NodeTraverser;
+import graphql.language.NodeVisitorStub;
+import graphql.language.OperationDefinition;
+import graphql.language.SelectionSet;
+import graphql.language.VariableDefinition;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeUtil;
+import graphql.util.DefaultTraverserContext;
+import graphql.util.DependenciesIterator;
+import graphql.util.DependencyGraph;
+import graphql.util.DependencyGraphContext;
+import graphql.util.Edge;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+import graphql.util.TraverserState;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+class ExecutionPlan extends DependencyGraph<NodeVertex<Node, GraphQLType>> {    
+    /**
+     * Retrieves GraphQL schema associated with this execution plan
+     * 
+     * @return GraphQL schema
+     */
+    public GraphQLSchema getSchema() {
+        return schema;
+    }
+
+    /**
+     * Retrieves GraphQL AST root Node associated with this execution plan
+     * 
+     * @return  AST root
+     */
+    public Document getDocument() {
+        return document;
+    }
+    
+    /**
+     * Locates an OperationDefinition corresponding to the specified openationName
+     * https://facebook.github.io/graphql/June2018/#sec-Executing-Requests
+     * 
+     * @param operationName name of operation to execute, could be null
+     * @return OperationDefinition for the specified operation name
+     * @throws UnknownOperationException if OperationDefinition could not be found
+     */
+    public OperationDefinition getOperation (String operationName) {
+        if (operationName == null && operationsByName.size() > 1)
+            throw new UnknownOperationException("Must provide operation name if query contains multiple operations.");
+        
+        return Optional
+            .ofNullable(operationsByName.get(operationName))
+            .orElseThrow(() -> new UnknownOperationException(String.format("Unknown operation named '%s'.", operationName)));
+    }
+
+    /**
+     * Retrieves all OperationDefinitions that exist in the document keyed off 
+     * their operation names
+     * 
+     * @return a map containing OperationDefinitions
+     */
+    public Map<String, OperationDefinition> getOperationsByName() {
+        return Collections.unmodifiableMap(operationsByName);
+    }
+
+    /**
+     * Retrieves all FragmentDefinitions that exist in the document keyed off 
+     * their fragment names
+     * 
+     * @return a map containing FragmentDefinitions
+     */
+    public Map<String, FragmentDefinition> getFragmentsByName() {
+        return Collections.unmodifiableMap(fragmentsByName);
+    }
+
+    /**
+     * After the ExecutionPLan is built, retrieves coerced variables for the selected operation
+     * 
+     * @return variables map
+     */
+    public Map<String, Object> getVariables() {
+        return Collections.unmodifiableMap(variables);
+    }
+
+    protected void prepareResolve (ExecutionPlanContext context, Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
+        context.prepareResolve(edge);
+    }
+
+    protected void whenResolved (ExecutionPlanContext context, Edge<? extends NodeVertex<? extends Node, ? extends GraphQLType>, ?> edge) {
+        context.whenResolved(edge);
+    }
+
+    @Override
+    public DependenciesIterator<NodeVertex<Node, GraphQLType>> orderDependencies(DependencyGraphContext context) {
+        return new IteratorImpl(context);
+    }
+    
+    private class IteratorImpl extends DependenciesIteratorImpl {
+        public IteratorImpl(DependencyGraphContext context) {
+            super(context);
+        }        
+
+        @Override
+        public synchronized void close(NodeVertex<Node, GraphQLType> node) {
+            super.close(node);
+        }
+
+        @Override
+        public synchronized void close(Collection<NodeVertex<Node, GraphQLType>> resolvedSet) {
+            super.close(resolvedSet);
+        }
+        
+    }
+    
+    /**
+     * Creates and initializes ExecutionContextBuilder
+     * 
+     * @param operationName selected operation name for this execution
+     * @return new ExecutionContextBuilder
+     */
+    public ExecutionContextBuilder newExecutionContextBuilder (String operationName) {
+        return ExecutionContextBuilder.newExecutionContextBuilder()
+            .graphQLSchema(schema)
+            .document(document)
+            .fragmentsByName(fragmentsByName)
+            .variables(variables)
+            .operationDefinition(getOperation(operationName));
+    }
+    
+    static Builder newExecutionPlanBuilder () {
+        return new Builder(new ExecutionPlan());
+    }
+    
+    static class Builder extends NodeVisitorStub {
+        private Builder (ExecutionPlan executionPlan) {
+            this.executionPlan = Objects.requireNonNull(executionPlan);
+        }
+        
+        public Builder schema (GraphQLSchema schema) {
+            executionPlan.schema = Objects.requireNonNull(schema);
+            return this;
+        }
+
+        public Builder document (Document document) {
+            executionPlan.document = Objects.requireNonNull(document);
+
+            // to optimize a bit on searching for operations and fragments,
+            // let's re-organize this a little
+            // FIXME: re-organize Document node to keep operations and fragments indexed
+            executionPlan.operationsByName = new HashMap<>();
+            executionPlan.fragmentsByName = new HashMap<>();
+
+            document
+                .getDefinitions()
+                .forEach(definition -> NodeTraverser.oneVisitWithResult(definition, new NodeVisitorStub() {
+                    @Override
+                    public TraversalControl visitOperationDefinition(OperationDefinition node, TraverserContext<Node> context) {
+                        executionPlan.operationsByName.put(node.getName(), node);
+                        return TraversalControl.QUIT;
+                    }
+
+                    @Override
+                    public TraversalControl visitFragmentDefinition(FragmentDefinition node, TraverserContext<Node> context) {
+                        executionPlan.fragmentsByName.put(node.getName(), node);
+                        return TraversalControl.QUIT;
+                    }
+                }));
+
+            return this;
+        }
+
+        /**
+         * Adds an operation to the list of selected operations
+         * 
+         * @param operationName operation name to select
+         * @return this instance
+         * @throws {@link graphql.execution.UnknownOperationException} in case the operation is not found
+         */
+        public Builder operation (String operationName) {
+            operations.add(executionPlan.getOperation(operationName));
+            return this;
+        }
+
+        /**
+         * Stores variables for the coercion.
+         * Note! Coercion happens <b>only</b> at the time of building the execution plan
+         * 
+         * @param variables variables map
+         * @return this instance
+         */
+        public Builder variables (Map<String, Object> variables) {
+            executionPlan.variables = Objects.requireNonNull(variables);
+            return this;
+        }
+
+        private List<Node> getChildrenOf (Node node) {
+            return NodeTraverser.oneVisitWithResult(node, new NodeVisitorStub() {
+                @Override
+                public TraversalControl visitFragmentSpread(FragmentSpread node, TraverserContext<Node> context) {
+                    Collection<Node> children = Optional
+                        .ofNullable(executionPlan.fragmentsByName.get(node.getName()))
+                        .map(Node::getChildren)
+                        // per https://facebook.github.io/graphql/June2018/#sec-Field-Collection d.v.
+                        .orElseGet(Collections::emptyList);
+                    
+                    context.setAccumulate(children);
+                    return TraversalControl.QUIT;
+                }            
+
+                @Override
+                protected TraversalControl visitNode(Node node, TraverserContext<Node> context) {
+                    context.setAccumulate(node.getChildren());
+                    return TraversalControl.QUIT;
+                }
+            });
+        }
+
+        /**
+         * Builds execution plan according to the input query document,
+         * GraphQL schema, selected operations and provided variables
+         * 
+         * @return execution plan to execute the query document
+         */
+        public ExecutionPlan build () {  
+            Objects.requireNonNull(executionPlan.schema);
+
+            // fix default operation if wasn't provided
+            if (operations.isEmpty())
+                operation(null);
+
+            // validate variables against all selected operations
+            // Note! coerceArgumentValues throws a RuntimeException to be handled later
+            ValuesResolver valuesResolver = new ValuesResolver();
+            List<VariableDefinition> variableDefinitions = operations
+                    .stream()
+                    .flatMap(od -> od.getVariableDefinitions().stream())
+                    .collect(Collectors.toList());
+            executionPlan.variables = valuesResolver.coerceArgumentValues(executionPlan.schema, variableDefinitions, executionPlan.variables);
+
+            // make DocumentVertex the universal source in this graph in order to bootstrap
+            // executions in a standartized way through regular DependencyGraph sorting callback mechanizm
+            DocumentVertex documentVertex = executionPlan().addNode(new DocumentVertex(executionPlan.document));
+            // walk Operations ASTs to record dependencies between fields
+            NodeTraverser traverser = new NodeTraverser(this::getChildrenOf, documentVertex);
+            traverser.depthFirst(this, operations, Builder::newTraverserState);
+
+            return executionPlan;
+        }
+
+        private static TraverserState.StackTraverserState<Node> newTraverserState (Object initialData) {
+            return TraverserState.newStackState(initialData, Builder::newTraverserContext);
+        }
+
+        private static DefaultTraverserContext<Node> newTraverserContext (TraverserState.TraverserContextBuilder<Node> builder) {
+            Objects.requireNonNull(builder);
+
+            TraverserContext<Node> parent = builder.getParentContext();
+            Map<Class<?>, Object> vars = builder.getVars();
+            
+            return new DefaultTraverserContext<Node>(
+                        builder.getNode(), 
+                        parent, 
+                        builder.getVisited(), 
+                        vars, 
+                        builder.getSharedContextData(), 
+                        builder.getNodeLocation(), 
+                        builder.isRootContext()) {
+                Object accumulate;
+
+                @Override
+                public <S> S getVar(Class<? super S> key) {
+                    return (S)vars.computeIfAbsent(key, k -> Optional
+                            .ofNullable(parent)
+                            .map(p -> p.getVar((Class<S>)k))
+                            .orElse(null));
+                }
+
+                @Override
+                public <S> TraverserContext<Node> setVar(Class<? super S> key, S value) {
+                    vars.put(key, value);
+                    return this;
+                }
+
+                @Override
+                public void setAccumulate(Object accumulate) {
+                    this.accumulate = accumulate;
+                }
+
+                @Override
+                public <U> U getNewAccumulate() {
+                    return (U)Optional
+                        .ofNullable(accumulate)
+                        .orElseGet(() -> accumulate = getParentAccumulate());
+                }
+            };
+        }
+
+        private OperationVertex newOperationVertex (OperationDefinition operationDefinition) {
+            GraphQLObjectType operationType = getOperationRootType(executionPlan.schema, operationDefinition);
+            return new OperationVertex(operationDefinition, operationType);
+        }
+
+        private FieldVertex newFieldVertex (Field field, GraphQLFieldsContainer parentType, FieldVertex inScopeOf) {
+            GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(executionPlan.schema, parentType, field.getName());
+            return new FieldVertex(field, fieldDefinition.getType(), parentType, inScopeOf);
+        }
+
+        private <V extends NodeVertex<? extends Node, ? extends GraphQLType>> DependencyGraph<? super V> executionPlan () {
+            return (DependencyGraph<? super V>)executionPlan;
+        }
+
+        private boolean isFieldVertex (NodeVertex<? extends Node, ? extends GraphQLType> vertex) {
+            return NodeVertexVisitor.whenFieldVertex(vertex, false, field -> true);
+        }
+        
+        // NodeVisitor methods
+
+        @Override
+        public TraversalControl visitOperationDefinition(OperationDefinition node, TraverserContext<Node> context) {
+            switch (context.getVar(NodeTraverser.LeaveOrEnter.class)) {
+                case ENTER: {
+                    OperationVertex vertex = executionPlan().addNode(newOperationVertex(node));
+                    // make OperationVertex available for any time access to any of its subordinates
+                    context.setVar(OperationVertex.class, vertex);
+
+                    // propagate my parent vertex to my children
+                    context.setAccumulate(vertex);
+                    break;
+                }
+                case LEAVE: {
+                    // In order to simplify dependency management between operations,
+                    // clear indegrees in this OperationVertex
+                    // This will make this vertex the ultimate sink in this sub-graph
+                    // In order to simplify propagation of the initial root value to the fields,
+                    // add disconnected field vertices as dependencies to the root DocumentVertex
+                    DocumentVertex documentVertex = (DocumentVertex)context.getSharedContextData();
+                    OperationVertex operationVertex = (OperationVertex)context.getNewAccumulate();
+                    // make this operation a dependency of a document to allow
+                    // standard bootstrapping.
+                    operationVertex.asNodeVertex().dependsOn(documentVertex.asNodeVertex(), executionPlan::prepareResolve);
+                    // change dependencies order by moving all field dependencies from
+                    // this operation vertex up to document vertex that will provide
+                    // a standard bootstrapping.
+                    // the dependencies order will looke like:
+                    //                field_1
+                    //                field_2
+                    // document <-- { field_3 } <-- operation
+                    //                ...
+                    //                field_N
+                    // this will allow to easy add dependencies between operations, since
+                    // an operation now will become "resolved" only after all its fields
+                    // are resolved
+                    operationVertex
+                        .adjacencySet()
+                        .stream()
+                        .filter(this::isFieldVertex)
+                        .map(v -> v.as(FieldVertex.class).root(true))
+                        .forEach(v ->  
+                            v.asNodeVertex().undependsOn(
+                                operationVertex.asNodeVertex(), 
+                                edge -> 
+                                    // record a dependency on document
+                                    // but execute an action bound to the operation->field edge
+                                    // field bootstrap will be available via overarching operation
+                                    v.asNodeVertex().dependsOn(
+                                        documentVertex.asNodeVertex(), 
+                                        (ExecutionPlanContext ctx, Edge<?, ?> e) -> executionPlan.prepareResolve(ctx, edge)
+                                ))
+                        );
+
+                    break;
+                }
+            }
+
+            return TraversalControl.CONTINUE;
+        }    
+
+        @Override
+        public TraversalControl visitSelectionSet(SelectionSet node, TraverserContext<Node> context) {
+            switch (context.getVar(NodeTraverser.LeaveOrEnter.class)) {
+                case ENTER: {                                
+                    NodeVertex<Node, GraphQLType> parentVertex = (NodeVertex<Node, GraphQLType>)context.getParentAccumulate();
+
+                    // set up parameters to collect child fields
+                    FieldCollectorParameters collectorParams = FieldCollectorParameters.newParameters()
+                            .schema(executionPlan.schema)
+                            .objectType((GraphQLObjectType)GraphQLTypeUtil.unwrapAll(parentVertex.getType()))
+                            .fragments(executionPlan.fragmentsByName)
+                            .variables(executionPlan.variables)
+                            .build();
+                    context.setVar(FieldCollectorParameters.class, collectorParams);
+                }
+            }
+
+            return TraversalControl.CONTINUE;
+        }
+
+        @Override
+        public TraversalControl visitInlineFragment(InlineFragment node, TraverserContext<Node> context) {
+            switch (context.getVar(NodeTraverser.LeaveOrEnter.class)) {
+                case ENTER: {
+                    if (!FIELD_COLLECTOR.shouldCollectInlineFragment(this, node, context.getVar(FieldCollectorParameters.class)))
+                        return TraversalControl.ABORT;
+                }
+            }
+
+            return TraversalControl.CONTINUE;
+        }
+
+        @Override
+        public TraversalControl visitFragmentSpread(FragmentSpread node, TraverserContext<Node> context) {
+            switch (context.getVar(NodeTraverser.LeaveOrEnter.class)) {
+                case ENTER: {
+                    if (!FIELD_COLLECTOR.shouldCollectFragmentSpread(this, node, context.getVar(FieldCollectorParameters.class))) 
+                        return TraversalControl.ABORT;
+                }
+            }
+
+            return TraversalControl.CONTINUE;
+        }
+
+        @Override
+        public TraversalControl visitField(Field node, TraverserContext<Node> context) {
+            switch (context.getVar(NodeTraverser.LeaveOrEnter.class)) {
+                case ENTER: {
+                    if (!FIELD_COLLECTOR.shouldCollectField(this, node))
+                        return TraversalControl.ABORT;
+
+                    // create a vertex for this node and add dependency on the parent one
+                    TraverserContext<Node> parentContext = context.getParentContext();
+                    NodeVertex<Node, GraphQLType> parentVertex = (NodeVertex<Node, GraphQLType>)parentContext.getNewAccumulate();
+
+                    FieldVertex vertex = executionPlan().addNode(
+                        newFieldVertex(node, (GraphQLFieldsContainer)GraphQLTypeUtil.unwrapAll(parentVertex.getType()), parentContext.getVar(FieldVertex.class))
+                    );
+
+                    // Note! the ordering of the below dependencies is important:
+                    // 1. complete previous resolve
+                    // 2. prepare to the next resolve
+                    OperationVertex operationVertex = context.getVar(OperationVertex.class);
+                    // action in this dependency will be executed when this vertex is resolved
+                    operationVertex.asNodeVertex().dependsOn(vertex.asNodeVertex(), 
+                        (ExecutionPlanContext ctx, Edge<?, ?> e) -> executionPlan.whenResolved(ctx, new NodeEdge(vertex, parentVertex)));
+                    
+                    // action in this dependency will be executed right after the source had been resolve 
+                    // in order to prepare to the next resolve
+                    vertex.asNodeVertex().dependsOn(parentVertex.asNodeVertex(), executionPlan::prepareResolve);
+
+                    // propagate current scope further to children
+                    if (node.getAlias() != null)
+                        context.setVar(FieldVertex.class, vertex);
+
+                    // propagate my vertex to my children
+                    context.setAccumulate(vertex);
+                }                                                           
+            }
+
+            return TraversalControl.CONTINUE;
+        }
+
+        private static class FieldCollectorHelper extends FieldCollector {
+            boolean shouldCollectField (Builder outer, Field node) {
+                if (!conditionalNodes.shouldInclude(outer.executionPlan.variables, node.getDirectives()))
+                    return false;
+
+                return true;
+            }
+
+            boolean shouldCollectInlineFragment (Builder outer, InlineFragment node, FieldCollectorParameters collectorParams) {
+                if (!conditionalNodes.shouldInclude(outer.executionPlan.variables, node.getDirectives()))
+                    return false;
+
+                if (!doesFragmentConditionMatch(collectorParams, node))
+                    return false;
+
+                return true;
+            }
+
+            boolean shouldCollectFragmentSpread (Builder outer, FragmentSpread node, FieldCollectorParameters collectorParams) {
+                if (!conditionalNodes.shouldInclude(outer.executionPlan.variables, node.getDirectives()))
+                    return false;
+
+                FragmentDefinition fragmentDefinition = outer.executionPlan.fragmentsByName.get(node.getName());
+                if (!conditionalNodes.shouldInclude(outer.executionPlan.variables, fragmentDefinition.getDirectives()))
+                    return false;
+
+                if (!doesFragmentConditionMatch(collectorParams, fragmentDefinition))
+                    return false;
+
+                return true;
+            }
+
+            private final ConditionalNodes conditionalNodes = new ConditionalNodes();
+        }
+
+        private final ExecutionPlan executionPlan;
+        private final Collection<OperationDefinition> operations = new ArrayList<>();
+
+        private static final FieldCollectorHelper FIELD_COLLECTOR = new FieldCollectorHelper();
+    }
+
+    private /*final*/ GraphQLSchema schema;
+    private /*final*/ Document document;
+    private /*final*/ Map<String, OperationDefinition> operationsByName = Collections.emptyMap();
+    private /*final*/ Map<String, FragmentDefinition> fragmentsByName = Collections.emptyMap();
+    private /*final*/ Map<String, Object> variables = Collections.emptyMap();    
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(Builder.class);
+}

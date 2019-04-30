@@ -363,7 +363,7 @@ class TraverserTest extends Specification {
 
     def "test traversal with zero roots"() {
 
-        def visitor = [] as TraverserVisitor
+        def visitor = Mock(TraverserVisitor)
         def roots = []
 
         when:

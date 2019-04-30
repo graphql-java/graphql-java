@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
+
 import static graphql.util.TraversalControl.CONTINUE;
 
 @Internal

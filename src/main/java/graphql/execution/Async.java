@@ -4,8 +4,10 @@ import graphql.Assert;
 import graphql.Internal;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
@@ -13,6 +15,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Internal
 @SuppressWarnings("FutureReturnValueIgnored")
@@ -24,41 +27,27 @@ public class Async {
     }
 
     public static <U> CompletableFuture<List<U>> each(List<CompletableFuture<U>> futures) {
-        CompletableFuture<List<U>> overallResult = new CompletableFuture<>();
-
-        CompletableFuture
-                .allOf(futures.toArray(new CompletableFuture[0]))
-                .whenComplete((noUsed, exception) -> {
-                    if (exception != null) {
-                        overallResult.completeExceptionally(exception);
-                        return;
-                    }
-                    List<U> results = new ArrayList<>();
-                    for (CompletableFuture<U> future : futures) {
-                        results.add(future.join());
-                    }
-                    overallResult.complete(results);
-                });
-        return overallResult;
+        Assert.assertNotNull(futures);
+        
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture<?>[futures.size()]))
+                .thenApply(noUsed -> futures
+                    .stream()
+                    .map(CompletableFuture::join)
+                    .collect(Collectors.toList()));
     }
 
     public static <T, U> CompletableFuture<List<U>> each(Iterable<T> list, BiFunction<T, Integer, CompletableFuture<U>> cfFactory) {
-        List<CompletableFuture<U>> futures = new ArrayList<>();
-        int index = 0;
-        for (T t : list) {
-            CompletableFuture<U> cf;
-            try {
-                cf = cfFactory.apply(t, index++);
-                Assert.assertNotNull(cf, "cfFactory must return a non null value");
-            } catch (Exception e) {
-                cf = new CompletableFuture<>();
-                // Async.each makes sure that it is not a CompletionException inside a CompletionException
-                cf.completeExceptionally(new CompletionException(e));
-            }
-            futures.add(cf);
-        }
-        return each(futures);
-
+        Assert.assertNotNull(list);
+        Assert.assertNotNull(cfFactory);
+        
+        int index[] = {0};
+        return each(
+            StreamSupport
+                .stream(list.spliterator(), false)
+                .map(o -> tryCatch(() -> 
+                    Assert.assertNotNull(cfFactory.apply(o, index[0]++), "cfFactory must return a non null value")))
+                .collect(Collectors.toList())
+        );
     }
 
     public static <T, U> CompletableFuture<List<U>> eachSequentially(Iterable<T> list, CFFactory<T, U> cfFactory) {

@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
+import java.util.Objects;
 
 @Internal
 public abstract class TraverserState<T> {
@@ -22,13 +23,17 @@ public abstract class TraverserState<T> {
 
     private final Deque<Object> state;
     private final Set<T> visited = new LinkedHashSet<>();
+    private final Function<TraverserContextBuilder<T>, DefaultTraverserContext<T>> contextFactory;
 
 
-    // used for depth first traversal
-    private static class StackTraverserState<U> extends TraverserState<U> {
+    public static class StackTraverserState<U> extends TraverserState<U> {
 
         private StackTraverserState(Object sharedContextData) {
             super(sharedContextData);
+        }
+        
+        private StackTraverserState(Object sharedContextData, Function<TraverserContextBuilder<U>, DefaultTraverserContext<U>> contextFactory) {
+            super(sharedContextData, contextFactory);
         }
 
         @Override
@@ -46,7 +51,7 @@ public abstract class TraverserState<T> {
                     for (int i = children.size() - 1; i >= 0; i--) {
                         U child = assertNotNull(children.get(i), "null child for key " + key);
                         NodeLocation nodeLocation = new NodeLocation(key, i);
-                        DefaultTraverserContext<U> context = super.newContext(child, traverserContext, nodeLocation);
+                        TraverserContext<U> context = super.newContext(child, traverserContext, nodeLocation);
                         super.state.push(context);
                         childrenContextMap.computeIfAbsent(key, notUsed -> new ArrayList<>());
                         childrenContextMap.get(key).add(0, context);
@@ -57,13 +62,16 @@ public abstract class TraverserState<T> {
         }
     }
 
-    // used for breadth first traversal
-    private static class QueueTraverserState<U> extends TraverserState<U> {
+    public static class QueueTraverserState<U> extends TraverserState<U> {
 
         private QueueTraverserState(Object sharedContextData) {
             super(sharedContextData);
         }
 
+        private QueueTraverserState(Object sharedContextData, Function<TraverserContextBuilder<U>, DefaultTraverserContext<U>> contextFactory) {
+            super(sharedContextData, contextFactory);
+        }
+        
         @Override
         public void pushAll(TraverserContext<U> traverserContext, Function<? super U, Map<String, ? extends List<U>>> getChildren) {
             Map<String, List<TraverserContext<U>>> childrenContextMap = new LinkedHashMap<>();
@@ -74,7 +82,7 @@ public abstract class TraverserState<T> {
                     for (int i = 0; i < children.size(); i++) {
                         U child = assertNotNull(children.get(i), "null child for key " + key);
                         NodeLocation nodeLocation = new NodeLocation(key, i);
-                        DefaultTraverserContext<U> context = super.newContext(child, traverserContext, nodeLocation);
+                        TraverserContext<U> context = super.newContext(child, traverserContext, nodeLocation);
                         childrenContextMap.computeIfAbsent(key, notUsed -> new ArrayList<>());
                         childrenContextMap.get(key).add(context);
                         super.state.add(context);
@@ -92,17 +100,30 @@ public abstract class TraverserState<T> {
         public Map<String, List<TraverserContext<U>>> childrenContextMap;
     }
 
-    private TraverserState(Object sharedContextData) {
+    private TraverserState(Object initialData) {
+        this(initialData, TraverserState::newContext);
+    }
+    
+    private TraverserState(Object sharedContextData, Function<TraverserContextBuilder<T>, DefaultTraverserContext<T>> contextFactory) {
         this.sharedContextData = sharedContextData;
         this.state = new ArrayDeque<>(32);
+        this.contextFactory = assertNotNull(contextFactory);
     }
 
-    public static <U> TraverserState<U> newQueueState(Object sharedContextData) {
-        return new QueueTraverserState<>(sharedContextData);
+    public static <U> QueueTraverserState<U> newQueueState(Object initialData) {
+        return new QueueTraverserState<>(initialData);
     }
 
-    public static <U> TraverserState<U> newStackState(Object sharedContextData) {
-        return new StackTraverserState<>(sharedContextData);
+    public static <U> QueueTraverserState<U> newQueueState(Object initialData, Function<TraverserContextBuilder<U>, DefaultTraverserContext<U>> contextFactory) {
+        return new QueueTraverserState<>(initialData, contextFactory);
+    }
+
+    public static <U> StackTraverserState<U> newStackState(Object initialData) {
+        return new StackTraverserState<>(initialData);
+    }
+
+    public static <U> StackTraverserState<U> newStackState(Object initialData, Function<TraverserContextBuilder<U>, DefaultTraverserContext<U>> contextFactory) {
+        return new StackTraverserState<>(initialData, contextFactory);
     }
 
     public abstract void pushAll(TraverserContext<T> o, Function<? super T, Map<String, ? extends List<T>>> getChildren);
@@ -125,21 +146,114 @@ public abstract class TraverserState<T> {
         this.visited.add(visited);
     }
 
+    private static <T> DefaultTraverserContext<T> newContext (TraverserContextBuilder<T> builder) {
+        assertNotNull(builder);
 
-    public DefaultTraverserContext<T> newRootContext(Map<Class<?>, Object> vars) {
+        return new DefaultTraverserContext<>(
+            builder.getNode(), 
+            builder.getParentContext(), 
+            builder.getVisited(), 
+            builder.getVars(), 
+            builder.getSharedContextData(), 
+            builder.getNodeLocation(), 
+            builder.isRootContext()
+        );
+    }
+
+    public TraverserContext<T> newRootContext(Map<Class<?>, Object> vars) {
         return newContextImpl(null, null, vars, null, true);
     }
 
-    private DefaultTraverserContext<T> newContext(T o, TraverserContext<T> parent, NodeLocation position) {
+    private TraverserContext<T> newContext(T o, TraverserContext<T> parent, NodeLocation position) {
         return newContextImpl(o, parent, new LinkedHashMap<>(), position, false);
     }
 
-    private DefaultTraverserContext<T> newContextImpl(T curNode,
+    private TraverserContext<T> newContextImpl(T curNode,
                                                       TraverserContext<T> parent,
                                                       Map<Class<?>, Object> vars,
                                                       NodeLocation nodeLocation,
                                                       boolean isRootContext) {
         assertNotNull(vars);
-        return new DefaultTraverserContext<>(curNode, parent, visited, vars, sharedContextData, nodeLocation, isRootContext);
+        
+        return new TraverserContextBuilder<>(this)
+            .thisNode(curNode)
+            .parentContext(parent)
+            .vars(vars)
+            .nodeLocation(nodeLocation)
+            .rootContext(isRootContext)
+            .build(contextFactory);
+    }
+    
+    public static final class TraverserContextBuilder<T> {
+        private final TraverserState<T> outer;
+        
+        private /*final*/ T node;
+        private /*final*/ TraverserContext<T> parentContext;
+        private /*final*/ Map<Class<?>, Object> vars;
+        private /*final*/ NodeLocation nodeLocation;
+        boolean /*final*/ isRootContext;
+        
+        public TraverserContextBuilder (TraverserState<T> outer) {
+            this.outer = Objects.requireNonNull(outer);
+        }
+        
+        public DefaultTraverserContext<T> build (Function<? super TraverserContextBuilder<T>, ? extends DefaultTraverserContext<T>> creator) {
+            assertNotNull(creator);
+            return creator.apply(this);
+        }
+        
+        public TraverserContextBuilder<T> thisNode (T node) {
+            this.node = node;
+            return this;
+        }
+        
+        public TraverserContextBuilder<T> parentContext (TraverserContext<? super T> parentContext) {
+            this.parentContext = (TraverserContext<T>)parentContext;
+            return this;
+        }
+        
+        public TraverserContextBuilder<T> vars (Map<Class<?>, Object> vars) {
+            this.vars = Objects.requireNonNull(vars);
+            return this;
+        }
+
+        public TraverserContextBuilder<T> rootContext (boolean value) {
+            this.isRootContext = value;
+            return this;
+        }
+        
+        public TraverserContextBuilder<T> nodeLocation (NodeLocation nodeLocation) {
+            this.nodeLocation = nodeLocation;
+            return this;
+        }
+                
+        public T getNode() {
+            return node;
+        }
+
+        public TraverserContext<T> getParentContext() {
+            return parentContext;
+        }
+
+        public Map<Class<?>, Object> getVars() {
+            return vars;
+        }
+        
+        public Object getSharedContextData () {
+            return outer.sharedContextData;
+        }
+        
+        public Set<T> getVisited () {
+            return outer.visited;
+        }
+
+        public boolean isRootContext() {
+            return isRootContext;
+        }
+
+        public NodeLocation getNodeLocation() {
+            return nodeLocation;
+        }
+       
     }
 }

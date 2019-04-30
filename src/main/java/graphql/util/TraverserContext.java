@@ -4,6 +4,7 @@ import graphql.PublicApi;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -68,6 +69,23 @@ public interface TraverserContext<T> {
      * @return context associated with the node parent
      */
     TraverserContext<T> getParentContext();
+    
+    /**
+     * The parent new accumulate value.
+     *
+     * @see #getParentContext() 
+     * @see #getNewAccumulate() 
+     * 
+     * @param <U> and me
+     *
+     * @return the accumulate value
+     */
+    default <U> U getParentAccumulate () {
+        return Optional
+            .ofNullable(getParentContext())
+            .map(TraverserContext::<U>getNewAccumulate)
+            .orElse(null);
+    }
 
     /**
      * The list of parent nodes starting from the current parent.
@@ -89,6 +107,7 @@ public interface TraverserContext<T> {
      *
      * @return list of breadcrumbs. the first element is the location inside the parent.
      */
+
     List<Breadcrumb<T>> getBreadcrumbs();
 
     /**
@@ -103,7 +122,10 @@ public interface TraverserContext<T> {
      *
      * @return {@code true} if a node had been already visited
      */
-    boolean isVisited();
+    default boolean isVisited() {
+        return visitedNodes()
+                .contains(thisNode());
+    }
 
     /**
      * Obtains all visited nodes and values received by the {@link TraverserVisitor#enter(graphql.util.TraverserContext) }
@@ -122,7 +144,7 @@ public interface TraverserContext<T> {
      * @return a variable value or {@code null}
      */
     <S> S getVar(Class<? super S> key);
-
+    
     /**
      * Searches for a context variable starting from the parent
      * up the hierarchy of contexts until the first variable is found.
@@ -196,5 +218,4 @@ public interface TraverserContext<T> {
      * @return the children contexts. If the childs are a simple list the key is null.
      */
     Map<String, List<TraverserContext<T>>> getChildrenContexts();
-
 }

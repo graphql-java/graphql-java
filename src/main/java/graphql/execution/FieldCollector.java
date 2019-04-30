@@ -120,7 +120,7 @@ public class FieldCollector {
     }
 
 
-    private boolean doesFragmentConditionMatch(FieldCollectorParameters parameters, InlineFragment inlineFragment) {
+    protected boolean doesFragmentConditionMatch(FieldCollectorParameters parameters, InlineFragment inlineFragment) {
         if (inlineFragment.getTypeCondition() == null) {
             return true;
         }
@@ -129,7 +129,7 @@ public class FieldCollector {
         return checkTypeCondition(parameters, conditionType);
     }
 
-    private boolean doesFragmentConditionMatch(FieldCollectorParameters parameters, FragmentDefinition fragmentDefinition) {
+    protected boolean doesFragmentConditionMatch(FieldCollectorParameters parameters, FragmentDefinition fragmentDefinition) {
         GraphQLType conditionType;
         conditionType = getTypeFromAST(parameters.getGraphQLSchema(), fragmentDefinition.getTypeCondition());
         return checkTypeCondition(parameters, conditionType);

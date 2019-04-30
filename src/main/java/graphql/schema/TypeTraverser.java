@@ -2,9 +2,11 @@ package graphql.schema;
 
 
 import graphql.PublicApi;
+import graphql.language.Node;
+import graphql.language.NodeVisitor;
+import graphql.util.DefaultTraverserContext;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
-import graphql.util.TraverserContext;
 import graphql.util.TraverserResult;
 import graphql.util.TraverserVisitor;
 
@@ -15,6 +17,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static graphql.util.TraversalControl.CONTINUE;
+import graphql.util.TraverserContext;
 
 @PublicApi
 public class TypeTraverser {
@@ -58,6 +61,13 @@ public class TypeTraverser {
         return traverser.traverse(roots, traverserDelegateVisitor);
     }
 
+    @SuppressWarnings("TypeParameterUnusedInFormals")
+    public static <T> T oneVisitWithResult(GraphQLType type, GraphQLTypeVisitor typeVisitor) {
+        DefaultTraverserContext<GraphQLType> context = DefaultTraverserContext.simple(type);
+        type.accept(context, typeVisitor);
+        return (T)context.getNewAccumulate();
+    }
+    
     private static class TraverserDelegateVisitor implements TraverserVisitor<GraphQLType> {
         private final GraphQLTypeVisitor before;
 
