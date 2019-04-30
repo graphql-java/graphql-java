@@ -859,6 +859,6 @@ public class SchemaDiff {
     }
 
     private String mkDotName(String... objectNames) {
-        return Arrays.stream(objectNames).collect(Collectors.joining("."));
+        return String.join(".", objectNames);
     }
 }
