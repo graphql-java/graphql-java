@@ -28,7 +28,7 @@ input Questor {
 }
 
 input NestedInput {
-    nestedInput: String
+    nestedInput: Int
 }
 
 scalar CustomScalar
@@ -45,7 +45,6 @@ interface Being {
 type Ainur implements Being {
     id : ID
     name : String
-    surname : String
     nameInQuenyan : String
     invitedBy(id : ID) : Being
     loves : String
@@ -59,7 +58,7 @@ type Istari implements Being {
     invitedBy(id : ID) : Being
     colour : String
     temperament : Temperament!
-
+    
 }
 
 type Deity implements Being {
