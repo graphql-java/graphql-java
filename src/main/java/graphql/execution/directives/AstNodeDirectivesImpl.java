@@ -1,6 +1,7 @@
 package graphql.execution.directives;
 
 import graphql.Assert;
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.DirectivesContainer;
@@ -22,14 +23,14 @@ import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
  * This value class holds information about the hierarchical directives on a field, what held them
  * and how far away from the field was those directives.
  */
-@PublicApi
-public class QueryDirectivesInfoImpl implements QueryDirectivesInfo {
+@Internal
+public class AstNodeDirectivesImpl implements AstNodeDirectives {
     private final DirectivesContainer directivesContainer;
     private final Map<String, GraphQLDirective> directives;
     private final int distance;
     private final DirectiveLocation directiveLocation;
 
-    QueryDirectivesInfoImpl(DirectivesContainer directivesContainer, int distance, Map<String, GraphQLDirective> directives) {
+    AstNodeDirectivesImpl(DirectivesContainer directivesContainer, int distance, Map<String, GraphQLDirective> directives) {
         this.directivesContainer = directivesContainer;
         this.distance = distance;
         this.directives = directives;
@@ -37,11 +38,11 @@ public class QueryDirectivesInfoImpl implements QueryDirectivesInfo {
     }
 
     @Override
-    public QueryDirectivesInfo restrictTo(String directiveName) {
+    public AstNodeDirectives restrictTo(String directiveName) {
         Map<String, GraphQLDirective> collect = directives.entrySet().stream()
                 .filter(entry -> directiveName.equals(entry.getKey()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        return new QueryDirectivesInfoImpl(this.directivesContainer, this.distance, collect);
+        return new AstNodeDirectivesImpl(this.directivesContainer, this.distance, collect);
     }
 
 
@@ -95,7 +96,7 @@ public class QueryDirectivesInfoImpl implements QueryDirectivesInfo {
 
     @Override
     public String toString() {
-        return "QueryDirectivesInfoImpl{" +
+        return "AstNodeDirectivesImpl{" +
                 ", distance=" + distance +
                 ", directiveLocation=" + directiveLocation +
                 ", directives=" + directives +
@@ -103,7 +104,7 @@ public class QueryDirectivesInfoImpl implements QueryDirectivesInfo {
     }
 
     @Override
-    public int compareTo(QueryDirectivesInfo that) {
+    public int compareTo(AstNodeDirectives that) {
         if (this == that) {
             return 0;
         }

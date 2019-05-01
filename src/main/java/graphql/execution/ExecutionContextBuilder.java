@@ -4,7 +4,7 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
-import graphql.execution.directives.QueryDirectivesInfo;
+import graphql.execution.directives.AstNodeDirectives;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -41,7 +41,7 @@ public class ExecutionContextBuilder {
     private DataLoaderRegistry dataLoaderRegistry;
     private CacheControl cacheControl;
     private List<GraphQLError> errors = new ArrayList<>();
-    private Map<Field, List<QueryDirectivesInfo>> queryDirectivesInfo = new LinkedHashMap<>();
+    private Map<Field, List<AstNodeDirectives>> queryDirectivesInfo = new LinkedHashMap<>();
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -150,7 +150,7 @@ public class ExecutionContextBuilder {
         return this;
     }
 
-    public ExecutionContextBuilder queryDirectivesInfo(Map<Field, List<QueryDirectivesInfo>> queryDirectivesInfo) {
+    public ExecutionContextBuilder astDirectives(Map<Field, List<AstNodeDirectives>> queryDirectivesInfo) {
         this.queryDirectivesInfo = queryDirectivesInfo;
         return this;
     }

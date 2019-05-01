@@ -2,8 +2,6 @@ package graphql.execution.directives
 
 import graphql.GraphQL
 import graphql.TestUtil
-import graphql.introspection.Introspection
-import graphql.language.Field
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLDirective
 import spock.lang.Specification
@@ -50,13 +48,19 @@ class QueryDirectivesCollectorIntegrationTest extends Specification {
         }
     '''
 
-    QueryDirectives capturedDirectives
+    Map<String, QueryDirectives> capturedDirectives
 
     DataFetcher reviewDF = { env ->
-        capturedDirectives = env.getQueryDirectives()
+        capturedDirectives.put(env.getMergedField().getName(), env.getQueryDirectives())
+        "review"
     }
 
-    def schema = TestUtil.schema(sdl, [Book: [review: reviewDF]])
+    DataFetcher titleDF = { env ->
+        capturedDirectives.put(env.getMergedField().getName(), env.getQueryDirectives())
+        "title"
+    }
+
+    def schema = TestUtil.schema(sdl, [Book: [review: reviewDF, title: titleDF]])
 
     def graphql = GraphQL.newGraphQL(schema).build()
 
@@ -77,7 +81,7 @@ class QueryDirectivesCollectorIntegrationTest extends Specification {
     }
 
     void setup() {
-        capturedDirectives = null
+        capturedDirectives = [:]
     }
 
     def "can collector directives as expected"() {
@@ -86,13 +90,7 @@ class QueryDirectivesCollectorIntegrationTest extends Specification {
         then:
         er.errors.isEmpty()
 
-        def closest = capturedDirectives.getClosestDirective("timeout")
-        joinArgs(closest) == "timeout(afterMillis:5),timeout(afterMillis:28),timeout(afterMillis:10)"
-
-        def closestImportance = capturedDirectives.getClosestDirective("importance")
-        joinArgs(closestImportance) == "importance(place:FragDef)"
-
-        Map<String, List<GraphQLDirective>> immediateMap = capturedDirectives.getImmediateDirectives()
+        Map<String, List<GraphQLDirective>> immediateMap = capturedDirectives["review"].getImmediateDirectives()
         def entries = immediateMap.entrySet().collectEntries({
             [(it.getKey()): joinArgs(it.getValue())]
         })
@@ -100,55 +98,36 @@ class QueryDirectivesCollectorIntegrationTest extends Specification {
                     timeout: "timeout(afterMillis:5),timeout(afterMillis:28),timeout(afterMillis:10)"
         ]
 
-        def immediate = capturedDirectives.getImmediateDirective("cached")
+        def immediate = capturedDirectives["review"].getImmediateDirective("cached")
         joinArgs(immediate) == "cached(forMillis:5),cached(forMillis:10)"
     }
 
-    def "getClosest can be on parent fields"() {
-
-        def query = '''
-            query Books {
-                books(searchString: "monkey") @importance(place : "books") {
-                    id
-                    review
+    def "wont create directives for peer fields accidentally"() {
+        def query = '''query Books {
+            books(searchString: "monkey") {
+                id
+                 ...on Book {
+                    review @timeout(afterMillis: 10) @cached(forMillis : 10)
+                    title @timeout(afterMillis: 99) @cached(forMillis : 99)
                 }
             }
-        '''
-
+        }
+'''
         when:
         def er = execute(query)
         then:
         er.errors.isEmpty()
 
-        def closest = capturedDirectives.getClosestDirective("importance")
-        joinArgs(closest) == "importance(place:books)"
+        Map<String, List<GraphQLDirective>> immediateMap = capturedDirectives["title"].getImmediateDirectives()
+        def entries = immediateMap.entrySet().collectEntries({
+            [(it.getKey()): joinArgs(it.getValue())]
+        })
+        entries == [cached : "cached(forMillis:99)",
+                    timeout: "timeout(afterMillis:99)"
+        ]
 
-        def allDirectives = capturedDirectives.getAllDirectives()
-        allDirectives.size() == 1
-        allDirectives[0].directiveLocation == Introspection.DirectiveLocation.FIELD
-        allDirectives[0].getDirectivesContainer() instanceof Field
-        allDirectives[0].getDistance() == 1
-
-        capturedDirectives.getImmediateDirectives().isEmpty()
-        capturedDirectives.getImmediateDirective("importance").isEmpty()
+        def immediate = capturedDirectives["review"].getImmediateDirective("cached")
+        joinArgs(immediate) == "cached(forMillis:10)"
     }
 
-    def "empty directives don't use memory"() {
-
-        def query = '''
-            query Books {
-                books(searchString: "monkey") {
-                    id
-                    review
-                }
-            }
-        '''
-
-        when:
-        def er = execute(query)
-        then:
-        er.errors.isEmpty()
-
-        capturedDirectives.getAllDirectives() == []
-    }
 }

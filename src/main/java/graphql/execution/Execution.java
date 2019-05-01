@@ -9,7 +9,7 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.defer.DeferSupport;
 import graphql.execution.directives.QueryDirectivesCollector;
-import graphql.execution.directives.QueryDirectivesInfo;
+import graphql.execution.directives.AstNodeDirectives;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -132,7 +132,7 @@ public class Execution {
         // since this traverses the query tree, we need to do it here after we are sure the query is valid to be traversed.  If we do it earlier
         // there are edge cases like not having a mutation type and so on.
         //
-        executionContext = buildQueryDirectives(executionContext);
+        executionContext = astDirectives(executionContext);
 
         FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
                 .schema(executionContext.getGraphQLSchema())
@@ -187,10 +187,10 @@ public class Execution {
         return deferSupport(executionContext, result);
     }
 
-    private ExecutionContext buildQueryDirectives(ExecutionContext executionContext) {
-        Map<Field, List<QueryDirectivesInfo>> queryDirectivesMap = fieldDirectiveCollector.collectDirectivesForAllFields(
+    private ExecutionContext astDirectives(ExecutionContext executionContext) {
+        Map<Field, List<AstNodeDirectives>> astDirectivesMap = fieldDirectiveCollector.collectDirectivesForAllFields(
                 executionContext.getDocument(), executionContext.getGraphQLSchema(), executionContext.getVariables(), executionContext.getOperationDefinition());
-        return executionContext.transform(ctx -> ctx.queryDirectivesInfo(queryDirectivesMap));
+        return executionContext.transform(ctx -> ctx.astDirectives(astDirectivesMap));
     }
 
     /*

@@ -6,10 +6,10 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
 import graphql.execution.defer.DeferSupport;
-import graphql.execution.directives.QueryDirectivesCollector;
+import graphql.execution.directives.AstNodeDirectives;
 import graphql.execution.directives.QueryDirectives;
+import graphql.execution.directives.QueryDirectivesCollector;
 import graphql.execution.directives.QueryDirectivesImpl;
-import graphql.execution.directives.QueryDirectivesInfo;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -44,13 +44,13 @@ public class ExecutionContext {
     private final Object context;
     private final Instrumentation instrumentation;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
-    private final Map<Field, List<QueryDirectivesInfo>> queryDirectivesInfo;
+    private final Map<Field, List<AstNodeDirectives>> astDirectives;
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
     private final DeferSupport deferSupport = new DeferSupport();
 
     @Internal
-    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, List<GraphQLError> startingErrors) {
+    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, Map<Field, List<AstNodeDirectives>> astDirectives, List<GraphQLError> startingErrors) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.instrumentationState = instrumentationState;
@@ -64,7 +64,7 @@ public class ExecutionContext {
         this.context = context;
         this.root = root;
         this.instrumentation = instrumentation;
-        this.queryDirectivesInfo = queryDirectivesInfo;
+        this.astDirectives = astDirectives;
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.cacheControl = cacheControl;
         this.errors.addAll(startingErrors);
@@ -117,8 +117,8 @@ public class ExecutionContext {
     }
 
     public QueryDirectives getQueryDirectives(MergedField mergedField) {
-        List<QueryDirectivesInfo> directivesInfos = directiveCollector.combineDirectivesForField(mergedField, queryDirectivesInfo);
-        return new QueryDirectivesImpl(directivesInfos);
+        List<AstNodeDirectives> astNodeDirectives = directiveCollector.combineDirectivesForField(mergedField, astDirectives);
+        return new QueryDirectivesImpl(astNodeDirectives);
     }
 
     public DataLoaderRegistry getDataLoaderRegistry() {

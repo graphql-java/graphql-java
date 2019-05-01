@@ -32,7 +32,7 @@ import java.util.Map;
  * @apiNote This class is internal and highly like to change in a future version.  Use it at your own peril
  */
 @Internal
-public interface QueryDirectivesInfo extends Comparable<QueryDirectivesInfo> {
+public interface AstNodeDirectives extends Comparable<AstNodeDirectives> {
 
     /**
      * @return the query AST node that contained the directives
@@ -45,6 +45,9 @@ public interface QueryDirectivesInfo extends Comparable<QueryDirectivesInfo> {
     Map<String, GraphQLDirective> getDirectives();
 
     /**
+     * Currently this is contentious in terms of its calculation and is HIGHLY likely to change
+     * in the future.
+     *
      * @return the distance from the originating field where 0 is on the field itself
      */
     int getDistance();
@@ -55,12 +58,12 @@ public interface QueryDirectivesInfo extends Comparable<QueryDirectivesInfo> {
     Introspection.DirectiveLocation getDirectiveLocation();
 
     /**
-     * This will create a new QueryDirectivesInfo that filters our the list of directives to a specifically named
+     * This will create a new AstNodeDirectives that filters our the list of directives to a specifically named
      * directive and otherwise keeps the other information the same
      *
      * @param directiveName the named directive
      *
      * @return a copy that only contains the named directive
      */
-    QueryDirectivesInfo restrictTo(String directiveName);
+    AstNodeDirectives restrictTo(String directiveName);
 }

@@ -18,12 +18,12 @@ class QueryDirectivesCollectorTest extends Specification {
     GraphQLDirective upperDirective = newDirective().name("upper").build()
     GraphQLDirective lowerDirective = newDirective().name("lower").build()
 
-    QueryDirectivesInfo info(int distance, Map<String, GraphQLDirective> directives) {
-        return new QueryDirectivesInfoImpl(new Field("ignored"), distance, directives)
+    AstNodeDirectives info(int distance, Map<String, GraphQLDirective> directives) {
+        return new AstNodeDirectivesImpl(new Field("ignored"), distance, directives)
     }
 
-    QueryDirectivesInfo info(DirectivesContainer container, int distance, Map<String, GraphQLDirective> directives) {
-        return new QueryDirectivesInfoImpl(container, distance, directives)
+    AstNodeDirectives info(DirectivesContainer container, int distance, Map<String, GraphQLDirective> directives) {
+        return new AstNodeDirectivesImpl(container, distance, directives)
     }
 
     def "combine works as expected"() {

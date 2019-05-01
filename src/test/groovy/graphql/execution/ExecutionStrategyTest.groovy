@@ -63,7 +63,7 @@ class ExecutionStrategyTest extends Specification {
         new ExecutionContext(SimpleInstrumentation.INSTANCE, executionId, schema ?: StarWarsSchema.starWarsSchema, null,
                 executionStrategy, executionStrategy, executionStrategy,
                 null, null, null,
-                variables, "context", "root", new DataLoaderRegistry(), null, Collections.emptyList())
+                variables, "context", "root", new DataLoaderRegistry(), null, [:], Collections.emptyList())
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")
@@ -319,7 +319,7 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(typeInfo)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .source(OptionalLong.empty())
-                .fields(mergedSelectionSet  (["fld": []]))
+                .fields(mergedSelectionSet(["fld": []]))
                 .build()
 
         when:
