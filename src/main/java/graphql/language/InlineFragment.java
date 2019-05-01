@@ -15,7 +15,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.directivesByName;
 
 @PublicApi
-public class InlineFragment extends AbstractNode<InlineFragment> implements Selection<InlineFragment>, SelectionSetContainer<InlineFragment> {
+public class InlineFragment extends AbstractNode<InlineFragment> implements Selection<InlineFragment>, SelectionSetContainer<InlineFragment>, DirectivesContainer<InlineFragment> {
     private final TypeName typeCondition;
     private final List<Directive> directives;
     private final SelectionSet selectionSet;
@@ -58,6 +58,11 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
 
     public TypeName getTypeCondition() {
         return typeCondition;
+    }
+
+    @Override
+    public String getName() {
+        return typeCondition == null ? null : typeCondition.getName();
     }
 
     public List<Directive> getDirectives() {
