@@ -1671,7 +1671,7 @@ class SchemaGeneratorTest extends Specification {
         GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
 
         expect:
-        def fetcher = schema.getCodeRegistry().getDataFetcher(type,type.getFieldDefinition("homePlanet"))
+        def fetcher = schema.getCodeRegistry().getDataFetcher(type, type.getFieldDefinition("homePlanet"))
         fetcher instanceof PropertyDataFetcher
 
         PropertyDataFetcher propertyDataFetcher = fetcher as PropertyDataFetcher
@@ -1679,7 +1679,7 @@ class SchemaGeneratorTest extends Specification {
         //
         // no directive - plain name
         //
-        def fetcher2 = schema.getCodeRegistry().getDataFetcher(type,type.getFieldDefinition("name"))
+        def fetcher2 = schema.getCodeRegistry().getDataFetcher(type, type.getFieldDefinition("name"))
         fetcher2 instanceof PropertyDataFetcher
 
         PropertyDataFetcher propertyDataFetcher2 = fetcher2 as PropertyDataFetcher
@@ -1736,9 +1736,38 @@ class SchemaGeneratorTest extends Specification {
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .transformer(transformer)
                 .build()
-        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring);
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring)
         expect:
         assert schema != null
         schema.getDirective("extra") != null
+    }
+
+    def "1509- enum object string default values are handled"() {
+        def spec = '''
+            enum EnumValue {
+                ONE, TWO, THREE
+            }
+            
+            input InputType {
+                value : EnumValue
+            }
+            
+            type Query {
+                fieldWithEnum(arg : InputType = { value : ONE } ) : String
+                fieldWithString(arg : InputType = { value : "ONE" } ) : String
+            }
+        '''
+        def types = new SchemaParser().parse(spec)
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, TestUtil.mockRuntimeWiring)
+        expect:
+        assert schema != null
+        def queryType = schema.getObjectType("Query")
+        def fieldWithEnum = queryType.getFieldDefinition("fieldWithEnum")
+        def arg = fieldWithEnum.getArgument("arg")
+        arg.defaultValue == [value: "ONE"]
+
+        def fieldWithString = queryType.getFieldDefinition("fieldWithString")
+        def arg2 = fieldWithString.getArgument("arg")
+        arg2.defaultValue == [value: "ONE"]
     }
 }
