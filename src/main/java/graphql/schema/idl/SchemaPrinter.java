@@ -744,7 +744,7 @@ public class SchemaPrinter {
                 String commentText = cmt.getContent() == null ? "" : cmt.getContent();
                 // it possible that in fact they manage to sneak in a multi line comment
                 // into what should be a single line comment.  So cater for that.
-                List<String> lines = Arrays.asList(commentText.split(commentText));
+                List<String> lines = Arrays.asList(commentText.split("\n"));
                 lines.forEach(t -> {
                     out.write(prefix);
                     out.write("#");
