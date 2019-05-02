@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static graphql.Assert.assertNotNull;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
@@ -47,6 +49,16 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
         @Override
         public boolean contains(String fieldGlobPattern) {
+            return false;
+        }
+
+        @Override
+        public boolean containsAnyOf(String fieldGlobPattern, String... fieldGlobPatterns) {
+            return false;
+        }
+
+        @Override
+        public boolean containsAllOf(String fieldGlobPattern, String... fieldGlobPatterns) {
             return false;
         }
 
@@ -139,6 +151,37 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
             }
         }
         return false;
+    }
+
+    @Override
+    public boolean containsAnyOf(String fieldGlobPattern, String... fieldGlobPatterns) {
+        assertNotNull(fieldGlobPattern);
+        assertNotNull(fieldGlobPatterns);
+        for (String globPattern : mkIterable(fieldGlobPattern, fieldGlobPatterns)) {
+            if (contains(globPattern)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean containsAllOf(String fieldGlobPattern, String... fieldGlobPatterns) {
+        assertNotNull(fieldGlobPattern);
+        assertNotNull(fieldGlobPatterns);
+        for (String globPattern : mkIterable(fieldGlobPattern, fieldGlobPatterns)) {
+            if (!contains(globPattern)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private List<String> mkIterable(String fieldGlobPattern, String[] fieldGlobPatterns) {
+        List<String> l = new ArrayList<>();
+        l.add(fieldGlobPattern);
+        Collections.addAll(l, fieldGlobPatterns);
+        return l;
     }
 
     @Override

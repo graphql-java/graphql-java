@@ -68,6 +68,38 @@ public interface DataFetchingFieldSelectionSet extends Supplier<MergedSelectionS
     boolean contains(String fieldGlobPattern);
 
     /**
+     * This will return true if the field selection set matches any of the specified "glob" pattern matches ie
+     * the glob pattern matching supported by {@link java.nio.file.FileSystem#getPathMatcher}.
+     *
+     * This will allow you to use '*', '**' and '?' as special matching characters such that "invoice/customer*" would
+     * match an invoice field with child fields that start with 'customer'.
+     *
+     * @param fieldGlobPattern  the glob pattern to match fields against
+     * @param fieldGlobPatterns optionally more glob pattern to match fields against
+     *
+     * @return true if the selection set contains any of these these fields
+     *
+     * @see java.nio.file.FileSystem#getPathMatcher(String)
+     */
+    boolean containsAnyOf(String fieldGlobPattern, String... fieldGlobPatterns);
+
+    /**
+     * This will return true if the field selection set matches all of the specified "glob" pattern matches ie
+     * the glob pattern matching supported by {@link java.nio.file.FileSystem#getPathMatcher}.
+     *
+     * This will allow you to use '*', '**' and '?' as special matching characters such that "invoice/customer*" would
+     * match an invoice field with child fields that start with 'customer'.
+     *
+     * @param fieldGlobPattern  the glob pattern to match fields against
+     * @param fieldGlobPatterns optionally more glob pattern to match fields against
+     *
+     * @return true if the selection set contains all of these these fields
+     *
+     * @see java.nio.file.FileSystem#getPathMatcher(String)
+     */
+    boolean containsAllOf(String fieldGlobPattern, String... fieldGlobPatterns);
+
+    /**
      * This will return all selected fields.
      *
      * @return a list of all selected fields or empty list if none match

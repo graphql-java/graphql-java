@@ -6,6 +6,7 @@ import graphql.PublicApi;
 import graphql.execution.ExecutionPath;
 import graphql.schema.DataFetchingEnvironment;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,7 +14,6 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.Assert.assertTrue;
 import static graphql.util.FpKit.map;
 
 /**
@@ -30,6 +30,8 @@ import static graphql.util.FpKit.map;
  */
 @PublicApi
 public class CacheControl {
+
+    public static final String CACHE_CONTROL_EXTENSION_KEY = "cacheControl";
 
     /**
      * If the scope is set to PRIVATE, this indicates anything under this path should only be cached per-user,
@@ -170,26 +172,18 @@ public class CacheControl {
      * @return a new execution result with the hints in the extensions map.
      */
     public ExecutionResult addTo(ExecutionResult executionResult) {
-        assertTrue(executionResult instanceof ExecutionResultImpl, "You must pass in an ExecutionResult based on graphql.ExecutionResultImpl");
-        Map<Object, Object> currentExtensions = executionResult.getExtensions();
-        if (currentExtensions == null) {
-            currentExtensions = Collections.emptyMap();
-        }
-        currentExtensions = new LinkedHashMap<>(currentExtensions);
-
-        putHintsInExtensionsMap(currentExtensions);
-
-        return ExecutionResultImpl.newExecutionResult().from((ExecutionResultImpl) executionResult)
-                .extensions(currentExtensions).build();
+        return ExecutionResultImpl.newExecutionResult()
+                                  .from(executionResult)
+                                  .addExtension(CACHE_CONTROL_EXTENSION_KEY, hintsToCacheControlProperties())
+                                  .build();
     }
 
-    private void putHintsInExtensionsMap(Map<Object, Object> extensions) {
+    private Map<String, Object> hintsToCacheControlProperties() {
         List<Map<String, Object>> recordedHints = map(hints, Hint::toMap);
 
         Map<String, Object> cacheControl = new LinkedHashMap<>();
         cacheControl.put("version", 1);
         cacheControl.put("hints", recordedHints);
-
-        extensions.put("cacheControl", cacheControl);
+        return cacheControl;
     }
 }

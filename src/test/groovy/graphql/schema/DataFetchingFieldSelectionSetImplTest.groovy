@@ -109,6 +109,19 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         !selectionSet.contains("?/name")
         !selectionSet.contains("friends/friends/rubbish")
+
+        //
+        // allOf matching
+        selectionSet.containsAllOf("name")
+        selectionSet.containsAllOf("name", "appearsIn", "friends")
+        !selectionSet.containsAllOf("name", "appearsIn", "friends", "notPresent")
+
+        //
+        // anyOf matching
+        selectionSet.containsAnyOf("name")
+        selectionSet.containsAnyOf("name", "appearsIn", "friends", "notPresent")
+        !selectionSet.containsAnyOf("notPresent")
+        !selectionSet.containsAnyOf("notPresent", "alsoNotPresent")
     }
 
     def "test field selection set capture works"() {
