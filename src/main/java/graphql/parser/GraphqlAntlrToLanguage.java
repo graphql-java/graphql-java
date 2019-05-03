@@ -810,11 +810,7 @@ public class GraphqlAntlrToLanguage {
     }
 
     protected SourceLocation getSourceLocation(Token token) {
-        MultiSourceReader.SourceAndLine sourceAndLine = multiSourceReader.getSourceAndLineFromOverallLine(token.getLine());
-        int column = token.getCharPositionInLine() + 1;
-        // graphql spec says line numbers start at 1
-        int line = sourceAndLine.getLine() + 1;
-        return new SourceLocation(line, column, sourceAndLine.getSourceName());
+        return SourceLocationHelper.mkSourceLocation(multiSourceReader, token);
     }
 
     protected SourceLocation getSourceLocation(ParserRuleContext parserRuleContext) {

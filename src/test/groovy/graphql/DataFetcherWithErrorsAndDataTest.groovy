@@ -108,7 +108,7 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
         result.errors.size() == 1
         result.errors[0].path == ["root", "parent", "child", "badField"]
         result.errors[0].message == "badField is bad"
-        result.errors[0].locations == [new SourceLocation(7, 27)]
+        result.errors[0].locations == [new SourceLocation(6, 27)]
 
         result.data["root"]["parent"]["child"]["goodField"] == "good"
         result.data["root"]["parent"]["child"]["badField"] == null
@@ -191,10 +191,10 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
         result.errors.size() == 2
         result.errors[0].path == ["root", "parent", "child", "goodField"]
         result.errors[0].message == "goodField is bad"
-        result.errors[0].locations == [new SourceLocation(8, 31)]
+        result.errors[0].locations == [new SourceLocation(7, 31)]
         result.errors[1].path == ["root", "parent", "child", "badField"]
         result.errors[1].message == "badField is bad"
-        result.errors[1].locations == [new SourceLocation(8, 31)]
+        result.errors[1].locations == [new SourceLocation(7, 31)]
 
         result.data["root"]["parent"]["child"]["goodField"] == null
         result.data["root"]["parent"]["child"]["badField"] == null
@@ -268,11 +268,11 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
         result.errors.size() == 2
         result.errors[0].path == ["parent", "child"]
         result.errors[0].message == "error 1"
-        result.errors[0].locations == [new SourceLocation(7, 27)]
+        result.errors[0].locations == [new SourceLocation(6, 27)]
 
         result.errors[1].path == ["parent", "child"]
         result.errors[1].message == "error 2"
-        result.errors[1].locations == [new SourceLocation(7, 27)]
+        result.errors[1].locations == [new SourceLocation(6, 27)]
 
         result.data["parent"]["child"] == null
 
@@ -344,7 +344,7 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
         result.errors.size() == 1
         result.errors[0].path == ["parent", "child", "badField"]
         result.errors[0].message == "badField is bad"
-        result.errors[0].locations == [new SourceLocation(7, 27)]
+        result.errors[0].locations == [new SourceLocation(6, 27)]
 
         result.data["parent"]["child"]["goodField"] == "good"
         result.data["parent"]["child"]["badField"] == null

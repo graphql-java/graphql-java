@@ -641,7 +641,7 @@ class SchemaGeneratorTest extends Specification {
 
         then:
         def err = thrown(NotAnInputTypeError.class)
-        err.message == "The type 'CharacterInput' [@12:13] is not an input type, but was used as an input type [@8:42]"
+        err.message == "The type 'CharacterInput' [@11:13] is not an input type, but was used as an input type [@7:42]"
     }
 
     def "InputType used as type should throw appropriate error #425"() {
@@ -666,7 +666,7 @@ class SchemaGeneratorTest extends Specification {
 
         then:
         def err = thrown(NotAnOutputTypeError.class)
-        err.message == "The type 'CharacterInput' [@12:13] is not an output type, but was used to declare the output type of a field [@8:32]"
+        err.message == "The type 'CharacterInput' [@11:13] is not an output type, but was used to declare the output type of a field [@7:32]"
     }
 
     def "schema with subscription"() {

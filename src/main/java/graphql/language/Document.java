@@ -9,6 +9,7 @@ import graphql.util.TraverserContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
@@ -36,6 +37,21 @@ public class Document extends AbstractNode<Document> {
 
     public List<Definition> getDefinitions() {
         return new ArrayList<>(definitions);
+    }
+
+    /**
+     * Returns a list of definitions of the specific type.  It uses {@link java.lang.Class#isAssignableFrom(Class)} for the test
+     *
+     * @param definitionClass the definition class
+     * @param <T>             the type of definition
+     *
+     * @return a list of definitions of that class or empty list
+     */
+    public <T extends Definition> List<T> getDefinitionsOfType(Class<T> definitionClass) {
+        return definitions.stream()
+                .filter(d -> definitionClass.isAssignableFrom(d.getClass()))
+                .map(definitionClass::cast)
+                .collect(Collectors.toList());
     }
 
     @Override

@@ -79,6 +79,14 @@ public class MultiSourceReader extends Reader {
         public int getLine() {
             return line;
         }
+
+        @Override
+        public String toString() {
+            return "SourceAndLine{" +
+                    "sourceName='" + sourceName + '\'' +
+                    ", line=" + line +
+                    '}';
+        }
     }
 
     /**
@@ -95,6 +103,11 @@ public class MultiSourceReader extends Reader {
         if (sourceParts.isEmpty()) {
             return sourceAndLine;
         }
+        if (overallLineNumber == 0) {
+            sourceAndLine.sourceName = sourceParts.get(0).sourceName;
+            sourceAndLine.line = 0;
+            return sourceAndLine;
+        }
         SourcePart currentPart;
         if (currentIndex >= sourceParts.size()) {
             currentPart = sourceParts.get(sourceParts.size() - 1);
@@ -107,9 +120,9 @@ public class MultiSourceReader extends Reader {
             sourceAndLine.sourceName = sourcePart.sourceName;
             if (sourcePart == currentPart) {
                 // we cant go any further
-                int offset = currentPart.lineReader.getLineNumber();
+                int partLineNumber = currentPart.lineReader.getLineNumber();
                 previousPage = page;
-                page += offset;
+                page += partLineNumber;
                 if (page > overallLineNumber) {
                     sourceAndLine.line = overallLineNumber - previousPage;
                 } else {
@@ -118,7 +131,8 @@ public class MultiSourceReader extends Reader {
                 return sourceAndLine;
             } else {
                 previousPage = page;
-                page += sourcePart.lineReader.getLineNumber();
+                int partLineNumber = sourcePart.lineReader.getLineNumber();
+                page += partLineNumber;
                 if (page > overallLineNumber) {
                     sourceAndLine.line = overallLineNumber - previousPage;
                     return sourceAndLine;
