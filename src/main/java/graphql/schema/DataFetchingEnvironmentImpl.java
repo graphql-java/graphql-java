@@ -21,6 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.Assert.assertNotNull;
+
 @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
 @Internal
 public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
@@ -241,7 +243,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private final Map<String, Object> arguments = new LinkedHashMap<>();
         private final Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
         private final Map<String, Object> variables = new LinkedHashMap<>();
-        private QueryDirectives queryDirectives = new QueryDirectivesImpl();
+        private QueryDirectives queryDirectives;
 
         public Builder(DataFetchingEnvironmentImpl env) {
             this.source = env.source;
@@ -363,14 +365,13 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             return this;
         }
 
-        public Builder queryDirectives(QueryDirectives queryDirectives) {
-            this.queryDirectives = queryDirectives;
-            return this;
-        }
-
         public DataFetchingEnvironment build() {
+            assertNotNull(mergedField);
+            assertNotNull(graphQLSchema);
+            assertNotNull(variables);
+
+            this.queryDirectives = new QueryDirectivesImpl(mergedField, graphQLSchema, variables);
             return new DataFetchingEnvironmentImpl(this);
         }
-
     }
 }

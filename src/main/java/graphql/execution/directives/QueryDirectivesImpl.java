@@ -1,16 +1,17 @@
 package graphql.execution.directives;
 
 import graphql.Internal;
+import graphql.execution.MergedField;
+import graphql.language.Directive;
+import graphql.language.Field;
 import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLSchema;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
-import static graphql.Assert.assertNotNull;
 import static java.util.Collections.emptyList;
 
 /**
@@ -19,33 +20,38 @@ import static java.util.Collections.emptyList;
 @Internal
 public class QueryDirectivesImpl implements QueryDirectives {
 
-    private final List<AstNodeDirectives> directivePositions;
+    private final DirectivesResolver directivesResolver = new DirectivesResolver();
+    private final Map<Field, List<GraphQLDirective>> fieldDirectivesMap;
 
-    public QueryDirectivesImpl() {
-        this(Collections.emptyList());
+    public QueryDirectivesImpl(MergedField mergedField, GraphQLSchema schema, Map<String, Object> variables) {
+        this.fieldDirectivesMap = new LinkedHashMap<>();
+        mergedField.getFields().forEach(field -> {
+            List<Directive> directives = field.getDirectives();
+            List<GraphQLDirective> resolvedDirectives = new ArrayList<>(
+                    directivesResolver
+                            .resolveDirectives(directives, schema, variables)
+                            .values()
+            );
+            fieldDirectivesMap.put(field, resolvedDirectives);
+        });
     }
 
-    public QueryDirectivesImpl(List<AstNodeDirectives> directivesInfos) {
-        this.directivePositions = assertNotNull(directivesInfos);
-        Collections.sort(directivesInfos);
+    @Override
+    public Map<Field, List<GraphQLDirective>> getImmediateDirectivesByField() {
+        return new LinkedHashMap<>(fieldDirectivesMap);
     }
 
-    private Map<String, List<GraphQLDirective>> toMap(Stream<AstNodeDirectives> directivePositions) {
+    @Override
+    public Map<String, List<GraphQLDirective>> getImmediateDirectives() {
         Map<String, List<GraphQLDirective>> mapOfDirectives = new LinkedHashMap<>();
-        directivePositions.forEach(info -> {
-            Map<String, GraphQLDirective> positionedDirectives = info.getDirectives();
-            positionedDirectives.forEach((name, directive) -> {
+        fieldDirectivesMap.forEach((field, directiveList) -> {
+            directiveList.forEach(directive -> {
+                String name = directive.getName();
                 mapOfDirectives.computeIfAbsent(name, k -> new ArrayList<>());
                 mapOfDirectives.get(name).add(directive);
             });
         });
         return mapOfDirectives;
-    }
-
-    @Override
-    public Map<String, List<GraphQLDirective>> getImmediateDirectives() {
-        return toMap(directivePositions.stream()
-                .filter(info -> info.getDistance() == 0));
     }
 
     @Override

@@ -1,5 +1,6 @@
 package graphql.execution.directives
 
+import graphql.TestUtil
 import graphql.language.DirectivesContainer
 import graphql.language.Field
 import graphql.language.FragmentDefinition
@@ -39,6 +40,8 @@ class QueryDirectivesImplTest extends Specification {
 
     def "can get immediate directives that is distance 0"() {
 
+        def f1 = TestUtil.parseField("f1 @cached @upper")
+        def f2 = TestUtil.parseField("f2 @cached @upper")
         def infos = [
                 info(0, [cached: cachedDirective, upper: upperDirective]),
                 info(1, [log: logDirective]),

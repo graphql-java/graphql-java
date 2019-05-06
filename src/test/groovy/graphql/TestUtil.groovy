@@ -5,6 +5,7 @@ import graphql.execution.MergedSelectionSet
 import graphql.introspection.Introspection.DirectiveLocation
 import graphql.language.Document
 import graphql.language.Field
+import graphql.language.OperationDefinition
 import graphql.language.ScalarTypeDefinition
 import graphql.parser.Parser
 import graphql.schema.Coercing
@@ -223,6 +224,16 @@ class TestUtil {
 
     static MergedSelectionSet mergedSelectionSet(Map<String, MergedField> subFields) {
         return MergedSelectionSet.newMergedSelectionSet().subFields(subFields).build()
+    }
+
+    static Field parseField(String sdlField) {
+        String spec = """ query Foo {
+        $sdlField
+        }
+        """
+        def document = parseQuery(spec)
+        def op = document.getDefinitionsOfType(OperationDefinition.class)[0]
+        return op.getSelectionSet()[0] as Field
     }
 
     static GraphQLDirective[] mockDirectivesWithArguments(String... names) {

@@ -1,6 +1,7 @@
 package graphql.execution.directives;
 
 import graphql.PublicApi;
+import graphql.language.Field;
 import graphql.schema.GraphQLDirective;
 
 import java.util.List;
@@ -20,21 +21,29 @@ import java.util.Map;
 public interface QueryDirectives {
 
     /**
-     * This will return a map of the directives that are immediately on a field
+     * This will return a map of the directives that are immediately on a merged field
      *
-     * @return a map of all the directives immediately on this field
+     * @return a map of all the directives immediately on this merged field
      */
     Map<String, List<GraphQLDirective>> getImmediateDirectives();
 
 
     /**
-     * This will return a list of the named directives that are immediately on this field.
+     * This will return a list of the named directives that are immediately on this merged field.
      *
      * Read above for why this is a list of directives and not just one
      *
      * @param directiveName the named directive
      *
-     * @return a list of the named directives that are immediately on this field
+     * @return a list of the named directives that are immediately on this merged field
      */
     List<GraphQLDirective> getImmediateDirective(String directiveName);
+
+    /**
+     * This will return a map of the {@link graphql.language.Field}s inside a {@link graphql.execution.MergedField}
+     * and the immediate directives that are on each specific field
+     *
+     * @return a map of all directives on each field inside this
+     */
+    Map<Field, List<GraphQLDirective>> getImmediateDirectivesByField();
 }

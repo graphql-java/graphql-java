@@ -44,7 +44,6 @@ public class ExecutionContext {
     private final Object context;
     private final Instrumentation instrumentation;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
-    private final Map<Field, List<AstNodeDirectives>> astDirectives;
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
     private final DeferSupport deferSupport = new DeferSupport();
@@ -64,7 +63,6 @@ public class ExecutionContext {
         this.context = context;
         this.root = root;
         this.instrumentation = instrumentation;
-        this.astDirectives = astDirectives;
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.cacheControl = cacheControl;
         this.errors.addAll(startingErrors);
@@ -114,11 +112,6 @@ public class ExecutionContext {
 
     public FragmentDefinition getFragment(String name) {
         return fragmentsByName.get(name);
-    }
-
-    public QueryDirectives getQueryDirectives(MergedField mergedField) {
-        List<AstNodeDirectives> astNodeDirectives = directiveCollector.combineDirectivesForField(mergedField, astDirectives);
-        return new QueryDirectivesImpl(astNodeDirectives);
     }
 
     public DataLoaderRegistry getDataLoaderRegistry() {

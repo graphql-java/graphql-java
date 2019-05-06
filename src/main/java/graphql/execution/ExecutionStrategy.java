@@ -231,7 +231,6 @@ public abstract class ExecutionStrategy {
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, parameters.getField());
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
-        QueryDirectives queryDirectives = executionContext.getQueryDirectives(field);
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(parameters.getSource())
@@ -243,7 +242,6 @@ public abstract class ExecutionStrategy {
                 .executionStepInfo(executionStepInfo)
                 .parentType(parentType)
                 .selectionSet(fieldCollector)
-                .queryDirectives(queryDirectives)
                 .build();
 
         DataFetcher dataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);
