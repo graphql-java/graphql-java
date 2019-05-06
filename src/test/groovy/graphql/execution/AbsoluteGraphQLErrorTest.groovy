@@ -58,7 +58,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
         error.getExtensions() == ["ext": true]
     }
 
-    def "constructor handles missing path as null"() {
+    def "constructor handles missing path"() {
         given:
 
         def field = Field.newField().name("test").sourceLocation(new SourceLocation(4, 5)).build()
@@ -79,7 +79,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
 
         then:
 
-        error.getPath() == null
+        error.getPath() == ExecutionPath.fromList(["foo", "bar"]).toList()
     }
 
     def "when constructor receives empty path it should return the base field path"() {

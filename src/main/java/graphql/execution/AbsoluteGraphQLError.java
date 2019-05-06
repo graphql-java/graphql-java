@@ -101,7 +101,7 @@ public class AbsoluteGraphQLError implements GraphQLError {
                     return path;
                 })
                 .map(Collections::unmodifiableList)
-                .orElse(null);
+                .orElse(executionPath.toList());
     }
 
     /**
