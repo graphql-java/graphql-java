@@ -15,8 +15,10 @@ import graphql.schema.GraphQLSchema;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
@@ -38,6 +40,7 @@ public class ExecutionContext {
     private final Object context;
     private final Instrumentation instrumentation;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
+    private final Set<ExecutionPath> errorPaths = new HashSet<>();
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
     private final DeferSupport deferSupport = new DeferSupport();
@@ -128,13 +131,8 @@ public class ExecutionContext {
         // field errors should be handled - ie only once per field if its already there for nullability
         // but unclear if its not that error path
         //
-        for (GraphQLError graphQLError : errors) {
-            List<Object> path = graphQLError.getPath();
-            if (path != null) {
-                if (fieldPath.equals(ExecutionPath.fromList(path))) {
-                    return;
-                }
-            }
+        if (!errorPaths.add(fieldPath)) {
+            return;
         }
         this.errors.add(error);
     }
@@ -149,6 +147,9 @@ public class ExecutionContext {
         // see https://github.com/graphql-java/graphql-java/issues/888 on how the spec is unclear
         // on how exactly multiple errors should be handled - ie only once per field or not outside the nullability
         // aspect.
+        if (error.getPath() != null) {
+            this.errorPaths.add(ExecutionPath.fromList(error.getPath()));
+        }
         this.errors.add(error);
     }
 
