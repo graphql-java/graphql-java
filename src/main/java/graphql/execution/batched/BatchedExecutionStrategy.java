@@ -20,7 +20,7 @@ import graphql.execution.MergedSelectionSet;
 import graphql.execution.NonNullableFieldValidator;
 import graphql.execution.ResolveType;
 import graphql.execution.SimpleDataFetcherExceptionHandler;
-import graphql.execution.directives.QueryDirectives;
+import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -249,6 +249,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 codeRegistry,
                 fieldDef.getArguments(), fields.getSingleField().getArguments(), executionContext.getVariables());
 
+        QueryDirectivesImpl queryDirectives = new QueryDirectivesImpl(fields, executionContext.getGraphQLSchema(), executionContext.getVariables());
+
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, fields);
 
@@ -261,6 +263,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .executionStepInfo(parameters.getExecutionStepInfo())
                 .parentType(parentType)
                 .selectionSet(fieldCollector)
+                .queryDirectives(queryDirectives)
                 .build();
 
         DataFetcher supplied = codeRegistry.getDataFetcher(parentType, fieldDef);

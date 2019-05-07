@@ -265,6 +265,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.operationDefinition = env.operationDefinition;
             this.document = env.document;
             this.variables.putAll(env.variables);
+            this.queryDirectives = env.queryDirectives;
         }
 
         public Builder() {
@@ -365,12 +366,12 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             return this;
         }
 
-        public DataFetchingEnvironment build() {
-            assertNotNull(mergedField);
-            assertNotNull(graphQLSchema);
-            assertNotNull(variables);
+        public Builder queryDirectives(QueryDirectives queryDirectives) {
+            this.queryDirectives = queryDirectives;
+            return this;
+        }
 
-            this.queryDirectives = new QueryDirectivesImpl(mergedField, graphQLSchema, variables);
+        public DataFetchingEnvironment build() {
             return new DataFetchingEnvironmentImpl(this);
         }
     }

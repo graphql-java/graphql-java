@@ -6,14 +6,9 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
 import graphql.execution.defer.DeferSupport;
-import graphql.execution.directives.AstNodeDirectives;
-import graphql.execution.directives.QueryDirectives;
-import graphql.execution.directives.QueryDirectivesCollector;
-import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
-import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
@@ -29,7 +24,6 @@ import java.util.function.Consumer;
 @PublicApi
 public class ExecutionContext {
 
-    private final QueryDirectivesCollector directiveCollector = new QueryDirectivesCollector();
     private final GraphQLSchema graphQLSchema;
     private final ExecutionId executionId;
     private final InstrumentationState instrumentationState;
@@ -49,7 +43,7 @@ public class ExecutionContext {
     private final DeferSupport deferSupport = new DeferSupport();
 
     @Internal
-    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, Map<Field, List<AstNodeDirectives>> astDirectives, List<GraphQLError> startingErrors) {
+    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, List<GraphQLError> startingErrors) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.instrumentationState = instrumentationState;

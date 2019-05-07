@@ -6,7 +6,12 @@ import graphql.schema.DataFetcher
 import graphql.schema.GraphQLDirective
 import spock.lang.Specification
 
-class QueryDirectivesCollectorIntegrationTest extends Specification {
+/**
+ * This test currently has way more directives than can be handled today but in the spirit of TDD
+ * I am going to leave the parent node directives there so we can expand the directives capabilities
+ * into the future
+ */
+class QueryDirectivesIntegrationTest extends Specification {
 
     def sdl = '''
         directive @timeout(afterMillis : Int) on FIELD | FRAGMENT_DEFINITION | FRAGMENT_SPREAD | INLINE_FRAGMENT | QUERY

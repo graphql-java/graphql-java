@@ -233,7 +233,7 @@ class TestUtil {
         """
         def document = parseQuery(spec)
         def op = document.getDefinitionsOfType(OperationDefinition.class)[0]
-        return op.getSelectionSet()[0] as Field
+        return op.getSelectionSet().getSelectionsOfType(Field.class)[0] as Field
     }
 
     static GraphQLDirective[] mockDirectivesWithArguments(String... names) {

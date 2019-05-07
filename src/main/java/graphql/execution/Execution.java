@@ -8,15 +8,12 @@ import graphql.GraphQL;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.defer.DeferSupport;
-import graphql.execution.directives.QueryDirectivesCollector;
-import graphql.execution.directives.AstNodeDirectives;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.language.Document;
-import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
@@ -47,7 +44,6 @@ public class Execution {
 
     private final FieldCollector fieldCollector = new FieldCollector();
     private final ValuesResolver valuesResolver = new ValuesResolver();
-    private final QueryDirectivesCollector fieldDirectiveCollector = new QueryDirectivesCollector();
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
@@ -132,8 +128,6 @@ public class Execution {
         // since this traverses the query tree, we need to do it here after we are sure the query is valid to be traversed.  If we do it earlier
         // there are edge cases like not having a mutation type and so on.
         //
-        executionContext = astDirectives(executionContext);
-
         FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
                 .schema(executionContext.getGraphQLSchema())
                 .objectType(operationRootType)
@@ -185,12 +179,6 @@ public class Execution {
         result = result.whenComplete(executeOperationCtx::onCompleted);
 
         return deferSupport(executionContext, result);
-    }
-
-    private ExecutionContext astDirectives(ExecutionContext executionContext) {
-        Map<Field, List<AstNodeDirectives>> astDirectivesMap = fieldDirectiveCollector.collectDirectivesForAllFields(
-                executionContext.getDocument(), executionContext.getGraphQLSchema(), executionContext.getVariables(), executionContext.getOperationDefinition());
-        return executionContext.transform(ctx -> ctx.astDirectives(astDirectivesMap));
     }
 
     /*

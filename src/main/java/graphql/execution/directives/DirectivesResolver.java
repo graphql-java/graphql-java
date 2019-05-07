@@ -44,6 +44,11 @@ public class DirectivesResolver {
                 Object argValue = argumentValues.get(protoArg.getName());
                 GraphQLArgument newArgument = protoArg.transform(argBuilder -> argBuilder.value(argValue));
                 directiveBuilder.argument(newArgument);
+            } else {
+                // this means they can ask for the argument default value because the arugment on the directive
+                // object is present - but null
+                GraphQLArgument newArgument = protoArg.transform(argBuilder -> argBuilder.value(null));
+                directiveBuilder.argument(newArgument);
             }
         });
     }

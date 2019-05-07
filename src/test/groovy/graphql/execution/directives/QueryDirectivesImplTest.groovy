@@ -1,65 +1,57 @@
 package graphql.execution.directives
 
 import graphql.TestUtil
-import graphql.language.DirectivesContainer
-import graphql.language.Field
-import graphql.language.FragmentDefinition
-import graphql.language.IgnoredChars
-import graphql.language.OperationDefinition
-import graphql.schema.GraphQLDirective
+import graphql.execution.MergedField
 import spock.lang.Specification
-
-import static graphql.schema.GraphQLDirective.newDirective
 
 class QueryDirectivesImplTest extends Specification {
 
-    GraphQLDirective cachedDirective = newDirective().name("cached").build()
-    GraphQLDirective timeOutDirective = newDirective().name("timeout").build()
-    GraphQLDirective logDirective = newDirective().name("log").build()
-    GraphQLDirective upperDirective = newDirective().name("upper").build()
-    GraphQLDirective lowerDirective = newDirective().name("lower").build()
+    def sdl = '''
+        directive @timeout(afterMillis : Int) on FIELD
+        
+        directive @cached(forMillis : Int = 99) on FIELD | QUERY
+        
+        directive @upper(place : String) on FIELD
+ 
+        type Query {
+            f : String
+        }
+    '''
 
-    AstNodeDirectivesImpl info(int distance, Map<String, GraphQLDirective> directives) {
-        return new AstNodeDirectivesImpl(new Field("ignored"), distance, directives)
-    }
-
-    AstNodeDirectivesImpl info(DirectivesContainer container, int distance, Map<String, GraphQLDirective> directives) {
-        return new AstNodeDirectivesImpl(container, distance, directives)
-    }
-
-    FragmentDefinition mkFragDef(String name) {
-        FragmentDefinition.newFragmentDefinition().name(name)
-                .comments([]).ignoredChars(IgnoredChars.EMPTY).build()
-    }
-
-    OperationDefinition mkOpDef(String name) {
-        OperationDefinition.newOperationDefinition().name(name)
-                .comments([]).ignoredChars(IgnoredChars.EMPTY).operation(OperationDefinition.Operation.QUERY).build()
-    }
+    def schema = TestUtil.schema(sdl)
 
 
-    def "can get immediate directives that is distance 0"() {
+    def "can get immediate directives"() {
 
         def f1 = TestUtil.parseField("f1 @cached @upper")
-        def f2 = TestUtil.parseField("f2 @cached @upper")
-        def infos = [
-                info(0, [cached: cachedDirective, upper: upperDirective]),
-                info(1, [log: logDirective]),
-                info(2, [lower: lowerDirective]),
-                info(0, [cached: cachedDirective, timeOut: timeOutDirective]),
+        def f2 = TestUtil.parseField("f2 @cached(forMillis : \$var) @timeout")
 
-        ]
-        def impl = new QueryDirectivesImpl(infos)
+        def mergedField = MergedField.newMergedField([f1, f2]).build()
+
+        def impl = new QueryDirectivesImpl(mergedField, schema, [var: 10])
 
         when:
         def directives = impl.getImmediateDirectives()
         then:
-        directives == [cached: [cachedDirective, cachedDirective], upper: [upperDirective], timeOut: [timeOutDirective]]
+        directives.keySet().sort() == ["cached", "timeout", "upper"]
 
         when:
         def result = impl.getImmediateDirective("cached")
+
         then:
-        result == [cachedDirective, cachedDirective]
+        result.size() == 2
+        result[0].getName() == "cached"
+        result[1].getName() == "cached"
+
+        result[0].getArgument("forMillis").getValue() == 99 // defaults
+        result[0].getArgument("forMillis").getDefaultValue() == 99
+
+        result[1].getArgument("forMillis").getValue() == 10
+        result[1].getArgument("forMillis").getDefaultValue() == 99
+
+        // the prototypical other properties are copied ok
+        result[0].validLocations().collect({ it.name() }).sort() == ["FIELD", "QUERY"]
+        result[1].validLocations().collect({ it.name() }).sort() == ["FIELD", "QUERY"]
     }
 
 }
