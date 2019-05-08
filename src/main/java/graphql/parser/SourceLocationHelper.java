@@ -1,9 +1,11 @@
 package graphql.parser;
 
+import graphql.Internal;
 import graphql.language.SourceLocation;
 import org.antlr.v4.runtime.Token;
 
-class SourceLocationHelper {
+@Internal
+public class SourceLocationHelper {
 
     static SourceLocation mkSourceLocation(MultiSourceReader multiSourceReader, Token token) {
         //
