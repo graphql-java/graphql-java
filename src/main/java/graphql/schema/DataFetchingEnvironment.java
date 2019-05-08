@@ -181,8 +181,7 @@ public interface DataFetchingEnvironment {
     DataFetchingFieldSelectionSet getSelectionSet();
 
     /**
-     * This gives you access to the directives on this field including hierarchical ones that may be on
-     * an enclosing parent fields or fragments.
+     * This gives you access to the directives related to this field
      *
      * @return the {@link graphql.execution.directives.QueryDirectives} for the currently executing field
      *

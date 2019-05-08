@@ -14,6 +14,11 @@ import java.util.Map;
  * Because a {@link graphql.execution.MergedField} can actually have multiple fields and hence
  * directives on each field instance its possible that there is more than one directive named "foo"
  * on the merged field.  How you decide which one to use is up to your code.
+ * <p>
+ * NOTE: A future version of the interface will try to add access to the inherited directives from
+ * parent fields and fragments.  This proved to be a non trivial problem and hence we decide
+ * to give access to immediate field directives and provide this holder interface so we can
+ * add the other directives in the future
  *
  * @see graphql.execution.MergedField
  */
