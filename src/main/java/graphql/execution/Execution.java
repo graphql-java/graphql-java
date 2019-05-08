@@ -124,10 +124,6 @@ public class Execution {
             throw rte;
         }
 
-        //
-        // since this traverses the query tree, we need to do it here after we are sure the query is valid to be traversed.  If we do it earlier
-        // there are edge cases like not having a mutation type and so on.
-        //
         FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
                 .schema(executionContext.getGraphQLSchema())
                 .objectType(operationRootType)
