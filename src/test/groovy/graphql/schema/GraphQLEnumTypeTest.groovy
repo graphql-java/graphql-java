@@ -134,6 +134,23 @@ class GraphQLEnumTypeTest extends Specification {
         serialized == "NEWHOPE"
     }
 
+    def "serialize EnumValue objects with Java enum definition values"() {
+
+        given:
+        enumType = newEnum().name("Episode")
+                .value("NEWHOPE", Episode.NEWHOPE)
+                .value("EMPIRE", Episode.EMPIRE)
+                .build()
+
+        EnumValue enumValueInput = EnumValue.newEnumValue(Episode.NEWHOPE.toString()).build()
+
+        when:
+        def serialized = enumType.coercing.serialize(enumValueInput)
+
+        then:
+        serialized == "NEWHOPE"
+    }
+
     def "object can be transformed"() {
         given:
         def startEnum = newEnum().name("E1")
