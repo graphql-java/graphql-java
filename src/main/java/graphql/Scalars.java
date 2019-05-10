@@ -206,6 +206,8 @@ public class Scalars {
         private Boolean convertImpl(Object input) {
             if (input instanceof Boolean) {
                 return (Boolean) input;
+            } else if (input instanceof BooleanValue) {
+                return ((BooleanValue) input).isValue();
             } else if (input instanceof String) {
                 return Boolean.parseBoolean((String) input);
             } else if (isNumberIsh(input)) {

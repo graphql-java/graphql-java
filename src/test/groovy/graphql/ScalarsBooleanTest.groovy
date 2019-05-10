@@ -60,6 +60,8 @@ class ScalarsBooleanTest extends Specification {
         new Float(42.3)              | true
         Integer.MAX_VALUE + 1l       | true
         Integer.MIN_VALUE - 1l       | true
+        new BooleanValue(true)           | true
+        new BooleanValue(false)          | false
     }
 
     @Unroll
