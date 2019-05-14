@@ -7,6 +7,7 @@ import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
 import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
 import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLCodeRegistry
@@ -58,7 +59,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
 
     def "will trace down into each directive callback"() {
 
-        def spec = '''
+        def sdl = '''
             type Query {
                 f : ObjectType
                 s : ScalarType
@@ -204,7 +205,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 .build()
 
         when:
-        def schema = schema(spec, runtimeWiring)
+        def schema = schema(sdl, runtimeWiring)
 
         then:
         schema != null
@@ -273,7 +274,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
 
 
     def "can modify the existing behaviour"() {
-        def spec = '''
+        def sdl = '''
             type Query {
                 lowerCaseValue : String @uppercase
                 upperCaseValue : String @lowercase
@@ -296,6 +297,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             @Override
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> directiveEnv) {
                 GraphQLFieldDefinition field = directiveEnv.getElement()
+                //
+                // we use the non shortcut path to the data fetcher here so prove it still works
                 def fetcher = directiveEnv.getCodeRegistry().getDataFetcher(directiveEnv.fieldsContainer, field)
                 def newFetcher = wrapDataFetcher(fetcher, { dfEnv, value ->
                     def directiveName = directiveEnv.directive.name
@@ -331,9 +334,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 DataFetcher echoDF = { dfEnv ->
                     return fieldName
                 }
-                def coordinates = FieldCoordinates.coordinates(env.fieldsContainer, field)
-                env.codeRegistry.dataFetcher(coordinates, echoDF)
-                return field
+                return env.setFieldDataFetcher(echoDF)
             }
         }
 
@@ -345,7 +346,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 .directive("echoFieldName", echoFieldNameWiring)
                 .build()
 
-        def schema = schema(spec, runtimeWiring)
+        def schema = schema(sdl, runtimeWiring)
         def graphQL = GraphQL.newGraphQL(schema).build()
         def input = ExecutionInput.newExecutionInput()
                 .root(
@@ -382,7 +383,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
 
     def "ensure the readme examples work"() {
 
-        def spec = '''
+        def sdl = '''
             type Query {
                 dateField : String @dateFormat
             }
@@ -392,7 +393,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 .directive("dateFormat", new DirectivesExamples.DateFormatting())
                 .build()
 
-        def schema = schema(spec, runtimeWiring)
+        def schema = schema(sdl, runtimeWiring)
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def day = LocalDateTime.of(1969, 10, 8, 0, 0)
@@ -419,7 +420,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
     }
 
     def "can state-fully track wrapped elements"() {
-        def spec = '''
+        def sdl = '''
             type Query {
                 secret : Secret
                 nonSecret : NonSecret
@@ -488,7 +489,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 .directive("secret", directiveWiring)
                 .build()
 
-        def schema = schema(spec, runtimeWiring)
+        def schema = schema(sdl, runtimeWiring)
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         String query = ''' 
@@ -538,4 +539,182 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         executionResult.data['nonSecret']['age'] == 42
     }
 
+    def "ordering of directive wiring is locked in place"() {
+        def sdl = '''
+            type Query {
+                field : String @generalDirective @factoryDirective @namedDirective1 @namedDirective2 
+            }
+        '''
+
+        SchemaDirectiveWiring generalWiring = new SchemaDirectiveWiring() {
+            @Override
+            GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
+                def existingFetcher = env.getFieldDataFetcher()
+
+                DataFetcher newDF = { dfEnv ->
+                    def val = existingFetcher.get(dfEnv)
+                    return val + ",general"
+                }
+                return env.setFieldDataFetcher(newDF)
+            }
+        }
+
+        def factoryWiring = new SchemaDirectiveWiring() {
+            @Override
+            GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
+                def existingFetcher = env.getFieldDataFetcher()
+
+                DataFetcher newDF = { dfEnv ->
+                    def val = existingFetcher.get(dfEnv)
+                    return val + ",factory"
+                }
+                return env.setFieldDataFetcher(newDF)
+            }
+        }
+
+        def wiringFactory = new WiringFactory() {
+            @Override
+            boolean providesSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
+                return true
+            }
+
+            @Override
+            SchemaDirectiveWiring getSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
+                return factoryWiring
+            }
+        }
+
+        def namedWiring = new SchemaDirectiveWiring() {
+            @Override
+            GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> environment) {
+                GraphQLDirective directive = environment.getDirective()
+                DataFetcher existingFetcher = environment.getFieldDataFetcher()
+
+                DataFetcher newDF = new DataFetcher() {
+                    @Override
+                    Object get(DataFetchingEnvironment dfEnv) throws Exception {
+                        Object val = existingFetcher.get(dfEnv)
+                        return val + "," + directive.getName()
+                    }
+                }
+                return environment.setFieldDataFetcher(newDF)
+            }
+        }
+
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .wiringFactory(wiringFactory)
+                .directive("namedDirective1", namedWiring)
+                .directive("namedDirective2", namedWiring)
+                .directiveWiring(generalWiring)
+                .build()
+
+        def schema = schema(sdl, runtimeWiring)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        String query = ''' 
+            query {
+                field
+            }
+        '''
+        when:
+        def executionInput = ExecutionInput.newExecutionInput()
+                .root([field: "start"])
+                .query(query)
+                .build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        then:
+        executionResult.errors.isEmpty()
+        //
+        // the ordering is named ones first, general ones next and finally the factory
+        //
+        executionResult.data["field"] == "start,namedDirective1,namedDirective2,general,factory"
+    }
+
+    def "all directives are available to all callbacks"() {
+        def sdl = '''
+            type Query {
+                field : String @generalDirective @factoryDirective @namedDirective1 @namedDirective2 
+            }
+        '''
+
+        def generalCount = 0
+        def factoryCount = 0
+        def namedCount = 0
+
+        SchemaDirectiveWiring generalWiring = new SchemaDirectiveWiring() {
+            @Override
+            GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
+                generalCount++
+                def directiveNames = env.getDirectives().values().collect { d -> d.getName() }.sort()
+                assert directiveNames == ["factoryDirective", "generalDirective", "namedDirective1", "namedDirective2"]
+                return env.getFieldDefinition()
+            }
+        }
+
+        def factoryWiring = new SchemaDirectiveWiring() {
+            @Override
+            GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
+                factoryCount++;
+                def directiveNames = env.getDirectives().values().collect { d -> d.getName() }.sort()
+                assert directiveNames == ["factoryDirective", "generalDirective", "namedDirective1", "namedDirective2"]
+                return env.getFieldDefinition()
+            }
+        }
+
+        def wiringFactory = new WiringFactory() {
+            @Override
+            boolean providesSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
+                return true
+            }
+
+            @Override
+            SchemaDirectiveWiring getSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
+                return factoryWiring
+            }
+        }
+
+        def namedWiring = new SchemaDirectiveWiring() {
+            @Override
+            GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
+                namedCount++
+                def directiveNames = env.getDirectives().values().collect { d -> d.getName() }.sort()
+                assert directiveNames == ["factoryDirective", "generalDirective", "namedDirective1", "namedDirective2"]
+
+                assert env.getDirective("factoryDirective") != null
+                assert env.containsDirective("factoryDirective")
+                return env.getFieldDefinition()
+            }
+        }
+
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .wiringFactory(wiringFactory)
+                .directive("namedDirective1", namedWiring)
+                .directive("namedDirective2", namedWiring)
+                .directiveWiring(generalWiring)
+                .build()
+
+        def schema = schema(sdl, runtimeWiring)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        String query = ''' 
+            query {
+                field
+            }
+        '''
+        when:
+        def executionInput = ExecutionInput.newExecutionInput()
+                .root([field: "start"])
+                .query(query)
+                .build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        then:
+        executionResult.errors.isEmpty()
+        namedCount == 2
+        factoryCount == 1
+        generalCount == 1
+    }
 }

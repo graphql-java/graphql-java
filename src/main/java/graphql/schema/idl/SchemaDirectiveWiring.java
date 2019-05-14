@@ -15,9 +15,17 @@ import graphql.schema.GraphQLUnionType;
 /**
  * A SchemaDirectiveWiring is responsible for enhancing a runtime element based on directives placed on that
  * element in the Schema Definition Language (SDL).
- *
+ * <p>
  * It can enhance the graphql runtime element and add new behaviour for example by changing
  * the fields {@link graphql.schema.DataFetcher}
+ * <p>
+ * The SchemaDirectiveWiring objects are called in a specific order based on registration:
+ * <ol>
+ * <li>{@link graphql.schema.idl.RuntimeWiring.Builder#directive(String, SchemaDirectiveWiring)} which work against a specific named directive are called first</li>
+ * <li>{@link graphql.schema.idl.RuntimeWiring.Builder#directiveWiring(SchemaDirectiveWiring)} which work against all directives are called next</li>
+ * <li>{@link graphql.schema.idl.WiringFactory#providesSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment)} which work against all directives are called last</li>
+ * </ol>
+ * <p>
  */
 @PublicApi
 public interface SchemaDirectiveWiring {
