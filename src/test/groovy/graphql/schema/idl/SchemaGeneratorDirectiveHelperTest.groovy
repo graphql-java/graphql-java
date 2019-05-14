@@ -717,4 +717,68 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         factoryCount == 1
         generalCount == 1
     }
+
+    def "parent and child element directives can be accessed"() {
+        def sdl = '''
+            type Query {
+                field(arg1 : String @argDirective1 @argDirective2, arg2 : String @argDirective3) : String @fieldDirective 
+            }
+        '''
+
+        def fieldCount = 0
+        def argCount = 0
+        SchemaDirectiveWiring generalWiring = new SchemaDirectiveWiring() {
+
+            @Override
+            GraphQLArgument onArgument(SchemaDirectiveWiringEnvironment<GraphQLArgument> env) {
+                argCount++
+                def arg = env.getElement()
+                if (arg.getName() == "arg1") {
+                    assert env.getDirectives().keySet().sort() == ["argDirective1", "argDirective2"]
+                }
+                if (arg.getName() == "arg2") {
+                    assert env.getDirectives().keySet().sort() == ["argDirective3"]
+                }
+                def fieldDef = env.getFieldDefinition()
+                assert fieldDef != null
+                assert fieldDef.getDirectives().collect({ d -> d.getName() }) == ["fieldDirective"]
+
+                return arg
+            }
+
+            @Override
+            GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
+                fieldCount++
+
+                assert env.getDirectives().keySet().sort() == ["fieldDirective"]
+
+                def fieldDef = env.getFieldDefinition()
+                assert fieldDef.getDirectives().collect({ d -> d.getName() }) == ["fieldDirective"]
+
+                def argDirectiveNames = fieldDef.getArguments()
+                        .stream()
+                        .map({ a -> a.getDirectives() })
+                        .flatMap({ dl -> dl.stream() })
+                        .collect { d -> d.getName() }
+                        .sort()
+
+                assert argDirectiveNames == ["argDirective1", "argDirective2", "argDirective3"]
+
+                return env.getElement()
+            }
+        }
+
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .directiveWiring(generalWiring)
+                .build()
+
+        when:
+        def schema = schema(sdl, runtimeWiring)
+
+        then:
+        schema != null
+        fieldCount == 1
+        argCount == 2
+    }
+
 }
