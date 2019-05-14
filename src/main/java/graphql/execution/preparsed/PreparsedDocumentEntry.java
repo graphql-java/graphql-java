@@ -1,6 +1,7 @@
 package graphql.execution.preparsed;
 
 import graphql.GraphQLError;
+import graphql.PublicApi;
 import graphql.language.Document;
 
 import java.io.Serializable;
@@ -18,6 +19,7 @@ import static java.util.Collections.singletonList;
  * with times frames that cross graphql-java versions.  While we don't change things unnecessarily,  we may inadvertently break
  * the serialised compatibility across versions.
  */
+@PublicApi
 public class PreparsedDocumentEntry implements Serializable {
     private final Document document;
     private final List<? extends GraphQLError> errors;

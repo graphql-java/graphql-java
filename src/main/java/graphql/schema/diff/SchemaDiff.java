@@ -390,6 +390,11 @@ public class SchemaDiff {
                                     oldField.getName(), getAstDesc(oldField.getType()), getAstDesc(newField.get().getType()))
                             .build());
                 }
+
+                //
+                // recurse via input types
+                //
+                checkType( ctx, oldField.getType(), newField.get().getType() );
             }
         }
 
@@ -854,6 +859,6 @@ public class SchemaDiff {
     }
 
     private String mkDotName(String... objectNames) {
-        return Arrays.stream(objectNames).collect(Collectors.joining("."));
+        return String.join(".", objectNames);
     }
 }

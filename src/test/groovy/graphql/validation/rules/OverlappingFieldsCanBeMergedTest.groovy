@@ -74,7 +74,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         then:
         errorCollector.getErrors().size() == 1
         errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: myName: name and nickname are different fields @ 'f'"
-        errorCollector.getErrors()[0].locations == [new SourceLocation(4, 17), new SourceLocation(5, 17)]
+        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 17), new SourceLocation(4, 17)]
     }
 
     GraphQLSchema unionSchema() {
@@ -314,7 +314,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         then:
         errorCollector.getErrors().size() == 1
         errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: fido: name and nickname are different fields @ 'sameAliasesWithDifferentFieldTargets'"
-        errorCollector.getErrors()[0].locations == [new SourceLocation(4, 13), new SourceLocation(5, 13)]
+        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
     }
 
     def 'Alias masking direct field access'() {
@@ -331,7 +331,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         then:
         errorCollector.getErrors().size() == 1
         errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: name: nickname and name are different fields @ 'aliasMaskingDirectFieldAccess'"
-        errorCollector.getErrors()[0].locations == [new SourceLocation(4, 13), new SourceLocation(5, 13)]
+        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
     }
 
     def 'conflicting args'() {
@@ -348,7 +348,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         then:
         errorCollector.getErrors().size() == 1
         errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: doesKnowCommand: they have differing arguments @ 'conflictingArgs'"
-        errorCollector.getErrors()[0].locations == [new SourceLocation(4, 13), new SourceLocation(5, 13)]
+        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
     }
 
     //
@@ -391,7 +391,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         then:
         errorCollector.getErrors().size() == 1
         errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: x: a and b are different fields"
-        errorCollector.getErrors()[0].locations == [new SourceLocation(8, 13), new SourceLocation(11, 13)]
+        errorCollector.getErrors()[0].locations == [new SourceLocation(7, 13), new SourceLocation(10, 13)]
     }
 
     def 'reports each conflict once'() {
@@ -425,13 +425,13 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         errorCollector.getErrors().size() == 3
 
         errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: x: a and b are different fields @ 'f1'"
-        errorCollector.getErrors()[0].locations == [new SourceLocation(19, 13), new SourceLocation(22, 13)]
+        errorCollector.getErrors()[0].locations == [new SourceLocation(18, 13), new SourceLocation(21, 13)]
 
         errorCollector.getErrors()[1].message == "Validation error of type FieldsConflict: x: a and c are different fields @ 'f3'"
-        errorCollector.getErrors()[1].locations == [new SourceLocation(19, 13), new SourceLocation(15, 17)]
+        errorCollector.getErrors()[1].locations == [new SourceLocation(18, 13), new SourceLocation(14, 17)]
 
         errorCollector.getErrors()[2].message == "Validation error of type FieldsConflict: x: b and c are different fields @ 'f3'"
-        errorCollector.getErrors()[2].locations == [new SourceLocation(22, 13), new SourceLocation(15, 17)]
+        errorCollector.getErrors()[2].locations == [new SourceLocation(21, 13), new SourceLocation(14, 17)]
     }
 
 

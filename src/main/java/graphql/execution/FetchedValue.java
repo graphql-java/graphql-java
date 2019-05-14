@@ -46,6 +46,16 @@ public class FetchedValue {
         return builder.build();
     }
 
+    @Override
+    public String toString() {
+        return "FetchedValue{" +
+                "fetchedValue=" + fetchedValue +
+                ", rawFetchedValue=" + rawFetchedValue +
+                ", localContext=" + localContext +
+                ", errors=" + errors +
+                '}';
+    }
+
     public static Builder newFetchedValue() {
         return new Builder();
     }

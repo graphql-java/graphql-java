@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
@@ -37,6 +38,21 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
 
     public List<Selection> getSelections() {
         return new ArrayList<>(selections);
+    }
+
+    /**
+     * Returns a list of selections of the specific type.  It uses {@link java.lang.Class#isAssignableFrom(Class)} for the test
+     *
+     * @param selectionClass the selection class
+     * @param <T>            the type of selection
+     *
+     * @return a list of selections of that class or empty list
+     */
+    public <T extends Selection> List<T> getSelectionsOfType(Class<T> selectionClass) {
+        return selections.stream()
+                .filter(d -> selectionClass.isAssignableFrom(d.getClass()))
+                .map(selectionClass::cast)
+                .collect(Collectors.toList());
     }
 
     @Override

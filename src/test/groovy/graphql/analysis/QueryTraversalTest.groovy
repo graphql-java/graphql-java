@@ -8,10 +8,13 @@ import graphql.language.FragmentSpread
 import graphql.language.InlineFragment
 import graphql.language.NodeTraverser
 import graphql.language.NodeUtil
+import graphql.language.OperationDefinition
 import graphql.parser.Parser
+import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLUnionType
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -1428,6 +1431,79 @@ class QueryTraversalTest extends Specification {
 
         then:
         result == "RESULT"
+
+    }
+
+    def "can select an interface field as root node"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                root: SomeInterface
+            }
+            interface SomeInterface {
+                hello: String
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {root { hello } }
+            """)
+        def rootField = (query.children[0] as OperationDefinition).selectionSet.selections[0] as Field
+        def hello = rootField.selectionSet.selections[0] as Field
+        hello.name == "hello"
+        def rootParentType = schema.getType("SomeInterface") as GraphQLInterfaceType
+        QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
+                .schema(schema)
+                .root(hello)
+                .rootParentType(rootParentType)
+                .variables(emptyMap())
+                .fragmentsByName(emptyMap())
+                .build()
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "hello" && it.parentType.name == "SomeInterface"
+        })
+
+    }
+
+    def "can select __typename field as root node"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                root: SomeUnion
+            }
+            union SomeUnion = A | B
+            type A  {
+                a: String
+            }
+            type B  {
+                b: String
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {root { __typename } }
+            """)
+        def rootField = (query.children[0] as OperationDefinition).selectionSet.selections[0] as Field
+        def typeNameField = rootField.selectionSet.selections[0] as Field
+        def rootParentType = schema.getType("SomeUnion") as GraphQLUnionType
+        QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
+                .schema(schema)
+                .root(typeNameField)
+                .rootParentType(rootParentType)
+                .variables(emptyMap())
+                .fragmentsByName(emptyMap())
+                .build()
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.isTypeNameIntrospectionField()
+        })
 
     }
 
