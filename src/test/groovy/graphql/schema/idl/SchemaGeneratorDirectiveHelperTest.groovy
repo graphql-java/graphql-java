@@ -367,11 +367,11 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 .build()
 
         when:
-        def executionResult = graphQL.execute(input)
+        def er = graphQL.execute(input)
 
         then:
-        executionResult.errors.isEmpty()
-        executionResult.data == [
+        er.errors.isEmpty()
+        er.data == [
                 lowerCaseValue: "LOWERCASEVALUE",
                 upperCaseValue: "uppercasevalue",
                 echoField1    : "echoField1",
@@ -410,13 +410,13 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 ''')
                 .build()
 
-        def executionResult = graphQL.execute(executionInput)
+        def er = graphQL.execute(executionInput)
 
         then:
-        executionResult.errors.isEmpty()
-        executionResult.data['default'] == '08-10-1969'
-        executionResult.data['usa'] == '10-08-1969'
-        executionResult.data['yearFirst'] == localizedYearFirst
+        er.errors.isEmpty()
+        er.data['default'] == '08-10-1969'
+        er.data['usa'] == '10-08-1969'
+        er.data['yearFirst'] == localizedYearFirst
     }
 
     def "can state-fully track wrapped elements"() {
@@ -513,14 +513,14 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 .context([protectSecrets: true])
                 .build()
 
-        def executionResult = graphQL.execute(executionInput)
+        def er = graphQL.execute(executionInput)
 
         then:
-        executionResult.errors.isEmpty()
-        executionResult.data['secret']['identity'] == null
-        executionResult.data['secret']['age'] == null
-        executionResult.data['nonSecret']['identity'] == "BruceWayne"
-        executionResult.data['nonSecret']['age'] == 42
+        er.errors.isEmpty()
+        er.data['secret']['identity'] == null
+        er.data['secret']['age'] == null
+        er.data['nonSecret']['identity'] == "BruceWayne"
+        er.data['nonSecret']['age'] == 42
 
         when:
         executionInput = ExecutionInput.newExecutionInput()
@@ -529,14 +529,14 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 .context([protectSecrets: false])
                 .build()
 
-        executionResult = graphQL.execute(executionInput)
+        er = graphQL.execute(executionInput)
 
         then:
-        executionResult.errors.isEmpty()
-        executionResult.data['secret']['identity'] == "BruceWayne"
-        executionResult.data['secret']['age'] == 42
-        executionResult.data['nonSecret']['identity'] == "BruceWayne"
-        executionResult.data['nonSecret']['age'] == 42
+        er.errors.isEmpty()
+        er.data['secret']['identity'] == "BruceWayne"
+        er.data['secret']['age'] == 42
+        er.data['nonSecret']['identity'] == "BruceWayne"
+        er.data['nonSecret']['age'] == 42
     }
 
     def "ordering of directive wiring is locked in place"() {
@@ -622,14 +622,14 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 .query(query)
                 .build()
 
-        def executionResult = graphQL.execute(executionInput)
+        def er = graphQL.execute(executionInput)
 
         then:
-        executionResult.errors.isEmpty()
+        er.errors.isEmpty()
         //
         // the ordering is named ones first, general ones next and finally the factory
         //
-        executionResult.data["field"] == "start,namedDirective1,namedDirective2,general,factory"
+        er.data["field"] == "start,namedDirective1,namedDirective2,general,factory"
     }
 
     def "all directives are available to all callbacks"() {
@@ -656,7 +656,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         def factoryWiring = new SchemaDirectiveWiring() {
             @Override
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
-                factoryCount++;
+                factoryCount++
                 def directiveNames = env.getDirectives().values().collect { d -> d.getName() }.sort()
                 assert directiveNames == ["factoryDirective", "generalDirective", "namedDirective1", "namedDirective2"]
                 return env.getFieldDefinition()
@@ -709,14 +709,15 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 .query(query)
                 .build()
 
-        def executionResult = graphQL.execute(executionInput)
+        def er = graphQL.execute(executionInput)
 
         then:
-        executionResult.errors.isEmpty()
+        er.errors.isEmpty()
         namedCount == 2
         factoryCount == 1
         generalCount == 1
     }
+
 
     def "parent and child element directives can be accessed"() {
         def sdl = '''
@@ -779,6 +780,74 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         schema != null
         fieldCount == 1
         argCount == 2
+    }
+
+    def "data fetchers can be changed in argument and object callbacks"() {
+        def sdl = '''
+            type Query {
+                field1(arg1 : String @argDirective1 @argDirective2, arg2 : String @argDirective3) : String @fieldDirective
+                field2 : String 
+            }
+        '''
+
+        SchemaDirectiveWiring generalWiring = new SchemaDirectiveWiring() {
+
+            @Override
+            GraphQLArgument onArgument(SchemaDirectiveWiringEnvironment<GraphQLArgument> env) {
+                def argument = env.getElement()
+                def oldDF = env.getFieldDataFetcher()
+                DataFetcher newDF = { dfEnv ->
+                    def val = oldDF.get(dfEnv)
+                    return val + "+" + argument.getName()
+                }
+                env.setFieldDataFetcher(newDF)
+                return argument
+            }
+
+            @Override
+            GraphQLObjectType onObject(SchemaDirectiveWiringEnvironment<GraphQLObjectType> env) {
+
+                def codeRegistry = env.getCodeRegistry()
+                def objectType = env.getElement()
+                objectType.getFieldDefinitions().forEach({ fieldDef ->
+                    def oldDF = codeRegistry.getDataFetcher(objectType, fieldDef)
+                    DataFetcher newDF = { dfEnv ->
+                        def val = oldDF.get(dfEnv)
+                        return val + "+" + fieldDef.getName()
+                    }
+                    codeRegistry.dataFetcher(objectType, fieldDef, newDF)
+
+                })
+                return objectType
+            }
+        }
+
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .directiveWiring(generalWiring)
+                .build()
+
+        def schema = schema(sdl, runtimeWiring)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        String query = ''' 
+            query {
+                field1
+                field2
+            }
+        '''
+        when:
+        def executionInput = ExecutionInput.newExecutionInput()
+                .root([field1: "data", field2: "data"])
+                .query(query)
+                .build()
+
+        def er = graphQL.execute(executionInput)
+
+        then:
+        er.errors.isEmpty()
+        // two args on field1 so wrapped twice plus one object callback for two fields
+        er.data["field1"] == "data+arg1+arg2+field1"
+        er.data["field2"] == "data+field2"
     }
 
 }
