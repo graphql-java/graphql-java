@@ -150,7 +150,7 @@ public class ExecutionInput {
         private Object root;
         private Map<String, Object> variables = Collections.emptyMap();
         private DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
-        private CacheControl cacheControl;
+        private CacheControl cacheControl = CacheControl.newCacheControl();
 
         public Builder query(String query) {
             this.query = query;
@@ -209,7 +209,7 @@ public class ExecutionInput {
         }
 
         public Builder cacheControl(CacheControl cacheControl) {
-            this.cacheControl = cacheControl;
+            this.cacheControl = assertNotNull(cacheControl);
             return this;
         }
 
