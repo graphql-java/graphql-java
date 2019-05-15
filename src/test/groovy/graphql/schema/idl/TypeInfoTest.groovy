@@ -1,5 +1,7 @@
 package graphql.schema.idl
 
+import graphql.TestUtil
+import graphql.language.AstPrinter
 import graphql.language.ListType
 import graphql.language.NonNullType
 import graphql.language.Type
@@ -9,6 +11,7 @@ import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLType
 import spock.lang.Specification
+import spock.lang.Unroll
 
 class TypeInfoTest extends Specification {
 
@@ -111,5 +114,26 @@ class TypeInfoTest extends Specification {
 
         assertNotEqualsAndHashCode(new NonNullType(new ListType(new TypeName("A"))), new ListType(new TypeName("A")))
         assertNotEqualsAndHashCode(new NonNullType(new ListType(new TypeName("A"))), new NonNullType(new ListType(new TypeName("B"))))
+    }
+
+
+    @Unroll
+    def "test rename works as expected"() {
+
+        expect:
+        Type actualType = TestUtil.parseType(actual)
+        def typeInfo = TypeInfo.typeInfo(actualType)
+        TypeInfo newTypeInfo = typeInfo.renameAs("newName")
+        def printed = AstPrinter.printAst(newTypeInfo.getRawType())
+        printed == expected
+
+        where:
+        actual        | expected
+        "named"       | "newName"
+        "named!"      | "newName!"
+        "[named]"     | "[newName]"
+        "[named!]"    | "[newName!]"
+        "[named!]!"   | "[newName!]!"
+        "[[named!]!]" | "[[newName!]!]"
     }
 }

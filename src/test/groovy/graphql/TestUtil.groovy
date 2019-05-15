@@ -5,7 +5,9 @@ import graphql.execution.MergedSelectionSet
 import graphql.introspection.Introspection.DirectiveLocation
 import graphql.language.Document
 import graphql.language.Field
+import graphql.language.ObjectTypeDefinition
 import graphql.language.ScalarTypeDefinition
+import graphql.language.Type
 import graphql.parser.Parser
 import graphql.schema.Coercing
 import graphql.schema.DataFetcher
@@ -207,6 +209,22 @@ class TestUtil {
 
     static Document parseQuery(String query) {
         new Parser().parseDocument(query)
+    }
+
+    static Type parseType(String typeAst) {
+        String docStr = """
+            type X {
+                field : $typeAst
+            }
+        """
+        try {
+            def document = toDocument(docStr)
+            ObjectTypeDefinition objTypeDef = document.getDefinitionsOfType(ObjectTypeDefinition.class)[0]
+            return objTypeDef.fieldDefinitions[0].getType()
+        } catch (Exception ignored) {
+            assert false, "Invalid type AST string : $typeAst"
+            return null
+        }
     }
 
     static Document toDocument(String query) {
