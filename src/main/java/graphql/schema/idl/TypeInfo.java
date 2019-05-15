@@ -69,6 +69,31 @@ public class TypeInfo {
     }
 
     /**
+     * This will rename the type with the specified new name but will preserve the wrapping that was present
+     *
+     * @param newName the new name of the type
+     *
+     * @return a new type info rebuilt with the new name
+     */
+    public TypeInfo renameAs(String newName) {
+
+        Type out = TypeName.newTypeName(newName).build();
+
+        Stack<Class<?>> wrappingStack = new Stack<>();
+        wrappingStack.addAll(this.decoration);
+        while (!wrappingStack.isEmpty()) {
+            Class<?> clazz = wrappingStack.pop();
+            if (clazz.equals(NonNullType.class)) {
+                out = NonNullType.newNonNullType(out).build();
+            }
+            if (clazz.equals(ListType.class)) {
+                out = ListType.newListType(out).build();
+            }
+        }
+        return typeInfo(out);
+    }
+
+    /**
      * This will decorate a graphql type with the original hierarchy of non null and list'ness
      * it originally contained in its definition type
      *
