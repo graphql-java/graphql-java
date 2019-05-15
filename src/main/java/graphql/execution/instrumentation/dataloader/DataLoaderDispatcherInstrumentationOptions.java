@@ -1,5 +1,10 @@
 package graphql.execution.instrumentation.dataloader;
 
+import org.dataloader.DataLoaderRegistry;
+import org.slf4j.Logger;
+
+import java.util.function.BiFunction;
+
 /**
  * The options that control the operation of {@link graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation}
  */
@@ -7,12 +12,19 @@ public class DataLoaderDispatcherInstrumentationOptions {
 
     private final boolean includeStatistics;
 
-    private DataLoaderDispatcherInstrumentationOptions(boolean includeStatistics) {
+    private final BiFunction<Logger, DataLoaderRegistry, TrackingApproach> approachSupplier;
+
+    private DataLoaderDispatcherInstrumentationOptions(boolean includeStatistics, BiFunction<Logger, DataLoaderRegistry, TrackingApproach> approachSupplier) {
         this.includeStatistics = includeStatistics;
+        this.approachSupplier = approachSupplier;
     }
 
     public static DataLoaderDispatcherInstrumentationOptions newOptions() {
-        return new DataLoaderDispatcherInstrumentationOptions(false);
+        return new DataLoaderDispatcherInstrumentationOptions(false, (log, registry) -> new FieldLevelTrackingApproach(registry));
+    }
+
+    public DataLoaderDispatcherInstrumentationOptions withTrackingApproach(BiFunction<Logger, DataLoaderRegistry, TrackingApproach> approachFactory) {
+        return new DataLoaderDispatcherInstrumentationOptions(includeStatistics, approachFactory);
     }
 
     /**
@@ -24,7 +36,7 @@ public class DataLoaderDispatcherInstrumentationOptions {
      * @return a new options object
      */
     public DataLoaderDispatcherInstrumentationOptions includeStatistics(boolean flag) {
-        return new DataLoaderDispatcherInstrumentationOptions(flag);
+        return new DataLoaderDispatcherInstrumentationOptions(flag, approachSupplier);
     }
 
 
@@ -32,4 +44,7 @@ public class DataLoaderDispatcherInstrumentationOptions {
         return includeStatistics;
     }
 
+    public TrackingApproach getApproach(Logger log, DataLoaderRegistry dataLoaderRegistry) {
+        return approachSupplier.apply(log, dataLoaderRegistry);
+    }
 }

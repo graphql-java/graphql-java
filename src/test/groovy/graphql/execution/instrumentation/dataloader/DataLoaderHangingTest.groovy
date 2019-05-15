@@ -40,7 +40,6 @@ class DataLoaderHangingTest extends Specification {
                 nextToken: String
             ): ModelSongConnection
         }
-
         type Artist {
             id: ID!
             name: String!
@@ -53,26 +52,21 @@ class DataLoaderHangingTest extends Specification {
                 nextToken: String
             ): ModelSongConnection
         }
-
         type ModelAlbumConnection {
             items: [Album]
             nextToken: String
         }
-
         type ModelArtistConnection {
             items: [Artist]
             nextToken: String
         }
-
         type ModelSongConnection {
             items: [Song]
             nextToken: String
         }
-
         type Query {
             listArtists(limit: Int, nextToken: String): ModelArtistConnection
         }
-
         type Song {
             id: ID!
             title: String!

@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation.dataloader;
 
+import graphql.execution.ExecutionId;
 import graphql.execution.instrumentation.InstrumentationState;
 import org.dataloader.DataLoaderRegistry;
 import org.slf4j.Logger;
@@ -9,17 +10,18 @@ import org.slf4j.Logger;
  */
 public class DataLoaderDispatcherInstrumentationState implements InstrumentationState {
 
-    private final FieldLevelTrackingApproach approach;
+    private final TrackingApproach approach;
     private final DataLoaderRegistry dataLoaderRegistry;
     private final InstrumentationState state;
     private final boolean hasNoDataLoaders;
     private boolean aggressivelyBatching = true;
 
-    public DataLoaderDispatcherInstrumentationState(Logger log, DataLoaderRegistry dataLoaderRegistry) {
+    public DataLoaderDispatcherInstrumentationState(Logger log, DataLoaderRegistry dataLoaderRegistry,
+                                                    DataLoaderDispatcherInstrumentationOptions options, ExecutionId executionId) {
 
         this.dataLoaderRegistry = dataLoaderRegistry;
-        this.approach = new FieldLevelTrackingApproach(log, dataLoaderRegistry);
-        this.state = approach.createState();
+        this.approach = options.getApproach(log, dataLoaderRegistry);
+        this.state = approach.createState(executionId);
         hasNoDataLoaders = dataLoaderRegistry.getKeys().isEmpty();
 
     }
@@ -32,7 +34,7 @@ public class DataLoaderDispatcherInstrumentationState implements Instrumentation
         this.aggressivelyBatching = aggressivelyBatching;
     }
 
-    FieldLevelTrackingApproach getApproach() {
+    TrackingApproach getApproach() {
         return approach;
     }
 

@@ -69,7 +69,8 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
     @Override
     public InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
-        return new DataLoaderDispatcherInstrumentationState(log, parameters.getExecutionInput().getDataLoaderRegistry());
+        return new DataLoaderDispatcherInstrumentationState(log, parameters.getExecutionInput().getDataLoaderRegistry(), options,
+            parameters.getExecutionInput().getExecutionId());
     }
 
     @Override
@@ -181,6 +182,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         statsMap.putAll(currentExt == null ? Collections.emptyMap() : currentExt);
         Map<Object, Object> dataLoaderStats = buildStatsMap(state);
         statsMap.put("dataloader", dataLoaderStats);
+        state.getApproach().removeTracking(parameters.getExecutionInput().getExecutionId());
 
         log.debug("Data loader stats : {}", dataLoaderStats);
 
