@@ -18,13 +18,16 @@ import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.Collectors
 import java.util.stream.Stream
 
 class DataLoaderDispatchEnhancementsTest extends Specification{
 
-    def REP_COUNT = 10
+    def REP_COUNT = 50
+
+    def executor = Executors.newFixedThreadPool(REP_COUNT)
 
     class A {
         String a
@@ -81,9 +84,9 @@ class DataLoaderDispatchEnhancementsTest extends Specification{
 
         def graphql = GraphQL.newGraphQL(schema).instrumentation(batchingInstrumentation).build()
         when:
-        executionInputList.parallelStream()
+        executor.submit{executionInputList.parallelStream()
                 .map{input -> graphql.executeAsync(input)}
-                .map{future -> future.join()}.collect(Collectors.toList())
+                .map{future -> future.join()}.collect(Collectors.toList())}.get()
         then:
         0 < fetchCounter.get() &&  fetchCounter.get() < REP_COUNT
     }
@@ -105,9 +108,9 @@ class DataLoaderDispatchEnhancementsTest extends Specification{
                 DataLoaderDispatcherInstrumentationOptions.newOptions().withTrackingApproach{dlr -> tracking})
         def graphql = GraphQL.newGraphQL(schema).instrumentation(batchingInstrumentation).build()
         when:
-        executionInputList.parallelStream()
+        executor.submit{executionInputList.parallelStream()
                 .map{input -> graphql.executeAsync(input)}
-                .map{future -> future.join()}.collect(Collectors.toList())
+                .map{future -> future.join()}.collect(Collectors.toList())}.get()
         then:
         fetchCounter.get() == 1
     }
