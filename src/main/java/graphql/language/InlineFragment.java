@@ -60,11 +60,6 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         return typeCondition;
     }
 
-    @Override
-    public String getName() {
-        return typeCondition == null ? null : typeCondition.getName();
-    }
-
     public List<Directive> getDirectives() {
         return new ArrayList<>(directives);
     }
