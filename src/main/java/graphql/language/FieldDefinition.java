@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
-public class FieldDefinition extends AbstractNode<FieldDefinition> implements DirectivesContainer<FieldDefinition> {
+public class FieldDefinition extends AbstractNode<FieldDefinition> implements DirectivesContainer<FieldDefinition>, NamedNode<FieldDefinition> {
     private final String name;
     private final Type type;
     private final Description description;
