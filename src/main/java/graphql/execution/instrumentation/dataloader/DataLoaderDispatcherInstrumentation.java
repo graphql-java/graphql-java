@@ -69,7 +69,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
     @Override
     public InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
-        return new DataLoaderDispatcherInstrumentationState(log, parameters.getExecutionInput().getDataLoaderRegistry(), options,
+        return new DataLoaderDispatcherInstrumentationState(parameters.getExecutionInput().getDataLoaderRegistry(), options,
             parameters.getExecutionInput().getExecutionId());
     }
 

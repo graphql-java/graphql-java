@@ -1,0 +1,7 @@
+type Query {
+    query(input:Int) : A
+}
+
+type A {
+    a: String
+}

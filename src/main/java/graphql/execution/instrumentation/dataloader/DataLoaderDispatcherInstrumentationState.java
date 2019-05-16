@@ -16,11 +16,11 @@ public class DataLoaderDispatcherInstrumentationState implements Instrumentation
     private final boolean hasNoDataLoaders;
     private boolean aggressivelyBatching = true;
 
-    public DataLoaderDispatcherInstrumentationState(Logger log, DataLoaderRegistry dataLoaderRegistry,
+    public DataLoaderDispatcherInstrumentationState(DataLoaderRegistry dataLoaderRegistry,
                                                     DataLoaderDispatcherInstrumentationOptions options, ExecutionId executionId) {
 
         this.dataLoaderRegistry = dataLoaderRegistry;
-        this.approach = options.getApproach(log, dataLoaderRegistry);
+        this.approach = options.getApproach(dataLoaderRegistry);
         this.state = approach.createState(executionId);
         hasNoDataLoaders = dataLoaderRegistry.getKeys().isEmpty();
 

@@ -16,6 +16,9 @@ public class RequestLevelTrackingApproach extends AbstractTrackingApproach {
 
     @Override
     public InstrumentationState createState(ExecutionId executionId) {
+        if (!getStack().contains(executionId)) {
+            throw new RuntimeException(String.format("Request tracking not set up with execution id %s", executionId));
+        }
         return null;
     }
 
