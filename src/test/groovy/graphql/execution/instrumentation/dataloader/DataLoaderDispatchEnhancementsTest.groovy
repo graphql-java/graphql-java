@@ -24,7 +24,7 @@ import java.util.stream.Stream
 
 class DataLoaderDispatchEnhancementsTest extends Specification{
 
-    def REP_COUNT = 50
+    def REP_COUNT = 10
 
     class A {
         String a
