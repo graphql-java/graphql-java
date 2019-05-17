@@ -7,10 +7,14 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class FragmentSpread extends AbstractNode<FragmentSpread> implements Selection<FragmentSpread>, DirectivesContainer<FragmentSpread> {
@@ -21,8 +25,8 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
     public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
-    protected FragmentSpread(String name, List<Directive> directives, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+    protected FragmentSpread(String name, List<Directive> directives, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.directives = new ArrayList<>(directives);
     }
@@ -33,7 +37,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
      * @param name of the fragment
      */
     public FragmentSpread(String name) {
-        this(name, new ArrayList<>(), null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, new ArrayList<>(), null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -84,7 +88,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
 
     @Override
     public FragmentSpread deepCopy() {
-        return new FragmentSpread(name, deepCopy(directives), getSourceLocation(), getComments(), getIgnoredChars());
+        return new FragmentSpread(name, deepCopy(directives), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -121,6 +125,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
         private String name;
         private List<Directive> directives = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -131,6 +136,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
             this.name = existing.getName();
             this.directives = existing.getDirectives();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -158,9 +164,19 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public FragmentSpread build() {
-            FragmentSpread fragmentSpread = new FragmentSpread(name, directives, sourceLocation, comments, ignoredChars);
-            return fragmentSpread;
+            return new FragmentSpread(name, directives, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

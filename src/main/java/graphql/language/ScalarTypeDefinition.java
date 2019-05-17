@@ -7,10 +7,14 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> implements TypeDefinition<ScalarTypeDefinition>, DirectivesContainer<ScalarTypeDefinition> {
@@ -27,8 +31,9 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
                                    Description description,
                                    SourceLocation sourceLocation,
                                    List<Comment> comments,
-                                   IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+                                   IgnoredChars ignoredChars,
+                                   Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.directives = directives;
         this.description = description;
@@ -40,7 +45,7 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
      * @param name of the scalar
      */
     public ScalarTypeDefinition(String name) {
-        this(name, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -60,9 +65,7 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
-        result.addAll(directives);
-        return result;
+        return new ArrayList<>(directives);
     }
 
     @Override
@@ -95,7 +98,7 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
 
     @Override
     public ScalarTypeDefinition deepCopy() {
-        return new ScalarTypeDefinition(name, deepCopy(directives), description, getSourceLocation(), getComments(), getIgnoredChars());
+        return new ScalarTypeDefinition(name, deepCopy(directives), description, getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -128,6 +131,7 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
         private Description description;
         private List<Directive> directives = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -139,6 +143,7 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
 
@@ -177,14 +182,23 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
         public ScalarTypeDefinition build() {
-            ScalarTypeDefinition scalarTypeDefinition = new ScalarTypeDefinition(name,
+            return new ScalarTypeDefinition(name,
                     directives,
                     description,
                     sourceLocation,
                     comments,
-                    ignoredChars);
-            return scalarTypeDefinition;
+                    ignoredChars, additionalData);
         }
     }
 }

@@ -7,10 +7,12 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.directivesByName;
 
@@ -28,8 +30,9 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
                                List<OperationTypeDefinition> operationTypeDefinitions,
                                SourceLocation sourceLocation,
                                List<Comment> comments,
-                               IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+                               IgnoredChars ignoredChars,
+                               Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.directives = directives;
         this.operationTypeDefinitions = operationTypeDefinitions;
     }
@@ -83,16 +86,13 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
-        SchemaDefinition that = (SchemaDefinition) o;
-
         return true;
     }
 
     @Override
     public SchemaDefinition deepCopy() {
         return new SchemaDefinition(deepCopy(directives), deepCopy(operationTypeDefinitions), getSourceLocation(), getComments(),
-                getIgnoredChars());
+                getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -124,6 +124,7 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
         private List<Directive> directives = new ArrayList<>();
         private List<OperationTypeDefinition> operationTypeDefinitions = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -134,6 +135,7 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
             this.directives = existing.getDirectives();
             this.operationTypeDefinitions = existing.getOperationTypeDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
 
@@ -172,13 +174,23 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
         public SchemaDefinition build() {
-            SchemaDefinition schemaDefinition = new SchemaDefinition(directives,
+            return new SchemaDefinition(directives,
                     operationTypeDefinitions,
                     sourceLocation,
                     comments,
-                    ignoredChars);
-            return schemaDefinition;
+                    ignoredChars,
+                    additionalData);
         }
     }
 }

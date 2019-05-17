@@ -7,10 +7,14 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinition> implements TypeDefinition<InterfaceTypeDefinition>, DirectivesContainer<InterfaceTypeDefinition> {
@@ -30,8 +34,9 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
                                       Description description,
                                       SourceLocation sourceLocation,
                                       List<Comment> comments,
-                                      IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+                                      IgnoredChars ignoredChars,
+                                      Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.definitions = definitions;
         this.directives = directives;
@@ -44,7 +49,7 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
      * @param name of the interface
      */
     public InterfaceTypeDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public List<FieldDefinition> getFieldDefinitions() {
@@ -111,8 +116,8 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
                 description,
                 getSourceLocation(),
                 getComments(),
-                getIgnoredChars()
-        );
+                getIgnoredChars(),
+                getAdditionalData());
     }
 
     @Override
@@ -148,6 +153,7 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
         private List<FieldDefinition> definitions = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -161,6 +167,7 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
             this.directives = existing.getDirectives();
             this.definitions = existing.getFieldDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
 
@@ -209,15 +216,26 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public InterfaceTypeDefinition build() {
-            InterfaceTypeDefinition interfaceTypeDefinition = new InterfaceTypeDefinition(name,
+            return new InterfaceTypeDefinition(name,
                     definitions,
                     directives,
                     description,
                     sourceLocation,
                     comments,
-                    ignoredChars);
-            return interfaceTypeDefinition;
+                    ignoredChars,
+                    additionalData);
         }
     }
 }

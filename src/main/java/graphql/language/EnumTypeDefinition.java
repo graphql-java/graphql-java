@@ -6,10 +6,14 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> implements TypeDefinition<EnumTypeDefinition>, DirectivesContainer<EnumTypeDefinition> {
@@ -28,8 +32,8 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
                                  Description description,
                                  SourceLocation sourceLocation,
                                  List<Comment> comments,
-                                 IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+                                 IgnoredChars ignoredChars, Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.description = description;
         this.directives = (null == directives) ? new ArrayList<>() : directives;
@@ -42,7 +46,7 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
      * @param name of the enum
      */
     public EnumTypeDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public List<EnumValueDefinition> getEnumValueDefinitions() {
@@ -109,7 +113,8 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
                 description,
                 getSourceLocation(),
                 getComments(),
-                getIgnoredChars());
+                getIgnoredChars(),
+                getAdditionalData());
     }
 
     @Override
@@ -144,6 +149,7 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
         private List<EnumValueDefinition> enumValueDefinitions = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -156,6 +162,7 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
             this.directives = existing.getDirectives();
             this.enumValueDefinitions = existing.getEnumValueDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -203,9 +210,19 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public EnumTypeDefinition build() {
-            EnumTypeDefinition enumTypeDefinition = new EnumTypeDefinition(name, enumValueDefinitions, directives, description, sourceLocation, comments, ignoredChars);
-            return enumTypeDefinition;
+            return new EnumTypeDefinition(name, enumValueDefinitions, directives, description, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

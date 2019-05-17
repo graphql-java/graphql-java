@@ -140,7 +140,7 @@ class AstZipperTest extends Specification {
         private static final String CHILDREN = "children"
 
         MyNode(String value, List<Node> children) {
-            super(null, emptyList(), IgnoredChars.EMPTY)
+            super(null, emptyList(), IgnoredChars.EMPTY, Collections.emptyMap())
             this.value = value
             this.children = children
         }

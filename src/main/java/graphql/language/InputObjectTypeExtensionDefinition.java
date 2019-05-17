@@ -4,8 +4,12 @@ import graphql.Internal;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
+
+import static graphql.Assert.assertNotNull;
 
 @PublicApi
 public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinition {
@@ -17,8 +21,9 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
                                                  Description description,
                                                  SourceLocation sourceLocation,
                                                  List<Comment> comments,
-                                                 IgnoredChars ignoredChars) {
-        super(name, directives, inputValueDefinitions, description, sourceLocation, comments, ignoredChars);
+                                                 IgnoredChars ignoredChars,
+                                                 Map<String, String> additionalData) {
+        super(name, directives, inputValueDefinitions, description, sourceLocation, comments, ignoredChars, additionalData);
     }
 
     @Override
@@ -29,7 +34,8 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
                 getDescription(),
                 getSourceLocation(),
                 getComments(),
-                getIgnoredChars());
+                getIgnoredChars(),
+                getAdditionalData());
     }
 
     @Override
@@ -60,6 +66,7 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
         private List<Directive> directives = new ArrayList<>();
         private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -72,6 +79,7 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
             this.directives = existing.getDirectives();
             this.inputValueDefinitions = existing.getInputValueDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
 
@@ -110,6 +118,17 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public InputObjectTypeExtensionDefinition build() {
             InputObjectTypeExtensionDefinition inputObjectTypeDefinition = new InputObjectTypeExtensionDefinition(name,
                     directives,
@@ -117,7 +136,7 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
                     description,
                     sourceLocation,
                     comments,
-                    ignoredChars);
+                    ignoredChars, additionalData);
             return inputObjectTypeDefinition;
         }
     }

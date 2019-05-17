@@ -7,10 +7,14 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class FieldDefinition extends AbstractNode<FieldDefinition> implements DirectivesContainer<FieldDefinition> {
@@ -32,8 +36,9 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
                               Description description,
                               SourceLocation sourceLocation,
                               List<Comment> comments,
-                              IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+                              IgnoredChars ignoredChars,
+                              Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.description = description;
         this.name = name;
         this.type = type;
@@ -43,7 +48,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
 
     public FieldDefinition(String name,
                            Type type) {
-        this(name, type, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, type, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public Type getType() {
@@ -118,8 +123,8 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
                 description,
                 getSourceLocation(),
                 getComments(),
-                getIgnoredChars()
-        );
+                getIgnoredChars(),
+                getAdditionalData());
     }
 
     @Override
@@ -156,6 +161,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
         private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -169,6 +175,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
             this.inputValueDefinitions = existing.getInputValueDefinitions();
             this.directives = existing.getDirectives();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
 
@@ -222,9 +229,19 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public FieldDefinition build() {
-            FieldDefinition fieldDefinition = new FieldDefinition(name, type, inputValueDefinitions, directives, description, sourceLocation, comments, ignoredChars);
-            return fieldDefinition;
+            return new FieldDefinition(name, type, inputValueDefinitions, directives, description, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }
