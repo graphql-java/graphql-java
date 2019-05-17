@@ -7,10 +7,14 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> implements TypeDefinition<ObjectTypeDefinition>, DirectivesContainer<ObjectTypeDefinition>, NamedNode<ObjectTypeDefinition> {
@@ -32,8 +36,9 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
                                    Description description,
                                    SourceLocation sourceLocation,
                                    List<Comment> comments,
-                                   IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+                                   IgnoredChars ignoredChars,
+                                   Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.implementz = implementz;
         this.directives = directives;
@@ -47,7 +52,7 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
      * @param name of the object type
      */
     public ObjectTypeDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public List<Type> getImplements() {
@@ -92,11 +97,9 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
 
     @Override
     public ObjectTypeDefinition withNewChildren(NodeChildrenContainer newChildren) {
-        return transform(builder -> {
-            builder.implementz(newChildren.getChildren(CHILD_IMPLEMENTZ))
-                    .directives(newChildren.getChildren(CHILD_DIRECTIVES))
-                    .fieldDefinitions(newChildren.getChildren(CHILD_FIELD_DEFINITIONS));
-        });
+        return transform(builder -> builder.implementz(newChildren.getChildren(CHILD_IMPLEMENTZ))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .fieldDefinitions(newChildren.getChildren(CHILD_FIELD_DEFINITIONS)));
     }
 
     @Override
@@ -121,8 +124,8 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
                 description,
                 getSourceLocation(),
                 getComments(),
-                getIgnoredChars()
-        );
+                getIgnoredChars(),
+                getAdditionalData());
     }
 
     @Override
@@ -159,6 +162,7 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
         private List<Directive> directives = new ArrayList<>();
         private List<FieldDefinition> fieldDefinitions = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -172,6 +176,7 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
             this.implementz = existing.getImplements();
             this.fieldDefinitions = existing.getFieldDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -229,16 +234,26 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
         public ObjectTypeDefinition build() {
-            ObjectTypeDefinition objectTypeDefinition = new ObjectTypeDefinition(name,
+            return new ObjectTypeDefinition(name,
                     implementz,
                     directives,
                     fieldDefinitions,
                     description,
                     sourceLocation,
                     comments,
-                    ignoredChars);
-            return objectTypeDefinition;
+                    ignoredChars,
+                    additionalData);
         }
     }
 }

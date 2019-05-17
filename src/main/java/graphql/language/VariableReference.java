@@ -7,11 +7,15 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class VariableReference extends AbstractNode<VariableReference> implements Value<VariableReference>, NamedNode<VariableReference> {
@@ -19,8 +23,8 @@ public class VariableReference extends AbstractNode<VariableReference> implement
     private final String name;
 
     @Internal
-    protected VariableReference(String name, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+    protected VariableReference(String name, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
     }
 
@@ -30,7 +34,7 @@ public class VariableReference extends AbstractNode<VariableReference> implement
      * @param name of the variable
      */
     public VariableReference(String name) {
-        this(name, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -70,7 +74,7 @@ public class VariableReference extends AbstractNode<VariableReference> implement
 
     @Override
     public VariableReference deepCopy() {
-        return new VariableReference(name, getSourceLocation(), getComments(), getIgnoredChars());
+        return new VariableReference(name, getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -100,6 +104,7 @@ public class VariableReference extends AbstractNode<VariableReference> implement
         private List<Comment> comments = new ArrayList<>();
         private String name;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -109,6 +114,7 @@ public class VariableReference extends AbstractNode<VariableReference> implement
             this.comments = existing.getComments();
             this.name = existing.getName();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -131,9 +137,19 @@ public class VariableReference extends AbstractNode<VariableReference> implement
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public VariableReference build() {
-            VariableReference variableReference = new VariableReference(name, sourceLocation, comments, ignoredChars);
-            return variableReference;
+            return new VariableReference(name, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

@@ -7,10 +7,14 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<ObjectField> {
@@ -21,8 +25,8 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
     public static final String CHILD_VALUE = "value";
 
     @Internal
-    protected ObjectField(String name, Value value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+    protected ObjectField(String name, Value value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.value = value;
     }
@@ -34,7 +38,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
      * @param value of the field
      */
     public ObjectField(String name, Value value) {
-        this(name, value, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, value, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -84,7 +88,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
 
     @Override
     public ObjectField deepCopy() {
-        return new ObjectField(name, deepCopy(this.value), getSourceLocation(), getComments(), getIgnoredChars());
+        return new ObjectField(name, deepCopy(this.value), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -116,6 +120,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
         private List<Comment> comments = new ArrayList<>();
         private Value value;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -126,6 +131,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
             this.comments = existing.getComments();
             this.name = existing.getName();
             this.value = existing.getValue();
+            this.additionalData = existing.getAdditionalData();
         }
 
 
@@ -154,9 +160,19 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public ObjectField build() {
-            ObjectField objectField = new ObjectField(name, value, sourceLocation, comments, ignoredChars);
-            return objectField;
+            return new ObjectField(name, value, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

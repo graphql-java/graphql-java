@@ -8,11 +8,15 @@ import graphql.util.TraverserContext;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<FloatValue> {
@@ -20,8 +24,8 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
     private final BigDecimal value;
 
     @Internal
-    protected FloatValue(BigDecimal value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+    protected FloatValue(BigDecimal value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.value = value;
     }
 
@@ -31,7 +35,7 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
      * @param value of the Float
      */
     public FloatValue(BigDecimal value) {
-        this(value, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(value, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public BigDecimal getValue() {
@@ -78,7 +82,7 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
 
     @Override
     public FloatValue deepCopy() {
-        return new FloatValue(value, getSourceLocation(), getComments(), getIgnoredChars());
+        return new FloatValue(value, getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     public FloatValue transform(Consumer<Builder> builderConsumer) {
@@ -105,6 +109,7 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
         private BigDecimal value;
         private List<Comment> comments = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -113,6 +118,7 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.value = existing.getValue();
+            this.additionalData = existing.getAdditionalData();
         }
 
 
@@ -136,9 +142,19 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public FloatValue build() {
-            FloatValue floatValue = new FloatValue(value, sourceLocation, comments, ignoredChars);
-            return floatValue;
+            return new FloatValue(value, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }
