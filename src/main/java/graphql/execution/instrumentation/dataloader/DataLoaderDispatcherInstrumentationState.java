@@ -3,7 +3,6 @@ package graphql.execution.instrumentation.dataloader;
 import graphql.execution.ExecutionId;
 import graphql.execution.instrumentation.InstrumentationState;
 import org.dataloader.DataLoaderRegistry;
-import org.slf4j.Logger;
 
 /**
  * A base class that keeps track of whether aggressive batching can be used
@@ -12,7 +11,6 @@ public class DataLoaderDispatcherInstrumentationState implements Instrumentation
 
     private final TrackingApproach approach;
     private final DataLoaderRegistry dataLoaderRegistry;
-    private final InstrumentationState state;
     private final boolean hasNoDataLoaders;
     private boolean aggressivelyBatching = true;
 
@@ -21,7 +19,7 @@ public class DataLoaderDispatcherInstrumentationState implements Instrumentation
 
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.approach = options.getApproach(dataLoaderRegistry);
-        this.state = approach.createState(executionId);
+        approach.createState(executionId);
         hasNoDataLoaders = dataLoaderRegistry.getKeys().isEmpty();
 
     }
@@ -45,10 +43,4 @@ public class DataLoaderDispatcherInstrumentationState implements Instrumentation
     boolean hasNoDataLoaders() {
         return hasNoDataLoaders;
     }
-
-    InstrumentationState getState() {
-        return state;
-    }
-
-
 }

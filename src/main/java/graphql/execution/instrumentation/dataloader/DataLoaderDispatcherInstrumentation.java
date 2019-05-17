@@ -110,9 +110,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         //
         if (executionContext.getOperationDefinition().getOperation() == OperationDefinition.Operation.QUERY) {
             ExecutionStrategy queryStrategy = executionContext.getQueryStrategy();
-            if (queryStrategy instanceof AsyncExecutionStrategy) {
-                return true;
-            }
+            return (queryStrategy instanceof AsyncExecutionStrategy);
         }
         return false;
     }
@@ -135,7 +133,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
             };
 
         }
-        return state.getApproach().beginExecutionStrategy(parameters.withNewState(state.getState()));
+        return state.getApproach().beginExecutionStrategy(parameters);
     }
 
     @Override
@@ -156,7 +154,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
             };
 
         }
-        return state.getApproach().beginDeferredField(parameters.withNewState(state.getState()));
+        return state.getApproach().beginDeferredField(parameters);
     }
 
     @Override
@@ -168,7 +166,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         if (state.hasNoDataLoaders()) {
             return new SimpleInstrumentationContext<>();
         }
-        return state.getApproach().beginFieldFetch(parameters.withNewState(state.getState()));
+        return state.getApproach().beginFieldFetch(parameters);
     }
 
     @Override

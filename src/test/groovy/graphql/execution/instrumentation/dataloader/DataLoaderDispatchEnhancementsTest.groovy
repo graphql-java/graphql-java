@@ -4,6 +4,7 @@ package graphql.execution.instrumentation.dataloader
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
+import graphql.TestUtil
 import graphql.execution.ExecutionId
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -65,7 +66,7 @@ class DataLoaderDispatchEnhancementsTest extends Specification {
 
     def queryTemplate = "{query(input:%s) { a }}"
 
-    def schema = graphql.TestUtil.schemaFile("simpleSchema.graphqls", simpleWiring())
+    def schema = TestUtil.schemaFile("simpleSchema.graphqls", simpleWiring())
 
     def "basic batch loading is possible across executions via instrumentation"() {
         given:
@@ -79,17 +80,20 @@ class DataLoaderDispatchEnhancementsTest extends Specification {
             String query = String.format(queryTemplate, i)
             executionInputList.add(ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(registry).build())
         }
-
         def graphql = GraphQL.newGraphQL(schema).instrumentation(batchingInstrumentation).build()
+
         when:
+        //We want to try batching some requests together, so execute in parallel
         List<CompletableFuture<ExecutionResult>> resultFutures = executionInputList.parallelStream()
                 .map{input -> graphql.executeAsync(input)}.collect(Collectors.toList())
         resultFutures.forEach{future -> future.get()}
+
         then:
+        //If no fetches happened, something blew up, and with a high rep count at least one batch will happen
         0 < fetchCounter.get() &&  fetchCounter.get() < REP_COUNT
     }
 
-    def "Request batch loading across executions performs as expected"() {
+    def "Waiting to dispatch until all executions within a request are ready is possible"() {
         given:
         def registry = registry()
         fetchCounter.set(0)
@@ -101,16 +105,19 @@ class DataLoaderDispatchEnhancementsTest extends Specification {
             executionInputList.add(ExecutionInput.newExecutionInput()
                     .query(query).executionId(id).dataLoaderRegistry(registry).build())
         }
-
         def tracking = new RequestLevelTrackingApproach(ids, registry)
         def batchingInstrumentation = new DataLoaderDispatcherInstrumentation(
                 DataLoaderDispatcherInstrumentationOptions.newOptions().withTrackingApproach{tracking})
         def graphql = GraphQL.newGraphQL(schema).instrumentation(batchingInstrumentation).build()
-                when:
+
+        when:
+        //Since the instrumentation knows about each request, this does not need to be run in parallel
         List<CompletableFuture<ExecutionResult>> resultFutures = executionInputList.stream()
                 .map{input -> graphql.executeAsync(input)}.collect(Collectors.toList())
         resultFutures.forEach{future -> future.get()}
+
         then:
+        //All load calls should be in a single batched request
         fetchCounter.get() == 1
     }
 }

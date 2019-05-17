@@ -91,6 +91,9 @@ public class ExecutionInput {
         return cacheControl;
     }
 
+    /**
+     * @return Id that will be/was used to execute this operation.
+     */
     public ExecutionId getExecutionId() {
         return executionId;
     }

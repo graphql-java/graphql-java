@@ -19,6 +19,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Handles logic common to tracking approaches.
+ */
 public abstract class AbstractTrackingApproach implements TrackingApproach {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractTrackingApproach.class);
@@ -31,10 +34,14 @@ public abstract class AbstractTrackingApproach implements TrackingApproach {
         this.dataLoaderRegistry = dataLoaderRegistry;
     }
 
+    /**
+     * @return allows extending classes to modify the stack.
+     */
     protected RequestStack getStack() {
         return stack;
     }
 
+    @Override
     public ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
         ExecutionId executionId = parameters.getExecutionContext().getExecutionId();
         ExecutionPath path = parameters.getExecutionStrategyParameters().getPath();
@@ -82,10 +89,10 @@ public abstract class AbstractTrackingApproach implements TrackingApproach {
     }
 
     //
-    // thread safety : called with synchronised(callStack)
+    // thread safety : called with synchronised(stack)
     //
-    private boolean handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, RequestStack callStack, ExecutionId executionId, int curLevel) {
-        callStack.increaseHappenedOnFieldValueCalls(executionId, curLevel);
+    private boolean handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, RequestStack stack, ExecutionId executionId, int curLevel) {
+        stack.increaseHappenedOnFieldValueCalls(executionId, curLevel);
         int expectedStrategyCalls = 0;
         for (FieldValueInfo fieldValueInfo : fieldValueInfoList) {
             if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.OBJECT) {
@@ -94,8 +101,8 @@ public abstract class AbstractTrackingApproach implements TrackingApproach {
                 expectedStrategyCalls += getCountForList(fieldValueInfo);
             }
         }
-        callStack.increaseExpectedStrategyCalls(executionId, curLevel + 1, expectedStrategyCalls);
-        return dispatchIfNeeded(callStack, executionId, curLevel + 1);
+        stack.increaseExpectedStrategyCalls(executionId, curLevel + 1, expectedStrategyCalls);
+        return dispatchIfNeeded(stack, executionId, curLevel + 1);
     }
 
     private int getCountForList(FieldValueInfo fieldValueInfo) {
@@ -110,6 +117,7 @@ public abstract class AbstractTrackingApproach implements TrackingApproach {
         return result;
     }
 
+    @Override
     public DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
         ExecutionId executionId = parameters.getExecutionContext().getExecutionId();
         int level = parameters.getExecutionStrategyParameters().getPath().getLevel();
@@ -139,6 +147,7 @@ public abstract class AbstractTrackingApproach implements TrackingApproach {
         };
     }
 
+    @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
         ExecutionId executionId = parameters.getExecutionContext().getExecutionId();
         ExecutionPath path = parameters.getEnvironment().getExecutionStepInfo().getPath();
@@ -172,27 +181,28 @@ public abstract class AbstractTrackingApproach implements TrackingApproach {
 
 
     //
-    // thread safety : called with synchronised(callStack)
+    // thread safety : called with synchronised(stack)
     //
-    private boolean dispatchIfNeeded(RequestStack callStack, ExecutionId executionId, int level) {
-        if (levelReady(callStack, executionId, level)) {
-            return callStack.dispatchIfNotDispatchedBefore(executionId, level);
+    private boolean dispatchIfNeeded(RequestStack stack, ExecutionId executionId, int level) {
+        if (levelReady(stack, executionId, level)) {
+            return stack.dispatchIfNotDispatchedBefore(executionId, level);
         }
         return false;
     }
 
     //
-    // thread safety : called with synchronised(callStack)
+    // thread safety : called with synchronised(stack)
     //
-    private boolean levelReady(RequestStack callStack, ExecutionId executionId, int level) {
+    private boolean levelReady(RequestStack stack, ExecutionId executionId, int level) {
         if (level == 1) {
             // level 1 is special: there is only one strategy call and that's it
-            return callStack.allFetchesHappened(executionId, 1);
+            return stack.allFetchesHappened(executionId, 1);
         }
-        return (levelReady(callStack, executionId, level - 1) && callStack.allOnFieldCallsHappened(executionId, level - 1)
-            && callStack.allStrategyCallsHappened(executionId, level) && callStack.allFetchesHappened(executionId, level));
+        return (levelReady(stack, executionId, level - 1) && stack.allOnFieldCallsHappened(executionId, level - 1)
+            && stack.allStrategyCallsHappened(executionId, level) && stack.allFetchesHappened(executionId, level));
     }
 
+    @Override
     public void dispatch() {
         synchronized (stack) {
             dispatchWithoutLocking();

@@ -6,6 +6,9 @@ import org.dataloader.DataLoaderRegistry;
 
 import java.util.List;
 
+/**
+ * Dispatching approach that expects to know about all executions before execution starts.
+ */
 public class RequestLevelTrackingApproach extends AbstractTrackingApproach {
 
     public RequestLevelTrackingApproach(List<ExecutionId> executionIds, DataLoaderRegistry dataLoaderRegistry) {

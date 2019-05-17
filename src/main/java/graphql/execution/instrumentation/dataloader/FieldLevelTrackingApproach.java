@@ -6,7 +6,8 @@ import graphql.execution.instrumentation.InstrumentationState;
 import org.dataloader.DataLoaderRegistry;
 
 /**
- * This approach uses field level tracking to achieve its aims of making the data loader more efficient
+ * This approach uses field level tracking to achieve its aims of making the data loader more efficient.
+ * Can handle new/concurrent executions using the same sets of dataloaders, attempting to batch load calls together.
  */
 @Internal
 public class FieldLevelTrackingApproach extends AbstractTrackingApproach {

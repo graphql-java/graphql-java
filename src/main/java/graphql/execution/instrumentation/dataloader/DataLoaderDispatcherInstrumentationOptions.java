@@ -1,7 +1,6 @@
 package graphql.execution.instrumentation.dataloader;
 
 import org.dataloader.DataLoaderRegistry;
-import org.slf4j.Logger;
 
 import java.util.function.Function;
 
@@ -20,7 +19,7 @@ public class DataLoaderDispatcherInstrumentationOptions {
     }
 
     public static DataLoaderDispatcherInstrumentationOptions newOptions() {
-        return new DataLoaderDispatcherInstrumentationOptions(false, (registry) -> new FieldLevelTrackingApproach(registry));
+        return new DataLoaderDispatcherInstrumentationOptions(false, FieldLevelTrackingApproach::new);
     }
 
     public DataLoaderDispatcherInstrumentationOptions withTrackingApproach(Function<DataLoaderRegistry, TrackingApproach> approachFactory) {
