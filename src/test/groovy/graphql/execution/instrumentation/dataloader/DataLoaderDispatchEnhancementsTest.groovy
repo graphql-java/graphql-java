@@ -1,14 +1,12 @@
 package graphql.execution.instrumentation.dataloader
 
-import com.sun.org.apache.regexp.internal.RE
+
 import graphql.ExecutionInput
+import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.execution.ExecutionId
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
-import graphql.schema.GraphQLFieldDefinition
-import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLSchema
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.TypeRuntimeWiring
 import org.dataloader.BatchLoader
@@ -18,16 +16,13 @@ import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.Collectors
 import java.util.stream.Stream
 
-class DataLoaderDispatchEnhancementsTest extends Specification{
+class DataLoaderDispatchEnhancementsTest extends Specification {
 
-    def REP_COUNT = 50
-
-    def executor = Executors.newFixedThreadPool(REP_COUNT)
+    def REP_COUNT = 1000
 
     class A {
         String a
@@ -62,7 +57,7 @@ class DataLoaderDispatchEnhancementsTest extends Specification{
         }
     }
 
-    def abWiring() {
+    def simpleWiring() {
         RuntimeWiring wiring = RuntimeWiring.newRuntimeWiring()
             .type(TypeRuntimeWiring.newTypeWiring("Query").dataFetcher("query", queryDataFetcher).build()).build()
         wiring
@@ -70,11 +65,14 @@ class DataLoaderDispatchEnhancementsTest extends Specification{
 
     def queryTemplate = "{query(input:%s) { a }}"
 
+    def schema = graphql.TestUtil.schemaFile("simpleSchema.graphqls", simpleWiring())
+
     def "basic batch loading is possible across executions via instrumentation"() {
         given:
-        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
         def registry = registry()
-        def schema = graphql.TestUtil.schemaFile("ABSchema.graphqls", abWiring())
+        FieldLevelTrackingApproach approach = new FieldLevelTrackingApproach(registry)
+        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation(
+                DataLoaderDispatcherInstrumentationOptions.newOptions().withTrackingApproach{approach})
         fetchCounter.set(0)
         List<ExecutionInput> executionInputList = new ArrayList<>()
         for (int i = 0; i < REP_COUNT; i++) {
@@ -84,9 +82,9 @@ class DataLoaderDispatchEnhancementsTest extends Specification{
 
         def graphql = GraphQL.newGraphQL(schema).instrumentation(batchingInstrumentation).build()
         when:
-        executor.submit{executionInputList.parallelStream()
-                .map{input -> graphql.executeAsync(input)}
-                .map{future -> future.join()}.collect(Collectors.toList())}.get()
+        List<CompletableFuture<ExecutionResult>> resultFutures = executionInputList.parallelStream()
+                .map{input -> graphql.executeAsync(input)}.collect(Collectors.toList())
+        resultFutures.forEach{future -> future.get()}
         then:
         0 < fetchCounter.get() &&  fetchCounter.get() < REP_COUNT
     }
@@ -100,17 +98,18 @@ class DataLoaderDispatchEnhancementsTest extends Specification{
         for (int i = 0; i < REP_COUNT; i++) {
             String query = String.format(queryTemplate, i)
             ExecutionId id = ids.get(i)
-            executionInputList.add(ExecutionInput.newExecutionInput().query(query).executionId(id).dataLoaderRegistry(registry).build())
+            executionInputList.add(ExecutionInput.newExecutionInput()
+                    .query(query).executionId(id).dataLoaderRegistry(registry).build())
         }
-        def schema = graphql.TestUtil.schemaFile("ABSchema.graphqls", abWiring())
+
         def tracking = new RequestLevelTrackingApproach(ids, registry)
         def batchingInstrumentation = new DataLoaderDispatcherInstrumentation(
-                DataLoaderDispatcherInstrumentationOptions.newOptions().withTrackingApproach{dlr -> tracking})
+                DataLoaderDispatcherInstrumentationOptions.newOptions().withTrackingApproach{tracking})
         def graphql = GraphQL.newGraphQL(schema).instrumentation(batchingInstrumentation).build()
-        when:
-        executor.submit{executionInputList.parallelStream()
-                .map{input -> graphql.executeAsync(input)}
-                .map{future -> future.join()}.collect(Collectors.toList())}.get()
+                when:
+        List<CompletableFuture<ExecutionResult>> resultFutures = executionInputList.stream()
+                .map{input -> graphql.executeAsync(input)}.collect(Collectors.toList())
+        resultFutures.forEach{future -> future.get()}
         then:
         fetchCounter.get() == 1
     }
