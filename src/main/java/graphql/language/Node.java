@@ -7,6 +7,7 @@ import graphql.util.TraverserContext;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The base interface for virtually all graphql language elements
@@ -61,6 +62,18 @@ public interface Node<T extends Node> extends Serializable {
      * @return the ignored chars
      */
     IgnoredChars getIgnoredChars();
+
+    /**
+     * A node can have a map of additional data associated with it.
+     *
+     * <p>
+     * NOTE: The reason this is a map of strings is so the Node
+     * can stay an immutable object, which Map<String,Object> would not allow
+     * say.
+     *
+     * @return the map of additional data about this node
+     */
+    Map<String, String> getAdditionalData();
 
     /**
      * Compares just the content and not the children.
