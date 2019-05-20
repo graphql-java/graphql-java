@@ -11,6 +11,7 @@ import graphql.parser.Parser
 import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLUnionType
+import graphql.util.TraversalControl
 import spock.lang.Specification
 
 import static graphql.language.AstPrinter.printAstCompact
@@ -206,7 +207,7 @@ class QueryTransformerTest extends Specification {
         when:
         queryTransformer.transform(visitor)
         then:
-        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "root" && it.fieldDefinition.type.name == "Root" && it.parentType.name == "Query" })
+        1 * visitor.visitFieldWithControl({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "root" && it.fieldDefinition.type.name == "Root" && it.parentType.name == "Query" }) >> TraversalControl.CONTINUE
         1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironment it -> it.fragmentSpread.name == "frag" })
         0 * _
     }

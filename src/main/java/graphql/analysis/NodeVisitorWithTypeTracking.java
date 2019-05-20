@@ -162,7 +162,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
             return TraversalControl.ABORT;
         }
 
-        preOrderCallback.visitField(environment);
+        TraversalControl traversalControl = preOrderCallback.visitFieldWithControl(environment);
 
         GraphQLUnmodifiedType unmodifiedType = unwrapAll(fieldDefinition.getType());
         QueryTraversalContext fieldEnv = (unmodifiedType instanceof GraphQLCompositeType)
@@ -171,7 +171,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
 
 
         context.setVar(QueryTraversalContext.class, fieldEnv);
-        return TraversalControl.CONTINUE;
+        return traversalControl;
     }
 
 }
