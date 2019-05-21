@@ -16,9 +16,7 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
-import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
-import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
 
 /**
@@ -69,7 +67,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         this.description = description;
         this.definition = definition;
         this.directives = directives;
-        buildMap(sortGraphQLTypes(fields));
+        buildMap(fields);
     }
 
     private void buildMap(List<GraphQLInputObjectField> fields) {
@@ -152,9 +150,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
     }
 
     @PublicApi
-    public static class Builder {
-        private String name;
-        private String description;
+    public static class Builder extends GraphqlTypeBuilder {
         private InputObjectTypeDefinition definition;
         private final Map<String, GraphQLInputObjectField> fields = new LinkedHashMap<>();
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
@@ -170,13 +166,21 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
             this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
 
+        @Override
         public Builder name(String name) {
-            this.name = name;
+            super.name(name);
             return this;
         }
 
+        @Override
         public Builder description(String description) {
-            this.description = description;
+            super.description(description);
+            return this;
+        }
+
+        @Override
+        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
+            super.comparatorRegistry(comparatorRegistry);
             return this;
         }
 
@@ -270,7 +274,12 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         }
 
         public GraphQLInputObjectType build() {
-            return new GraphQLInputObjectType(name, description, valuesToList(fields), valuesToList(directives), definition);
+            return new GraphQLInputObjectType(
+                    name,
+                    description,
+                    sort(fields, GraphQLInputObjectType.class, GraphQLInputObjectField.class),
+                    sort(directives, GraphQLInputObjectType.class, GraphQLDirective.class),
+                    definition);
         }
     }
 }

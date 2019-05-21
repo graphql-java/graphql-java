@@ -18,9 +18,7 @@ import java.util.function.UnaryOperator;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactoryEnvironment;
-import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
-import static graphql.util.FpKit.valuesToList;
 
 /**
  * Fields are the ways you get data values in graphql and a field definition represents a field, its type, the arguments it takes
@@ -84,7 +82,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         this.description = description;
         this.type = type;
         this.dataFetcherFactory = dataFetcherFactory;
-        this.arguments = Collections.unmodifiableList(sortGraphQLTypes(arguments));
+        this.arguments = Collections.unmodifiableList(arguments);
         this.directives = directives;
         this.deprecationReason = deprecationReason;
         this.definition = definition;
@@ -193,10 +191,8 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
     }
 
     @PublicApi
-    public static class Builder {
+    public static class Builder extends GraphqlTypeBuilder {
 
-        private String name;
-        private String description;
         private GraphQLOutputType type;
         private DataFetcherFactory<?> dataFetcherFactory;
         private String deprecationReason;
@@ -220,18 +216,26 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         }
 
 
+        @Override
         public Builder name(String name) {
-            this.name = name;
+            super.name(name);
+            return this;
+        }
+
+        @Override
+        public Builder description(String description) {
+            super.description(description);
+            return this;
+        }
+
+        @Override
+        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
+            super.comparatorRegistry(comparatorRegistry);
             return this;
         }
 
         public Builder definition(FieldDefinition definition) {
             this.definition = definition;
-            return this;
-        }
-
-        public Builder description(String description) {
-            this.description = description;
             return this;
         }
 
@@ -414,8 +418,15 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
             if (dataFetcherFactory == null) {
                 dataFetcherFactory = DataFetcherFactories.useDataFetcher(new PropertyDataFetcher<>(name));
             }
-            return new GraphQLFieldDefinition(name, description, type, dataFetcherFactory,
-                    valuesToList(arguments), deprecationReason, valuesToList(directives), definition);
+            return new GraphQLFieldDefinition(
+                    name,
+                    description,
+                    type,
+                    dataFetcherFactory,
+                    sort(arguments, GraphQLFieldDefinition.class, GraphQLArgument.class),
+                    deprecationReason,
+                    sort(directives, GraphQLFieldDefinition.class, GraphQLDirective.class),
+                    definition);
         }
     }
 }

@@ -29,6 +29,7 @@ import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
+import graphql.schema.GraphqlTypeComparatorRegistry;
 import graphql.util.FpKit;
 
 import java.util.ArrayList;
@@ -218,11 +219,12 @@ public class SchemaGeneratorHelper {
     }
 
     // builds directives from a type and its extensions
-    public GraphQLDirective buildDirective(Directive directive, Set<GraphQLDirective> directiveDefinitions, DirectiveLocation directiveLocation) {
+    public GraphQLDirective buildDirective(Directive directive, Set<GraphQLDirective> directiveDefinitions, DirectiveLocation directiveLocation, GraphqlTypeComparatorRegistry comparatorRegistry) {
         Optional<GraphQLDirective> directiveDefinition = directiveDefinitions.stream().filter(dd -> dd.getName().equals(directive.getName())).findFirst();
         GraphQLDirective.Builder builder = GraphQLDirective.newDirective()
                 .name(directive.getName())
                 .description(buildDescription(directive, null))
+                .comparatorRegistry(comparatorRegistry)
                 .validLocations(directiveLocation);
 
         List<GraphQLArgument> arguments = directive.getArguments().stream()

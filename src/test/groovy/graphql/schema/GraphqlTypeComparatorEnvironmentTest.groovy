@@ -1,13 +1,11 @@
-package graphql.schema.idl
+package graphql.schema
 
 import graphql.AssertException
-import graphql.schema.GraphQLFieldDefinition
-import graphql.schema.GraphQLObjectType
 import spock.lang.Specification
 
-import static graphql.schema.idl.SchemaPrinterComparatorEnvironment.newEnvironment
+import static graphql.schema.GraphqlTypeComparatorEnvironment.newEnvironment
 
-class SchemaPrinterComparatorEnvironmentTest extends Specification {
+class GraphqlTypeComparatorEnvironmentTest extends Specification {
 
     def "valid instance"() {
         when:

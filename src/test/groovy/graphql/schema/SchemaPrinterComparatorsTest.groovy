@@ -1,6 +1,8 @@
-package graphql.schema.idl
+package graphql.schema
 
+import graphql.TestUtil
 import graphql.schema.*
+import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLInt
@@ -15,10 +17,10 @@ import static graphql.schema.GraphQLInterfaceType.newInterface
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLScalarType.newScalar
 import static graphql.schema.GraphQLUnionType.newUnionType
-import static graphql.schema.idl.DefaultSchemaPrinterComparatorRegistry.DEFAULT_COMPARATOR
-import static graphql.schema.idl.DefaultSchemaPrinterComparatorRegistry.newComparators
+import static graphql.schema.DefaultGraphqlTypeComparatorRegistry.DEFAULT_COMPARATOR
+import static graphql.schema.DefaultGraphqlTypeComparatorRegistry.newComparators
 import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
-import static graphql.schema.idl.SchemaPrinterComparatorEnvironment.newEnvironment
+import static graphql.schema.GraphqlTypeComparatorEnvironment.newEnvironment
 
 class SchemaPrinterComparatorsTest extends Specification {
 
@@ -197,8 +199,8 @@ scalar TestScalar @a(a, bb) @bb(a, bb)
 
         when:
         def registry = newComparators()
-                .addComparator({ it.parentType(GraphQLScalarType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
+                .addComparator({ it.parentType(GraphQLScalarType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
 
         def options = defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(true).setComparators(registry)
@@ -219,8 +221,8 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         when:
         def registry = newComparators()
-                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
+                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
 
         def options = defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(true).setComparators(registry)
@@ -243,10 +245,10 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         when:
         def registry = newComparators()
-                .addComparator({ it.parentType(GraphQLEnumType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLEnumType.class).elementType(GraphQLEnumValueDefinition.class) }, GraphQLEnumValueDefinition.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLEnumValueDefinition.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
+                .addComparator({ it.parentType(GraphQLEnumType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLEnumType.class).elementType(GraphQLEnumValueDefinition.class) }, GraphQLEnumValueDefinition.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLEnumValueDefinition.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
 
         def options = defaultOptions().setComparators(registry)
@@ -271,9 +273,9 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         when:
         def registry = newComparators()
-                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.elementType(GraphQLEnumValueDefinition.class) }, GraphQLEnumValueDefinition.class, byGreatestLength)
-                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
+                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLEnumValueDefinition.class) }, GraphQLEnumValueDefinition.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
 
         def options = defaultOptions().setComparators(registry)
@@ -298,9 +300,9 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         when:
         def registry = newComparators()
-                .addComparator({ it.parentType(GraphQLUnionType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLUnionType.class).elementType(GraphQLOutputType.class) }, GraphQLOutputType.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
+                .addComparator({ it.parentType(GraphQLUnionType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLUnionType.class).elementType(GraphQLOutputType.class) }, GraphQLOutputType.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
 
         def options = defaultOptions().setComparators(registry)
@@ -322,9 +324,9 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         when:
         def registry = newComparators()
-                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.elementType(GraphQLOutputType.class) }, GraphQLOutputType.class, byGreatestLength)
-                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
+                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLOutputType.class) }, GraphQLOutputType.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
 
         def options = defaultOptions().setComparators(registry)
@@ -354,11 +356,11 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         when:
         def registry = newComparators()
-                .addComparator({ it.parentType(GraphQLInterfaceType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLInterfaceType.class).elementType(GraphQLFieldDefinition.class) }, GraphQLFieldDefinition.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
+                .addComparator({ it.parentType(GraphQLInterfaceType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLInterfaceType.class).elementType(GraphQLFieldDefinition.class) }, GraphQLFieldDefinition.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
 
         def options = defaultOptions().setComparators(registry)
@@ -391,9 +393,9 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         when:
         def registry = newComparators()
-                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.elementType(GraphQLFieldDefinition.class) }, GraphQLFieldDefinition.class, byGreatestLength)
-                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
+                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLFieldDefinition.class) }, GraphQLFieldDefinition.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
 
         def options = defaultOptions().setComparators(registry)
@@ -426,12 +428,12 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         when:
         def registry = newComparators()
-                .addComparator({ it.parentType(GraphQLObjectType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLObjectType.class).elementType(GraphQLOutputType.class) }, GraphQLOutputType.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLObjectType.class).elementType(GraphQLFieldDefinition.class) }, GraphQLFieldDefinition.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
+                .addComparator({ it.parentType(GraphQLObjectType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLObjectType.class).elementType(GraphQLOutputType.class) }, GraphQLOutputType.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLObjectType.class).elementType(GraphQLFieldDefinition.class) }, GraphQLFieldDefinition.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
         def options = defaultOptions().setComparators(registry)
         def result = new SchemaPrinter(options).print(objectType)
@@ -463,10 +465,10 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         when:
         def registry = newComparators()
-                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.elementType(GraphQLOutputType.class) }, GraphQLOutputType.class, byGreatestLength)
-                .addComparator({ it.elementType(GraphQLFieldDefinition.class) }, GraphQLFieldDefinition.class, byGreatestLength)
-                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
+                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLOutputType.class) }, GraphQLOutputType.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLFieldDefinition.class) }, GraphQLFieldDefinition.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
         def options = defaultOptions().setComparators(registry)
         def result = new SchemaPrinter(options).print(objectType)
@@ -496,10 +498,10 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         when:
         def registry = newComparators()
-                .addComparator({ it.parentType(GraphQLInputObjectType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLInputObjectType.class).elementType(GraphQLInputObjectField.class) }, GraphQLInputObjectField.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLInputObjectField.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
+                .addComparator({ it.parentType(GraphQLInputObjectType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLInputObjectType.class).elementType(GraphQLInputObjectField.class) }, GraphQLInputObjectField.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLInputObjectField.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
         def options = defaultOptions().setComparators(registry)
         def result = new SchemaPrinter(options).print(inputObjectType)
@@ -529,9 +531,9 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         when:
         def registry = newComparators()
-                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.elementType(GraphQLInputObjectField.class) }, GraphQLInputObjectField.class, byGreatestLength)
-                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
+                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLInputObjectField.class) }, GraphQLInputObjectField.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
         def options = defaultOptions().setComparators(registry)
         def result = new SchemaPrinter(options).print(inputObjectType)
@@ -551,7 +553,7 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         when:
         def registry = newComparators()
-                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
+                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
         def options = defaultOptions().setComparators(registry)
         def printer = new SchemaPrinter(options)
@@ -566,7 +568,7 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         when:
         def registry = newComparators()
-                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
+                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
         def options = defaultOptions().setComparators(registry)
         def printer = new SchemaPrinter(options)
@@ -586,8 +588,8 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         when:
         def registry = newComparators()
-                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
+                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
         def options = defaultOptions().setComparators(registry)
         def result = new SchemaPrinter(options).directivesString(GraphQLFieldDefinition.class, field.directives)
@@ -605,8 +607,8 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         when:
         def registry = newComparators()
-                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
+                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
         def options = defaultOptions().setComparators(registry)
         def result = new SchemaPrinter(options).directivesString(GraphQLFieldDefinition.class, field.directives)
@@ -672,12 +674,12 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         when:
         def registry = newComparators()
-                .addComparator({ it.elementType(GraphQLFieldDefinition.class) }, GraphQLFieldDefinition.class, byGreatestLength)
-                .addComparator({ it.elementType(GraphQLInputObjectField.class) }, GraphQLInputObjectField.class, byGreatestLength)
-                .addComparator({ it.elementType(GraphQLEnumValueDefinition.class) }, GraphQLEnumValueDefinition.class, byGreatestLength)
-                .addComparator({ it.elementType(GraphQLOutputType.class) }, GraphQLOutputType.class, byGreatestLength)
-                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, byGreatestLength)
-                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, byGreatestLength)
+                .addComparator({ it.elementType(GraphQLFieldDefinition.class) }, GraphQLFieldDefinition.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLInputObjectField.class) }, GraphQLInputObjectField.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLEnumValueDefinition.class) }, GraphQLEnumValueDefinition.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLOutputType.class) }, GraphQLOutputType.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
         def options = defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(true).setComparators(registry)
         def printer = new SchemaPrinter(options)
@@ -732,14 +734,14 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
     def "DefaultSchemaPrinterComparatorRegistry finds expected comparator"() {
         given:
         def registry = newComparators()
-                .addComparator({ it.elementType(GraphQLFieldDefinition.class) }, GraphQLFieldDefinition.class, byGreatestLength)
+                .addComparator({ it.elementType(GraphQLFieldDefinition.class) }, GraphQLFieldDefinition.class, TestUtil.byGreatestLength)
                 .build()
 
         when:
         def result = registry.getComparator(newEnvironment().elementType(GraphQLFieldDefinition.class).build())
 
         then:
-        result == byGreatestLength
+        result == TestUtil.byGreatestLength
     }
 
     def "DefaultSchemaPrinterComparatorRegistry provides default comparator when environment is not found"() {
