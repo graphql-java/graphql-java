@@ -361,5 +361,43 @@ class AstTransformerTest extends Specification {
 
     }
 
+    def "change different kind of children"() {
+        def document = TestUtil.parseQuery("{ field(arg1:1, arg2:2) @directive1 @directive2}")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitDirective(Directive node, TraverserContext<Node> context) {
+                if (node.name == "directive2") {
+                    deleteNode(context)
+                    insertAfter(context, new Directive("newDirective2"))
+                } else {
+                    insertAfter(context, new Directive("after1Directive"))
+                }
+                TraversalControl.CONTINUE
+            }
+
+            @Override
+            TraversalControl visitArgument(Argument node, TraverserContext<Node> context) {
+                if (node.name == "arg1") {
+                    deleteNode(context)
+                    insertAfter(context, new Argument("newArg1", new IntValue(BigInteger.TEN)))
+                } else {
+                    insertAfter(context, new Argument("arg3", new IntValue(BigInteger.TEN)))
+                }
+                TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {field(newArg1:10,arg2:2,arg3:10) @directive1 @after1Directive @newDirective2}"
+
+    }
+
 
 }
