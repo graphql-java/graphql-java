@@ -1,6 +1,7 @@
 package graphql;
 
 import graphql.cachecontrol.CacheControl;
+import graphql.execution.ExecutionId;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.Collections;
@@ -22,14 +23,15 @@ public class ExecutionInput {
     private final Map<String, Object> variables;
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
+    private final ExecutionId executionId;
 
 
     public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables) {
-        this(query, operationName, context, root, variables, new DataLoaderRegistry(), null);
+        this(query, operationName, context, root, variables, new DataLoaderRegistry(), null, null);
     }
 
     @Internal
-    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl) {
+    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, ExecutionId executionId) {
         this.query = query;
         this.operationName = operationName;
         this.context = context;
@@ -37,6 +39,7 @@ public class ExecutionInput {
         this.variables = variables;
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.cacheControl = cacheControl;
+        this.executionId = executionId;
     }
 
     /**
@@ -89,22 +92,29 @@ public class ExecutionInput {
     }
 
     /**
+     * @return Id that will be/was used to execute this operation.
+     */
+    public ExecutionId getExecutionId() {
+        return executionId;
+    }
+
+    /**
      * This helps you transform the current ExecutionInput object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
-     *
      * @return a new ExecutionInput object based on calling build on that builder
      */
     public ExecutionInput transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder()
-                .query(this.query)
-                .operationName(this.operationName)
-                .context(this.context)
-                .root(this.root)
-                .dataLoaderRegistry(this.dataLoaderRegistry)
-                .cacheControl(this.cacheControl)
-                .variables(this.variables);
+            .query(this.query)
+            .operationName(this.operationName)
+            .context(this.context)
+            .root(this.root)
+            .dataLoaderRegistry(this.dataLoaderRegistry)
+            .cacheControl(this.cacheControl)
+            .variables(this.variables)
+            .executionId(executionId);
 
         builderConsumer.accept(builder);
 
@@ -115,13 +125,14 @@ public class ExecutionInput {
     @Override
     public String toString() {
         return "ExecutionInput{" +
-                "query='" + query + '\'' +
-                ", operationName='" + operationName + '\'' +
-                ", context=" + context +
-                ", root=" + root +
-                ", variables=" + variables +
-                ", dataLoaderRegistry=" + dataLoaderRegistry +
-                '}';
+            "query='" + query + '\'' +
+            ", operationName='" + operationName + '\'' +
+            ", context=" + context +
+            ", root=" + root +
+            ", variables=" + variables +
+            ", dataLoaderRegistry=" + dataLoaderRegistry +
+            ", executionId= " + executionId +
+            '}';
     }
 
     /**
@@ -135,7 +146,6 @@ public class ExecutionInput {
      * Creates a new builder of ExecutionInput objects with the given query
      *
      * @param query the query to execute
-     *
      * @return a new builder of ExecutionInput objects
      */
     public static Builder newExecutionInput(String query) {
@@ -151,6 +161,7 @@ public class ExecutionInput {
         private Map<String, Object> variables = Collections.emptyMap();
         private DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
         private CacheControl cacheControl = CacheControl.newCacheControl();
+        private ExecutionId executionId = null;
 
         public Builder query(String query) {
             this.query = query;
@@ -163,10 +174,19 @@ public class ExecutionInput {
         }
 
         /**
+         * A default one will be assigned, but you can set your own.
+         * @param executionId an execution id object
+         * @return this builder
+         */
+        public Builder executionId(ExecutionId executionId) {
+            this.executionId = executionId;
+            return this;
+        }
+
+        /**
          * By default you will get a {@link GraphQLContext} object but you can set your own.
          *
          * @param context the context object to use
-         *
          * @return this builder
          */
         public Builder context(Object context) {
@@ -196,11 +216,11 @@ public class ExecutionInput {
         }
 
         /**
-         * You should create new {@link org.dataloader.DataLoaderRegistry}s and new {@link org.dataloader.DataLoader}s for each execution.  Do not re-use
+         * You should create new {@link org.dataloader.DataLoaderRegistry}s and new {@link org.dataloader.DataLoader}s for each execution.  Do not
+         * re-use
          * instances as this will create unexpected results.
          *
          * @param dataLoaderRegistry a registry of {@link org.dataloader.DataLoader}s
-         *
          * @return this builder
          */
         public Builder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {
@@ -214,7 +234,7 @@ public class ExecutionInput {
         }
 
         public ExecutionInput build() {
-            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry, cacheControl);
+            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry, cacheControl, executionId);
         }
     }
 }
