@@ -60,7 +60,7 @@ public class NodeZipper<T> {
     }
 
     public NodeZipper<T> modifyNode(Function<T, T> transform) {
-        return new NodeZipper<T>(transform.apply(curNode), breadcrumbs, nodeAdapter);
+        return new NodeZipper<T>(transform.apply(curNode), breadcrumbs, nodeAdapter, this.modificationType);
     }
 
     public NodeZipper<T> deleteNode() {
@@ -76,13 +76,13 @@ public class NodeZipper<T> {
     }
 
     public NodeZipper<T> withNewNode(T newNode) {
-        return new NodeZipper<T>(newNode, breadcrumbs, nodeAdapter);
+        return new NodeZipper<T>(newNode, breadcrumbs, nodeAdapter, this.modificationType);
     }
 
     public NodeZipper<T> moveUp() {
         T node = getParent();
         List<Breadcrumb<T>> newBreadcrumbs = breadcrumbs.subList(1, breadcrumbs.size());
-        return new NodeZipper<>(node, newBreadcrumbs, nodeAdapter);
+        return new NodeZipper<>(node, newBreadcrumbs, nodeAdapter, this.modificationType);
     }
 
     public T toRoot() {
