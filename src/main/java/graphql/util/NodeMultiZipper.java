@@ -5,7 +5,6 @@ import graphql.PublicApi;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,13 +95,20 @@ public class NodeMultiZipper<T> {
         assertNotEmpty(sameParent, "expected at least one zipper");
 
         Map<String, List<T>> childrenMap = nodeAdapter.getNamedChildren(parent);
-        //first replace nodes
-        // delete node makes the list shorter inserting it after problem
-        // add increases in it, inserting it makes it hard
-
         Map<String, Integer> indexCorrection = new LinkedHashMap<>();
 
-        sameParent.sort(Comparator.comparingInt(zipper -> zipper.getBreadcrumbs().get(0).getLocation().getIndex()));
+        sameParent.sort((zipper1, zipper2) -> {
+            int index1 = zipper1.getBreadcrumbs().get(0).getLocation().getIndex();
+            int index2 = zipper2.getBreadcrumbs().get(0).getLocation().getIndex();
+            if (index1 != index2) {
+                return Integer.compare(index1, index2);
+            }
+            if (zipper1.getModificationType() == NodeZipper.ModificationType.INSERT_BEFORE) {
+                return zipper2.getModificationType() == NodeZipper.ModificationType.INSERT_BEFORE ? 0 : -1;
+            }
+            return zipper2.getModificationType() == NodeZipper.ModificationType.INSERT_BEFORE ? 1 : 0;
+
+        });
 
         for (NodeZipper<T> zipper : sameParent) {
             NodeLocation location = zipper.getBreadcrumbs().get(0).getLocation();
