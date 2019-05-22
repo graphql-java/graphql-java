@@ -7,8 +7,9 @@ import spock.lang.Specification
 
 import static graphql.language.AstPrinter.printAstCompact
 import static graphql.util.TreeTransformerUtil.changeNode
-import static graphql.util.TreeTransformerUtil.changeParentNode
 import static graphql.util.TreeTransformerUtil.deleteNode
+import static graphql.util.TreeTransformerUtil.insertAfter
+import static graphql.util.TreeTransformerUtil.insertBefore
 
 class AstTransformerTest extends Specification {
 
@@ -212,7 +213,7 @@ class AstTransformerTest extends Specification {
 
     }
 
-    def "add sibling"() {
+    def "add sibling after"() {
         def document = TestUtil.parseQuery("{foo}")
 
         AstTransformer astTransformer = new AstTransformer()
@@ -221,9 +222,7 @@ class AstTransformerTest extends Specification {
 
             @Override
             TraversalControl visitField(Field node, TraverserContext<Node> context) {
-                return changeParentNode(context, { selectionSet ->
-                    selectionSet.transform({ builder -> builder.selection(new Field("foo2")) })
-                })
+                return insertAfter(context, new Field("foo2"))
             }
         }
 
@@ -233,6 +232,52 @@ class AstTransformerTest extends Specification {
 
         then:
         printAstCompact(newDocument) == "query {foo foo2}"
+
+    }
+
+    def "add sibling before"() {
+        def document = TestUtil.parseQuery("{foo}")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitField(Field node, TraverserContext<Node> context) {
+                return insertBefore(context, new Field("foo2"))
+            }
+        }
+
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {foo2 foo}"
+
+    }
+
+    def "add sibling before and after"() {
+        def document = TestUtil.parseQuery("{foo}")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitField(Field node, TraverserContext<Node> context) {
+                insertBefore(context, new Field("foo2"))
+                insertAfter(context, new Field("foo3"))
+                TraversalControl.CONTINUE
+            }
+        }
+
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {foo2 foo foo3}"
 
     }
 
@@ -248,9 +293,7 @@ class AstTransformerTest extends Specification {
                 if (field.name == "toDelete") {
                     return deleteNode(context);
                 } else if (field.name == "a") {
-                    return changeParentNode(context, { selectionSet ->
-                        selectionSet.transform({ builder -> builder.selection(new Field("newOne")) })
-                    })
+                    return insertAfter(context, new Field("newOne"))
                 } else {
                     return TraversalControl.CONTINUE
                 }
@@ -262,6 +305,35 @@ class AstTransformerTest extends Specification {
 
         then:
         printAstCompact(newDocument) == "query {root {a(arg:1) {x y} newOne}}"
+
+    }
+
+    def "delete node and change sibling"() {
+        def document = TestUtil.parseQuery("{root { a(arg: 1) { x y } toDelete { x y } } }")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitField(Field field, TraverserContext<Node> context) {
+                if (field.name == "toDelete") {
+                    return deleteNode(context);
+                } else if (field.name == "a") {
+                    def newNode = field.transform({ builder -> builder.name("a-changed") })
+                    return changeNode(context, newNode)
+                } else {
+                    return TraversalControl.CONTINUE
+                }
+            }
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {root {a-changed(arg:1) {x y}}}"
+
 
     }
 

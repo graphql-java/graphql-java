@@ -149,7 +149,7 @@ public interface TraverserContext<T> {
     /**
      * Sets the new accumulate value.
      *
-     * Can be retrieved by getA
+     * Can be retrieved by {@link #getNewAccumulate()}
      *
      * @param accumulate to set
      */

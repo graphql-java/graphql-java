@@ -5,18 +5,15 @@ import graphql.PublicApi;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
 
 @PublicApi
 public class NodeMultiZipper<T> {
@@ -89,9 +86,7 @@ public class NodeMultiZipper<T> {
 
 
     private List<NodeZipper<T>> getDeepestZippers(List<NodeZipper<T>> zippers) {
-        Map<Integer, List<NodeZipper<T>>> grouped = zippers
-                .stream()
-                .collect(groupingBy(astZipper -> astZipper.getBreadcrumbs().size(), LinkedHashMap::new, mapping(Function.identity(), toList())));
+        Map<Integer, List<NodeZipper<T>>> grouped = FpKit.groupingBy(zippers, astZipper -> astZipper.getBreadcrumbs().size());
 
         Integer maxLevel = Collections.max(grouped.keySet());
         return grouped.get(maxLevel);
@@ -99,18 +94,41 @@ public class NodeMultiZipper<T> {
 
     private NodeZipper<T> moveUp(T parent, List<NodeZipper<T>> sameParent) {
         assertNotEmpty(sameParent, "expected at least one zipper");
+
         Map<String, List<T>> childrenMap = nodeAdapter.getNamedChildren(parent);
+        //first replace nodes
+        // delete node makes the list shorter inserting it after problem
+        // add increases in it, inserting it makes it hard
+
+        Map<String, Integer> indexCorrection = new LinkedHashMap<>();
+
+        sameParent.sort(Comparator.comparingInt(zipper -> zipper.getBreadcrumbs().get(0).getLocation().getIndex()));
 
         for (NodeZipper<T> zipper : sameParent) {
             NodeLocation location = zipper.getBreadcrumbs().get(0).getLocation();
-            childrenMap.computeIfAbsent(location.getName(), (key) -> new ArrayList<>());
-            List<T> childrenList = childrenMap.get(location.getName());
-            if (childrenList.size() > location.getIndex()) {
-                childrenList.set(location.getIndex(), zipper.getCurNode());
-            } else {
-                childrenList.add(zipper.getCurNode());
+            Integer ixDiff = indexCorrection.getOrDefault(location.getName(), 0);
+            int ix = location.getIndex() + ixDiff;
+            String name = location.getName();
+            switch (zipper.getModificationType()) {
+                case REPLACE:
+                    childrenMap.get(name).set(ix, zipper.getCurNode());
+                    break;
+                case DELETE:
+                    childrenMap.get(name).remove(ix);
+                    indexCorrection.put(name, ix - 1);
+                    break;
+                case INSERT_AFTER:
+                    childrenMap.get(name).add(ix + 1, zipper.getCurNode());
+                    indexCorrection.put(name, ix + 1);
+                    break;
+                case INSERT_BEFORE:
+                    childrenMap.get(name).add(ix, zipper.getCurNode());
+                    indexCorrection.put(name, ix + 1);
+                    break;
             }
+
         }
+
         T newNode = nodeAdapter.withNewChildren(parent, childrenMap);
         List<Breadcrumb<T>> newBreadcrumbs = sameParent.get(0).getBreadcrumbs().subList(1, sameParent.get(0).getBreadcrumbs().size());
         return new NodeZipper<>(newNode, newBreadcrumbs, this.nodeAdapter);
