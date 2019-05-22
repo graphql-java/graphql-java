@@ -123,12 +123,12 @@ public class NodeMultiZipper<T> {
                     childrenMap.get(name).remove(ix);
                     indexCorrection.put(name, ixDiff - 1);
                     break;
-                case INSERT_AFTER:
-                    childrenMap.get(name).add(ix + 1, zipper.getCurNode());
-                    indexCorrection.put(name, ixDiff + 1);
-                    break;
                 case INSERT_BEFORE:
                     childrenMap.get(name).add(ix, zipper.getCurNode());
+                    indexCorrection.put(name, ixDiff + 1);
+                    break;
+                case INSERT_AFTER:
+                    childrenMap.get(name).add(ix + 1, zipper.getCurNode());
                     indexCorrection.put(name, ixDiff + 1);
                     break;
             }

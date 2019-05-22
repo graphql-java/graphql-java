@@ -103,11 +103,11 @@ public class NodeZipper<T> {
             case DELETE:
                 childrenForParent.get(name).remove(ix);
                 break;
-            case INSERT_AFTER:
-                childrenForParent.get(name).add(ix + 1, curNode);
-                break;
             case INSERT_BEFORE:
                 childrenForParent.get(name).add(ix, curNode);
+                break;
+            case INSERT_AFTER:
+                childrenForParent.get(name).add(ix + 1, curNode);
                 break;
         }
         curNode = nodeAdapter.withNewChildren(firstBreadcrumb.getNode(), childrenForParent);
