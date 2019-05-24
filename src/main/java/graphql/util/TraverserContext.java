@@ -54,9 +54,14 @@ public interface TraverserContext<T> {
     void deleteNode();
 
     /**
-     * @return true if the current node is deleted
+     * @return true if the current node is deleted (by calling {@link #deleteNode()}
      */
     boolean isDeleted();
+
+    /**
+     * @return true if the current node is changed (by calling {@link #changeNode(Object)}
+     */
+    boolean isChanged();
 
     /**
      * Returns parent context.

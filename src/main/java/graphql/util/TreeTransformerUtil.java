@@ -5,11 +5,25 @@ import graphql.PublicApi;
 @PublicApi
 public class TreeTransformerUtil {
 
+    /**
+     * Can be called multiple times to change the current node of the context. The latest call wins
+     *
+     * @param context
+     * @param changedNode
+     * @param <T>
+     *
+     * @return
+     */
     public static <T> TraversalControl changeNode(TraverserContext<T> context, T changedNode) {
         NodeZipper<T> zipperWithChangedNode = context.getVar(NodeZipper.class).withNewNode(changedNode);
         NodeMultiZipper<T> multiZipper = context.getNewAccumulate();
-        context.setAccumulate(multiZipper.withNewZipper(zipperWithChangedNode));
-        context.changeNode(changedNode);
+        if (context.isChanged()) {
+            context.setAccumulate(multiZipper.withReplacedZipperForNode(context.thisNode(), changedNode));
+            context.changeNode(changedNode);
+        } else {
+            context.setAccumulate(multiZipper.withNewZipper(zipperWithChangedNode));
+            context.changeNode(changedNode);
+        }
         return TraversalControl.CONTINUE;
     }
 

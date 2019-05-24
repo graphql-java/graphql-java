@@ -474,5 +474,29 @@ class AstTransformerTest extends Specification {
 
     }
 
+    def "changeNode can be called multiple times"() {
+        def document = TestUtil.parseQuery("{ field }")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitField(Field node, TraverserContext<Node> context) {
+                changeNode(context, new Field("change1"))
+                changeNode(context, new Field("change2"))
+                changeNode(context, new Field("change3"))
+                TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {change3}"
+
+    }
+
 
 }

@@ -83,6 +83,15 @@ public class NodeMultiZipper<T> {
         return new NodeMultiZipper<>(commonRoot, newZippers, this.nodeAdapter);
     }
 
+    public NodeMultiZipper<T> withReplacedZipperForNode(T currentNode, T newNode) {
+        int index = FpKit.findIndex(zippers, zipper -> zipper.getCurNode() == currentNode);
+        assertTrue(index >= 0, "No current zipper found for provided node");
+        NodeZipper<T> newZipper = zippers.get(index).withNewNode(newNode);
+        List<NodeZipper<T>> newZippers = new ArrayList<>(zippers);
+        newZippers.set(index, newZipper);
+        return new NodeMultiZipper<>(commonRoot, newZippers, this.nodeAdapter);
+    }
+
 
     private List<NodeZipper<T>> getDeepestZippers(List<NodeZipper<T>> zippers) {
         Map<Integer, List<NodeZipper<T>>> grouped = FpKit.groupingBy(zippers, astZipper -> astZipper.getBreadcrumbs().size());
