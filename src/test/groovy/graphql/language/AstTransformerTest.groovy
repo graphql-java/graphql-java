@@ -7,8 +7,9 @@ import spock.lang.Specification
 
 import static graphql.language.AstPrinter.printAstCompact
 import static graphql.util.TreeTransformerUtil.changeNode
-import static graphql.util.TreeTransformerUtil.changeParentNode
 import static graphql.util.TreeTransformerUtil.deleteNode
+import static graphql.util.TreeTransformerUtil.insertAfter
+import static graphql.util.TreeTransformerUtil.insertBefore
 
 class AstTransformerTest extends Specification {
 
@@ -212,7 +213,7 @@ class AstTransformerTest extends Specification {
 
     }
 
-    def "add sibling"() {
+    def "add sibling after"() {
         def document = TestUtil.parseQuery("{foo}")
 
         AstTransformer astTransformer = new AstTransformer()
@@ -221,9 +222,7 @@ class AstTransformerTest extends Specification {
 
             @Override
             TraversalControl visitField(Field node, TraverserContext<Node> context) {
-                return changeParentNode(context, { selectionSet ->
-                    selectionSet.transform({ builder -> builder.selection(new Field("foo2")) })
-                })
+                return insertAfter(context, new Field("foo2"))
             }
         }
 
@@ -233,6 +232,52 @@ class AstTransformerTest extends Specification {
 
         then:
         printAstCompact(newDocument) == "query {foo foo2}"
+
+    }
+
+    def "add sibling before"() {
+        def document = TestUtil.parseQuery("{foo}")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitField(Field node, TraverserContext<Node> context) {
+                return insertBefore(context, new Field("foo2"))
+            }
+        }
+
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {foo2 foo}"
+
+    }
+
+    def "add sibling before and after"() {
+        def document = TestUtil.parseQuery("{foo}")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitField(Field node, TraverserContext<Node> context) {
+                insertBefore(context, new Field("foo2"))
+                insertAfter(context, new Field("foo3"))
+                TraversalControl.CONTINUE
+            }
+        }
+
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {foo2 foo foo3}"
 
     }
 
@@ -248,9 +293,7 @@ class AstTransformerTest extends Specification {
                 if (field.name == "toDelete") {
                     return deleteNode(context);
                 } else if (field.name == "a") {
-                    return changeParentNode(context, { selectionSet ->
-                        selectionSet.transform({ builder -> builder.selection(new Field("newOne")) })
-                    })
+                    return insertAfter(context, new Field("newOne"))
                 } else {
                     return TraversalControl.CONTINUE
                 }
@@ -262,6 +305,35 @@ class AstTransformerTest extends Specification {
 
         then:
         printAstCompact(newDocument) == "query {root {a(arg:1) {x y} newOne}}"
+
+    }
+
+    def "delete node and change sibling"() {
+        def document = TestUtil.parseQuery("{root { a(arg: 1) { x y } toDelete { x y } } }")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitField(Field field, TraverserContext<Node> context) {
+                if (field.name == "toDelete") {
+                    return deleteNode(context);
+                } else if (field.name == "a") {
+                    def newNode = field.transform({ builder -> builder.name("a-changed") })
+                    return changeNode(context, newNode)
+                } else {
+                    return TraversalControl.CONTINUE
+                }
+            }
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {root {a-changed(arg:1) {x y}}}"
+
 
     }
 
@@ -286,6 +358,143 @@ class AstTransformerTest extends Specification {
 
         then:
         printAstCompact(newDocument) == "query B {fieldB}"
+
+    }
+
+    def "change different kind of children"() {
+        def document = TestUtil.parseQuery("{ field(arg1:1, arg2:2) @directive1 @directive2}")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitDirective(Directive node, TraverserContext<Node> context) {
+                if (node.name == "directive1") {
+                    insertAfter(context, new Directive("after1Directive"))
+                } else {
+                    deleteNode(context)
+                    insertAfter(context, new Directive("newDirective2"))
+                }
+                TraversalControl.CONTINUE
+            }
+
+            @Override
+            TraversalControl visitArgument(Argument node, TraverserContext<Node> context) {
+                if (node.name == "arg1") {
+                    deleteNode(context)
+                    insertAfter(context, new Argument("newArg1", new IntValue(BigInteger.TEN)))
+                } else {
+                    insertAfter(context, new Argument("arg3", new IntValue(BigInteger.TEN)))
+                }
+                TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {field(newArg1:10,arg2:2,arg3:10) @directive1 @after1Directive @newDirective2}"
+
+    }
+
+    def "insertAfter and then insertBefore"() {
+        def document = TestUtil.parseQuery("{ field @directive1 @directive2}")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitDirective(Directive node, TraverserContext<Node> context) {
+                if (node.name == "directive1") {
+                    insertAfter(context, new Directive("after"))
+                    insertBefore(context, new Directive("before"))
+                }
+                TraversalControl.CONTINUE
+            }
+
+            @Override
+            TraversalControl visitArgument(Argument node, TraverserContext<Node> context) {
+                TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {field @before @directive1 @after @directive2}"
+
+    }
+
+
+    def "mix of all modifications at once"() {
+        def document = TestUtil.parseQuery("{ field(arg1:1, arg2:2) @directive1 @directive2}")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitDirective(Directive node, TraverserContext<Node> context) {
+
+                if (node.name == "directive1") {
+                    insertAfter(context, new Directive("d4"))
+                    insertBefore(context, new Directive("d5"))
+                } else {
+                    insertBefore(context, new Directive("d1"))
+                    insertBefore(context, new Directive("d2"))
+                    deleteNode(context)
+                    insertAfter(context, new Directive("d3"))
+                }
+                TraversalControl.CONTINUE
+            }
+
+            @Override
+            TraversalControl visitArgument(Argument node, TraverserContext<Node> context) {
+                if (node.name == "arg1") {
+                    insertAfter(context, new Argument("a1", new IntValue(BigInteger.TEN)))
+                } else {
+                    deleteNode(context)
+                    insertAfter(context, new Argument("a2", new IntValue(BigInteger.TEN)))
+                    insertAfter(context, new Argument("a3", new IntValue(BigInteger.TEN)))
+                    insertBefore(context, new Argument("a4", new IntValue(BigInteger.TEN)))
+                }
+                TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {field(arg1:1,a1:10,a4:10,a2:10,a3:10) @d5 @directive1 @d4 @d1 @d2 @d3}"
+
+    }
+
+    def "changeNode can be called multiple times"() {
+        def document = TestUtil.parseQuery("{ field }")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitField(Field node, TraverserContext<Node> context) {
+                changeNode(context, new Field("change1"))
+                changeNode(context, new Field("change2"))
+                changeNode(context, new Field("change3"))
+                TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {change3}"
 
     }
 
