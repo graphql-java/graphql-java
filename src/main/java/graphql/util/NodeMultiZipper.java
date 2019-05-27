@@ -1,6 +1,5 @@
 package graphql.util;
 
-import graphql.Assert;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
@@ -27,6 +26,9 @@ public class NodeMultiZipper<T> {
         this.nodeAdapter = nodeAdapter;
     }
 
+    /**
+     * @return can be null if the root node is marked as deleted
+     */
     public T toRootNode() {
         if (zippers.size() == 0) {
             return commonRoot;
@@ -49,7 +51,7 @@ public class NodeMultiZipper<T> {
             curZippers.addAll(newZippers);
         }
         assertTrue(curZippers.size() == 1, "unexpected state: all zippers must share the same root node");
-        return Assert.assertNotNull(curZippers.get(0).toRoot());
+        return curZippers.get(0).toRoot();
     }
 
     public T getCommonRoot() {
