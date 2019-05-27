@@ -85,9 +85,16 @@ public class NodeZipper<T> {
         return new NodeZipper<>(node, newBreadcrumbs, nodeAdapter, this.modificationType);
     }
 
+
+    /**
+     * @return null if it is the root node and marked as deleted, otherwise never null
+     */
     public T toRoot() {
-        if (breadcrumbs.size() == 0) {
+        if (breadcrumbs.size() == 0 && modificationType != ModificationType.DELETE) {
             return this.curNode;
+        }
+        if (breadcrumbs.size() == 0 && modificationType == ModificationType.DELETE) {
+            return null;
         }
         T curNode = this.curNode;
 

@@ -499,4 +499,27 @@ class AstTransformerTest extends Specification {
     }
 
 
+    def "delete root node"() {
+        def document = TestUtil.parseQuery("{ field }")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitDocument(Document node, TraverserContext<Node> context) {
+                deleteNode(context)
+                TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        newDocument == null
+
+    }
+
+
 }
