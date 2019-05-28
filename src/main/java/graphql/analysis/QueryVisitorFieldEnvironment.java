@@ -32,7 +32,9 @@ public interface QueryVisitorFieldEnvironment {
     GraphQLOutputType getParentType();
 
     /**
-     * @return the unmodified fields container fot the current type
+     * @return the unmodified fields container fot the current type. This is the unwrapped version of {@link #getParentType()}
+     * It is either {@link graphql.schema.GraphQLObjectType} or {@link graphql.schema.GraphQLInterfaceType}. because these
+     * are the only {@link GraphQLFieldsContainer}
      *
      * @throws IllegalStateException if the current field is __typename see {@link #isTypeNameIntrospectionField()}
      */
