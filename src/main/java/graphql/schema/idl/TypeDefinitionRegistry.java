@@ -205,7 +205,7 @@ public class TypeDefinitionRegistry {
     }
 
     public void remove(SDLDefinition definition) {
-        assertNotNull("definition to remove can't be null");
+        assertNotNull(definition, "definition to remove can't be null");
         if (definition instanceof ObjectTypeExtensionDefinition) {
             removeFromList(objectTypeExtensions, (TypeDefinition) definition);
         } else if (definition instanceof InterfaceTypeExtensionDefinition) {
