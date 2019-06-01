@@ -101,7 +101,33 @@ class GraphQLCodeRegistryTest extends Specification {
         (codeRegistry.getDataFetcher(objectType("parentType3"), field("fieldE")) as NamedDF).name == "E"
 
         codeRegistry.getDataFetcher(objectType("parentType2"), field("A")) instanceof PropertyDataFetcher // a default one
+    }
 
+    def "data fetchers can be retrieved using field coordinates"() {
+        when:
+        def codeRegistryBuilder = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(FieldCoordinates.coordinates("parentType1", "A"), new NamedDF("A"))
+                .dataFetcher(FieldCoordinates.coordinates("parentType2", "B"), new NamedDF("B"))
+                .dataFetchers("parentType3", [fieldD: new NamedDF("D"), fieldE: new NamedDF("E")])
+
+        // we can do a read on a half built code registry, namely for schema directive wiring use cases
+        then:
+        (codeRegistryBuilder.getDataFetcher(FieldCoordinates.coordinates("parentType1", "A"), field("A")) as NamedDF).name == "A"
+        (codeRegistryBuilder.getDataFetcher(FieldCoordinates.coordinates("parentType2", "B"), field("B")) as NamedDF).name == "B"
+        (codeRegistryBuilder.getDataFetcher(FieldCoordinates.coordinates("parentType3", "fieldD"), field("fieldD")) as NamedDF).name == "D"
+        (codeRegistryBuilder.getDataFetcher(FieldCoordinates.coordinates("parentType3", "fieldE"), field("fieldE")) as NamedDF).name == "E"
+
+        codeRegistryBuilder.getDataFetcher(FieldCoordinates.coordinates("parentType2", "A"), field("A")) instanceof PropertyDataFetcher // a default one
+
+        when:
+        def codeRegistry = codeRegistryBuilder.build()
+        then:
+        (codeRegistry.getDataFetcher(FieldCoordinates.coordinates("parentType1", "A"), field("A")) as NamedDF).name == "A"
+        (codeRegistry.getDataFetcher(FieldCoordinates.coordinates("parentType2", "B"), field("B")) as NamedDF).name == "B"
+        (codeRegistry.getDataFetcher(FieldCoordinates.coordinates("parentType3", "fieldD"), field("fieldD")) as NamedDF).name == "D"
+        (codeRegistry.getDataFetcher(FieldCoordinates.coordinates("parentType3", "fieldE"), field("fieldE")) as NamedDF).name == "E"
+
+        codeRegistry.getDataFetcher(FieldCoordinates.coordinates("parentType2", "A"), field("A")) instanceof PropertyDataFetcher // a default one
     }
 
     def "records type resolvers against unions and interfaces"() {
