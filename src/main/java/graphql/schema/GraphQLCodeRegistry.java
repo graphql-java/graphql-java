@@ -55,16 +55,28 @@ public class GraphQLCodeRegistry {
      * @return the DataFetcher associated with this field.  All fields have data fetchers
      */
     public DataFetcher getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
-        return getDataFetcherImpl(parentType, fieldDefinition, dataFetcherMap, systemDataFetcherMap);
+        return getDataFetcherImpl(FieldCoordinates.coordinates(parentType, fieldDefinition), fieldDefinition, dataFetcherMap, systemDataFetcherMap);
     }
 
-    private static DataFetcher getDataFetcherImpl(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition, Map<FieldCoordinates, DataFetcherFactory> dataFetcherMap, Map<String, DataFetcherFactory> systemDataFetcherMap) {
-        assertNotNull(parentType);
+    /**
+     * Returns a data fetcher associated with a field located at specified coordinates.
+     *
+     * @param coordinates     the field coordinates
+     * @param fieldDefinition the field definition
+     *
+     * @return the DataFetcher associated with this field.  All fields have data fetchers
+     */
+    public DataFetcher getDataFetcher(FieldCoordinates coordinates, GraphQLFieldDefinition fieldDefinition) {
+        return getDataFetcherImpl(coordinates, fieldDefinition, dataFetcherMap, systemDataFetcherMap);
+    }
+
+    private static DataFetcher getDataFetcherImpl(FieldCoordinates coordinates, GraphQLFieldDefinition fieldDefinition, Map<FieldCoordinates, DataFetcherFactory> dataFetcherMap, Map<String, DataFetcherFactory> systemDataFetcherMap) {
+        assertNotNull(coordinates);
         assertNotNull(fieldDefinition);
 
         DataFetcherFactory dataFetcherFactory = systemDataFetcherMap.get(fieldDefinition.getName());
         if (dataFetcherFactory == null) {
-            dataFetcherFactory = dataFetcherMap.get(FieldCoordinates.coordinates(parentType, fieldDefinition));
+            dataFetcherFactory = dataFetcherMap.get(coordinates);
             if (dataFetcherFactory == null) {
                 dataFetcherFactory = DataFetcherFactories.useDataFetcher(new PropertyDataFetcher<>(fieldDefinition.getName()));
             }
@@ -183,7 +195,19 @@ public class GraphQLCodeRegistry {
          * @return the DataFetcher associated with this field.  All fields have data fetchers
          */
         public DataFetcher getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
-            return getDataFetcherImpl(parentType, fieldDefinition, dataFetcherMap, systemDataFetcherMap);
+            return getDataFetcherImpl(FieldCoordinates.coordinates(parentType, fieldDefinition), fieldDefinition, dataFetcherMap, systemDataFetcherMap);
+        }
+
+        /**
+         * Returns a data fetcher associated with a field located at specified coordinates.
+         *
+         * @param coordinates     the field coordinates
+         * @param fieldDefinition the field definition
+         *
+         * @return the DataFetcher associated with this field.  All fields have data fetchers
+         */
+        public DataFetcher getDataFetcher(FieldCoordinates coordinates, GraphQLFieldDefinition fieldDefinition) {
+            return getDataFetcherImpl(coordinates, fieldDefinition, dataFetcherMap, systemDataFetcherMap);
         }
 
         /**
