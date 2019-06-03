@@ -898,6 +898,24 @@ class GraphQLTest extends Specification {
         ! (queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(instrumentation)
     }
 
+    def "disabling data loader instrumentation leaves instrumentation as is"() {
+        given:
+        def queryStrategy = new CaptureStrategy()
+        def instrumentation = new SimpleInstrumentation()
+        def builder = GraphQL.newGraphQL(simpleSchema())
+            .queryExecutionStrategy(queryStrategy)
+            .instrumentation(instrumentation)
+
+        when:
+        def graphql = builder
+                .dataLoaderInstrumentationEnabled(false)
+                .build()
+        graphql.execute('{ hello }')
+
+        then:
+        queryStrategy.instrumentation == instrumentation
+    }
+
     def "query with triple quoted multi line strings"() {
         given:
         GraphQLFieldDefinition.Builder fieldDefinition = newFieldDefinition()

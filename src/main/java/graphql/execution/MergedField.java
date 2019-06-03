@@ -5,6 +5,7 @@ import graphql.language.Argument;
 import graphql.language.Field;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -119,7 +120,7 @@ public class MergedField {
      * @return all merged fields
      */
     public List<Field> getFields() {
-        return new ArrayList<>(fields);
+        return Collections.unmodifiableList(fields);
     }
 
     public static Builder newMergedField() {
@@ -141,14 +142,14 @@ public class MergedField {
     }
 
     public static class Builder {
-        private List<Field> fields = new ArrayList<>();
+        private List<Field> fields;
 
         private Builder() {
-
+            this.fields = new ArrayList<>();
         }
 
         private Builder(MergedField existing) {
-            this.fields = existing.getFields();
+            this.fields = new ArrayList<>(existing.getFields());
         }
 
         public Builder fields(List<Field> fields) {

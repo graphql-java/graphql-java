@@ -56,9 +56,8 @@ class DataFetchingEnvironmentImplTest extends Specification {
         value == "argVal"
         when:
         dataFetchingEnvironment.getArguments().put("arg", "some other value")
-        value = dataFetchingEnvironment.getArguments().get("arg")
         then:
-        value == "argVal"
+        thrown(UnsupportedOperationException)
     }
 
     def "copying works as expected from execution context"() {
@@ -87,7 +86,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
                 .executionStepInfo(Mock(ExecutionStepInfo))
                 .parentType(Mock(GraphQLType))
                 .graphQLSchema(Mock(GraphQLSchema))
-                .fragmentsByName(Mock(Map))
+                .fragmentsByName(fragmentByName)
                 .executionId(Mock(ExecutionId))
                 .selectionSet(Mock(DataFetchingFieldSelectionSet))
                 .operationDefinition(operationDefinition)

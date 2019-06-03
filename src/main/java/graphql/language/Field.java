@@ -7,6 +7,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -133,12 +134,12 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     }
 
     public List<Argument> getArguments() {
-        return new ArrayList<>(arguments);
+        return Collections.unmodifiableList(arguments);
     }
 
     @Override
     public List<Directive> getDirectives() {
-        return new ArrayList<>(directives);
+        return Collections.unmodifiableList(directives);
     }
 
     @Override
@@ -147,7 +148,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     }
 
     public Map<String, String> getAdditionalData() {
-        return new LinkedHashMap<>(additionalData);
+        return Collections.unmodifiableMap(additionalData);
     }
 
     @Override
