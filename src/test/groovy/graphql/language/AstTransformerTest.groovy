@@ -474,6 +474,67 @@ class AstTransformerTest extends Specification {
 
     }
 
+    def "replace first , insert After twice, replace second"() {
+        def document = TestUtil.parseQuery("{ first second }")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitField(Field field, TraverserContext<Node> context) {
+                if (field.name == "first") {
+                    changeNode(context, new Field("first-changed"))
+                    return TraversalControl.CONTINUE
+                } else {
+                    insertAfter(context, new Field("after-second-1"))
+                    insertAfter(context, new Field("after-second-2"))
+                    changeNode(context, new Field("second-changed"))
+                    return TraversalControl.CONTINUE
+                }
+
+            }
+
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {first-changed second-changed after-second-1 after-second-2}"
+
+    }
+
+    def "replaced and inserted in random order"() {
+        def document = TestUtil.parseQuery("{ field }")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitField(Field field, TraverserContext<Node> context) {
+                insertBefore(context, new Field("before-1"))
+                changeNode(context, new Field("changed"))
+                insertAfter(context, new Field("after-1"))
+                insertAfter(context, new Field("after-2"))
+                changeNode(context, new Field("changed"))
+                insertBefore(context, new Field("before-2"))
+                insertAfter(context, new Field("after-3"))
+                return TraversalControl.CONTINUE
+
+            }
+
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {before-1 before-2 changed after-1 after-2 after-3}"
+
+    }
+
     def "changeNode can be called multiple times"() {
         def document = TestUtil.parseQuery("{ field }")
 
