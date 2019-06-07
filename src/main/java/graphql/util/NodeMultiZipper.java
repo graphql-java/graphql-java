@@ -12,6 +12,7 @@ import java.util.Optional;
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
+import static graphql.util.NodeZipper.ModificationType.REPLACE;
 
 @PublicApi
 public class NodeMultiZipper<T> {
@@ -114,10 +115,16 @@ public class NodeMultiZipper<T> {
             if (index1 != index2) {
                 return Integer.compare(index1, index2);
             }
-            if (zipper1.getModificationType() == NodeZipper.ModificationType.INSERT_BEFORE) {
-                return zipper2.getModificationType() == NodeZipper.ModificationType.INSERT_BEFORE ? 0 : -1;
+            NodeZipper.ModificationType modificationType1 = zipper1.getModificationType();
+            NodeZipper.ModificationType modificationType2 = zipper2.getModificationType();
+
+            if (modificationType1 == REPLACE) {
+                return -1;
             }
-            return zipper2.getModificationType() == NodeZipper.ModificationType.INSERT_BEFORE ? 1 : 0;
+            if (modificationType1 == NodeZipper.ModificationType.INSERT_BEFORE) {
+                return modificationType2 == NodeZipper.ModificationType.INSERT_BEFORE ? 0 : -1;
+            }
+            return modificationType2 == NodeZipper.ModificationType.INSERT_BEFORE ? 1 : 0;
 
         });
 

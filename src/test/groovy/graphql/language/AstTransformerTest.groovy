@@ -474,6 +474,37 @@ class AstTransformerTest extends Specification {
 
     }
 
+    def "replace first , insert After twice, replace second"() {
+        def document = TestUtil.parseQuery("{ first second }")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitField(Field field, TraverserContext<Node> context) {
+                if (field.name == "first") {
+                    changeNode(context, new Field("first-changed"))
+                    return TraversalControl.CONTINUE
+                } else {
+                    insertAfter(context, new Field("after-second-1"))
+                    insertAfter(context, new Field("after-second-2"))
+                    changeNode(context, new Field("second-changed"))
+                    return TraversalControl.CONTINUE
+                }
+
+            }
+
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {first-changed second-changed after-second-1 after-second-2}"
+
+    }
+
     def "changeNode can be called multiple times"() {
         def document = TestUtil.parseQuery("{ field }")
 
