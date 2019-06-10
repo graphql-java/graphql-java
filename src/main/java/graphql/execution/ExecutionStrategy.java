@@ -519,13 +519,16 @@ public abstract class ExecutionStrategy {
             NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, stepInfoForListElement);
 
             int finalIndex = index;
+            FetchedValue value = unboxPossibleDataFetcherResult(executionContext, parameters, item);
+
             ExecutionStrategyParameters newParameters = parameters.transform(builder ->
                     builder.executionStepInfo(stepInfoForListElement)
                             .nonNullFieldValidator(nonNullableFieldValidator)
                             .listSize(values.size())
+                            .localContext(value.getLocalContext())
                             .currentListIndex(finalIndex)
                             .path(indexedPath)
-                            .source(item)
+                            .source(value.getFetchedValue())
             );
             fieldValueInfos.add(completeValue(executionContext, newParameters));
             index++;
