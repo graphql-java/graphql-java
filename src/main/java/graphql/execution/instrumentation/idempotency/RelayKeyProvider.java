@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * {@link KeyProvider] implementation that assumes Relay-compliant mutations and uses the value of
+ * {@link KeyProvider} implementation that assumes Relay-compliant mutations and uses the value of
  * the <code>clientMutationId</code> input field as the idempotency key (cf.
  * https://facebook.github.io/relay/graphql/mutations.htm).
  *
