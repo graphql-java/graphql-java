@@ -709,6 +709,29 @@ class ExecutionStrategyTest extends Specification {
         executionContext.getErrors()[0].path == ["parent", "child", "foo"]
     }
 
+    def "#1558 forward localContext on nonBoxed return from DataFetcher"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        def fieldType = list(Scalars.GraphQLLong)
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
+        def field = Field.newField("parent").sourceLocation(new SourceLocation(5, 10)).build()
+        def localContext = "localContext"
+        def parameters = newParameters()
+                .path(ExecutionPath.fromList(["parent"]))
+                .localContext(localContext)
+                .field(mergedField(field))
+                .fields(mergedSelectionSet(["parent": [mergedField(field)]]))
+                .executionStepInfo(executionStepInfo)
+                .build()
+
+        when:
+        def fetchedValue = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters, new Object())
+
+        then:
+        fetchedValue.localContext == localContext
+    }
+
     def "#820 processes DataFetcherResult just message"() {
         given:
 

@@ -4,8 +4,9 @@ import graphql.util.TraversalControl
 import graphql.util.TraverserContext
 import spock.lang.Specification
 
-import static graphql.language.NodeTraverser.LeaveOrEnter.ENTER
-import static graphql.language.NodeTraverser.LeaveOrEnter.LEAVE
+import static graphql.util.TraverserContext.Phase.ENTER
+import static graphql.util.TraverserContext.Phase.LEAVE
+
 
 class NodeTraverserTest extends Specification {
 
@@ -148,10 +149,10 @@ class NodeTraverserTest extends Specification {
 
 
     boolean isEnter(TraverserContext context) {
-        return context.getVar(NodeTraverser.LeaveOrEnter.class) == ENTER
+        return context.phase == ENTER
     }
 
     boolean isLeave(TraverserContext context) {
-        return context.getVar(NodeTraverser.LeaveOrEnter.class) == LEAVE
+        return context.phase == LEAVE
     }
 }

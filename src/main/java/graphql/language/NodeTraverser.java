@@ -20,14 +20,6 @@ import java.util.function.Function;
 public class NodeTraverser {
 
 
-    /**
-     * Used to indicate via {@link TraverserContext#getVar(Class)} if the visit happens inside the ENTER or LEAVE phase.
-     */
-    public enum LeaveOrEnter {
-        LEAVE,
-        ENTER
-    }
-
     private final Map<Class<?>, Object> rootVars;
     private final Function<? super Node, ? extends List<Node>> getChildren;
 
@@ -66,13 +58,11 @@ public class NodeTraverser {
 
             @Override
             public TraversalControl enter(TraverserContext<Node> context) {
-                context.setVar(LeaveOrEnter.class, LeaveOrEnter.ENTER);
                 return context.thisNode().accept(context, nodeVisitor);
             }
 
             @Override
             public TraversalControl leave(TraverserContext<Node> context) {
-                context.setVar(LeaveOrEnter.class, LeaveOrEnter.LEAVE);
                 return context.thisNode().accept(context, nodeVisitor);
             }
         };
@@ -104,7 +94,6 @@ public class NodeTraverser {
 
             @Override
             public TraversalControl enter(TraverserContext<Node> context) {
-                context.setVar(LeaveOrEnter.class, LeaveOrEnter.ENTER);
                 return context.thisNode().accept(context, nodeVisitor);
             }
 
@@ -147,7 +136,6 @@ public class NodeTraverser {
 
             @Override
             public TraversalControl leave(TraverserContext<Node> context) {
-                context.setVar(LeaveOrEnter.class, LeaveOrEnter.LEAVE);
                 return context.thisNode().accept(context, nodeVisitor);
             }
 

@@ -9,7 +9,6 @@ import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.Node;
-import graphql.language.NodeTraverser;
 import graphql.language.NodeVisitorStub;
 import graphql.language.TypeName;
 import graphql.schema.GraphQLCodeRegistry;
@@ -24,8 +23,8 @@ import graphql.util.TraverserContext;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.language.NodeTraverser.LeaveOrEnter.LEAVE;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
+import static graphql.util.TraverserContext.Phase.LEAVE;
 
 /**
  * Internally used node visitor which delegates to a {@link QueryVisitor} with type
@@ -61,7 +60,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
 
         QueryVisitorInlineFragmentEnvironment inlineFragmentEnvironment = new QueryVisitorInlineFragmentEnvironmentImpl(inlineFragment, context);
 
-        if (context.getVar(NodeTraverser.LeaveOrEnter.class) == LEAVE) {
+        if (context.getPhase() == LEAVE) {
             postOrderCallback.visitInlineFragment(inlineFragmentEnvironment);
             return TraversalControl.CONTINUE;
         }
@@ -91,7 +90,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
 
         QueryVisitorFragmentDefinitionEnvironment fragmentEnvironment = new QueryVisitorFragmentDefinitionEnvironmentImpl(node, context);
 
-        if (context.getVar(NodeTraverser.LeaveOrEnter.class) == LEAVE) {
+        if (context.getPhase() == LEAVE) {
             postOrderCallback.visitFragmentDefinition(fragmentEnvironment);
             return TraversalControl.CONTINUE;
         }
@@ -116,7 +115,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         }
 
         QueryVisitorFragmentSpreadEnvironment fragmentSpreadEnvironment = new QueryVisitorFragmentSpreadEnvironmentImpl(fragmentSpread, fragmentDefinition, context);
-        if (context.getVar(NodeTraverser.LeaveOrEnter.class) == LEAVE) {
+        if (context.getPhase() == LEAVE) {
             postOrderCallback.visitFragmentSpread(fragmentSpreadEnvironment);
             return TraversalControl.CONTINUE;
         }
@@ -152,8 +151,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
                 parentEnv.getSelectionSetContainer(),
                 context);
 
-        NodeTraverser.LeaveOrEnter leaveOrEnter = context.getVar(NodeTraverser.LeaveOrEnter.class);
-        if (leaveOrEnter == LEAVE) {
+        if (context.getPhase() == LEAVE) {
             postOrderCallback.visitField(environment);
             return TraversalControl.CONTINUE;
         }
@@ -162,7 +160,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
             return TraversalControl.ABORT;
         }
 
-        preOrderCallback.visitField(environment);
+        TraversalControl traversalControl = preOrderCallback.visitFieldWithControl(environment);
 
         GraphQLUnmodifiedType unmodifiedType = unwrapAll(fieldDefinition.getType());
         QueryTraversalContext fieldEnv = (unmodifiedType instanceof GraphQLCompositeType)
@@ -171,7 +169,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
 
 
         context.setVar(QueryTraversalContext.class, fieldEnv);
-        return TraversalControl.CONTINUE;
+        return traversalControl;
     }
 
 }
