@@ -12,6 +12,7 @@ import graphql.execution.batched.BatchedExecutionStrategy
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -895,7 +896,7 @@ class GraphQLTest extends Specification {
         queryStrategy.executionId == goodbye
         queryStrategy.instrumentation instanceof ChainedInstrumentation
         (queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(newInstrumentation)
-        ! (queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(instrumentation)
+        !(queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(instrumentation)
     }
 
     def "disabling data loader instrumentation leaves instrumentation as is"() {
@@ -903,17 +904,49 @@ class GraphQLTest extends Specification {
         def queryStrategy = new CaptureStrategy()
         def instrumentation = new SimpleInstrumentation()
         def builder = GraphQL.newGraphQL(simpleSchema())
-            .queryExecutionStrategy(queryStrategy)
-            .instrumentation(instrumentation)
+                .queryExecutionStrategy(queryStrategy)
+                .instrumentation(instrumentation)
 
         when:
         def graphql = builder
-                .dataLoaderInstrumentationEnabled(false)
+                .doNotAddDefaultInstrumentations()
                 .build()
         graphql.execute('{ hello }')
 
         then:
         queryStrategy.instrumentation == instrumentation
+    }
+
+    def "a single DataLoader instrumentation leaves instrumentation as is"() {
+        given:
+        def queryStrategy = new CaptureStrategy()
+        def instrumentation = new DataLoaderDispatcherInstrumentation()
+        def builder = GraphQL.newGraphQL(simpleSchema())
+                .queryExecutionStrategy(queryStrategy)
+                .instrumentation(instrumentation)
+
+        when:
+        def graphql = builder
+                .build()
+        graphql.execute('{ hello }')
+
+        then:
+        queryStrategy.instrumentation == instrumentation
+    }
+
+    def "DataLoader instrumentation is the default instrumentation"() {
+        given:
+        def queryStrategy = new CaptureStrategy()
+        def builder = GraphQL.newGraphQL(simpleSchema())
+                .queryExecutionStrategy(queryStrategy)
+
+        when:
+        def graphql = builder
+                .build()
+        graphql.execute('{ hello }')
+
+        then:
+        queryStrategy.instrumentation instanceof DataLoaderDispatcherInstrumentation
     }
 
     def "query with triple quoted multi line strings"() {
