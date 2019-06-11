@@ -13,7 +13,6 @@ import graphql.schema.GraphQLSchema;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,8 +74,8 @@ public class ExecutionContextBuilder {
         root = other.getRoot();
         document = other.getDocument();
         operationDefinition = other.getOperationDefinition();
-        variables = new HashMap<>(other.getVariables());
-        fragmentsByName = new HashMap<>(other.getFragmentsByName());
+        variables = new LinkedHashMap<>(other.getVariables());
+        fragmentsByName = new LinkedHashMap<>(other.getFragmentsByName());
         dataLoaderRegistry = other.getDataLoaderRegistry();
         cacheControl = other.getCacheControl();
         errors = new ArrayList<>(other.getErrors());

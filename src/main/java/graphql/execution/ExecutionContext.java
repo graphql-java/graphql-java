@@ -53,10 +53,10 @@ public class ExecutionContext {
         this.queryStrategy = queryStrategy;
         this.mutationStrategy = mutationStrategy;
         this.subscriptionStrategy = subscriptionStrategy;
-        this.fragmentsByName = fragmentsByName;
+        this.fragmentsByName = Collections.unmodifiableMap(fragmentsByName);
+        this.variables = Collections.unmodifiableMap(variables);
         this.document = document;
         this.operationDefinition = operationDefinition;
-        this.variables = variables;
         this.context = context;
         this.root = root;
         this.instrumentation = instrumentation;
