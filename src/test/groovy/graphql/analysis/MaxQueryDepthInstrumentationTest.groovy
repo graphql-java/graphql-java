@@ -35,7 +35,7 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(6) {
 
             @Override
-            QueryTraverser newQueryTraversal(InstrumentationValidationParameters parameters) {
+            QueryTraverser newQueryTraverser(InstrumentationValidationParameters parameters) {
                 return queryTraversal
             }
         }
@@ -63,7 +63,7 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(6) {
 
             @Override
-            QueryTraverser newQueryTraversal(InstrumentationValidationParameters parameters) {
+            QueryTraverser newQueryTraverser(InstrumentationValidationParameters parameters) {
                 return queryTraversal
             }
         }

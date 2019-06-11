@@ -34,7 +34,7 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
         MaxQueryComplexityInstrumentation maxQueryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(6) {
 
             @Override
-            QueryTraverser newQueryTraversal(InstrumentationValidationParameters parameters) {
+            QueryTraverser newQueryTraverser(InstrumentationValidationParameters parameters) {
                 return queryTraversal
             }
         }
@@ -62,7 +62,7 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
         MaxQueryComplexityInstrumentation maxQueryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(6) {
 
             @Override
-            QueryTraverser newQueryTraversal(InstrumentationValidationParameters parameters) {
+            QueryTraverser newQueryTraverser(InstrumentationValidationParameters parameters) {
                 return queryTraversal
             }
         }

@@ -82,7 +82,7 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
             if ((errors != null && errors.size() > 0) || throwable != null) {
                 return;
             }
-            QueryTraverser queryTraverser = newQueryTraversal(parameters);
+            QueryTraverser queryTraverser = newQueryTraverser(parameters);
 
             Map<QueryVisitorFieldEnvironment, Integer> valuesByParent = new LinkedHashMap<>();
             queryTraverser.visitPostOrder(new QueryVisitorStub() {
@@ -122,7 +122,7 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
         return new AbortExecutionException("maximum query complexity exceeded " + totalComplexity + " > " + maxComplexity);
     }
 
-    QueryTraverser newQueryTraversal(InstrumentationValidationParameters parameters) {
+    QueryTraverser newQueryTraverser(InstrumentationValidationParameters parameters) {
         return QueryTraverser.newQueryTraverser()
                 .schema(parameters.getSchema())
                 .document(parameters.getDocument())

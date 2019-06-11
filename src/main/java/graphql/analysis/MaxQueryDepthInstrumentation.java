@@ -54,7 +54,7 @@ public class MaxQueryDepthInstrumentation extends SimpleInstrumentation {
             if ((errors != null && errors.size() > 0) || throwable != null) {
                 return;
             }
-            QueryTraverser queryTraverser = newQueryTraversal(parameters);
+            QueryTraverser queryTraverser = newQueryTraverser(parameters);
             int depth = queryTraverser.reducePreOrder((env, acc) -> Math.max(getPathLength(env.getParentEnvironment()), acc), 0);
             log.debug("Query depth info: {}", depth);
             if (depth > maxDepth) {
@@ -81,7 +81,7 @@ public class MaxQueryDepthInstrumentation extends SimpleInstrumentation {
         return new AbortExecutionException("maximum query depth exceeded " + depth + " > " + maxDepth);
     }
 
-    QueryTraverser newQueryTraversal(InstrumentationValidationParameters parameters) {
+    QueryTraverser newQueryTraverser(InstrumentationValidationParameters parameters) {
         return QueryTraverser.newQueryTraverser()
                 .schema(parameters.getSchema())
                 .document(parameters.getDocument())
