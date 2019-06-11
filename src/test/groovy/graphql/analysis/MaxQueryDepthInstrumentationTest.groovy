@@ -31,11 +31,11 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         def query = createQuery("""
             { bar { thisIsWrong } }
             """)
-        def queryTraversal = Mock(QueryTraversal)
+        def queryTraversal = Mock(QueryTraverser)
         MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(6) {
 
             @Override
-            QueryTraversal newQueryTraversal(InstrumentationValidationParameters parameters) {
+            QueryTraverser newQueryTraverser(InstrumentationValidationParameters parameters) {
                 return queryTraversal
             }
         }
@@ -59,11 +59,11 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         def query = createQuery("""
             { bar { thisIsWrong } }
             """)
-        def queryTraversal = Mock(QueryTraversal)
+        def queryTraversal = Mock(QueryTraverser)
         MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(6) {
 
             @Override
-            QueryTraversal newQueryTraversal(InstrumentationValidationParameters parameters) {
+            QueryTraverser newQueryTraverser(InstrumentationValidationParameters parameters) {
                 return queryTraversal
             }
         }

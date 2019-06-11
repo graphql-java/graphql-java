@@ -4,9 +4,9 @@ import graphql.PublicApi;
 import graphql.util.TraversalControl;
 
 /**
- * Used by {@link QueryTraversal} to visit the nodes of a Query.
+ * Used by {@link QueryTraverser} to visit the nodes of a Query.
  * <p>
- * How this happens in detail (pre vs post-order for example) is defined by {@link QueryTraversal}.
+ * How this happens in detail (pre vs post-order for example) is defined by {@link QueryTraverser}.
  */
 @PublicApi
 public interface QueryVisitor {
