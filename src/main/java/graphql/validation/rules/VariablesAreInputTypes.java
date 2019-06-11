@@ -4,16 +4,14 @@ package graphql.validation.rules;
 import graphql.language.TypeName;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLType;
-import graphql.schema.SchemaUtil;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
-import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
-public class VariablesAreInputTypes extends AbstractRule {
+import static graphql.schema.GraphQLTypeUtil.isInput;
 
-    private final SchemaUtil schemaUtil = new SchemaUtil();
+public class VariablesAreInputTypes extends AbstractRule {
 
     public VariablesAreInputTypes(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
@@ -25,9 +23,9 @@ public class VariablesAreInputTypes extends AbstractRule {
 
         GraphQLType type = getValidationContext().getSchema().getType(unmodifiedAstType.getName());
         if (type == null) return;
-        if (!schemaUtil.isInputType(type)) {
+        if (!isInput(type)) {
             String message = "Wrong type for a variable";
-            addError(new ValidationError(ValidationErrorType.NonInputTypeOnVariable, variableDefinition.getSourceLocation(), message));
+            addError(ValidationErrorType.NonInputTypeOnVariable, variableDefinition.getSourceLocation(), message);
         }
     }
 }

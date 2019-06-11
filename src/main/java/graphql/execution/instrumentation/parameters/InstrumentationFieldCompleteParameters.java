@@ -1,8 +1,8 @@
 package graphql.execution.instrumentation.parameters;
 
 import graphql.execution.ExecutionContext;
+import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStrategyParameters;
-import graphql.execution.ExecutionTypeInfo;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.GraphQLFieldDefinition;
 
@@ -12,19 +12,21 @@ import graphql.schema.GraphQLFieldDefinition;
 public class InstrumentationFieldCompleteParameters {
     private final ExecutionContext executionContext;
     private final GraphQLFieldDefinition fieldDef;
-    private final ExecutionTypeInfo typeInfo;
+    private final ExecutionStepInfo typeInfo;
+    private final Object fetchedValue;
     private final InstrumentationState instrumentationState;
     private final ExecutionStrategyParameters executionStrategyParameters;
 
-    public InstrumentationFieldCompleteParameters(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters, GraphQLFieldDefinition fieldDef, ExecutionTypeInfo typeInfo) {
-        this(executionContext, executionStrategyParameters, fieldDef, typeInfo, executionContext.getInstrumentationState());
+    public InstrumentationFieldCompleteParameters(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters, GraphQLFieldDefinition fieldDef, ExecutionStepInfo typeInfo, Object fetchedValue) {
+        this(executionContext, executionStrategyParameters, fieldDef, typeInfo, fetchedValue, executionContext.getInstrumentationState());
     }
 
-    InstrumentationFieldCompleteParameters(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters, GraphQLFieldDefinition fieldDef, ExecutionTypeInfo typeInfo, InstrumentationState instrumentationState) {
+    InstrumentationFieldCompleteParameters(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters, GraphQLFieldDefinition fieldDef, ExecutionStepInfo typeInfo, Object fetchedValue, InstrumentationState instrumentationState) {
         this.executionContext = executionContext;
         this.executionStrategyParameters = executionStrategyParameters;
         this.fieldDef = fieldDef;
         this.typeInfo = typeInfo;
+        this.fetchedValue = fetchedValue;
         this.instrumentationState = instrumentationState;
     }
 
@@ -37,7 +39,7 @@ public class InstrumentationFieldCompleteParameters {
      */
     public InstrumentationFieldCompleteParameters withNewState(InstrumentationState instrumentationState) {
         return new InstrumentationFieldCompleteParameters(
-                this.executionContext, executionStrategyParameters, this.fieldDef, this.typeInfo, instrumentationState);
+                this.executionContext, executionStrategyParameters, this.fieldDef, this.typeInfo, this.fetchedValue, instrumentationState);
     }
 
 
@@ -53,10 +55,15 @@ public class InstrumentationFieldCompleteParameters {
         return fieldDef;
     }
 
-    public ExecutionTypeInfo getTypeInfo() {
+    public ExecutionStepInfo getTypeInfo() {
         return typeInfo;
     }
 
+    public Object getFetchedValue() {
+        return fetchedValue;
+    }
+
+    @SuppressWarnings("TypeParameterUnusedInFormals")
     public <T extends InstrumentationState> T getInstrumentationState() {
         //noinspection unchecked
         return (T) instrumentationState;

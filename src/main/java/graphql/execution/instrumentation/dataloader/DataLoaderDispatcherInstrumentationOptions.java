@@ -27,7 +27,9 @@ public class DataLoaderDispatcherInstrumentationOptions {
         return new DataLoaderDispatcherInstrumentationOptions(flag);
     }
 
+
     public boolean isIncludeStatistics() {
         return includeStatistics;
     }
+
 }

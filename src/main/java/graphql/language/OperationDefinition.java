@@ -1,30 +1,45 @@
 package graphql.language;
 
 
+import graphql.Internal;
+import graphql.PublicApi;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.function.Consumer;
 
-import static graphql.language.NodeUtil.directivesByName;
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
-public class OperationDefinition extends AbstractNode<OperationDefinition> implements Definition<OperationDefinition> {
+@PublicApi
+public class OperationDefinition extends AbstractNode<OperationDefinition> implements Definition<OperationDefinition>, SelectionSetContainer<OperationDefinition> {
 
     public enum Operation {
         QUERY, MUTATION, SUBSCRIPTION
     }
 
-    private String name;
+    private final String name;
 
-    private Operation operation;
-    private List<VariableDefinition> variableDefinitions = new ArrayList<>();
-    private List<Directive> directives = new ArrayList<>();
-    private SelectionSet selectionSet;
+    private final Operation operation;
+    private final List<VariableDefinition> variableDefinitions;
+    private final List<Directive> directives;
+    private final SelectionSet selectionSet;
 
-    public OperationDefinition() {
+    public static final String CHILD_VARIABLE_DEFINITIONS = "variableDefinitions";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_SELECTION_SET = "selectionSet";
 
-    }
-
-    public OperationDefinition(String name, Operation operation, List<VariableDefinition> variableDefinitions, List<Directive> directives, SelectionSet selectionSet) {
+    @Internal
+    protected OperationDefinition(String name,
+                                  Operation operation,
+                                  List<VariableDefinition> variableDefinitions,
+                                  List<Directive> directives,
+                                  SelectionSet selectionSet,
+                                  SourceLocation sourceLocation,
+                                  List<Comment> comments,
+                                  IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.operation = operation;
         this.variableDefinitions = variableDefinitions;
@@ -32,17 +47,13 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         this.selectionSet = selectionSet;
     }
 
-    public OperationDefinition(String name, Operation operation, List<VariableDefinition> variableDefinitions, SelectionSet selectionSet) {
-        this.name = name;
-        this.operation = operation;
-        this.variableDefinitions = variableDefinitions;
-        this.selectionSet = selectionSet;
+    public OperationDefinition(String name,
+                               Operation operation) {
+        this(name, operation, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
-    public OperationDefinition(String name, Operation operation, SelectionSet selectionSet) {
-        this.name = name;
-        this.operation = operation;
-        this.selectionSet = selectionSet;
+    public OperationDefinition(String name) {
+        this(name, null, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     @Override
@@ -54,59 +65,53 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         return result;
     }
 
-    public String getName() {
-        return name;
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_VARIABLE_DEFINITIONS, variableDefinitions)
+                .children(CHILD_DIRECTIVES, directives)
+                .child(CHILD_SELECTION_SET, selectionSet)
+                .build();
     }
 
-    public void setName(String name) {
-        this.name = name;
+    @Override
+    public OperationDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .variableDefinitions(newChildren.getChildren(CHILD_VARIABLE_DEFINITIONS))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .selectionSet(newChildren.getChildOrNull(CHILD_SELECTION_SET))
+        );
+    }
+
+    public String getName() {
+        return name;
     }
 
     public Operation getOperation() {
         return operation;
     }
 
-    public void setOperation(Operation operation) {
-        this.operation = operation;
-    }
-
     public List<VariableDefinition> getVariableDefinitions() {
-        return variableDefinitions;
-    }
-
-    public void setVariableDefinitions(List<VariableDefinition> variableDefinitions) {
-        this.variableDefinitions = variableDefinitions;
+        return new ArrayList<>(variableDefinitions);
     }
 
     public List<Directive> getDirectives() {
-        return directives;
+        return new ArrayList<>(directives);
     }
 
-    public Map<String, Directive> getDirectivesByName() {
-        return directivesByName(directives);
-    }
-
-    public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
-    }
-
-    public void setDirectives(List<Directive> directives) {
-        this.directives = directives;
-    }
-
+    @Override
     public SelectionSet getSelectionSet() {
         return selectionSet;
     }
 
-    public void setSelectionSet(SelectionSet selectionSet) {
-        this.selectionSet = selectionSet;
-    }
-
-
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         OperationDefinition that = (OperationDefinition) o;
 
@@ -120,7 +125,10 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
                 operation,
                 deepCopy(variableDefinitions),
                 deepCopy(directives),
-                deepCopy(selectionSet)
+                deepCopy(selectionSet),
+                getSourceLocation(),
+                getComments(),
+                getIgnoredChars()
         );
     }
 
@@ -133,5 +141,100 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
                 ", directives=" + directives +
                 ", selectionSet=" + selectionSet +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitOperationDefinition(this, context);
+    }
+
+    public static Builder newOperationDefinition() {
+        return new Builder();
+    }
+
+    public OperationDefinition transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private List<Comment> comments = new ArrayList<>();
+        private String name;
+        private Operation operation;
+        private List<VariableDefinition> variableDefinitions = new ArrayList<>();
+        private List<Directive> directives = new ArrayList<>();
+        private SelectionSet selectionSet;
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+
+        private Builder() {
+        }
+
+        private Builder(OperationDefinition existing) {
+            this.sourceLocation = existing.getSourceLocation();
+            this.comments = existing.getComments();
+            this.name = existing.getName();
+            this.operation = existing.getOperation();
+            this.variableDefinitions = existing.getVariableDefinitions();
+            this.directives = existing.getDirectives();
+            this.selectionSet = existing.getSelectionSet();
+            this.ignoredChars = existing.getIgnoredChars();
+        }
+
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder operation(Operation operation) {
+            this.operation = operation;
+            return this;
+        }
+
+        public Builder variableDefinitions(List<VariableDefinition> variableDefinitions) {
+            this.variableDefinitions = variableDefinitions;
+            return this;
+        }
+
+        public Builder directives(List<Directive> directives) {
+            this.directives = directives;
+            return this;
+        }
+
+        public Builder selectionSet(SelectionSet selectionSet) {
+            this.selectionSet = selectionSet;
+            return this;
+        }
+
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
+        public OperationDefinition build() {
+            OperationDefinition operationDefinition = new OperationDefinition(
+                    name,
+                    operation,
+                    variableDefinitions,
+                    directives,
+                    selectionSet,
+                    sourceLocation,
+                    comments,
+                    ignoredChars
+            );
+            return operationDefinition;
+        }
     }
 }

@@ -1,6 +1,11 @@
 package graphql.language;
 
-public class Description {
+import graphql.PublicApi;
+
+import java.io.Serializable;
+
+@PublicApi
+public class Description implements Serializable {
     public final String content;
     public final SourceLocation sourceLocation;
     public final boolean multiLine;

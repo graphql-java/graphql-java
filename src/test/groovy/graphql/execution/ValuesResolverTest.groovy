@@ -18,8 +18,6 @@ import graphql.language.VariableDefinition
 import graphql.language.VariableReference
 import graphql.schema.CoercingParseValueException
 import graphql.schema.GraphQLArgument
-import graphql.schema.GraphQLList
-import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -30,6 +28,8 @@ import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLEnumType.newEnum
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
+import static graphql.schema.GraphQLList.list
+import static graphql.schema.GraphQLNonNull.nonNull
 
 class ValuesResolverTest extends Specification {
 
@@ -119,7 +119,7 @@ class ValuesResolverTest extends Specification {
 
     def "getVariableValues: simple value gets resolved to a list when the type is a List"() {
         given:
-        def schema = TestUtil.schemaWithInputType(new GraphQLList(GraphQLString))
+        def schema = TestUtil.schemaWithInputType(list(GraphQLString))
         VariableDefinition variableDefinition = new VariableDefinition("variable", new ListType(new TypeName("String")))
         String value = "world"
         when:
@@ -202,7 +202,7 @@ class ValuesResolverTest extends Specification {
                 .name("inputObject")
                 .field(newInputObjectField()
                 .name("intKey")
-                .type(new GraphQLNonNull(GraphQLInt))
+                .type(nonNull(GraphQLInt))
                 .defaultValue(3)
                 .build())
                 .field(newInputObjectField()
@@ -244,13 +244,13 @@ class ValuesResolverTest extends Specification {
                 .name("inputObject")
                 .field(newInputObjectField()
                 .name("intKey")
-                .type(new GraphQLNonNull(GraphQLInt))
+                .type(nonNull(GraphQLInt))
                 .build())
                 .build()
         def fieldArgument = new GraphQLArgument("arg", inputObjectType)
 
         when:
-        def argument = new Argument("arg", new ObjectValue())
+        def argument = new Argument("arg", ObjectValue.newObjectValue().build())
         resolver.getArgumentValues([fieldArgument], [argument], [:])
 
         then:
@@ -258,12 +258,12 @@ class ValuesResolverTest extends Specification {
     }
 
     ObjectValue buildObjectLiteral(Map<String, Object> contents) {
-        def object = new ObjectValue()
+        def object = ObjectValue.newObjectValue()
         contents.each { key, value ->
             def transformedValue = value instanceof Map ? buildObjectLiteral(value) : (Value) value
-            object.getObjectFields().add(new ObjectField(key, transformedValue))
+            object.objectField(new ObjectField(key, transformedValue))
         }
-        return object
+        return object.build()
     }
 
     def "getArgumentValues: resolves enum literals"() {
@@ -291,12 +291,12 @@ class ValuesResolverTest extends Specification {
 
     def "getArgumentValues: resolves array literals"() {
         given:
-        ArrayValue arrayValue = new ArrayValue()
-        arrayValue.getValues().add(new BooleanValue(true))
-        arrayValue.getValues().add(new BooleanValue(false))
-        def argument = new Argument("arg", arrayValue)
+        ArrayValue.Builder arrayValue = ArrayValue.newArrayValue()
+        arrayValue.value(new BooleanValue(true))
+        arrayValue.value(new BooleanValue(false))
+        def argument = new Argument("arg", arrayValue.build())
 
-        def fieldArgument = new GraphQLArgument("arg", new GraphQLList(GraphQLBoolean))
+        def fieldArgument = new GraphQLArgument("arg", list(GraphQLBoolean))
 
         when:
         def values = resolver.getArgumentValues([fieldArgument], [argument], [:])
@@ -311,7 +311,7 @@ class ValuesResolverTest extends Specification {
         StringValue stringValue = new StringValue("world")
         def argument = new Argument("arg", stringValue)
 
-        def fieldArgument = new GraphQLArgument("arg", new GraphQLList(GraphQLString))
+        def fieldArgument = new GraphQLArgument("arg", list(GraphQLString))
 
         when:
         def values = resolver.getArgumentValues([fieldArgument], [argument], [:])
@@ -383,7 +383,7 @@ class ValuesResolverTest extends Specification {
                 .type(GraphQLInt))
                 .field(newInputObjectField()
                 .name("requiredField")
-                .type(new GraphQLNonNull(GraphQLString)))
+                .type(nonNull(GraphQLString)))
                 .build()
 
         def schema = TestUtil.schemaWithInputType(inputObjectType)
@@ -423,7 +423,7 @@ class ValuesResolverTest extends Specification {
     def "getVariableValues: null default value for non null type"() {
         given:
 
-        def schema = TestUtil.schemaWithInputType(GraphQLNonNull.nonNull(GraphQLString))
+        def schema = TestUtil.schemaWithInputType(nonNull(GraphQLString))
         VariableDefinition fooVarDef = new VariableDefinition("foo", new NonNullType(new TypeName("String")))
 
         when:

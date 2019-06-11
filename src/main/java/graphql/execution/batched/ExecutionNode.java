@@ -1,27 +1,28 @@
 package graphql.execution.batched;
 
-import graphql.execution.ExecutionTypeInfo;
-import graphql.language.Field;
+import graphql.execution.ExecutionStepInfo;
+import graphql.execution.MergedField;
 import graphql.schema.GraphQLObjectType;
 
 import java.util.List;
 import java.util.Map;
 
+@Deprecated
 class ExecutionNode {
 
     private final GraphQLObjectType type;
-    private final ExecutionTypeInfo typeInfo;
-    private final Map<String, List<Field>> fields;
+    private final ExecutionStepInfo executionStepInfo;
+    private final Map<String, MergedField> fields;
     private final List<MapOrList> parentResults;
     private final List<Object> sources;
 
     public ExecutionNode(GraphQLObjectType type,
-                         ExecutionTypeInfo typeInfo,
-                         Map<String, List<Field>> fields,
+                         ExecutionStepInfo executionStepInfo,
+                         Map<String, MergedField> fields,
                          List<MapOrList> parentResults,
                          List<Object> sources) {
         this.type = type;
-        this.typeInfo = typeInfo;
+        this.executionStepInfo = executionStepInfo;
         this.fields = fields;
         this.parentResults = parentResults;
         this.sources = sources;
@@ -31,11 +32,11 @@ class ExecutionNode {
         return type;
     }
 
-    public ExecutionTypeInfo getTypeInfo() {
-        return typeInfo;
+    public ExecutionStepInfo getExecutionStepInfo() {
+        return executionStepInfo;
     }
 
-    public Map<String, List<Field>> getFields() {
+    public Map<String, MergedField> getFields() {
         return fields;
     }
 

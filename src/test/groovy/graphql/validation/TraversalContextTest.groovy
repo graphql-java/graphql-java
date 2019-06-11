@@ -17,16 +17,18 @@ import graphql.language.VariableDefinition
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
-import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 
 import static graphql.Directives.IncludeDirective
 import static graphql.Scalars.GraphQLString
 import static graphql.StarWarsSchema.droidType
+import static graphql.StarWarsSchema.inputHumanType
 import static graphql.StarWarsSchema.queryType
 import static graphql.StarWarsSchema.starWarsSchema
 import static graphql.language.OperationDefinition.Operation.QUERY
+import static graphql.schema.GraphQLList.list
+import static graphql.schema.GraphQLNonNull.nonNull
 
 class TraversalContextTest extends Specification {
 
@@ -35,7 +37,7 @@ class TraversalContextTest extends Specification {
     def "operation definition"() {
         given:
         SelectionSet selectionSet = new SelectionSet([])
-        OperationDefinition operationDefinition = new OperationDefinition(queryType.getName(), QUERY, selectionSet)
+        OperationDefinition operationDefinition = OperationDefinition.newOperationDefinition().name(queryType.getName()).operation(QUERY).selectionSet(selectionSet).build()
 
         when:
         traversalContext.enter(operationDefinition, [])
@@ -52,8 +54,8 @@ class TraversalContextTest extends Specification {
 
     def "SelectionSet saves current output type as parent"() {
         given:
-        SelectionSet selectionSet = new SelectionSet()
-        traversalContext.outputTypeStack.add(new GraphQLNonNull(droidType))
+        SelectionSet selectionSet = SelectionSet.newSelectionSet().build()
+        traversalContext.outputTypeStack.add(nonNull(droidType))
 
         when:
         traversalContext.enter(selectionSet, [])
@@ -126,13 +128,50 @@ class TraversalContextTest extends Specification {
 
     def "fragmentDefinition type condition saved as output type"() {
         given:
-        FragmentDefinition fragmentDefinition = new FragmentDefinition("fragment", new TypeName(droidType.getName()))
+        FragmentDefinition fragmentDefinition = FragmentDefinition.newFragmentDefinition().name("fragment").typeCondition(new TypeName(droidType.getName())).build()
 
         when:
         traversalContext.enter(fragmentDefinition, [])
 
         then:
         traversalContext.getOutputType() == droidType
+
+        when:
+        traversalContext.leave(fragmentDefinition, [])
+
+        then:
+        traversalContext.getOutputType() == null
+    }
+
+    def "inlineFragment that is not a GraphQLOutputType should result as null"() {
+        given:
+        InlineFragment inlineFragment = new InlineFragment(new TypeName(inputHumanType.getName()))
+
+        when:
+        traversalContext.enter(inlineFragment, [])
+
+        then:
+        traversalContext.getOutputType() == null
+
+        when:
+        traversalContext.leave(inlineFragment, [])
+
+        then:
+        traversalContext.getOutputType() == null
+    }
+
+    def "fragmentDefinition that is not a GraphQLOutputType should result as null"() {
+        given:
+        FragmentDefinition fragmentDefinition = FragmentDefinition.newFragmentDefinition()
+                .name("fragment")
+                .typeCondition(new TypeName(inputHumanType.getName()))
+                .build()
+
+        when:
+        traversalContext.enter(fragmentDefinition, [])
+
+        then:
+        traversalContext.getOutputType() == null
 
         when:
         traversalContext.leave(fragmentDefinition, [])
@@ -150,6 +189,23 @@ class TraversalContextTest extends Specification {
 
         then:
         traversalContext.getInputType() == GraphQLString
+
+        when:
+        traversalContext.leave(variableDefinition, [])
+
+        then:
+        traversalContext.getInputType() == null
+    }
+
+    def "variableDefinition that is not a GraphQLInputType should result as null"() {
+        given: "a GraphQLObjectType instead of a GraphQLInputType"
+        VariableDefinition variableDefinition = new VariableDefinition("var", new TypeName("Human"))
+
+        when:
+        traversalContext.enter(variableDefinition, [])
+
+        then:
+        traversalContext.getInputType() == null
 
         when:
         traversalContext.leave(variableDefinition, [])
@@ -201,7 +257,7 @@ class TraversalContextTest extends Specification {
 
     def "array value saves input type"() {
         given:
-        GraphQLNonNull graphQLList = new GraphQLNonNull(new GraphQLList(GraphQLString))
+        GraphQLNonNull graphQLList = nonNull(list(GraphQLString))
         traversalContext.inputTypeStack.add(graphQLList)
         ArrayValue arrayValue = new ArrayValue([new StringValue("string")])
 
@@ -241,7 +297,7 @@ class TraversalContextTest extends Specification {
     def "visit array with schema input type is enum: input type is null after"() {
         given:
         GraphQLEnumType enumType = GraphQLEnumType.newEnum().name("EnumType").value("Val1").value("Val2").build()
-        ArrayValue arrayValue = new ArrayValue()
+        ArrayValue arrayValue = ArrayValue.newArrayValue().build()
 
         traversalContext.inputTypeStack.add(enumType)
 

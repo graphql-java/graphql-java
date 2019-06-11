@@ -6,6 +6,7 @@ package graphql.validation;
  *
  * @author dwinsor
  */
+@SuppressWarnings("ClassCanBeStatic")
 public class SpecValidationSchemaPojos {
     public class Human {
         public String name;

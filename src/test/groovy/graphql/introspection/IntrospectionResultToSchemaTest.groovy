@@ -13,15 +13,13 @@ import graphql.language.ObjectTypeDefinition
 import graphql.language.UnionTypeDefinition
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
-import graphql.schema.idl.RuntimeWiring
-import graphql.schema.idl.SchemaGenerator
-import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.SchemaPrinter
 import groovy.json.JsonSlurper
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
 import static graphql.introspection.IntrospectionQuery.INTROSPECTION_QUERY
+import static graphql.language.AstPrinter.printAst
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 
 class IntrospectionResultToSchemaTest extends Specification {
@@ -89,8 +87,7 @@ class IntrospectionResultToSchemaTest extends Specification {
 
         when:
         ObjectTypeDefinition objectTypeDefinition = introspectionResultToSchema.createObject(parsed)
-        AstPrinter astPrinter = new AstPrinter()
-        def result = astPrinter.printAst(objectTypeDefinition)
+        def result = printAst(objectTypeDefinition)
 
         then:
         result == """type QueryType implements Query {
@@ -195,8 +192,7 @@ class IntrospectionResultToSchemaTest extends Specification {
 
         when:
         InterfaceTypeDefinition interfaceTypeDefinition = introspectionResultToSchema.createInterface(parsed)
-        AstPrinter astPrinter = new AstPrinter()
-        def result = astPrinter.printAst(interfaceTypeDefinition)
+        def result = printAst(interfaceTypeDefinition)
 
         then:
         result == """#A character in the Star Wars Trilogy
@@ -248,8 +244,7 @@ interface Character {
 
         when:
         EnumTypeDefinition enumTypeDef = introspectionResultToSchema.createEnum(parsed)
-        AstPrinter astPrinter = new AstPrinter()
-        def result = astPrinter.printAst(enumTypeDef)
+        def result = printAst(enumTypeDef)
 
         then:
         result == """#One of the films in the Star Wars Trilogy
@@ -291,8 +286,7 @@ enum Episode {
 
         when:
         UnionTypeDefinition unionTypeDefinition = introspectionResultToSchema.createUnion(parsed)
-        AstPrinter astPrinter = new AstPrinter()
-        def result = astPrinter.printAst(unionTypeDefinition)
+        def result = printAst(unionTypeDefinition)
 
         then:
         result == """#all the stuff
@@ -347,8 +341,7 @@ union Everything = Character | Episode"""
 
         when:
         InputObjectTypeDefinition inputObjectTypeDefinition = introspectionResultToSchema.createInputObject(parsed)
-        AstPrinter astPrinter = new AstPrinter()
-        def result = astPrinter.printAst(inputObjectTypeDefinition)
+        def result = printAst(inputObjectTypeDefinition)
 
         then:
         result == """#input for characters
@@ -376,8 +369,7 @@ input CharacterInput {
 
         when:
         Document document = introspectionResultToSchema.createSchemaDefinition(parsed)
-        AstPrinter astPrinter = new AstPrinter()
-        def result = astPrinter.printAst(document)
+        def result = printAst(document)
 
         then:
         result == """schema {
@@ -397,8 +389,7 @@ input CharacterInput {
 
         when:
         Document document = introspectionResultToSchema.createSchemaDefinition(parsed)
-        AstPrinter astPrinter = new AstPrinter()
-        def result = astPrinter.printAst(document)
+        def result = printAst(document)
 
         then:
         result == """schema {
@@ -480,8 +471,7 @@ type Droid implements Character {
 
         when:
         Document document = introspectionResultToSchema.createSchemaDefinition(parsed)
-        AstPrinter astPrinter = new AstPrinter()
-        def result = astPrinter.printAst(document)
+        def result = printAst(document)
 
         then:
         result == """schema {
@@ -556,14 +546,12 @@ input CharacterInput {
 
         when:
         def printedSchema = new SchemaPrinter().print(graphQLSchema)
-        def typeRegistry = new SchemaParser().parse(printedSchema)
-        RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring().build()
-        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, runtimeWiring)
 
-        def introspectionResult = GraphQL.newGraphQL(schema).build().execute(ExecutionInput.newExecutionInput().query(INTROSPECTION_QUERY).build())
+        def graphQL = TestUtil.graphQL(printedSchema).build()
+
+        def introspectionResult = graphQL.execute(ExecutionInput.newExecutionInput().query(INTROSPECTION_QUERY).build())
         Document schemaDefinitionDocument = introspectionResultToSchema.createSchemaDefinition(introspectionResult.data as Map)
-        AstPrinter astPrinter = new AstPrinter()
-        def astPrinterResult = astPrinter.printAst(schemaDefinitionDocument)
+        def astPrinterResult = printAst(schemaDefinitionDocument)
 
         then:
         printedSchema == astPrinterResult
@@ -617,8 +605,7 @@ input CharacterInput {
 
         Document schemaDefinitionDocument = introspectionResultToSchema.createSchemaDefinition(roundTripMap)
 
-        AstPrinter astPrinter = new AstPrinter()
-        def astPrinterResult = astPrinter.printAst(schemaDefinitionDocument)
+        def astPrinterResult = printAst(schemaDefinitionDocument)
 
         def actualSchema = TestUtil.schema(astPrinterResult)
         def actualPrintedSchema = new SchemaPrinter().print(actualSchema)
@@ -688,8 +675,7 @@ input InputType {
 
         when:
         Document document = introspectionResultToSchema.createSchemaDefinition(parsed)
-        AstPrinter astPrinter = new AstPrinter()
-        def result = astPrinter.printAst(document)
+        def result = printAst(document)
 
         then:
         result == """type Query {

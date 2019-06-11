@@ -1,12 +1,23 @@
 package graphql.schema.idl;
 
 import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLScalarType;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 
 import static graphql.Assert.assertShouldNeverHappen;
 
 public class NoopWiringFactory implements WiringFactory {
+
+    @Override
+    public boolean providesScalar(ScalarWiringEnvironment environment) {
+        return false;
+    }
+
+    @Override
+    public GraphQLScalarType getScalar(ScalarWiringEnvironment environment) {
+        return assertShouldNeverHappen();
+    }
 
     @Override
     public boolean providesTypeResolver(InterfaceWiringEnvironment environment) {
@@ -40,6 +51,6 @@ public class NoopWiringFactory implements WiringFactory {
 
     @Override
     public DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
-        return new PropertyDataFetcher(environment.getFieldDefinition().getName());
+        return null;
     }
 }

@@ -5,11 +5,8 @@ import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLTypeReference;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -25,7 +22,10 @@ import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLEnumType.newEnum;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
+import static graphql.schema.GraphQLList.list;
+import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
+import static graphql.schema.GraphQLTypeReference.typeRef;
 
 public class FunWithStringsSchemaFactory {
 
@@ -297,11 +297,7 @@ public class FunWithStringsSchemaFactory {
                         .dataFetcher(stringObjectValueFetcher))
                 .field(newFieldDefinition()
                         .name("nonNullValue")
-                        .type(new GraphQLNonNull(GraphQLString))
-                        .dataFetcher(stringObjectValueFetcher))
-                .field(newFieldDefinition()
-                        .name("veryNonNullValue")
-                        .type(new GraphQLNonNull(new GraphQLNonNull(GraphQLString)))
+                        .type(nonNull(GraphQLString))
                         .dataFetcher(stringObjectValueFetcher))
                 .field(newFieldDefinition()
                         .name("throwException")
@@ -313,22 +309,22 @@ public class FunWithStringsSchemaFactory {
                         .dataFetcher(returnBadListFetcher))
                 .field(newFieldDefinition()
                         .name("anyIterable")
-                        .type(new GraphQLList(GraphQLString))
+                        .type(list(GraphQLString))
                         .dataFetcher(anyIterableFetcher))
                 .field(newFieldDefinition()
                         .name("shatter")
-                        .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLTypeReference("StringObject")))))
+                        .type(nonNull(list(nonNull(typeRef("StringObject")))))
                         .dataFetcher(shatterFetcher))
 
                 .field(newFieldDefinition()
                         .name("wordsAndLetters")
-                        .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLNonNull(new GraphQLTypeReference("StringObject"))))))))
+                        .type(nonNull(list(nonNull(list(nonNull(typeRef("StringObject")))))))
                         .dataFetcher(wordsAndLettersFetcher))
 
                 .field(newFieldDefinition()
                         .name("split")
                         .description("String#split(regex) but replace empty strings with nulls to help us test null behavior in lists")
-                        .type(new GraphQLList(new GraphQLTypeReference("StringObject")))
+                        .type(list(typeRef("StringObject")))
                         .argument(GraphQLArgument.newArgument()
                                 .name("regex")
                                 .type(GraphQLString))
@@ -337,7 +333,7 @@ public class FunWithStringsSchemaFactory {
                 .field(newFieldDefinition()
                         .name("splitNotNull")
                         .description("String#split(regex) but replace empty strings with nulls to help us test null behavior in lists")
-                        .type(new GraphQLList(new GraphQLNonNull(new GraphQLTypeReference("StringObject"))))
+                        .type(list(nonNull(typeRef("StringObject"))))
                         .argument(GraphQLArgument.newArgument()
                                 .name("regex")
                                 .type(GraphQLString))
@@ -346,7 +342,7 @@ public class FunWithStringsSchemaFactory {
 
                 .field(newFieldDefinition()
                         .name("append")
-                        .type(new GraphQLTypeReference("StringObject"))
+                        .type(typeRef("StringObject"))
                         .argument(GraphQLArgument.newArgument()
                                 .name("text")
                                 .type(GraphQLString))
@@ -389,6 +385,7 @@ public class FunWithStringsSchemaFactory {
 
         GraphQLObjectType simpleObjectType = newObject()
                 .name("SimpleObject")
+                .withInterface(typeRef("InterfaceType"))
                 .field(newFieldDefinition()
                         .name("value")
                         .type(GraphQLString))
@@ -434,6 +431,7 @@ public class FunWithStringsSchemaFactory {
 
         return GraphQLSchema.newSchema()
                 .query(queryType)
+                .additionalType(simpleObjectType)
                 .build();
 
     }

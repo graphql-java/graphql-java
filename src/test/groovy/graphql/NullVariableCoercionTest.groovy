@@ -27,7 +27,7 @@ class NullVariableCoercionTest extends Specification {
           .build()
 
 
-        def schema = TestUtil.schema("""
+        def graphQL = TestUtil.graphQL("""
                 schema {
                   query: Query
                 }
@@ -47,11 +47,8 @@ class NullVariableCoercionTest extends Specification {
                 type Foo implements Node {
                   id: String
                 }
-            """, runtimeWiring)
+            """, runtimeWiring).build()
 
-
-        GraphQL graphQL = GraphQL.newGraphQL(schema)
-            .build()
 
         def variables = ["input": ["baz": null]]
 
@@ -69,7 +66,7 @@ class NullVariableCoercionTest extends Specification {
         varResult.data == null
         varResult.errors.size() == 1
         varResult.errors[0].errorType == ErrorType.ValidationError
-        varResult.errors[0].message == "Variable 'input' has coerced Null value for NonNull type 'String!'"
+        varResult.errors[0].message == "Field 'baz' of variable 'input' has coerced Null value for NonNull type 'String!'"
         varResult.errors[0].locations == [new SourceLocation(1, 11)]
     }
 }

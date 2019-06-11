@@ -12,11 +12,12 @@ import graphql.language.Type;
 import graphql.language.TypeName;
 import graphql.language.Value;
 import graphql.language.VariableReference;
+import graphql.schema.Coercing;
+import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
@@ -28,6 +29,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static graphql.schema.GraphQLTypeUtil.isList;
+import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 
 public class ValidationUtil {
 
@@ -68,7 +73,7 @@ public class ValidationUtil {
 
     public boolean isValidLiteralValue(Value value, GraphQLType type, GraphQLSchema schema) {
         if (value == null || value instanceof NullValue) {
-            boolean valid = !(type instanceof GraphQLNonNull);
+            boolean valid = !(isNonNull(type));
             if (!valid) {
                 handleNullError(value, type);
             }
@@ -77,30 +82,38 @@ public class ValidationUtil {
         if (value instanceof VariableReference) {
             return true;
         }
-        if (type instanceof GraphQLNonNull) {
-            return isValidLiteralValue(value, ((GraphQLNonNull) type).getWrappedType(), schema);
+        if (isNonNull(type)) {
+            return isValidLiteralValue(value, unwrapOne(type), schema);
         }
 
         if (type instanceof GraphQLScalarType) {
-            boolean valid = ((GraphQLScalarType) type).getCoercing().parseLiteral(value) != null;
+            boolean valid = parseLiteral(value, ((GraphQLScalarType) type).getCoercing());
             if (!valid) {
                 handleScalarError(value, (GraphQLScalarType) type);
             }
             return valid;
         }
         if (type instanceof GraphQLEnumType) {
-            boolean valid = ((GraphQLEnumType) type).getCoercing().parseLiteral(value) != null;
+            boolean valid = parseLiteral(value, ((GraphQLEnumType) type).getCoercing());
             if (!valid) {
                 handleEnumError(value, (GraphQLEnumType) type);
             }
             return valid;
         }
 
-        if (type instanceof GraphQLList) {
+        if (isList(type)) {
             return isValidLiteralValue(value, (GraphQLList) type, schema);
         }
         return type instanceof GraphQLInputObjectType && isValidLiteralValue(value, (GraphQLInputObjectType) type, schema);
 
+    }
+
+    private boolean parseLiteral(Value value, Coercing coercing) {
+        try {
+            return coercing.parseLiteral(value) != null;
+        } catch (CoercingParseLiteralException e) {
+            return false;
+        }
     }
 
     private boolean isValidLiteralValue(Value value, GraphQLInputObjectType type, GraphQLSchema schema) {
@@ -108,7 +121,7 @@ public class ValidationUtil {
             handleNotObjectError(value, type);
             return false;
         }
-        GraphqlFieldVisibility fieldVisibility = schema.getFieldVisibility();
+        GraphqlFieldVisibility fieldVisibility = schema.getCodeRegistry().getFieldVisibility();
         ObjectValue objectValue = (ObjectValue) value;
         Map<String, ObjectField> objectFieldMap = fieldMap(objectValue);
 
@@ -136,7 +149,7 @@ public class ValidationUtil {
 
     private Set<String> getMissingFields(GraphQLInputObjectType type, Map<String, ObjectField> objectFieldMap, GraphqlFieldVisibility fieldVisibility) {
         return fieldVisibility.getFieldDefinitions(type).stream()
-                .filter(field -> field.getType() instanceof GraphQLNonNull)
+                .filter(field -> isNonNull(field.getType()))
                 .map(GraphQLInputObjectField::getName)
                 .filter(((Predicate<String>) objectFieldMap::containsKey).negate())
                 .collect(Collectors.toSet());

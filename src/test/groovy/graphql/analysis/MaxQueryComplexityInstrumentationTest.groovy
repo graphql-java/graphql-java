@@ -11,6 +11,8 @@ import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
+import java.util.function.Function
+
 class MaxQueryComplexityInstrumentationTest extends Specification {
 
     Document createQuery(String query) {
@@ -40,7 +42,7 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
         InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
         InstrumentationContext instrumentationContext = maxQueryComplexityInstrumentation.beginValidation(validationParameters)
         when:
-        instrumentationContext.onEnd([new ValidationError(ValidationErrorType.SubSelectionNotAllowed)], null)
+        instrumentationContext.onCompleted([new ValidationError(ValidationErrorType.SubSelectionNotAllowed)], null)
         then:
         0 * queryTraversal._(_)
 
@@ -68,7 +70,7 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
         InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
         InstrumentationContext instrumentationContext = maxQueryComplexityInstrumentation.beginValidation(validationParameters)
         when:
-        instrumentationContext.onEnd(null, new RuntimeException())
+        instrumentationContext.onCompleted(null, new RuntimeException())
         then:
         0 * queryTraversal._(_)
 
@@ -94,10 +96,32 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
         InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
         InstrumentationContext instrumentationContext = queryComplexityInstrumentation.beginValidation(validationParameters)
         when:
-        instrumentationContext.onEnd(null, null)
+        instrumentationContext.onCompleted(null, null)
         then:
         def e = thrown(AbortExecutionException)
         e.message == "maximum query complexity exceeded 11 > 10"
+
+    }
+
+    def "complexity calculator works with __typename field with score 0"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: String 
+            }
+        """)
+        def query = createQuery("""
+            { f1: foo f2: foo __typename }
+            """)
+        MaxQueryComplexityInstrumentation queryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(1)
+        ExecutionInput executionInput = Mock(ExecutionInput)
+        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
+        InstrumentationContext instrumentationContext = queryComplexityInstrumentation.beginValidation(validationParameters)
+        when:
+        instrumentationContext.onCompleted(null, null)
+        then:
+        def e = thrown(AbortExecutionException)
+        e.message == "maximum query complexity exceeded 2 > 1"
 
     }
 
@@ -122,7 +146,7 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
         InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
         InstrumentationContext instrumentationContext = queryComplexityInstrumentation.beginValidation(validationParameters)
         when:
-        instrumentationContext.onEnd(null, null)
+        instrumentationContext.onCompleted(null, null)
 
         then:
         1 * calculator.calculate({ FieldComplexityEnvironment env -> env.field.name == "scalar" }, 0) >> 10
@@ -132,6 +156,39 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
 
     }
 
+    def "custom max query complexity exceeded function"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                scalar: String  
+                foo: Foo
+            }
+        """)
+        def query = createQuery("""
+            {f2: foo {scalar foo{scalar}} f1: foo { foo {foo {foo {foo{foo{scalar}}}}}} }
+            """)
+        Boolean test = false
+        Function<QueryComplexityInfo, Boolean> maxQueryComplexityExceededFunction = new Function<QueryComplexityInfo, Boolean>() {
+            @Override
+            Boolean apply(final QueryComplexityInfo queryComplexityInfo) {
+                test = true
+                return false
+            }
+        }
+        MaxQueryComplexityInstrumentation queryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(10, maxQueryComplexityExceededFunction)
+        ExecutionInput executionInput = Mock(ExecutionInput)
+        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
+        InstrumentationContext instrumentationContext = queryComplexityInstrumentation.beginValidation(validationParameters)
+        when:
+        instrumentationContext.onCompleted(null, null)
+        then:
+        test == true
+        notThrown(Exception)
+    }
 }
 
 

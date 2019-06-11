@@ -1,6 +1,7 @@
 package graphql.parser;
 
 import graphql.Assert;
+import graphql.Internal;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -10,11 +11,12 @@ import java.util.List;
 /**
  * Contains parsing code for the StringValue types in the grammar
  */
-class StringValueParsing {
+@Internal
+public class StringValueParsing {
     private final static String ESCAPED_TRIPLE_QUOTES = "\\\\\"\"\""; // ahh Java + Regex
     private final static String THREE_QUOTES = "\"\"\"";
 
-    static String parseTripleQuotedString(String strText) {
+    public static String parseTripleQuotedString(String strText) {
         int end = strText.length() - 3;
         String s = strText.substring(3, end);
         s = s.replaceAll(ESCAPED_TRIPLE_QUOTES, THREE_QUOTES);
@@ -24,32 +26,34 @@ class StringValueParsing {
     /*
        See https://github.com/facebook/graphql/pull/327/files#diff-fe406b08746616e2f5f00909488cce66R758
      */
-    static String removeIndentation(String rawValue) {
+    public static String removeIndentation(String rawValue) {
         String[] lines = rawValue.split("\\n");
-        int minIndent = Integer.MAX_VALUE;
+        Integer commonIndent = null;
         for (int i = 0; i < lines.length; i++) {
             if (i == 0) continue;
             String line = lines[i];
             int length = line.length();
             int indent = leadingWhitespace(line);
-            if (indent < length && indent < minIndent) {
-                minIndent = indent;
+            if (indent < length) {
+                if (commonIndent == null || indent < commonIndent) {
+                    commonIndent = indent;
+                }
             }
         }
         List<String> lineList = new ArrayList<>(Arrays.asList(lines));
-        if (minIndent != Integer.MAX_VALUE) {
+        if (commonIndent != null) {
             for (int i = 0; i < lineList.size(); i++) {
                 String line = lineList.get(i);
                 if (i == 0) continue;
-                if (line.length() > minIndent) {
-                    line = line.substring(minIndent);
+                if (line.length() > commonIndent) {
+                    line = line.substring(commonIndent);
                     lineList.set(i, line);
                 }
             }
         }
         while (!lineList.isEmpty()) {
             String line = lineList.get(0);
-            if (line.isEmpty()) {
+            if (containsOnlyWhiteSpace(line)) {
                 lineList.remove(0);
             } else {
                 break;
@@ -58,7 +62,7 @@ class StringValueParsing {
         while (!lineList.isEmpty()) {
             int endIndex = lineList.size() - 1;
             String line = lineList.get(endIndex);
-            if (line.isEmpty()) {
+            if (containsOnlyWhiteSpace(line)) {
                 lineList.remove(endIndex);
             } else {
                 break;
@@ -77,10 +81,10 @@ class StringValueParsing {
         return formatted.toString();
     }
 
-    private static int leadingWhitespace(String line) {
+    private static int leadingWhitespace(String str) {
         int count = 0;
-        for (int i = 1; i < line.length(); i++) {
-            char ch = line.charAt(i);
+        for (int i = 0; i < str.length(); i++) {
+            char ch = str.charAt(i);
             if (ch != ' ' && ch != '\t') {
                 break;
             }
@@ -89,7 +93,12 @@ class StringValueParsing {
         return count;
     }
 
-    static String parseSingleQuotedString(String string) {
+    private static boolean containsOnlyWhiteSpace(String str) {
+        // according to graphql spec and graphql-js - this is the definition
+        return leadingWhitespace(str) == str.length();
+    }
+
+    public static String parseSingleQuotedString(String string) {
         StringWriter writer = new StringWriter(string.length() - 2);
         int end = string.length() - 1;
         for (int i = 1; i < end; i++) {

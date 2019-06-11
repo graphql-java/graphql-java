@@ -1,26 +1,35 @@
 package graphql.schema;
 
 
+import graphql.Assert;
 import graphql.PublicApi;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.introspection.Introspection.DirectiveLocation;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
+import static graphql.util.FpKit.getByName;
+import static graphql.util.FpKit.valuesToList;
 
 /**
- * A directive can be used to modify the behavior of a graphql field.
+ * A directive can be used to modify the behavior of a graphql field or type.
  *
  * See http://graphql.org/learn/queries/#directives for more details on the concept.
  */
 @SuppressWarnings("DeprecatedIsStillUsed") // because the graphql spec still has some of these deprecated fields
 @PublicApi
-public class GraphQLDirective {
+public class GraphQLDirective implements GraphQLType {
 
     private final String name;
     private final String description;
@@ -37,12 +46,13 @@ public class GraphQLDirective {
         this.name = name;
         this.description = description;
         this.locations = locations;
-        this.arguments.addAll(arguments);
+        this.arguments.addAll(sortGraphQLTypes(arguments));
         this.onOperation = onOperation;
         this.onFragment = onFragment;
         this.onField = onField;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -96,19 +106,70 @@ public class GraphQLDirective {
         return description;
     }
 
+    @Override
+    public String toString() {
+        return "GraphQLDirective{" +
+                "name='" + name + '\'' +
+                ", arguments=" + arguments +
+                ", locations=" + locations +
+                '}';
+    }
+
+    /**
+     * This helps you transform the current GraphQLDirective into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
+     *
+     * @param builderConsumer the consumer code that will be given a builder to transform
+     *
+     * @return a new field based on calling build on that builder
+     */
+    public GraphQLDirective transform(Consumer<Builder> builderConsumer) {
+        Builder builder = newDirective(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+        return visitor.visitGraphQLDirective(this, context);
+    }
+
+    @Override
+    public List<GraphQLType> getChildren() {
+        return new ArrayList<>(arguments);
+    }
+
     public static Builder newDirective() {
         return new Builder();
+    }
+
+    public static Builder newDirective(GraphQLDirective existing) {
+        return new Builder(existing);
     }
 
     public static class Builder {
 
         private String name;
-        private final EnumSet<DirectiveLocation> locations = EnumSet.noneOf(DirectiveLocation.class);
-        private final List<GraphQLArgument> arguments = new ArrayList<>();
         private String description;
         private boolean onOperation;
         private boolean onFragment;
         private boolean onField;
+        private EnumSet<DirectiveLocation> locations = EnumSet.noneOf(DirectiveLocation.class);
+        private final Map<String, GraphQLArgument> arguments = new LinkedHashMap<>();
+
+        public Builder() {
+        }
+
+        @SuppressWarnings("deprecation")
+        public Builder(GraphQLDirective existing) {
+            this.name = existing.getName();
+            this.description = existing.getDescription();
+            this.onOperation = existing.isOnOperation();
+            this.onFragment = existing.isOnFragment();
+            this.onField = existing.isOnField();
+            this.locations = existing.validLocations();
+            this.arguments.putAll(getByName(existing.getArguments(), GraphQLArgument::getName));
+        }
 
         public Builder name(String name) {
             this.name = name;
@@ -125,8 +186,19 @@ public class GraphQLDirective {
             return this;
         }
 
-        public Builder argument(GraphQLArgument fieldArgument) {
-            arguments.add(fieldArgument);
+        public Builder validLocation(DirectiveLocation validLocation) {
+            locations.add(validLocation);
+            return this;
+        }
+
+        public Builder clearValidLocations() {
+            locations = EnumSet.noneOf(DirectiveLocation.class);
+            return this;
+        }
+
+        public Builder argument(GraphQLArgument argument) {
+            Assert.assertNotNull(argument, "argument must not be null");
+            arguments.put(argument.getName(), argument);
             return this;
         }
 
@@ -158,9 +230,19 @@ public class GraphQLDirective {
          * @return this
          */
         public Builder argument(GraphQLArgument.Builder builder) {
-            this.arguments.add(builder.build());
+            return argument(builder.build());
+        }
+
+        /**
+         * This is used to clear all the arguments in the builder so far.
+         *
+         * @return the builder
+         */
+        public Builder clearArguments() {
+            arguments.clear();
             return this;
         }
+
 
         /**
          * @param onOperation onOperation
@@ -202,7 +284,7 @@ public class GraphQLDirective {
         }
 
         public GraphQLDirective build() {
-            return new GraphQLDirective(name, description, locations, arguments, onOperation, onFragment, onField);
+            return new GraphQLDirective(name, description, locations, valuesToList(arguments), onOperation, onFragment, onField);
         }
 
 

@@ -1,20 +1,25 @@
 package graphql.language;
 
 
-import java.util.Collections;
+import graphql.Assert;
+import graphql.PublicApi;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static graphql.Assert.assertNotNull;
-
+@PublicApi
 public abstract class AbstractNode<T extends Node> implements Node<T> {
 
-    private SourceLocation sourceLocation;
-    private List<Comment> comments = Collections.emptyList();
+    private final SourceLocation sourceLocation;
+    private final List<Comment> comments;
+    private final IgnoredChars ignoredChars;
 
-
-    public void setSourceLocation(SourceLocation sourceLocation) {
+    public AbstractNode(SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
         this.sourceLocation = sourceLocation;
+        Assert.assertNotNull(comments, "comments can't be null");
+        this.comments = new ArrayList<>(comments);
+        this.ignoredChars = Assert.assertNotNull(ignoredChars, "ignoredChars can't be null");
     }
 
     @Override
@@ -22,13 +27,14 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
         return sourceLocation;
     }
 
+    @Override
     public List<Comment> getComments() {
-        return comments;
+        return new ArrayList<>(comments);
     }
 
-    public void setComments(List<Comment> comments) {
-        assertNotNull(comments, "You must provide non null comments");
-        this.comments = comments;
+    @Override
+    public IgnoredChars getIgnoredChars() {
+        return ignoredChars;
     }
 
     @SuppressWarnings("unchecked")
@@ -46,5 +52,4 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
         }
         return list.stream().map(Node::deepCopy).map(node -> (V) node).collect(Collectors.toList());
     }
-
 }

@@ -14,7 +14,7 @@ class KnownFragmentNamesTest extends Specification {
 
     def "unknown fragment reference in fragment spread"() {
         given:
-        FragmentSpread fragmentSpread = new FragmentSpread("fragment")
+        FragmentSpread fragmentSpread = FragmentSpread.newFragmentSpread("fragment").build()
         knownFragmentNames.validationContext.getFragment("fragment") >> null
         when:
         knownFragmentNames.checkFragmentSpread(fragmentSpread)

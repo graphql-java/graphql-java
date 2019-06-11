@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -104,17 +105,20 @@ public class HttpMain extends AbstractHandler {
             return;
         }
 
+        //
+        // This example uses the DataLoader technique to ensure that the most efficient
+        // loading of data (in this case StarWars characters) happens.
+        //
+        DataLoaderRegistry dataLoaderRegistry = buildDataLoaderRegistry();
+
+
         ExecutionInput.Builder executionInput = newExecutionInput()
                 .query(parameters.getQuery())
                 .operationName(parameters.getOperationName())
-                .variables(parameters.getVariables());
+                .variables(parameters.getVariables())
+                .dataLoaderRegistry(dataLoaderRegistry)
+                ;
 
-        //
-        // This example uses the DataLoader technique to ensure that the most efficient
-        // loading of data (in this case StarWars characters) happens.  We pass that to data
-        // fetchers via the graphql context object.
-        //
-        DataLoaderRegistry dataLoaderRegistry = buildDataLoaderRegistry();
 
 
         //
@@ -131,7 +135,6 @@ public class HttpMain extends AbstractHandler {
         Map<String, Object> context = new HashMap<>();
         context.put("YouAppSecurityClearanceLevel", "CodeRed");
         context.put("YouAppExecutingUser", "Dr Nefarious");
-        context.put("dataloaderRegistry", dataLoaderRegistry);
         executionInput.context(context);
 
         //
@@ -139,7 +142,7 @@ public class HttpMain extends AbstractHandler {
         GraphQLSchema schema = buildStarWarsSchema();
 
         DataLoaderDispatcherInstrumentation dlInstrumentation =
-                new DataLoaderDispatcherInstrumentation(dataLoaderRegistry, newOptions().includeStatistics(true));
+                new DataLoaderDispatcherInstrumentation(newOptions().includeStatistics(true));
 
         Instrumentation instrumentation = new ChainedInstrumentation(
                 asList(new TracingInstrumentation(), dlInstrumentation)
@@ -200,8 +203,7 @@ public class HttpMain extends AbstractHandler {
             // more efficient by batching and caching the calls to load Character friends
             //
             DataFetcher friendsFetcher = environment -> {
-                DataLoaderRegistry dataloaderRegistry = asMapGet(environment.getContext(), "dataloaderRegistry");
-                DataLoader friendsDataLoader = dataloaderRegistry.getDataLoader("friends");
+                DataLoader friendsDataLoader = environment.getDataLoader("friends");
 
                 List<String> friendIds = asMapGet(environment.getSource(), "friends");
                 return friendsDataLoader.loadMany(friendIds);
@@ -219,7 +221,7 @@ public class HttpMain extends AbstractHandler {
             // logical schema
             //
             TypeResolver characterTypeResolver = env -> {
-                Map<String, Object> obj = (Map<String, Object>) env.getObject();
+                Map<String, Object> obj = env.getObject();
                 String id = (String) obj.get("id");
                 GraphQLSchema schema = env.getSchema();
                 if (StarWarsData.isHuman(id)) {
@@ -267,12 +269,13 @@ public class HttpMain extends AbstractHandler {
     @SuppressWarnings("SameParameterValue")
     private Reader loadSchemaFile(String name) {
         InputStream stream = getClass().getClassLoader().getResourceAsStream(name);
-        return new InputStreamReader(stream);
+        return new InputStreamReader(stream, Charset.defaultCharset());
     }
 
     // Lots of the data happens to be maps of objects and this allows us to get back into type safety land
-    // with less boiler plat and casts
+    // with less boiler plate and casts
     //
+    @SuppressWarnings("TypeParameterUnusedInFormals")
     private <T> T asMapGet(Object mapObj, Object mapKey) {
         Map<Object, ?> map = (Map<Object, ?>) mapObj;
         return (T) map.get(mapKey);

@@ -3,6 +3,7 @@ package graphql
 import graphql.language.FloatValue
 import graphql.language.IntValue
 import graphql.language.StringValue
+import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
 import spock.lang.Specification
@@ -27,8 +28,10 @@ class ScalarsIntTest extends Specification {
 
     @Unroll
     def "Int returns null for invalid #literal"() {
-        expect:
-        Scalars.GraphQLInt.getCoercing().parseLiteral(literal) == null
+        when:
+        Scalars.GraphQLInt.getCoercing().parseLiteral(literal)
+        then:
+        thrown(CoercingParseLiteralException)
 
         where:
         literal                                            | _

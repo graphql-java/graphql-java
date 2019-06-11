@@ -1,12 +1,18 @@
 package graphql.schema;
 
 
+import graphql.PublicApi;
+
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import static graphql.Assert.assertValidName;
 
 /**
  * A special type to allow a object/interface types to reference itself. It's replaced with the real type
  * object when the schema is built.
  */
+@PublicApi
 public class GraphQLTypeReference implements GraphQLType, GraphQLOutputType, GraphQLInputType {
 
     /**
@@ -29,7 +35,13 @@ public class GraphQLTypeReference implements GraphQLType, GraphQLOutputType, Gra
         this.name = name;
     }
 
+    @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+        return visitor.visitGraphQLTypeReference(this, context);
     }
 }

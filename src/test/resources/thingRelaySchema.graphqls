@@ -1,0 +1,45 @@
+type ThingConnection {
+    pageInfo: PageInfo
+    nodes: [Thing]
+    edges: [ThingEdge]
+    totalCount: Int!
+}
+
+type PageInfo {
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    startCursor: String
+    endCursor: String
+}
+
+type ThingEdge {
+    cursor: String!
+    node: Thing
+}
+
+interface Node {
+    id: ID!
+}
+
+type Thing implements Node {
+    id: ID!
+    key: String
+    summary: String
+    description : String
+    createdDate : String
+    lastUpdatedDate : String
+    status : Status
+    stuff : Stuff
+}
+
+type Status {
+    name : String
+}
+
+type Stuff {
+    name : String
+}
+
+type Query {
+    things(first : Int) : ThingConnection
+}

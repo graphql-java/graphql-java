@@ -3,6 +3,7 @@ package graphql
 import graphql.language.BooleanValue
 import graphql.language.IntValue
 import graphql.language.StringValue
+import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
 import spock.lang.Specification
@@ -24,8 +25,10 @@ class ScalarsIDTest extends Specification {
 
     @Unroll
     def "ID returns null for invalid #literal"() {
-        expect:
-        Scalars.GraphQLID.getCoercing().parseLiteral(literal) == null
+        when:
+        Scalars.GraphQLID.getCoercing().parseLiteral(literal)
+        then:
+        thrown(CoercingParseLiteralException)
 
         where:
         literal                | _
@@ -43,6 +46,7 @@ class ScalarsIDTest extends Specification {
         "123ab"             | "123ab"
         123                 | "123"
         123123123123123123L | "123123123123123123"
+        UUID.fromString("037ebc7a-f9b8-4d76-89f6-31b34a40e10b") | "037ebc7a-f9b8-4d76-89f6-31b34a40e10b"
     }
 
     @Unroll

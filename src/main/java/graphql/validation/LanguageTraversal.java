@@ -1,11 +1,11 @@
 package graphql.validation;
 
 
-import graphql.Internal;
-import graphql.language.Node;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import graphql.Internal;
+import graphql.language.Node;
 
 @Internal
 public class LanguageTraversal {
@@ -32,8 +32,11 @@ public class LanguageTraversal {
     private void traverseImpl(Node<?> root, DocumentVisitor documentVisitor, List<Node> path) {
         documentVisitor.enter(root, path);
         path.add(root);
-        for (Node child : root.getChildren()) {
-            traverseImpl(child, documentVisitor, path);
+        List<Node> children = root.getChildren();
+        for (Node child : children) {
+            if (child != null) {
+                traverseImpl(child, documentVisitor, path);
+            }
         }
         path.remove(path.size() - 1);
         documentVisitor.leave(root, path);

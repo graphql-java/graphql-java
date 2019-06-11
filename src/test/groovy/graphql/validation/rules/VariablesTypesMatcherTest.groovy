@@ -1,14 +1,13 @@
 package graphql.validation.rules
 
 import graphql.language.BooleanValue
-import graphql.schema.GraphQLList
-import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 import spock.lang.Unroll
 
 import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLString
-
+import static graphql.schema.GraphQLList.list
+import static graphql.schema.GraphQLNonNull.nonNull
 
 class VariablesTypesMatcherTest extends Specification {
 
@@ -22,10 +21,10 @@ class VariablesTypesMatcherTest extends Specification {
         typesMatcher.doesVariableTypesMatch(variableType, defaultValue, expectedType) == result
 
         where:
-        variableType                       | defaultValue           | expectedType                   || result
-        GraphQLString                      | null                   | GraphQLString                  || true
-        new GraphQLList(GraphQLString)     | null                   | new GraphQLList(GraphQLString) || true
-        new GraphQLNonNull(GraphQLBoolean) | new BooleanValue(true) | GraphQLBoolean                 || true
-        new GraphQLNonNull(GraphQLString)  | null                   | new GraphQLList(GraphQLString) || false
+        variableType            | defaultValue           | expectedType        || result
+        GraphQLString           | null                   | GraphQLString       || true
+        list(GraphQLString)     | null                   | list(GraphQLString) || true
+        nonNull(GraphQLBoolean) | new BooleanValue(true) | GraphQLBoolean      || true
+        nonNull(GraphQLString)  | null                   | list(GraphQLString) || false
     }
 }

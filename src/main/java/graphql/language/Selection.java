@@ -1,10 +1,8 @@
 package graphql.language;
 
 
-public interface Selection<T extends Selection> extends Node<T> {
+import graphql.PublicApi;
 
-    /**
-     * @return a deep copy of this selection
-     */
-    T deepCopy();
+@PublicApi
+public interface Selection<T extends Selection> extends Node<T> {
 }

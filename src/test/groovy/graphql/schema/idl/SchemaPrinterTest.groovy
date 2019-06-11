@@ -26,6 +26,7 @@ import java.util.function.UnaryOperator
 
 import static graphql.Scalars.GraphQLString
 import static graphql.TestUtil.mockScalar
+import static graphql.TestUtil.mockTypeRuntimeWiring
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
@@ -40,9 +41,10 @@ class SchemaPrinterTest extends Specification {
     GraphQLSchema starWarsSchema() {
         def wiring = newRuntimeWiring()
                 .type("Character", { type -> type.typeResolver(resolver) } as UnaryOperator<TypeRuntimeWiring.Builder>)
+                .type("Node", { type -> type.typeResolver(resolver) } as UnaryOperator<TypeRuntimeWiring.Builder>)
                 .scalar(ASTEROID)
                 .build()
-        GraphQLSchema schema = load("starWarsSchemaExtended.graphqls", wiring)
+        GraphQLSchema schema = TestUtil.schemaFromResource("starWarsSchemaExtended.graphqls", wiring)
         schema
     }
 
@@ -72,20 +74,6 @@ class SchemaPrinterTest extends Specification {
         }
     }
 
-    GraphQLSchema load(String fileName, RuntimeWiring wiring) {
-        def stream = getClass().getClassLoader().getResourceAsStream(fileName)
-
-        def typeRegistry = new SchemaParser().parse(new InputStreamReader(stream))
-        def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, wiring)
-        schema
-    }
-
-    GraphQLSchema generate(String spec) {
-        def typeRegistry = new SchemaParser().parse(spec)
-        def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, newRuntimeWiring().build())
-        schema
-    }
-
     static class MyGraphQLObjectType extends GraphQLObjectType {
 
         MyGraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions) {
@@ -96,15 +84,11 @@ class SchemaPrinterTest extends Specification {
     def "typeString"() {
 
         GraphQLType type1 = nonNull(list(nonNull(list(nonNull(Scalars.GraphQLInt)))))
-        GraphQLType type2 = nonNull(nonNull(list(nonNull(Scalars.GraphQLInt))))
 
         def typeStr1 = new SchemaPrinter().typeString(type1)
-        def typeStr2 = new SchemaPrinter().typeString(type2)
 
         expect:
         typeStr1 == "[[Int!]!]!"
-        typeStr2 == "[Int!]!!"
-
     }
 
     def "argsString"() {
@@ -173,7 +157,7 @@ class SchemaPrinterTest extends Specification {
     }
 
     def "default root names are handled"() {
-        def schema = generate("""
+        def schema = TestUtil.schema("""
             type Query {
                 field: String
             }
@@ -205,8 +189,50 @@ type Subscription {
 """
     }
 
+    def "schema prints if forced with default root names"() {
+        def schema = TestUtil.schema("""
+            type Query {
+                field: String
+            }
+
+            type Mutation {
+                field: String
+            }
+
+            type Subscription {
+                field: String
+            }
+        """)
+
+        def options = defaultOptions()
+                .includeSchemaDefintion(true)
+
+        def result = new SchemaPrinter(options).print(schema)
+
+        expect:
+        result == """schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
+
+type Mutation {
+  field: String
+}
+
+type Query {
+  field: String
+}
+
+type Subscription {
+  field: String
+}
+"""
+    }
+
+
     def "schema is printed if default root names are not ALL present"() {
-        def schema = generate("""
+        def schema = TestUtil.schema("""
             type Query {
                 field: String
             }
@@ -510,12 +536,14 @@ scalar Scalar
         then:
         result == """type Query {
   field(
-  #about arg1
-  arg1: String, 
-  arg2: String, 
-  #about 3
-  #second line
-  arg3: String
+    #about arg1
+    arg1: String, 
+    arg2: String, 
+    \"\"\"
+    about 3
+    second line
+    \"\"\"
+    arg3: String
   ): String
 }
 """
@@ -576,7 +604,7 @@ type Query {
 
 
     def "schema will be sorted"() {
-        def schema = generate("""
+        def schema = TestUtil.schema("""
             type Query {
                 fieldB(argZ : String, argY : Int, argX : String) : String
                 fieldA(argZ : String, argY : Int, argX : String) : String
@@ -644,7 +672,11 @@ type TypeE {
   name: String!
 }
 
-type Droid implements Character {
+interface Node {
+  id: ID!
+}
+
+type Droid implements Character & Node {
   appearsIn: [Episode]!
   friends: [Character]
   id: ID!
@@ -653,7 +685,7 @@ type Droid implements Character {
   primaryFunction: String
 }
 
-type Human implements Character {
+type Human implements Character & Node {
   appearsIn: [Episode]!
   friends: [Character]
   homePlanet: String
@@ -669,6 +701,12 @@ type Planet {
 type Query {
   droid(id: ID!): Droid
   hero(episode: Episode): Character
+  node(id: ID!): Node
+}
+
+type Starship implements Node {
+  id: ID!
+  name: String
 }
 
 enum Episode {
@@ -680,9 +718,8 @@ enum Episode {
     }
 
 
-
     def "AST doc string entries are printed if present"() {
-        def schema = generate('''
+        def schema = TestUtil.schema('''
             # comments up here
             """docstring"""
             # and comments as well down here
@@ -700,6 +737,231 @@ enum Episode {
 type Query {
   "field single desc"
   field: String
+}
+'''
+    }
+
+
+    def idlWithDirectives() {
+        return """
+            
+            interface SomeInterface @interfaceTypeDirective {
+                fieldA : String @interfaceFieldDirective
+            }
+            
+            union SomeUnion @unionTypeDirective = Single | SomeImplementingType
+            
+            type Query @query1 @query2(arg1:"x") {
+                fieldA : String @fieldDirective1 @fieldDirective2(argStr:"str", argInt : 1, argFloat : 1.0, argBool : false)
+                fieldB(input : SomeInput) : SomeScalar
+                fieldC : SomeEnum
+                fieldD : SomeInterface
+                fieldE : SomeUnion
+                fieldF(argWithDirective: String @argDirective): String
+            }
+            
+            type Single @single {
+                fieldA : String @singleField
+            }
+            
+            type SomeImplementingType implements SomeInterface @interfaceImplementingTypeDirective {
+                fieldA : String @interfaceImplementingFieldDirective
+            }
+            
+            enum SomeEnum @enumTypeDirective {
+                SOME_ENUM_VALUE @enumValueDirective
+            }
+            
+            scalar SomeScalar @scalarDirective
+            
+            input SomeInput @inputTypeDirective {
+                fieldA : String @inputFieldDirective
+            }
+        """
+    }
+
+
+    def "directives will be printed with the includeDirectives flag set"() {
+        given:
+        def registry = new SchemaParser().parse(idlWithDirectives())
+        def runtimeWiring = newRuntimeWiring()
+                .scalar(mockScalar(registry.scalars().get("SomeScalar")))
+                .type(mockTypeRuntimeWiring("SomeInterface", true))
+                .type(mockTypeRuntimeWiring("SomeUnion", true))
+                .build()
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true)).print(schema)
+
+        then:
+        // args and directives are sorted like the rest of the schema printer
+        result == '''interface SomeInterface @interfaceTypeDirective {
+  fieldA: String @interfaceFieldDirective
+}
+
+union SomeUnion @unionTypeDirective = Single | SomeImplementingType
+
+type Query @query1 @query2(arg1 : "x") {
+  fieldA: String @fieldDirective1 @fieldDirective2(argBool : false, argFloat : 1.0, argInt : 1, argStr : "str")
+  fieldB(input: SomeInput): SomeScalar
+  fieldC: SomeEnum
+  fieldD: SomeInterface
+  fieldE: SomeUnion
+  fieldF(argWithDirective: String @argDirective): String
+}
+
+type Single @single {
+  fieldA: String @singleField
+}
+
+type SomeImplementingType implements SomeInterface @interfaceImplementingTypeDirective {
+  fieldA: String @interfaceImplementingFieldDirective
+}
+
+enum SomeEnum @enumTypeDirective {
+  SOME_ENUM_VALUE @enumValueDirective
+}
+
+scalar SomeScalar @scalarDirective
+
+input SomeInput @inputTypeDirective {
+  fieldA: String @inputFieldDirective
+}
+'''
+        when:
+        def resultNoDirectives = new SchemaPrinter(defaultOptions()
+                .includeScalarTypes(true)
+                .includeDirectives(false))
+                .print(schema)
+
+        then:
+        // args and directives are sorted like the rest of the schema printer
+        resultNoDirectives == '''interface SomeInterface {
+  fieldA: String
+}
+
+union SomeUnion = Single | SomeImplementingType
+
+type Query {
+  fieldA: String
+  fieldB(input: SomeInput): SomeScalar
+  fieldC: SomeEnum
+  fieldD: SomeInterface
+  fieldE: SomeUnion
+  fieldF(argWithDirective: String): String
+}
+
+type Single {
+  fieldA: String
+}
+
+type SomeImplementingType implements SomeInterface {
+  fieldA: String
+}
+
+enum SomeEnum {
+  SOME_ENUM_VALUE
+}
+
+scalar SomeScalar
+
+input SomeInput {
+  fieldA: String
+}
+'''
+    }
+
+
+    def "directives with default values are printed correctly"() {
+        given:
+        def idl = """
+
+            type Field {
+              active : Enum
+              deprecated : Enum @deprecated
+              deprecatedWithReason : Enum @deprecated(reason : "Custom reason 1")
+            }
+            
+            type Query {
+                field : Field
+            }
+            
+            enum Enum {
+              ACTIVE
+              DEPRECATED @deprecated
+              DEPRECATED_WITH_REASON @deprecated(reason : "Custom reason 2")
+            }
+        """
+        def registry = new SchemaParser().parse(idl)
+        def runtimeWiring = newRuntimeWiring().build()
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true)).print(schema)
+
+        then:
+        // args and directives are sorted like the rest of the schema printer
+        result == '''type Field {
+  active: Enum
+  deprecated: Enum @deprecated(reason : "No longer supported")
+  deprecatedWithReason: Enum @deprecated(reason : "Custom reason 1")
+}
+
+type Query {
+  field: Field
+}
+
+enum Enum {
+  ACTIVE
+  DEPRECATED @deprecated(reason : "No longer supported")
+  DEPRECATED_WITH_REASON @deprecated(reason : "Custom reason 2")
+}
+'''
+    }
+
+
+    def "directives are printed as top level types when the includeDirectives flag is set"() {
+        def simpleIdlWithDirective = '''
+                directive @example on FIELD_DEFINITION
+                
+                directive @moreComplex(arg1 : String = "default", arg2 : Int) 
+                    on FIELD_DEFINITION | 
+                        INPUT_FIELD_DEFINITION
+               
+                type Query {
+                    fieldA : String @example @moreComplex(arg2 : 666)
+                }
+            '''
+        given:
+        def registry = new SchemaParser().parse(simpleIdlWithDirective)
+        def runtimeWiring = newRuntimeWiring().build()
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+
+        when:
+        def resultWithNoDirectives = new SchemaPrinter(defaultOptions().includeDirectives(false)).print(schema)
+
+        then:
+        resultWithNoDirectives == '''\
+type Query {
+  fieldA: String
+}
+'''
+
+        when:
+        def resultWithDirectives = new SchemaPrinter(defaultOptions().includeDirectives(true)).print(schema)
+
+        then:
+        resultWithDirectives == '''\
+directive @example on FIELD_DEFINITION
+
+directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+type Query {
+  fieldA: String @example @moreComplex(arg1 : "default", arg2 : 666)
 }
 '''
     }

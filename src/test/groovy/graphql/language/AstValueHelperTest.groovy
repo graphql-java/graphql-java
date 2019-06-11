@@ -2,8 +2,6 @@ package graphql.language
 
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectType
-import graphql.schema.GraphQLList
-import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 
 import static AstValueHelper.astFromValue
@@ -12,23 +10,26 @@ import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLID
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.language.BooleanValue.newBooleanValue
+import static graphql.schema.GraphQLList.list
+import static graphql.schema.GraphQLNonNull.nonNull
 
 class AstValueHelperTest extends Specification {
 
     def 'converts boolean values to ASTs'() {
         expect:
-        astFromValue(true, GraphQLBoolean).isEqualTo(new BooleanValue(true))
+        astFromValue(true, GraphQLBoolean).isEqualTo(newBooleanValue(true).build())
 
-        astFromValue(false, GraphQLBoolean).isEqualTo(new BooleanValue(false))
+        astFromValue(false, GraphQLBoolean).isEqualTo(newBooleanValue(false).build())
 
         astFromValue(null, GraphQLBoolean) == null
 
-        astFromValue(0, GraphQLBoolean).isEqualTo(new BooleanValue(false))
+        astFromValue(0, GraphQLBoolean).isEqualTo(newBooleanValue(false).build())
 
-        astFromValue(1, GraphQLBoolean).isEqualTo(new BooleanValue(true))
+        astFromValue(1, GraphQLBoolean).isEqualTo(newBooleanValue(true).build())
 
-        def NonNullBoolean = new GraphQLNonNull(GraphQLBoolean)
-        astFromValue(0, NonNullBoolean).isEqualTo(new BooleanValue(false))
+        def NonNullBoolean = nonNull(GraphQLBoolean)
+        astFromValue(0, NonNullBoolean).isEqualTo(newBooleanValue(false).build())
     }
 
     BigInteger bigInt(int i) {
@@ -37,20 +38,20 @@ class AstValueHelperTest extends Specification {
 
     def 'converts Int values to Int ASTs'() {
         expect:
-        astFromValue(123.0, GraphQLInt).isEqualTo(new IntValue(bigInt(123)))
+        astFromValue(123.0, GraphQLInt).isEqualTo(IntValue.newIntValue(bigInt(123)).build())
 
-        astFromValue(1e4, GraphQLInt).isEqualTo(new IntValue(bigInt(10000)))
+        astFromValue(1e4, GraphQLInt).isEqualTo(IntValue.newIntValue(bigInt(10000)).build())
     }
 
     def 'converts Float values to Int/Float ASTs'() {
         expect:
-        astFromValue(123.0, GraphQLFloat).isEqualTo(new FloatValue(123.0))
+        astFromValue(123.0, GraphQLFloat).isEqualTo(FloatValue.newFloatValue(123.0).build())
 
-        astFromValue(123.5, GraphQLFloat).isEqualTo(new FloatValue(123.5))
+        astFromValue(123.5, GraphQLFloat).isEqualTo(FloatValue.newFloatValue(123.5).build())
 
-        astFromValue(1e4, GraphQLFloat).isEqualTo(new FloatValue(10000.0))
+        astFromValue(1e4, GraphQLFloat).isEqualTo(FloatValue.newFloatValue(10000.0).build())
 
-        astFromValue(1e40, GraphQLFloat).isEqualTo(new FloatValue(1.0e40))
+        astFromValue(1e40, GraphQLFloat).isEqualTo(FloatValue.newFloatValue(1.0e40).build())
     }
 
 
@@ -60,7 +61,11 @@ class AstValueHelperTest extends Specification {
 
         astFromValue('VALUE', GraphQLString).isEqualTo(new StringValue('VALUE'))
 
-        astFromValue('VA\n\t\\LUE', GraphQLString).isEqualTo(new StringValue('VA\\n\\t\\\\LUE'))
+        astFromValue('VA\n\t\f\r\b\\LUE', GraphQLString).isEqualTo(new StringValue('VA\\n\\t\\f\\r\\b\\\\LUE'))
+
+        astFromValue('VA/LUE', GraphQLString).isEqualTo(new StringValue('VA\\/LUE'))
+
+        astFromValue('VA\\L\"UE', GraphQLString).isEqualTo(new StringValue('VA\\\\L\\"UE'))
 
         astFromValue(123, GraphQLString).isEqualTo(new StringValue('123'))
 
@@ -87,7 +92,7 @@ class AstValueHelperTest extends Specification {
 
     def 'does not converts NonNull values to NullValue'() {
         expect:
-        def NonNullBoolean = new GraphQLNonNull(GraphQLBoolean)
+        def NonNullBoolean = nonNull(GraphQLBoolean)
         astFromValue(null, NonNullBoolean) == null
     }
 
@@ -115,19 +120,19 @@ class AstValueHelperTest extends Specification {
 
     def 'converts array values to List ASTs'() {
         expect:
-        astFromValue(['FOO', 'BAR'], new GraphQLList(GraphQLString)).isEqualTo(
+        astFromValue(['FOO', 'BAR'], list(GraphQLString)).isEqualTo(
                 new ArrayValue([new StringValue('FOO'), new StringValue('BAR')])
         )
 
 
-        astFromValue(['HELLO', 'GOODBYE'], new GraphQLList(myEnum)).isEqualTo(
+        astFromValue(['HELLO', 'GOODBYE'], list(myEnum)).isEqualTo(
                 new ArrayValue([new EnumValue('HELLO'), new EnumValue('GOODBYE')])
         )
     }
 
     def 'converts list singletons'() {
         expect:
-        astFromValue('FOO', new GraphQLList(GraphQLString)).isEqualTo(
+        astFromValue('FOO', list(GraphQLString)).isEqualTo(
                 new StringValue('FOO')
         )
     }
@@ -172,5 +177,30 @@ class AstValueHelperTest extends Specification {
         '666.6'                                       | FloatValue.class
         '["A", "B", "C"]'                             | ArrayValue.class
         '{string : "s", integer : 1, boolean : true}' | ObjectValue.class
+    }
+
+    def "1105 - encoding of json strings"() {
+
+        when:
+        def json = AstValueHelper.jsonStringify(strValue)
+
+        then:
+        json == expected
+
+        where:
+        strValue                                  | expected
+        ''                                        | ''
+        'json'                                    | 'json'
+        'quotation-"'                             | 'quotation-\\"'
+        'reverse-solidus-\\'                      | 'reverse-solidus-\\\\'
+        'solidus-/'                               | 'solidus-\\/'
+        'backspace-\b'                            | 'backspace-\\b'
+        'formfeed-\f'                             | 'formfeed-\\f'
+        'newline-\n'                              | 'newline-\\n'
+        'carriage-return-\r'                      | 'carriage-return-\\r'
+        'horizontal-tab-\t'                       | 'horizontal-tab-\\t'
+
+        // this is some AST from issue 1105
+        '''"{"operator":"eq", "operands": []}"''' | '''\\"{\\"operator\\":\\"eq\\", \\"operands\\": []}\\"'''
     }
 }

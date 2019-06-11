@@ -1,12 +1,16 @@
 package graphql.execution.instrumentation
 
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.batched.BatchedExecutionStrategy
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
+import graphql.language.AstPrinter
+import graphql.parser.Parser
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.PropertyDataFetcher
@@ -46,12 +50,10 @@ class InstrumentationTest extends Specification {
                 "start:validation",
                 "end:validation",
 
-                "start:data-fetch-dispatch",
-                "start:data-fetch",
+                "start:execute-operation",
 
                 "start:execution-strategy",
 
-                "start:fields",
                 "start:field-hero",
                 "start:fetch-hero",
                 "end:fetch-hero",
@@ -60,26 +62,21 @@ class InstrumentationTest extends Specification {
 
                 "start:execution-strategy",
 
-                "start:fields",
                 "start:field-id",
                 "start:fetch-id",
                 "end:fetch-id",
                 "start:complete-id",
                 "end:complete-id",
                 "end:field-id",
-                "end:fields",
 
                 "end:execution-strategy",
 
                 "end:complete-hero",
                 "end:field-hero",
-                "end:fields",
 
                 "end:execution-strategy",
 
-                "end:data-fetch",
-
-                "end:data-fetch-dispatch",
+                "end:execute-operation",
                 "end:execution",
         ]
         when:
@@ -105,14 +102,14 @@ class InstrumentationTest extends Specification {
         instrumentation.dfInvocations.size() == 2
 
         instrumentation.dfInvocations[0].getFieldDefinition().name == 'hero'
-        instrumentation.dfInvocations[0].getFieldTypeInfo().getPath().toList() == ['hero']
-        instrumentation.dfInvocations[0].getFieldTypeInfo().getType().name == 'Character'
-        !instrumentation.dfInvocations[0].getFieldTypeInfo().isNonNullType()
+        instrumentation.dfInvocations[0].getExecutionStepInfo().getPath().toList() == ['hero']
+        instrumentation.dfInvocations[0].getExecutionStepInfo().getUnwrappedNonNullType().name == 'Character'
+        !instrumentation.dfInvocations[0].getExecutionStepInfo().isNonNullType()
 
         instrumentation.dfInvocations[1].getFieldDefinition().name == 'id'
-        instrumentation.dfInvocations[1].getFieldTypeInfo().getPath().toList() == ['hero', 'id']
-        instrumentation.dfInvocations[1].getFieldTypeInfo().getType().name == 'String'
-        instrumentation.dfInvocations[1].getFieldTypeInfo().isNonNullType()
+        instrumentation.dfInvocations[1].getExecutionStepInfo().getPath().toList() == ['hero', 'id']
+        instrumentation.dfInvocations[1].getExecutionStepInfo().getUnwrappedNonNullType().name == 'String'
+        instrumentation.dfInvocations[1].getExecutionStepInfo().isNonNullType()
     }
 
     def '#630 - Instrumentation of batched execution strategy is called'() {
@@ -132,8 +129,7 @@ class InstrumentationTest extends Specification {
                 "end:parse",
                 "start:validation",
                 "end:validation",
-                "start:data-fetch-dispatch",
-                "start:data-fetch",
+                "start:execute-operation",
                 "start:execution-strategy",
 
                 "start:field-hero",
@@ -147,8 +143,7 @@ class InstrumentationTest extends Specification {
                 "end:field-id",
 
                 "end:execution-strategy",
-                "end:data-fetch",
-                "end:data-fetch-dispatch",
+                "end:execute-operation",
                 "end:execution",
         ]
         when:
@@ -214,26 +209,31 @@ class InstrumentationTest extends Specification {
      * java-dataloader works.  That is calls inside DataFetchers are "batched"
      * until a "dispatch" signal is made.
      */
-    class WaitingInstrumentation extends NoOpInstrumentation {
+    class WaitingInstrumentation extends SimpleInstrumentation {
 
         final AtomicBoolean goSignal = new AtomicBoolean()
 
         @Override
-        InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+        ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
             System.out.println(String.format("t%s setting go signal off", Thread.currentThread().getId()))
             goSignal.set(false)
-            return new InstrumentationContext<CompletableFuture<ExecutionResult>>() {
+            return new ExecutionStrategyInstrumentationContext() {
+
                 @Override
-                void onEnd(CompletableFuture<ExecutionResult> result, Throwable t) {
+                void onDispatched(CompletableFuture<ExecutionResult> result) {
                     System.out.println(String.format("t%s setting go signal on", Thread.currentThread().getId()))
                     goSignal.set(true)
+                }
+
+                @Override
+                void onCompleted(ExecutionResult result, Throwable t) {
                 }
             }
         }
 
         @Override
         DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
-            System.out.println(String.format("t%s instrument DF for %s", Thread.currentThread().getId(), parameters.environment.getFieldTypeInfo().getPath()))
+            System.out.println(String.format("t%s instrument DF for %s", Thread.currentThread().getId(), parameters.environment.getExecutionStepInfo().getPath()))
 
             return new DataFetcher<Object>() {
                 @Override
@@ -241,9 +241,9 @@ class InstrumentationTest extends Specification {
                     // off thread call - that waits
                     return CompletableFuture.supplyAsync({
                         def value = dataFetcher.get(environment)
-                        System.out.println(String.format("   t%s awaiting %s", Thread.currentThread().getId(), environment.getFieldTypeInfo().getPath()))
+                        System.out.println(String.format("   t%s awaiting %s", Thread.currentThread().getId(), environment.getExecutionStepInfo().getPath()))
                         Awaitility.await().atMost(20, TimeUnit.SECONDS).untilTrue(goSignal)
-                        System.out.println(String.format("      t%s returning value %s", Thread.currentThread().getId(), environment.getFieldTypeInfo().getPath()))
+                        System.out.println(String.format("      t%s returning value %s", Thread.currentThread().getId(), environment.getExecutionStepInfo().getPath()))
                         return value
                     })
                 }
@@ -282,5 +282,51 @@ class InstrumentationTest extends Specification {
         then:
 
         er.data == [artoo: [id: '2001'], r2d2: [name: 'R2-D2']]
+    }
+
+    def "document and variables can be intercepted by instrumentation and changed"() {
+
+        given:
+
+        def query = '''query Q($var: String!) {
+  human(id: $var) {
+    id
+  }
+}
+'''
+        def newQuery = '''query Q($var: String!) {
+  human(id: $var) {
+    id
+    name
+  }
+}
+'''
+
+        def instrumentation = new TestingInstrumentation() {
+
+            @Override
+            DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters) {
+                this.capturedData["originalDoc"] = AstPrinter.printAst(documentAndVariables.getDocument())
+                this.capturedData["originalVariables"] = documentAndVariables.getVariables()
+                def newDoc = new Parser().parseDocument(newQuery)
+                def newVars = [var: "1001"]
+                documentAndVariables.transform({ builder -> builder.document(newDoc).variables(newVars) })
+            }
+
+        }
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .instrumentation(instrumentation)
+                .build()
+
+        when:
+        def variables = [var: "1000"]
+        def er = graphQL.execute(ExecutionInput.newExecutionInput().query(query).variables(variables)) // Luke
+
+        then:
+        er.data == [human: [id : "1001", name: 'Darth Vader']]
+        instrumentation.capturedData["originalDoc"] == query
+        instrumentation.capturedData["originalVariables"] == variables
     }
 }

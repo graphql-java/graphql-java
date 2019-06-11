@@ -51,7 +51,11 @@ interface Character {
     appearsIn: [Episode]!
 }
 
-type Human implements Character {
+interface Node {
+  id: ID!
+}
+
+type Human implements Character & Node {
     id: ID!
     name: String!
     friends: [Character]
@@ -59,7 +63,7 @@ type Human implements Character {
     homePlanet: String
 }
 
-type Droid implements Character {
+type Droid implements Character & Node {
     id: ID!
     name: String!
     friends: [Character]
@@ -69,7 +73,7 @@ type Droid implements Character {
 
 union SearchResult = Human | Droid | Starship
 
-type Review {
+type Review implements Node {
   id: ID!
   stars: Int!
   commentary: String
@@ -122,7 +126,11 @@ interface Character {
   appearsIn: [Episode]!
 }
 
-type Human implements Character {
+interface Node {
+  id: ID!
+}
+
+type Human implements Character & Node {
   id: ID!
   name: String!
   friends: [Character]
@@ -130,7 +138,7 @@ type Human implements Character {
   homePlanet: String
 }
 
-type Droid implements Character {
+type Droid implements Character & Node {
   id: ID!
   name: String!
   friends: [Character]
@@ -140,7 +148,7 @@ type Droid implements Character {
 
 union SearchResult = Human | Droid | Starship
 
-type Review {
+type Review implements Node {
   id: ID!
   stars: Int!
   commentary: String
@@ -454,6 +462,104 @@ type Query {
 }
 '''
 
+    }
+
+    def "print type extensions"() {
+        def query = '''
+    extend type Object @directive {
+        objectField : String
+    }    
+
+    extend interface Interface @directive {
+        objectField : String
+    }    
+
+    extend union Union @directive = | Foo | Baz
+    
+    extend enum Enum {
+        X
+        Y
+    }
+    
+    extend scalar Scalar @directive
+
+    extend input Input @directive {
+        inputField : String
+    }
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''extend type Object @directive {
+  objectField: String
+}
+
+extend interface Interface @directive {
+  objectField: String
+}
+
+extend union Union @directive = Foo | Baz
+
+extend enum Enum {
+  X
+  Y
+}
+
+extend scalar Scalar @directive
+
+extend input Input @directive {
+  inputField: String
+}
+'''
+
+    }
+
+    def "compact ast printing"() {
+        def query = '''
+    { 
+        #comments go away
+        aliasOfFoo : foo(arg1 : "val1", args2 : "val2") @isCached { #   and this comment as well
+            hello
+        } 
+        world @neverCache @okThenCache
+    }
+    
+    fragment FX on SomeType {
+        aliased : field(withArgs : "argVal", andMoreArgs : "andMoreVals")
+    }
+'''
+        def document = parse(query)
+        String output = AstPrinter.printAstCompact(document)
+
+        expect:
+        output == '''query {aliasOfFoo:foo(arg1:"val1",args2:"val2") @isCached {hello} world @neverCache @okThenCache} fragment FX on SomeType {aliased:field(withArgs:"argVal",andMoreArgs:"andMoreVals")}'''
+    }
+
+    def "print ast with inline fragment without type condition"() {
+        def query = '''
+    { 
+        foo {
+            ... {
+                hello
+            }
+        }
+    }
+'''
+        def document = parse(query)
+        String outputCompact = AstPrinter.printAstCompact(document)
+        String outputFull = AstPrinter.printAst(document)
+
+        expect:
+        outputCompact == '''query {foo {... {hello}}}'''
+        outputFull == '''query {
+  foo {
+    ... {
+      hello
+    }
+  }
+}
+'''
     }
 
 }

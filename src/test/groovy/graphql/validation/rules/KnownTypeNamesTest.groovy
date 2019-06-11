@@ -18,7 +18,7 @@ class KnownTypeNamesTest extends Specification {
         knownTypeNames.validationContext.getSchema() >> StarWarsSchema.starWarsSchema
 
         when:
-        knownTypeNames.checkTypeName(new TypeName("Simpson"))
+        knownTypeNames.checkTypeName(TypeName.newTypeName("Simpson").build())
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UnknownType)

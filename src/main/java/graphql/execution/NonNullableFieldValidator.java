@@ -13,11 +13,11 @@ import graphql.Internal;
 public class NonNullableFieldValidator {
 
     private final ExecutionContext executionContext;
-    private final ExecutionTypeInfo typeInfo;
+    private final ExecutionStepInfo executionStepInfo;
 
-    public NonNullableFieldValidator(ExecutionContext executionContext, ExecutionTypeInfo typeInfo) {
+    public NonNullableFieldValidator(ExecutionContext executionContext, ExecutionStepInfo executionStepInfo) {
         this.executionContext = executionContext;
-        this.typeInfo = typeInfo;
+        this.executionStepInfo = executionStepInfo;
     }
 
     /**
@@ -33,9 +33,20 @@ public class NonNullableFieldValidator {
      */
     public <T> T validate(ExecutionPath path, T result) throws NonNullableFieldWasNullException {
         if (result == null) {
-            if (typeInfo.isNonNullType()) {
+            if (executionStepInfo.isNonNullType()) {
                 // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability
-                NonNullableFieldWasNullException nonNullException = new NonNullableFieldWasNullException(typeInfo, path);
+                //
+                //    > If the field returns null because of an error which has already been added to the "errors" list in the response,
+                //    > the "errors" list must not be further affected. That is, only one error should be added to the errors list per field.
+                //
+                // We interpret this to cover the null field path only.  So here we use the variant of addError() that checks
+                // for the current path already.
+                //
+                // Other places in the code base use the addError() that does not care about previous errors on that path being there.
+                //
+                // We will do this until the spec makes this more explicit.
+                //
+                NonNullableFieldWasNullException nonNullException = new NonNullableFieldWasNullException(executionStepInfo, path);
                 executionContext.addError(new NonNullableFieldWasNullError(nonNullException), path);
                 throw nonNullException;
             }

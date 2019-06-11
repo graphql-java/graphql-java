@@ -13,3 +13,4 @@ docs/_build/
 \.classpath
 \.project
 \.settings/
+/.nb-gradle/

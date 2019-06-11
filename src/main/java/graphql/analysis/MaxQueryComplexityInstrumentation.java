@@ -3,26 +3,35 @@ package graphql.analysis;
 import graphql.PublicApi;
 import graphql.execution.AbortExecutionException;
 import graphql.execution.instrumentation.InstrumentationContext;
-import graphql.execution.instrumentation.NoOpInstrumentation;
+import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.validation.ValidationError;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenCompleted;
+import static java.util.Optional.ofNullable;
 
 /**
- * Prevents execution if the query complexity is greater than the specified maxComplexity
+ * Prevents execution if the query complexity is greater than the specified maxComplexity.
+ *
+ * Use the {@code Function<QueryComplexityInfo, Boolean>} parameter to supply a function to perform a custom action when the max complexity
+ * is exceeded. If the function returns {@code true} a {@link AbortExecutionException} is thrown.
  */
 @PublicApi
-public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
+public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
 
+    private static final Logger log = LoggerFactory.getLogger(MaxQueryComplexityInstrumentation.class);
 
     private final int maxComplexity;
     private final FieldComplexityCalculator fieldComplexityCalculator;
+    private final Function<QueryComplexityInfo, Boolean> maxQueryComplexityExceededFunction;
 
     /**
      * new Instrumentation with default complexity calculator which is `1 + childComplexity`
@@ -30,7 +39,17 @@ public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
      * @param maxComplexity max allowed complexity, otherwise execution will be aborted
      */
     public MaxQueryComplexityInstrumentation(int maxComplexity) {
-        this(maxComplexity, (env, childComplexity) -> 1 + childComplexity);
+        this(maxComplexity, (queryComplexityInfo) -> true);
+    }
+
+    /**
+     * new Instrumentation with default complexity calculator which is `1 + childComplexity`
+     *
+     * @param maxComplexity                      max allowed complexity, otherwise execution will be aborted
+     * @param maxQueryComplexityExceededFunction the function to perform when the max complexity is exceeded
+     */
+    public MaxQueryComplexityInstrumentation(int maxComplexity, Function<QueryComplexityInfo, Boolean> maxQueryComplexityExceededFunction) {
+        this(maxComplexity, (env, childComplexity) -> 1 + childComplexity, maxQueryComplexityExceededFunction);
     }
 
     /**
@@ -40,35 +59,55 @@ public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
      * @param fieldComplexityCalculator custom complexity calculator
      */
     public MaxQueryComplexityInstrumentation(int maxComplexity, FieldComplexityCalculator fieldComplexityCalculator) {
-        this.maxComplexity = maxComplexity;
-        this.fieldComplexityCalculator = assertNotNull(fieldComplexityCalculator, "calculator can't be null");
+        this(maxComplexity, fieldComplexityCalculator, (queryComplexityInfo) -> true);
     }
 
+    /**
+     * new Instrumentation with custom complexity calculator
+     *
+     * @param maxComplexity                      max allowed complexity, otherwise execution will be aborted
+     * @param fieldComplexityCalculator          custom complexity calculator
+     * @param maxQueryComplexityExceededFunction the function to perform when the max complexity is exceeded
+     */
+    public MaxQueryComplexityInstrumentation(int maxComplexity, FieldComplexityCalculator fieldComplexityCalculator,
+                                             Function<QueryComplexityInfo, Boolean> maxQueryComplexityExceededFunction) {
+        this.maxComplexity = maxComplexity;
+        this.fieldComplexityCalculator = assertNotNull(fieldComplexityCalculator, "calculator can't be null");
+        this.maxQueryComplexityExceededFunction = maxQueryComplexityExceededFunction;
+    }
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        return (errors, throwable) -> {
+        return whenCompleted((errors, throwable) -> {
             if ((errors != null && errors.size() > 0) || throwable != null) {
                 return;
             }
             QueryTraversal queryTraversal = newQueryTraversal(parameters);
 
-            Map<QueryVisitorEnvironment, List<Integer>> valuesByParent = new LinkedHashMap<>();
-            queryTraversal.visitPostOrder(env -> {
-                int childsComplexity = 0;
-                QueryVisitorEnvironment thisNodeAsParent = new QueryVisitorEnvironment(env.getField(), env.getFieldDefinition(), env.getParentType(), env.getParentEnvironment(), env.getArguments());
-                if (valuesByParent.containsKey(thisNodeAsParent)) {
-                    childsComplexity = valuesByParent.get(thisNodeAsParent).stream().mapToInt(Integer::intValue).sum();
+            Map<QueryVisitorFieldEnvironment, Integer> valuesByParent = new LinkedHashMap<>();
+            queryTraversal.visitPostOrder(new QueryVisitorStub() {
+                @Override
+                public void visitField(QueryVisitorFieldEnvironment env) {
+                    int childsComplexity = valuesByParent.getOrDefault(env, 0);
+                    int value = calculateComplexity(env, childsComplexity);
+
+                    valuesByParent.compute(env.getParentEnvironment(), (key, oldValue) ->
+                            ofNullable(oldValue).orElse(0) + value
+                    );
                 }
-                int value = calculateComplexity(env, childsComplexity);
-                valuesByParent.putIfAbsent(env.getParentEnvironment(), new ArrayList<>());
-                valuesByParent.get(env.getParentEnvironment()).add(value);
             });
-            int totalComplexity = valuesByParent.get(null).stream().mapToInt(Integer::intValue).sum();
+            int totalComplexity = valuesByParent.getOrDefault(null, 0);
+            log.debug("Query complexity: {}", totalComplexity);
             if (totalComplexity > maxComplexity) {
-                throw mkAbortException(totalComplexity, maxComplexity);
+                QueryComplexityInfo queryComplexityInfo = QueryComplexityInfo.newQueryComplexityInfo()
+                        .complexity(totalComplexity)
+                        .build();
+                boolean throwAbortException = maxQueryComplexityExceededFunction.apply(queryComplexityInfo);
+                if (throwAbortException) {
+                    throw mkAbortException(totalComplexity, maxComplexity);
+                }
             }
-        };
+        });
     }
 
     /**
@@ -84,29 +123,32 @@ public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
     }
 
     QueryTraversal newQueryTraversal(InstrumentationValidationParameters parameters) {
-        return new QueryTraversal(
-                parameters.getSchema(),
-                parameters.getDocument(),
-                parameters.getOperation(),
-                parameters.getVariables()
-        );
+        return QueryTraversal.newQueryTraversal()
+                .schema(parameters.getSchema())
+                .document(parameters.getDocument())
+                .operationName(parameters.getOperation())
+                .variables(parameters.getVariables())
+                .build();
     }
 
-    private int calculateComplexity(QueryVisitorEnvironment queryVisitorEnvironment, int childsComplexity) {
-        FieldComplexityEnvironment fieldComplexityEnvironment = convertEnv(queryVisitorEnvironment);
+    private int calculateComplexity(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment, int childsComplexity) {
+        if (queryVisitorFieldEnvironment.isTypeNameIntrospectionField()) {
+            return 0;
+        }
+        FieldComplexityEnvironment fieldComplexityEnvironment = convertEnv(queryVisitorFieldEnvironment);
         return fieldComplexityCalculator.calculate(fieldComplexityEnvironment, childsComplexity);
     }
 
-    private FieldComplexityEnvironment convertEnv(QueryVisitorEnvironment queryVisitorEnvironment) {
+    private FieldComplexityEnvironment convertEnv(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
         FieldComplexityEnvironment parentEnv = null;
-        if (queryVisitorEnvironment.getParentEnvironment() != null) {
-            parentEnv = convertEnv(queryVisitorEnvironment.getParentEnvironment());
+        if (queryVisitorFieldEnvironment.getParentEnvironment() != null) {
+            parentEnv = convertEnv(queryVisitorFieldEnvironment.getParentEnvironment());
         }
         return new FieldComplexityEnvironment(
-                queryVisitorEnvironment.getField(),
-                queryVisitorEnvironment.getFieldDefinition(),
-                queryVisitorEnvironment.getParentType(),
-                queryVisitorEnvironment.getArguments(),
+                queryVisitorFieldEnvironment.getField(),
+                queryVisitorFieldEnvironment.getFieldDefinition(),
+                queryVisitorFieldEnvironment.getFieldsContainer(),
+                queryVisitorFieldEnvironment.getArguments(),
                 parentEnv
         );
     }

@@ -9,13 +9,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
+import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 
 /**
  * Given a normal data fetcher as a delegate,
  * uses that fetcher in a batched context by iterating through each source value and calling
  * the delegate.
+ *
+ * @deprecated This has been deprecated in favour of using {@link graphql.execution.AsyncExecutionStrategy} and {@link graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation}
  */
+@Deprecated
 public class UnbatchedDataFetcher implements BatchedDataFetcher {
 
     private final DataFetcher delegate;
@@ -26,7 +29,7 @@ public class UnbatchedDataFetcher implements BatchedDataFetcher {
 
 
     @Override
-    public CompletableFuture<List<Object>> get(DataFetchingEnvironment environment) {
+    public CompletableFuture<List<Object>> get(DataFetchingEnvironment environment) throws Exception {
         List<Object> sources = environment.getSource();
         List<CompletableFuture<Object>> results = new ArrayList<>();
         for (Object source : sources) {

@@ -167,16 +167,16 @@ type Human implements Character {
 
 type QueryType {
   droid(
-  #id of the droid
-  id: String!
+    #id of the droid
+    id: String!
   ): Droid
   hero(
-  #If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode.
-  episode: Episode
+    #If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode.
+    episode: Episode
   ): Character
   human(
-  #id of the human
-  id: String!
+    #id of the human
+    id: String!
   ): Human
 }
 
@@ -244,12 +244,12 @@ type Human implements Character {
 
 type QueryType {
   droid(
-  #id of the droid
-  id: String!
+    #id of the droid
+    id: String!
   ): Droid
   human(
-  #id of the human
-  id: String!
+    #id of the human
+    id: String!
   ): Human
 }
 

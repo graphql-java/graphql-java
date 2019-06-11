@@ -1,9 +1,5 @@
 package graphql;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import graphql.execution.ExecutionPath;
 import graphql.introspection.Introspection;
 import graphql.language.SourceLocation;
@@ -16,6 +12,10 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static java.lang.String.format;
@@ -40,7 +40,7 @@ public class TypeMismatchError implements GraphQLError {
 
     static class GraphQLTypeToTypeKindMapping {
 
-        private static final Map<Class<? extends GraphQLType>, Introspection.TypeKind> registry = new HashMap<Class<? extends GraphQLType>, Introspection.TypeKind>() {{
+        private static final Map<Class<? extends GraphQLType>, Introspection.TypeKind> registry = new LinkedHashMap<Class<? extends GraphQLType>, Introspection.TypeKind>() {{
             put(GraphQLEnumType.class, Introspection.TypeKind.ENUM);
             put(GraphQLList.class, Introspection.TypeKind.LIST);
             put(GraphQLObjectType.class, Introspection.TypeKind.OBJECT);
@@ -74,13 +74,14 @@ public class TypeMismatchError implements GraphQLError {
         return ErrorType.DataFetchingException;
     }
 
+    @Override
     public List<Object> getPath() {
         return path;
     }
 
     @Override
     public String toString() {
-        return "ExceptionWhileDataFetching{" +
+        return "TypeMismatchError{" +
                 "path=" + path +
                 "expectedType=" + expectedType +
                 '}';

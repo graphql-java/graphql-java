@@ -3,6 +3,7 @@ package graphql.execution.batched;
 import graphql.GraphQLException;
 
 
+@Deprecated
 public class BatchAssertionFailed extends GraphQLException {
     public BatchAssertionFailed() {
         super();

@@ -6,12 +6,14 @@ import graphql.language.FloatValue;
 import graphql.language.IntValue;
 import graphql.language.StringValue;
 import graphql.schema.Coercing;
+import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLScalarType;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.UUID;
 
 import static graphql.Assert.assertShouldNeverHappen;
 
@@ -97,10 +99,16 @@ public class Scalars {
 
         @Override
         public Integer parseLiteral(Object input) {
-            if (!(input instanceof IntValue)) return null;
+            if (!(input instanceof IntValue)) {
+                throw new CoercingParseLiteralException(
+                        "Expected AST type 'IntValue' but was '" + typeName(input) + "'."
+                );
+            }
             BigInteger value = ((IntValue) input).getValue();
             if (value.compareTo(INT_MIN) < 0 || value.compareTo(INT_MAX) > 0) {
-                return null;
+                throw new CoercingParseLiteralException(
+                        "Expected value to be in the Integer range but it was '" + value.toString() + "'"
+                );
             }
             return value.intValue();
         }
@@ -158,7 +166,9 @@ public class Scalars {
             } else if (input instanceof FloatValue) {
                 return ((FloatValue) input).getValue().doubleValue();
             } else {
-                return null;
+                throw new CoercingParseLiteralException(
+                        "Expected AST type 'IntValue' or 'FloatValue' but was '" + typeName(input) + "'."
+                );
             }
         }
     });
@@ -179,7 +189,11 @@ public class Scalars {
 
         @Override
         public String parseLiteral(Object input) {
-            if (!(input instanceof StringValue)) return null;
+            if (!(input instanceof StringValue)) {
+                throw new CoercingParseLiteralException(
+                        "Expected AST type 'StringValue' but was '" + typeName(input) + "'."
+                );
+            }
             return ((StringValue) input).getValue();
         }
     });
@@ -233,7 +247,11 @@ public class Scalars {
 
         @Override
         public Boolean parseLiteral(Object input) {
-            if (!(input instanceof BooleanValue)) return null;
+            if (!(input instanceof BooleanValue)) {
+                throw new CoercingParseLiteralException(
+                        "Expected AST type 'BooleanValue' but was '" + typeName(input) + "'."
+                );
+            }
             return ((BooleanValue) input).isValue();
         }
     });
@@ -255,6 +273,9 @@ public class Scalars {
                 return String.valueOf(input);
             }
             if (input instanceof Long) {
+                return String.valueOf(input);
+            }
+            if (input instanceof UUID) {
                 return String.valueOf(input);
             }
             return null;
@@ -291,7 +312,9 @@ public class Scalars {
             if (input instanceof IntValue) {
                 return ((IntValue) input).getValue().toString();
             }
-            return null;
+            throw new CoercingParseLiteralException(
+                    "Expected AST type 'IntValue' or 'StringValue' but was '" + typeName(input) + "'."
+            );
         }
     });
 
@@ -349,16 +372,22 @@ public class Scalars {
                 try {
                     return Long.parseLong(((StringValue) input).getValue());
                 } catch (NumberFormatException e) {
-                    return null;
+                    throw new CoercingParseLiteralException(
+                            "Expected value to be a Long but it was '" + String.valueOf(input) + "'"
+                    );
                 }
             } else if (input instanceof IntValue) {
                 BigInteger value = ((IntValue) input).getValue();
                 if (value.compareTo(LONG_MIN) < 0 || value.compareTo(LONG_MAX) > 0) {
-                    return null;
+                    throw new CoercingParseLiteralException(
+                            "Expected value to be in the Long range but it was '" + value.toString() + "'"
+                    );
                 }
                 return value.longValue();
             }
-            return null;
+            throw new CoercingParseLiteralException(
+                    "Expected AST type 'IntValue' or 'StringValue' but was '" + typeName(input) + "'."
+            );
         }
     });
 
@@ -412,10 +441,16 @@ public class Scalars {
 
         @Override
         public Short parseLiteral(Object input) {
-            if (!(input instanceof IntValue)) return null;
+            if (!(input instanceof IntValue)) {
+                throw new CoercingParseLiteralException(
+                        "Expected AST type 'IntValue' but was '" + typeName(input) + "'."
+                );
+            }
             BigInteger value = ((IntValue) input).getValue();
             if (value.compareTo(SHORT_MIN) < 0 || value.compareTo(SHORT_MAX) > 0) {
-                return null;
+                throw new CoercingParseLiteralException(
+                        "Expected value to be in the Short range but it was '" + value.toString() + "'"
+                );
             }
             return value.shortValue();
         }
@@ -471,10 +506,16 @@ public class Scalars {
 
         @Override
         public Byte parseLiteral(Object input) {
-            if (!(input instanceof IntValue)) return null;
+            if (!(input instanceof IntValue)) {
+                throw new CoercingParseLiteralException(
+                        "Expected AST type 'IntValue' but was '" + typeName(input) + "'."
+                );
+            }
             BigInteger value = ((IntValue) input).getValue();
             if (value.compareTo(BYTE_MIN) < 0 || value.compareTo(BYTE_MAX) > 0) {
-                return null;
+                throw new CoercingParseLiteralException(
+                        "Expected value to be in the Byte range but it was '" + value.toString() + "'"
+                );
             }
             return value.byteValue();
         }
@@ -532,7 +573,9 @@ public class Scalars {
                 try {
                     return new BigDecimal(((StringValue) input).getValue()).toBigIntegerExact();
                 } catch (NumberFormatException | ArithmeticException e) {
-                    return null;
+                    throw new CoercingParseLiteralException(
+                            "Unable to turn AST input into a 'BigInteger' : '" + String.valueOf(input) + "'"
+                    );
                 }
             } else if (input instanceof IntValue) {
                 return ((IntValue) input).getValue();
@@ -540,10 +583,14 @@ public class Scalars {
                 try {
                     return ((FloatValue) input).getValue().toBigIntegerExact();
                 } catch (ArithmeticException e) {
-                    return null;
+                    throw new CoercingParseLiteralException(
+                            "Unable to turn AST input into a 'BigInteger' : '" + String.valueOf(input) + "'"
+                    );
                 }
             }
-            return null;
+            throw new CoercingParseLiteralException(
+                    "Expected AST type 'IntValue', 'StringValue' or 'FloatValue' but was '" + typeName(input) + "'."
+            );
         }
     });
 
@@ -592,14 +639,18 @@ public class Scalars {
                 try {
                     return new BigDecimal(((StringValue) input).getValue());
                 } catch (NumberFormatException e) {
-                    return null;
+                    throw new CoercingParseLiteralException(
+                            "Unable to turn AST input into a 'BigDecimal' : '" + String.valueOf(input) + "'"
+                    );
                 }
             } else if (input instanceof IntValue) {
                 return new BigDecimal(((IntValue) input).getValue());
             } else if (input instanceof FloatValue) {
                 return ((FloatValue) input).getValue();
             }
-            return null;
+            throw new CoercingParseLiteralException(
+                    "Expected AST type 'IntValue', 'StringValue' or 'FloatValue' but was '" + typeName(input) + "'."
+            );
         }
     });
 
@@ -644,9 +695,17 @@ public class Scalars {
 
         @Override
         public Character parseLiteral(Object input) {
-            if (!(input instanceof StringValue)) return null;
+            if (!(input instanceof StringValue)) {
+                throw new CoercingParseLiteralException(
+                        "Expected AST type 'StringValue' but was '" + typeName(input) + "'."
+                );
+            }
             String value = ((StringValue) input).getValue();
-            if (value.length() != 1) return null;
+            if (value.length() != 1) {
+                throw new CoercingParseLiteralException(
+                        "Empty 'StringValue' provided."
+                );
+            }
             return value.charAt(0);
         }
     });

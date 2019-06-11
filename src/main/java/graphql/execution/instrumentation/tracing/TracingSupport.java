@@ -1,7 +1,7 @@
 package graphql.execution.instrumentation.tracing;
 
 import graphql.PublicApi;
-import graphql.execution.ExecutionTypeInfo;
+import graphql.execution.ExecutionStepInfo;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.DataFetchingEnvironment;
 
@@ -28,11 +28,15 @@ public class TracingSupport implements InstrumentationState {
     private final ConcurrentLinkedQueue<Map<String, Object>> fieldData;
     private final Map<String, Object> parseMap = new LinkedHashMap<>();
     private final Map<String, Object> validationMap = new LinkedHashMap<>();
+    private final boolean includeTrivialDataFetchers;
 
     /**
      * The timer starts as soon as you create this object
+     *
+     * @param includeTrivialDataFetchers whether the trace trivial data fetchers
      */
-    public TracingSupport() {
+    public TracingSupport(boolean includeTrivialDataFetchers) {
+        this.includeTrivialDataFetchers = includeTrivialDataFetchers;
         startRequestNanos = System.nanoTime();
         startRequestTime = Instant.now();
         fieldData = new ConcurrentLinkedQueue<>();
@@ -53,22 +57,28 @@ public class TracingSupport implements InstrumentationState {
      * end the call.
      *
      * @param dataFetchingEnvironment the data fetching that is occurring
+     * @param trivialDataFetcher      if the data fetcher is considered trivial
      *
      * @return a context to call end on
      */
-    public TracingContext beginField(DataFetchingEnvironment dataFetchingEnvironment) {
+    public TracingContext beginField(DataFetchingEnvironment dataFetchingEnvironment, boolean trivialDataFetcher) {
+        if (!includeTrivialDataFetchers && trivialDataFetcher) {
+            return () -> {
+                // nothing to do
+            };
+        }
         long startFieldFetch = System.nanoTime();
         return () -> {
             long now = System.nanoTime();
             long duration = now - startFieldFetch;
             long startOffset = startFieldFetch - startRequestNanos;
-            ExecutionTypeInfo typeInfo = dataFetchingEnvironment.getFieldTypeInfo();
+            ExecutionStepInfo executionStepInfo = dataFetchingEnvironment.getExecutionStepInfo();
 
             Map<String, Object> fetchMap = new LinkedHashMap<>();
-            fetchMap.put("path", typeInfo.getPath().toList());
-            fetchMap.put("parentType", typeInfo.getParentTypeInfo().getType().getName());
-            fetchMap.put("returnType", typeInfo.toAst());
-            fetchMap.put("fieldName", typeInfo.getFieldDefinition().getName());
+            fetchMap.put("path", executionStepInfo.getPath().toList());
+            fetchMap.put("parentType", executionStepInfo.getParent().getUnwrappedNonNullType().getName());
+            fetchMap.put("returnType", executionStepInfo.simplePrint());
+            fetchMap.put("fieldName", executionStepInfo.getFieldDefinition().getName());
             fetchMap.put("startOffset", startOffset);
             fetchMap.put("duration", duration);
 

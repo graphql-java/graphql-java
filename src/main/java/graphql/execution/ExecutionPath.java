@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import graphql.Assert;
 import graphql.AssertException;
 import graphql.PublicApi;
 
@@ -44,6 +45,39 @@ public class ExecutionPath {
         this.parent = assertNotNull(parent, "Must provide a parent path");
         this.segment = assertNotNull(segment, "Must provide a sub path");
         pathList = toListImpl();
+    }
+
+    public int getLevel() {
+        int counter = 0;
+        ExecutionPath currentPath = this;
+        while (currentPath != null) {
+            if (currentPath.segment instanceof StringPathSegment) {
+                counter++;
+            }
+            currentPath = currentPath.parent;
+        }
+        return counter;
+    }
+
+    public ExecutionPath getPathWithoutListEnd() {
+        if (ROOT_PATH.equals(this)) {
+            return ROOT_PATH;
+        }
+        if (segment instanceof StringPathSegment) {
+            return this;
+        }
+        return parent;
+    }
+
+    public String getSegmentName() {
+        if (segment instanceof StringPathSegment) {
+            return ((StringPathSegment) segment).getValue();
+        } else {
+            if (parent == null) {
+                return null;
+            }
+            return ((StringPathSegment) parent.segment).getValue();
+        }
     }
 
     /**
@@ -121,11 +155,16 @@ public class ExecutionPath {
         return new ExecutionPath(this, new IntPathSegment(segment));
     }
 
+    public ExecutionPath sibling(String siblingField) {
+        Assert.assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
+        return new ExecutionPath(this.parent, new StringPathSegment(siblingField));
+    }
+
     /**
      * @return converts the path into a list of segments
      */
     public List<Object> toList() {
-        return pathList;
+        return new ArrayList<>(pathList);
     }
 
     private List<Object> toListImpl() {
@@ -151,7 +190,7 @@ public class ExecutionPath {
             return "";
         }
 
-        if (parent == ROOT_PATH) {
+        if (ROOT_PATH.equals(parent)) {
             return segment.toString();
         }
 

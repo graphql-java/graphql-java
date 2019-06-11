@@ -179,6 +179,7 @@ class PossibleFragmentSpreadsTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
+        errorCollector.getErrors().get(0).message == 'Validation error of type InvalidFragmentType: Fragment cannot be spread here as objects of type Cat can never be of type Dog @ \'invalidObjectWithinObjectAnon\''
     }
 
     def 'object into not implementing interface'() {
@@ -191,6 +192,7 @@ class PossibleFragmentSpreadsTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
+        errorCollector.getErrors().get(0).message == 'Validation error of type InvalidFragmentType: Fragment humanFragment cannot be spread here as objects of type Pet can never be of type Human @ \'invalidObjectWithinInterface\''
     }
 
     def 'object into not containing union'() {
@@ -293,6 +295,44 @@ class PossibleFragmentSpreadsTest extends Specification {
         then:
         errorCollector.getErrors().size() == 1
 
+    }
+
+    def 'when fragment target type is not composite type do not error - FragmentsOnCompositeType takes care of the validation'() {
+        setup: "LeashInput is an input type so it shouldn't be target-able"
+        def query = """
+           query {
+            dogWithInput {
+             ...LeashInputFragment
+            }
+           }
+           
+           fragment LeashInputFragment on LeashInput {
+            id
+           }
+        """
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.getErrors().isEmpty()
+    }
+
+    def 'when inline fragment target type is not composite type do not error - FragmentsOnCompositeType takes care of the validation'() {
+        setup: "LeashInput is an input type so it shouldn't be target-able"
+        def query = """
+           query {
+            dogWithInput {
+             ...on LeashInput {
+              id 
+             }
+            }
+           }           
+        """
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.getErrors().isEmpty()
     }
 
 }

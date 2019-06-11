@@ -1,13 +1,15 @@
 package graphql.schema.idl
 
+import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
+import graphql.schema.Coercing
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetcherFactories
 import graphql.schema.DataFetcherFactory
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLUnionType
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.TypeResolver
@@ -46,6 +48,31 @@ class WiringFactoryTest extends Specification {
 
         NamedWiringFactory(String name) {
             this.name = name
+        }
+
+        @Override
+        boolean providesScalar(ScalarWiringEnvironment environment) {
+            return name == environment.getInterfaceTypeDefinition().getName()
+        }
+
+        @Override
+        GraphQLScalarType getScalar(ScalarWiringEnvironment environment) {
+            return new GraphQLScalarType(name, "Custom scalar", new Coercing() {
+                @Override
+                Object serialize(Object input) {
+                    throw new UnsupportedOperationException("Not implemented")
+                }
+
+                @Override
+                Object parseValue(Object input) {
+                    throw new UnsupportedOperationException("Not implemented")
+                }
+
+                @Override
+                Object parseLiteral(Object input) {
+                    throw new UnsupportedOperationException("Not implemented")
+                }
+            })
         }
 
         @Override
@@ -98,13 +125,6 @@ class WiringFactoryTest extends Specification {
     }
 
 
-    GraphQLSchema generateSchema(String schemaSpec, RuntimeWiring wiring) {
-        def typeRegistry = new SchemaParser().parse(schemaSpec)
-        def result = new SchemaGenerator().makeExecutableSchema(typeRegistry, wiring)
-        result
-    }
-
-
     def "ensure that wiring factory is called to resolve and create data fetchers"() {
 
         def spec = """             
@@ -121,11 +141,14 @@ class WiringFactoryTest extends Specification {
                 name: String!
             }
             
+            scalar Long
+
             union Cyborg = Human | Droid
             
             type Droid implements Character {
                 id: ID!
                 name: String!
+                age: Long
                 friends: [Character]
                 appearsIn: [Episode]!
             }
@@ -145,6 +168,7 @@ class WiringFactoryTest extends Specification {
         def combinedWiringFactory = new CombinedWiringFactory([
                 new NamedWiringFactory("Character"),
                 new NamedWiringFactory("Cyborg"),
+                new NamedWiringFactory("Long"),
                 new NamedDataFetcherFactoryWiringFactory("cyborg"),
                 new NamedWiringFactory("friends")])
 
@@ -152,28 +176,31 @@ class WiringFactoryTest extends Specification {
                 .wiringFactory(combinedWiringFactory)
                 .build()
 
-        def schema = generateSchema(spec, wiring)
+        def schema = TestUtil.schema(spec, wiring)
 
         expect:
 
         GraphQLInterfaceType characterType = schema.getType("Character") as GraphQLInterfaceType
 
-        def characterTypeResolver = characterType.getTypeResolver() as NamedTypeResolver
+        def characterTypeResolver = schema.getCodeRegistry().getTypeResolver(characterType) as NamedTypeResolver
         characterTypeResolver.name == "Character"
 
         GraphQLUnionType unionType = schema.getType("Cyborg") as GraphQLUnionType
 
-        def unionTypeResolver = unionType.getTypeResolver() as NamedTypeResolver
+        def unionTypeResolver = schema.getCodeRegistry().getTypeResolver(unionType) as NamedTypeResolver
         unionTypeResolver.name == "Cyborg"
 
 
         GraphQLObjectType humanType = schema.getType("Human") as GraphQLObjectType
 
-        def friendsDataFetcher = humanType.getFieldDefinition("friends").getDataFetcher() as NamedDataFetcher
+        def friendsDataFetcher = schema.getCodeRegistry().getDataFetcher(humanType, humanType.getFieldDefinition("friends")) as NamedDataFetcher
         friendsDataFetcher.name == "friends"
 
-        def cyborgDataFetcher = humanType.getFieldDefinition("cyborg").getDataFetcher() as NamedDataFetcher
+        def cyborgDataFetcher = schema.getCodeRegistry().getDataFetcher(humanType, humanType.getFieldDefinition("cyborg")) as NamedDataFetcher
         cyborgDataFetcher.name == "cyborg"
+
+        GraphQLScalarType longScalar = schema.getType("Long") as GraphQLScalarType
+        longScalar.name == "Long"
     }
 
     def "ensure field wiring environment makes sense"() {
@@ -212,7 +239,7 @@ class WiringFactoryTest extends Specification {
                 .wiringFactory(wiringFactory)
                 .build()
 
-        generateSchema(spec, wiring)
+        TestUtil.schema(spec, wiring)
 
         expect:
 
@@ -221,7 +248,7 @@ class WiringFactoryTest extends Specification {
 
     def "default data fetcher is used"() {
 
-        def spec = """             
+        def spec = """   
 
             type Query {
                 id: ID!
@@ -258,10 +285,72 @@ class WiringFactoryTest extends Specification {
                 .wiringFactory(wiringFactory)
                 .build()
 
-        generateSchema(spec, wiring)
+        TestUtil.schema(spec, wiring)
 
         expect:
 
         fields == ["id", "homePlanet"]
+    }
+
+    def "@fetch directive is respected by default data fetcher wiring"() {
+        def spec = """
+
+            directive @fetch(from : String!) on FIELD_DEFINITION              
+
+            type Query {
+                name : String,
+                homePlanet: String @fetch(from : "planetOfBirth")
+            }
+        """
+
+        def wiringFactory = new WiringFactory() {
+        }
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .wiringFactory(wiringFactory)
+                .build()
+
+        def schema = TestUtil.schema(spec, wiring)
+
+        GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
+
+        expect:
+        def fetcher = schema.getCodeRegistry().getDataFetcher(type, type.getFieldDefinition("homePlanet"))
+        fetcher instanceof PropertyDataFetcher
+
+        PropertyDataFetcher propertyDataFetcher = fetcher as PropertyDataFetcher
+        propertyDataFetcher.getPropertyName() == "planetOfBirth"
+        //
+        // no directive - plain name
+        //
+        def fetcher2 = type.getFieldDefinition("name").getDataFetcher()
+        fetcher2 instanceof PropertyDataFetcher
+
+        PropertyDataFetcher propertyDataFetcher2 = fetcher2 as PropertyDataFetcher
+        propertyDataFetcher2.getPropertyName() == "name"
+
+    }
+
+    def "Name"() {
+        WiringFactory wf = new WiringFactory() {
+            @Override
+            boolean providesDataFetcherFactory(FieldWiringEnvironment environment) {
+                def fieldDef = environment.getFieldDefinition();
+                if (fieldDef.getName() == "class") {
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
+                return new DataFetcher() {
+                    @Override
+                    Object get(DataFetchingEnvironment env) throws Exception {
+                        def sourceObject = env.getSource()
+                        return sourceObject.getClass().getSimpleName()
+                    }
+                }
+            }
+        }
     }
 }

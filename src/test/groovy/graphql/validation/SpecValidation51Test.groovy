@@ -1,7 +1,4 @@
 package graphql.validation
-
-import spock.lang.Requires
-
 /**
  * validation examples used in the spec in given section
  * http://facebook.github.io/graphql/#sec-Validation
@@ -33,7 +30,6 @@ query getOwnerName {
         validationErrors.empty
     }
 
-    @Requires({ SpecValidationBase.enableStrictValidation })
     def '5.1.1.1 Operation Name Uniqueness Not Valid'() {
         def query = """
 query getName {
@@ -52,13 +48,11 @@ query getName {
 """
         when:
         def validationErrors = validate(query)
-        //def result = new GraphQL(SpecValidationSchema.specValidationSchema).execute(query)
 
         then:
         !validationErrors.empty
     }
 
-    @Requires({ SpecValidationBase.enableStrictValidation })
     def '5.1.1.1 Operation Name Uniqueness Not Valid Different Operations'() {
         def query = """
 query dogOperation {

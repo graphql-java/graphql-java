@@ -4,6 +4,9 @@ import com.github.javafaker.Faker
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.TestUtil
+import graphql.execution.instrumentation.dataloader.models.Company
+import graphql.execution.instrumentation.dataloader.models.Person
+import graphql.execution.instrumentation.dataloader.models.Product
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.RuntimeWiring
@@ -89,13 +92,12 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
     DataFetcher productsDF = new DataFetcher() {
         @Override
         Object get(DataFetchingEnvironment environment) {
-            return IntStream.range(0, 5)
-                    .mapToObj(
-                    { id ->
-                        List<Integer> madeBy = [id * 10001, id * 10002, id * 10003, id * 10004, id * 10005]
-                        new Product(id.toString(), faker.commerce().productName(), id + 200, madeBy)
-                    })
-                    .collect(Collectors.toList())
+            List<Product> products = new ArrayList<>();
+            for (int id = 0; id < 5; id++) {
+                List<Integer> madeBy = [id * 10001, id * 10002, id * 10003, id * 10004, id * 10005]
+                products.add(new Product(id.toString(), faker.commerce().productName(), id + 200, madeBy))
+            }
+            return products
         }
     }
 
@@ -176,13 +178,13 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         return registry
     }
 
-    def "ensure performant loading"() {
+    def "ensure performant loading with field tracking"() {
 
         DataLoaderRegistry registry = buildRegistry()
 
         GraphQL graphQL = GraphQL
                 .newGraphQL(graphQLSchema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation(registry))
+                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         when:
@@ -190,6 +192,7 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
                 .context(registry)
+                .dataLoaderRegistry(registry)
                 .build()
 
         def executionResult = graphQL.execute(executionInput)
@@ -197,14 +200,14 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
 
         then:
 
-        executionResult.data != null
+        (executionResult.data["products"] as Map).size() == 5
 
         personBatchLoadKeyCount == 26
         personBatchLoadInvocationCount == 1
 
         companyBatchLoadKeyCount == 26
 
-        companyBatchLoadInvocationCount == 10
+        companyBatchLoadInvocationCount == 1
 
     }
 }

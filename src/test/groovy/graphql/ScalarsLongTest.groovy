@@ -3,6 +3,7 @@ package graphql
 import graphql.language.FloatValue
 import graphql.language.IntValue
 import graphql.language.StringValue
+import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
 import spock.lang.Shared
@@ -35,8 +36,10 @@ class ScalarsLongTest extends Specification {
 
     @Unroll
     def "Long returns null for invalid #literal"() {
-        expect:
-        Scalars.GraphQLLong.getCoercing().parseLiteral(literal) == null
+        when:
+        Scalars.GraphQLLong.getCoercing().parseLiteral(literal)
+        then:
+        thrown(CoercingParseLiteralException)
 
         where:
         literal                         | _

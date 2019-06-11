@@ -6,14 +6,17 @@ import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLModifiedType;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLType;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+
+import static graphql.schema.GraphQLTypeUtil.isList;
+import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 
 /**
  * Schema validation rule ensuring no input type forms an unbroken non-nullable recursion,
@@ -32,7 +35,7 @@ public class NoUnbrokenInputCycles implements SchemaValidationRule {
             if (argumentType instanceof GraphQLInputObjectType) {
                 List<String> path = new ArrayList<>();
                 path.add(argumentType.getName());
-                check((GraphQLInputObjectType) argumentType, new HashSet<>(), path, validationErrorCollector);
+                check((GraphQLInputObjectType) argumentType, new LinkedHashSet<>(), path, validationErrorCollector);
             }
         }
     }
@@ -45,35 +48,29 @@ public class NoUnbrokenInputCycles implements SchemaValidationRule {
         seen.add(type);
 
         for (GraphQLInputObjectField field : type.getFieldDefinitions()) {
-            if (field.getType() instanceof GraphQLNonNull) {
+            if (isNonNull(field.getType())) {
                 GraphQLType unwrapped = unwrapNonNull((GraphQLNonNull) field.getType());
                 if (unwrapped instanceof GraphQLInputObjectType) {
                     path = new ArrayList<>(path);
                     path.add(field.getName() + "!");
-                    check((GraphQLInputObjectType) unwrapped, new HashSet<>(seen), path, validationErrorCollector);
+                    check((GraphQLInputObjectType) unwrapped, new LinkedHashSet<>(seen), path, validationErrorCollector);
                 }
             }
         }
     }
 
     private GraphQLType unwrapNonNull(GraphQLNonNull type) {
-        if (type.getWrappedType() instanceof GraphQLList) {
+        if (isList(type.getWrappedType())) {
             //we only care about [type!]! i.e. non-null lists of non-nulls
-            if (((GraphQLList) type.getWrappedType()).getWrappedType() instanceof GraphQLNonNull) {
-                return unwrap(((GraphQLList) type.getWrappedType()).getWrappedType());
+            GraphQLList listType = (GraphQLList) type.getWrappedType();
+            if (isNonNull(listType.getWrappedType())) {
+                return unwrapAll(listType.getWrappedType());
             } else {
                 return type.getWrappedType();
             }
         } else {
-            return unwrap(type.getWrappedType());
+            return unwrapAll(type.getWrappedType());
         }
-    }
-
-    private GraphQLType unwrap(GraphQLType type) {
-        if (type instanceof GraphQLModifiedType) {
-            return unwrap(((GraphQLModifiedType) type).getWrappedType());
-        }
-        return type;
     }
 
     private String getErrorMessage(List<String> path) {

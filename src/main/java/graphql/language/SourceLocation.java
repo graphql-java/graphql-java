@@ -1,14 +1,25 @@
 package graphql.language;
 
 
-public class SourceLocation {
+import graphql.PublicApi;
+
+import java.io.Serializable;
+
+@PublicApi
+public class SourceLocation implements Serializable {
 
     private final int line;
     private final int column;
+    private final String sourceName;
 
     public SourceLocation(int line, int column) {
+        this(line, column, null);
+    }
+
+    public SourceLocation(int line, int column, String sourceName) {
         this.line = line;
         this.column = column;
+        this.sourceName = sourceName;
     }
 
     public int getLine() {
@@ -19,6 +30,10 @@ public class SourceLocation {
         return column;
     }
 
+    public String getSourceName() {
+        return sourceName;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -27,14 +42,15 @@ public class SourceLocation {
         SourceLocation that = (SourceLocation) o;
 
         if (line != that.line) return false;
-        return column == that.column;
-
+        if (column != that.column) return false;
+        return sourceName != null ? sourceName.equals(that.sourceName) : that.sourceName == null;
     }
 
     @Override
     public int hashCode() {
         int result = line;
         result = 31 * result + column;
+        result = 31 * result + (sourceName != null ? sourceName.hashCode() : 0);
         return result;
     }
 
@@ -43,6 +59,7 @@ public class SourceLocation {
         return "SourceLocation{" +
                 "line=" + line +
                 ", column=" + column +
+                (sourceName != null ? ", sourceName=" + sourceName : "") +
                 '}';
     }
 }

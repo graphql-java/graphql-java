@@ -1,11 +1,10 @@
 package graphql.validation.rules;
 
 import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.TypeResolver;
 
@@ -15,9 +14,12 @@ import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLEnumType.newEnum;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
+import static graphql.schema.GraphQLInputObjectField.newInputObjectField;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
+import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLObjectType.newObject;
 import static graphql.schema.GraphQLSchema.newSchema;
+import static graphql.schema.GraphQLTypeReference.typeRef;
 import static graphql.schema.GraphQLUnionType.newUnionType;
 
 
@@ -139,10 +141,10 @@ public class Harness {
                     .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("pets")
-                    .type(new GraphQLList(Pet)))
+                    .type(list(Pet)))
             .field(newFieldDefinition()
                     .name("relatives")
-                    .type(new GraphQLList(new GraphQLTypeReference("Human"))))
+                    .type(list(typeRef("Human"))))
             .field(newFieldDefinition()
                     .name("iq")
                     .type(GraphQLInt))
@@ -175,6 +177,13 @@ public class Harness {
             .typeResolver(dummyTypeResolve)
             .build();
 
+    public static GraphQLInputObjectType Leash = GraphQLInputObjectType.newInputObject()
+            .name("LeashInput")
+            .field(newInputObjectField()
+                    .name("id")
+                    .type(GraphQLString))
+            .build();
+
     public static GraphQLObjectType QueryRoot = newObject()
             .name("QueryRoot")
             .field(newFieldDefinition()
@@ -192,6 +201,12 @@ public class Harness {
             .field(newFieldDefinition()
                     .name("catOrDog")
                     .type(CatOrDog))
+            .field(newFieldDefinition()
+                    .name("dogWithInput")
+                    .argument(newArgument()
+                            .name("leash")
+                            .type(Leash))
+                    .type(Dog))
 
             .field(newFieldDefinition()
                     .name("dogOrHuman")
@@ -204,7 +219,5 @@ public class Harness {
     public static GraphQLSchema Schema = newSchema()
             .query(QueryRoot)
             .build();
-
-
 }
 

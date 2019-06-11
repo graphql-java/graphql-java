@@ -2,11 +2,15 @@ package graphql.introspection;
 
 
 import graphql.Assert;
+import graphql.Internal;
+import graphql.PublicApi;
 import graphql.language.AstPrinter;
 import graphql.language.AstValueHelper;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
@@ -18,19 +22,25 @@ import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLModifiedType;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static graphql.Assert.assertTrue;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
+import static graphql.schema.FieldCoordinates.coordinates;
+import static graphql.schema.FieldCoordinates.systemCoordinates;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
@@ -38,7 +48,23 @@ import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
 import static graphql.schema.GraphQLTypeReference.typeRef;
 
+@PublicApi
 public class Introspection {
+    private static final Map<FieldCoordinates, DataFetcher> introspectionDataFetchers = new LinkedHashMap<>();
+
+    private static void register(GraphQLFieldsContainer parentType, String fieldName, DataFetcher dataFetcher) {
+        introspectionDataFetchers.put(coordinates(parentType.getName(), fieldName), dataFetcher);
+    }
+
+    @Internal
+    public static void addCodeForIntrospectionTypes(GraphQLCodeRegistry.Builder codeRegistry) {
+        // place the system __ fields into the mix.  They have no parent types
+        codeRegistry.systemDataFetcher(systemCoordinates(SchemaMetaFieldDef.getName()), SchemaMetaFieldDefDataFetcher);
+        codeRegistry.systemDataFetcher(systemCoordinates(TypeNameMetaFieldDef.getName()), TypeNameMetaFieldDefDataFetcher);
+        codeRegistry.systemDataFetcher(systemCoordinates(TypeMetaFieldDef.getName()), TypeMetaFieldDefDataFetcher);
+
+        introspectionDataFetchers.forEach(codeRegistry::dataFetcher);
+    }
 
     public enum TypeKind {
         SCALAR,
@@ -100,18 +126,21 @@ public class Introspection {
                     .type(nonNull(typeRef("__Type"))))
             .field(newFieldDefinition()
                     .name("defaultValue")
-                    .type(GraphQLString)
-                    .dataFetcher(environment -> {
-                        if (environment.getSource() instanceof GraphQLArgument) {
-                            GraphQLArgument inputField = environment.getSource();
-                            return inputField.getDefaultValue() != null ? print(inputField.getDefaultValue(), inputField.getType()) : null;
-                        } else if (environment.getSource() instanceof GraphQLInputObjectField) {
-                            GraphQLInputObjectField inputField = environment.getSource();
-                            return inputField.getDefaultValue() != null ? print(inputField.getDefaultValue(), inputField.getType()) : null;
-                        }
-                        return null;
-                    }))
+                    .type(GraphQLString))
             .build();
+
+    static {
+        register(__InputValue, "defaultValue", environment -> {
+            if (environment.getSource() instanceof GraphQLArgument) {
+                GraphQLArgument inputField = environment.getSource();
+                return inputField.getDefaultValue() != null ? print(inputField.getDefaultValue(), inputField.getType()) : null;
+            } else if (environment.getSource() instanceof GraphQLInputObjectField) {
+                GraphQLInputObjectField inputField = environment.getSource();
+                return inputField.getDefaultValue() != null ? print(inputField.getDefaultValue(), inputField.getType()) : null;
+            }
+            return null;
+        });
+    }
 
     private static String print(Object value, GraphQLInputType type) {
         return AstPrinter.printAst(AstValueHelper.astFromValue(value, type));
@@ -128,25 +157,28 @@ public class Introspection {
                     .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("args")
-                    .type(nonNull(list(nonNull(__InputValue))))
-                    .dataFetcher(environment -> {
-                        Object type = environment.getSource();
-                        return ((GraphQLFieldDefinition) type).getArguments();
-                    }))
+                    .type(nonNull(list(nonNull(__InputValue)))))
             .field(newFieldDefinition()
                     .name("type")
                     .type(nonNull(typeRef("__Type"))))
             .field(newFieldDefinition()
                     .name("isDeprecated")
-                    .type(nonNull(GraphQLBoolean))
-                    .dataFetcher(environment -> {
-                        Object type = environment.getSource();
-                        return ((GraphQLFieldDefinition) type).isDeprecated();
-                    }))
+                    .type(nonNull(GraphQLBoolean)))
             .field(newFieldDefinition()
                     .name("deprecationReason")
                     .type(GraphQLString))
             .build();
+
+    static {
+        register(__Field, "args", environment -> {
+            Object type = environment.getSource();
+            return ((GraphQLFieldDefinition) type).getArguments();
+        });
+        register(__Field, "isDeprecated", environment -> {
+            Object type = environment.getSource();
+            return ((GraphQLFieldDefinition) type).isDeprecated();
+        });
+    }
 
 
     public static final GraphQLObjectType __EnumValue = newObject()
@@ -159,15 +191,19 @@ public class Introspection {
                     .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("isDeprecated")
-                    .type(nonNull(GraphQLBoolean))
-                    .dataFetcher(environment -> {
-                        GraphQLEnumValueDefinition enumValue = environment.getSource();
-                        return enumValue.isDeprecated();
-                    }))
+                    .type(nonNull(GraphQLBoolean)))
             .field(newFieldDefinition()
                     .name("deprecationReason")
                     .type(GraphQLString))
             .build();
+
+    static {
+        register(__EnumValue, "isDeprecated", environment -> {
+            GraphQLEnumValueDefinition enumValue = environment.getSource();
+            return enumValue.isDeprecated();
+        });
+    }
+
 
     public static final DataFetcher fieldsFetcher = environment -> {
         Object type = environment.getSource();
@@ -200,7 +236,7 @@ public class Introspection {
     public static final DataFetcher possibleTypesFetcher = environment -> {
         Object type = environment.getSource();
         if (type instanceof GraphQLInterfaceType) {
-            return environment.getGraphQLSchema().getImplementations((GraphQLInterfaceType)type);
+            return environment.getGraphQLSchema().getImplementations((GraphQLInterfaceType) type);
         }
         if (type instanceof GraphQLUnionType) {
             return ((GraphQLUnionType) type).getTypes();
@@ -236,11 +272,8 @@ public class Introspection {
 
     public static final DataFetcher OfTypeFetcher = environment -> {
         Object type = environment.getSource();
-        if (type instanceof GraphQLList) {
-            return ((GraphQLList) type).getWrappedType();
-        }
-        if (type instanceof GraphQLNonNull) {
-            return ((GraphQLNonNull) type).getWrappedType();
+        if (type instanceof GraphQLModifiedType) {
+            return GraphQLTypeUtil.unwrapOne((GraphQLModifiedType) type);
         }
         return null;
     };
@@ -250,8 +283,7 @@ public class Introspection {
             .name("__Type")
             .field(newFieldDefinition()
                     .name("kind")
-                    .type(nonNull(__TypeKind))
-                    .dataFetcher(kindDataFetcher))
+                    .type(nonNull(__TypeKind)))
             .field(newFieldDefinition()
                     .name("name")
                     .type(GraphQLString))
@@ -264,33 +296,38 @@ public class Introspection {
                     .argument(newArgument()
                             .name("includeDeprecated")
                             .type(GraphQLBoolean)
-                            .defaultValue(false))
-                    .dataFetcher(fieldsFetcher))
+                            .defaultValue(false)))
             .field(newFieldDefinition()
                     .name("interfaces")
-                    .type(list(nonNull(typeRef("__Type"))))
-                    .dataFetcher(interfacesFetcher))
+                    .type(list(nonNull(typeRef("__Type")))))
             .field(newFieldDefinition()
                     .name("possibleTypes")
-                    .type(list(nonNull(typeRef("__Type"))))
-                    .dataFetcher(possibleTypesFetcher))
+                    .type(list(nonNull(typeRef("__Type")))))
             .field(newFieldDefinition()
                     .name("enumValues")
                     .type(list(nonNull(__EnumValue)))
                     .argument(newArgument()
                             .name("includeDeprecated")
                             .type(GraphQLBoolean)
-                            .defaultValue(false))
-                    .dataFetcher(enumValuesTypesFetcher))
+                            .defaultValue(false)))
             .field(newFieldDefinition()
                     .name("inputFields")
-                    .type(list(nonNull(__InputValue)))
-                    .dataFetcher(inputFieldsFetcher))
+                    .type(list(nonNull(__InputValue))))
             .field(newFieldDefinition()
                     .name("ofType")
-                    .type(typeRef("__Type"))
-                    .dataFetcher(OfTypeFetcher))
+                    .type(typeRef("__Type")))
             .build();
+
+    static {
+        register(__Type, "kind", kindDataFetcher);
+        register(__Type, "fields", fieldsFetcher);
+        register(__Type, "interfaces", interfacesFetcher);
+        register(__Type, "possibleTypes", possibleTypesFetcher);
+        register(__Type, "enumValues", enumValuesTypesFetcher);
+        register(__Type, "inputFields", inputFieldsFetcher);
+        register(__Type, "ofType", OfTypeFetcher);
+    }
+
 
     public enum DirectiveLocation {
         QUERY,
@@ -300,7 +337,7 @@ public class Introspection {
         FRAGMENT_SPREAD,
         INLINE_FRAGMENT,
         //
-        // schema IDL places
+        // schema SDL places
         //
         SCHEMA,
         SCALAR,
@@ -325,18 +362,19 @@ public class Introspection {
             .value("FRAGMENT_SPREAD", DirectiveLocation.FRAGMENT_SPREAD, "Indicates the directive is valid on fragment spreads.")
             .value("INLINE_FRAGMENT", DirectiveLocation.INLINE_FRAGMENT, "Indicates the directive is valid on inline fragments.")
             //
-            // from schema IDL PR  https://github.com/facebook/graphql/pull/90
+            // from schema SDL PR  https://github.com/facebook/graphql/pull/90
             //
-            .value("SCHEMA", DirectiveLocation.SCHEMA, "Indicates the directive is valid on a schema IDL definition.")
-            .value("SCALAR", DirectiveLocation.SCALAR, "Indicates the directive is valid on a scalar IDL definition.")
-            .value("OBJECT", DirectiveLocation.OBJECT, "Indicates the directive is valid on an object IDL definition.")
-            .value("FIELD_DEFINITION", DirectiveLocation.FIELD_DEFINITION, "Indicates the directive is valid on a field IDL definition.")
-            .value("ARGUMENT_DEFINITION", DirectiveLocation.ARGUMENT_DEFINITION, "Indicates the directive is valid on a field argument IDL definition.")
-            .value("INTERFACE", DirectiveLocation.INTERFACE, "Indicates the directive is valid on an interface IDL definition.")
-            .value("UNION", DirectiveLocation.UNION, "Indicates the directive is valid on an union IDL definition.")
-            .value("ENUM", DirectiveLocation.ENUM, "Indicates the directive is valid on an enum IDL definition.")
-            .value("INPUT_OBJECT", DirectiveLocation.INPUT_OBJECT, "Indicates the directive is valid on an input object IDL definition.")
-            .value("INPUT_FIELD_DEFINITION", DirectiveLocation.INPUT_FIELD_DEFINITION, "Indicates the directive is valid on an input object field IDL definition.")
+            .value("SCHEMA", DirectiveLocation.SCHEMA, "Indicates the directive is valid on a schema SDL definition.")
+            .value("SCALAR", DirectiveLocation.SCALAR, "Indicates the directive is valid on a scalar SDL definition.")
+            .value("OBJECT", DirectiveLocation.OBJECT, "Indicates the directive is valid on an object SDL definition.")
+            .value("FIELD_DEFINITION", DirectiveLocation.FIELD_DEFINITION, "Indicates the directive is valid on a field SDL definition.")
+            .value("ARGUMENT_DEFINITION", DirectiveLocation.ARGUMENT_DEFINITION, "Indicates the directive is valid on a field argument SDL definition.")
+            .value("INTERFACE", DirectiveLocation.INTERFACE, "Indicates the directive is valid on an interface SDL definition.")
+            .value("UNION", DirectiveLocation.UNION, "Indicates the directive is valid on an union SDL definition.")
+            .value("ENUM", DirectiveLocation.ENUM, "Indicates the directive is valid on an enum SDL definition.")
+            .value("ENUM_VALUE", DirectiveLocation.ENUM_VALUE, "Indicates the directive is valid on an enum value SDL definition.")
+            .value("INPUT_OBJECT", DirectiveLocation.INPUT_OBJECT, "Indicates the directive is valid on an input object SDL definition.")
+            .value("INPUT_FIELD_DEFINITION", DirectiveLocation.INPUT_FIELD_DEFINITION, "Indicates the directive is valid on an input object field SDL definition.")
 
             .build();
 
@@ -351,46 +389,49 @@ public class Introspection {
                     .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("locations")
-                    .type(list(nonNull(__DirectiveLocation)))
-                    .dataFetcher(environment -> {
-                        GraphQLDirective directive = environment.getSource();
-                        return new ArrayList<>(directive.validLocations());
-                    }))
+                    .type(list(nonNull(__DirectiveLocation))))
             .field(newFieldDefinition()
                     .name("args")
-                    .type(nonNull(list(nonNull(__InputValue))))
-                    .dataFetcher(environment -> {
-                        GraphQLDirective directive = environment.getSource();
-                        return directive.getArguments();
-                    }))
+                    .type(nonNull(list(nonNull(__InputValue)))))
             .field(newFieldDefinition()
                     .name("onOperation")
                     .type(GraphQLBoolean)
-                    .deprecate("Use `locations`.")
-                    .dataFetcher(environment -> {
-                        GraphQLDirective directive = environment.getSource();
-                        return directive.isOnOperation();
-                    }))
+                    .deprecate("Use `locations`."))
             .field(newFieldDefinition()
                     .name("onFragment")
                     .type(GraphQLBoolean)
-                    .deprecate("Use `locations`.")
-                    .dataFetcher(environment -> {
-                        GraphQLDirective directive = environment.getSource();
-                        return directive.isOnFragment() ||
-                                (directive.validLocations().contains(DirectiveLocation.INLINE_FRAGMENT)
-                                        && directive.validLocations().contains(DirectiveLocation.FRAGMENT_SPREAD));
-                    }))
+                    .deprecate("Use `locations`."))
             .field(newFieldDefinition()
                     .name("onField")
                     .type(GraphQLBoolean)
-                    .deprecate("Use `locations`.")
-                    .dataFetcher(environment -> {
-                        GraphQLDirective directive = environment.getSource();
-                        return directive.isOnField() ||
-                                directive.validLocations().contains(DirectiveLocation.FIELD);
-                    }))
+                    .deprecate("Use `locations`."))
             .build();
+
+    static {
+        register(__Directive, "locations", environment -> {
+            GraphQLDirective directive = environment.getSource();
+            return new ArrayList<>(directive.validLocations());
+        });
+        register(__Directive, "args", environment -> {
+            GraphQLDirective directive = environment.getSource();
+            return directive.getArguments();
+        });
+        register(__Directive, "onOperation", environment -> {
+            GraphQLDirective directive = environment.getSource();
+            return directive.isOnOperation();
+        });
+        register(__Directive, "onFragment", environment -> {
+            GraphQLDirective directive = environment.getSource();
+            return directive.isOnFragment() ||
+                    (directive.validLocations().contains(DirectiveLocation.INLINE_FRAGMENT)
+                            && directive.validLocations().contains(DirectiveLocation.FRAGMENT_SPREAD));
+        });
+        register(__Directive, "onField", environment -> {
+            GraphQLDirective directive = environment.getSource();
+            return directive.isOnField() ||
+                    directive.validLocations().contains(DirectiveLocation.FIELD);
+        });
+    }
 
     public static final GraphQLObjectType __Schema = newObject()
             .name("__Schema")
@@ -400,49 +441,56 @@ public class Introspection {
             .field(newFieldDefinition()
                     .name("types")
                     .description("A list of all types supported by this server.")
-                    .type(nonNull(list(nonNull(__Type))))
-                    .dataFetcher(environment -> {
-                        GraphQLSchema schema = environment.getSource();
-                        return schema.getAllTypesAsList();
-                    }))
+                    .type(nonNull(list(nonNull(__Type)))))
             .field(newFieldDefinition()
                     .name("queryType")
                     .description("The type that query operations will be rooted at.")
-                    .type(nonNull(__Type))
-                    .dataFetcher(environment -> {
-                        GraphQLSchema schema = environment.getSource();
-                        return schema.getQueryType();
-                    }))
+                    .type(nonNull(__Type)))
             .field(newFieldDefinition()
                     .name("mutationType")
                     .description("If this server supports mutation, the type that mutation operations will be rooted at.")
-                    .type(__Type)
-                    .dataFetcher(environment -> {
-                        GraphQLSchema schema = environment.getSource();
-                        return schema.getMutationType();
-                    }))
+                    .type(__Type))
             .field(newFieldDefinition()
                     .name("directives")
                     .description("'A list of all directives supported by this server.")
-                    .type(nonNull(list(nonNull(__Directive))))
-                    .dataFetcher(environment -> environment.getGraphQLSchema().getDirectives()))
+                    .type(nonNull(list(nonNull(__Directive)))))
             .field(newFieldDefinition()
                     .name("subscriptionType")
                     .description("'If this server support subscription, the type that subscription operations will be rooted at.")
-                    .type(__Type)
-                    .dataFetcher(environment -> {
-                        GraphQLSchema schema = environment.getSource();
-                        return schema.getSubscriptionType();
-                    }))
+                    .type(__Type))
             .build();
 
+    static {
+        register(__Schema, "types", environment -> {
+            GraphQLSchema schema = environment.getSource();
+            return schema.getAllTypesAsList();
+        });
+        register(__Schema, "queryType", environment -> {
+            GraphQLSchema schema = environment.getSource();
+            return schema.getQueryType();
+        });
+        register(__Schema, "mutationType", environment -> {
+            GraphQLSchema schema = environment.getSource();
+            return schema.getMutationType();
+        });
+        register(__Schema, "directives", environment -> environment.getGraphQLSchema().getDirectives());
+        register(__Schema, "subscriptionType", environment -> {
+            GraphQLSchema schema = environment.getSource();
+            return schema.getSubscriptionType();
+        });
+    }
 
+    public static final DataFetcher<Object> SchemaMetaFieldDefDataFetcher = DataFetchingEnvironment::getGraphQLSchema;
     public static final GraphQLFieldDefinition SchemaMetaFieldDef = newFieldDefinition()
             .name("__schema")
             .type(nonNull(__Schema))
             .description("Access the current type schema of this server.")
-            .dataFetcher(DataFetchingEnvironment::getGraphQLSchema).build();
+            .build();
 
+    public static final DataFetcher<Object> TypeMetaFieldDefDataFetcher = environment -> {
+        String name = environment.getArgument("name");
+        return environment.getGraphQLSchema().getType(name);
+    };
     public static final GraphQLFieldDefinition TypeMetaFieldDef = newFieldDefinition()
             .name("__type")
             .type(__Type)
@@ -450,16 +498,14 @@ public class Introspection {
             .argument(newArgument()
                     .name("name")
                     .type(nonNull(GraphQLString)))
-            .dataFetcher(environment -> {
-                String name = environment.getArgument("name");
-                return environment.getGraphQLSchema().getType(name);
-            }).build();
+            .build();
+
+    public static final DataFetcher<Object> TypeNameMetaFieldDefDataFetcher = environment -> environment.getParentType().getName();
 
     public static final GraphQLFieldDefinition TypeNameMetaFieldDef = newFieldDefinition()
             .name("__typename")
             .type(nonNull(GraphQLString))
             .description("The name of the current Object type at runtime.")
-            .dataFetcher(environment -> environment.getParentType().getName())
             .build();
 
 
@@ -501,7 +547,7 @@ public class Introspection {
 
         assertTrue(parentType instanceof GraphQLFieldsContainer, "should not happen : parent type must be an object or interface %s", parentType);
         GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
-        GraphQLFieldDefinition fieldDefinition = schema.getFieldVisibility().getFieldDefinition(fieldsContainer, fieldName);
+        GraphQLFieldDefinition fieldDefinition = schema.getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, fieldName);
         Assert.assertTrue(fieldDefinition != null, "Unknown field '%s'", fieldName);
         return fieldDefinition;
     }

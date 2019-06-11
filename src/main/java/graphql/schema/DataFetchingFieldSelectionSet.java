@@ -1,6 +1,6 @@
 package graphql.schema;
 
-import graphql.language.Field;
+import graphql.execution.MergedSelectionSet;
 
 import java.util.List;
 import java.util.Map;
@@ -34,12 +34,13 @@ import java.util.function.Supplier;
  * from the underlying data system.  Imagine a SQL system where this might represent the SQL 'projection'
  * of columns say.
  */
-public interface DataFetchingFieldSelectionSet extends Supplier<Map<String, List<Field>>> {
+public interface DataFetchingFieldSelectionSet extends Supplier<MergedSelectionSet> {
 
     /**
      * @return a map of the fields that represent the selection set
      */
-    Map<String, List<Field>> get();
+    @Override
+    MergedSelectionSet get();
 
     /**
      * @return a map of the arguments for each field in the selection set
@@ -59,10 +60,73 @@ public interface DataFetchingFieldSelectionSet extends Supplier<Map<String, List
      * match an invoice field with child fields that start with 'customer'.
      *
      * @param fieldGlobPattern the glob pattern to match fields against
+     *
      * @return true if the selection set contains these fields
      *
      * @see java.nio.file.FileSystem#getPathMatcher(String)
      */
     boolean contains(String fieldGlobPattern);
+
+    /**
+     * This will return true if the field selection set matches any of the specified "glob" pattern matches ie
+     * the glob pattern matching supported by {@link java.nio.file.FileSystem#getPathMatcher}.
+     *
+     * This will allow you to use '*', '**' and '?' as special matching characters such that "invoice/customer*" would
+     * match an invoice field with child fields that start with 'customer'.
+     *
+     * @param fieldGlobPattern  the glob pattern to match fields against
+     * @param fieldGlobPatterns optionally more glob pattern to match fields against
+     *
+     * @return true if the selection set contains any of these these fields
+     *
+     * @see java.nio.file.FileSystem#getPathMatcher(String)
+     */
+    boolean containsAnyOf(String fieldGlobPattern, String... fieldGlobPatterns);
+
+    /**
+     * This will return true if the field selection set matches all of the specified "glob" pattern matches ie
+     * the glob pattern matching supported by {@link java.nio.file.FileSystem#getPathMatcher}.
+     *
+     * This will allow you to use '*', '**' and '?' as special matching characters such that "invoice/customer*" would
+     * match an invoice field with child fields that start with 'customer'.
+     *
+     * @param fieldGlobPattern  the glob pattern to match fields against
+     * @param fieldGlobPatterns optionally more glob pattern to match fields against
+     *
+     * @return true if the selection set contains all of these these fields
+     *
+     * @see java.nio.file.FileSystem#getPathMatcher(String)
+     */
+    boolean containsAllOf(String fieldGlobPattern, String... fieldGlobPatterns);
+
+    /**
+     * This will return all selected fields.
+     *
+     * @return a list of all selected fields or empty list if none match
+     */
+    List<SelectedField> getFields();
+
+    /**
+     * This will return a list of selected fields that match a specified "glob" pattern matching ie
+     * the glob pattern matching supported by {@link java.nio.file.FileSystem#getPathMatcher}.
+     *
+     * This will allow you to use '*', '**' and '?' as special matching characters such that "invoice/customer*" would
+     * match an invoice field with child fields that start with 'customer'.
+     *
+     * @param fieldGlobPattern the glob pattern to match fields against
+     *
+     * @return a list of selected fields or empty list if none match
+     */
+    List<SelectedField> getFields(String fieldGlobPattern);
+
+    /**
+     * This will return a selected field using the fully qualified field name.
+     *
+     * @param fqFieldName the fully qualified name that is contained in the map from {@link #get()}
+     *
+     * @return a selected field or null if there is no matching field
+     */
+    SelectedField getField(String fqFieldName);
+
 
 }

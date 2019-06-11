@@ -4,17 +4,24 @@ package graphql.schema;
 import graphql.Assert;
 import graphql.GraphQLException;
 import graphql.PublicApi;
+import graphql.TrivialDataFetcher;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import static graphql.Scalars.GraphQLBoolean;
+import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 
 /**
  * This is the default data fetcher used in graphql-java.  It will examine
@@ -40,10 +47,15 @@ import static graphql.Scalars.GraphQLBoolean;
  * @see graphql.schema.DataFetcher
  */
 @PublicApi
-public class PropertyDataFetcher<T> implements DataFetcher<T> {
+public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetcher<T> {
 
     private final String propertyName;
     private final Function<Object, Object> function;
+
+    private static final AtomicBoolean USE_SET_ACCESSIBLE = new AtomicBoolean(true);
+    private static final ConcurrentMap<String, Method> METHOD_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, Field> FIELD_CACHE = new ConcurrentHashMap<>();
+
 
     /**
      * This constructor will use the property name and examine the {@link DataFetchingEnvironment#getSource()}
@@ -131,15 +143,15 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
         if (source instanceof Map) {
             return (T) ((Map<?, ?>) source).get(propertyName);
         }
-        return (T) getPropertyViaGetter(source, environment.getFieldType());
+        return (T) getPropertyViaGetter(source, environment.getFieldType(), environment);
     }
 
-    private Object getPropertyViaGetter(Object object, GraphQLOutputType outputType) {
+    private Object getPropertyViaGetter(Object object, GraphQLOutputType outputType, DataFetchingEnvironment environment) {
         try {
-            return getPropertyViaGetterMethod(object, outputType, this::findPubliclyAccessibleMethod);
+            return getPropertyViaGetterMethod(object, outputType, this::findPubliclyAccessibleMethod, environment);
         } catch (NoSuchMethodException ignored) {
             try {
-                return getPropertyViaGetterMethod(object, outputType, this::findViaSetAccessible);
+                return getPropertyViaGetterMethod(object, outputType, this::findViaSetAccessible, environment);
             } catch (NoSuchMethodException ignored2) {
                 return getPropertyViaFieldAccess(object);
             }
@@ -151,23 +163,27 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
         Method apply(Class aClass, String s) throws NoSuchMethodException;
     }
 
-    private Object getPropertyViaGetterMethod(Object object, GraphQLOutputType outputType, MethodFinder methodFinder) throws NoSuchMethodException {
+    private Object getPropertyViaGetterMethod(Object object, GraphQLOutputType outputType, MethodFinder methodFinder, DataFetchingEnvironment environment) throws NoSuchMethodException {
         if (isBooleanProperty(outputType)) {
             try {
-                return getPropertyViaGetterUsingPrefix(object, "is", methodFinder);
+                return getPropertyViaGetterUsingPrefix(object, "is", methodFinder, environment);
             } catch (NoSuchMethodException e) {
-                return getPropertyViaGetterUsingPrefix(object, "get", methodFinder);
+                return getPropertyViaGetterUsingPrefix(object, "get", methodFinder, environment);
             }
         } else {
-            return getPropertyViaGetterUsingPrefix(object, "get", methodFinder);
+            return getPropertyViaGetterUsingPrefix(object, "get", methodFinder, environment);
         }
     }
 
-    private Object getPropertyViaGetterUsingPrefix(Object object, String prefix, MethodFinder methodFinder) throws NoSuchMethodException {
+    private Object getPropertyViaGetterUsingPrefix(Object object, String prefix, MethodFinder methodFinder, DataFetchingEnvironment environment) throws NoSuchMethodException {
         String getterName = prefix + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
         try {
             Method method = methodFinder.apply(object.getClass(), getterName);
-            return method.invoke(object);
+            if (takesDataFetcherEnvironmentAsOnlyArgument(method)) {
+                return method.invoke(object, environment);
+            } else {
+                return method.invoke(object);
+            }
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new GraphQLException(e);
         }
@@ -175,11 +191,55 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
 
     @SuppressWarnings("SimplifiableIfStatement")
     private boolean isBooleanProperty(GraphQLOutputType outputType) {
-        if (outputType == GraphQLBoolean) return true;
-        if (outputType instanceof GraphQLNonNull) {
-            return ((GraphQLNonNull) outputType).getWrappedType() == GraphQLBoolean;
+        if (outputType == GraphQLBoolean) {
+            return true;
+        }
+        if (isNonNull(outputType)) {
+            return unwrapOne(outputType) == GraphQLBoolean;
         }
         return false;
+    }
+
+    /**
+     * PropertyDataFetcher caches the methods and fields that map from a class to a property for runtime performance reasons.
+     *
+     * However during development you might be using an assistance tool like JRebel to allow you to tweak your code base and this
+     * caching may interfere with this.  So you can call this method to clear the cache.  A JRebel plugin could
+     * be developed to do just that.
+     */
+    @SuppressWarnings("unused")
+    public static void clearReflectionCache() {
+        METHOD_CACHE.clear();
+        FIELD_CACHE.clear();
+    }
+
+    /**
+     * This can be used to control whether PropertyDataFetcher will use {@link java.lang.reflect.Method#setAccessible(boolean)} to gain access to property
+     * values.  By default it PropertyDataFetcher WILL use setAccessible.
+     *
+     * @param flag whether to use setAccessible
+     *
+     * @return the previous value of the flag
+     */
+    public static boolean setUseSetAccessible(boolean flag) {
+        return USE_SET_ACCESSIBLE.getAndSet(flag);
+    }
+
+    private String mkKey(Class clazz, String propertyName) {
+        return clazz.getName() + "__" + propertyName;
+    }
+
+    // by not filling out the stack trace, we gain speed when using the exception as flow control
+    @SuppressWarnings("serial")
+    private static class FastNoSuchMethodException extends NoSuchMethodException {
+        public FastNoSuchMethodException(String methodName) {
+            super(methodName);
+        }
+
+        @Override
+        public synchronized Throwable fillInStackTrace() {
+            return this;
+        }
     }
 
     /**
@@ -190,48 +250,99 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
      * which have abstract public interfaces implemented by package-protected
      * (generated) subclasses.
      */
+    @SuppressWarnings("unchecked")
     private Method findPubliclyAccessibleMethod(Class root, String methodName) throws NoSuchMethodException {
-        Class cur = root;
-        while (cur != null) {
-            if (Modifier.isPublic(cur.getModifiers())) {
-                @SuppressWarnings("unchecked")
-                Method m = cur.getMethod(methodName);
-                if (Modifier.isPublic(m.getModifiers())) {
-                    return m;
+        Class currentClass = root;
+        while (currentClass != null) {
+            String key = mkKey(currentClass, propertyName);
+            Method method = METHOD_CACHE.get(key);
+            if (method != null) {
+                return method;
+            }
+            if (Modifier.isPublic(currentClass.getModifiers())) {
+                //
+                // try a getter that takes DataFetchingEnvironment first
+                try {
+                    method = currentClass.getMethod(methodName, DataFetchingEnvironment.class);
+                    if (Modifier.isPublic(method.getModifiers())) {
+                        METHOD_CACHE.putIfAbsent(key, method);
+                        return method;
+                    }
+                } catch (NoSuchMethodException e) {
+                    // ok try the next approach
+                }
+                method = currentClass.getMethod(methodName);
+                if (Modifier.isPublic(method.getModifiers())) {
+                    METHOD_CACHE.putIfAbsent(key, method);
+                    return method;
                 }
             }
-            cur = cur.getSuperclass();
+            currentClass = currentClass.getSuperclass();
         }
-        //noinspection unchecked
         return root.getMethod(methodName);
     }
 
     private Method findViaSetAccessible(Class aClass, String methodName) throws NoSuchMethodException {
+        if (!USE_SET_ACCESSIBLE.get()) {
+            throw new FastNoSuchMethodException(methodName);
+        }
+        String key = mkKey(aClass, propertyName);
+        Method method = METHOD_CACHE.get(key);
+        if (method != null) {
+            return method;
+        }
+
         Method[] declaredMethods = aClass.getDeclaredMethods();
         Optional<Method> m = Arrays.stream(declaredMethods)
-                .filter(method -> methodName.equals(method.getName()))
+                .filter(mth -> methodName.equals(mth.getName()))
+                .filter(mth -> hasZeroArgs(mth) || takesDataFetcherEnvironmentAsOnlyArgument(mth))
+                .sorted(mostMethodArgsFirst())
                 .findFirst();
         if (m.isPresent()) {
             try {
                 // few JVMs actually enforce this but it might happen
-                m.get().setAccessible(true);
-                return m.get();
+                method = m.get();
+                method.setAccessible(true);
+                METHOD_CACHE.putIfAbsent(key, method);
+                return method;
             } catch (SecurityException ignored) {
             }
         }
-        throw new NoSuchMethodException(methodName);
+        throw new FastNoSuchMethodException(methodName);
+    }
+
+    private boolean hasZeroArgs(Method mth) {
+        return mth.getParameterCount() == 0;
+    }
+
+    private boolean takesDataFetcherEnvironmentAsOnlyArgument(Method mth) {
+        return mth.getParameterCount() == 1 &&
+                mth.getParameterTypes()[0].equals(DataFetchingEnvironment.class);
+    }
+
+    private Comparator<? super Method> mostMethodArgsFirst() {
+        return Comparator.comparingInt(Method::getParameterCount).reversed();
     }
 
     private Object getPropertyViaFieldAccess(Object object) {
         Class<?> aClass = object.getClass();
+        String key = mkKey(aClass, propertyName);
         try {
-            Field field = aClass.getField(propertyName);
+            Field field = FIELD_CACHE.get(key);
+            if (field == null) {
+                field = aClass.getField(propertyName);
+                FIELD_CACHE.putIfAbsent(key, field);
+            }
             return field.get(object);
         } catch (NoSuchFieldException e) {
+            if (!USE_SET_ACCESSIBLE.get()) {
+                return null;
+            }
             // if not public fields then try via setAccessible
             try {
                 Field field = aClass.getDeclaredField(propertyName);
                 field.setAccessible(true);
+                FIELD_CACHE.putIfAbsent(key, field);
                 return field.get(object);
             } catch (SecurityException | NoSuchFieldException ignored2) {
                 return null;

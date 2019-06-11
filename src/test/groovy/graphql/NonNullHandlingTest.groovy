@@ -338,14 +338,14 @@ class NonNullHandlingTest extends Specification {
         where:
 
         strategyName  | executionStrategy
-        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
-        'async'       | new AsyncExecutionStrategy()
+//        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
+//        'async'       | new AsyncExecutionStrategy()
         'asyncSerial' | new AsyncSerialExecutionStrategy()
 
     }
 
     @Unroll
-    def "#561 - null entry in non null list type with nullable wrapper list(strategy: #strategy)"() {
+    def "#561 - null entry in non null list type with nullable wrapper list(strategy: #strategyName)"() {
 
         given:
 

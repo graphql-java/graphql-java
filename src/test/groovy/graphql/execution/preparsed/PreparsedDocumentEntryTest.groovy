@@ -1,5 +1,6 @@
 package graphql.execution.preparsed
 
+import graphql.AssertException
 import graphql.GraphQLError
 import graphql.InvalidSyntaxError
 import graphql.language.Document
@@ -11,7 +12,7 @@ import spock.lang.Specification
 class PreparsedDocumentEntryTest extends Specification {
     def "Ensure a non-null document returns"() {
         given:
-        def document = new Document()
+        def document = Document.newDocument().build()
 
         when:
         def docEntry = new PreparsedDocumentEntry(document)
@@ -21,12 +22,12 @@ class PreparsedDocumentEntryTest extends Specification {
         docEntry.errors == null
     }
 
-    def "Ensure a null document throws NPE"() {
+    def "Ensure a null document throws Exception"() {
         when:
         new PreparsedDocumentEntry((Document) null)
 
         then:
-        thrown(NullPointerException)
+        thrown(AssertException)
     }
 
     def "Ensure a non-null errors returns"() {
@@ -42,20 +43,20 @@ class PreparsedDocumentEntryTest extends Specification {
         docEntry.errors == errors
     }
 
-    def "Ensure a null errors throws NPE"() {
+    def "Ensure a null errors throws Exception"() {
         when:
         new PreparsedDocumentEntry((List<GraphQLError>) null)
 
         then:
-        thrown(NullPointerException)
+        thrown(AssertException)
     }
 
-    def "Ensure a null error throws NPE"() {
+    def "Ensure a null error throws Exception"() {
         when:
         new PreparsedDocumentEntry((GraphQLError) null)
 
         then:
-        thrown(NullPointerException)
+        thrown(AssertException)
     }
 
 

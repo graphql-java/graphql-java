@@ -6,7 +6,6 @@ import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
-import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
@@ -26,7 +25,7 @@ public class FieldsOnCorrectType extends AbstractRule {
         GraphQLFieldDefinition fieldDef = getValidationContext().getFieldDef();
         if (fieldDef == null) {
             String message = String.format("Field '%s' in type '%s' is undefined", field.getName(), parentType.getName());
-            addError(new ValidationError(ValidationErrorType.FieldUndefined, field.getSourceLocation(), message));
+            addError(ValidationErrorType.FieldUndefined, field.getSourceLocation(), message);
         }
 
     }

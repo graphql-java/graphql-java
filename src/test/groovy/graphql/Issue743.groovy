@@ -6,13 +6,11 @@ class Issue743 extends Specification {
 
     def "#743 missing variables"() {
         when:
-        def schema = TestUtil.schema("""
+        def graphQL = TestUtil.graphQL("""
             type Query {
                 version : Int
             }
-        """)
-
-        def graphQL = GraphQL.newGraphQL(schema).build()
+        """).build()
 
         def executionInput = ExecutionInput.newExecutionInput()
                 .query('''

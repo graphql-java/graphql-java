@@ -1,32 +1,23 @@
 package graphql.execution
 
+import graphql.TestUtil
 import graphql.language.Document
 import graphql.language.Field
 import graphql.language.InlineFragment
 import graphql.language.OperationDefinition
 import graphql.parser.Parser
 import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLSchema
-import graphql.schema.idl.MockedWiringFactory
-import graphql.schema.idl.RuntimeWiring
-import graphql.schema.idl.SchemaGenerator
-import graphql.schema.idl.SchemaParser
 import spock.lang.Specification
 
+import static graphql.TestUtil.mergedField
 import static graphql.execution.FieldCollectorParameters.newParameters
 
 class FieldCollectorTest extends Specification {
 
 
-    GraphQLSchema createSchema(String schema) {
-        def registry = new SchemaParser().parse(schema)
-        return new SchemaGenerator().makeExecutableSchema(registry,
-                RuntimeWiring.newRuntimeWiring().wiringFactory(new MockedWiringFactory()).build())
-    }
-
     def "collect fields"() {
         given:
-        def schema = createSchema("""
+        def schema = TestUtil.schema("""
             type Query {
                 bar1: String
                 bar2: String 
@@ -45,15 +36,15 @@ class FieldCollectorTest extends Specification {
         def bar2 = field.selectionSet.selections[1]
 
         when:
-        def result = fieldCollector.collectFields(fieldCollectorParameters, [field])
+        def result = fieldCollector.collectFields(fieldCollectorParameters, mergedField(field))
 
         then:
-        result['bar1'] == [bar1]
-        result['bar2'] == [bar2]
+        result.getSubField('bar1').getFields() == [bar1]
+        result.getSubField('bar2').getFields() == [bar2]
     }
 
     def "collect fields on inline fragments"() {
-        def schema = createSchema("""
+        def schema = TestUtil.schema("""
             type Query{
                 bar1: String
                 bar2: Test 
@@ -78,10 +69,10 @@ class FieldCollectorTest extends Specification {
         def interfaceField = inlineFragment.selectionSet.selections[0]
 
         when:
-        def result = fieldCollector.collectFields(fieldCollectorParameters, [bar1Field])
+        def result = fieldCollector.collectFields(fieldCollectorParameters, mergedField(bar1Field))
 
         then:
-        result['fieldOnInterface'] == [interfaceField]
+        result.getSubField('fieldOnInterface').getFields() == [interfaceField]
 
     }
 }

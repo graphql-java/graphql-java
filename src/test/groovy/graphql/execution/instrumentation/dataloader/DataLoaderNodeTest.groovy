@@ -1,10 +1,10 @@
 package graphql.execution.instrumentation.dataloader
 
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
-import graphql.schema.GraphQLTypeReference
 import graphql.schema.StaticDataFetcher
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderRegistry
@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture
 import static graphql.Scalars.GraphQLInt
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLList.list
+import static graphql.schema.GraphQLTypeReference.typeRef
 
 /**
  * A test for the reported problem in https://github.com/graphql-java/graphql-java/issues/831
@@ -85,7 +86,7 @@ class DataLoaderNodeTest extends Specification {
                 .build())
                 .field(newFieldDefinition()
                 .name("childNodes")
-                .type(list(new GraphQLTypeReference("Node")))
+                .type(list(typeRef("Node")))
                 .dataFetcher({ environment -> loader.load(environment.getSource()) })
                 .build())
                 .build()
@@ -104,9 +105,10 @@ class DataLoaderNodeTest extends Specification {
         DataLoaderRegistry registry = new DataLoaderRegistry().register("childNodes", loader)
 
         ExecutionResult result = GraphQL.newGraphQL(schema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation(registry))
+                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
-                .execute('''
+                .execute(ExecutionInput.newExecutionInput().dataLoaderRegistry(registry).query(
+                '''
                         query Q { 
                             root { 
                                 id 
@@ -121,16 +123,10 @@ class DataLoaderNodeTest extends Specification {
                                 }
                             }
                         }
-                    ''')
+                    ''').build())
 
         expect:
         result != null
-        //
-        // we want this
-        //nodeLoads.size() == 3
-        //
-        // but currently is this
-        nodeLoads.size() == 4
 
         result.data == [root: [id: 1, childNodes: [
                 [id: 2, childNodes: [
@@ -143,5 +139,13 @@ class DataLoaderNodeTest extends Specification {
                 ]]
         ]]
         ]
+
+        //
+        // we want this
+        //nodeLoads.size() == 3
+        //
+        // but currently is this
+        nodeLoads.size() == 3 // WOOT!
+
     }
 }

@@ -7,6 +7,30 @@ import spock.lang.Specification
 class StarWarsIntrospectionTests extends Specification {
 
     def "Allows querying the schema for types"() {
+        def expected = [
+                __schema: [types:
+                                   [
+                                           [name: 'Boolean'],
+                                           [name: 'Character'],
+                                           [name: 'Droid'],
+                                           [name: 'Episode'],
+                                           [name: 'Human'],
+                                           [name: 'HumanInput'],
+                                           [name: 'MutationType'],
+                                           [name: 'QueryType'],
+                                           [name: 'String'],
+                                           [name: '__Directive'],
+                                           [name: '__DirectiveLocation'],
+                                           [name: '__EnumValue'],
+                                           [name: '__Field'],
+                                           [name: '__InputValue'],
+                                           [name: '__Schema'],
+                                           [name: '__Type'],
+                                           [name: '__TypeKind'],
+                                   ]
+                ]
+
+        ]
         given:
         def query = """
         query IntrospectionTypeQuery {
@@ -17,26 +41,6 @@ class StarWarsIntrospectionTests extends Specification {
             }
         }
         """
-        def expected = [
-                __schema: [types:
-                                   [[name: 'QueryType'],
-                                    [name: 'Character'],
-                                    [name: 'String'],
-                                    [name: 'Episode'],
-                                    [name: 'Human'],
-                                    [name: 'Droid'],
-                                    [name: '__Schema'],
-                                    [name: '__Type'],
-                                    [name: '__TypeKind'],
-                                    [name: '__Field'],
-                                    [name: '__InputValue'],
-                                    [name: 'Boolean'],
-                                    [name: '__EnumValue'],
-                                    [name: '__Directive'],
-                                    [name: '__DirectiveLocation']]
-                ]
-
-        ]
 
         when:
         def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query).data
@@ -162,6 +166,20 @@ class StarWarsIntrospectionTests extends Specification {
                         name  : 'Droid',
                         fields: [
                                 [
+                                        name: 'appearsIn',
+                                        type: [
+                                                name: null,
+                                                kind: 'LIST'
+                                        ]
+                                ],
+                                [
+                                        name: 'friends',
+                                        type: [
+                                                name: null,
+                                                kind: 'LIST'
+                                        ]
+                                ],
+                                [
                                         name: 'id',
                                         type: [
                                                 name: null,
@@ -173,20 +191,6 @@ class StarWarsIntrospectionTests extends Specification {
                                         type: [
                                                 name: 'String',
                                                 kind: 'SCALAR'
-                                        ]
-                                ],
-                                [
-                                        name: 'friends',
-                                        type: [
-                                                name: null,
-                                                kind: 'LIST'
-                                        ]
-                                ],
-                                [
-                                        name: 'appearsIn',
-                                        type: [
-                                                name: null,
-                                                kind: 'LIST'
                                         ]
                                 ],
                                 [
@@ -231,6 +235,28 @@ class StarWarsIntrospectionTests extends Specification {
                         name  : 'Droid',
                         fields: [
                                 [
+                                        name: 'appearsIn',
+                                        type: [
+                                                name  : null,
+                                                kind  : 'LIST',
+                                                ofType: [
+                                                        name: 'Episode',
+                                                        kind: 'ENUM'
+                                                ]
+                                        ]
+                                ],
+                                [
+                                        name: 'friends',
+                                        type: [
+                                                name  : null,
+                                                kind  : 'LIST',
+                                                ofType: [
+                                                        name: 'Character',
+                                                        kind: 'INTERFACE'
+                                                ]
+                                        ]
+                                ],
+                                [
                                         name: 'id',
                                         type: [
                                                 name  : null,
@@ -247,28 +273,6 @@ class StarWarsIntrospectionTests extends Specification {
                                                 name  : 'String',
                                                 kind  : 'SCALAR',
                                                 ofType: null
-                                        ]
-                                ],
-                                [
-                                        name: 'friends',
-                                        type: [
-                                                name  : null,
-                                                kind  : 'LIST',
-                                                ofType: [
-                                                        name: 'Character',
-                                                        kind: 'INTERFACE'
-                                                ]
-                                        ]
-                                ],
-                                [
-                                        name: 'appearsIn',
-                                        type: [
-                                                name  : null,
-                                                kind  : 'LIST',
-                                                ofType: [
-                                                        name: 'Episode',
-                                                        kind: 'ENUM'
-                                                ]
                                         ]
                                 ],
                                 [
@@ -320,6 +324,24 @@ class StarWarsIntrospectionTests extends Specification {
                         queryType: [
                                 fields: [
                                         [
+                                                name: 'droid',
+                                                args: [
+                                                        [
+                                                                name        : 'id',
+                                                                description : 'id of the droid',
+                                                                type        : [
+                                                                        kind  : 'NON_NULL',
+                                                                        name  : null,
+                                                                        ofType: [
+                                                                                kind: 'SCALAR',
+                                                                                name: 'String'
+                                                                        ]
+                                                                ],
+                                                                defaultValue: null
+                                                        ]
+                                                ]
+                                        ],
+                                        [
                                                 name: 'hero',
                                                 args: [
                                                         [
@@ -356,24 +378,6 @@ class StarWarsIntrospectionTests extends Specification {
                                                         ]
                                                 ]
                                         ],
-                                        [
-                                                name: 'droid',
-                                                args: [
-                                                        [
-                                                                name        : 'id',
-                                                                description : 'id of the droid',
-                                                                type        : [
-                                                                        kind  : 'NON_NULL',
-                                                                        name  : null,
-                                                                        ofType: [
-                                                                                kind: 'SCALAR',
-                                                                                name: 'String'
-                                                                        ]
-                                                                ],
-                                                                defaultValue: null
-                                                        ]
-                                                ]
-                                        ]
                                 ]
                         ]
                 ]
@@ -423,9 +427,9 @@ class StarWarsIntrospectionTests extends Specification {
         Map<String, Object> schemaParts = (Map<String, Map>) schema.get("__schema")
         schemaParts.size() == 5
         schemaParts.get('queryType').size() == 1
-        schemaParts.get('mutationType') == null
+        schemaParts.get('mutationType').size() == 1
         schemaParts.get('subscriptionType') == null
-        schemaParts.get('types').size() == 15
+        schemaParts.get('types').size() == 17
         schemaParts.get('directives').size() == 2
     }
 }
