@@ -1,11 +1,13 @@
 package graphql.parser;
 
+import graphql.Internal;
 import graphql.language.SourceLocation;
 import org.antlr.v4.runtime.Token;
 
-class SourceLocationHelper {
+@Internal
+public class SourceLocationHelper {
 
-    static SourceLocation mkSourceLocation(MultiSourceReader multiSourceReader, Token token) {
+    public static SourceLocation mkSourceLocation(MultiSourceReader multiSourceReader, Token token) {
         //
         // multi source reader lines are 0 based while Antler lines are 1's based
         //

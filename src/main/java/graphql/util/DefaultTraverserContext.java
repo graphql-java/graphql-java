@@ -76,6 +76,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
         this.newNode = newNode;
     }
 
+
     @Override
     public void deleteNode() {
         assertNull(this.newNode, "node is already changed");
@@ -87,6 +88,12 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     public boolean isDeleted() {
         return this.nodeDeleted;
     }
+
+    @Override
+    public boolean isChanged() {
+        return this.newNode != null;
+    }
+
 
     @Override
     public TraverserContext<T> getParentContext() {

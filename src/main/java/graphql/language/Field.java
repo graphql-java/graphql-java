@@ -7,8 +7,13 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
+
+import static graphql.Assert.assertNotNull;
+import static java.util.Collections.emptyMap;
 
 /*
  * This is provided to a DataFetcher, therefore it is a public API.
@@ -22,10 +27,12 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     private final List<Argument> arguments;
     private final List<Directive> directives;
     private final SelectionSet selectionSet;
+    private final Map<String, String> additionalData;
 
     public static final String CHILD_ARGUMENTS = "arguments";
     public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_SELECTION_SET = "selectionSet";
+
 
     @Internal
     protected Field(String name,
@@ -35,13 +42,15 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
                     SelectionSet selectionSet,
                     SourceLocation sourceLocation,
                     List<Comment> comments,
-                    IgnoredChars ignoredChars) {
+                    IgnoredChars ignoredChars,
+                    Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.alias = alias;
         this.arguments = arguments;
         this.directives = directives;
         this.selectionSet = selectionSet;
+        this.additionalData = new LinkedHashMap<>(additionalData);
     }
 
 
@@ -51,7 +60,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
      * @param name of the field
      */
     public Field(String name) {
-        this(name, null, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, null, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     /**
@@ -61,7 +70,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
      * @param arguments to the field
      */
     public Field(String name, List<Argument> arguments) {
-        this(name, null, arguments, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, null, arguments, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     /**
@@ -72,7 +81,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
      * @param selectionSet of the field
      */
     public Field(String name, List<Argument> arguments, SelectionSet selectionSet) {
-        this(name, null, arguments, new ArrayList<>(), selectionSet, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, null, arguments, new ArrayList<>(), selectionSet, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     /**
@@ -82,7 +91,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
      * @param selectionSet of the field
      */
     public Field(String name, SelectionSet selectionSet) {
-        this(name, null, new ArrayList<>(), new ArrayList<>(), selectionSet, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, null, new ArrayList<>(), new ArrayList<>(), selectionSet, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -137,6 +146,10 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         return selectionSet;
     }
 
+    public Map<String, String> getAdditionalData() {
+        return new LinkedHashMap<>(additionalData);
+    }
+
     @Override
     public boolean isEqualTo(Node o) {
         if (this == o) {
@@ -160,7 +173,8 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
                 deepCopy(selectionSet),
                 getSourceLocation(),
                 getComments(),
-                getIgnoredChars()
+                getIgnoredChars(),
+                additionalData
         );
     }
 
@@ -207,6 +221,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         private List<Directive> directives = new ArrayList<>();
         private SelectionSet selectionSet;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -220,6 +235,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
             this.directives = existing.getDirectives();
             this.selectionSet = existing.getSelectionSet();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
 
@@ -263,8 +279,19 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public Field build() {
-            Field field = new Field(name, alias, arguments, directives, selectionSet, sourceLocation, comments, ignoredChars);
+            Field field = new Field(name, alias, arguments, directives, selectionSet, sourceLocation, comments, ignoredChars, additionalData);
             return field;
         }
     }
