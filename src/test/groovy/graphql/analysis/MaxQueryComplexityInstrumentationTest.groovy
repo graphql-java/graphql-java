@@ -30,11 +30,11 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
         def query = createQuery("""
             { bar { thisIsWrong } }
             """)
-        def queryTraversal = Mock(QueryTraversal)
+        def queryTraversal = Mock(QueryTraverser)
         MaxQueryComplexityInstrumentation maxQueryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(6) {
 
             @Override
-            QueryTraversal newQueryTraversal(InstrumentationValidationParameters parameters) {
+            QueryTraverser newQueryTraversal(InstrumentationValidationParameters parameters) {
                 return queryTraversal
             }
         }
@@ -58,11 +58,11 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
         def query = createQuery("""
             { bar { thisIsWrong } }
             """)
-        def queryTraversal = Mock(QueryTraversal)
+        def queryTraversal = Mock(QueryTraverser)
         MaxQueryComplexityInstrumentation maxQueryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(6) {
 
             @Override
-            QueryTraversal newQueryTraversal(InstrumentationValidationParameters parameters) {
+            QueryTraverser newQueryTraversal(InstrumentationValidationParameters parameters) {
                 return queryTraversal
             }
         }
