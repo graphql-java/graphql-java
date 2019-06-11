@@ -13,6 +13,7 @@ import graphql.execution.instrumentation.DocumentAndVariables;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -218,7 +219,7 @@ public class GraphQL {
         private ExecutionStrategy mutationExecutionStrategy = new AsyncSerialExecutionStrategy();
         private ExecutionStrategy subscriptionExecutionStrategy = new SubscriptionExecutionStrategy();
         private ExecutionIdProvider idProvider = DEFAULT_EXECUTION_ID_PROVIDER;
-        private Instrumentation instrumentation = DEFAULT_INSTRUMENTATION;
+        private Instrumentation instrumentation = null; // deliberate default here
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
         private boolean doNotAddDefaultInstrumentations = false;
 
@@ -619,12 +620,19 @@ public class GraphQL {
 
     private static Instrumentation checkInstrumentationDefaultState(Instrumentation instrumentation, boolean doNotAddDefaultInstrumentations) {
         if (doNotAddDefaultInstrumentations) {
-            return instrumentation;
+            return instrumentation == null ? SimpleInstrumentation.INSTANCE : instrumentation;
         }
         if (instrumentation instanceof DataLoaderDispatcherInstrumentation) {
             return instrumentation;
         }
+        if (instrumentation == null) {
+            return new DataLoaderDispatcherInstrumentation();
+        }
 
+        //
+        // if we don't have a DataLoaderDispatcherInstrumentation in play, we add one.  We want DataLoader to be 1st class in graphql without requiring
+        // people to remember to wire it in.  Later we may decide to have more default instrumentations but for now its just the one
+        //
         List<Instrumentation> instrumentationList = new ArrayList<>();
         if (instrumentation instanceof ChainedInstrumentation) {
             instrumentationList.addAll(((ChainedInstrumentation) instrumentation).getInstrumentations());
@@ -632,10 +640,6 @@ public class GraphQL {
             instrumentationList.add(instrumentation);
         }
         boolean containsDLInstrumentation = instrumentationList.stream().anyMatch(instr -> instr instanceof DataLoaderDispatcherInstrumentation);
-        //
-        // if we don't have a DataLoaderDispatcherInstrumentation in play, we add one.  We want DataLoader to be 1st class in graphql without requiring
-        // people to remember to wire it in.  Later we may decide to have more default instrumentations but for now its just the one
-        //
         if (!containsDLInstrumentation) {
             instrumentationList.add(new DataLoaderDispatcherInstrumentation());
         }
