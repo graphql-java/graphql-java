@@ -6,7 +6,6 @@ import graphql.language.Field
 import graphql.language.FragmentDefinition
 import graphql.language.FragmentSpread
 import graphql.language.InlineFragment
-import graphql.language.NodeTraverser
 import graphql.language.NodeUtil
 import graphql.language.OperationDefinition
 import graphql.parser.Parser
@@ -19,10 +18,10 @@ import graphql.util.TraversalControl
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static graphql.language.NodeTraverser.LeaveOrEnter.ENTER
-import static graphql.language.NodeTraverser.LeaveOrEnter.LEAVE
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
+import static graphql.util.TraverserContext.Phase.ENTER
+import static graphql.util.TraverserContext.Phase.LEAVE
 import static java.util.Collections.emptyMap
 
 class QueryTraversalTest extends Specification {
@@ -1393,29 +1392,29 @@ class QueryTraversalTest extends Specification {
 
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
-            it.field.name == "foo" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == ENTER
+            it.field.name == "foo" && it.traverserContext.phase == ENTER
         })
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
-            it.field.name == "subFoo" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == ENTER
+            it.field.name == "subFoo" && it.traverserContext.phase == ENTER
 
         })
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
-            it.field.name == "subFoo" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == LEAVE
+            it.field.name == "subFoo" && it.traverserContext.phase == LEAVE
 
         })
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
-            it.field.name == "foo" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == LEAVE
+            it.field.name == "foo" && it.traverserContext.phase == LEAVE
         })
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
-            it.field.name == "bar" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == ENTER
+            it.field.name == "bar" && it.traverserContext.phase == ENTER
         })
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
-            it.field.name == "bar" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == LEAVE
+            it.field.name == "bar" && it.traverserContext.phase == LEAVE
         })
 
     }

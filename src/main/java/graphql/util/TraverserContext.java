@@ -18,6 +18,12 @@ import java.util.Set;
 @PublicApi
 public interface TraverserContext<T> {
 
+    enum Phase {
+        LEAVE,
+        ENTER,
+        BACKREF
+    }
+
     /**
      * Returns current node being visited.
      * Special cases:
@@ -201,5 +207,10 @@ public interface TraverserContext<T> {
      * @return the children contexts. If the childs are a simple list the key is null.
      */
     Map<String, List<TraverserContext<T>>> getChildrenContexts();
+
+    /**
+     * @return the phase in which the node visits currently happens (Enter,Leave or BackRef)
+     */
+    Phase getPhase();
 
 }
