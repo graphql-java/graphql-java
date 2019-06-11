@@ -23,7 +23,7 @@ import java.util.Map;
 @Internal
 public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Object source;
-    private final Map<String, Object> arguments = new LinkedHashMap<>();
+    private final Map<String, Object> arguments;
     private final Object context;
     private final Object localContext;
     private final Object root;
@@ -32,7 +32,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final GraphQLOutputType fieldType;
     private final GraphQLType parentType;
     private final GraphQLSchema graphQLSchema;
-    private final Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
+    private final Map<String, FragmentDefinition> fragmentsByName;
     private final ExecutionId executionId;
     private final DataFetchingFieldSelectionSet selectionSet;
     private final ExecutionStepInfo executionStepInfo;
@@ -44,7 +44,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     private DataFetchingEnvironmentImpl(Builder builder) {
         this.source = builder.source;
-        this.arguments.putAll(builder.arguments);
+        this.arguments = builder.arguments == null ? Collections.emptyMap() : builder.arguments;
         this.context = builder.context;
         this.localContext = builder.localContext;
         this.root = builder.root;
@@ -53,7 +53,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.fieldType = builder.fieldType;
         this.parentType = builder.parentType;
         this.graphQLSchema = builder.graphQLSchema;
-        this.fragmentsByName.putAll(builder.fragmentsByName);
+        this.fragmentsByName = builder.fragmentsByName == null ? Collections.emptyMap() : builder.fragmentsByName;
         this.executionId = builder.executionId;
         this.selectionSet = builder.selectionSet;
         this.executionStepInfo = builder.executionStepInfo;
@@ -61,7 +61,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.cacheControl = builder.cacheControl;
         this.operationDefinition = builder.operationDefinition;
         this.document = builder.document;
-        this.variables = builder.variables;
+        this.variables = builder.variables == null ? Collections.emptyMap() : builder.variables;
     }
 
     @Override
@@ -71,7 +71,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public Map<String, Object> getArguments() {
-        return new LinkedHashMap<>(arguments);
+        return Collections.unmodifiableMap(arguments);
     }
 
     @Override
@@ -136,7 +136,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public Map<String, FragmentDefinition> getFragmentsByName() {
-        return new LinkedHashMap<>(fragmentsByName);
+        return Collections.unmodifiableMap(fragmentsByName);
     }
 
     @Override
@@ -176,7 +176,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public Map<String, Object> getVariables() {
-        return new LinkedHashMap<>(variables);
+        return Collections.unmodifiableMap(variables);
     }
 
     @Override
@@ -229,13 +229,13 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private CacheControl cacheControl;
         private OperationDefinition operationDefinition;
         private Document document;
-        private final Map<String, Object> arguments = new LinkedHashMap<>();
-        private final Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
-        private final Map<String, Object> variables = new LinkedHashMap<>();
+        private Map<String, Object> arguments;
+        private Map<String, FragmentDefinition> fragmentsByName;
+        private Map<String, Object> variables;
 
         public Builder(DataFetchingEnvironmentImpl env) {
             this.source = env.source;
-            this.arguments.putAll(env.arguments);
+            this.arguments = env.arguments;
             this.context = env.context;
             this.localContext = env.localContext;
             this.root = env.root;
@@ -244,7 +244,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.fieldType = env.fieldType;
             this.parentType = env.parentType;
             this.graphQLSchema = env.graphQLSchema;
-            this.fragmentsByName.putAll(env.fragmentsByName);
+            this.fragmentsByName = env.fragmentsByName;
             this.executionId = env.executionId;
             this.selectionSet = env.selectionSet;
             this.executionStepInfo = env.executionStepInfo;
@@ -252,7 +252,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.cacheControl = env.cacheControl;
             this.operationDefinition = env.operationDefinition;
             this.document = env.document;
-            this.variables.putAll(env.variables);
+            this.variables = env.variables;
         }
 
         public Builder() {
@@ -264,7 +264,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         }
 
         public Builder arguments(Map<String, Object> arguments) {
-            this.arguments.putAll(arguments == null ? Collections.emptyMap() : arguments);
+            this.arguments = arguments;
             return this;
         }
 
@@ -309,7 +309,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         }
 
         public Builder fragmentsByName(Map<String, FragmentDefinition> fragmentsByName) {
-            this.fragmentsByName.putAll(fragmentsByName == null ? Collections.emptyMap() : fragmentsByName);
+            this.fragmentsByName = fragmentsByName;
             return this;
         }
 
@@ -349,7 +349,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         }
 
         public Builder variables(Map<String, Object> variables) {
-            this.variables.putAll(variables == null ? Collections.emptyMap() : variables);
+            this.variables = variables;
             return this;
         }
 

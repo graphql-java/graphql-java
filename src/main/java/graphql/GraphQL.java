@@ -169,23 +169,8 @@ public class GraphQL {
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new SubscriptionExecutionStrategy();
         this.idProvider = assertNotNull(idProvider, "idProvider must be non null");
-        this.instrumentation = checkInstrumentation(assertNotNull(instrumentation));
+        this.instrumentation = assertNotNull(instrumentation);
         this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, "preparsedDocumentProvider must be non null");
-    }
-
-    private Instrumentation checkInstrumentation(Instrumentation instrumentation) {
-        List<Instrumentation> instrumentationList = new ArrayList<>();
-        if (instrumentation instanceof ChainedInstrumentation) {
-            instrumentationList.addAll(((ChainedInstrumentation) instrumentation).getInstrumentations());
-        } else {
-            instrumentationList.add(instrumentation);
-        }
-        boolean containsDLInstrumentation = instrumentationList.stream().anyMatch(instr -> instr instanceof DataLoaderDispatcherInstrumentation);
-        // if we don't have a DataLoaderDispatcherInstrumentation in play, we add one.  We want DataLoader to be 1st class in graphql
-        if (!containsDLInstrumentation) {
-            instrumentationList.add(new DataLoaderDispatcherInstrumentation());
-        }
-        return new ChainedInstrumentation(instrumentationList);
     }
 
     /**
@@ -235,6 +220,7 @@ public class GraphQL {
         private ExecutionIdProvider idProvider = DEFAULT_EXECUTION_ID_PROVIDER;
         private Instrumentation instrumentation = SimpleInstrumentation.INSTANCE;
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
+        private boolean dataLoaderInstrumentationEnabled = true;
 
 
         public Builder(GraphQLSchema graphQLSchema) {
@@ -276,11 +262,17 @@ public class GraphQL {
             return this;
         }
 
+        public Builder dataLoaderInstrumentationEnabled(boolean dataLoaderInstrumentationEnabled) {
+            this.dataLoaderInstrumentationEnabled = dataLoaderInstrumentationEnabled;
+            return this;
+        }
+
         public GraphQL build() {
             assertNotNull(graphQLSchema, "graphQLSchema must be non null");
             assertNotNull(queryExecutionStrategy, "queryStrategy must be non null");
             assertNotNull(idProvider, "idProvider must be non null");
-            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, instrumentation, preparsedDocumentProvider);
+            final Instrumentation augmentedInstrumentation = dataLoaderInstrumentationEnabled ? checkInstrumentation(instrumentation) : instrumentation;
+            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, augmentedInstrumentation, preparsedDocumentProvider);
         }
     }
 
@@ -613,4 +605,18 @@ public class GraphQL {
         return future;
     }
 
+    private static Instrumentation checkInstrumentation(Instrumentation instrumentation) {
+        List<Instrumentation> instrumentationList = new ArrayList<>();
+        if (instrumentation instanceof ChainedInstrumentation) {
+            instrumentationList.addAll(((ChainedInstrumentation) instrumentation).getInstrumentations());
+        } else {
+            instrumentationList.add(instrumentation);
+        }
+        boolean containsDLInstrumentation = instrumentationList.stream().anyMatch(instr -> instr instanceof DataLoaderDispatcherInstrumentation);
+        // if we don't have a DataLoaderDispatcherInstrumentation in play, we add one.  We want DataLoader to be 1st class in graphql
+        if (!containsDLInstrumentation) {
+            instrumentationList.add(new DataLoaderDispatcherInstrumentation());
+        }
+        return new ChainedInstrumentation(instrumentationList);
+    }
 }
