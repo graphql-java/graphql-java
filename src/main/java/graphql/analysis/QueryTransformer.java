@@ -3,7 +3,6 @@ package graphql.analysis;
 import graphql.PublicApi;
 import graphql.language.FragmentDefinition;
 import graphql.language.Node;
-import graphql.language.NodeTraverser.LeaveOrEnter;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLSchema;
 import graphql.util.TraversalControl;
@@ -74,7 +73,6 @@ public class QueryTransformer {
 
             @Override
             public TraversalControl enter(TraverserContext<Node> context) {
-                context.setVar(LeaveOrEnter.class, LeaveOrEnter.ENTER);
                 return context.thisNode().accept(context, nodeVisitor);
             }
 
