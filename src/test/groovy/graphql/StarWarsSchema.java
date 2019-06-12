@@ -6,6 +6,7 @@ import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphqlTypeComparatorRegistry;
 import graphql.schema.StaticDataFetcher;
 
 import static graphql.Scalars.GraphQLString;
@@ -19,6 +20,7 @@ import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
 import static graphql.schema.GraphQLTypeReference.typeRef;
+import static graphql.schema.GraphqlTypeComparatorRegistry.*;
 
 public class StarWarsSchema {
 
@@ -29,6 +31,7 @@ public class StarWarsSchema {
             .value("NEWHOPE", 4, "Released in 1977.")
             .value("EMPIRE", 5, "Released in 1980.")
             .value("JEDI", 6, "Released in 1983.")
+            .comparatorRegistry(BY_NAME_REGISTRY)
             .build();
 
 
@@ -52,6 +55,7 @@ public class StarWarsSchema {
                     .description("Which movies they appear in.")
                     .type(list(episodeEnum)))
             .typeResolver(StarWarsData.getCharacterTypeResolver())
+            .comparatorRegistry(BY_NAME_REGISTRY)
             .build();
 
     public static GraphQLObjectType humanType = newObject()
@@ -79,6 +83,7 @@ public class StarWarsSchema {
                     .name("homePlanet")
                     .description("The home planet of the human, or null if unknown.")
                     .type(GraphQLString))
+            .comparatorRegistry(BY_NAME_REGISTRY)
             .build();
 
     public static GraphQLObjectType droidType = newObject()
@@ -106,6 +111,7 @@ public class StarWarsSchema {
                     .name("primaryFunction")
                     .description("The primary function of the droid.")
                     .type(GraphQLString))
+            .comparatorRegistry(BY_NAME_REGISTRY)
             .build();
 
     public static GraphQLInputObjectType inputHumanType = newInputObject()
@@ -115,6 +121,7 @@ public class StarWarsSchema {
                     .name("id")
                     .description("The id of the human.")
                     .type(nonNull(GraphQLString)))
+            .comparatorRegistry(BY_NAME_REGISTRY)
             .build();
 
     public static GraphQLObjectType queryType = newObject()
@@ -143,6 +150,7 @@ public class StarWarsSchema {
                             .description("id of the droid")
                             .type(nonNull(GraphQLString)))
                     .dataFetcher(StarWarsData.getDroidDataFetcher()))
+            .comparatorRegistry(BY_NAME_REGISTRY)
             .build();
 
     public static GraphQLObjectType mutationType = newObject()
@@ -154,6 +162,7 @@ public class StarWarsSchema {
                             .name("input")
                             .type(inputHumanType))
                     .dataFetcher(new StaticDataFetcher(StarWarsData.getArtoo())))
+            .comparatorRegistry(BY_NAME_REGISTRY)
             .build();
 
     public static GraphQLSchema starWarsSchema = GraphQLSchema.newSchema()

@@ -7,10 +7,14 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class VariableDefinition extends AbstractNode<VariableDefinition> implements NamedNode<VariableDefinition> {
@@ -28,8 +32,9 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
                                  Value defaultValue,
                                  SourceLocation sourceLocation,
                                  List<Comment> comments,
-                                 IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+                                 IgnoredChars ignoredChars,
+                                 Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;
@@ -45,7 +50,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     public VariableDefinition(String name,
                               Type type,
                               Value defaultValue) {
-        this(name, type, defaultValue, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, type, defaultValue, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     /**
@@ -56,7 +61,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
      */
     public VariableDefinition(String name,
                               Type type) {
-        this(name, type, null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, type, null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
 
@@ -120,8 +125,8 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
                 deepCopy(defaultValue),
                 getSourceLocation(),
                 getComments(),
-                getIgnoredChars()
-        );
+                getIgnoredChars(),
+                getAdditionalData());
     }
 
     @Override
@@ -168,6 +173,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         private Type type;
         private Value defaultValue;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -179,6 +185,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
             this.type = existing.getType();
             this.defaultValue = existing.getDefaultValue();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -211,16 +218,25 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
         public VariableDefinition build() {
-            VariableDefinition variableDefinition = new VariableDefinition(
+            return new VariableDefinition(
                     name,
                     type,
                     defaultValue,
                     sourceLocation,
                     comments,
-                    ignoredChars
-            );
-            return variableDefinition;
+                    ignoredChars,
+                    additionalData);
         }
     }
 }

@@ -5,6 +5,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphqlTypeComparatorRegistry;
 import graphql.schema.SchemaTransformer;
 import graphql.schema.TypeResolver;
 import graphql.schema.visibility.GraphqlFieldVisibility;
@@ -37,19 +38,21 @@ public class RuntimeWiring {
     private final Collection<SchemaTransformer> schemaTransformers;
     private final GraphqlFieldVisibility fieldVisibility;
     private final GraphQLCodeRegistry codeRegistry;
+    private final GraphqlTypeComparatorRegistry comparatorRegistry;
 
-    private RuntimeWiring(Map<String, Map<String, DataFetcher>> dataFetchers, Map<String, DataFetcher> defaultDataFetchers, Map<String, GraphQLScalarType> scalars, Map<String, TypeResolver> typeResolvers, Map<String, SchemaDirectiveWiring> registeredDirectiveWiring, List<SchemaDirectiveWiring> directiveWiring, Map<String, EnumValuesProvider> enumValuesProviders, WiringFactory wiringFactory, Collection<SchemaTransformer> schemaTransformers, GraphqlFieldVisibility fieldVisibility, GraphQLCodeRegistry codeRegistry) {
-        this.dataFetchers = dataFetchers;
-        this.defaultDataFetchers = defaultDataFetchers;
-        this.scalars = scalars;
-        this.typeResolvers = typeResolvers;
-        this.registeredDirectiveWiring = registeredDirectiveWiring;
-        this.directiveWiring = directiveWiring;
-        this.wiringFactory = wiringFactory;
-        this.enumValuesProviders = enumValuesProviders;
-        this.schemaTransformers = schemaTransformers;
-        this.fieldVisibility = fieldVisibility;
-        this.codeRegistry = codeRegistry;
+    private RuntimeWiring(Builder builder) {
+        this.dataFetchers = builder.dataFetchers;
+        this.defaultDataFetchers = builder.defaultDataFetchers;
+        this.scalars = builder.scalars;
+        this.typeResolvers = builder.typeResolvers;
+        this.registeredDirectiveWiring = builder.registeredDirectiveWiring;
+        this.directiveWiring = builder.directiveWiring;
+        this.wiringFactory = builder.wiringFactory;
+        this.enumValuesProviders = builder.enumValuesProviders;
+        this.schemaTransformers = builder.schemaTransformers;
+        this.fieldVisibility = builder.fieldVisibility;
+        this.codeRegistry = builder.codeRegistry;
+        this.comparatorRegistry = builder.comparatorRegistry;
     }
 
     /**
@@ -107,6 +110,10 @@ public class RuntimeWiring {
         return schemaTransformers;
     }
 
+    public GraphqlTypeComparatorRegistry getComparatorRegistry() {
+        return comparatorRegistry;
+    }
+
     @PublicApi
     public static class Builder {
         private final Map<String, Map<String, DataFetcher>> dataFetchers = new LinkedHashMap<>();
@@ -120,6 +127,7 @@ public class RuntimeWiring {
         private WiringFactory wiringFactory = new NoopWiringFactory();
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
         private GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().build();
+        private GraphqlTypeComparatorRegistry comparatorRegistry = GraphqlTypeComparatorRegistry.AS_IS_REGISTRY;
 
         private Builder() {
             ScalarInfo.STANDARD_SCALARS.forEach(this::scalar);
@@ -283,6 +291,18 @@ public class RuntimeWiring {
         }
 
         /**
+         * You can specify your own sort order of graphql types via {@link graphql.schema.GraphqlTypeComparatorRegistry}
+         * which will tell you what type of objects you are to sort when
+         * it asks for a comparator.
+         *
+         * @return the runtime wiring builder
+         */
+        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
+            this.comparatorRegistry = comparatorRegistry;
+            return this;
+        }
+
+        /**
          * Adds a schema transformer into the mix
          *
          * @param schemaTransformer the non null schema transformer to add
@@ -298,7 +318,7 @@ public class RuntimeWiring {
          * @return the built runtime wiring
          */
         public RuntimeWiring build() {
-            return new RuntimeWiring(dataFetchers, defaultDataFetchers, scalars, typeResolvers, registeredDirectiveWiring, directiveWiring, enumValuesProviders, wiringFactory, schemaTransformers, fieldVisibility, codeRegistry);
+            return new RuntimeWiring(this);
         }
 
     }

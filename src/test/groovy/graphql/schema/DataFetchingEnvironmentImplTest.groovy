@@ -4,7 +4,6 @@ import graphql.cachecontrol.CacheControl
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionStepInfo
 import graphql.language.FragmentDefinition
-import graphql.language.IgnoredChars
 import graphql.language.OperationDefinition
 import graphql.language.TypeName
 import org.dataloader.BatchLoader
@@ -21,7 +20,7 @@ import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironm
 
 class DataFetchingEnvironmentImplTest extends Specification {
 
-    def frag = new FragmentDefinition("frag", new TypeName("t"), [], null, null, [], new IgnoredChars([], []))
+    def frag = FragmentDefinition.newFragmentDefinition().name("frag").typeCondition(new TypeName("t")).build()
 
     def dataLoader = DataLoader.newDataLoader({ keys -> CompletableFuture.completedFuture(keys) } as BatchLoader)
     def operationDefinition = new OperationDefinition("q")

@@ -7,10 +7,14 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> implements TypeDefinition<UnionTypeDefinition>, DirectivesContainer<UnionTypeDefinition>, NamedNode<UnionTypeDefinition> {
@@ -30,8 +34,8 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
                                   Description description,
                                   SourceLocation sourceLocation,
                                   List<Comment> comments,
-                                  IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+                                  IgnoredChars ignoredChars, Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.directives = directives;
         this.memberTypes = memberTypes;
@@ -46,7 +50,7 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
      */
     public UnionTypeDefinition(String name,
                                List<Directive> directives) {
-        this(name, directives, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, directives, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     /**
@@ -55,7 +59,7 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
      * @param name of the union
      */
     public UnionTypeDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -122,8 +126,8 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
                 description,
                 getSourceLocation(),
                 getComments(),
-                getIgnoredChars()
-        );
+                getIgnoredChars(),
+                getAdditionalData());
     }
 
     @Override
@@ -158,6 +162,7 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
         private List<Directive> directives = new ArrayList<>();
         private List<Type> memberTypes = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -217,15 +222,26 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public UnionTypeDefinition build() {
-            UnionTypeDefinition unionTypeDefinition = new UnionTypeDefinition(name,
+            return new UnionTypeDefinition(name,
                     directives,
                     memberTypes,
                     description,
                     sourceLocation,
                     comments,
-                    ignoredChars);
-            return unionTypeDefinition;
+                    ignoredChars,
+                    additionalData);
         }
     }
 }

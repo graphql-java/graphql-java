@@ -7,10 +7,14 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class OperationDefinition extends AbstractNode<OperationDefinition> implements Definition<OperationDefinition>, SelectionSetContainer<OperationDefinition>, DirectivesContainer<OperationDefinition> {
@@ -38,8 +42,9 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
                                   SelectionSet selectionSet,
                                   SourceLocation sourceLocation,
                                   List<Comment> comments,
-                                  IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+                                  IgnoredChars ignoredChars,
+                                  Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.operation = operation;
         this.variableDefinitions = variableDefinitions;
@@ -49,11 +54,11 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
 
     public OperationDefinition(String name,
                                Operation operation) {
-        this(name, operation, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, operation, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public OperationDefinition(String name) {
-        this(name, null, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, null, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -128,8 +133,8 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
                 deepCopy(selectionSet),
                 getSourceLocation(),
                 getComments(),
-                getIgnoredChars()
-        );
+                getIgnoredChars(),
+                getAdditionalData());
     }
 
     @Override
@@ -167,6 +172,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         private List<Directive> directives = new ArrayList<>();
         private SelectionSet selectionSet;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -180,6 +186,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
             this.directives = existing.getDirectives();
             this.selectionSet = existing.getSelectionSet();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
 
@@ -223,8 +230,18 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
         public OperationDefinition build() {
-            OperationDefinition operationDefinition = new OperationDefinition(
+            return new OperationDefinition(
                     name,
                     operation,
                     variableDefinitions,
@@ -232,9 +249,8 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
                     selectionSet,
                     sourceLocation,
                     comments,
-                    ignoredChars
-            );
-            return operationDefinition;
+                    ignoredChars,
+                    additionalData);
         }
     }
 }

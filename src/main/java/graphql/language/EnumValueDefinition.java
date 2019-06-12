@@ -7,10 +7,14 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> implements DirectivesContainer<EnumValueDefinition>, NamedNode<EnumValueDefinition> {
@@ -26,8 +30,8 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
                                   Description description,
                                   SourceLocation sourceLocation,
                                   List<Comment> comments,
-                                  IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+                                  IgnoredChars ignoredChars, Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.description = description;
         this.directives = (null == directives) ? new ArrayList<>() : directives;
@@ -39,7 +43,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
      * @param name of the enum value
      */
     public EnumValueDefinition(String name) {
-        this(name, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     /**
@@ -49,7 +53,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
      * @param directives the directives on the enum value
      */
     public EnumValueDefinition(String name, List<Directive> directives) {
-        this(name, directives, null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, directives, null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -104,7 +108,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
 
     @Override
     public EnumValueDefinition deepCopy() {
-        return new EnumValueDefinition(name, deepCopy(directives), description, getSourceLocation(), getComments(), getIgnoredChars());
+        return new EnumValueDefinition(name, deepCopy(directives), description, getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -137,6 +141,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
         private Description description;
         private List<Directive> directives;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -148,6 +153,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -180,9 +186,19 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public EnumValueDefinition build() {
-            EnumValueDefinition enumValueDefinition = new EnumValueDefinition(name, directives, description, sourceLocation, comments, ignoredChars);
-            return enumValueDefinition;
+            return new EnumValueDefinition(name, directives, description, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

@@ -22,7 +22,8 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
-import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
+import static graphql.schema.GraphqlTypeComparators.byNameAsc;
+import static graphql.schema.GraphqlTypeComparators.sortTypes;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
@@ -44,9 +45,6 @@ public class GraphQLSchema {
     private final Set<GraphQLDirective> directives = new LinkedHashSet<>();
     private final Map<String, List<GraphQLObjectType>> byInterface;
     private final GraphQLCodeRegistry codeRegistry;
-
-    private final SchemaUtil schemaUtil = new SchemaUtil();
-
 
     /**
      * @param queryType the query type
@@ -100,6 +98,7 @@ public class GraphQLSchema {
         this.additionalTypes.addAll(additionalTypes);
         this.directives.addAll(directives);
         // sorted by type name
+        SchemaUtil schemaUtil = new SchemaUtil();
         this.typeMap = new TreeMap<>(schemaUtil.allTypes(this, additionalTypes));
         this.byInterface = new TreeMap<>(schemaUtil.groupImplementations(this));
         this.codeRegistry = codeRegistry;
@@ -155,7 +154,7 @@ public class GraphQLSchema {
     }
 
     public List<GraphQLType> getAllTypesAsList() {
-        return sortGraphQLTypes(typeMap.values());
+        return sortTypes(byNameAsc(), typeMap.values());
     }
 
     /**
@@ -170,7 +169,7 @@ public class GraphQLSchema {
         List<GraphQLObjectType> implementations = byInterface.get(type.getName());
         return (implementations == null)
                 ? Collections.emptyList()
-                : Collections.unmodifiableList(sortGraphQLTypes(implementations));
+                : Collections.unmodifiableList(sortTypes(byNameAsc(), implementations));
     }
 
     /**

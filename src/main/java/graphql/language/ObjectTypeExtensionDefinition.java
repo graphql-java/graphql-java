@@ -5,8 +5,13 @@ import graphql.Internal;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
+
+import static graphql.Assert.assertNotNull;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
@@ -19,9 +24,10 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
                                             Description description,
                                             SourceLocation sourceLocation,
                                             List<Comment> comments,
-                                            IgnoredChars ignoredChars) {
+                                            IgnoredChars ignoredChars,
+                                            Map<String, String> additionalData) {
         super(name, implementz, directives, fieldDefinitions,
-                description, sourceLocation, comments, ignoredChars);
+                description, sourceLocation, comments, ignoredChars, additionalData);
     }
 
     /**
@@ -30,7 +36,7 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
      * @param name of the object type extension
      */
     public ObjectTypeExtensionDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -42,8 +48,8 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
                 getDescription(),
                 getSourceLocation(),
                 getComments(),
-                getIgnoredChars()
-        );
+                getIgnoredChars(),
+                getAdditionalData());
     }
 
 
@@ -76,6 +82,7 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
         private List<Directive> directives = new ArrayList<>();
         private List<FieldDefinition> fieldDefinitions = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -89,6 +96,7 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
             this.implementz = existing.getImplements();
             this.fieldDefinitions = existing.getFieldDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -146,16 +154,25 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
         public ObjectTypeExtensionDefinition build() {
-            ObjectTypeExtensionDefinition objectTypeDefinition = new ObjectTypeExtensionDefinition(name,
+            return new ObjectTypeExtensionDefinition(name,
                     implementz,
                     directives,
                     fieldDefinitions,
                     description,
                     sourceLocation,
                     comments,
-                    ignoredChars);
-            return objectTypeDefinition;
+                    ignoredChars, additionalData);
         }
     }
 }

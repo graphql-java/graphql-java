@@ -18,9 +18,7 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition;
-import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
-import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
 
 /**
@@ -109,7 +107,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         this.description = description;
         this.definition = definition;
         this.directives = directives;
-        buildMap(sortGraphQLTypes(values));
+        buildMap(values);
     }
 
     public List<GraphQLEnumValueDefinition> getValues() {
@@ -217,10 +215,8 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         return new Builder(existing);
     }
 
-    public static class Builder {
+    public static class Builder extends GraphqlTypeBuilder {
 
-        private String name;
-        private String description;
         private EnumTypeDefinition definition;
         private final Map<String, GraphQLEnumValueDefinition> values = new LinkedHashMap<>();
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
@@ -236,13 +232,21 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
             this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
 
+        @Override
         public Builder name(String name) {
-            this.name = name;
+            super.name(name);
             return this;
         }
 
+        @Override
         public Builder description(String description) {
-            this.description = description;
+            super.description(description);
+            return this;
+        }
+
+        @Override
+        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
+            super.comparatorRegistry(comparatorRegistry);
             return this;
         }
 
@@ -329,7 +333,12 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         }
 
         public GraphQLEnumType build() {
-            return new GraphQLEnumType(name, description, valuesToList(values), valuesToList(directives), definition);
+            return new GraphQLEnumType(
+                    name,
+                    description,
+                    sort(values, GraphQLEnumType.class, GraphQLEnumValueDefinition.class),
+                    sort(directives, GraphQLEnumType.class, GraphQLDirective.class),
+                    definition);
         }
     }
 }
