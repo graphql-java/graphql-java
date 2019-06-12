@@ -95,7 +95,7 @@ class QueryDirectivesIntegrationTest extends Specification {
         then:
         er.errors.isEmpty()
 
-        Map<String, List<GraphQLDirective>> immediateMap = capturedDirectives["review"].getImmediateDirectives()
+        Map<String, List<GraphQLDirective>> immediateMap = capturedDirectives["review"].getImmediateDirectivesByName()
         def entries = immediateMap.entrySet().collectEntries({
             [(it.getKey()): joinArgs(it.getValue())]
         })
@@ -123,7 +123,7 @@ class QueryDirectivesIntegrationTest extends Specification {
         then:
         er.errors.isEmpty()
 
-        Map<String, List<GraphQLDirective>> immediateMap = capturedDirectives["title"].getImmediateDirectives()
+        Map<String, List<GraphQLDirective>> immediateMap = capturedDirectives["title"].getImmediateDirectivesByName()
         def entries = immediateMap.entrySet().collectEntries({
             [(it.getKey()): joinArgs(it.getValue())]
         })

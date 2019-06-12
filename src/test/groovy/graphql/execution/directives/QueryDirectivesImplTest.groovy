@@ -31,7 +31,7 @@ class QueryDirectivesImplTest extends Specification {
         def impl = new QueryDirectivesImpl(mergedField, schema, [var: 10])
 
         when:
-        def directives = impl.getImmediateDirectives()
+        def directives = impl.getImmediateDirectivesByName()
         then:
         directives.keySet().sort() == ["cached", "timeout", "upper"]
 

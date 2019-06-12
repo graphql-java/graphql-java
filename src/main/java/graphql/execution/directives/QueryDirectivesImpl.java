@@ -8,6 +8,7 @@ import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +27,8 @@ public class QueryDirectivesImpl implements QueryDirectives {
     private final MergedField mergedField;
     private final GraphQLSchema schema;
     private final Map<String, Object> variables;
-    private volatile Map<Field, List<GraphQLDirective>> fieldDirectivesMap;
+    private volatile Map<Field, List<GraphQLDirective>> fieldDirectivesByField;
+    private volatile Map<String, List<GraphQLDirective>> fieldDirectivesByName;
 
     public QueryDirectivesImpl(MergedField mergedField, GraphQLSchema schema, Map<String, Object> variables) {
         this.mergedField = mergedField;
@@ -36,11 +38,11 @@ public class QueryDirectivesImpl implements QueryDirectives {
 
     private void computeValuesLazily() {
         synchronized (this) {
-            if (fieldDirectivesMap != null) {
+            if (fieldDirectivesByField != null) {
                 return;
             }
 
-            this.fieldDirectivesMap = new LinkedHashMap<>();
+            final Map<Field, List<GraphQLDirective>> byField = new LinkedHashMap<>();
             mergedField.getFields().forEach(field -> {
                 List<Directive> directives = field.getDirectives();
                 List<GraphQLDirective> resolvedDirectives = new ArrayList<>(
@@ -48,8 +50,18 @@ public class QueryDirectivesImpl implements QueryDirectives {
                                 .resolveDirectives(directives, schema, variables)
                                 .values()
                 );
-                fieldDirectivesMap.put(field, resolvedDirectives);
+                byField.put(field, Collections.unmodifiableList(resolvedDirectives));
             });
+
+            Map<String, List<GraphQLDirective>> byName = new LinkedHashMap<>();
+            byField.forEach((field, directiveList) -> directiveList.forEach(directive -> {
+                String name = directive.getName();
+                byName.computeIfAbsent(name, k -> new ArrayList<>());
+                byName.get(name).add(directive);
+            }));
+
+            this.fieldDirectivesByName = Collections.unmodifiableMap(byName);
+            this.fieldDirectivesByField = Collections.unmodifiableMap(byField);
         }
     }
 
@@ -57,26 +69,18 @@ public class QueryDirectivesImpl implements QueryDirectives {
     @Override
     public Map<Field, List<GraphQLDirective>> getImmediateDirectivesByField() {
         computeValuesLazily();
-        return new LinkedHashMap<>(fieldDirectivesMap);
+        return fieldDirectivesByField;
     }
 
     @Override
-    public Map<String, List<GraphQLDirective>> getImmediateDirectives() {
+    public Map<String, List<GraphQLDirective>> getImmediateDirectivesByName() {
         computeValuesLazily();
-        Map<String, List<GraphQLDirective>> mapOfDirectives = new LinkedHashMap<>();
-        fieldDirectivesMap.forEach((field, directiveList) -> {
-            directiveList.forEach(directive -> {
-                String name = directive.getName();
-                mapOfDirectives.computeIfAbsent(name, k -> new ArrayList<>());
-                mapOfDirectives.get(name).add(directive);
-            });
-        });
-        return mapOfDirectives;
+        return fieldDirectivesByName;
     }
 
     @Override
     public List<GraphQLDirective> getImmediateDirective(String directiveName) {
         computeValuesLazily();
-        return getImmediateDirectives().getOrDefault(directiveName, emptyList());
+        return getImmediateDirectivesByName().getOrDefault(directiveName, emptyList());
     }
 }

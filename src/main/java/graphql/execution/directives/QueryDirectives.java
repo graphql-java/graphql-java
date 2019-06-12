@@ -30,7 +30,7 @@ public interface QueryDirectives {
      *
      * @return a map of all the directives immediately on this merged field
      */
-    Map<String, List<GraphQLDirective>> getImmediateDirectives();
+    Map<String, List<GraphQLDirective>> getImmediateDirectivesByName();
 
 
     /**
