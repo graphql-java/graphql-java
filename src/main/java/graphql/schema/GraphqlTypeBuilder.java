@@ -9,7 +9,7 @@ import java.util.Map;
 import static graphql.util.FpKit.valuesToList;
 
 @Internal
-abstract class GraphqlTypeBuilder {
+public abstract class GraphqlTypeBuilder {
 
     protected String name;
     protected String description;
