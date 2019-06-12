@@ -16,7 +16,6 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.util.FpKit.getByName;
-import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
 
 /**
@@ -155,9 +154,7 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
     }
 
     @PublicApi
-    public static class Builder {
-        private String name;
-        private String description;
+    public static class Builder extends GraphqlTypeBuilder {
         private Object defaultValue;
         private GraphQLInputType type;
         private InputValueDefinition definition;
@@ -175,13 +172,21 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
             this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
 
+        @Override
         public Builder name(String name) {
-            this.name = name;
+            super.name(name);
             return this;
         }
 
+        @Override
         public Builder description(String description) {
-            this.description = description;
+            super.description(description);
+            return this;
+        }
+
+        @Override
+        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
+            super.comparatorRegistry(comparatorRegistry);
             return this;
         }
 
@@ -233,7 +238,13 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
         }
 
         public GraphQLInputObjectField build() {
-            return new GraphQLInputObjectField(name, description, type, defaultValue, valuesToList(directives), definition);
+            return new GraphQLInputObjectField(
+                    name,
+                    description,
+                    type,
+                    defaultValue,
+                    sort(directives, GraphQLInputObjectField.class, GraphQLDirective.class),
+                    definition);
         }
     }
 }

@@ -17,7 +17,6 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
-import static graphql.util.FpKit.valuesToList;
 
 /**
  * This defines an argument that can be supplied to a graphql field (via {@link graphql.schema.GraphQLFieldDefinition}.
@@ -183,13 +182,11 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
         return children;
     }
 
-    public static class Builder {
+    public static class Builder extends GraphqlTypeBuilder {
 
-        private String name;
         private GraphQLInputType type;
         private Object defaultValue;
         private Object value;
-        private String description;
         private InputValueDefinition definition;
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
 
@@ -206,13 +203,21 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
             this.directives.putAll(FpKit.getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
 
+        @Override
         public Builder name(String name) {
-            this.name = name;
+            super.name(name);
             return this;
         }
 
+        @Override
         public Builder description(String description) {
-            this.description = description;
+            super.description(description);
+            return this;
+        }
+
+        @Override
+        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
+            super.comparatorRegistry(comparatorRegistry);
             return this;
         }
 
@@ -267,7 +272,15 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
 
 
         public GraphQLArgument build() {
-            return new GraphQLArgument(name, description, type, defaultValue, value, definition, valuesToList(directives));
+            return new GraphQLArgument(
+                    name,
+                    description,
+                    type,
+                    defaultValue,
+                    value,
+                    definition,
+                    sort(directives, GraphQLArgument.class, GraphQLDirective.class)
+            );
         }
     }
 }

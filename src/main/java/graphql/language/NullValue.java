@@ -8,19 +8,23 @@ import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class NullValue extends AbstractNode<NullValue> implements Value<NullValue> {
 
-    public static final NullValue Null = new NullValue(null, Collections.emptyList(), IgnoredChars.EMPTY);
+    public static final NullValue Null = new NullValue(null, Collections.emptyList(), IgnoredChars.EMPTY, emptyMap());
 
     @Internal
-    protected NullValue(SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+    protected NullValue(SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
     }
 
     @Override
@@ -77,6 +81,7 @@ public class NullValue extends AbstractNode<NullValue> implements Value<NullValu
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -96,9 +101,19 @@ public class NullValue extends AbstractNode<NullValue> implements Value<NullValu
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public NullValue build() {
-            NullValue nullValue = new NullValue(sourceLocation, comments, ignoredChars);
-            return nullValue;
+            return new NullValue(sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

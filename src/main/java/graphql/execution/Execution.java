@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import graphql.DeferredExecutionResult;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
@@ -186,7 +187,7 @@ public class Execution {
             if (deferSupport.isDeferDetected()) {
                 // we start the rest of the query now to maximize throughput.  We have the initial important results
                 // and now we can start the rest of the calls as early as possible (even before some one subscribes)
-                Publisher<ExecutionResult> publisher = deferSupport.startDeferredCalls();
+                Publisher<DeferredExecutionResult> publisher = deferSupport.startDeferredCalls();
                 return ExecutionResultImpl.newExecutionResult().from(er)
                         .addExtension(GraphQL.DEFERRED_RESULTS, publisher)
                         .build();

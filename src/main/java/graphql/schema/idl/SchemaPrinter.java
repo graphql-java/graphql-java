@@ -8,6 +8,7 @@ import graphql.language.Comment;
 import graphql.language.Description;
 import graphql.language.Document;
 import graphql.language.Node;
+import graphql.schema.DefaultGraphqlTypeComparatorRegistry;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
@@ -24,6 +25,8 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.GraphqlTypeComparatorEnvironment;
+import graphql.schema.GraphqlTypeComparatorRegistry;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.io.PrintWriter;
@@ -63,14 +66,14 @@ public class SchemaPrinter {
 
         private final boolean includeDirectives;
 
-        private final SchemaPrinterComparatorRegistry comparatorRegistry;
+        private final GraphqlTypeComparatorRegistry comparatorRegistry;
 
         private Options(boolean includeIntrospectionTypes,
                         boolean includeScalars,
                         boolean includeExtendedScalars,
                         boolean includeSchemaDefinition,
                         boolean includeDirectives,
-                        SchemaPrinterComparatorRegistry comparatorRegistry) {
+                        GraphqlTypeComparatorRegistry comparatorRegistry) {
             this.includeIntrospectionTypes = includeIntrospectionTypes;
             this.includeScalars = includeScalars;
             this.includeExtendedScalars = includeExtendedScalars;
@@ -101,7 +104,7 @@ public class SchemaPrinter {
 
         public static Options defaultOptions() {
             return new Options(false, false, false, false, true,
-                    DefaultSchemaPrinterComparatorRegistry.defaultComparators());
+                    DefaultGraphqlTypeComparatorRegistry.defaultComparators());
         }
 
         /**
@@ -166,17 +169,19 @@ public class SchemaPrinter {
 
         /**
          * The comparator registry controls the printing order for registered {@code GraphQLType}s.
+         * <p>
+         * The default is to sort elements by name but you can put in your own code to decide on the field order
          *
          * @param comparatorRegistry The registry containing the {@code Comparator} and environment scoping rules.
          *
          * @return options
          */
-        public Options setComparators(SchemaPrinterComparatorRegistry comparatorRegistry) {
+        public Options setComparators(GraphqlTypeComparatorRegistry comparatorRegistry) {
             return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives,
                     comparatorRegistry);
         }
 
-        public SchemaPrinterComparatorRegistry getComparatorRegistry() {
+        public GraphqlTypeComparatorRegistry getComparatorRegistry() {
             return comparatorRegistry;
         }
     }
@@ -287,7 +292,7 @@ public class SchemaPrinter {
                 return;
             }
 
-            SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
+            GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
                     .parentType(GraphQLEnumType.class)
                     .elementType(GraphQLEnumValueDefinition.class)
                     .build();
@@ -313,7 +318,7 @@ public class SchemaPrinter {
                 return;
             }
 
-            SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
+            GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
                     .parentType(GraphQLInterfaceType.class)
                     .elementType(GraphQLFieldDefinition.class)
                     .build();
@@ -340,7 +345,7 @@ public class SchemaPrinter {
                 return;
             }
 
-            SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
+            GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
                     .parentType(GraphQLUnionType.class)
                     .elementType(GraphQLOutputType.class)
                     .build();
@@ -373,7 +378,7 @@ public class SchemaPrinter {
                 out.format("type %s%s {\n", type.getName(), directivesString(GraphQLObjectType.class, type.getDirectives()));
             } else {
 
-                SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
+                GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
                         .parentType(GraphQLObjectType.class)
                         .elementType(GraphQLOutputType.class)
                         .build();
@@ -389,7 +394,7 @@ public class SchemaPrinter {
                         directivesString(GraphQLObjectType.class, type.getDirectives()));
             }
 
-            SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
+            GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
                     .parentType(GraphQLObjectType.class)
                     .elementType(GraphQLFieldDefinition.class)
                     .build();
@@ -415,7 +420,7 @@ public class SchemaPrinter {
             }
             printComments(out, type, "");
 
-            SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
+            GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
                     .parentType(GraphQLInputObjectType.class)
                     .elementType(GraphQLInputObjectField.class)
                     .build();
@@ -515,7 +520,7 @@ public class SchemaPrinter {
         int count = 0;
         StringBuilder sb = new StringBuilder();
 
-        SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
+        GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
                 .parentType(parent)
                 .elementType(GraphQLArgument.class)
                 .build();
@@ -579,7 +584,7 @@ public class SchemaPrinter {
             sb.append(" ");
         }
 
-        SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
+        GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
                 .parentType(parent)
                 .elementType(GraphQLDirective.class)
                 .build();
@@ -607,7 +612,7 @@ public class SchemaPrinter {
         StringBuilder sb = new StringBuilder();
         sb.append("@").append(directive.getName());
 
-        SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
+        GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
                 .parentType(GraphQLDirective.class)
                 .elementType(GraphQLArgument.class)
                 .build();
@@ -658,7 +663,7 @@ public class SchemaPrinter {
 
         sb.append("directive @").append(directive.getName());
 
-        SchemaPrinterComparatorEnvironment environment = SchemaPrinterComparatorEnvironment.newEnvironment()
+        GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
                 .parentType(GraphQLDirective.class)
                 .elementType(GraphQLArgument.class)
                 .build();
@@ -741,10 +746,16 @@ public class SchemaPrinter {
 
         if (descriptionAndComments.comments != null) {
             descriptionAndComments.comments.forEach(cmt -> {
-                out.write(prefix);
-                out.write("#");
-                out.write(cmt.getContent());
-                out.write("\n");
+                String commentText = cmt.getContent() == null ? "" : cmt.getContent();
+                // it possible that in fact they manage to sneak in a multi line comment
+                // into what should be a single line comment.  So cater for that.
+                List<String> lines = Arrays.asList(commentText.split("\n"));
+                lines.forEach(t -> {
+                    out.write(prefix);
+                    out.write("#");
+                    out.write(commentText);
+                    out.write("\n");
+                });
             });
         } else {
             String runtimeDescription = descriptionAndComments.runtimeDescription;

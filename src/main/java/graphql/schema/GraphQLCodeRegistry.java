@@ -339,6 +339,11 @@ public class GraphQLCodeRegistry {
             return this;
         }
 
+        public Builder dataFetchers(GraphQLCodeRegistry codeRegistry) {
+            this.dataFetcherMap.putAll(codeRegistry.dataFetcherMap);
+            return this;
+        }
+
         public Builder typeResolver(GraphQLInterfaceType interfaceType, TypeResolver typeResolver) {
             typeResolverMap.put(interfaceType.getName(), typeResolver);
             return this;
@@ -364,6 +369,10 @@ public class GraphQLCodeRegistry {
             return this;
         }
 
+        public Builder typeResolvers(GraphQLCodeRegistry codeRegistry) {
+            this.typeResolverMap.putAll(codeRegistry.typeResolverMap);
+            return this;
+        }
 
         public Builder fieldVisibility(GraphqlFieldVisibility fieldVisibility) {
             this.fieldVisibility = assertNotNull(fieldVisibility);

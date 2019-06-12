@@ -8,6 +8,7 @@ import spock.lang.Specification
 
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLTypeReference.typeRef
+import static graphql.schema.GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY
 
 class TypeTraverserTest extends Specification {
 
@@ -58,6 +59,7 @@ class TypeTraverserTest extends Specification {
                 .name("foo")
                 .value("bar")
                 .value(GraphQLEnumValueDefinition.newEnumValueDefinition().name("abc").value(123).build())
+                .comparatorRegistry(BY_NAME_REGISTRY)
                 .build())
         then:
         visitor.getStack() == ["enum: foo", "fallback: foo",

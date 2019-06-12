@@ -4,8 +4,12 @@ import graphql.Internal;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
+
+import static graphql.Assert.assertNotNull;
 
 @PublicApi
 public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
@@ -16,13 +20,13 @@ public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
                                             Description description,
                                             SourceLocation sourceLocation,
                                             List<Comment> comments,
-                                            IgnoredChars ignoredChars) {
-        super(name, directives, description, sourceLocation, comments, ignoredChars);
+                                            IgnoredChars ignoredChars, Map<String, String> additionalData) {
+        super(name, directives, description, sourceLocation, comments, ignoredChars, additionalData);
     }
 
     @Override
     public ScalarTypeExtensionDefinition deepCopy() {
-        return new ScalarTypeExtensionDefinition(getName(), deepCopy(getDirectives()), getDescription(), getSourceLocation(), getComments(), getIgnoredChars());
+        return new ScalarTypeExtensionDefinition(getName(), deepCopy(getDirectives()), getDescription(), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -51,6 +55,7 @@ public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
         private Description description;
         private List<Directive> directives = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -63,6 +68,7 @@ public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
 
@@ -96,14 +102,25 @@ public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public ScalarTypeExtensionDefinition build() {
-            ScalarTypeExtensionDefinition scalarTypeDefinition = new ScalarTypeExtensionDefinition(name,
+            return new ScalarTypeExtensionDefinition(name,
                     directives,
                     description,
                     sourceLocation,
                     comments,
-                    ignoredChars);
-            return scalarTypeDefinition;
+                    ignoredChars,
+                    additionalData);
         }
     }
 }

@@ -30,5 +30,8 @@ public enum ValidationErrorType {
     LoneAnonymousOperationViolation,
     NonExecutableDefinition,
     DuplicateOperationName,
-    DuplicateDirectiveName
+    DuplicateDirectiveName,
+    DeferDirectiveOnNonNullField,
+    DeferDirectiveNotOnQueryOperation,
+    DeferMustBeOnAllFields
 }

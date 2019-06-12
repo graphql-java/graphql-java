@@ -7,16 +7,19 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 /**
  * Provided to the DataFetcher, therefore public API
  */
 @PublicApi
-public class FragmentDefinition extends AbstractNode<FragmentDefinition> implements Definition<FragmentDefinition>, SelectionSetContainer<FragmentDefinition>, DirectivesContainer<FragmentDefinition> {
+public class FragmentDefinition extends AbstractNode<FragmentDefinition> implements Definition<FragmentDefinition>, SelectionSetContainer<FragmentDefinition>, DirectivesContainer<FragmentDefinition>, NamedNode<FragmentDefinition> {
 
     private final String name;
     private final TypeName typeCondition;
@@ -34,8 +37,9 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
                                  SelectionSet selectionSet,
                                  SourceLocation sourceLocation,
                                  List<Comment> comments,
-                                 IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+                                 IgnoredChars ignoredChars,
+                                 Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.typeCondition = typeCondition;
         this.directives = directives;
@@ -112,8 +116,8 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
                 deepCopy(selectionSet),
                 getSourceLocation(),
                 getComments(),
-                getIgnoredChars()
-        );
+                getIgnoredChars(),
+                getAdditionalData());
     }
 
     @Override
@@ -149,6 +153,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         private List<Directive> directives = new ArrayList<>();
         private SelectionSet selectionSet;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -161,6 +166,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
             this.directives = existing.getDirectives();
             this.selectionSet = existing.getSelectionSet();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
 
@@ -199,9 +205,19 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public FragmentDefinition build() {
-            FragmentDefinition fragmentDefinition = new FragmentDefinition(name, typeCondition, directives, selectionSet, sourceLocation, comments, ignoredChars);
-            return fragmentDefinition;
+            return new FragmentDefinition(name, typeCondition, directives, selectionSet, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

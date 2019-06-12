@@ -4,8 +4,12 @@ import graphql.Internal;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
+
+import static graphql.Assert.assertNotNull;
 
 @PublicApi
 public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
@@ -17,14 +21,16 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
                                            Description description,
                                            SourceLocation sourceLocation,
                                            List<Comment> comments,
-                                           IgnoredChars ignoredChars) {
+                                           IgnoredChars ignoredChars,
+                                           Map<String, String> additionalData) {
         super(name,
                 directives,
                 memberTypes,
                 description,
                 sourceLocation,
                 comments,
-                ignoredChars);
+                ignoredChars,
+                additionalData);
     }
 
     @Override
@@ -35,7 +41,7 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
                 getDescription(),
                 getSourceLocation(),
                 getComments(),
-                getIgnoredChars());
+                getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -65,6 +71,7 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
         private List<Directive> directives = new ArrayList<>();
         private List<Type> memberTypes = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -78,6 +85,7 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
             this.directives = existing.getDirectives();
             this.memberTypes = existing.getMemberTypes();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -115,16 +123,26 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public UnionTypeExtensionDefinition build() {
-            UnionTypeExtensionDefinition unionTypeDefinition = new UnionTypeExtensionDefinition(name,
+            return new UnionTypeExtensionDefinition(name,
                     directives,
                     memberTypes,
                     description,
                     sourceLocation,
                     comments,
-                    ignoredChars
-            );
-            return unionTypeDefinition;
+                    ignoredChars,
+                    additionalData);
         }
     }
 }

@@ -7,9 +7,13 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
 
@@ -26,8 +30,8 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
     private final String name;
 
     @Internal
-    protected DirectiveLocation(String name, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+    protected DirectiveLocation(String name, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
     }
 
@@ -37,7 +41,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
      * @param name of the directive location
      */
     public DirectiveLocation(String name) {
-        this(name, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, null, new ArrayList<>(), IgnoredChars.EMPTY, Collections.emptyMap());
     }
 
     @Override
@@ -77,7 +81,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
 
     @Override
     public DirectiveLocation deepCopy() {
-        return new DirectiveLocation(name, getSourceLocation(), getComments(), getIgnoredChars());
+        return new DirectiveLocation(name, getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -107,6 +111,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
         private List<Comment> comments = new ArrayList<>();
         private String name;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -115,6 +120,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.name = existing.getName();
+            this.additionalData = existing.getAdditionalData();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -137,9 +143,18 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
         public DirectiveLocation build() {
-            DirectiveLocation directiveLocation = new DirectiveLocation(name, sourceLocation, comments, ignoredChars);
-            return directiveLocation;
+            return new DirectiveLocation(name, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

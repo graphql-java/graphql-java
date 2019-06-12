@@ -21,14 +21,13 @@ import static java.util.Collections.emptyMap;
  * This might change in the future.
  */
 @PublicApi
-public class Field extends AbstractNode<Field> implements Selection<Field>, SelectionSetContainer<Field>, DirectivesContainer<Field> {
+public class Field extends AbstractNode<Field> implements Selection<Field>, SelectionSetContainer<Field>, DirectivesContainer<Field>, NamedNode<Field> {
 
     private final String name;
     private final String alias;
     private final List<Argument> arguments;
     private final List<Directive> directives;
     private final SelectionSet selectionSet;
-    private final Map<String, String> additionalData;
 
     public static final String CHILD_ARGUMENTS = "arguments";
     public static final String CHILD_DIRECTIVES = "directives";
@@ -45,13 +44,12 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
                     List<Comment> comments,
                     IgnoredChars ignoredChars,
                     Map<String, String> additionalData) {
-        super(sourceLocation, comments, ignoredChars);
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.alias = alias;
         this.arguments = arguments;
         this.directives = directives;
         this.selectionSet = selectionSet;
-        this.additionalData = new LinkedHashMap<>(additionalData);
     }
 
 
@@ -147,9 +145,6 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         return selectionSet;
     }
 
-    public Map<String, String> getAdditionalData() {
-        return Collections.unmodifiableMap(additionalData);
-    }
 
     @Override
     public boolean isEqualTo(Node o) {
@@ -175,7 +170,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),
-                additionalData
+                getAdditionalData()
         );
     }
 
@@ -292,8 +287,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
 
 
         public Field build() {
-            Field field = new Field(name, alias, arguments, directives, selectionSet, sourceLocation, comments, ignoredChars, additionalData);
-            return field;
+            return new Field(name, alias, arguments, directives, selectionSet, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }
