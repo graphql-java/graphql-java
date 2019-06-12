@@ -93,6 +93,7 @@ public class GraphQL {
 
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
+    private final static Instrumentation DEFAULT_INSTRUMENTATION = new DataLoaderDispatcherInstrumentation();
 
     private final GraphQLSchema graphQLSchema;
     private final ExecutionStrategy queryStrategy;
@@ -144,7 +145,7 @@ public class GraphQL {
     @Internal
     @Deprecated
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
-        this(graphQLSchema, queryStrategy, mutationStrategy, null, DEFAULT_EXECUTION_ID_PROVIDER, SimpleInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE);
+        this(graphQLSchema, queryStrategy, mutationStrategy, null, DEFAULT_EXECUTION_ID_PROVIDER, DEFAULT_INSTRUMENTATION, NoOpPreparsedDocumentProvider.INSTANCE);
     }
 
     /**
@@ -160,7 +161,7 @@ public class GraphQL {
     @Internal
     @Deprecated
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy) {
-        this(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, DEFAULT_EXECUTION_ID_PROVIDER, SimpleInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE);
+        this(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, DEFAULT_EXECUTION_ID_PROVIDER, DEFAULT_INSTRUMENTATION, NoOpPreparsedDocumentProvider.INSTANCE);
     }
 
     private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation, PreparsedDocumentProvider preparsedDocumentProvider) {
@@ -169,23 +170,8 @@ public class GraphQL {
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new SubscriptionExecutionStrategy();
         this.idProvider = assertNotNull(idProvider, "idProvider must be non null");
-        this.instrumentation = checkInstrumentation(assertNotNull(instrumentation));
+        this.instrumentation = assertNotNull(instrumentation);
         this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, "preparsedDocumentProvider must be non null");
-    }
-
-    private Instrumentation checkInstrumentation(Instrumentation instrumentation) {
-        List<Instrumentation> instrumentationList = new ArrayList<>();
-        if (instrumentation instanceof ChainedInstrumentation) {
-            instrumentationList.addAll(((ChainedInstrumentation) instrumentation).getInstrumentations());
-        } else {
-            instrumentationList.add(instrumentation);
-        }
-        boolean containsDLInstrumentation = instrumentationList.stream().anyMatch(instr -> instr instanceof DataLoaderDispatcherInstrumentation);
-        // if we don't have a DataLoaderDispatcherInstrumentation in play, we add one.  We want DataLoader to be 1st class in graphql
-        if (!containsDLInstrumentation) {
-            instrumentationList.add(new DataLoaderDispatcherInstrumentation());
-        }
-        return new ChainedInstrumentation(instrumentationList);
     }
 
     /**
@@ -233,8 +219,9 @@ public class GraphQL {
         private ExecutionStrategy mutationExecutionStrategy = new AsyncSerialExecutionStrategy();
         private ExecutionStrategy subscriptionExecutionStrategy = new SubscriptionExecutionStrategy();
         private ExecutionIdProvider idProvider = DEFAULT_EXECUTION_ID_PROVIDER;
-        private Instrumentation instrumentation = SimpleInstrumentation.INSTANCE;
+        private Instrumentation instrumentation = null; // deliberate default here
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
+        private boolean doNotAddDefaultInstrumentations = false;
 
 
         public Builder(GraphQLSchema graphQLSchema) {
@@ -276,11 +263,29 @@ public class GraphQL {
             return this;
         }
 
+        /**
+         * For performance reasons you can opt into situation where the default instrumentations (such
+         * as {@link graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation} will not be
+         * automatically added into the graphql instance.
+         * <p>
+         * For most situations this is not needed unless you are really pushing the boundaries of performance
+         * <p>
+         * By default a certain graphql instrumentations will be added to the mix to more easily enable certain functionality.  This
+         * allows you to stop this behavior
+         *
+         * @return this builder
+         */
+        public Builder doNotAddDefaultInstrumentations() {
+            this.doNotAddDefaultInstrumentations = true;
+            return this;
+        }
+
         public GraphQL build() {
             assertNotNull(graphQLSchema, "graphQLSchema must be non null");
             assertNotNull(queryExecutionStrategy, "queryStrategy must be non null");
             assertNotNull(idProvider, "idProvider must be non null");
-            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, instrumentation, preparsedDocumentProvider);
+            final Instrumentation augmentedInstrumentation = checkInstrumentationDefaultState(instrumentation, doNotAddDefaultInstrumentations);
+            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, augmentedInstrumentation, preparsedDocumentProvider);
         }
     }
 
@@ -613,4 +618,31 @@ public class GraphQL {
         return future;
     }
 
+    private static Instrumentation checkInstrumentationDefaultState(Instrumentation instrumentation, boolean doNotAddDefaultInstrumentations) {
+        if (doNotAddDefaultInstrumentations) {
+            return instrumentation == null ? SimpleInstrumentation.INSTANCE : instrumentation;
+        }
+        if (instrumentation instanceof DataLoaderDispatcherInstrumentation) {
+            return instrumentation;
+        }
+        if (instrumentation == null) {
+            return new DataLoaderDispatcherInstrumentation();
+        }
+
+        //
+        // if we don't have a DataLoaderDispatcherInstrumentation in play, we add one.  We want DataLoader to be 1st class in graphql without requiring
+        // people to remember to wire it in.  Later we may decide to have more default instrumentations but for now its just the one
+        //
+        List<Instrumentation> instrumentationList = new ArrayList<>();
+        if (instrumentation instanceof ChainedInstrumentation) {
+            instrumentationList.addAll(((ChainedInstrumentation) instrumentation).getInstrumentations());
+        } else {
+            instrumentationList.add(instrumentation);
+        }
+        boolean containsDLInstrumentation = instrumentationList.stream().anyMatch(instr -> instr instanceof DataLoaderDispatcherInstrumentation);
+        if (!containsDLInstrumentation) {
+            instrumentationList.add(new DataLoaderDispatcherInstrumentation());
+        }
+        return new ChainedInstrumentation(instrumentationList);
+    }
 }

@@ -10,6 +10,7 @@ import graphql.execution.ExecutorServiceExecutionStrategy
 import graphql.execution.batched.BatchedExecutionStrategy
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
+import graphql.execution.instrumentation.SimpleInstrumentation
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderRegistry
@@ -39,7 +40,9 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
     def "dataloader instrumentation is always added and an empty data loader registry is in place"() {
 
         def captureStrategy = new CaptureStrategy()
-        def graphQL = GraphQL.newGraphQL(starWarsSchema).queryExecutionStrategy(captureStrategy).build()
+        def graphQL = GraphQL.newGraphQL(starWarsSchema).queryExecutionStrategy(captureStrategy)
+                .instrumentation(new SimpleInstrumentation())
+                .build()
         def executionInput = newExecutionInput().query('{ hero { name } }').build()
         when:
         graphQL.execute(executionInput)

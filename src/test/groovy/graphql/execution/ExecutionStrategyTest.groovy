@@ -62,7 +62,7 @@ class ExecutionStrategyTest extends Specification {
         def variables = [arg1: "value1"]
         new ExecutionContext(SimpleInstrumentation.INSTANCE, executionId, schema ?: StarWarsSchema.starWarsSchema, null,
                 executionStrategy, executionStrategy, executionStrategy,
-                null, null, null,
+                [:], null, null,
                 variables, "context", "root", new DataLoaderRegistry(), null, Collections.emptyList())
     }
 
