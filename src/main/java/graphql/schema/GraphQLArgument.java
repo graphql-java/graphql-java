@@ -181,6 +181,15 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
         children.addAll(directives);
         return children;
     }
+    @Override
+    public String toString() {
+        return "GraphQLArgument{" +
+                "name='" + name + '\'' +
+                ", value=" + value +
+                ", defaultValue=" + defaultValue +
+                ", type=" + type +
+                '}';
+    }
 
     public static class Builder extends GraphqlTypeBuilder {
 
