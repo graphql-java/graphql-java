@@ -147,7 +147,6 @@ public class ExecutionContextBuilder {
         return this;
     }
 
-
     public ExecutionContextBuilder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {
         this.dataLoaderRegistry = assertNotNull(dataLoaderRegistry);
         return this;
@@ -181,4 +180,5 @@ public class ExecutionContextBuilder {
                 errors
         );
     }
+
 }

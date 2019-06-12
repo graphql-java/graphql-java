@@ -7,6 +7,8 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
+import graphql.execution.directives.QueryDirectives;
+import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -18,6 +20,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static graphql.Assert.assertNotNull;
 
 @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
 @Internal
@@ -41,6 +45,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final OperationDefinition operationDefinition;
     private final Document document;
     private final Map<String, Object> variables;
+    private final QueryDirectives queryDirectives;
 
     private DataFetchingEnvironmentImpl(Builder builder) {
         this.source = builder.source;
@@ -62,6 +67,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.operationDefinition = builder.operationDefinition;
         this.document = builder.document;
         this.variables = builder.variables;
+        this.queryDirectives = builder.queryDirectives;
     }
 
     @Override
@@ -150,6 +156,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
+    public QueryDirectives getQueryDirectives() {
+        return queryDirectives;
+    }
+
+    @Override
     public ExecutionStepInfo getExecutionStepInfo() {
         return executionStepInfo;
     }
@@ -232,6 +243,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private final Map<String, Object> arguments = new LinkedHashMap<>();
         private final Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
         private final Map<String, Object> variables = new LinkedHashMap<>();
+        private QueryDirectives queryDirectives;
 
         public Builder(DataFetchingEnvironmentImpl env) {
             this.source = env.source;
@@ -253,6 +265,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.operationDefinition = env.operationDefinition;
             this.document = env.document;
             this.variables.putAll(env.variables);
+            this.queryDirectives = env.queryDirectives;
         }
 
         public Builder() {
@@ -350,6 +363,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
         public Builder variables(Map<String, Object> variables) {
             this.variables.putAll(variables == null ? Collections.emptyMap() : variables);
+            return this;
+        }
+
+        public Builder queryDirectives(QueryDirectives queryDirectives) {
+            this.queryDirectives = queryDirectives;
             return this;
         }
 

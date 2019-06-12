@@ -319,7 +319,7 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(typeInfo)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .source(OptionalLong.empty())
-                .fields(mergedSelectionSet  (["fld": []]))
+                .fields(mergedSelectionSet(["fld": []]))
                 .build()
 
         when:

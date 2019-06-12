@@ -332,6 +332,7 @@ public class Introspection {
     public enum DirectiveLocation {
         QUERY,
         MUTATION,
+        SUBSCRIPTION,
         FIELD,
         FRAGMENT_DEFINITION,
         FRAGMENT_SPREAD,

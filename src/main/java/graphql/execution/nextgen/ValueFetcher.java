@@ -16,6 +16,7 @@ import graphql.execution.FetchedValue;
 import graphql.execution.MergedField;
 import graphql.execution.UnboxPossibleOptional;
 import graphql.execution.ValuesResolver;
+import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -114,6 +115,8 @@ public class ValueFetcher {
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
 
+        QueryDirectivesImpl queryDirectives = new QueryDirectivesImpl(sameFields, executionContext.getGraphQLSchema(), executionContext.getVariables());
+
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, sameFields);
 
@@ -127,6 +130,7 @@ public class ValueFetcher {
                 .executionStepInfo(executionInfo)
                 .parentType(parentType)
                 .selectionSet(fieldCollector)
+                .queryDirectives(queryDirectives)
                 .build();
 
         ExecutionId executionId = executionContext.getExecutionId();
