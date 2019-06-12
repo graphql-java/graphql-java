@@ -3,12 +3,14 @@ package graphql.execution.reactive;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.tck.PublisherVerification;
 import org.reactivestreams.tck.TestEnvironment;
+import org.testng.annotations.Test;
 
 import java.time.Duration;
 
 /**
  * This uses the reactive streams TCK to test that our implementation meets spec
  */
+@Test
 public class SingleSubscriberPublisherTckVerificationTest extends PublisherVerification<String> {
 
     public SingleSubscriberPublisherTckVerificationTest() {

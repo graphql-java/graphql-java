@@ -34,6 +34,10 @@ public class ExecutionResultImpl implements ExecutionResult {
         this(true, data, errors, extensions);
     }
 
+    public ExecutionResultImpl(ExecutionResultImpl other) {
+        this(other.dataPresent, other.data, other.errors, other.extensions);
+    }
+
     private ExecutionResultImpl(boolean dataPresent, Object data, List<? extends GraphQLError> errors, Map<Object, Object> extensions) {
         this.dataPresent = dataPresent;
         this.data = data;

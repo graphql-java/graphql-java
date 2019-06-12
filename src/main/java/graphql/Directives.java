@@ -42,6 +42,12 @@ public class Directives {
     public static final GraphQLDirective DeferDirective = GraphQLDirective.newDirective()
             .name("defer")
             .description("This directive allows results to be deferred during execution")
+            .argument(newArgument()
+                    .name("if")
+                    .type(nonNull(GraphQLBoolean))
+                    .description("Deferred behaviour is controlled by this argument")
+                    .defaultValue(true)
+            )
             .validLocations(FIELD)
             .build();
 
