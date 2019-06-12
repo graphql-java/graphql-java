@@ -40,19 +40,19 @@ public class RuntimeWiring {
     private final GraphQLCodeRegistry codeRegistry;
     private final GraphqlTypeComparatorRegistry comparatorRegistry;
 
-    private RuntimeWiring(Map<String, Map<String, DataFetcher>> dataFetchers, Map<String, DataFetcher> defaultDataFetchers, Map<String, GraphQLScalarType> scalars, Map<String, TypeResolver> typeResolvers, Map<String, SchemaDirectiveWiring> registeredDirectiveWiring, List<SchemaDirectiveWiring> directiveWiring, Map<String, EnumValuesProvider> enumValuesProviders, WiringFactory wiringFactory, Collection<SchemaTransformer> schemaTransformers, GraphqlFieldVisibility fieldVisibility, GraphQLCodeRegistry codeRegistry, GraphqlTypeComparatorRegistry comparatorRegistry) {
-        this.dataFetchers = dataFetchers;
-        this.defaultDataFetchers = defaultDataFetchers;
-        this.scalars = scalars;
-        this.typeResolvers = typeResolvers;
-        this.registeredDirectiveWiring = registeredDirectiveWiring;
-        this.directiveWiring = directiveWiring;
-        this.wiringFactory = wiringFactory;
-        this.enumValuesProviders = enumValuesProviders;
-        this.schemaTransformers = schemaTransformers;
-        this.fieldVisibility = fieldVisibility;
-        this.codeRegistry = codeRegistry;
-        this.comparatorRegistry = comparatorRegistry;
+    private RuntimeWiring(Builder builder) {
+        this.dataFetchers = builder.dataFetchers;
+        this.defaultDataFetchers = builder.defaultDataFetchers;
+        this.scalars = builder.scalars;
+        this.typeResolvers = builder.typeResolvers;
+        this.registeredDirectiveWiring = builder.registeredDirectiveWiring;
+        this.directiveWiring = builder.directiveWiring;
+        this.wiringFactory = builder.wiringFactory;
+        this.enumValuesProviders = builder.enumValuesProviders;
+        this.schemaTransformers = builder.schemaTransformers;
+        this.fieldVisibility = builder.fieldVisibility;
+        this.codeRegistry = builder.codeRegistry;
+        this.comparatorRegistry = builder.comparatorRegistry;
     }
 
     /**
@@ -318,7 +318,7 @@ public class RuntimeWiring {
          * @return the built runtime wiring
          */
         public RuntimeWiring build() {
-            return new RuntimeWiring(dataFetchers, defaultDataFetchers, scalars, typeResolvers, registeredDirectiveWiring, directiveWiring, enumValuesProviders, wiringFactory, schemaTransformers, fieldVisibility, codeRegistry, comparatorRegistry);
+            return new RuntimeWiring(this);
         }
 
     }
