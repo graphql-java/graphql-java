@@ -3,7 +3,7 @@ package graphql.execution.instrumentation.fieldvalidation;
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.analysis.QueryTraversal;
+import graphql.analysis.QueryTraverser;
 import graphql.analysis.QueryVisitorFieldEnvironment;
 import graphql.analysis.QueryVisitorStub;
 import graphql.execution.ExecutionContext;
@@ -29,14 +29,14 @@ class FieldValidationSupport {
 
         Map<ExecutionPath, List<FieldAndArguments>> fieldArgumentsMap = new LinkedHashMap<>();
 
-        QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
+        QueryTraverser queryTraverser = QueryTraverser.newQueryTraverser()
                 .schema(executionContext.getGraphQLSchema())
                 .document(executionContext.getDocument())
                 .operationName(executionContext.getOperationDefinition().getName())
                 .variables(executionContext.getVariables())
                 .build();
 
-        queryTraversal.visitPreOrder(new QueryVisitorStub() {
+        queryTraverser.visitPreOrder(new QueryVisitorStub() {
             @Override
             public void visitField(QueryVisitorFieldEnvironment env) {
                 Field field = env.getField();

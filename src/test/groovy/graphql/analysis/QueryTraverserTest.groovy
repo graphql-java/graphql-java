@@ -6,7 +6,6 @@ import graphql.language.Field
 import graphql.language.FragmentDefinition
 import graphql.language.FragmentSpread
 import graphql.language.InlineFragment
-import graphql.language.NodeTraverser
 import graphql.language.NodeUtil
 import graphql.language.OperationDefinition
 import graphql.parser.Parser
@@ -19,13 +18,13 @@ import graphql.util.TraversalControl
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static graphql.language.NodeTraverser.LeaveOrEnter.ENTER
-import static graphql.language.NodeTraverser.LeaveOrEnter.LEAVE
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
+import static graphql.util.TraverserContext.Phase.ENTER
+import static graphql.util.TraverserContext.Phase.LEAVE
 import static java.util.Collections.emptyMap
 
-class QueryTraversalTest extends Specification {
+class QueryTraverserTest extends Specification {
 
 
     Document createQuery(String query) {
@@ -33,8 +32,8 @@ class QueryTraversalTest extends Specification {
         parser.parseDocument(query)
     }
 
-    QueryTraversal createQueryTraversal(Document document, GraphQLSchema schema, Map variables = [:]) {
-        QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
+    QueryTraverser createQueryTraversal(Document document, GraphQLSchema schema, Map variables = [:]) {
+        QueryTraverser queryTraversal = QueryTraverser.newQueryTraverser()
                 .schema(schema)
                 .document(document)
                 .variables(variables)
@@ -67,7 +66,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {foo { subFoo} bar }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal.visitPreOrder(visitor)
 
@@ -105,7 +104,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {foo { subFoo} bar }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal.visitPostOrder(visitor)
 
@@ -153,7 +152,7 @@ class QueryTraversalTest extends Specification {
         assert inlineFragmentLeft instanceof InlineFragment
         def inlineFragmentRight = inlineFragmentRoot.selectionSet.children[1]
         assert inlineFragmentRight instanceof InlineFragment
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal.visitPreOrder(visitor)
 
@@ -197,7 +196,7 @@ class QueryTraversalTest extends Specification {
         assert inlineFragmentLeft instanceof InlineFragment
         def inlineFragmentRight = inlineFragmentRoot.selectionSet.children[1]
         assert inlineFragmentRight instanceof InlineFragment
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal.visitPostOrder(visitor)
 
@@ -251,7 +250,7 @@ class QueryTraversalTest extends Specification {
         assert fragmentSpreadLeft instanceof FragmentSpread
         def fragmentSpreadRight = fragmentF1.selectionSet.children[1]
         assert fragmentSpreadRight instanceof FragmentSpread
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal.visitPreOrder(visitor)
 
@@ -305,7 +304,7 @@ class QueryTraversalTest extends Specification {
         assert fragmentSpreadLeft instanceof FragmentSpread
         def fragmentSpreadRight = fragmentF1.selectionSet.children[1]
         assert fragmentSpreadRight instanceof FragmentSpread
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal.visitPostOrder(visitor)
 
@@ -345,7 +344,7 @@ class QueryTraversalTest extends Specification {
 
         def fragments = NodeUtil.getFragmentsByName(query)
 
-        QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
+        QueryTraverser queryTraversal = QueryTraverser.newQueryTraverser()
                 .schema(schema)
                 .root(fragments["F1"])
                 .rootParentType(schema.getQueryType())
@@ -385,7 +384,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             mutation M{bar foo { subFoo} }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -424,7 +423,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             subscription S{bar foo { subFoo} }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -456,7 +455,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             query myQuery(\$myVar: String){foo(arg1: \$myVar, arg2: true)} 
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, ['myVar': 'hello'])
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema, ['myVar': 'hello'])
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -488,7 +487,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {bar foo { subFoo} }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -525,7 +524,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {bar foo { subFoo} foo2 { subFoo} foo3 { subFoo}}
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -569,7 +568,7 @@ class QueryTraversalTest extends Specification {
                 }
             }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         def inlineFragment = query.children[0].children[0].children[1]
         assert inlineFragment instanceof InlineFragment
         when:
@@ -614,7 +613,7 @@ class QueryTraversalTest extends Specification {
                 }
             }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -659,7 +658,7 @@ class QueryTraversalTest extends Specification {
             }
             
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         def fragmentDefinition = query.children[1]
         assert fragmentDefinition instanceof FragmentDefinition
         when:
@@ -706,7 +705,7 @@ class QueryTraversalTest extends Specification {
             }
             
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -745,7 +744,7 @@ class QueryTraversalTest extends Specification {
             }
             
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, [variableFoo: true])
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema, [variableFoo: true])
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -798,7 +797,7 @@ class QueryTraversalTest extends Specification {
             }
             
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, [variableFoo: true])
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema, [variableFoo: true])
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -847,7 +846,7 @@ class QueryTraversalTest extends Specification {
                 bar
             }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, [variableFoo: false])
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema, [variableFoo: false])
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -887,7 +886,7 @@ class QueryTraversalTest extends Specification {
                 }
             }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, [variableFoo: false])
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema, [variableFoo: false])
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -925,7 +924,7 @@ class QueryTraversalTest extends Specification {
                 foo @include(if: \$variableFoo)
             }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, [variableFoo: false])
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema, [variableFoo: false])
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -955,7 +954,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {foo { subFoo} bar }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         QueryReducer reducer = Mock(QueryReducer)
         when:
         def result = queryTraversal.reducePreOrder(reducer, 1)
@@ -985,7 +984,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {foo { subFoo} bar }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         QueryReducer reducer = Mock(QueryReducer)
         when:
         def result = queryTraversal.reducePostOrder(reducer, 1)
@@ -1022,7 +1021,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {a {id... on Person {name}}}
         """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -1060,7 +1059,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {foo {... on Cat {catName} ... on Dog {dogName}} }
         """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -1106,7 +1105,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {foo {... on Cat {catName} ... on Dog {dogName}} bar {id}}
         """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -1140,7 +1139,7 @@ class QueryTraversalTest extends Specification {
             __type(name: "Foo") { name } 
             }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -1194,7 +1193,7 @@ class QueryTraversalTest extends Specification {
             }
         }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -1234,7 +1233,7 @@ class QueryTraversalTest extends Specification {
         assert subFooAsRoot instanceof Field
         ((Field) subFooAsRoot).name == "subFoo"
         def rootParentType = schema.getType("Foo")
-        QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
+        QueryTraverser queryTraversal = QueryTraverser.newQueryTraverser()
                 .schema(schema)
                 .root(subFooAsRoot)
                 .rootParentType(rootParentType)
@@ -1257,7 +1256,7 @@ class QueryTraversalTest extends Specification {
     @Unroll
     def "builder doesn't allow ambiguous arguments"() {
         when:
-        QueryTraversal.newQueryTraversal()
+        QueryTraverser.newQueryTraverser()
                 .document(document)
                 .operationName(operationName)
                 .root(root)
@@ -1296,7 +1295,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             { __typename }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         QueryVisitorFieldEnvironment env
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
             env = it
@@ -1326,7 +1325,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {foo { subFoo} bar }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal.visitPreOrder(visitor)
 
@@ -1358,7 +1357,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             { ...F } fragment F on Query @myDirective {bar}
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal.visitPreOrder(visitor)
 
@@ -1387,35 +1386,35 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {foo { subFoo} bar }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal.visitDepthFirst(visitor)
 
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
-            it.field.name == "foo" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == ENTER
+            it.field.name == "foo" && it.traverserContext.phase == ENTER
         })
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
-            it.field.name == "subFoo" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == ENTER
+            it.field.name == "subFoo" && it.traverserContext.phase == ENTER
 
         })
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
-            it.field.name == "subFoo" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == LEAVE
+            it.field.name == "subFoo" && it.traverserContext.phase == LEAVE
 
         })
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
-            it.field.name == "foo" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == LEAVE
+            it.field.name == "foo" && it.traverserContext.phase == LEAVE
         })
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
-            it.field.name == "bar" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == ENTER
+            it.field.name == "bar" && it.traverserContext.phase == ENTER
         })
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
-            it.field.name == "bar" && it.traverserContext.getVar(NodeTraverser.LeaveOrEnter.class) == LEAVE
+            it.field.name == "bar" && it.traverserContext.phase == LEAVE
         })
 
     }
@@ -1430,7 +1429,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {bar}
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         def visitor = new QueryVisitorStub() {
             @Override
             void visitField(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
@@ -1464,7 +1463,7 @@ class QueryTraversalTest extends Specification {
         def hello = rootField.selectionSet.selections[0] as Field
         hello.name == "hello"
         def rootParentType = schema.getType("SomeInterface") as GraphQLInterfaceType
-        QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
+        QueryTraverser queryTraversal = QueryTraverser.newQueryTraverser()
                 .schema(schema)
                 .root(hello)
                 .rootParentType(rootParentType)
@@ -1502,7 +1501,7 @@ class QueryTraversalTest extends Specification {
         def rootField = (query.children[0] as OperationDefinition).selectionSet.selections[0] as Field
         def typeNameField = rootField.selectionSet.selections[0] as Field
         def rootParentType = schema.getType("SomeUnion") as GraphQLUnionType
-        QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
+        QueryTraverser queryTraversal = QueryTraverser.newQueryTraverser()
                 .schema(schema)
                 .root(typeNameField)
                 .rootParentType(rootParentType)
@@ -1533,7 +1532,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {field { a } }
             """)
-        QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
+        QueryTraverser queryTraversal = QueryTraverser.newQueryTraverser()
                 .schema(schema)
                 .document(query)
                 .variables(emptyMap())

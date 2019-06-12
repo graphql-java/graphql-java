@@ -4,7 +4,6 @@ import graphql.PublicSpi;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactory;
 import graphql.schema.GraphQLScalarType;
-import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 
 import static graphql.Assert.assertShouldNeverHappen;
@@ -106,10 +105,27 @@ public interface WiringFactory {
         return assertShouldNeverHappen();
     }
 
+    /**
+     * This is called to ask if this factory can provide a schema directive wiring.
+     * <p>
+     * {@link SchemaDirectiveWiringEnvironment#getDirectives()} contains all the directives
+     * available which may in fact be an empty list.
+     *
+     * @param environment the calling environment
+     *
+     * @return true if the factory can give out a schema directive wiring.
+     */
     default boolean providesSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
         return false;
     }
 
+    /**
+     * Returns a {@link graphql.schema.idl.SchemaDirectiveWiring} given the environment
+     *
+     * @param environment the calling environment
+     *
+     * @return a {@link graphql.schema.idl.SchemaDirectiveWiring}
+     */
     default SchemaDirectiveWiring getSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
         return assertShouldNeverHappen();
     }
