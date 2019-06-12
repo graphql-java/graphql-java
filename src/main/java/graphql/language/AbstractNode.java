@@ -4,9 +4,7 @@ package graphql.language;
 import graphql.Assert;
 import graphql.PublicApi;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -24,11 +22,14 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
     }
 
     public AbstractNode(SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
-        this.sourceLocation = sourceLocation;
-        this.additionalData = additionalData;
         Assert.assertNotNull(comments, "comments can't be null");
-        this.comments = new ArrayList<>(comments);
-        this.ignoredChars = Assert.assertNotNull(ignoredChars, "ignoredChars can't be null");
+        Assert.assertNotNull(ignoredChars, "ignoredChars can't be null");
+        Assert.assertNotNull(additionalData, "additionalData can't be null");
+
+        this.sourceLocation = sourceLocation;
+        this.additionalData = Collections.unmodifiableMap(additionalData);
+        this.comments = Collections.unmodifiableList(comments);
+        this.ignoredChars = ignoredChars;
     }
 
     @Override
@@ -38,7 +39,7 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
 
     @Override
     public List<Comment> getComments() {
-        return new ArrayList<>(comments);
+        return comments;
     }
 
     @Override
@@ -48,7 +49,7 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
 
 
     public Map<String, String> getAdditionalData() {
-        return new LinkedHashMap<>(additionalData);
+        return additionalData;
     }
 
     @SuppressWarnings("unchecked")
