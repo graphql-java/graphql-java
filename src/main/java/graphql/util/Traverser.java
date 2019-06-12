@@ -112,6 +112,7 @@ public class Traverser<T> {
                 currentContext = (DefaultTraverserContext) traverserState.pop();
                 currentContext.setCurAccValue(currentAccValue);
                 currentContext.setChildrenContexts(childrenContextMap);
+                currentContext.setPhase(TraverserContext.Phase.LEAVE);
                 TraversalControl traversalControl = visitor.leave(currentContext);
                 currentAccValue = currentContext.getNewAccumulate();
                 assertNotNull(traversalControl, "result of leave must not be null");
@@ -131,6 +132,7 @@ public class Traverser<T> {
 
             if (currentContext.isVisited()) {
                 currentContext.setCurAccValue(currentAccValue);
+                currentContext.setPhase(TraverserContext.Phase.BACKREF);
                 TraversalControl traversalControl = visitor.backRef(currentContext);
                 currentAccValue = currentContext.getNewAccumulate();
                 assertNotNull(traversalControl, "result of backRef must not be null");
@@ -141,6 +143,7 @@ public class Traverser<T> {
             } else {
                 currentContext.setCurAccValue(currentAccValue);
                 Object nodeBeforeEnter = currentContext.thisNode();
+                currentContext.setPhase(TraverserContext.Phase.ENTER);
                 TraversalControl traversalControl = visitor.enter(currentContext);
                 currentAccValue = currentContext.getNewAccumulate();
                 assertNotNull(traversalControl, "result of enter must not be null");

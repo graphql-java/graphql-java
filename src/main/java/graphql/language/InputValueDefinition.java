@@ -7,13 +7,17 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
-public class InputValueDefinition extends AbstractNode<InputValueDefinition> implements DirectivesContainer<InputValueDefinition> {
+public class InputValueDefinition extends AbstractNode<InputValueDefinition> implements DirectivesContainer<InputValueDefinition>, NamedNode<InputValueDefinition> {
     private final String name;
     private final Type type;
     private final Value defaultValue;
@@ -32,8 +36,9 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
                                    Description description,
                                    SourceLocation sourceLocation,
                                    List<Comment> comments,
-                                   IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+                                   IgnoredChars ignoredChars,
+                                   Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;
@@ -50,7 +55,7 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
      */
     public InputValueDefinition(String name,
                                 Type type) {
-        this(name, type, null, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, type, null, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
 
     }
 
@@ -65,7 +70,7 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
     public InputValueDefinition(String name,
                                 Type type,
                                 Value defaultValue) {
-        this(name, type, defaultValue, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, type, defaultValue, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
 
     }
 
@@ -143,7 +148,8 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
                 description,
                 getSourceLocation(),
                 getComments(),
-                getIgnoredChars());
+                getIgnoredChars(),
+                getAdditionalData());
     }
 
     @Override
@@ -180,6 +186,7 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
         private Description description;
         private List<Directive> directives = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -192,6 +199,7 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
             this.defaultValue = existing.getDefaultValue();
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
+            this.additionalData = existing.getAdditionalData();
         }
 
 
@@ -240,16 +248,26 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public InputValueDefinition build() {
-            InputValueDefinition inputValueDefinition = new InputValueDefinition(name,
+            return new InputValueDefinition(name,
                     type,
                     defaultValue,
                     directives,
                     description,
                     sourceLocation,
                     comments,
-                    ignoredChars);
-            return inputValueDefinition;
+                    ignoredChars, additionalData);
         }
     }
 }

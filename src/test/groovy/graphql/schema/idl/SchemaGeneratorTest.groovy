@@ -1750,9 +1750,38 @@ class SchemaGeneratorTest extends Specification {
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .transformer(transformer)
                 .build()
-        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring);
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring)
         expect:
         assert schema != null
         schema.getDirective("extra") != null
+    }
+
+    def "1509- enum object string default values are handled"() {
+        def spec = '''
+            enum EnumValue {
+                ONE, TWO, THREE
+            }
+            
+            input InputType {
+                value : EnumValue
+            }
+            
+            type Query {
+                fieldWithEnum(arg : InputType = { value : ONE } ) : String
+                fieldWithString(arg : InputType = { value : "ONE" } ) : String
+            }
+        '''
+        def types = new SchemaParser().parse(spec)
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, TestUtil.mockRuntimeWiring)
+        expect:
+        assert schema != null
+        def queryType = schema.getObjectType("Query")
+        def fieldWithEnum = queryType.getFieldDefinition("fieldWithEnum")
+        def arg = fieldWithEnum.getArgument("arg")
+        arg.defaultValue == [value: "ONE"]
+
+        def fieldWithString = queryType.getFieldDefinition("fieldWithString")
+        def arg2 = fieldWithString.getArgument("arg")
+        arg2.defaultValue == [value: "ONE"]
     }
 }

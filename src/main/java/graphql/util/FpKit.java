@@ -164,4 +164,14 @@ public class FpKit {
         return findOne(list, filter).orElse(null);
     }
 
+    public static <T> int findIndex(List<T> list, Predicate<T> filter) {
+        for (int i = 0; i < list.size(); i++) {
+            if (filter.test(list.get(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+
 }

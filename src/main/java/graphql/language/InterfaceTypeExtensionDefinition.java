@@ -4,8 +4,12 @@ import graphql.Internal;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
+
+import static graphql.Assert.assertNotNull;
 
 @PublicApi
 public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
@@ -17,8 +21,9 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
                                                Description description,
                                                SourceLocation sourceLocation,
                                                List<Comment> comments,
-                                               IgnoredChars ignoredChars) {
-        super(name, definitions, directives, description, sourceLocation, comments, ignoredChars);
+                                               IgnoredChars ignoredChars,
+                                               Map<String, String> additionalData) {
+        super(name, definitions, directives, description, sourceLocation, comments, ignoredChars, additionalData);
     }
 
     @Override
@@ -29,8 +34,8 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
                 getDescription(),
                 getSourceLocation(),
                 getComments(),
-                getIgnoredChars()
-        );
+                getIgnoredChars(),
+                getAdditionalData());
     }
 
     @Override
@@ -61,6 +66,7 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
         private List<FieldDefinition> definitions = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -73,6 +79,7 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
             this.directives = existing.getDirectives();
             this.definitions = existing.getFieldDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -110,15 +117,26 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public InterfaceTypeExtensionDefinition build() {
-            InterfaceTypeExtensionDefinition interfaceTypeDefinition = new InterfaceTypeExtensionDefinition(name,
+            return new InterfaceTypeExtensionDefinition(name,
                     definitions,
                     directives,
                     description,
                     sourceLocation,
                     comments,
-                    ignoredChars);
-            return interfaceTypeDefinition;
+                    ignoredChars,
+                    additionalData);
         }
     }
 }

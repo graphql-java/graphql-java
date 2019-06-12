@@ -73,6 +73,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertTrue;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
@@ -157,7 +158,9 @@ public class SchemaGenerator {
 
         @SuppressWarnings({"OptionalGetWithoutIsPresent", "ConstantConditions"})
         TypeDefinition getTypeDefinition(Type type) {
-            return typeRegistry.getType(type).get();
+            Optional<TypeDefinition> optionalTypeDefinition = typeRegistry.getType(type);
+            assertTrue(optionalTypeDefinition.isPresent(), " type definition for type '" + type + "' not found");
+            return optionalTypeDefinition.get();
         }
 
         boolean stackContains(TypeInfo typeInfo) {

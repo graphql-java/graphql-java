@@ -8,11 +8,15 @@ import graphql.util.TraverserContext;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntValue> {
@@ -20,8 +24,8 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
     private final BigInteger value;
 
     @Internal
-    protected IntValue(BigInteger value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+    protected IntValue(BigInteger value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.value = value;
     }
 
@@ -31,7 +35,7 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
      * @param value of the Int
      */
     public IntValue(BigInteger value) {
-        this(value, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(value, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public BigInteger getValue() {
@@ -71,7 +75,7 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
 
     @Override
     public IntValue deepCopy() {
-        return new IntValue(value, getSourceLocation(), getComments(), IgnoredChars.EMPTY);
+        return new IntValue(value, getSourceLocation(), getComments(), IgnoredChars.EMPTY, getAdditionalData());
     }
 
     @Override
@@ -105,6 +109,7 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
         private BigInteger value;
         private List<Comment> comments = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -113,6 +118,7 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.value = existing.getValue();
+            this.additionalData = existing.getAdditionalData();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -135,9 +141,18 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
         public IntValue build() {
-            IntValue intValue = new IntValue(value, sourceLocation, comments, ignoredChars);
-            return intValue;
+            return new IntValue(value, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

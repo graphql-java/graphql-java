@@ -482,6 +482,7 @@ public class GraphQL {
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
         try {
             log.debug("Executing request. operation name: '{}'. query: '{}'. variables '{}'", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
+            executionInput = ensureInputHasId(executionInput);
 
             InstrumentationState instrumentationState = instrumentation.createState(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInput));
 
@@ -504,6 +505,16 @@ public class GraphQL {
         } catch (AbortExecutionException abortException) {
             return CompletableFuture.completedFuture(abortException.toExecutionResult());
         }
+    }
+
+    private ExecutionInput ensureInputHasId(ExecutionInput executionInput) {
+        if (executionInput.getExecutionId() != null) {
+            return executionInput;
+        }
+        String queryString = executionInput.getQuery();
+        String operationName = executionInput.getOperationName();
+        Object context = executionInput.getContext();
+        return executionInput.transform(builder -> builder.executionId(idProvider.provide(queryString, operationName, context)));
     }
 
 
@@ -581,12 +592,9 @@ public class GraphQL {
     }
 
     private CompletableFuture<ExecutionResult> execute(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
-        String query = executionInput.getQuery();
-        String operationName = executionInput.getOperationName();
-        Object context = executionInput.getContext();
 
         Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation);
-        ExecutionId executionId = idProvider.provide(query, operationName, context);
+        ExecutionId executionId = executionInput.getExecutionId();
 
         log.debug("Executing '{}'. operation name: '{}'. query: '{}'. variables '{}'", executionId, executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
         CompletableFuture<ExecutionResult> future = execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState);

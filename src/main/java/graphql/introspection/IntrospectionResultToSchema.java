@@ -297,9 +297,17 @@ public class IntrospectionResultToSchema {
     }
 
     private List<Comment> toComment(String description) {
-        if (description == null) return Collections.emptyList();
-        Comment comment = new Comment(description, new SourceLocation(1, 1));
-        return Collections.singletonList(comment);
+        if (description == null) {
+            return Collections.emptyList();
+        }
+        List<Comment> comments = new ArrayList<>();
+        String[] lines = description.split("\n");
+        int lineNumber = 0;
+        for (String line : lines) {
+            Comment comment = new Comment(line, new SourceLocation(++lineNumber, 1));
+            comments.add(comment);
+        }
+        return comments;
     }
 
 }

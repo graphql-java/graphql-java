@@ -18,6 +18,12 @@ import java.util.Set;
 @PublicApi
 public interface TraverserContext<T> {
 
+    enum Phase {
+        LEAVE,
+        ENTER,
+        BACKREF
+    }
+
     /**
      * Returns current node being visited.
      * Special cases:
@@ -54,9 +60,14 @@ public interface TraverserContext<T> {
     void deleteNode();
 
     /**
-     * @return true if the current node is deleted
+     * @return true if the current node is deleted (by calling {@link #deleteNode()}
      */
     boolean isDeleted();
+
+    /**
+     * @return true if the current node is changed (by calling {@link #changeNode(Object)}
+     */
+    boolean isChanged();
 
     /**
      * Returns parent context.
@@ -149,7 +160,7 @@ public interface TraverserContext<T> {
     /**
      * Sets the new accumulate value.
      *
-     * Can be retrieved by getA
+     * Can be retrieved by {@link #getNewAccumulate()}
      *
      * @param accumulate to set
      */
@@ -196,5 +207,10 @@ public interface TraverserContext<T> {
      * @return the children contexts. If the childs are a simple list the key is null.
      */
     Map<String, List<TraverserContext<T>>> getChildrenContexts();
+
+    /**
+     * @return the phase in which the node visits currently happens (Enter,Leave or BackRef)
+     */
+    Phase getPhase();
 
 }

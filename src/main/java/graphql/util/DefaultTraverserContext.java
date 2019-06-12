@@ -30,6 +30,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     private final NodeLocation location;
     private final boolean isRootContext;
     private Map<String, List<TraverserContext<T>>> children;
+    private Phase phase;
 
     public DefaultTraverserContext(T curNode,
                                    TraverserContext<T> parent,
@@ -76,6 +77,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
         this.newNode = newNode;
     }
 
+
     @Override
     public void deleteNode() {
         assertNull(this.newNode, "node is already changed");
@@ -87,6 +89,12 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     public boolean isDeleted() {
         return this.nodeDeleted;
     }
+
+    @Override
+    public boolean isChanged() {
+        return this.newNode != null;
+    }
+
 
     @Override
     public TraverserContext<T> getParentContext() {
@@ -211,9 +219,22 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
         this.children = children;
     }
 
+
     @Override
     public Map<String, List<TraverserContext<T>>> getChildrenContexts() {
         assertNotNull(children, "children not available");
         return children;
+    }
+
+    /*
+     * PRIVATE: Used by {@link Traverser}
+     */
+    void setPhase(Phase phase) {
+        this.phase = phase;
+    }
+
+    @Override
+    public Phase getPhase() {
+        return phase;
     }
 }

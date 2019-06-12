@@ -45,7 +45,7 @@ class IntrospectionResultToSchemaTest extends Specification {
                 "args": [
                   {
                     "name": "episode",
-                    "description": "comment about episode",
+                    "description": "comment about episode\non two lines",
                     "type": {
                       "kind": "ENUM",
                       "name": "Episode",
@@ -93,6 +93,7 @@ class IntrospectionResultToSchemaTest extends Specification {
         result == """type QueryType implements Query {
   hero(
   #comment about episode
+  #on two lines
   episode: Episode
   foo: String = \"bar\"
   ): Character @deprecated(reason: "killed off character")

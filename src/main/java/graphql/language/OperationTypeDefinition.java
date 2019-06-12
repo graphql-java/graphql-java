@@ -7,10 +7,15 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinition> implements NamedNode<OperationTypeDefinition> {
@@ -21,8 +26,8 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
     public static final String CHILD_TYPE_NAME = "typeName";
 
     @Internal
-    protected OperationTypeDefinition(String name, TypeName typeName, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+    protected OperationTypeDefinition(String name, TypeName typeName, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.typeName = typeName;
     }
@@ -34,7 +39,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
      * @param typeName the type in play
      */
     public OperationTypeDefinition(String name, TypeName typeName) {
-        this(name, typeName, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, typeName, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public TypeName getTypeName() {
@@ -83,7 +88,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
 
     @Override
     public OperationTypeDefinition deepCopy() {
-        return new OperationTypeDefinition(name, deepCopy(typeName), getSourceLocation(), getComments(), getIgnoredChars());
+        return new OperationTypeDefinition(name, deepCopy(typeName), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -115,6 +120,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
         private String name;
         private TypeName typeName;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -126,6 +132,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
             this.name = existing.getName();
             this.typeName = existing.getTypeName();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
 
@@ -154,9 +161,19 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public OperationTypeDefinition build() {
-            OperationTypeDefinition operationTypeDefinition = new OperationTypeDefinition(name, typeName, sourceLocation, comments, ignoredChars);
-            return operationTypeDefinition;
+            return new OperationTypeDefinition(name, typeName, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

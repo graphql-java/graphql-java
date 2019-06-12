@@ -309,6 +309,7 @@ public abstract class ExecutionStrategy {
             return FetchedValue.newFetchedValue()
                     .fetchedValue(UnboxPossibleOptional.unboxPossibleOptional(result))
                     .rawFetchedValue(result)
+                    .localContext(parameters.getLocalContext())
                     .build();
         }
     }

@@ -623,6 +623,44 @@ class TraverserTest extends Specification {
         leaveData == [0, 1, 2, 3]
     }
 
+    def "phase is provided for enter and leave"() {
+        given:
+        def visitor = [
+                enter  : { TraverserContext context ->
+                    assert context.phase == TraverserContext.Phase.ENTER
+                    TraversalControl.CONTINUE
+                },
+                leave  : { TraverserContext context ->
+                    assert context.phase == TraverserContext.Phase.LEAVE
+                    TraversalControl.CONTINUE
+                },
+                backRef: { TraverserContext context ->
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        when:
+        Traverser.depthFirst({ n -> n.children }).traverse(root, visitor)
+
+
+        then:
+        noExceptionThrown()
+    }
+
+    def "phase is provided for backRef"() {
+        given:
+        def cycleRoot = new Node(number: 0)
+        cycleRoot.children.add(cycleRoot)
+
+
+        def visitor = Mock(TraverserVisitor)
+        when:
+        Traverser.depthFirst({ n -> n.children }).traverse(cycleRoot, visitor)
+
+        then:
+        1 * visitor.enter(_) >> TraversalControl.CONTINUE
+        1 * visitor.leave(_) >> TraversalControl.CONTINUE
+        1 * visitor.backRef({ TraverserContext context -> context.getPhase() == TraverserContext.Phase.BACKREF }) >> TraversalControl.CONTINUE
+    }
 }
 
 

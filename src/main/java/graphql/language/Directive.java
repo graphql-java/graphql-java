@@ -7,12 +7,15 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.argumentsByName;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class Directive extends AbstractNode<Directive> implements NamedNode<Directive> {
@@ -22,8 +25,8 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     public static final String CHILD_ARGUMENTS = "arguments";
 
     @Internal
-    protected Directive(String name, List<Argument> arguments, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+    protected Directive(String name, List<Argument> arguments, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.arguments.addAll(arguments);
     }
@@ -35,7 +38,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
      * @param arguments of the directive
      */
     public Directive(String name, List<Argument> arguments) {
-        this(name, arguments, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, arguments, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
 
@@ -45,7 +48,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
      * @param name of the directive
      */
     public Directive(String name) {
-        this(name, new ArrayList<>(), null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, new ArrayList<>(), null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public List<Argument> getArguments() {
@@ -103,7 +106,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
 
     @Override
     public Directive deepCopy() {
-        return new Directive(name, deepCopy(arguments), getSourceLocation(), getComments(), getIgnoredChars());
+        return new Directive(name, deepCopy(arguments), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -135,6 +138,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
         private String name;
         private List<Argument> arguments = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -145,6 +149,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
             this.name = existing.getName();
             this.arguments = existing.getArguments();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
 
@@ -173,9 +178,19 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public Directive build() {
-            Directive directive = new Directive(name, arguments, sourceLocation, comments, ignoredChars);
-            return directive;
+            return new Directive(name, arguments, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

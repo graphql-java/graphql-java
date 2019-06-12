@@ -12,7 +12,7 @@ import static graphql.language.NodeUtil.directivesByName;
  * Represents a language node that can contain Directives.
  */
 @PublicApi
-public interface DirectivesContainer<T extends DirectivesContainer> extends NamedNode<T> {
+public interface DirectivesContainer<T extends DirectivesContainer> extends Node<T> {
 
     /**
      * @return a list of directives associated with this Node
