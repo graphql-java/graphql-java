@@ -18,9 +18,7 @@ import java.util.function.UnaryOperator;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.introspection.Introspection.DirectiveLocation;
-import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
-import static graphql.util.FpKit.valuesToList;
 
 /**
  * A directive can be used to modify the behavior of a graphql field or type.
@@ -46,7 +44,7 @@ public class GraphQLDirective implements GraphQLType {
         this.name = name;
         this.description = description;
         this.locations = locations;
-        this.arguments.addAll(sortGraphQLTypes(arguments));
+        this.arguments.addAll(arguments);
         this.onOperation = onOperation;
         this.onFragment = onFragment;
         this.onField = onField;
@@ -147,10 +145,8 @@ public class GraphQLDirective implements GraphQLType {
         return new Builder(existing);
     }
 
-    public static class Builder {
+    public static class Builder extends GraphqlTypeBuilder {
 
-        private String name;
-        private String description;
         private boolean onOperation;
         private boolean onFragment;
         private boolean onField;
@@ -171,13 +167,21 @@ public class GraphQLDirective implements GraphQLType {
             this.arguments.putAll(getByName(existing.getArguments(), GraphQLArgument::getName));
         }
 
+        @Override
         public Builder name(String name) {
-            this.name = name;
+            super.name(name);
             return this;
         }
 
+        @Override
         public Builder description(String description) {
-            this.description = description;
+            super.description(description);
+            return this;
+        }
+
+        @Override
+        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
+            super.comparatorRegistry(comparatorRegistry);
             return this;
         }
 
@@ -284,7 +288,14 @@ public class GraphQLDirective implements GraphQLType {
         }
 
         public GraphQLDirective build() {
-            return new GraphQLDirective(name, description, locations, valuesToList(arguments), onOperation, onFragment, onField);
+            return new GraphQLDirective(
+                    name,
+                    description,
+                    locations,
+                    sort(arguments, GraphQLDirective.class, GraphQLArgument.class),
+                    onOperation,
+                    onFragment,
+                    onField);
         }
 
 

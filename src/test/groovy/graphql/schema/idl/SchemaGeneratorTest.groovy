@@ -17,6 +17,7 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLUnionType
+import graphql.schema.GraphqlTypeComparatorRegistry
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.SchemaTransformer
 import graphql.schema.idl.errors.NotAnInputTypeError
@@ -31,10 +32,27 @@ import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
-import static graphql.TestUtil.schema
 import static graphql.schema.GraphQLList.list
 
 class SchemaGeneratorTest extends Specification {
+
+    def newRuntimeWiring() {
+        return RuntimeWiring.newRuntimeWiring()
+                .comparatorRegistry(GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY)
+    }
+
+    GraphQLSchema schema(String sdl) {
+        def runtimeWiringAsIs = newRuntimeWiring()
+                .comparatorRegistry(GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY)
+                .wiringFactory(TestUtil.mockWiringFactory)
+                .build()
+        return schema(sdl, runtimeWiringAsIs)
+    }
+
+    GraphQLSchema schema(String sdl, RuntimeWiring runtimeWiring) {
+        return TestUtil.schema(sdl, runtimeWiring)
+    }
+
 
     GraphQLType unwrap1Layer(GraphQLType type) {
         if (type instanceof GraphQLNonNull) {
@@ -142,7 +160,6 @@ class SchemaGeneratorTest extends Specification {
         assert queryType.description == " the schema allows the following query\n to be made"
 
     }
-
 
     def "test simple schema generate"() {
 
@@ -866,7 +883,7 @@ class SchemaGeneratorTest extends Specification {
         def enumValuesProvider = new NaturalEnumValuesProvider<ExampleEnum>(ExampleEnum.class)
         when:
 
-        def wiring = RuntimeWiring.newRuntimeWiring()
+        def wiring = newRuntimeWiring()
                 .type("Enum", { TypeRuntimeWiring.Builder it -> it.enumValues(enumValuesProvider) } as UnaryOperator)
                 .build()
         def schema = schema(spec, wiring)
@@ -979,10 +996,7 @@ class SchemaGeneratorTest extends Specification {
         }
         """
         when:
-        def wiring = RuntimeWiring.newRuntimeWiring()
-                .build()
-
-        def schema = schema(spec, wiring)
+        def schema = schema(spec)
         GraphQLEnumType enumType = schema.getType("Enum") as GraphQLEnumType
         GraphQLObjectType queryType = schema.getType("Query") as GraphQLObjectType
 

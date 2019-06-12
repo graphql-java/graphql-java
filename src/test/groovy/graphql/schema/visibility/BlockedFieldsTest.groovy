@@ -2,6 +2,7 @@ package graphql.schema.visibility
 
 import graphql.StarWarsSchema
 import graphql.schema.GraphQLInputObjectType
+import graphql.schema.GraphqlTypeComparatorRegistry
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -27,6 +28,7 @@ class BlockedFieldsTest extends Specification {
             .name("secretRoles")
             .type(list(GraphQLString))
     )
+            .comparatorRegistry(GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY)
             .build()
 
     @Unroll
@@ -48,7 +50,7 @@ class BlockedFieldsTest extends Specification {
         "all blocked"                    | StarWarsSchema.characterInterface | [".*"]                                         | []
         "needs FQN to match"             | StarWarsSchema.characterInterface | ["name"]                                       | ["appearsIn", "friends", "id", "name",]
         "FQN"                            | StarWarsSchema.characterInterface | ["Character.name"]                             | ["appearsIn", "friends", "id",]
-        "multiple patterns"              | StarWarsSchema.characterInterface | ["Character.name", ".*.id"]                    | ["appearsIn", "friends", ]
+        "multiple patterns"              | StarWarsSchema.characterInterface | ["Character.name", ".*.id"]                    | ["appearsIn", "friends",]
 
         "input partial field name match" | accessInputType                   | [".*\\.secretRoles"]                           | ["openRoles", "questionableRoles"]
         "input no match"                 | accessInputType                   | ["Access.mismatched"]                          | ["openRoles", "questionableRoles", "secretRoles"]

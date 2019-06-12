@@ -90,7 +90,8 @@ class RelaySchemaTest extends Specification {
 
         then:
         def fields = result.data["__type"]["fields"]
-        fields == [[name: "cursor", type: [name: null, kind: "NON_NULL", ofType: [name: "String", kind: "SCALAR"]]], [name: "node", type: [name: "Stuff", kind: "OBJECT", ofType: null]]]
+        fields == [[name: "node", type: [name: "Stuff", kind: "OBJECT", ofType: null]],
+                   [name: "cursor", type: [name: null, kind: "NON_NULL", ofType: [name: "String", kind: "SCALAR"]]]]
     }
 
 }

@@ -46,6 +46,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.GraphqlTypeComparatorRegistry;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.SchemaTransformer;
 import graphql.schema.TypeResolver;
@@ -204,6 +205,10 @@ public class SchemaGenerator {
 
         RuntimeWiring getWiring() {
             return wiring;
+        }
+
+        GraphqlTypeComparatorRegistry getComparatorRegistry() {
+            return wiring.getComparatorRegistry();
         }
 
         public GraphQLCodeRegistry.Builder getCodeRegistry() {
@@ -468,11 +473,12 @@ public class SchemaGenerator {
         builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
         builder.description(schemaGeneratorHelper.buildDescription(typeDefinition, typeDefinition.getDescription()));
+        builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
         List<ObjectTypeExtensionDefinition> extensions = objectTypeExtensions(typeDefinition, buildCtx);
         builder.withDirectives(
                 buildDirectives(typeDefinition.getDirectives(),
-                        directivesOf(extensions), OBJECT, buildCtx.getDirectiveDefinitions())
+                        directivesOf(extensions), OBJECT, buildCtx.getDirectiveDefinitions(), buildCtx.getComparatorRegistry())
         );
 
         typeDefinition.getFieldDefinitions().forEach(fieldDef -> {
@@ -524,12 +530,13 @@ public class SchemaGenerator {
         builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
         builder.description(schemaGeneratorHelper.buildDescription(typeDefinition, typeDefinition.getDescription()));
+        builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
 
         List<InterfaceTypeExtensionDefinition> extensions = interfaceTypeExtensions(typeDefinition, buildCtx);
         builder.withDirectives(
                 buildDirectives(typeDefinition.getDirectives(),
-                        directivesOf(extensions), OBJECT, buildCtx.getDirectiveDefinitions())
+                        directivesOf(extensions), OBJECT, buildCtx.getDirectiveDefinitions(), buildCtx.getComparatorRegistry())
         );
 
         typeDefinition.getFieldDefinitions().forEach(fieldDef -> {
@@ -559,6 +566,7 @@ public class SchemaGenerator {
         builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
         builder.description(schemaGeneratorHelper.buildDescription(typeDefinition, typeDefinition.getDescription()));
+        builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
         List<UnionTypeExtensionDefinition> extensions = unionTypeExtensions(typeDefinition, buildCtx);
 
@@ -573,7 +581,7 @@ public class SchemaGenerator {
 
         builder.withDirectives(
                 buildDirectives(typeDefinition.getDirectives(),
-                        directivesOf(extensions), UNION, buildCtx.getDirectiveDefinitions())
+                        directivesOf(extensions), UNION, buildCtx.getDirectiveDefinitions(), buildCtx.getComparatorRegistry())
         );
 
         extensions.forEach(extension -> extension.getMemberTypes().forEach(mt -> {
@@ -602,6 +610,7 @@ public class SchemaGenerator {
         builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
         builder.description(schemaGeneratorHelper.buildDescription(typeDefinition, typeDefinition.getDescription()));
+        builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
         List<EnumTypeExtensionDefinition> extensions = enumTypeExtensions(typeDefinition, buildCtx);
 
@@ -620,7 +629,7 @@ public class SchemaGenerator {
 
         builder.withDirectives(
                 buildDirectives(typeDefinition.getDirectives(),
-                        directivesOf(extensions), ENUM, buildCtx.getDirectiveDefinitions())
+                        directivesOf(extensions), ENUM, buildCtx.getDirectiveDefinitions(), buildCtx.getComparatorRegistry())
         );
 
         GraphQLEnumType enumType = builder.build();
@@ -645,9 +654,10 @@ public class SchemaGenerator {
                 .description(description)
                 .deprecationReason(deprecation)
                 .definition(evd)
+                .comparatorRegistry(buildCtx.getComparatorRegistry())
                 .withDirectives(
                         buildDirectives(evd.getDirectives(),
-                                emptyList(), ENUM_VALUE, buildCtx.getDirectiveDefinitions())
+                                emptyList(), ENUM_VALUE, buildCtx.getDirectiveDefinitions(), buildCtx.getComparatorRegistry())
                 )
                 .build();
     }
@@ -670,9 +680,10 @@ public class SchemaGenerator {
         if (!ScalarInfo.isStandardScalar(scalar) && !ScalarInfo.isGraphqlSpecifiedScalar(scalar)) {
             scalar = scalar.transform(builder -> builder
                     .definition(typeDefinition)
+                    .comparatorRegistry(buildCtx.getComparatorRegistry())
                     .withDirectives(
                             buildDirectives(typeDefinition.getDirectives(),
-                                    directivesOf(extensions), SCALAR, buildCtx.getDirectiveDefinitions())
+                                    directivesOf(extensions), SCALAR, buildCtx.getDirectiveDefinitions(), buildCtx.getComparatorRegistry())
                     ));
             //
             // only allow modification of custom scalars
@@ -687,9 +698,12 @@ public class SchemaGenerator {
         builder.name(fieldDef.getName());
         builder.description(schemaGeneratorHelper.buildDescription(fieldDef, fieldDef.getDescription()));
         builder.deprecate(schemaGeneratorHelper.buildDeprecationReason(fieldDef.getDirectives()));
+        builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
         GraphQLDirective[] directives = buildDirectives(fieldDef.getDirectives(),
-                Collections.emptyList(), DirectiveLocation.FIELD_DEFINITION, buildCtx.getDirectiveDefinitions());
+                Collections.emptyList(), DirectiveLocation.FIELD_DEFINITION,
+                buildCtx.getDirectiveDefinitions(),
+                buildCtx.getComparatorRegistry());
         builder.withDirectives(
                 directives
         );
@@ -757,12 +771,13 @@ public class SchemaGenerator {
         builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
         builder.description(schemaGeneratorHelper.buildDescription(typeDefinition, typeDefinition.getDescription()));
+        builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
         List<InputObjectTypeExtensionDefinition> extensions = inputObjectTypeExtensions(typeDefinition, buildCtx);
 
         builder.withDirectives(
                 buildDirectives(typeDefinition.getDirectives(),
-                        directivesOf(extensions), INPUT_OBJECT, buildCtx.getDirectiveDefinitions())
+                        directivesOf(extensions), INPUT_OBJECT, buildCtx.getDirectiveDefinitions(), buildCtx.getComparatorRegistry())
         );
 
         typeDefinition.getInputValueDefinitions().forEach(inputValue ->
@@ -785,6 +800,7 @@ public class SchemaGenerator {
         fieldBuilder.definition(fieldDef);
         fieldBuilder.name(fieldDef.getName());
         fieldBuilder.description(schemaGeneratorHelper.buildDescription(fieldDef, fieldDef.getDescription()));
+        fieldBuilder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
         // currently the spec doesnt allow deprecations on InputValueDefinitions but it should!
         //fieldBuilder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
@@ -797,7 +813,7 @@ public class SchemaGenerator {
 
         fieldBuilder.withDirectives(
                 buildDirectives(fieldDef.getDirectives(),
-                        emptyList(), INPUT_FIELD_DEFINITION, buildCtx.getDirectiveDefinitions())
+                        emptyList(), INPUT_FIELD_DEFINITION, buildCtx.getDirectiveDefinitions(), buildCtx.getComparatorRegistry())
         );
 
         return fieldBuilder.build();
@@ -808,6 +824,8 @@ public class SchemaGenerator {
         builder.definition(valueDefinition);
         builder.name(valueDefinition.getName());
         builder.description(schemaGeneratorHelper.buildDescription(valueDefinition, valueDefinition.getDescription()));
+        builder.comparatorRegistry(buildCtx.getComparatorRegistry());
+
         GraphQLInputType inputType = buildInputType(buildCtx, valueDefinition.getType());
         builder.type(inputType);
         Value defaultValue = valueDefinition.getDefaultValue();
@@ -817,7 +835,7 @@ public class SchemaGenerator {
 
         builder.withDirectives(
                 buildDirectives(valueDefinition.getDirectives(),
-                        emptyList(), ARGUMENT_DEFINITION, buildCtx.getDirectiveDefinitions())
+                        emptyList(), ARGUMENT_DEFINITION, buildCtx.getDirectiveDefinitions(), buildCtx.getComparatorRegistry())
         );
 
         return builder.build();
@@ -872,7 +890,7 @@ public class SchemaGenerator {
     }
 
 
-    private GraphQLDirective[] buildDirectives(List<Directive> directives, List<Directive> extensionDirectives, DirectiveLocation directiveLocation, Set<GraphQLDirective> directiveDefinitions) {
+    private GraphQLDirective[] buildDirectives(List<Directive> directives, List<Directive> extensionDirectives, DirectiveLocation directiveLocation, Set<GraphQLDirective> directiveDefinitions, GraphqlTypeComparatorRegistry comparatorRegistry) {
         directives = directives == null ? emptyList() : directives;
         extensionDirectives = extensionDirectives == null ? emptyList() : extensionDirectives;
         Set<String> names = new LinkedHashSet<>();
@@ -881,13 +899,13 @@ public class SchemaGenerator {
         for (Directive directive : directives) {
             if (!names.contains(directive.getName())) {
                 names.add(directive.getName());
-                output.add(schemaGeneratorHelper.buildDirective(directive, directiveDefinitions, directiveLocation));
+                output.add(schemaGeneratorHelper.buildDirective(directive, directiveDefinitions, directiveLocation, comparatorRegistry));
             }
         }
         for (Directive directive : extensionDirectives) {
             if (!names.contains(directive.getName())) {
                 names.add(directive.getName());
-                output.add(schemaGeneratorHelper.buildDirective(directive, directiveDefinitions, directiveLocation));
+                output.add(schemaGeneratorHelper.buildDirective(directive, directiveDefinitions, directiveLocation, comparatorRegistry));
             }
         }
         return output.toArray(new GraphQLDirective[0]);
