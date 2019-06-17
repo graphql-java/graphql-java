@@ -17,6 +17,7 @@ import org.dataloader.DataLoaderRegistry;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -43,10 +44,11 @@ public class ExecutionContext {
     private final Set<ExecutionPath> errorPaths = new HashSet<>();
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
+    private final Locale locale;
     private final DeferSupport deferSupport = new DeferSupport();
 
     @Internal
-    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, List<GraphQLError> startingErrors) {
+    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, Locale locale, List<GraphQLError> startingErrors) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.instrumentationState = instrumentationState;
@@ -62,6 +64,7 @@ public class ExecutionContext {
         this.instrumentation = instrumentation;
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.cacheControl = cacheControl;
+        this.locale = locale;
         this.errors.addAll(startingErrors);
     }
 
@@ -117,6 +120,10 @@ public class ExecutionContext {
 
     public CacheControl getCacheControl() {
         return cacheControl;
+    }
+
+    public Locale getLocale() {
+        return locale;
     }
 
     /**

@@ -1,6 +1,8 @@
 package graphql
 
 import graphql.cachecontrol.CacheControl
+import graphql.execution.ExecutionId
+import graphql.schema.DataFetcher
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
@@ -23,6 +25,7 @@ class ExecutionInputTest extends Specification {
                 .variables(variables)
                 .root(root)
                 .context(context)
+                .locale(Locale.GERMAN)
                 .build()
         then:
         executionInput.context == context
@@ -31,6 +34,7 @@ class ExecutionInputTest extends Specification {
         executionInput.dataLoaderRegistry == registry
         executionInput.cacheControl == cacheControl
         executionInput.query == query
+        executionInput.locale == Locale.GERMAN
     }
 
     def "context methods work"() {
@@ -65,6 +69,7 @@ class ExecutionInputTest extends Specification {
                 .variables(variables)
                 .root(root)
                 .context(context)
+                .locale(Locale.GERMAN)
                 .build()
         def executionInput = executionInputOld.transform({ bldg -> bldg.query("new query") })
 
@@ -74,6 +79,7 @@ class ExecutionInputTest extends Specification {
         executionInput.variables == variables
         executionInput.dataLoaderRegistry == registry
         executionInput.cacheControl == cacheControl
+        executionInput.locale == Locale.GERMAN
         executionInput.query == "new query"
     }
 
@@ -83,7 +89,40 @@ class ExecutionInputTest extends Specification {
         then:
         executionInput.query == "{ q }"
         executionInput.cacheControl != null
+        executionInput.locale == null
         executionInput.dataLoaderRegistry != null
         executionInput.variables == [:]
+    }
+
+    def "integration test so that values make it right into the data fetchers"() {
+
+        def sdl = '''
+            type Query {
+                fetch : String
+            }
+        '''
+        DataFetcher df = { env ->
+            return [
+                    "locale"      : env.getLocale().getDisplayName(),
+                    "cacheControl": env.getCacheControl() == cacheControl,
+                    "executionId" : env.getExecutionId().toString()
+
+            ]
+        }
+        def schema = TestUtil.schema(sdl, ["Query": ["fetch": df]])
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        when:
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query("{ fetch }")
+                .locale(Locale.GERMAN)
+                .cacheControl(cacheControl)
+                .executionId(ExecutionId.from("ID123"))
+                .build()
+        def er = graphQL.execute(executionInput)
+
+        then:
+        er.errors.isEmpty()
+        er.data["fetch"] == "{locale=German, cacheControl=true, executionId=ID123}"
     }
 }
