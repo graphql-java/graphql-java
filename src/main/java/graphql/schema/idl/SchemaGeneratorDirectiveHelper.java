@@ -33,7 +33,7 @@ import static java.util.stream.Collectors.toList;
  * to be invoked during schema generation.
  */
 @Internal
-class SchemaGeneratorDirectiveHelper {
+public class SchemaGeneratorDirectiveHelper {
 
     static class Parameters {
         private final TypeDefinitionRegistry typeRegistry;
