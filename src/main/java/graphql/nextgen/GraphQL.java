@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
@@ -181,16 +182,15 @@ public class GraphQL {
 
     private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
         AtomicReference<ExecutionInput> executionInputRef = new AtomicReference<>(executionInput);
-        PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(),
-                transformedQuery -> {
-                    // if they change the original query in the pre-parser, then we want to see it downstream from then on
-                    executionInputRef.set(executionInput.transform(bldr -> bldr.query(transformedQuery)));
-                    return parseAndValidate(executionInputRef.get(), graphQLSchema, instrumentationState);
-                });
+        Function<ExecutionInput, PreparsedDocumentEntry> computeFunction = transformedInput -> {
+            // if they change the original query in the pre-parser, then we want to see it downstream from then on
+            executionInputRef.set(transformedInput);
+            return parseAndValidate(executionInputRef.get(), graphQLSchema, instrumentationState);
+        };
+        PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.getDocument(executionInput,computeFunction);
         if (preparsedDoc.hasErrors()) {
             return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDoc.getErrors()));
         }
-
         return execute(executionInputRef.get(), preparsedDoc.getDocument(), graphQLSchema, instrumentationState);
     }
 

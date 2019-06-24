@@ -7,7 +7,7 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLTypeUtil;
 
 /**
- * QueryTraversal helper class that maintains traversal context as
+ * QueryTraverser helper class that maintains traversal context as
  * the query traversal algorithm traverses down the Selection AST
  */
 @Internal

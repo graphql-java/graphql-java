@@ -317,6 +317,21 @@ class SchemaDiffTest extends Specification {
 
     }
 
+    def "changed nested input object field types"() {
+        DiffSet diffSet = diffSet("schema_changed_nested_input_object_fields.graphqls")
+
+        def diff = new SchemaDiff()
+        diff.diffSchema(diffSet, chainedReporter)
+
+        expect:
+        reporter.breakageCount == 1
+        reporter.breakages[0].category == DiffCategory.INVALID
+        reporter.breakages[0].typeName == 'NestedInput'
+        reporter.breakages[0].typeKind == TypeKind.InputObject
+        reporter.breakages[0].fieldName == 'nestedInput'
+
+    }
+
     def "changed input object field types"() {
         DiffSet diffSet = diffSet("schema_changed_input_object_fields.graphqls")
 

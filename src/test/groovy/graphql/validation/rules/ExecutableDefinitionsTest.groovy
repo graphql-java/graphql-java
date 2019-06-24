@@ -27,7 +27,7 @@ class ExecutableDefinitionsTest extends Specification {
     }
 
     def 'Executable Definitions with operation and fragment'() {
-        def query = """\
+        def query = """
               query Foo {
                 dog {
                   name
@@ -47,7 +47,7 @@ class ExecutableDefinitionsTest extends Specification {
     }
 
     def 'Executable Definitions with type definition'() {
-        def query = """\
+        def query = """
               query Foo {
                 dog {
                   name
@@ -74,7 +74,7 @@ class ExecutableDefinitionsTest extends Specification {
     }
 
     def 'Executable Definitions with schema definition'() {
-        def query = """\
+        def query = """
               schema {
                 query: QueryRoot
               }
@@ -94,7 +94,7 @@ class ExecutableDefinitionsTest extends Specification {
     }
 
     def 'Executable Definitions with input value type definition'() {
-        def query = """\
+        def query = """
             type QueryRoot {               
                 getDog(id: String!): String
             }

@@ -5,19 +5,19 @@ import graphql.language.Document
 import graphql.language.Field
 import graphql.language.NodeUtil
 import graphql.language.OperationDefinition
-import graphql.language.SelectionSet
 import graphql.language.TypeName
 import graphql.parser.Parser
 import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLUnionType
+import graphql.util.TraversalControl
 import spock.lang.Specification
 
 import static graphql.language.AstPrinter.printAstCompact
 import static graphql.language.Field.newField
 import static graphql.util.TreeTransformerUtil.changeNode
-import static graphql.util.TreeTransformerUtil.changeParentNode
 import static graphql.util.TreeTransformerUtil.deleteNode
+import static graphql.util.TreeTransformerUtil.insertAfter
 
 class QueryTransformerTest extends Specification {
     Document createQuery(String query) {
@@ -114,12 +114,7 @@ class QueryTransformerTest extends Specification {
             @Override
             void visitField(QueryVisitorFieldEnvironment env) {
                 if (env.fieldDefinition.type.name == "MidA") {
-                    changeParentNode(env.getTraverserContext(), { node ->
-                        def newChild = newField("addedField").build()
-                        def newChildren = node.getNamedChildren()
-                                .transform({ it.child(SelectionSet.CHILD_SELECTIONS, newChild) })
-                        node.withNewChildren(newChildren)
-                    })
+                    insertAfter(env.getTraverserContext(), newField("addedField").build())
                 }
             }
         }
@@ -206,7 +201,7 @@ class QueryTransformerTest extends Specification {
         when:
         queryTransformer.transform(visitor)
         then:
-        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "root" && it.fieldDefinition.type.name == "Root" && it.parentType.name == "Query" })
+        1 * visitor.visitFieldWithControl({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "root" && it.fieldDefinition.type.name == "Root" && it.parentType.name == "Query" }) >> TraversalControl.CONTINUE
         1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironment it -> it.fragmentSpread.name == "frag" })
         0 * _
     }
@@ -234,15 +229,12 @@ class QueryTransformerTest extends Specification {
         def visitor = new QueryVisitorStub() {
             @Override
             void visitField(QueryVisitorFieldEnvironment env) {
+                if (env.field.name == "leafA") {
+                    deleteNode(env.traverserContext)
+                }
                 if (env.fieldDefinition.type.name == "String") {
-                    changeParentNode(env.traverserContext, { node ->
-
-                        node.withNewChildren(node.namedChildren.transform({
-                            it.removeChild(SelectionSet.CHILD_SELECTIONS, 0)
-                            it.child(SelectionSet.CHILD_SELECTIONS, newField("newChild1").build())
-                            it.child(SelectionSet.CHILD_SELECTIONS, newField("newChild2").build())
-                        }))
-                    })
+                    insertAfter(env.traverserContext, newField("newChild1").build())
+                    insertAfter(env.traverserContext, newField("newChild2").build())
                 }
             }
 

@@ -29,6 +29,7 @@ import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
+import graphql.schema.GraphqlTypeComparatorRegistry;
 import graphql.util.FpKit;
 
 import java.util.ArrayList;
@@ -47,6 +48,7 @@ import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -81,18 +83,17 @@ public class SchemaGeneratorHelper {
         }
         if (requiredType instanceof GraphQLScalarType) {
             result = parseLiteral(value, (GraphQLScalarType) requiredType);
-        } else if (value instanceof EnumValue && requiredType instanceof GraphQLEnumType) {
+        } else if (requiredType instanceof GraphQLEnumType && value instanceof EnumValue) {
             result = ((EnumValue) value).getName();
+        } else if (requiredType instanceof GraphQLEnumType && value instanceof StringValue) {
+            result = ((StringValue) value).getValue();
         } else if (value instanceof ArrayValue && isList(requiredType)) {
-            ArrayValue arrayValue = (ArrayValue) value;
-            GraphQLType wrappedType = unwrapOne(requiredType);
-            result = arrayValue.getValues().stream()
-                    .map(item -> this.buildValue(item, wrappedType)).collect(Collectors.toList());
+            result = buildArrayValue(requiredType, (ArrayValue) value);
         } else if (value instanceof ObjectValue && requiredType instanceof GraphQLInputObjectType) {
             result = buildObjectValue((ObjectValue) value, (GraphQLInputObjectType) requiredType);
         } else if (!(value instanceof NullValue)) {
             assertShouldNeverHappen(
-                    "cannot build value of %s from %s", requiredType.getName(), String.valueOf(value));
+                    "cannot build value of type %s from object class %s with instance %s", requiredType.getName(), value.getClass().getSimpleName(), String.valueOf(value));
         }
         return result;
     }
@@ -102,6 +103,14 @@ public class SchemaGeneratorHelper {
             return null;
         }
         return requiredType.getCoercing().parseLiteral(value);
+    }
+
+    public Object buildArrayValue(GraphQLType requiredType, ArrayValue arrayValue) {
+        Object result;
+        GraphQLType wrappedType = unwrapOne(requiredType);
+        result = arrayValue.getValues().stream()
+                .map(item -> this.buildValue(item, wrappedType)).collect(toList());
+        return result;
     }
 
 
@@ -191,7 +200,7 @@ public class SchemaGeneratorHelper {
         // get rid of null values
         List<Value> nonNullValueList = value.getValues().stream()
                 .filter(v -> !(v instanceof NullValue))
-                .collect(Collectors.toList());
+                .collect(toList());
 
         // [null, null, ...] unwrapped is null
         if (nonNullValueList.isEmpty()) {
@@ -218,16 +227,17 @@ public class SchemaGeneratorHelper {
     }
 
     // builds directives from a type and its extensions
-    public GraphQLDirective buildDirective(Directive directive, Set<GraphQLDirective> directiveDefinitions, DirectiveLocation directiveLocation) {
+    public GraphQLDirective buildDirective(Directive directive, Set<GraphQLDirective> directiveDefinitions, DirectiveLocation directiveLocation, GraphqlTypeComparatorRegistry comparatorRegistry) {
         Optional<GraphQLDirective> directiveDefinition = directiveDefinitions.stream().filter(dd -> dd.getName().equals(directive.getName())).findFirst();
         GraphQLDirective.Builder builder = GraphQLDirective.newDirective()
                 .name(directive.getName())
                 .description(buildDescription(directive, null))
+                .comparatorRegistry(comparatorRegistry)
                 .validLocations(directiveLocation);
 
         List<GraphQLArgument> arguments = directive.getArguments().stream()
                 .map(arg -> buildDirectiveArgument(arg, directiveDefinition))
-                .collect(Collectors.toList());
+                .collect(toList());
 
         if (directiveDefinition.isPresent()) {
             arguments = transferMissingArguments(arguments, directiveDefinition.get());
@@ -292,7 +302,7 @@ public class SchemaGeneratorHelper {
 
         List<GraphQLArgument> arguments = directiveDefinition.getInputValueDefinitions().stream()
                 .map(arg -> buildDirectiveArgumentFromDefinition(arg, inputTypeFactory))
-                .collect(Collectors.toList());
+                .collect(toList());
         arguments.forEach(builder::argument);
         return builder.build();
     }
@@ -312,7 +322,7 @@ public class SchemaGeneratorHelper {
     private List<DirectiveLocation> buildLocations(DirectiveDefinition directiveDefinition) {
         return directiveDefinition.getDirectiveLocations().stream()
                 .map(dl -> DirectiveLocation.valueOf(dl.getName().toUpperCase()))
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
 }

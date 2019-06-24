@@ -7,15 +7,18 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.directivesByName;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
-public class InlineFragment extends AbstractNode<InlineFragment> implements Selection<InlineFragment>, SelectionSetContainer<InlineFragment> {
+public class InlineFragment extends AbstractNode<InlineFragment> implements Selection<InlineFragment>, SelectionSetContainer<InlineFragment>, DirectivesContainer<InlineFragment> {
     private final TypeName typeCondition;
     private final List<Directive> directives;
     private final SelectionSet selectionSet;
@@ -30,8 +33,9 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
                              SelectionSet selectionSet,
                              SourceLocation sourceLocation,
                              List<Comment> comments,
-                             IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+                             IgnoredChars ignoredChars,
+                             Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.typeCondition = typeCondition;
         this.directives = directives;
         this.selectionSet = selectionSet;
@@ -43,7 +47,7 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
      * @param typeCondition the type condition of the inline fragment
      */
     public InlineFragment(TypeName typeCondition) {
-        this(typeCondition, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(typeCondition, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     /**
@@ -53,7 +57,7 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
      * @param selectionSet  of the inline fragment
      */
     public InlineFragment(TypeName typeCondition, SelectionSet selectionSet) {
-        this(typeCondition, new ArrayList<>(), selectionSet, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(typeCondition, new ArrayList<>(), selectionSet, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public TypeName getTypeCondition() {
@@ -126,8 +130,8 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
                 deepCopy(selectionSet),
                 getSourceLocation(),
                 getComments(),
-                getIgnoredChars()
-        );
+                getIgnoredChars(),
+                getAdditionalData());
     }
 
     @Override
@@ -161,6 +165,7 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         private List<Directive> directives = new ArrayList<>();
         private SelectionSet selectionSet;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -173,6 +178,7 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
             this.directives = existing.getDirectives();
             this.selectionSet = existing.getSelectionSet();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
 
@@ -206,9 +212,19 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public InlineFragment build() {
-            InlineFragment inlineFragment = new InlineFragment(typeCondition, directives, selectionSet, sourceLocation, comments, ignoredChars);
-            return inlineFragment;
+            return new InlineFragment(typeCondition, directives, selectionSet, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

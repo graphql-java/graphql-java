@@ -4,8 +4,12 @@ import graphql.Internal;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
+
+import static graphql.Assert.assertNotNull;
 
 @PublicApi
 public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
@@ -17,9 +21,10 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
                                           Description description,
                                           SourceLocation sourceLocation,
                                           List<Comment> comments,
-                                          IgnoredChars ignoredChars) {
+                                          IgnoredChars ignoredChars,
+                                          Map<String, String> additionalData) {
         super(name, enumValueDefinitions, directives, description,
-                sourceLocation, comments, ignoredChars);
+                sourceLocation, comments, ignoredChars, additionalData);
     }
 
     @Override
@@ -30,7 +35,7 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
                 getDescription(),
                 getSourceLocation(),
                 getComments(),
-                getIgnoredChars());
+                getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -60,6 +65,7 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
         private List<EnumValueDefinition> enumValueDefinitions;
         private List<Directive> directives;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -72,6 +78,7 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
             this.directives = existing.getDirectives();
             this.enumValueDefinitions = existing.getEnumValueDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -109,15 +116,25 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public EnumTypeExtensionDefinition build() {
-            EnumTypeExtensionDefinition enumTypeDefinition = new EnumTypeExtensionDefinition(name,
+            return new EnumTypeExtensionDefinition(name,
                     enumValueDefinitions,
                     directives,
                     description,
                     sourceLocation,
                     comments,
-                    ignoredChars);
-            return enumTypeDefinition;
+                    ignoredChars, additionalData);
         }
     }
 

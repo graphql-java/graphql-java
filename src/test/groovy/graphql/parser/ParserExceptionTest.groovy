@@ -34,15 +34,15 @@ fragment X on SomeType {
         then:
         def e = thrown(InvalidSyntaxException)
 
-        e.location.line == 14
-        e.location.column == 4
-        e.sourcePreview == '''    fragField1
+        e.location.line == 13
+        e.location.column == 5
+        e.sourcePreview == '''fragment X on SomeType {
+    fragField1
     fragField2(syntaxErrorHere
     fragField3
     fragField4
     fragField5
 }
-        
 '''
     }
 
@@ -57,16 +57,16 @@ fragment X on SomeType {
         then:
         def e = thrown(InvalidSyntaxException)
 
-        e.location.line == 7
-        e.location.column == 4
+        e.location.line == 6
+        e.location.column == 5
         e.location.sourceName == "part2"
-        e.sourcePreview == '''    fragField1
+        e.sourcePreview == '''fragment X on SomeType {
+    fragField1
     fragField2(syntaxErrorHere
     fragField3
     fragField4
     fragField5
 }
-        
 '''
     }
 
@@ -84,8 +84,8 @@ fragment X on SomeType {
         def e = thrown(InvalidSyntaxException)
         print e
 
-        e.location.line == 3
-        e.location.column == 12
+        e.location.line == 2
+        e.location.column == 13
         e.location.sourceName == "namedSource"
     }
 
@@ -97,7 +97,7 @@ fragment X on SomeType {
         def e = thrown(InvalidSyntaxException)
 
         e.location.line == 1
-        e.location.column == 39
+        e.location.column == 40
         e.location.sourceName == null
     }
 

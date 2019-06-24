@@ -164,9 +164,7 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
     }
 
     @PublicApi
-    public static class Builder {
-        private String name;
-        private String description;
+    public static class Builder extends GraphqlTypeBuilder {
         private Object value;
         private String deprecationReason;
         private EnumValueDefinition definition;
@@ -183,13 +181,21 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
             this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
 
+        @Override
         public Builder name(String name) {
-            this.name = name;
+            super.name(name);
             return this;
         }
 
+        @Override
         public Builder description(String description) {
-            this.description = description;
+            super.description(description);
+            return this;
+        }
+
+        @Override
+        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
+            super.comparatorRegistry(comparatorRegistry);
             return this;
         }
 

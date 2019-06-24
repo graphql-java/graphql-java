@@ -5,6 +5,7 @@ import graphql.cachecontrol.CacheControl;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
+import graphql.execution.directives.QueryDirectives;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -178,6 +179,15 @@ public interface DataFetchingEnvironment {
      * @return the {@link DataFetchingFieldSelectionSet} for the current data fetch operation
      */
     DataFetchingFieldSelectionSet getSelectionSet();
+
+    /**
+     * This gives you access to the directives related to this field
+     *
+     * @return the {@link graphql.execution.directives.QueryDirectives} for the currently executing field
+     *
+     * @see graphql.execution.directives.QueryDirectives for more information
+     */
+    QueryDirectives getQueryDirectives();
 
     /**
      * This allows you to retrieve a named dataloader from the underlying {@link org.dataloader.DataLoaderRegistry}

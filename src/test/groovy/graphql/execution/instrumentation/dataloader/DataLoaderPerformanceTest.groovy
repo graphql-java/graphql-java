@@ -1,7 +1,7 @@
 package graphql.execution.instrumentation.dataloader
 
+import graphql.DeferredExecutionResult
 import graphql.ExecutionInput
-import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.execution.defer.CapturingSubscriber
 import graphql.execution.instrumentation.Instrumentation
@@ -10,9 +10,10 @@ import org.dataloader.DataLoaderRegistry
 import org.reactivestreams.Publisher
 import spock.lang.Specification
 
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.expectedInitialDeferredData
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.expectedInitialExpensiveDeferredData
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getDeferredQuery
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedData
-import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedDeferredData
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedExpensiveData
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedExpensiveDeferredData
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedListOfDeferredData
@@ -103,7 +104,7 @@ class DataLoaderPerformanceTest extends Specification {
         def result = graphQL.execute(executionInput)
 
         Map<Object, Object> extensions = result.getExtensions()
-        Publisher<ExecutionResult> deferredResultStream = (Publisher<ExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS)
+        Publisher<DeferredExecutionResult> deferredResultStream = (Publisher<DeferredExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS)
 
         def subscriber = new CapturingSubscriber()
         subscriber.subscribeTo(deferredResultStream)
@@ -112,7 +113,7 @@ class DataLoaderPerformanceTest extends Specification {
 
         then:
 
-        result.data == expectedDeferredData
+        result.data == expectedInitialDeferredData
 
         subscriber.executionResultData == expectedListOfDeferredData
 
@@ -130,7 +131,7 @@ class DataLoaderPerformanceTest extends Specification {
         def result = graphQL.execute(executionInput)
 
         Map<Object, Object> extensions = result.getExtensions()
-        Publisher<ExecutionResult> deferredResultStream = (Publisher<ExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS)
+        Publisher<DeferredExecutionResult> deferredResultStream = (Publisher<DeferredExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS)
 
         def subscriber = new CapturingSubscriber()
         subscriber.subscribeTo(deferredResultStream)
@@ -139,7 +140,7 @@ class DataLoaderPerformanceTest extends Specification {
 
         then:
 
-        result.data == expectedDeferredData
+        result.data == expectedInitialExpensiveDeferredData
 
         subscriber.executionResultData == expectedExpensiveDeferredData
 

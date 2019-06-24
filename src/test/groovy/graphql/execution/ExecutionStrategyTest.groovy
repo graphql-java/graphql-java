@@ -62,7 +62,7 @@ class ExecutionStrategyTest extends Specification {
         def variables = [arg1: "value1"]
         new ExecutionContext(SimpleInstrumentation.INSTANCE, executionId, schema ?: StarWarsSchema.starWarsSchema, null,
                 executionStrategy, executionStrategy, executionStrategy,
-                null, null, null,
+                [:], null, null,
                 variables, "context", "root", new DataLoaderRegistry(), null, Collections.emptyList())
     }
 
@@ -319,7 +319,7 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(typeInfo)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .source(OptionalLong.empty())
-                .fields(mergedSelectionSet  (["fld": []]))
+                .fields(mergedSelectionSet(["fld": []]))
                 .build()
 
         when:
@@ -707,6 +707,29 @@ class ExecutionStrategyTest extends Specification {
         executionContext.getErrors()[0].locations == [new SourceLocation(7, 20)]
         executionContext.getErrors()[0].message == "bad foo"
         executionContext.getErrors()[0].path == ["parent", "child", "foo"]
+    }
+
+    def "#1558 forward localContext on nonBoxed return from DataFetcher"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        def fieldType = list(Scalars.GraphQLLong)
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
+        def field = Field.newField("parent").sourceLocation(new SourceLocation(5, 10)).build()
+        def localContext = "localContext"
+        def parameters = newParameters()
+                .path(ExecutionPath.fromList(["parent"]))
+                .localContext(localContext)
+                .field(mergedField(field))
+                .fields(mergedSelectionSet(["parent": [mergedField(field)]]))
+                .executionStepInfo(executionStepInfo)
+                .build()
+
+        when:
+        def fetchedValue = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters, new Object())
+
+        then:
+        fetchedValue.localContext == localContext
     }
 
     def "#820 processes DataFetcherResult just message"() {

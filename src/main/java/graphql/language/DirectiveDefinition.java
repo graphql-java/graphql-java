@@ -7,10 +7,14 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> implements SDLDefinition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
@@ -29,9 +33,9 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
                                   List<DirectiveLocation> directiveLocations,
                                   SourceLocation sourceLocation,
                                   List<Comment> comments,
-                                  IgnoredChars ignoredChars
-    ) {
-        super(sourceLocation, comments, ignoredChars);
+                                  IgnoredChars ignoredChars,
+                                  Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.description = description;
         this.inputValueDefinitions = inputValueDefinitions;
@@ -44,7 +48,7 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
      * @param name of the directive definition
      */
     public DirectiveDefinition(String name) {
-        this(name, null, new ArrayList<>(), new ArrayList<>(), null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, null, new ArrayList<>(), new ArrayList<>(), null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -110,7 +114,8 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
                 deepCopy(directiveLocations),
                 getSourceLocation(),
                 getComments(),
-                getIgnoredChars());
+                getIgnoredChars(),
+                getAdditionalData());
     }
 
     @Override
@@ -145,6 +150,7 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
         private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
         private List<DirectiveLocation> directiveLocations = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -157,6 +163,7 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
             this.inputValueDefinitions = existing.getInputValueDefinitions();
             this.directiveLocations = existing.getDirectiveLocations();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -204,9 +211,19 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public DirectiveDefinition build() {
-            DirectiveDefinition directiveDefinition = new DirectiveDefinition(name, description, inputValueDefinitions, directiveLocations, sourceLocation, comments, ignoredChars);
-            return directiveDefinition;
+            return new DirectiveDefinition(name, description, inputValueDefinitions, directiveLocations, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

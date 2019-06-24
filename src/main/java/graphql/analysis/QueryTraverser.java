@@ -35,7 +35,7 @@ import static java.util.Collections.singletonList;
  * visitField calls.
  */
 @PublicApi
-public class QueryTraversal {
+public class QueryTraverser {
 
     private final Collection<? extends Node> roots;
     private final GraphQLSchema schema;
@@ -44,7 +44,7 @@ public class QueryTraversal {
 
     private final GraphQLCompositeType rootParentType;
 
-    private QueryTraversal(GraphQLSchema schema,
+    private QueryTraverser(GraphQLSchema schema,
                            Document document,
                            String operation,
                            Map<String, Object> variables) {
@@ -57,7 +57,7 @@ public class QueryTraversal {
         this.rootParentType = getRootTypeFromOperation(getOperationResult.operationDefinition);
     }
 
-    private QueryTraversal(GraphQLSchema schema,
+    private QueryTraverser(GraphQLSchema schema,
                            Node root,
                            GraphQLCompositeType rootParentType,
                            Map<String, FragmentDefinition> fragmentsByName,
@@ -178,7 +178,7 @@ public class QueryTraversal {
         return nodeTraverser.depthFirst(nodeVisitorWithTypeTracking, roots);
     }
 
-    public static Builder newQueryTraversal() {
+    public static Builder newQueryTraverser() {
         return new Builder();
     }
 
@@ -282,14 +282,14 @@ public class QueryTraversal {
         }
 
         /**
-         * @return a built {@link graphql.analysis.QueryTraversal} object
+         * @return a built {@link QueryTraverser} object
          */
-        public QueryTraversal build() {
+        public QueryTraverser build() {
             checkState();
             if (document != null) {
-                return new QueryTraversal(schema, document, operation, variables);
+                return new QueryTraverser(schema, document, operation, variables);
             } else {
-                return new QueryTraversal(schema, root, rootParentType, fragmentsByName, variables);
+                return new QueryTraverser(schema, root, rootParentType, fragmentsByName, variables);
             }
         }
 

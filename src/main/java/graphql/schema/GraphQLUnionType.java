@@ -16,9 +16,7 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
-import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
-import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
 
 /**
@@ -76,7 +74,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
 
         this.name = name;
         this.description = description;
-        this.types = sortGraphQLTypes(types);
+        this.types = types;
         this.typeResolver = typeResolver;
         this.definition = definition;
         this.directives = directives;
@@ -153,9 +151,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
     }
 
     @PublicApi
-    public static class Builder {
-        private String name;
-        private String description;
+    public static class Builder extends GraphqlTypeBuilder {
         private TypeResolver typeResolver;
         private UnionTypeDefinition definition;
         private final Map<String, GraphQLOutputType> types = new LinkedHashMap<>();
@@ -173,13 +169,21 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
             this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
 
+        @Override
         public Builder name(String name) {
-            this.name = name;
+            super.name(name);
             return this;
         }
 
+        @Override
         public Builder description(String description) {
-            this.description = description;
+            super.description(description);
+            return this;
+        }
+
+        @Override
+        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
+            super.comparatorRegistry(comparatorRegistry);
             return this;
         }
 
@@ -264,7 +268,13 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         }
 
         public GraphQLUnionType build() {
-            return new GraphQLUnionType(name, description, valuesToList(types), typeResolver, valuesToList(directives), definition);
+            return new GraphQLUnionType(
+                    name,
+                    description,
+                    sort(types, GraphQLUnionType.class, GraphQLOutputType.class),
+                    typeResolver,
+                    sort(directives, GraphQLUnionType.class, GraphQLDirective.class),
+                    definition);
         }
     }
 }

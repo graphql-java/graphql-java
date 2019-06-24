@@ -17,9 +17,7 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
-import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
-import static graphql.util.FpKit.valuesToList;
 import static java.lang.String.format;
 
 /**
@@ -75,17 +73,18 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
 
         this.name = name;
         this.description = description;
-        buildDefinitionMap(sortGraphQLTypes(fieldDefinitions));
         this.typeResolver = typeResolver;
         this.definition = definition;
         this.directives = directives;
+        buildDefinitionMap(fieldDefinitions);
     }
 
     private void buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
         for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
             String name = fieldDefinition.getName();
-            if (fieldDefinitionsByName.containsKey(name))
+            if (fieldDefinitionsByName.containsKey(name)) {
                 throw new AssertException(format("Duplicated definition for field '%s' in interface '%s'", name, this.name));
+            }
             fieldDefinitionsByName.put(name, fieldDefinition);
         }
     }
@@ -170,9 +169,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
 
 
     @PublicApi
-    public static class Builder {
-        private String name;
-        private String description;
+    public static class Builder extends GraphqlTypeBuilder {
         private TypeResolver typeResolver;
         private InterfaceTypeDefinition definition;
         private final Map<String, GraphQLFieldDefinition> fields = new LinkedHashMap<>();
@@ -190,13 +187,21 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
             this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
 
+        @Override
         public Builder name(String name) {
-            this.name = name;
+            super.name(name);
             return this;
         }
 
+        @Override
         public Builder description(String description) {
-            this.description = description;
+            super.description(description);
+            return this;
+        }
+
+        @Override
+        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
+            super.comparatorRegistry(comparatorRegistry);
             return this;
         }
 
@@ -298,7 +303,13 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         }
 
         public GraphQLInterfaceType build() {
-            return new GraphQLInterfaceType(name, description, valuesToList(fields), typeResolver, valuesToList(directives), definition);
+            return new GraphQLInterfaceType(
+                    name,
+                    description,
+                    sort(fields, GraphQLInterfaceType.class, GraphQLFieldDefinition.class),
+                    typeResolver,
+                    sort(directives, GraphQLInterfaceType.class, GraphQLDirective.class),
+                    definition);
         }
     }
 }

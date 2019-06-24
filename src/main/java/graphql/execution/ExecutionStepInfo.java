@@ -126,7 +126,7 @@ public class ExecutionStepInfo {
      * @return the resolved arguments that have been passed to this field
      */
     public Map<String, Object> getArguments() {
-        return new LinkedHashMap<>(arguments);
+        return Collections.unmodifiableMap(arguments);
     }
 
     /**
@@ -221,12 +221,13 @@ public class ExecutionStepInfo {
         GraphQLObjectType fieldContainer;
         MergedField field;
         ExecutionPath path;
-        Map<String, Object> arguments = new LinkedHashMap<>();
+        Map<String, Object> arguments;
 
         /**
          * @see ExecutionStepInfo#newExecutionStepInfo()
          */
         private Builder() {
+            arguments = Collections.emptyMap();
         }
 
         private Builder(ExecutionStepInfo existing) {
@@ -265,7 +266,7 @@ public class ExecutionStepInfo {
         }
 
         public Builder arguments(Map<String, Object> arguments) {
-            this.arguments = new LinkedHashMap<>(arguments == null ? Collections.emptyMap() : arguments);
+            this.arguments = arguments == null ? Collections.emptyMap() : arguments;
             return this;
         }
 

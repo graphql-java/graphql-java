@@ -8,10 +8,15 @@ import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class SelectionSet extends AbstractNode<SelectionSet> {
@@ -21,8 +26,8 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
     public static final String CHILD_SELECTIONS = "selections";
 
     @Internal
-    protected SelectionSet(Collection<? extends Selection> selections, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+    protected SelectionSet(Collection<? extends Selection> selections, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.selections.addAll(selections);
     }
 
@@ -32,18 +37,31 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
      * @param selections the list of selection in this selection set
      */
     public SelectionSet(Collection<? extends Selection> selections) {
-        this(selections, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(selections, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public List<Selection> getSelections() {
         return new ArrayList<>(selections);
     }
 
+    /**
+     * Returns a list of selections of the specific type.  It uses {@link java.lang.Class#isAssignableFrom(Class)} for the test
+     *
+     * @param selectionClass the selection class
+     * @param <T>            the type of selection
+     *
+     * @return a list of selections of that class or empty list
+     */
+    public <T extends Selection> List<T> getSelectionsOfType(Class<T> selectionClass) {
+        return selections.stream()
+                .filter(d -> selectionClass.isAssignableFrom(d.getClass()))
+                .map(selectionClass::cast)
+                .collect(Collectors.toList());
+    }
+
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
-        result.addAll(selections);
-        return result;
+        return new ArrayList<>(selections);
     }
 
     @Override
@@ -69,15 +87,12 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
             return false;
         }
 
-        SelectionSet that = (SelectionSet) o;
-
         return true;
-
     }
 
     @Override
     public SelectionSet deepCopy() {
-        return new SelectionSet(deepCopy(selections), getSourceLocation(), getComments(), getIgnoredChars());
+        return new SelectionSet(deepCopy(selections), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -112,6 +127,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -121,6 +137,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
             this.comments = existing.getComments();
             this.selections = existing.getSelections();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
         public Builder selections(Collection<? extends Selection> selections) {
@@ -148,9 +165,18 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
         public SelectionSet build() {
-            SelectionSet selectionSet = new SelectionSet(selections, sourceLocation, comments, ignoredChars);
-            return selectionSet;
+            return new SelectionSet(selections, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

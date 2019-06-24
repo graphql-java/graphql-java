@@ -3,11 +3,11 @@ package graphql.analysis;
 import graphql.PublicApi;
 
 /**
- * Used by {@link QueryTraversal} to reduce the fields of a Document (or part of it) to a single value.
+ * Used by {@link QueryTraverser} to reduce the fields of a Document (or part of it) to a single value.
  * <p>
- * How this happens in detail (pre vs post-order for example) is defined by {@link QueryTraversal}.
+ * How this happens in detail (pre vs post-order for example) is defined by {@link QueryTraverser}.
  * <p>
- * See {@link QueryTraversal#reducePostOrder(QueryReducer, Object)} and {@link QueryTraversal#reducePreOrder(QueryReducer, Object)}
+ * See {@link QueryTraverser#reducePostOrder(QueryReducer, Object)} and {@link QueryTraverser#reducePreOrder(QueryReducer, Object)}
  */
 @PublicApi
 @FunctionalInterface

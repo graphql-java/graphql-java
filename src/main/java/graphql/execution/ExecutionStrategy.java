@@ -9,6 +9,7 @@ import graphql.SerializationError;
 import graphql.TrivialDataFetcher;
 import graphql.TypeMismatchError;
 import graphql.UnresolvedTypeError;
+import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
@@ -205,6 +206,13 @@ public abstract class ExecutionStrategy {
         return result;
     }
 
+    protected CompletableFuture<FieldValueInfo> resolveFieldWithInfoToNull(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        FetchedValue fetchedValue = FetchedValue.newFetchedValue().build();
+        FieldValueInfo fieldValueInfo = completeField(executionContext, parameters, fetchedValue);
+        return CompletableFuture.completedFuture(fieldValueInfo);
+    }
+
+
     /**
      * Called to fetch a value for a field from the {@link DataFetcher} associated with the field
      * {@link GraphQLFieldDefinition}.
@@ -227,9 +235,12 @@ public abstract class ExecutionStrategy {
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
 
+        QueryDirectivesImpl queryDirectives = new QueryDirectivesImpl(field, executionContext.getGraphQLSchema(), executionContext.getVariables());
+
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, parameters.getField());
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
+
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(parameters.getSource())
@@ -241,6 +252,7 @@ public abstract class ExecutionStrategy {
                 .executionStepInfo(executionStepInfo)
                 .parentType(parentType)
                 .selectionSet(fieldCollector)
+                .queryDirectives(queryDirectives)
                 .build();
 
         DataFetcher dataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);
@@ -309,6 +321,7 @@ public abstract class ExecutionStrategy {
             return FetchedValue.newFetchedValue()
                     .fetchedValue(UnboxPossibleOptional.unboxPossibleOptional(result))
                     .rawFetchedValue(result)
+                    .localContext(parameters.getLocalContext())
                     .build();
         }
     }
@@ -506,13 +519,16 @@ public abstract class ExecutionStrategy {
             NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, stepInfoForListElement);
 
             int finalIndex = index;
+            FetchedValue value = unboxPossibleDataFetcherResult(executionContext, parameters, item);
+
             ExecutionStrategyParameters newParameters = parameters.transform(builder ->
                     builder.executionStepInfo(stepInfoForListElement)
                             .nonNullFieldValidator(nonNullableFieldValidator)
                             .listSize(values.size())
+                            .localContext(value.getLocalContext())
                             .currentListIndex(finalIndex)
                             .path(indexedPath)
-                            .source(item)
+                            .source(value.getFetchedValue())
             );
             fieldValueInfos.add(completeValue(executionContext, newParameters));
             index++;
@@ -772,7 +788,7 @@ public abstract class ExecutionStrategy {
      * @param executionContext the execution context  in play
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param fieldDefinition  the field definition to build type info for
-     * @param fieldContainer  the field container
+     * @param fieldContainer   the field container
      *
      * @return a new type info
      */
@@ -781,7 +797,8 @@ public abstract class ExecutionStrategy {
                                                         GraphQLFieldDefinition fieldDefinition,
                                                         GraphQLObjectType fieldContainer) {
         GraphQLOutputType fieldType = fieldDefinition.getType();
-        List<Argument> fieldArgs = parameters.getField().getArguments();
+        MergedField field = parameters.getField();
+        List<Argument> fieldArgs = field.getArguments();
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables());
 
@@ -789,7 +806,7 @@ public abstract class ExecutionStrategy {
                 .type(fieldType)
                 .fieldDefinition(fieldDefinition)
                 .fieldContainer(fieldContainer)
-                .field(parameters.getField())
+                .field(field)
                 .path(parameters.getPath())
                 .parentInfo(parameters.getExecutionStepInfo())
                 .arguments(argumentValues)

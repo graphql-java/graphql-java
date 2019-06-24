@@ -87,7 +87,7 @@ class ExecutionTest extends Specification {
         given:
         def query = '''
             subscription {
-                numberChanged(newNumber: 1) {
+                changeNumberSubscribe(clientId: 1) {
                     theNumber
                 }
             }

@@ -17,6 +17,7 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLUnionType
+import graphql.schema.GraphqlTypeComparatorRegistry
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.SchemaTransformer
 import graphql.schema.idl.errors.NotAnInputTypeError
@@ -31,10 +32,27 @@ import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
-import static graphql.TestUtil.schema
 import static graphql.schema.GraphQLList.list
 
 class SchemaGeneratorTest extends Specification {
+
+    def newRuntimeWiring() {
+        return RuntimeWiring.newRuntimeWiring()
+                .comparatorRegistry(GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY)
+    }
+
+    GraphQLSchema schema(String sdl) {
+        def runtimeWiringAsIs = newRuntimeWiring()
+                .comparatorRegistry(GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY)
+                .wiringFactory(TestUtil.mockWiringFactory)
+                .build()
+        return schema(sdl, runtimeWiringAsIs)
+    }
+
+    GraphQLSchema schema(String sdl, RuntimeWiring runtimeWiring) {
+        return TestUtil.schema(sdl, runtimeWiring)
+    }
+
 
     GraphQLType unwrap1Layer(GraphQLType type) {
         if (type instanceof GraphQLNonNull) {
@@ -142,7 +160,6 @@ class SchemaGeneratorTest extends Specification {
         assert queryType.description == " the schema allows the following query\n to be made"
 
     }
-
 
     def "test simple schema generate"() {
 
@@ -641,7 +658,7 @@ class SchemaGeneratorTest extends Specification {
 
         then:
         def err = thrown(NotAnInputTypeError.class)
-        err.message == "The type 'CharacterInput' [@12:13] is not an input type, but was used as an input type [@8:42]"
+        err.message == "The type 'CharacterInput' [@11:13] is not an input type, but was used as an input type [@7:42]"
     }
 
     def "InputType used as type should throw appropriate error #425"() {
@@ -666,7 +683,7 @@ class SchemaGeneratorTest extends Specification {
 
         then:
         def err = thrown(NotAnOutputTypeError.class)
-        err.message == "The type 'CharacterInput' [@12:13] is not an output type, but was used to declare the output type of a field [@8:32]"
+        err.message == "The type 'CharacterInput' [@11:13] is not an output type, but was used to declare the output type of a field [@7:32]"
     }
 
     def "schema with subscription"() {
@@ -866,7 +883,7 @@ class SchemaGeneratorTest extends Specification {
         def enumValuesProvider = new NaturalEnumValuesProvider<ExampleEnum>(ExampleEnum.class)
         when:
 
-        def wiring = RuntimeWiring.newRuntimeWiring()
+        def wiring = newRuntimeWiring()
                 .type("Enum", { TypeRuntimeWiring.Builder it -> it.enumValues(enumValuesProvider) } as UnaryOperator)
                 .build()
         def schema = schema(spec, wiring)
@@ -979,10 +996,7 @@ class SchemaGeneratorTest extends Specification {
         }
         """
         when:
-        def wiring = RuntimeWiring.newRuntimeWiring()
-                .build()
-
-        def schema = schema(spec, wiring)
+        def schema = schema(spec)
         GraphQLEnumType enumType = schema.getType("Enum") as GraphQLEnumType
         GraphQLObjectType queryType = schema.getType("Query") as GraphQLObjectType
 
@@ -1671,7 +1685,7 @@ class SchemaGeneratorTest extends Specification {
         GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
 
         expect:
-        def fetcher = schema.getCodeRegistry().getDataFetcher(type,type.getFieldDefinition("homePlanet"))
+        def fetcher = schema.getCodeRegistry().getDataFetcher(type, type.getFieldDefinition("homePlanet"))
         fetcher instanceof PropertyDataFetcher
 
         PropertyDataFetcher propertyDataFetcher = fetcher as PropertyDataFetcher
@@ -1679,7 +1693,7 @@ class SchemaGeneratorTest extends Specification {
         //
         // no directive - plain name
         //
-        def fetcher2 = schema.getCodeRegistry().getDataFetcher(type,type.getFieldDefinition("name"))
+        def fetcher2 = schema.getCodeRegistry().getDataFetcher(type, type.getFieldDefinition("name"))
         fetcher2 instanceof PropertyDataFetcher
 
         PropertyDataFetcher propertyDataFetcher2 = fetcher2 as PropertyDataFetcher
@@ -1736,9 +1750,38 @@ class SchemaGeneratorTest extends Specification {
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .transformer(transformer)
                 .build()
-        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring);
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring)
         expect:
         assert schema != null
         schema.getDirective("extra") != null
+    }
+
+    def "1509- enum object string default values are handled"() {
+        def spec = '''
+            enum EnumValue {
+                ONE, TWO, THREE
+            }
+            
+            input InputType {
+                value : EnumValue
+            }
+            
+            type Query {
+                fieldWithEnum(arg : InputType = { value : ONE } ) : String
+                fieldWithString(arg : InputType = { value : "ONE" } ) : String
+            }
+        '''
+        def types = new SchemaParser().parse(spec)
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, TestUtil.mockRuntimeWiring)
+        expect:
+        assert schema != null
+        def queryType = schema.getObjectType("Query")
+        def fieldWithEnum = queryType.getFieldDefinition("fieldWithEnum")
+        def arg = fieldWithEnum.getArgument("arg")
+        arg.defaultValue == [value: "ONE"]
+
+        def fieldWithString = queryType.getFieldDefinition("fieldWithString")
+        def arg2 = fieldWithString.getArgument("arg")
+        arg2.defaultValue == [value: "ONE"]
     }
 }

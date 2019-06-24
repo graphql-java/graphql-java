@@ -5,7 +5,10 @@ import graphql.execution.MergedSelectionSet
 import graphql.introspection.Introspection.DirectiveLocation
 import graphql.language.Document
 import graphql.language.Field
+import graphql.language.ObjectTypeDefinition
+import graphql.language.OperationDefinition
 import graphql.language.ScalarTypeDefinition
+import graphql.language.Type
 import graphql.parser.Parser
 import graphql.schema.Coercing
 import graphql.schema.DataFetcher
@@ -209,6 +212,22 @@ class TestUtil {
         new Parser().parseDocument(query)
     }
 
+    static Type parseType(String typeAst) {
+        String docStr = """
+            type X {
+                field : $typeAst
+            }
+        """
+        try {
+            def document = toDocument(docStr)
+            ObjectTypeDefinition objTypeDef = document.getDefinitionsOfType(ObjectTypeDefinition.class)[0]
+            return objTypeDef.fieldDefinitions[0].getType()
+        } catch (Exception ignored) {
+            assert false, "Invalid type AST string : $typeAst"
+            return null
+        }
+    }
+
     static Document toDocument(String query) {
         parseQuery(query)
     }
@@ -223,6 +242,16 @@ class TestUtil {
 
     static MergedSelectionSet mergedSelectionSet(Map<String, MergedField> subFields) {
         return MergedSelectionSet.newMergedSelectionSet().subFields(subFields).build()
+    }
+
+    static Field parseField(String sdlField) {
+        String spec = """ query Foo {
+        $sdlField
+        }
+        """
+        def document = parseQuery(spec)
+        def op = document.getDefinitionsOfType(OperationDefinition.class)[0]
+        return op.getSelectionSet().getSelectionsOfType(Field.class)[0] as Field
     }
 
     static GraphQLDirective[] mockDirectivesWithArguments(String... names) {

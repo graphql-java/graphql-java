@@ -7,10 +7,14 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNullType> {
@@ -20,8 +24,8 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
     public static final String CHILD_TYPE = "type";
 
     @Internal
-    protected NonNullType(Type type, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+    protected NonNullType(Type type, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.type = type;
     }
 
@@ -31,7 +35,7 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
      * @param type the wrapped type
      */
     public NonNullType(Type type) {
-        this(type, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(type, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public Type getType() {
@@ -74,7 +78,7 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
 
     @Override
     public NonNullType deepCopy() {
-        return new NonNullType(deepCopy(type), getSourceLocation(), getComments(), getIgnoredChars());
+        return new NonNullType(deepCopy(type), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -108,6 +112,7 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
         private Type type;
         private List<Comment> comments = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -117,6 +122,7 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
             this.comments = existing.getComments();
             this.type = existing.getType();
             this.ignoredChars = existing.getIgnoredChars();
+            this.additionalData = existing.getAdditionalData();
         }
 
 
@@ -153,9 +159,19 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public NonNullType build() {
-            NonNullType nonNullType = new NonNullType(type, sourceLocation, comments, ignoredChars);
-            return nonNullType;
+            return new NonNullType(type, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

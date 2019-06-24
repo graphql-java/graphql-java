@@ -7,11 +7,15 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
+import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValue>, NamedNode<EnumValue> {
@@ -19,8 +23,8 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
     private final String name;
 
     @Internal
-    protected EnumValue(String name, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
-        super(sourceLocation, comments, ignoredChars);
+    protected EnumValue(String name, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+        super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
     }
 
@@ -31,7 +35,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
      * @param name of the enum value
      */
     public EnumValue(String name) {
-        this(name, null, new ArrayList<>(), IgnoredChars.EMPTY);
+        this(name, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -72,7 +76,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
 
     @Override
     public EnumValue deepCopy() {
-        return new EnumValue(name, getSourceLocation(), getComments(), getIgnoredChars());
+        return new EnumValue(name, getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -106,6 +110,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
         private String name;
         private List<Comment> comments = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
+        private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -114,6 +119,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.name = existing.getName();
+            this.additionalData = existing.getAdditionalData();
         }
 
 
@@ -137,9 +143,19 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
             return this;
         }
 
+        public Builder additionalData(Map<String, String> additionalData) {
+            this.additionalData = assertNotNull(additionalData);
+            return this;
+        }
+
+        public Builder additionalData(String key, String value) {
+            this.additionalData.put(key, value);
+            return this;
+        }
+
+
         public EnumValue build() {
-            EnumValue enumValue = new EnumValue(name, sourceLocation, comments, ignoredChars);
-            return enumValue;
+            return new EnumValue(name, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

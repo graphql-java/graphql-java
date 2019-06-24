@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import static graphql.Directives.DeferDirective;
 import static graphql.ExecutionInput.newExecutionInput;
 import static graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentationOptions.newOptions;
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
@@ -53,7 +54,7 @@ import static java.util.Arrays.asList;
 @SuppressWarnings("unchecked")
 public class HttpMain extends AbstractHandler {
 
-    static final int PORT = 3000;
+    static final int PORT = 8080;
     static GraphQLSchema starWarsSchema = null;
 
     public static void main(String[] args) throws Exception {
@@ -116,9 +117,7 @@ public class HttpMain extends AbstractHandler {
                 .query(parameters.getQuery())
                 .operationName(parameters.getOperationName())
                 .variables(parameters.getVariables())
-                .dataLoaderRegistry(dataLoaderRegistry)
-                ;
-
+                .dataLoaderRegistry(dataLoaderRegistry);
 
 
         //
@@ -161,6 +160,14 @@ public class HttpMain extends AbstractHandler {
 
 
     private void returnAsJson(HttpServletResponse response, ExecutionResult executionResult) throws IOException {
+        Map<Object, Object> extensions = executionResult.getExtensions();
+        if (extensions != null && extensions.containsKey(GraphQL.DEFERRED_RESULTS)) {
+            DeferHttpSupport.sendDeferredResponse(response, executionResult, extensions);
+        }
+        sendNormalResponse(response, executionResult);
+    }
+
+    private void sendNormalResponse(HttpServletResponse response, ExecutionResult executionResult) throws IOException {
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);
         JsonKit.toJson(response, executionResult.toSpecification());
@@ -253,6 +260,7 @@ public class HttpMain extends AbstractHandler {
 
             // finally combine the logical schema with the physical runtime
             starWarsSchema = new SchemaGenerator().makeExecutableSchema(typeRegistry, wiring);
+            starWarsSchema = starWarsSchema.transform(builder -> builder.additionalDirective(DeferDirective));
         }
         return starWarsSchema;
     }

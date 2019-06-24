@@ -6,7 +6,7 @@ import spock.lang.Specification
 class ExecutionResultImplTest extends Specification {
 
     def KNOWN_ERRORS = [new InvalidSyntaxError(new SourceLocation(666, 664), "Yikes")]
-    def EXPECTED_SPEC_ERRORS = [['message': 'Yikes', 'locations': [[line: 666, column: 664]]]]
+    def EXPECTED_SPEC_ERRORS = [['message': 'Yikes', 'locations': [[line: 666, column: 664]], extensions:[classification:"InvalidSyntax"]]]
 
 
     def "data with no errors"() {
@@ -17,6 +17,7 @@ class ExecutionResultImplTest extends Specification {
         def errors = er.getErrors()
         def specMap = er.toSpecification()
         then:
+        er.isDataPresent()
         actual == "hello world"
 
         errors.size() == 0
@@ -33,6 +34,7 @@ class ExecutionResultImplTest extends Specification {
         def errors = er.getErrors()
         def specMap = er.toSpecification()
         then:
+        er.isDataPresent()
         actual == "hello world"
 
         errors.size() == 1
@@ -43,6 +45,9 @@ class ExecutionResultImplTest extends Specification {
         specMap["errors"] == EXPECTED_SPEC_ERRORS
     }
 
+    // According to https://graphql.github.io/graphql-spec/June2018/#sec-Data,
+    // there's a disctinction between `null` data, and no data at all.
+    // See test below
     def "errors and no data"() {
         given:
         def er = new ExecutionResultImpl(KNOWN_ERRORS)
@@ -51,6 +56,7 @@ class ExecutionResultImplTest extends Specification {
         def errors = er.getErrors()
         def specMap = er.toSpecification()
         then:
+        !er.isDataPresent()
         actual == null
 
         errors.size() == 1
@@ -58,6 +64,28 @@ class ExecutionResultImplTest extends Specification {
 
         specMap.size() == 1
         specMap["errors"] == EXPECTED_SPEC_ERRORS
+    }
+
+    // According to https://graphql.github.io/graphql-spec/June2018/#sec-Data,
+    // there's a disctinction between `null` data, and no data at all.
+    // See test above
+    def "errors and (present) null data"() {
+        given:
+        def er = new ExecutionResultImpl(null, KNOWN_ERRORS)
+        when:
+        def actual = er.getData()
+        def errors = er.getErrors()
+        def specMap = er.toSpecification()
+        then:
+        er.isDataPresent()
+        actual == null
+
+        errors.size() == 1
+        errors == KNOWN_ERRORS
+
+        specMap.size() == 2
+        specMap["errors"] == EXPECTED_SPEC_ERRORS
+        specMap["data"] == null
     }
 
     def "can have extensions"() {
@@ -124,8 +152,8 @@ class ExecutionResultImplTest extends Specification {
 
         specMap.size() == 1
         specMap["errors"] == [
-                ['message': 'Yikes', 'locations': [[line: 666, column: 664]]],
-                ['message': 'Yowza', 'locations': [[line: 966, column: 964]]]
+                ['message': 'Yikes', 'locations': [[line: 666, column: 664]], extensions:[classification:"InvalidSyntax"]],
+                ['message': 'Yowza', 'locations': [[line: 966, column: 964]], extensions:[classification:"InvalidSyntax"]]
         ]
     }
 
