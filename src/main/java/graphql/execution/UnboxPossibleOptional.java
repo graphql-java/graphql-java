@@ -20,20 +20,22 @@ public class UnboxPossibleOptional {
 
     static {
         final ServiceLoader<PossibleOptionalUnboxer> unboxers = ServiceLoader.load(PossibleOptionalUnboxer.class,
-                UnboxPossibleOptional.class.getClassLoader() );
+                UnboxPossibleOptional.class.getClassLoader());
         final List<PossibleOptionalUnboxer> listOfUnboxers = new CopyOnWriteArrayList<>();
         unboxers.iterator().forEachRemaining(listOfUnboxers::add);
         UNBOXERS = Collections.unmodifiableList(listOfUnboxers);
     }
 
     public static Object unboxPossibleOptional(Object result) {
-        return UNBOXERS.stream()
-                .filter(unboxer -> unboxer.canUnbox(result))
-                .findFirst()
-                .map(unboxer -> unboxer.unbox(result))
-                .orElse(result);
+        final Optional<PossibleOptionalUnboxer> unboxer = UNBOXERS.stream()
+                .filter(u -> u.canUnbox(result))
+                .findFirst();
+        if (unboxer.isPresent()) {
+            return unboxer.map(u -> u.unbox(result)).orElse(null);
+        } else {
+            return result;
+        }
     }
-
 
     /**
      * Java SPI interface for unboxing possible optional types
@@ -42,6 +44,7 @@ public class UnboxPossibleOptional {
 
         /**
          * Can this unboxer unbox the arg?
+         *
          * @param object to try and unbox
          * @return true if it can be unboxed
          */
@@ -58,11 +61,27 @@ public class UnboxPossibleOptional {
         Object unbox(final Object object);
     }
 
-    public static final class JavaOptionalUnboxer implements PossibleOptionalUnboxer {
+    public static class JavaOptionalUnboxer implements PossibleOptionalUnboxer {
+        private static final List<Class<?>> SUPPORTED_TYPES;
+
+        static {
+            final CopyOnWriteArrayList<Class<?>> classes = new CopyOnWriteArrayList<>();
+            classes.add(Optional.class);
+            classes.add(OptionalInt.class);
+            classes.add(OptionalDouble.class);
+            classes.add(OptionalLong.class);
+
+            SUPPORTED_TYPES = Collections.unmodifiableList(classes);
+        }
 
         @Override
         public boolean canUnbox(final Object object) {
-            return object instanceof Optional;
+            for (Class<?> supportedType : SUPPORTED_TYPES) {
+                if (object != null && supportedType.isAssignableFrom(object.getClass())) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override
