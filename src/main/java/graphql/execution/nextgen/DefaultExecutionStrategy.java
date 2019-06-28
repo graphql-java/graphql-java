@@ -2,8 +2,10 @@ package graphql.execution.nextgen;
 
 import graphql.Internal;
 import graphql.execution.ExecutionContext;
+import graphql.execution.ExecutionStepInfo;
 import graphql.execution.nextgen.result.ExecutionResultNode;
 import graphql.execution.nextgen.result.ObjectExecutionResultNode;
+import graphql.execution.nextgen.result.ResolvedValue;
 import graphql.execution.nextgen.result.ResultNodesUtil;
 import graphql.execution.nextgen.result.RootExecutionResultNode;
 import graphql.util.NodeMultiZipper;
@@ -47,10 +49,11 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
     }
 
     private CompletableFuture<NodeZipper<ExecutionResultNode>> resolveNode(ExecutionContext executionContext, NodeZipper<ExecutionResultNode> unresolvedNode) {
-        FetchedValueAnalysis fetchedValueAnalysis = unresolvedNode.getCurNode().getFetchedValueAnalysis();
-        FieldSubSelection fieldSubSelection = util.createFieldSubSelection(executionContext, fetchedValueAnalysis);
+        ExecutionStepInfo executionStepInfo = unresolvedNode.getCurNode().getExecutionStepInfo();
+        ResolvedValue resolvedValue = unresolvedNode.getCurNode().getResolvedValue();
+        FieldSubSelection fieldSubSelection = util.createFieldSubSelection(executionContext, executionStepInfo, resolvedValue);
         return resolveSubSelection(executionContext, fieldSubSelection)
-                .thenApply(resolvedChildMap -> unresolvedNode.withNewNode(new ObjectExecutionResultNode(fetchedValueAnalysis, resolvedChildMap)));
+                .thenApply(resolvedChildMap -> unresolvedNode.withNewNode(new ObjectExecutionResultNode(executionStepInfo, resolvedValue, resolvedChildMap)));
     }
 
     private CompletableFuture<ExecutionResultNode> resolvedNodesToResultNode(

@@ -3,9 +3,9 @@ package graphql.execution.nextgen.result;
 import graphql.Assert;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
 import graphql.execution.NonNullableFieldWasNullException;
-import graphql.execution.nextgen.FetchedValueAnalysis;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,16 +16,19 @@ import static graphql.Assert.assertNotNull;
 @Internal
 public abstract class ExecutionResultNode {
 
-    private final FetchedValueAnalysis fetchedValueAnalysis;
+    private final ExecutionStepInfo executionStepInfo;
+    private final ResolvedValue resolvedValue;
     private final NonNullableFieldWasNullException nonNullableFieldWasNullException;
     private final List<ExecutionResultNode> children;
     private final List<GraphQLError> errors;
 
-    protected ExecutionResultNode(FetchedValueAnalysis fetchedValueAnalysis,
+    protected ExecutionResultNode(ExecutionStepInfo executionStepInfo,
+                                  ResolvedValue resolvedValue,
                                   NonNullableFieldWasNullException nonNullableFieldWasNullException,
                                   List<ExecutionResultNode> children,
                                   List<GraphQLError> errors) {
-        this.fetchedValueAnalysis = fetchedValueAnalysis;
+        this.resolvedValue = resolvedValue;
+        this.executionStepInfo = executionStepInfo;
         this.nonNullableFieldWasNullException = nonNullableFieldWasNullException;
         this.children = assertNotNull(children);
         children.forEach(Assert::assertNotNull);
@@ -39,12 +42,16 @@ public abstract class ExecutionResultNode {
     /*
      * can be null for the RootExecutionResultNode
      */
-    public FetchedValueAnalysis getFetchedValueAnalysis() {
-        return fetchedValueAnalysis;
+    public ResolvedValue getResolvedValue() {
+        return resolvedValue;
     }
 
     public MergedField getMergedField() {
-        return fetchedValueAnalysis.getExecutionStepInfo().getField();
+        return executionStepInfo.getField();
+    }
+
+    public ExecutionStepInfo getExecutionStepInfo() {
+        return executionStepInfo;
     }
 
     public NonNullableFieldWasNullException getNonNullableFieldWasNullException() {
@@ -71,14 +78,10 @@ public abstract class ExecutionResultNode {
      */
     public abstract ExecutionResultNode withNewChildren(List<ExecutionResultNode> children);
 
-    /**
-     * Creates a new ExecutionResultNode of the same specific type with the new {@link graphql.execution.nextgen.FetchedValueAnalysis}
-     *
-     * @param fetchedValueAnalysis the {@link graphql.execution.nextgen.FetchedValueAnalysis} for this result node
-     *
-     * @return a new ExecutionResultNode with the new {@link graphql.execution.nextgen.FetchedValueAnalysis}
-     */
-    public abstract ExecutionResultNode withNewFetchedValueAnalysis(FetchedValueAnalysis fetchedValueAnalysis);
+    public abstract ExecutionResultNode withNewResolvedValue(ResolvedValue resolvedValue);
+
+    public abstract ExecutionResultNode withNewExecutionStepInfo(ExecutionStepInfo executionStepInfo);
+
 
     /**
      * Creates a new ExecutionResultNode of the same specific type with the new error collection
@@ -92,11 +95,12 @@ public abstract class ExecutionResultNode {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" +
-                "fva=" + fetchedValueAnalysis +
+        return "ExecutionResultNode{" +
+                "executionStepInfo=" + executionStepInfo +
+                ", resolvedValue=" + resolvedValue +
+                ", nonNullableFieldWasNullException=" + nonNullableFieldWasNullException +
                 ", children=" + children +
                 ", errors=" + errors +
-                ", nonNullableEx=" + nonNullableFieldWasNullException +
                 '}';
     }
 }

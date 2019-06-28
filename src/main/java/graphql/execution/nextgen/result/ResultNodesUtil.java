@@ -5,9 +5,9 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.execution.ExecutionStepInfo;
 import graphql.execution.NonNullableFieldWasNullError;
 import graphql.execution.NonNullableFieldWasNullException;
-import graphql.execution.nextgen.FetchedValueAnalysis;
 import graphql.util.NodeLocation;
 import graphql.util.NodeMultiZipper;
 import graphql.util.NodeZipper;
@@ -54,7 +54,7 @@ public class ResultNodesUtil {
 
     private static ExecutionResultData data(Object data, ExecutionResultNode executionResultNode) {
         List<GraphQLError> allErrors = new ArrayList<>();
-        allErrors.addAll(executionResultNode.getFetchedValueAnalysis().getErrors());
+        allErrors.addAll(executionResultNode.getResolvedValue().getErrors());
         allErrors.addAll(executionResultNode.getErrors());
         return new ExecutionResultData(data, allErrors);
     }
@@ -69,7 +69,7 @@ public class ResultNodesUtil {
 
     private static ExecutionResultData toDataImpl(ExecutionResultNode root) {
         if (root instanceof LeafExecutionResultNode) {
-            return root.getFetchedValueAnalysis().isNullValue() ? data(null, root) : data(((LeafExecutionResultNode) root).getValue(), root);
+            return root.getResolvedValue().isNullValue() ? data(null, root) : data(((LeafExecutionResultNode) root).getValue(), root);
         }
         if (root instanceof ListExecutionResultNode) {
             Optional<NonNullableFieldWasNullException> childNonNullableException = root.getChildNonNullableException();
@@ -85,8 +85,8 @@ public class ResultNodesUtil {
         }
 
         if (root instanceof UnresolvedObjectResultNode) {
-            FetchedValueAnalysis fetchedValueAnalysis = root.getFetchedValueAnalysis();
-            return data("Not resolved : " + fetchedValueAnalysis.getExecutionStepInfo().getPath() + " with field " + fetchedValueAnalysis.getField(), emptyList());
+            ExecutionStepInfo executionStepInfo = root.getExecutionStepInfo();
+            return data("Not resolved : " + executionStepInfo.getPath() + " with field " + executionStepInfo.getField(), emptyList());
         }
         if (root instanceof ObjectExecutionResultNode) {
             Optional<NonNullableFieldWasNullException> childrenNonNullableException = root.getChildNonNullableException();
@@ -114,8 +114,8 @@ public class ResultNodesUtil {
                 .findFirst();
     }
 
-    public static NonNullableFieldWasNullException newNullableException(FetchedValueAnalysis fetchedValueAnalysis, List<NamedResultNode> children) {
-        return newNullableException(fetchedValueAnalysis, children.stream().map(NamedResultNode::getNode).collect(Collectors.toList()));
+    public static NonNullableFieldWasNullException newNullableException(ExecutionStepInfo executionStepInfo, List<NamedResultNode> children) {
+        return newNullableException(executionStepInfo, children.stream().map(NamedResultNode::getNode).collect(Collectors.toList()));
     }
 
     public static Map<String, ExecutionResultNode> namedNodesToMap(List<NamedResultNode> namedResultNodes) {
@@ -126,13 +126,13 @@ public class ResultNodesUtil {
         return result;
     }
 
-    public static NonNullableFieldWasNullException newNullableException(FetchedValueAnalysis fetchedValueAnalysis, Collection<ExecutionResultNode> children) {
+    public static NonNullableFieldWasNullException newNullableException(ExecutionStepInfo executionStepInfo, Collection<ExecutionResultNode> children) {
         // can only happen for the root node
-        if (fetchedValueAnalysis == null) {
+        if (executionStepInfo == null) {
             return null;
         }
         Assert.assertNotNull(children);
-        boolean listIsNonNull = fetchedValueAnalysis.getExecutionStepInfo().isNonNullType();
+        boolean listIsNonNull = executionStepInfo.isNonNullType();
         if (listIsNonNull) {
             Optional<NonNullableFieldWasNullException> firstNonNullableException = getFirstNonNullableException(children);
             if (firstNonNullableException.isPresent()) {

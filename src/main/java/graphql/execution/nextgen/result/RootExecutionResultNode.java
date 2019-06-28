@@ -1,7 +1,7 @@
 package graphql.execution.nextgen.result;
 
 import graphql.GraphQLError;
-import graphql.execution.nextgen.FetchedValueAnalysis;
+import graphql.execution.ExecutionStepInfo;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,16 +13,20 @@ public class RootExecutionResultNode extends ObjectExecutionResultNode {
 
 
     public RootExecutionResultNode(List<ExecutionResultNode> children, List<GraphQLError> errors) {
-        super(null, children, errors);
+        super(null, null, children, errors);
     }
 
     public RootExecutionResultNode(List<ExecutionResultNode> children) {
-        super(null, children, Collections.emptyList());
+        super(null, null, children, Collections.emptyList());
     }
 
+    @Override
+    public ExecutionStepInfo getExecutionStepInfo() {
+        return assertShouldNeverHappen("not supported at root node");
+    }
 
     @Override
-    public FetchedValueAnalysis getFetchedValueAnalysis() {
+    public ResolvedValue getResolvedValue() {
         return assertShouldNeverHappen("not supported at root node");
     }
 
@@ -32,7 +36,12 @@ public class RootExecutionResultNode extends ObjectExecutionResultNode {
     }
 
     @Override
-    public RootExecutionResultNode withNewFetchedValueAnalysis(FetchedValueAnalysis fetchedValueAnalysis) {
+    public ExecutionResultNode withNewResolvedValue(ResolvedValue resolvedValue) {
+        return assertShouldNeverHappen("not supported at root node");
+    }
+
+    @Override
+    public ExecutionResultNode withNewExecutionStepInfo(ExecutionStepInfo executionStepInfo) {
         return assertShouldNeverHappen("not supported at root node");
     }
 
