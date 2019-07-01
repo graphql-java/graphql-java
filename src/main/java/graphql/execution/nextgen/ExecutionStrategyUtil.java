@@ -12,6 +12,7 @@ import graphql.execution.MergedField;
 import graphql.execution.MergedSelectionSet;
 import graphql.execution.ResolveType;
 import graphql.execution.nextgen.result.ExecutionResultNode;
+import graphql.execution.nextgen.result.ResolvedValue;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.util.FpKit;
@@ -66,11 +67,10 @@ public class ExecutionStrategyUtil {
         return fetchedValueAnalysis;
     }
 
-    public FieldSubSelection createFieldSubSelection(ExecutionContext executionContext, FetchedValueAnalysis analysis) {
-        ExecutionStepInfo executionInfo = analysis.getExecutionStepInfo();
-        MergedField field = analysis.getField();
-        Object source = analysis.getCompletedValue();
-        Object localContext = analysis.getFetchedValue().getLocalContext();
+    public FieldSubSelection createFieldSubSelection(ExecutionContext executionContext, ExecutionStepInfo executionInfo, ResolvedValue resolvedValue) {
+        MergedField field = executionInfo.getField();
+        Object source = resolvedValue.getCompletedValue();
+        Object localContext = resolvedValue.getLocalContext();
 
         GraphQLOutputType sourceType = executionInfo.getUnwrappedNonNullType();
         GraphQLObjectType resolvedObjectType = resolveType.resolveType(executionContext, field, source, executionInfo.getArguments(), sourceType);
