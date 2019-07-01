@@ -25,29 +25,37 @@ public class FieldCollectorWTC {
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
     public List<MergedFieldWTC> collectFields(FieldCollectorParameters parameters, MergedFieldWTC mergedField) {
-        Map<String, MergedFieldWTC> subFields = new LinkedHashMap<>();
+        Map<String, Map<Set<String>, MergedFieldWTC>> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
-        for (FieldWTC field : mergedField.getFields()) {
+        for (Field field : mergedField.getFields()) {
             if (field.getSelectionSet() == null) {
                 continue;
             }
             this.collectFields(parameters, field.getSelectionSet(), visitedFragments, subFields, new LinkedHashSet<>());
         }
-        return new ArrayList<>(subFields.values());
+        List<MergedFieldWTC> result = new ArrayList<>();
+        subFields.values().forEach(setMergedFieldWTCMap -> {
+            result.addAll(setMergedFieldWTCMap.values());
+        });
+        return result;
     }
 
     public List<MergedFieldWTC> collectFromOperation(FieldCollectorParameters parameters, OperationDefinition operationDefinition) {
-        Map<String, MergedFieldWTC> subFields = new LinkedHashMap<>();
+        Map<String, Map<Set<String>, MergedFieldWTC>> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
         this.collectFields(parameters, operationDefinition.getSelectionSet(), visitedFragments, subFields, new LinkedHashSet<>());
-        return new ArrayList<>(subFields.values());
+        List<MergedFieldWTC> result = new ArrayList<>();
+        subFields.values().forEach(setMergedFieldWTCMap -> {
+            result.addAll(setMergedFieldWTCMap.values());
+        });
+        return result;
     }
 
 
     private void collectFields(FieldCollectorParameters parameters,
                                SelectionSet selectionSet,
                                List<String> visitedFragments,
-                               Map<String, MergedFieldWTC> fields,
+                               Map<String, Map<Set<String>, MergedFieldWTC>> fields,
                                Set<String> typeConditions) {
 
         for (Selection selection : selectionSet.getSelections()) {
@@ -63,7 +71,7 @@ public class FieldCollectorWTC {
 
     private void collectFragmentSpread(FieldCollectorParameters parameters,
                                        List<String> visitedFragments,
-                                       Map<String, MergedFieldWTC> fields,
+                                       Map<String, Map<Set<String>, MergedFieldWTC>> fields,
                                        FragmentSpread fragmentSpread,
                                        Set<String> typeConditions) {
         if (visitedFragments.contains(fragmentSpread.getName())) {
@@ -85,7 +93,7 @@ public class FieldCollectorWTC {
 
     private void collectInlineFragment(FieldCollectorParameters parameters,
                                        List<String> visitedFragments,
-                                       Map<String, MergedFieldWTC> fields,
+                                       Map<String, Map<Set<String>, MergedFieldWTC>> fields,
                                        InlineFragment inlineFragment,
                                        Set<String> typeConditions) {
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), inlineFragment.getDirectives())) {
@@ -99,19 +107,20 @@ public class FieldCollectorWTC {
     }
 
     private void collectField(FieldCollectorParameters parameters,
-                              Map<String, MergedFieldWTC> fields,
+                              Map<String, Map<Set<String>, MergedFieldWTC>> fields,
                               Field field,
                               Set<String> typeConditions) {
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), field.getDirectives())) {
             return;
         }
         String name = getFieldEntryKey(field);
-        FieldWTC fieldWTC = new FieldWTC(field, new ArrayList<>(typeConditions));
-        if (fields.containsKey(name)) {
-            MergedFieldWTC curFields = fields.get(name);
-            fields.put(name, curFields.transform(builder -> builder.addField(fieldWTC)));
+        fields.computeIfAbsent(name, ignored -> new LinkedHashMap<>());
+        Map<Set<String>, MergedFieldWTC> existingFieldWTC = fields.get(name);
+        if (existingFieldWTC.containsKey(typeConditions)) {
+            MergedFieldWTC mergedFieldWTC = existingFieldWTC.get(typeConditions);
+            existingFieldWTC.put(typeConditions, mergedFieldWTC.transform(builder -> builder.addField(field)));
         } else {
-            fields.put(name, MergedFieldWTC.newMergedFieldWTC(fieldWTC).build());
+            existingFieldWTC.put(typeConditions, MergedFieldWTC.newMergedFieldWTC(field).build());
         }
     }
 

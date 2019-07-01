@@ -1,6 +1,7 @@
 package graphql.execution.nextgen.depgraph;
 
 import graphql.language.Argument;
+import graphql.language.Field;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,11 +12,13 @@ import static graphql.Assert.assertNotEmpty;
 
 public class MergedFieldWTC {
 
-    private final List<FieldWTC> fields;
+    private final List<Field> fields;
+    private final List<String> typeConditions;
 
-    private MergedFieldWTC(List<FieldWTC> fields) {
+    private MergedFieldWTC(List<Field> fields, List<String> typeConditions) {
         assertNotEmpty(fields);
         this.fields = new ArrayList<>(fields);
+        this.typeConditions = new ArrayList<>(typeConditions);
     }
 
     /**
@@ -36,7 +39,7 @@ public class MergedFieldWTC {
      * @return the key for this MergedFieldWTC.
      */
     public String getResultKey() {
-        FieldWTC singleField = getSingleField();
+        Field singleField = getSingleField();
         if (singleField.getAlias() != null) {
             return singleField.getAlias();
         }
@@ -51,7 +54,7 @@ public class MergedFieldWTC {
      *
      * @return the fist of the merged Fields
      */
-    public FieldWTC getSingleField() {
+    public Field getSingleField() {
         return fields.get(0);
     }
 
@@ -65,12 +68,7 @@ public class MergedFieldWTC {
     }
 
 
-    /**
-     * All merged fields
-     *
-     * @return all merged fields
-     */
-    public List<FieldWTC> getFields() {
+    public List<Field> getFields() {
         return new ArrayList<>(fields);
     }
 
@@ -78,11 +76,11 @@ public class MergedFieldWTC {
         return new Builder();
     }
 
-    public static Builder newMergedFieldWTC(FieldWTC field) {
+    public static Builder newMergedFieldWTC(Field field) {
         return new Builder().addField(field);
     }
 
-    public static Builder newMergedFieldWTC(List<FieldWTC> fields) {
+    public static Builder newMergedFieldWTC(List<Field> fields) {
         return new Builder().fields(fields);
     }
 
@@ -93,7 +91,8 @@ public class MergedFieldWTC {
     }
 
     public static class Builder {
-        private List<FieldWTC> fields = new ArrayList<>();
+        private List<Field> fields = new ArrayList<>();
+        private List<String> typeConditions = new ArrayList<>();
 
         private Builder() {
 
@@ -103,18 +102,28 @@ public class MergedFieldWTC {
             this.fields = existing.getFields();
         }
 
-        public Builder fields(List<FieldWTC> fields) {
+        public Builder fields(List<Field> fields) {
             this.fields = fields;
             return this;
         }
 
-        public Builder addField(FieldWTC field) {
+        public Builder typeConditions(List<String> typeConditions) {
+            this.typeConditions = new ArrayList<>(typeConditions);
+            return this;
+        }
+
+        public Builder typeCondition(String typeCondition) {
+            this.typeConditions.add(typeCondition);
+            return this;
+        }
+
+        public Builder addField(Field field) {
             this.fields.add(field);
             return this;
         }
 
         public MergedFieldWTC build() {
-            return new MergedFieldWTC(fields);
+            return new MergedFieldWTC(fields, typeConditions);
         }
 
 
