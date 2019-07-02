@@ -2,6 +2,9 @@ package graphql.execution.nextgen.depgraph;
 
 import graphql.language.Argument;
 import graphql.language.Field;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLOutputType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,16 +12,28 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotEmpty;
+import static graphql.Assert.assertNotNull;
 
 public class MergedFieldWTC {
 
     private final List<Field> fields;
     private final List<String> typeConditions;
+    private final GraphQLFieldDefinition fieldDefinition;
+    private final GraphQLFieldsContainer fieldsContainer;
+    private final GraphQLOutputType parentType;
 
-    private MergedFieldWTC(List<Field> fields, List<String> typeConditions) {
+    private MergedFieldWTC(List<Field> fields,
+                           List<String> typeConditions,
+                           GraphQLFieldDefinition fieldDefinition,
+                           GraphQLFieldsContainer fieldsContainer,
+                           GraphQLOutputType parentType) {
         assertNotEmpty(fields);
         this.fields = new ArrayList<>(fields);
         this.typeConditions = new ArrayList<>(typeConditions);
+        this.fieldDefinition = assertNotNull(fieldDefinition);
+        this.fieldsContainer = assertNotNull(fieldsContainer);
+        this.parentType = assertNotNull(parentType);
+
     }
 
     /**
@@ -80,6 +95,10 @@ public class MergedFieldWTC {
         return new Builder().addField(field);
     }
 
+    public GraphQLFieldDefinition getFieldDefinition() {
+        return fieldDefinition;
+    }
+
     public static Builder newMergedFieldWTC(List<Field> fields) {
         return new Builder().fields(fields);
     }
@@ -90,9 +109,24 @@ public class MergedFieldWTC {
         return builder.build();
     }
 
+    public List<String> getTypeConditions() {
+        return typeConditions;
+    }
+
+    public GraphQLFieldsContainer getFieldsContainer() {
+        return fieldsContainer;
+    }
+
+    public GraphQLOutputType getParentType() {
+        return parentType;
+    }
+
     public static class Builder {
         private List<Field> fields = new ArrayList<>();
         private List<String> typeConditions = new ArrayList<>();
+        private GraphQLFieldDefinition fieldDefinition;
+        private GraphQLFieldsContainer fieldsContainer;
+        private GraphQLOutputType parentType;
 
         private Builder() {
 
@@ -100,7 +134,12 @@ public class MergedFieldWTC {
 
         private Builder(MergedFieldWTC existing) {
             this.fields = existing.getFields();
+            this.typeConditions = existing.getTypeConditions();
+            this.fieldDefinition = existing.getFieldDefinition();
+            this.fieldsContainer = existing.getFieldsContainer();
+            this.parentType = existing.getParentType();
         }
+
 
         public Builder fields(List<Field> fields) {
             this.fields = fields;
@@ -122,8 +161,23 @@ public class MergedFieldWTC {
             return this;
         }
 
+        public Builder fieldDefinition(GraphQLFieldDefinition fieldDefinition) {
+            this.fieldDefinition = fieldDefinition;
+            return this;
+        }
+
+        public Builder fieldsContainer(GraphQLFieldsContainer fieldsContainer) {
+            this.fieldsContainer = fieldsContainer;
+            return this;
+        }
+
+        public Builder parentType(GraphQLOutputType parentType) {
+            this.parentType = parentType;
+            return this;
+        }
+
         public MergedFieldWTC build() {
-            return new MergedFieldWTC(fields, typeConditions);
+            return new MergedFieldWTC(fields, typeConditions, fieldDefinition, fieldsContainer, parentType);
         }
 
 
@@ -150,6 +204,9 @@ public class MergedFieldWTC {
     public String toString() {
         return "MergedFieldWTC{" +
                 "fields=" + fields +
+                ", typeConditions=" + typeConditions +
+                ", fieldDefinition=" + fieldDefinition +
+                ", fieldsContainer" + fieldsContainer +
                 '}';
     }
 }
