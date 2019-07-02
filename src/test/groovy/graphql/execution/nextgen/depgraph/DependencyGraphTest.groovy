@@ -241,7 +241,7 @@ type Dog implements Animal{
             pets {
                 ... on Dog {
                     ... on CatOrDog {
-                    ... on Dog{
+                    ... on Cat{
                             name
                             }
                     }
