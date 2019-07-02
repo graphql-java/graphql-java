@@ -34,7 +34,7 @@ public class FieldCollectorWTC {
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
     public List<MergedFieldWTC> collectFields(FieldCollectorParameters parameters, MergedFieldWTC mergedField) {
-        Map<String, Map<Set<String>, MergedFieldWTC>> subFields = new LinkedHashMap<>();
+        Map<String, Map<Set<GraphQLCompositeType>, MergedFieldWTC>> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
         for (Field field : mergedField.getFields()) {
             if (field.getSelectionSet() == null) {
@@ -55,7 +55,7 @@ public class FieldCollectorWTC {
     }
 
     public List<MergedFieldWTC> collectFromOperation(FieldCollectorParameters parameters, OperationDefinition operationDefinition, GraphQLCompositeType rootType) {
-        Map<String, Map<Set<String>, MergedFieldWTC>> subFields = new LinkedHashMap<>();
+        Map<String, Map<Set<GraphQLCompositeType>, MergedFieldWTC>> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
         this.collectFields(parameters, operationDefinition.getSelectionSet(), visitedFragments, subFields, new LinkedHashSet<>(), rootType);
         List<MergedFieldWTC> result = new ArrayList<>();
@@ -69,8 +69,8 @@ public class FieldCollectorWTC {
     private void collectFields(FieldCollectorParameters parameters,
                                SelectionSet selectionSet,
                                List<String> visitedFragments,
-                               Map<String, Map<Set<String>, MergedFieldWTC>> fields,
-                               Set<String> typeConditions,
+                               Map<String, Map<Set<GraphQLCompositeType>, MergedFieldWTC>> fields,
+                               Set<GraphQLCompositeType> typeConditions,
                                GraphQLOutputType parentType) {
 
         for (Selection selection : selectionSet.getSelections()) {
@@ -86,9 +86,9 @@ public class FieldCollectorWTC {
 
     private void collectFragmentSpread(FieldCollectorParameters parameters,
                                        List<String> visitedFragments,
-                                       Map<String, Map<Set<String>, MergedFieldWTC>> fields,
+                                       Map<String, Map<Set<GraphQLCompositeType>, MergedFieldWTC>> fields,
                                        FragmentSpread fragmentSpread,
-                                       Set<String> typeConditions,
+                                       Set<GraphQLCompositeType> typeConditions,
                                        GraphQLOutputType parentType) {
         if (visitedFragments.contains(fragmentSpread.getName())) {
             return;
@@ -102,8 +102,8 @@ public class FieldCollectorWTC {
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), fragmentDefinition.getDirectives())) {
             return;
         }
-        Set<String> newConditions = new LinkedHashSet<>(typeConditions);
-        newConditions.add(fragmentDefinition.getTypeCondition().getName());
+        Set<GraphQLCompositeType> newConditions = new LinkedHashSet<>(typeConditions);
+        newConditions.add((GraphQLCompositeType) parameters.getGraphQLSchema().getType(fragmentDefinition.getTypeCondition().getName()));
         GraphQLCompositeType newParentType = (GraphQLCompositeType)
                 Assert.assertNotNull(parameters.getGraphQLSchema().getType(fragmentDefinition.getTypeCondition().getName()));
         collectFields(parameters, fragmentDefinition.getSelectionSet(), visitedFragments, fields, newConditions, newParentType);
@@ -111,16 +111,16 @@ public class FieldCollectorWTC {
 
     private void collectInlineFragment(FieldCollectorParameters parameters,
                                        List<String> visitedFragments,
-                                       Map<String, Map<Set<String>, MergedFieldWTC>> fields,
+                                       Map<String, Map<Set<GraphQLCompositeType>, MergedFieldWTC>> fields,
                                        InlineFragment inlineFragment,
-                                       Set<String> typeConditions,
+                                       Set<GraphQLCompositeType> typeConditions,
                                        GraphQLOutputType parentType) {
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), inlineFragment.getDirectives())) {
             return;
         }
-        Set<String> newConditions = new LinkedHashSet<>(typeConditions);
+        Set<GraphQLCompositeType> newConditions = new LinkedHashSet<>(typeConditions);
         if (inlineFragment.getTypeCondition() != null) {
-            newConditions.add(inlineFragment.getTypeCondition().getName());
+            newConditions.add((GraphQLCompositeType) parameters.getGraphQLSchema().getType(inlineFragment.getTypeCondition().getName()));
             parentType = (GraphQLCompositeType)
                     Assert.assertNotNull(parameters.getGraphQLSchema().getType(inlineFragment.getTypeCondition().getName()));
 
@@ -129,16 +129,16 @@ public class FieldCollectorWTC {
     }
 
     private void collectField(FieldCollectorParameters parameters,
-                              Map<String, Map<Set<String>, MergedFieldWTC>> fields,
+                              Map<String, Map<Set<GraphQLCompositeType>, MergedFieldWTC>> fields,
                               Field field,
-                              Set<String> typeConditions,
+                              Set<GraphQLCompositeType> typeConditions,
                               GraphQLOutputType parentType) {
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), field.getDirectives())) {
             return;
         }
         String name = getFieldEntryKey(field);
         fields.computeIfAbsent(name, ignored -> new LinkedHashMap<>());
-        Map<Set<String>, MergedFieldWTC> existingFieldWTC = fields.get(name);
+        Map<Set<GraphQLCompositeType>, MergedFieldWTC> existingFieldWTC = fields.get(name);
         if (existingFieldWTC.containsKey(typeConditions)) {
             MergedFieldWTC mergedFieldWTC = existingFieldWTC.get(typeConditions);
             existingFieldWTC.put(typeConditions, mergedFieldWTC.transform(builder -> builder.addField(field)));

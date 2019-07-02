@@ -1,5 +1,6 @@
 package graphql.execution.nextgen.depgraph
 
+import graphql.GraphQL
 import graphql.TestUtil
 import graphql.language.Document
 import graphql.language.OperationDefinition
@@ -174,10 +175,9 @@ type Dog implements Animal{
         """
         GraphQLSchema graphQLSchema = TestUtil.schema(schema)
 
-        Document query = new Parser().parseDocument("""
+        String query = """
         {
             a {
-                b
                 ... on A1 {
                    b { 
                    ... on B {
@@ -201,10 +201,62 @@ type Dog implements Animal{
             }
         }
         
-        """)
+        """
 
+        GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build();
 
-        OperationDefinition operationDefinition = (OperationDefinition) query.getDefinitions().get(0);
+        assert graphQL.execute(query).errors.size() == 0
+
+        Document document = new Parser().parseDocument(query)
+        OperationDefinition operationDefinition = (OperationDefinition) document.getDefinitions().get(0);
+
+        DependencyGraph dependencyGraph = new DependencyGraph();
+        dependencyGraph.createDependencyGraph(graphQLSchema, operationDefinition)
+
+        expect:
+        true
+
+    }
+
+    def "test4"() {
+        String schema = """
+        type Query{ 
+            pets: [Pet]
+        }
+        interface Pet {
+            name: String
+        }
+        type Cat implements Pet {
+            name: String
+        }
+        type Dog implements Pet{
+            name: String
+        }
+        union CatOrDog = Cat | Dog
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = """
+        {
+            pets {
+                ... on Dog {
+                    ... on CatOrDog {
+                    ... on Dog{
+                            name
+                            }
+                    }
+                }
+            }
+        }
+        
+        """
+
+        GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build();
+
+        assert graphQL.execute(query).errors.size() == 0
+
+        Document document = new Parser().parseDocument(query)
+        OperationDefinition operationDefinition = (OperationDefinition) document.getDefinitions().get(0);
 
         DependencyGraph dependencyGraph = new DependencyGraph();
         dependencyGraph.createDependencyGraph(graphQLSchema, operationDefinition)
