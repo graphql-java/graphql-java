@@ -77,33 +77,32 @@ public class DependencyGraph {
 
         System.out.println(listOfClosures);
 
-//        StringBuilder dotFile = new StringBuilder();
-//        dotFile.append("digraph G{\n");
-//        Traverser<FieldVertex> traverserVertex = Traverser.depthFirst(FieldVertex::getChildren);
-//
-//        List<FieldVertex> allVertices = new ArrayList<>();
-//        traverserVertex.traverse(rootVertex, new TraverserVisitorStub<FieldVertex>() {
-//            @Override
-//            public TraversalControl enter(TraverserContext<FieldVertex> context) {
-//                FieldVertex fieldVertex = context.thisNode();
-//                FieldVertex parentVertex = context.getParentNode();
-//                if (parentVertex != null) {
-//                    String vertexId = fieldVertex.getClass().getSimpleName() + Integer.toHexString(fieldVertex.hashCode());
-//                    String parentVertexId = parentVertex.getClass().getSimpleName() + Integer.toHexString(parentVertex.hashCode());
-//                    dotFile.append(vertexId).append(" -> ").append(parentVertexId).append(";\n");
-//                }
-//                allVertices.add(context.thisNode());
-//                return TraversalControl.CONTINUE;
-//            }
-//        });
-//
-//        for (FieldVertex fieldVertex : allVertices) {
-//            dotFile.append(fieldVertex.getClass().getSimpleName()).append(Integer.toHexString(fieldVertex.hashCode())).append("[label=\"")
-//                    .append(fieldVertex.toString()).append("\"];\n");
-//        }
-//
-//        dotFile.append("}");
-//        System.out.println(dotFile);
+        StringBuilder dotFile = new StringBuilder();
+        dotFile.append("digraph G{\n");
+        Traverser<FieldVertex> traverserVertex = Traverser.depthFirst(FieldVertex::getDependsOnMe);
+
+        traverserVertex.traverse(rootVertex, new TraverserVisitorStub<FieldVertex>() {
+            @Override
+            public TraversalControl enter(TraverserContext<FieldVertex> context) {
+                FieldVertex fieldVertex = context.thisNode();
+                FieldVertex parentVertex = context.getParentNode();
+                if (parentVertex != null) {
+                    String vertexId = fieldVertex.getClass().getSimpleName() + Integer.toHexString(fieldVertex.hashCode());
+                    String parentVertexId = parentVertex.getClass().getSimpleName() + Integer.toHexString(parentVertex.hashCode());
+                    dotFile.append(vertexId).append(" -> ").append(parentVertexId).append(";\n");
+                }
+                allVertices.add(context.thisNode());
+                return TraversalControl.CONTINUE;
+            }
+        });
+
+        for (FieldVertex fieldVertex : allVertices) {
+            dotFile.append(fieldVertex.getClass().getSimpleName()).append(Integer.toHexString(fieldVertex.hashCode())).append("[label=\"")
+                    .append(fieldVertex.toString()).append("\"];\n");
+        }
+
+        dotFile.append("}");
+        System.out.println(dotFile);
         return null;
     }
 
