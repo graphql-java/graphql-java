@@ -18,7 +18,7 @@ public class FieldVertex extends Object {
 
     private final GraphQLObjectType objectType;
 
-    private List<FieldVertex> children = new ArrayList<>();
+    private List<FieldVertex> dependencies = new ArrayList<>();
 
     public FieldVertex(List<Field> fields,
                        GraphQLFieldDefinition fieldDefinition,
@@ -32,12 +32,8 @@ public class FieldVertex extends Object {
         this.objectType = objectType;
     }
 
-    public void addChild(FieldVertex fieldVertex) {
-        this.children.add(fieldVertex);
-    }
-
-    public void setChildren(List<FieldVertex> children) {
-        this.children = new ArrayList<>(children);
+    public void addDependency(FieldVertex fieldVertex) {
+        this.dependencies.add(fieldVertex);
     }
 
 
@@ -61,8 +57,8 @@ public class FieldVertex extends Object {
         return objectType;
     }
 
-    public List<FieldVertex> getChildren() {
-        return children;
+    public List<FieldVertex> getDependencies() {
+        return dependencies;
     }
 
     public String getName() {

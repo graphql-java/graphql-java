@@ -7,8 +7,9 @@ import graphql.util.Traverser;
 import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitorStub;
 
-import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 
 public class DependencyGraph {
@@ -27,9 +28,12 @@ public class DependencyGraph {
             return childs;
         };
 
+
+        Set<FieldVertex> allVertices = new LinkedHashSet<>();
+
         Traverser<MergedFieldWTC> traverser = Traverser.depthFirst(getChildren);
-        FieldVertex rootVertex = new FieldVertex(null, null, null, null, null);
-        traverser.rootVar(FieldVertex.class, rootVertex);
+//        FieldVertex rootVertex = new FieldVertex(null, null, null, null, null);
+//        traverser.rootVar(FieldVertex.class, rootVertex);
         List<MergedFieldWTC> roots = fieldCollector.collectFromOperation(parameters, operationDefinition, graphQLSchema.getQueryType());
         traverser.traverse(roots, new TraverserVisitorStub<MergedFieldWTC>() {
             @Override
@@ -50,43 +54,63 @@ public class DependencyGraph {
 //                System.out.println("visited: " + context.thisNode());
 
 
-                FieldVertex parentVertex = context.getVarFromParents(FieldVertex.class);
                 FieldVertex fieldVertex = createFieldVertex(mergedFieldWTC, graphQLSchema);
-                context.setVar(FieldVertex.class, fieldVertex);
-                parentVertex.addChild(fieldVertex);
-
-                return TraversalControl.CONTINUE;
-            }
-
-        });
-
-        StringBuilder dotFile = new StringBuilder();
-        dotFile.append("digraph G{\n");
-        Traverser<FieldVertex> traverserVertex = Traverser.depthFirst(FieldVertex::getChildren);
-
-        List<FieldVertex> allVertices = new ArrayList<>();
-        traverserVertex.traverse(rootVertex, new TraverserVisitorStub<FieldVertex>() {
-            @Override
-            public TraversalControl enter(TraverserContext<FieldVertex> context) {
-                FieldVertex fieldVertex = context.thisNode();
-                FieldVertex parentVertex = context.getParentNode();
+                FieldVertex parentVertex = context.getVarFromParents(FieldVertex.class);
                 if (parentVertex != null) {
-                    String vertexId = fieldVertex.getClass().getSimpleName() + Integer.toHexString(fieldVertex.hashCode());
-                    String parentVertexId = parentVertex.getClass().getSimpleName() + Integer.toHexString(parentVertex.hashCode());
-                    dotFile.append(vertexId).append(" -> ").append(parentVertexId).append(";\n");
+                    fieldVertex.addDependency(parentVertex);
                 }
-                allVertices.add(context.thisNode());
+                allVertices.add(fieldVertex);
+                context.setVar(FieldVertex.class, fieldVertex);
+
                 return TraversalControl.CONTINUE;
             }
+
         });
 
-        for (FieldVertex fieldVertex : allVertices) {
-            dotFile.append(fieldVertex.getClass().getSimpleName()).append(Integer.toHexString(fieldVertex.hashCode())).append("[label=\"")
-                    .append(fieldVertex.toString()).append("\"];\n");
+        Set<FieldVertex> unresolvedSet = new LinkedHashSet<>(allVertices);
+        Set<FieldVertex> resolvedSet = new LinkedHashSet<>();
+        while (!unresolvedSet.isEmpty()) {
+            Set<FieldVertex> closure = new LinkedHashSet<>();
+            for (FieldVertex fieldVertex : unresolvedSet) {
+                if (resolvedSet.containsAll(fieldVertex.getDependencies())) {
+                    closure.add(fieldVertex);
+                }
+            }
+
+            for (FieldVertex node : closure) {
+                System.out.println("Resolve " + node.toString());
+                unresolvedSet.remove(node);
+                resolvedSet.add(node);
+            }
         }
 
-        dotFile.append("}");
-        System.out.println(dotFile);
+//        StringBuilder dotFile = new StringBuilder();
+//        dotFile.append("digraph G{\n");
+//        Traverser<FieldVertex> traverserVertex = Traverser.depthFirst(FieldVertex::getChildren);
+//
+//        List<FieldVertex> allVertices = new ArrayList<>();
+//        traverserVertex.traverse(rootVertex, new TraverserVisitorStub<FieldVertex>() {
+//            @Override
+//            public TraversalControl enter(TraverserContext<FieldVertex> context) {
+//                FieldVertex fieldVertex = context.thisNode();
+//                FieldVertex parentVertex = context.getParentNode();
+//                if (parentVertex != null) {
+//                    String vertexId = fieldVertex.getClass().getSimpleName() + Integer.toHexString(fieldVertex.hashCode());
+//                    String parentVertexId = parentVertex.getClass().getSimpleName() + Integer.toHexString(parentVertex.hashCode());
+//                    dotFile.append(vertexId).append(" -> ").append(parentVertexId).append(";\n");
+//                }
+//                allVertices.add(context.thisNode());
+//                return TraversalControl.CONTINUE;
+//            }
+//        });
+//
+//        for (FieldVertex fieldVertex : allVertices) {
+//            dotFile.append(fieldVertex.getClass().getSimpleName()).append(Integer.toHexString(fieldVertex.hashCode())).append("[label=\"")
+//                    .append(fieldVertex.toString()).append("\"];\n");
+//        }
+//
+//        dotFile.append("}");
+//        System.out.println(dotFile);
         return null;
     }
 
@@ -99,7 +123,6 @@ public class DependencyGraph {
         );
 
     }
-
 
 
     public static void main(String[] args) {
