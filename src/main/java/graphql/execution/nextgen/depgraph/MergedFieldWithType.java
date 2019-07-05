@@ -14,7 +14,7 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 
-public class MergedFieldWTC {
+public class MergedFieldWithType {
 
     private final List<Field> fields;
     private final GraphQLObjectType objectType;
@@ -22,11 +22,11 @@ public class MergedFieldWTC {
     private final GraphQLFieldsContainer fieldsContainer;
     private final GraphQLOutputType parentType;
 
-    private MergedFieldWTC(List<Field> fields,
-                           GraphQLObjectType objectType,
-                           GraphQLFieldDefinition fieldDefinition,
-                           GraphQLFieldsContainer fieldsContainer,
-                           GraphQLOutputType parentType) {
+    private MergedFieldWithType(List<Field> fields,
+                                GraphQLObjectType objectType,
+                                GraphQLFieldDefinition fieldDefinition,
+                                GraphQLFieldsContainer fieldsContainer,
+                                GraphQLOutputType parentType) {
         assertNotEmpty(fields);
         this.fields = new ArrayList<>(fields);
         this.objectType = objectType;
@@ -48,10 +48,10 @@ public class MergedFieldWTC {
     }
 
     /**
-     * Returns the key of this MergedFieldWTC for the overall result.
+     * Returns the key of this MergedFieldWithType for the overall result.
      * This is either an alias or the FieldWTC name.
      *
-     * @return the key for this MergedFieldWTC.
+     * @return the key for this MergedFieldWithType.
      */
     public String getResultKey() {
         Field singleField = getSingleField();
@@ -103,7 +103,7 @@ public class MergedFieldWTC {
         return new Builder().fields(fields);
     }
 
-    public MergedFieldWTC transform(Consumer<Builder> builderConsumer) {
+    public MergedFieldWithType transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
         return builder.build();
@@ -132,7 +132,7 @@ public class MergedFieldWTC {
 
         }
 
-        private Builder(MergedFieldWTC existing) {
+        private Builder(MergedFieldWithType existing) {
             this.fields = existing.getFields();
             this.objectType = existing.getObjectType();
             this.fieldDefinition = existing.getFieldDefinition();
@@ -171,15 +171,15 @@ public class MergedFieldWTC {
             return this;
         }
 
-        public MergedFieldWTC build() {
-            return new MergedFieldWTC(fields, objectType, fieldDefinition, fieldsContainer, parentType);
+        public MergedFieldWithType build() {
+            return new MergedFieldWithType(fields, objectType, fieldDefinition, fieldsContainer, parentType);
         }
 
 
     }
     @Override
     public String toString() {
-        return "MergedFieldWTC{" +
+        return "MergedFieldWithType{" +
                 ", objectType=" + objectType +
                 ", fieldDefinition=" + fieldDefinition +
                 ", fieldsContainer" + fieldsContainer +

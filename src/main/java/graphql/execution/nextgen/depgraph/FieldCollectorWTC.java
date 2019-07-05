@@ -39,8 +39,8 @@ public class FieldCollectorWTC {
 
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
-    public List<MergedFieldWTC> collectFields(FieldCollectorParameters parameters, MergedFieldWTC mergedField) {
-        Map<String, Map<GraphQLObjectType, MergedFieldWTC>> subFields = new LinkedHashMap<>();
+    public List<MergedFieldWithType> collectFields(FieldCollectorParameters parameters, MergedFieldWithType mergedField) {
+        Map<String, Map<GraphQLObjectType, MergedFieldWithType>> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
         GraphQLUnmodifiedType fieldType = GraphQLTypeUtil.unwrapAll(mergedField.getFieldDefinition().getType());
         Set<GraphQLObjectType> typeConditions = new LinkedHashSet<>();
@@ -58,20 +58,20 @@ public class FieldCollectorWTC {
                     typeConditions,
                     mergedField.getFieldDefinition().getType());
         }
-        List<MergedFieldWTC> result = new ArrayList<>();
+        List<MergedFieldWithType> result = new ArrayList<>();
         subFields.values().forEach(setMergedFieldWTCMap -> {
             result.addAll(setMergedFieldWTCMap.values());
         });
         return result;
     }
 
-    public List<MergedFieldWTC> collectFromOperation(FieldCollectorParameters parameters, OperationDefinition operationDefinition, GraphQLObjectType rootType) {
-        Map<String, Map<GraphQLObjectType, MergedFieldWTC>> subFields = new LinkedHashMap<>();
+    public List<MergedFieldWithType> collectFromOperation(FieldCollectorParameters parameters, OperationDefinition operationDefinition, GraphQLObjectType rootType) {
+        Map<String, Map<GraphQLObjectType, MergedFieldWithType>> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
         Set<GraphQLObjectType> typeConditions = new LinkedHashSet<>();
         typeConditions.add(rootType);
         this.collectFields(parameters, operationDefinition.getSelectionSet(), visitedFragments, subFields, typeConditions, rootType);
-        List<MergedFieldWTC> result = new ArrayList<>();
+        List<MergedFieldWithType> result = new ArrayList<>();
         subFields.values().forEach(setMergedFieldWTCMap -> {
             result.addAll(setMergedFieldWTCMap.values());
         });
@@ -82,7 +82,7 @@ public class FieldCollectorWTC {
     private void collectFields(FieldCollectorParameters parameters,
                                SelectionSet selectionSet,
                                List<String> visitedFragments,
-                               Map<String, Map<GraphQLObjectType, MergedFieldWTC>> fields,
+                               Map<String, Map<GraphQLObjectType, MergedFieldWithType>> fields,
                                Set<GraphQLObjectType> typeConditions,
                                GraphQLOutputType parentType) {
 
@@ -99,7 +99,7 @@ public class FieldCollectorWTC {
 
     private void collectFragmentSpread(FieldCollectorParameters parameters,
                                        List<String> visitedFragments,
-                                       Map<String, Map<GraphQLObjectType, MergedFieldWTC>> fields,
+                                       Map<String, Map<GraphQLObjectType, MergedFieldWithType>> fields,
                                        FragmentSpread fragmentSpread,
                                        Set<GraphQLObjectType> typeConditions,
                                        GraphQLOutputType parentType) {
@@ -124,7 +124,7 @@ public class FieldCollectorWTC {
 
     private void collectInlineFragment(FieldCollectorParameters parameters,
                                        List<String> visitedFragments,
-                                       Map<String, Map<GraphQLObjectType, MergedFieldWTC>> fields,
+                                       Map<String, Map<GraphQLObjectType, MergedFieldWithType>> fields,
                                        InlineFragment inlineFragment,
                                        Set<GraphQLObjectType> typeConditions,
                                        GraphQLOutputType parentType) {
@@ -143,7 +143,7 @@ public class FieldCollectorWTC {
     }
 
     private void collectField(FieldCollectorParameters parameters,
-                              Map<String, Map<GraphQLObjectType, MergedFieldWTC>> fields,
+                              Map<String, Map<GraphQLObjectType, MergedFieldWithType>> fields,
                               Field field,
                               Set<GraphQLObjectType> objectTypes,
                               GraphQLOutputType parentType) {
@@ -152,14 +152,14 @@ public class FieldCollectorWTC {
         }
         String name = getFieldEntryKey(field);
         fields.computeIfAbsent(name, ignored -> new LinkedHashMap<>());
-        Map<GraphQLObjectType, MergedFieldWTC> existingFieldWTC = fields.get(name);
+        Map<GraphQLObjectType, MergedFieldWithType> existingFieldWTC = fields.get(name);
         for (GraphQLObjectType objectType : objectTypes) {
             if (existingFieldWTC.containsKey(objectType)) {
-                MergedFieldWTC mergedFieldWTC = existingFieldWTC.get(objectType);
-                existingFieldWTC.put(objectType, mergedFieldWTC.transform(builder -> builder.addField(field)));
+                MergedFieldWithType mergedFieldWithType = existingFieldWTC.get(objectType);
+                existingFieldWTC.put(objectType, mergedFieldWithType.transform(builder -> builder.addField(field)));
             } else {
                 GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) GraphQLTypeUtil.unwrapAll(parentType);
-                MergedFieldWTC newFieldWTC = MergedFieldWTC.newMergedFieldWTC(field)
+                MergedFieldWithType newFieldWTC = MergedFieldWithType.newMergedFieldWTC(field)
                         .objectType(objectType)
                         .fieldDefinition(getFieldDefinition(fieldsContainer, field.getName()))
                         .fieldsContainer(fieldsContainer)
@@ -218,9 +218,9 @@ public class FieldCollectorWTC {
 
     }
 
-    private List<GraphQLObjectType> getImplicitObjects(GraphQLSchema graphQLSchema, MergedFieldWTC mergedFieldWTC) {
+    private List<GraphQLObjectType> getImplicitObjects(GraphQLSchema graphQLSchema, MergedFieldWithType mergedFieldWithType) {
         List<GraphQLObjectType> result = new ArrayList<>();
-        GraphQLFieldsContainer fieldsContainer = mergedFieldWTC.getFieldsContainer();
+        GraphQLFieldsContainer fieldsContainer = mergedFieldWithType.getFieldsContainer();
         if (fieldsContainer instanceof GraphQLInterfaceType) {
             result.addAll(graphQLSchema.getImplementations((GraphQLInterfaceType) fieldsContainer));
         } else if (fieldsContainer instanceof GraphQLObjectType) {

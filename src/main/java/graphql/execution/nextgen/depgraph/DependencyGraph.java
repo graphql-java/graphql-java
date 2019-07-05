@@ -24,26 +24,26 @@ public class DependencyGraph {
                 .schema(graphQLSchema)
                 .build();
 
-        Function<MergedFieldWTC, List<MergedFieldWTC>> getChildren = mergedFieldWTC -> {
-            List<MergedFieldWTC> childs = fieldCollector.collectFields(parameters, mergedFieldWTC);
+        Function<MergedFieldWithType, List<MergedFieldWithType>> getChildren = mergedFieldWithType -> {
+            List<MergedFieldWithType> childs = fieldCollector.collectFields(parameters, mergedFieldWithType);
             return childs;
         };
 
 
         Set<FieldVertex> allVertices = new LinkedHashSet<>();
 
-        Traverser<MergedFieldWTC> traverser = Traverser.depthFirst(getChildren);
+        Traverser<MergedFieldWithType> traverser = Traverser.depthFirst(getChildren);
         FieldVertex rootVertex = new FieldVertex(null, null, null, null, null);
         traverser.rootVar(FieldVertex.class, rootVertex);
         allVertices.add(rootVertex);
-        List<MergedFieldWTC> roots = fieldCollector.collectFromOperation(parameters, operationDefinition, graphQLSchema.getQueryType());
-        traverser.traverse(roots, new TraverserVisitorStub<MergedFieldWTC>() {
+        List<MergedFieldWithType> roots = fieldCollector.collectFromOperation(parameters, operationDefinition, graphQLSchema.getQueryType());
+        traverser.traverse(roots, new TraverserVisitorStub<MergedFieldWithType>() {
             @Override
-            public TraversalControl enter(TraverserContext<MergedFieldWTC> context) {
-                MergedFieldWTC mergedFieldWTC = context.thisNode();
-                System.out.println(mergedFieldWTC.getName() + "" + mergedFieldWTC.getObjectType().getName());
+            public TraversalControl enter(TraverserContext<MergedFieldWithType> context) {
+                MergedFieldWithType mergedFieldWithType = context.thisNode();
+                System.out.println(mergedFieldWithType.getName() + "" + mergedFieldWithType.getObjectType().getName());
 
-                FieldVertex fieldVertex = createFieldVertex(mergedFieldWTC, graphQLSchema);
+                FieldVertex fieldVertex = createFieldVertex(mergedFieldWithType, graphQLSchema);
                 FieldVertex parentVertex = context.getVarFromParents(FieldVertex.class);
                 fieldVertex.addDependency(parentVertex);
                 parentVertex.addDependsOnMe(fieldVertex);
@@ -106,12 +106,12 @@ public class DependencyGraph {
         return null;
     }
 
-    private FieldVertex createFieldVertex(MergedFieldWTC mergedFieldWTC, GraphQLSchema graphQLSchemas) {
-        return new FieldVertex(mergedFieldWTC.getFields(),
-                mergedFieldWTC.getFieldDefinition(),
-                mergedFieldWTC.getFieldsContainer(),
-                mergedFieldWTC.getParentType(),
-                mergedFieldWTC.getObjectType()
+    private FieldVertex createFieldVertex(MergedFieldWithType mergedFieldWithType, GraphQLSchema graphQLSchemas) {
+        return new FieldVertex(mergedFieldWithType.getFields(),
+                mergedFieldWithType.getFieldDefinition(),
+                mergedFieldWithType.getFieldsContainer(),
+                mergedFieldWithType.getParentType(),
+                mergedFieldWithType.getObjectType()
         );
 
     }
