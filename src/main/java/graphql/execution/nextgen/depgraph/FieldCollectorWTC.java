@@ -160,7 +160,7 @@ public class FieldCollectorWTC {
             } else {
                 GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) GraphQLTypeUtil.unwrapAll(parentType);
                 MergedFieldWTC newFieldWTC = MergedFieldWTC.newMergedFieldWTC(field)
-                        .typeCondition((objectType))
+                        .objectType(objectType)
                         .fieldDefinition(getFieldDefinition(fieldsContainer, field.getName()))
                         .fieldsContainer(fieldsContainer)
                         .parentType(parentType)

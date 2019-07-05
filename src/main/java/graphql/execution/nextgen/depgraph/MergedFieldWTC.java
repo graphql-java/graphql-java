@@ -17,19 +17,19 @@ import static graphql.Assert.assertNotNull;
 public class MergedFieldWTC {
 
     private final List<Field> fields;
-    private final List<GraphQLObjectType> typeConditions;
+    private final GraphQLObjectType objectType;
     private final GraphQLFieldDefinition fieldDefinition;
     private final GraphQLFieldsContainer fieldsContainer;
     private final GraphQLOutputType parentType;
 
     private MergedFieldWTC(List<Field> fields,
-                           List<GraphQLObjectType> typeConditions,
+                           GraphQLObjectType objectType,
                            GraphQLFieldDefinition fieldDefinition,
                            GraphQLFieldsContainer fieldsContainer,
                            GraphQLOutputType parentType) {
         assertNotEmpty(fields);
         this.fields = new ArrayList<>(fields);
-        this.typeConditions = new ArrayList<>(typeConditions);
+        this.objectType = objectType;
         this.fieldDefinition = assertNotNull(fieldDefinition);
         this.fieldsContainer = assertNotNull(fieldsContainer);
         this.parentType = assertNotNull(parentType);
@@ -109,8 +109,8 @@ public class MergedFieldWTC {
         return builder.build();
     }
 
-    public List<GraphQLObjectType> getTypeConditions() {
-        return typeConditions;
+    public GraphQLObjectType getObjectType() {
+        return objectType;
     }
 
     public GraphQLFieldsContainer getFieldsContainer() {
@@ -123,7 +123,7 @@ public class MergedFieldWTC {
 
     public static class Builder {
         private List<Field> fields = new ArrayList<>();
-        private List<GraphQLObjectType> typeConditions = new ArrayList<>();
+        private GraphQLObjectType objectType;
         private GraphQLFieldDefinition fieldDefinition;
         private GraphQLFieldsContainer fieldsContainer;
         private GraphQLOutputType parentType;
@@ -134,7 +134,7 @@ public class MergedFieldWTC {
 
         private Builder(MergedFieldWTC existing) {
             this.fields = existing.getFields();
-            this.typeConditions = existing.getTypeConditions();
+            this.objectType = existing.getObjectType();
             this.fieldDefinition = existing.getFieldDefinition();
             this.fieldsContainer = existing.getFieldsContainer();
             this.parentType = existing.getParentType();
@@ -146,13 +146,8 @@ public class MergedFieldWTC {
             return this;
         }
 
-        public Builder typeConditions(List<GraphQLObjectType> typeConditions) {
-            this.typeConditions = new ArrayList<>(typeConditions);
-            return this;
-        }
-
-        public Builder typeCondition(GraphQLObjectType typeCondition) {
-            this.typeConditions.add(typeCondition);
+        public Builder objectType(GraphQLObjectType objectType) {
+            this.objectType = objectType;
             return this;
         }
 
@@ -177,7 +172,7 @@ public class MergedFieldWTC {
         }
 
         public MergedFieldWTC build() {
-            return new MergedFieldWTC(fields, typeConditions, fieldDefinition, fieldsContainer, parentType);
+            return new MergedFieldWTC(fields, objectType, fieldDefinition, fieldsContainer, parentType);
         }
 
 
@@ -185,7 +180,7 @@ public class MergedFieldWTC {
     @Override
     public String toString() {
         return "MergedFieldWTC{" +
-                ", typeConditions=" + typeConditions +
+                ", objectType=" + objectType +
                 ", fieldDefinition=" + fieldDefinition +
                 ", fieldsContainer" + fieldsContainer +
                 '}';

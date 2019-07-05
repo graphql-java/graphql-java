@@ -5,7 +5,6 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
-import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +14,8 @@ public class FieldVertex extends Object {
     private final GraphQLFieldDefinition fieldDefinition;
     private final GraphQLFieldsContainer fieldsContainer;
     private final GraphQLOutputType parentType;
-    private final List<GraphQLObjectType> possibleObjectTypes;
+
+    private final GraphQLObjectType objectType;
 
     private List<FieldVertex> children = new ArrayList<>();
 
@@ -23,12 +23,12 @@ public class FieldVertex extends Object {
                        GraphQLFieldDefinition fieldDefinition,
                        GraphQLFieldsContainer fieldsContainer,
                        GraphQLOutputType parentType,
-                       List<GraphQLObjectType> possibleObjectTypes) {
+                       GraphQLObjectType objectType) {
         this.fields = fields;
         this.fieldDefinition = fieldDefinition;
         this.fieldsContainer = fieldsContainer;
         this.parentType = parentType;
-        this.possibleObjectTypes = possibleObjectTypes;
+        this.objectType = objectType;
     }
 
     public void addChild(FieldVertex fieldVertex) {
@@ -56,8 +56,8 @@ public class FieldVertex extends Object {
         return parentType;
     }
 
-    public List<GraphQLObjectType> getPossibleObjectTypes() {
-        return possibleObjectTypes;
+    public GraphQLObjectType getObjectType() {
+        return objectType;
     }
 
     public List<FieldVertex> getChildren() {
@@ -85,6 +85,6 @@ public class FieldVertex extends Object {
         if (fields == null) {
             return "ROOT VERTEX";
         }
-        return fields.get(0).getName() + FpKit.map(getPossibleObjectTypes(), GraphQLObjectType::getName);
+        return objectType.getName() + "." + fields.get(0).getName();
     }
 }

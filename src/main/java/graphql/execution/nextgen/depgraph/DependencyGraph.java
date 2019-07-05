@@ -1,25 +1,15 @@
 package graphql.execution.nextgen.depgraph;
 
-import graphql.Assert;
 import graphql.language.OperationDefinition;
-import graphql.schema.GraphQLCompositeType;
-import graphql.schema.GraphQLFieldsContainer;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLUnionType;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
 import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitorStub;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
-
-import static graphql.util.FpKit.map;
 
 public class DependencyGraph {
 
@@ -45,7 +35,7 @@ public class DependencyGraph {
             @Override
             public TraversalControl enter(TraverserContext<MergedFieldWTC> context) {
                 MergedFieldWTC mergedFieldWTC = context.thisNode();
-                System.out.println(mergedFieldWTC.getName() + "" + map(mergedFieldWTC.getTypeConditions(), GraphQLType::getName));
+                System.out.println(mergedFieldWTC.getName() + "" + mergedFieldWTC.getObjectType().getName());
 //                List<MergedFieldWTC> parentNodes = context.getParentNodes();
 //                Collections.reverse(parentNodes);
 
@@ -105,45 +95,11 @@ public class DependencyGraph {
                 mergedFieldWTC.getFieldDefinition(),
                 mergedFieldWTC.getFieldsContainer(),
                 mergedFieldWTC.getParentType(),
-                mergedFieldWTC.getTypeConditions()
+                mergedFieldWTC.getObjectType()
         );
 
     }
 
-    private List<String> getPossibleObjectTypesString(MergedFieldWTC mergedFieldWTC, GraphQLSchema graphQLSchema) {
-        return map(getPossibleObjectTypes(mergedFieldWTC, graphQLSchema), GraphQLObjectType::getName);
-    }
-
-    private List<GraphQLObjectType> getPossibleObjectTypes(MergedFieldWTC mergedFieldWTC, GraphQLSchema graphQLSchema) {
-        List<GraphQLObjectType> possibleObjects = getImplicitObjects(graphQLSchema, mergedFieldWTC);
-
-        if (mergedFieldWTC.getTypeConditions().isEmpty()) {
-        } else {
-            for (GraphQLCompositeType typeCondition : mergedFieldWTC.getTypeConditions()) {
-                if (typeCondition instanceof GraphQLObjectType) {
-                    possibleObjects.retainAll(Collections.singleton(typeCondition));
-                } else if (typeCondition instanceof GraphQLInterfaceType) {
-                    possibleObjects.retainAll(graphQLSchema.getImplementations((GraphQLInterfaceType) typeCondition));
-                } else if (typeCondition instanceof GraphQLUnionType) {
-                    possibleObjects.retainAll(((GraphQLUnionType) typeCondition).getTypes());
-                }
-            }
-        }
-        return possibleObjects;
-    }
-
-    private List<GraphQLObjectType> getImplicitObjects(GraphQLSchema graphQLSchema, MergedFieldWTC mergedFieldWTC) {
-        List<GraphQLObjectType> result = new ArrayList<>();
-        GraphQLFieldsContainer fieldsContainer = mergedFieldWTC.getFieldsContainer();
-        if (fieldsContainer instanceof GraphQLInterfaceType) {
-            result.addAll(graphQLSchema.getImplementations((GraphQLInterfaceType) fieldsContainer));
-        } else if (fieldsContainer instanceof GraphQLObjectType) {
-            result.add((GraphQLObjectType) fieldsContainer);
-        } else {
-            return Assert.assertShouldNeverHappen();
-        }
-        return result;
-    }
 
 
     public static void main(String[] args) {
