@@ -272,4 +272,67 @@ type Dog implements Animal{
         true
 
     }
+
+    def "test5"() {
+        String schema = """
+        type Query{ 
+            a: [A]
+        }
+        interface A {
+           b: String
+        }
+        type A1 implements A {
+           b: String 
+        }
+        type A2 implements A{
+            b: String
+            otherField: A
+        }
+        type A3  implements A {
+            b: String
+        }
+    
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+
+        def query = """
+        {
+            a {
+                b
+                ... on A1 {
+                   b 
+                }
+                ... on A2 {
+                    b 
+                    otherField {
+                    ... on A2 {
+                            b
+                        }
+                        ... on A3 {
+                            b
+                        }
+                    }
+                    
+                }
+            }
+        }
+        
+        """
+
+
+        GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build();
+
+        assert graphQL.execute(query).errors.size() == 0
+
+        Document document = new Parser().parseDocument(query)
+        OperationDefinition operationDefinition = (OperationDefinition) document.getDefinitions().get(0);
+
+        DependencyGraph dependencyGraph = new DependencyGraph();
+        dependencyGraph.createDependencyGraph(graphQLSchema, operationDefinition)
+
+        expect:
+        true
+
+    }
 }

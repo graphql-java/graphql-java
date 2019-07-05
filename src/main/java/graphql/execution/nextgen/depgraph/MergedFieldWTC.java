@@ -9,7 +9,6 @@ import graphql.schema.GraphQLOutputType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotEmpty;
@@ -183,24 +182,6 @@ public class MergedFieldWTC {
 
 
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        MergedFieldWTC that = (MergedFieldWTC) o;
-        return fields.equals(that.fields);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(fields);
-    }
-
     @Override
     public String toString() {
         return "MergedFieldWTC{" +

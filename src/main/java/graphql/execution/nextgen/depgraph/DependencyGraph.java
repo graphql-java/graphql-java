@@ -33,7 +33,8 @@ public class DependencyGraph {
                 .build();
 
         Function<MergedFieldWTC, List<MergedFieldWTC>> getChildren = mergedFieldWTC -> {
-            return fieldCollector.collectFields(parameters, mergedFieldWTC);
+            List<MergedFieldWTC> childs = fieldCollector.collectFields(parameters, mergedFieldWTC);
+            return childs;
         };
 
         Traverser<MergedFieldWTC> traverser = Traverser.depthFirst(getChildren);
