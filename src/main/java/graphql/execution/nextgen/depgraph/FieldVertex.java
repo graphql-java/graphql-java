@@ -5,6 +5,7 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLTypeUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,6 +86,6 @@ public class FieldVertex extends Object {
         if (fields == null) {
             return "ROOT VERTEX";
         }
-        return objectType.getName() + "." + fields.get(0).getName();
+        return objectType.getName() + "." + fields.get(0).getName() + ": " + GraphQLTypeUtil.simplePrint(fieldDefinition.getType());
     }
 }

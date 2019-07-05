@@ -335,4 +335,49 @@ type Dog implements Animal{
         true
 
     }
+
+    def "test6"() {
+        String schema = """
+        type Query {
+            issues: [Issue]
+        }
+
+        type Issue {
+            id: ID
+            author: User
+        }
+        type User {
+            name: String
+            createdIssues: [Issue] @dependOn(sourceType: "Issue")
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        def query = """{ issues {
+                    author {
+                        name
+                        ... on User {
+                            createdIssues {
+                                id
+                            }
+                        }
+                    }
+                }}
+                """
+
+
+        GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build();
+
+        assert graphQL.execute(query).errors.size() == 0
+
+        Document document = new Parser().parseDocument(query)
+        OperationDefinition operationDefinition = (OperationDefinition) document.getDefinitions().get(0);
+
+        DependencyGraph dependencyGraph = new DependencyGraph();
+        dependencyGraph.createDependencyGraph(graphQLSchema, operationDefinition)
+
+        expect:
+        true
+
+    }
 }
