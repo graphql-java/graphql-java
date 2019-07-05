@@ -7,6 +7,7 @@ import graphql.util.Traverser;
 import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitorStub;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,33 +33,20 @@ public class DependencyGraph {
         Set<FieldVertex> allVertices = new LinkedHashSet<>();
 
         Traverser<MergedFieldWTC> traverser = Traverser.depthFirst(getChildren);
-//        FieldVertex rootVertex = new FieldVertex(null, null, null, null, null);
-//        traverser.rootVar(FieldVertex.class, rootVertex);
+        FieldVertex rootVertex = new FieldVertex(null, null, null, null, null);
+        traverser.rootVar(FieldVertex.class, rootVertex);
+        allVertices.add(rootVertex);
         List<MergedFieldWTC> roots = fieldCollector.collectFromOperation(parameters, operationDefinition, graphQLSchema.getQueryType());
         traverser.traverse(roots, new TraverserVisitorStub<MergedFieldWTC>() {
             @Override
             public TraversalControl enter(TraverserContext<MergedFieldWTC> context) {
                 MergedFieldWTC mergedFieldWTC = context.thisNode();
                 System.out.println(mergedFieldWTC.getName() + "" + mergedFieldWTC.getObjectType().getName());
-//                List<MergedFieldWTC> parentNodes = context.getParentNodes();
-//                Collections.reverse(parentNodes);
-
-//                List<String> keys = map(parentNodes, parentNode -> {
-//                    return parentNode.getResultKey() + getPossibleObjectTypesString(parentNode, graphQLSchema);
-//                });
-//                String queryPath = String.join("/", keys);
-//                queryPath = "/" + queryPath + "/" + mergedFieldWTC.getResultKey() + getPossibleObjectTypesString(mergedFieldWTC, graphQLSchema);
-////                System.out.println("-----------");
-////                System.out.println("visited key:" + context.thisNode().getResultKey());
-//                System.out.println("query path: " + queryPath + " field type: " + context.thisNode().getFieldDefinition().getType() + " container: " + context.thisNode().getFieldsContainer().getName());
-//                System.out.println("visited: " + context.thisNode());
-
 
                 FieldVertex fieldVertex = createFieldVertex(mergedFieldWTC, graphQLSchema);
                 FieldVertex parentVertex = context.getVarFromParents(FieldVertex.class);
-                if (parentVertex != null) {
-                    fieldVertex.addDependency(parentVertex);
-                }
+                fieldVertex.addDependency(parentVertex);
+                parentVertex.addDependsOnMe(fieldVertex);
                 allVertices.add(fieldVertex);
                 context.setVar(FieldVertex.class, fieldVertex);
 
@@ -67,22 +55,27 @@ public class DependencyGraph {
 
         });
 
-        Set<FieldVertex> unresolvedSet = new LinkedHashSet<>(allVertices);
-        Set<FieldVertex> resolvedSet = new LinkedHashSet<>();
-        while (!unresolvedSet.isEmpty()) {
-            Set<FieldVertex> closure = new LinkedHashSet<>();
-            for (FieldVertex fieldVertex : unresolvedSet) {
-                if (resolvedSet.containsAll(fieldVertex.getDependencies())) {
-                    closure.add(fieldVertex);
+        List<Set<FieldVertex>> listOfClosures = new ArrayList<>();
+        Set<FieldVertex> allClosed = new LinkedHashSet<>();
+        allClosed.add(rootVertex);
+        Set<FieldVertex> curSourceSet = new LinkedHashSet<>();
+        curSourceSet.add(rootVertex);
+
+        while (!curSourceSet.isEmpty()) {
+            Set<FieldVertex> nextClosure = new LinkedHashSet<>();
+            allClosed.addAll(curSourceSet);
+            for (FieldVertex source : curSourceSet) {
+                for (FieldVertex dependsOnSource : source.getDependsOnMe()) {
+                    if (allClosed.containsAll(dependsOnSource.getDependencies())) {
+                        nextClosure.add(dependsOnSource);
+                    }
                 }
             }
-
-            for (FieldVertex node : closure) {
-                System.out.println("Resolve " + node.toString());
-                unresolvedSet.remove(node);
-                resolvedSet.add(node);
-            }
+            listOfClosures.add(nextClosure);
+            curSourceSet = nextClosure;
         }
+
+        System.out.println(listOfClosures);
 
 //        StringBuilder dotFile = new StringBuilder();
 //        dotFile.append("digraph G{\n");
