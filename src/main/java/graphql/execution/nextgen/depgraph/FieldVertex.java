@@ -10,7 +10,7 @@ import graphql.util.FpKit;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FieldVertex {
+public class FieldVertex extends Object {
     private final List<Field> fields;
     private final GraphQLFieldDefinition fieldDefinition;
     private final GraphQLFieldsContainer fieldsContainer;

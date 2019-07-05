@@ -2,9 +2,9 @@ package graphql.execution.nextgen.depgraph;
 
 import graphql.language.Argument;
 import graphql.language.Field;
-import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 
 import java.util.ArrayList;
@@ -18,13 +18,13 @@ import static graphql.Assert.assertNotNull;
 public class MergedFieldWTC {
 
     private final List<Field> fields;
-    private final List<GraphQLCompositeType> typeConditions;
+    private final List<GraphQLObjectType> typeConditions;
     private final GraphQLFieldDefinition fieldDefinition;
     private final GraphQLFieldsContainer fieldsContainer;
     private final GraphQLOutputType parentType;
 
     private MergedFieldWTC(List<Field> fields,
-                           List<GraphQLCompositeType> typeConditions,
+                           List<GraphQLObjectType> typeConditions,
                            GraphQLFieldDefinition fieldDefinition,
                            GraphQLFieldsContainer fieldsContainer,
                            GraphQLOutputType parentType) {
@@ -110,7 +110,7 @@ public class MergedFieldWTC {
         return builder.build();
     }
 
-    public List<GraphQLCompositeType> getTypeConditions() {
+    public List<GraphQLObjectType> getTypeConditions() {
         return typeConditions;
     }
 
@@ -124,7 +124,7 @@ public class MergedFieldWTC {
 
     public static class Builder {
         private List<Field> fields = new ArrayList<>();
-        private List<GraphQLCompositeType> typeConditions = new ArrayList<>();
+        private List<GraphQLObjectType> typeConditions = new ArrayList<>();
         private GraphQLFieldDefinition fieldDefinition;
         private GraphQLFieldsContainer fieldsContainer;
         private GraphQLOutputType parentType;
@@ -147,12 +147,12 @@ public class MergedFieldWTC {
             return this;
         }
 
-        public Builder typeConditions(List<GraphQLCompositeType> typeConditions) {
+        public Builder typeConditions(List<GraphQLObjectType> typeConditions) {
             this.typeConditions = new ArrayList<>(typeConditions);
             return this;
         }
 
-        public Builder typeCondition(GraphQLCompositeType typeCondition) {
+        public Builder typeCondition(GraphQLObjectType typeCondition) {
             this.typeConditions.add(typeCondition);
             return this;
         }
@@ -204,7 +204,6 @@ public class MergedFieldWTC {
     @Override
     public String toString() {
         return "MergedFieldWTC{" +
-                "fields=" + fields +
                 ", typeConditions=" + typeConditions +
                 ", fieldDefinition=" + fieldDefinition +
                 ", fieldsContainer" + fieldsContainer +

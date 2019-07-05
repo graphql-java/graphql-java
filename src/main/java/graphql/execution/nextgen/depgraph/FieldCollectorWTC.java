@@ -14,10 +14,16 @@ import graphql.language.SelectionSet;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLTypeUtil;
+import graphql.schema.GraphQLUnionType;
+import graphql.schema.GraphQLUnmodifiedType;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -34,8 +40,13 @@ public class FieldCollectorWTC {
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
     public List<MergedFieldWTC> collectFields(FieldCollectorParameters parameters, MergedFieldWTC mergedField) {
-        Map<String, Map<Set<GraphQLCompositeType>, MergedFieldWTC>> subFields = new LinkedHashMap<>();
+        Map<String, Map<GraphQLObjectType, MergedFieldWTC>> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
+        GraphQLUnmodifiedType fieldType = GraphQLTypeUtil.unwrapAll(mergedField.getFieldDefinition().getType());
+        Set<GraphQLObjectType> typeConditions = new LinkedHashSet<>();
+        if (fieldType instanceof GraphQLCompositeType) {
+            typeConditions.addAll(resolveType((GraphQLCompositeType) fieldType, parameters.getGraphQLSchema()));
+        }
         for (Field field : mergedField.getFields()) {
             if (field.getSelectionSet() == null) {
                 continue;
@@ -44,7 +55,7 @@ public class FieldCollectorWTC {
                     field.getSelectionSet(),
                     visitedFragments,
                     subFields,
-                    new LinkedHashSet<>(),
+                    typeConditions,
                     mergedField.getFieldDefinition().getType());
         }
         List<MergedFieldWTC> result = new ArrayList<>();
@@ -54,10 +65,12 @@ public class FieldCollectorWTC {
         return result;
     }
 
-    public List<MergedFieldWTC> collectFromOperation(FieldCollectorParameters parameters, OperationDefinition operationDefinition, GraphQLCompositeType rootType) {
-        Map<String, Map<Set<GraphQLCompositeType>, MergedFieldWTC>> subFields = new LinkedHashMap<>();
+    public List<MergedFieldWTC> collectFromOperation(FieldCollectorParameters parameters, OperationDefinition operationDefinition, GraphQLObjectType rootType) {
+        Map<String, Map<GraphQLObjectType, MergedFieldWTC>> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
-        this.collectFields(parameters, operationDefinition.getSelectionSet(), visitedFragments, subFields, new LinkedHashSet<>(), rootType);
+        Set<GraphQLObjectType> typeConditions = new LinkedHashSet<>();
+        typeConditions.add(rootType);
+        this.collectFields(parameters, operationDefinition.getSelectionSet(), visitedFragments, subFields, typeConditions, rootType);
         List<MergedFieldWTC> result = new ArrayList<>();
         subFields.values().forEach(setMergedFieldWTCMap -> {
             result.addAll(setMergedFieldWTCMap.values());
@@ -69,8 +82,8 @@ public class FieldCollectorWTC {
     private void collectFields(FieldCollectorParameters parameters,
                                SelectionSet selectionSet,
                                List<String> visitedFragments,
-                               Map<String, Map<Set<GraphQLCompositeType>, MergedFieldWTC>> fields,
-                               Set<GraphQLCompositeType> typeConditions,
+                               Map<String, Map<GraphQLObjectType, MergedFieldWTC>> fields,
+                               Set<GraphQLObjectType> typeConditions,
                                GraphQLOutputType parentType) {
 
         for (Selection selection : selectionSet.getSelections()) {
@@ -86,9 +99,9 @@ public class FieldCollectorWTC {
 
     private void collectFragmentSpread(FieldCollectorParameters parameters,
                                        List<String> visitedFragments,
-                                       Map<String, Map<Set<GraphQLCompositeType>, MergedFieldWTC>> fields,
+                                       Map<String, Map<GraphQLObjectType, MergedFieldWTC>> fields,
                                        FragmentSpread fragmentSpread,
-                                       Set<GraphQLCompositeType> typeConditions,
+                                       Set<GraphQLObjectType> typeConditions,
                                        GraphQLOutputType parentType) {
         if (visitedFragments.contains(fragmentSpread.getName())) {
             return;
@@ -102,8 +115,8 @@ public class FieldCollectorWTC {
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), fragmentDefinition.getDirectives())) {
             return;
         }
-        Set<GraphQLCompositeType> newConditions = new LinkedHashSet<>(typeConditions);
-        newConditions.add((GraphQLCompositeType) parameters.getGraphQLSchema().getType(fragmentDefinition.getTypeCondition().getName()));
+        GraphQLCompositeType newCondition = (GraphQLCompositeType) parameters.getGraphQLSchema().getType(fragmentDefinition.getTypeCondition().getName());
+        Set<GraphQLObjectType> newConditions = getPossibleObjectTypes(typeConditions, newCondition, parameters.getGraphQLSchema());
         GraphQLCompositeType newParentType = (GraphQLCompositeType)
                 Assert.assertNotNull(parameters.getGraphQLSchema().getType(fragmentDefinition.getTypeCondition().getName()));
         collectFields(parameters, fragmentDefinition.getSelectionSet(), visitedFragments, fields, newConditions, newParentType);
@@ -111,16 +124,17 @@ public class FieldCollectorWTC {
 
     private void collectInlineFragment(FieldCollectorParameters parameters,
                                        List<String> visitedFragments,
-                                       Map<String, Map<Set<GraphQLCompositeType>, MergedFieldWTC>> fields,
+                                       Map<String, Map<GraphQLObjectType, MergedFieldWTC>> fields,
                                        InlineFragment inlineFragment,
-                                       Set<GraphQLCompositeType> typeConditions,
+                                       Set<GraphQLObjectType> typeConditions,
                                        GraphQLOutputType parentType) {
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), inlineFragment.getDirectives())) {
             return;
         }
-        Set<GraphQLCompositeType> newConditions = new LinkedHashSet<>(typeConditions);
+        Set<GraphQLObjectType> newConditions = typeConditions;
         if (inlineFragment.getTypeCondition() != null) {
-            newConditions.add((GraphQLCompositeType) parameters.getGraphQLSchema().getType(inlineFragment.getTypeCondition().getName()));
+            GraphQLCompositeType newCondition = (GraphQLCompositeType) parameters.getGraphQLSchema().getType(inlineFragment.getTypeCondition().getName());
+            newConditions = getPossibleObjectTypes(typeConditions, newCondition, parameters.getGraphQLSchema());
             parentType = (GraphQLCompositeType)
                     Assert.assertNotNull(parameters.getGraphQLSchema().getType(inlineFragment.getTypeCondition().getName()));
 
@@ -129,30 +143,33 @@ public class FieldCollectorWTC {
     }
 
     private void collectField(FieldCollectorParameters parameters,
-                              Map<String, Map<Set<GraphQLCompositeType>, MergedFieldWTC>> fields,
+                              Map<String, Map<GraphQLObjectType, MergedFieldWTC>> fields,
                               Field field,
-                              Set<GraphQLCompositeType> typeConditions,
+                              Set<GraphQLObjectType> objectTypes,
                               GraphQLOutputType parentType) {
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), field.getDirectives())) {
             return;
         }
         String name = getFieldEntryKey(field);
         fields.computeIfAbsent(name, ignored -> new LinkedHashMap<>());
-        Map<Set<GraphQLCompositeType>, MergedFieldWTC> existingFieldWTC = fields.get(name);
-        if (existingFieldWTC.containsKey(typeConditions)) {
-            MergedFieldWTC mergedFieldWTC = existingFieldWTC.get(typeConditions);
-            existingFieldWTC.put(typeConditions, mergedFieldWTC.transform(builder -> builder.addField(field)));
-        } else {
-            GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) GraphQLTypeUtil.unwrapAll(parentType);
-            MergedFieldWTC newFieldWTC = MergedFieldWTC.newMergedFieldWTC(field)
-                    .typeConditions(new ArrayList<>(typeConditions))
-                    .fieldDefinition(getFieldDefinition(fieldsContainer, field.getName()))
-                    .fieldsContainer(fieldsContainer)
-                    .parentType(parentType)
-                    .build();
-            existingFieldWTC.put(typeConditions, newFieldWTC);
+        Map<GraphQLObjectType, MergedFieldWTC> existingFieldWTC = fields.get(name);
+        for (GraphQLObjectType objectType : objectTypes) {
+            if (existingFieldWTC.containsKey(objectType)) {
+                MergedFieldWTC mergedFieldWTC = existingFieldWTC.get(objectType);
+                existingFieldWTC.put(objectType, mergedFieldWTC.transform(builder -> builder.addField(field)));
+            } else {
+                GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) GraphQLTypeUtil.unwrapAll(parentType);
+                MergedFieldWTC newFieldWTC = MergedFieldWTC.newMergedFieldWTC(field)
+                        .typeCondition((objectType))
+                        .fieldDefinition(getFieldDefinition(fieldsContainer, field.getName()))
+                        .fieldsContainer(fieldsContainer)
+                        .parentType(parentType)
+                        .build();
+                existingFieldWTC.put(objectType, newFieldWTC);
+            }
         }
     }
+
 
     private GraphQLFieldDefinition getFieldDefinition(GraphQLCompositeType parentType, String fieldName) {
 
@@ -173,6 +190,45 @@ public class FieldCollectorWTC {
         } else {
             return field.getName();
         }
+    }
+
+    private Set<GraphQLObjectType> getPossibleObjectTypes(Set<GraphQLObjectType> currentOnes, GraphQLCompositeType typeCondition, GraphQLSchema graphQLSchema) {
+
+        List<GraphQLObjectType> resolvedTypeCondition = resolveType(typeCondition, graphQLSchema);
+        if (currentOnes.size() == 0) {
+            return new LinkedHashSet<>(resolvedTypeCondition);
+        }
+
+        Set<GraphQLObjectType> result = new LinkedHashSet<>(currentOnes);
+        result.retainAll(resolvedTypeCondition);
+        return result;
+    }
+
+    private List<GraphQLObjectType> resolveType(GraphQLCompositeType type, GraphQLSchema graphQLSchema) {
+        if (type instanceof GraphQLObjectType) {
+            return Collections.singletonList((GraphQLObjectType) type);
+        } else if (type instanceof GraphQLInterfaceType) {
+            return graphQLSchema.getImplementations((GraphQLInterfaceType) type);
+        } else if (type instanceof GraphQLUnionType) {
+            List types = ((GraphQLUnionType) type).getTypes();
+            return new ArrayList<GraphQLObjectType>(types);
+        } else {
+            return Assert.assertShouldNeverHappen();
+        }
+
+    }
+
+    private List<GraphQLObjectType> getImplicitObjects(GraphQLSchema graphQLSchema, MergedFieldWTC mergedFieldWTC) {
+        List<GraphQLObjectType> result = new ArrayList<>();
+        GraphQLFieldsContainer fieldsContainer = mergedFieldWTC.getFieldsContainer();
+        if (fieldsContainer instanceof GraphQLInterfaceType) {
+            result.addAll(graphQLSchema.getImplementations((GraphQLInterfaceType) fieldsContainer));
+        } else if (fieldsContainer instanceof GraphQLObjectType) {
+            result.add((GraphQLObjectType) fieldsContainer);
+        } else {
+            return Assert.assertShouldNeverHappen();
+        }
+        return result;
     }
 
 

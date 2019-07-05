@@ -7,6 +7,7 @@ import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
@@ -15,9 +16,7 @@ import graphql.util.TraverserVisitorStub;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Function;
 
 import static graphql.util.FpKit.map;
@@ -45,6 +44,7 @@ public class DependencyGraph {
             @Override
             public TraversalControl enter(TraverserContext<MergedFieldWTC> context) {
                 MergedFieldWTC mergedFieldWTC = context.thisNode();
+                System.out.println(mergedFieldWTC.getName() + "" + map(mergedFieldWTC.getTypeConditions(), GraphQLType::getName));
 //                List<MergedFieldWTC> parentNodes = context.getParentNodes();
 //                Collections.reverse(parentNodes);
 
@@ -59,20 +59,8 @@ public class DependencyGraph {
 //                System.out.println("visited: " + context.thisNode());
 
 
-                Set<GraphQLObjectType> possibleObjectTypes = new LinkedHashSet<>(getPossibleObjectTypes(mergedFieldWTC, graphQLSchema));
                 FieldVertex parentVertex = context.getVarFromParents(FieldVertex.class);
-//                List<FieldVertex> newChildren = new ArrayList<>();
-//                for (FieldVertex child : parentVertex.getChildren()) {
-//                    if (!child.getResultKey().equals(mergedFieldWTC.getResultKey())) {
-//                        newChildren.add(child);
-//                        continue;
-//                    }
-//                    possibleObjectTypes.addAll(child.getPossibleObjectTypes());
-//                }
-
-                FieldVertex fieldVertex = createFieldVertex(mergedFieldWTC, graphQLSchema, new ArrayList<>(possibleObjectTypes));
-//                newChildren.add(fieldVertex);
-//                parentVertex.setChildren(newChildren);
+                FieldVertex fieldVertex = createFieldVertex(mergedFieldWTC, graphQLSchema);
                 context.setVar(FieldVertex.class, fieldVertex);
                 parentVertex.addChild(fieldVertex);
 
@@ -81,27 +69,43 @@ public class DependencyGraph {
 
         });
 
-
+        StringBuilder dotFile = new StringBuilder();
+        dotFile.append("digraph G{\n");
         Traverser<FieldVertex> traverserVertex = Traverser.depthFirst(FieldVertex::getChildren);
 
+        List<FieldVertex> allVertices = new ArrayList<>();
         traverserVertex.traverse(rootVertex, new TraverserVisitorStub<FieldVertex>() {
             @Override
             public TraversalControl enter(TraverserContext<FieldVertex> context) {
                 FieldVertex fieldVertex = context.thisNode();
-                System.out.println(fieldVertex);
+                FieldVertex parentVertex = context.getParentNode();
+                if (parentVertex != null) {
+                    String vertexId = fieldVertex.getClass().getSimpleName() + Integer.toHexString(fieldVertex.hashCode());
+                    String parentVertexId = parentVertex.getClass().getSimpleName() + Integer.toHexString(parentVertex.hashCode());
+                    dotFile.append(vertexId).append(" -> ").append(parentVertexId).append(";\n");
+                }
+                allVertices.add(context.thisNode());
                 return TraversalControl.CONTINUE;
             }
         });
 
+        for (FieldVertex fieldVertex : allVertices) {
+            dotFile.append(fieldVertex.getClass().getSimpleName()).append(Integer.toHexString(fieldVertex.hashCode())).append("[label=\"")
+                    .append(fieldVertex.toString()).append("\"];\n");
+        }
+
+        dotFile.append("}");
+        System.out.println(dotFile);
         return null;
     }
 
-    private FieldVertex createFieldVertex(MergedFieldWTC mergedFieldWTC, GraphQLSchema graphQLSchema, List<GraphQLObjectType> possibleObjectTypes) {
+    private FieldVertex createFieldVertex(MergedFieldWTC mergedFieldWTC, GraphQLSchema graphQLSchemas) {
         return new FieldVertex(mergedFieldWTC.getFields(),
                 mergedFieldWTC.getFieldDefinition(),
                 mergedFieldWTC.getFieldsContainer(),
                 mergedFieldWTC.getParentType(),
-                possibleObjectTypes);
+                mergedFieldWTC.getTypeConditions()
+        );
 
     }
 

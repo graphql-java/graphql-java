@@ -123,6 +123,9 @@ type Dog implements Animal{
                      ... on B1 {
                         leaf
                         }
+                     ... on B2 {
+                        leaf
+                        }
                    }
                 }
                 ... on A2 {
@@ -152,6 +155,10 @@ type Dog implements Animal{
         String schema = """
         type Query{ 
             a: [A]
+            object: Object
+        }
+        type Object {
+            someValue: String
         }
         interface A {
            b: B  
@@ -177,30 +184,30 @@ type Dog implements Animal{
 
         String query = """
         {
-            a {
-                ... on A1 {
-                   b { 
-                   ... on B {
-                    leaf
-                   }
-                     ... on B1 {
-                        leaf
-                        }
-                       ... on B2 {
-                       ... on B {
-                            leaf
-                       }
-                            leaf
-                            leaf
-                            ... on B2 {
-                                leaf
-                            }
-                       } 
-                   }
+          object{someValue}
+          a {
+            ... on A1 {
+              b {
+                ... on B {
+                  leaf
                 }
+                ... on B1 {
+                  leaf
+                }
+                ... on B2 {
+                  ... on B {
+                    leaf
+                  }
+                  leaf
+                  leaf
+                  ... on B2 {
+                    leaf
+                  }
+                }
+              }
             }
+          }
         }
-        
         """
 
         GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build();
