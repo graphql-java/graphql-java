@@ -128,6 +128,13 @@ type Dog implements Animal{
                         }
                    }
                 }
+                ... on A1 {
+                   b { 
+                     ... on B1 {
+                        leaf
+                        }
+                   }
+                }
                 ... on A2 {
                     b {
                        ... on B2 {
