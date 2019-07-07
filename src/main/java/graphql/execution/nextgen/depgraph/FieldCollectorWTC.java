@@ -137,14 +137,16 @@ public class FieldCollectorWTC {
             return;
         }
         Set<GraphQLObjectType> newPossibleOjects = possibleObjects;
+        GraphQLOutputType newParentType = parentType;
+
         if (inlineFragment.getTypeCondition() != null) {
             GraphQLCompositeType newCondition = (GraphQLCompositeType) parameters.getGraphQLSchema().getType(inlineFragment.getTypeCondition().getName());
             newPossibleOjects = narrowDownPossibleObjects(possibleObjects, newCondition, parameters.getGraphQLSchema());
-            parentType = (GraphQLCompositeType)
+            newParentType = (GraphQLCompositeType)
                     Assert.assertNotNull(parameters.getGraphQLSchema().getType(inlineFragment.getTypeCondition().getName()));
 
         }
-        collectFields(parameters, inlineFragment.getSelectionSet(), visitedFragments, result, newPossibleOjects, parentType);
+        collectFields(parameters, inlineFragment.getSelectionSet(), visitedFragments, result, newPossibleOjects, newParentType);
     }
 
     private void collectField(FieldCollectorParameters parameters,
