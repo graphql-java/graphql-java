@@ -989,19 +989,6 @@ many lines''']
 
     }
 
-    def "variables map can't be null via ExecutionInput constructor"() {
-        given:
-
-        when:
-        new ExecutionInput("query", "opName", null, null, null);
-
-        then:
-        def assEx = thrown(AssertException)
-        assEx.message.contains("variables map can't be null")
-
-
-    }
-
     def "query can't be null via ExecutionInput"() {
         given:
 
@@ -1028,16 +1015,4 @@ many lines''']
 
     }
 
-    def "query can't be null via ExecutionInput constructor"() {
-        given:
-
-        when:
-        new ExecutionInput(null, "opName", null, null, null);
-
-        then:
-        def assEx = thrown(AssertException)
-        assEx.message.contains("query can't be null")
-
-
-    }
 }

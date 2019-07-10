@@ -26,17 +26,14 @@ public class ExecutionInput {
     private final ExecutionId executionId;
 
 
-    public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables) {
-        this(query, operationName, context, root, variables, new DataLoaderRegistry(), null, null);
-    }
-
     @Internal
     private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, ExecutionId executionId) {
         this.query = assertNotNull(query, "query can't be null");
         this.operationName = operationName;
         this.context = context;
         this.root = root;
-        this.variables = assertNotNull(variables, "variables map can't be null");
+        this.variables = variables;
+//        this.variables = assertNotNull(variables, "variables map can't be null");
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.cacheControl = cacheControl;
         this.executionId = executionId;
