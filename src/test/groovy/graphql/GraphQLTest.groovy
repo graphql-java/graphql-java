@@ -1001,4 +1001,43 @@ many lines''']
 
 
     }
+
+    def "query can't be null via ExecutionInput"() {
+        given:
+
+        when:
+        def input = newExecutionInput().query(null).build()
+
+        then:
+        def assEx = thrown(AssertException)
+        assEx.message.contains("query can't be null")
+
+
+    }
+
+    def "query must be set via ExecutionInput"() {
+        given:
+
+        when:
+        def input = newExecutionInput().query().build()
+
+        then:
+        def assEx = thrown(AssertException)
+        assEx.message.contains("query can't be null")
+
+
+    }
+
+    def "query can't be null via ExecutionInput constructor"() {
+        given:
+
+        when:
+        new ExecutionInput(null, "opName", null, null, null);
+
+        then:
+        def assEx = thrown(AssertException)
+        assEx.message.contains("query can't be null")
+
+
+    }
 }
