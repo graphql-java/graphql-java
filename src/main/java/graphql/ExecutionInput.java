@@ -33,7 +33,6 @@ public class ExecutionInput {
         this.context = context;
         this.root = root;
         this.variables = variables;
-//        this.variables = assertNotNull(variables, "variables map can't be null");
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.cacheControl = cacheControl;
         this.executionId = executionId;
