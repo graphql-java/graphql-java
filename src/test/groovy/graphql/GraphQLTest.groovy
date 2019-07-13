@@ -77,13 +77,13 @@ class GraphQLTest extends Specification {
         GraphQLObjectType heroType = newObject()
                 .name("heroType")
                 .field(
-                newFieldDefinition()
-                        .name("id")
-                        .type(GraphQLString))
+                        newFieldDefinition()
+                                .name("id")
+                                .type(GraphQLString))
                 .field(
-                newFieldDefinition()
-                        .name("name")
-                        .type(GraphQLString))
+                        newFieldDefinition()
+                                .name("name")
+                                .type(GraphQLString))
                 .build()
 
         GraphQLFieldDefinition.Builder simpsonField = newFieldDefinition()
@@ -166,11 +166,11 @@ class GraphQLTest extends Specification {
                 newObject()
                         .name("RootQueryType")
                         .field(newFieldDefinition()
-                        .name("field")
-                        .type(GraphQLString)
-                        .argument(newArgument()
-                        .name("arg")
-                        .type(GraphQLNonNull.nonNull(GraphQLString))))
+                                .name("field")
+                                .type(GraphQLString)
+                                .argument(newArgument()
+                                        .name("arg")
+                                        .type(GraphQLNonNull.nonNull(GraphQLString))))
                         .build()
         ).build()
 
@@ -192,11 +192,11 @@ class GraphQLTest extends Specification {
 
         def schema = newSchema()
                 .query(newObject()
-                .name("QueryType")
-                .field(newFieldDefinition()
-                .name("set")
-                .type(list(GraphQLString))
-                .dataFetcher({ set })))
+                        .name("QueryType")
+                        .field(newFieldDefinition()
+                                .name("set")
+                                .type(list(GraphQLString))
+                                .dataFetcher({ set })))
                 .build()
 
         when:
@@ -295,12 +295,12 @@ class GraphQLTest extends Specification {
                 newObject()
                         .name("QueryType")
                         .field(
-                        newFieldDefinition()
-                                .name("foo")
-                                .type(GraphQLInt)
-                                .argument(newArgument().name("bar").type(GraphQLInt).build())
-                                .dataFetcher({ return it.getArgument("bar") })
-                ))
+                                newFieldDefinition()
+                                        .name("foo")
+                                        .type(GraphQLInt)
+                                        .argument(newArgument().name("bar").type(GraphQLInt).build())
+                                        .dataFetcher({ return it.getArgument("bar") })
+                        ))
                 .build()
         def query = "{foo(bar: 12345678910)}"
         when:
@@ -319,12 +319,12 @@ class GraphQLTest extends Specification {
                 newObject()
                         .name("QueryType")
                         .field(
-                        newFieldDefinition()
-                                .name("foo")
-                                .type(GraphQLInt)
-                                .argument(newArgument().name("bar").type(GraphQLInt).build())
-                                .dataFetcher(dataFetcher)
-                ))
+                                newFieldDefinition()
+                                        .name("foo")
+                                        .type(GraphQLInt)
+                                        .argument(newArgument().name("bar").type(GraphQLInt).build())
+                                        .dataFetcher(dataFetcher)
+                        ))
                 .build()
         def query = "{foo}"
         when:
@@ -345,12 +345,12 @@ class GraphQLTest extends Specification {
                 newObject()
                         .name("QueryType")
                         .field(
-                        newFieldDefinition()
-                                .name("foo")
-                                .type(GraphQLInt)
-                                .argument(newArgument().name("bar").type(GraphQLInt).build())
-                                .dataFetcher(dataFetcher)
-                ))
+                                newFieldDefinition()
+                                        .name("foo")
+                                        .type(GraphQLInt)
+                                        .argument(newArgument().name("bar").type(GraphQLInt).build())
+                                        .dataFetcher(dataFetcher)
+                        ))
                 .build()
         def query = "{foo(bar: null)}"
         DataFetchingEnvironment dataFetchingEnvironment
@@ -377,12 +377,12 @@ class GraphQLTest extends Specification {
                 newObject()
                         .name("QueryType")
                         .field(
-                        newFieldDefinition()
-                                .name("foo")
-                                .type(GraphQLInt)
-                                .argument(newArgument().name("bar").type(inputObject).build())
-                                .dataFetcher(dataFetcher)
-                ))
+                                newFieldDefinition()
+                                        .name("foo")
+                                        .type(GraphQLInt)
+                                        .argument(newArgument().name("bar").type(inputObject).build())
+                                        .dataFetcher(dataFetcher)
+                        ))
                 .build()
         def query = "{foo(bar: {someKey: \"value\"})}"
         when:
@@ -410,12 +410,12 @@ class GraphQLTest extends Specification {
                 newObject()
                         .name("QueryType")
                         .field(
-                        newFieldDefinition()
-                                .name("foo")
-                                .type(GraphQLInt)
-                                .argument(newArgument().name("bar").type(inputObject).build())
-                                .dataFetcher(dataFetcher)
-                ))
+                                newFieldDefinition()
+                                        .name("foo")
+                                        .type(GraphQLInt)
+                                        .argument(newArgument().name("bar").type(inputObject).build())
+                                        .dataFetcher(dataFetcher)
+                        ))
                 .build()
         def query = "{foo(bar: {someKey: \"value\", otherKey: null})}"
         when:
@@ -443,12 +443,12 @@ class GraphQLTest extends Specification {
                 newObject()
                         .name("QueryType")
                         .field(
-                        newFieldDefinition()
-                                .name("foo")
-                                .type(GraphQLInt)
-                                .argument(newArgument().name("bar").type(inputObject).build())
-                                .dataFetcher(dataFetcher)
-                ))
+                                newFieldDefinition()
+                                        .name("foo")
+                                        .type(GraphQLInt)
+                                        .argument(newArgument().name("bar").type(inputObject).build())
+                                        .dataFetcher(dataFetcher)
+                        ))
                 .build()
         def query = "{foo(bar: {})}"
         when:
@@ -474,12 +474,12 @@ class GraphQLTest extends Specification {
                 newObject()
                         .name("QueryType")
                         .field(
-                        newFieldDefinition()
-                                .name("foo")
-                                .type(GraphQLInt)
-                                .argument(newArgument().name("bar").type(inputObject).build())
-                                .dataFetcher(dataFetcher)
-                ))
+                                newFieldDefinition()
+                                        .name("foo")
+                                        .type(GraphQLInt)
+                                        .argument(newArgument().name("bar").type(inputObject).build())
+                                        .dataFetcher(dataFetcher)
+                        ))
                 .build()
         def query = "{foo(bar: {list: null})}"
         when:
@@ -506,12 +506,12 @@ class GraphQLTest extends Specification {
                 newObject()
                         .name("QueryType")
                         .field(
-                        newFieldDefinition()
-                                .name("foo")
-                                .type(GraphQLInt)
-                                .argument(newArgument().name("bar").type(inputObject).build())
-                                .dataFetcher(dataFetcher)
-                ))
+                                newFieldDefinition()
+                                        .name("foo")
+                                        .type(GraphQLInt)
+                                        .argument(newArgument().name("bar").type(inputObject).build())
+                                        .dataFetcher(dataFetcher)
+                        ))
                 .build()
         def query = "{foo(bar: {list: [null]})}"
         when:
@@ -545,9 +545,9 @@ class GraphQLTest extends Specification {
         GraphQLObjectType queryType = newObject()
                 .name("QueryType")
                 .field(newFieldDefinition()
-                .name("query")
-                .argument(newArgument().name("fooParam").type(enumType))
-                .type(GraphQLInt))
+                        .name("query")
+                        .argument(newArgument().name("fooParam").type(enumType))
+                        .type(GraphQLInt))
                 .build()
 
         GraphQLSchema schema = newSchema()
@@ -619,21 +619,21 @@ class GraphQLTest extends Specification {
         def foo = newObject()
                 .name("Foo")
                 .field(newFieldDefinition()
-                .name("field")
-                .type(typeRef('Foo'))
-                .build())
+                        .name("field")
+                        .type(typeRef('Foo'))
+                        .build())
                 .field(newFieldDefinition()
-                .name("scalar")
-                .type(GraphQLString)
-                .build())
+                        .name("scalar")
+                        .type(GraphQLString)
+                        .build())
                 .build()
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("RootQueryType")
                         .field(newFieldDefinition()
-                        .name("field")
-                        .type(foo)
-                        .build()).build())
+                                .name("field")
+                                .type(foo)
+                                .build()).build())
                 .build()
 
         MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(3)
@@ -663,21 +663,21 @@ class GraphQLTest extends Specification {
         def foo = newObject()
                 .name("Foo")
                 .field(newFieldDefinition()
-                .name("field")
-                .type(typeRef('Foo'))
-                .build())
+                        .name("field")
+                        .type(typeRef('Foo'))
+                        .build())
                 .field(newFieldDefinition()
-                .name("scalar")
-                .type(GraphQLString)
-                .build())
+                        .name("scalar")
+                        .type(GraphQLString)
+                        .build())
                 .build()
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("RootQueryType")
                         .field(newFieldDefinition()
-                        .name("field")
-                        .type(foo)
-                        .build()).build())
+                                .name("field")
+                                .type(foo)
+                                .build()).build())
                 .build()
 
         MaxQueryComplexityInstrumentation maxQueryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(3)
@@ -707,32 +707,32 @@ class GraphQLTest extends Specification {
                 .name("Foo")
                 .withInterface(typeRef("Node"))
                 .field(
-                { field ->
-                    field
-                            .name("id")
-                            .type(Scalars.GraphQLID)
-                } as UnaryOperator)
+                        { field ->
+                            field
+                                    .name("id")
+                                    .type(Scalars.GraphQLID)
+                        } as UnaryOperator)
                 .build()
 
         GraphQLInterfaceType node = GraphQLInterfaceType.newInterface()
                 .name("Node")
                 .field(
-                { field ->
-                    field
-                            .name("id")
-                            .type(Scalars.GraphQLID)
-                } as UnaryOperator)
+                        { field ->
+                            field
+                                    .name("id")
+                                    .type(Scalars.GraphQLID)
+                        } as UnaryOperator)
                 .typeResolver({ type -> foo })
                 .build()
 
         GraphQLObjectType query = newObject()
                 .name("RootQuery")
                 .field(
-                { field ->
-                    field
-                            .name("a")
-                            .type(node)
-                } as UnaryOperator)
+                        { field ->
+                            field
+                                    .name("a")
+                                    .type(node)
+                        } as UnaryOperator)
                 .build()
 
         GraphQLSchema schema = newSchema()
@@ -767,49 +767,49 @@ class GraphQLTest extends Specification {
                 .name("Foo")
                 .withInterface(typeRef("Node"))
                 .field(
-                { field ->
-                    field
-                            .name("id")
-                            .type(Scalars.GraphQLID)
-                } as UnaryOperator)
+                        { field ->
+                            field
+                                    .name("id")
+                                    .type(Scalars.GraphQLID)
+                        } as UnaryOperator)
                 .build()
 
         GraphQLInterfaceType node = GraphQLInterfaceType.newInterface()
                 .name("Node")
                 .field(
-                { field ->
-                    field
-                            .name("id")
-                            .type(Scalars.GraphQLID)
-                } as UnaryOperator)
+                        { field ->
+                            field
+                                    .name("id")
+                                    .type(Scalars.GraphQLID)
+                        } as UnaryOperator)
                 .typeResolver(
-                {
-                    env ->
-                        if (env.getObject() instanceof CompletableFuture) {
-                            throw new RuntimeException("This seems bad!")
-                        }
+                        {
+                            env ->
+                                if (env.getObject() instanceof CompletableFuture) {
+                                    throw new RuntimeException("This seems bad!")
+                                }
 
-                        return foo
-                })
+                                return foo
+                        })
                 .build()
 
         GraphQLObjectType query = newObject()
                 .name("RootQuery")
                 .field(
-                { field ->
-                    field
-                            .name("node")
-                            .dataFetcher(
-                            { env ->
-                                CompletableFuture.supplyAsync({ ->
-                                    Map<String, String> map = new HashMap<>()
-                                    map.put("id", "abc")
+                        { field ->
+                            field
+                                    .name("node")
+                                    .dataFetcher(
+                                            { env ->
+                                                CompletableFuture.supplyAsync({ ->
+                                                    Map<String, String> map = new HashMap<>()
+                                                    map.put("id", "abc")
 
-                                    return map
-                                })
-                            })
-                            .type(node)
-                } as UnaryOperator)
+                                                    return map
+                                                })
+                                            })
+                                    .type(node)
+                        } as UnaryOperator)
                 .build()
 
         GraphQLSchema schema = newSchema()
@@ -956,7 +956,7 @@ class GraphQLTest extends Specification {
                 .type(GraphQLString)
                 .argument(newArgument().name("arg").type(GraphQLString))
                 .dataFetcher({ env -> env.getArgument("arg") }
-        )
+                )
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("Query")
@@ -975,4 +975,44 @@ many lines""") }''')
 over
 many lines''']
     }
+
+    def "variables map can't be null via ExecutionInput"() {
+        given:
+
+        when:
+        def input = newExecutionInput().query('query($var:String){ hello(arg: $var) }').variables(null).build()
+
+        then:
+        def assEx = thrown(AssertException)
+        assEx.message.contains("variables map can't be null")
+
+
+    }
+
+    def "query can't be null via ExecutionInput"() {
+        given:
+
+        when:
+        def input = newExecutionInput().query(null).build()
+
+        then:
+        def assEx = thrown(AssertException)
+        assEx.message.contains("query can't be null")
+
+
+    }
+
+    def "query must be set via ExecutionInput"() {
+        given:
+
+        when:
+        def input = newExecutionInput().query().build()
+
+        then:
+        def assEx = thrown(AssertException)
+        assEx.message.contains("query can't be null")
+
+
+    }
+
 }
