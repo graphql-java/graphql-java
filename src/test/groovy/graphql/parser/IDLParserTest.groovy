@@ -30,6 +30,7 @@ import graphql.language.OperationTypeDefinition
 import graphql.language.ScalarTypeDefinition
 import graphql.language.ScalarTypeExtensionDefinition
 import graphql.language.SchemaDefinition
+import graphql.language.TypeDefinition
 import graphql.language.TypeName
 import graphql.language.UnionTypeDefinition
 import graphql.language.UnionTypeExtensionDefinition
@@ -811,5 +812,26 @@ input Gun {
         assert asClass == definition.getClass(), "Could not find expected definition of type " + asClass.getName() + " but was " + definition.getClass().getName()
         return asClass.cast(definition)
     }
+
+    def "able to allow special names for field names"() {
+        given:
+
+        def input = """
+        type Query {
+          true: String
+          fragment: String
+          false: String
+          on: String
+          null: String
+        }
+    """
+        when:
+        Document document = Parser.parse(input)
+        String name = (document.definitions[0] as TypeDefinition).name
+
+        then:
+        name == "Query"
+    }
+
 }
 
