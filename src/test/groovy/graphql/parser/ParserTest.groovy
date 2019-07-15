@@ -718,4 +718,19 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         ((FloatValue) argumentValue).value.toString() == "1.7976931348155E+308"
     }
 
+    def "parse fragment definition"() {
+        given:
+        def input = """
+            fragment Foo on Bar {
+                hello
+            }
+        """
+        when:
+        Document document = Parser.parse(input)
+        FragmentDefinition fragmentDefinition = (document.definitions[0] as FragmentDefinition)
+
+        then:
+        fragmentDefinition.name == "Foo"
+
+    }
 }
