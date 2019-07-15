@@ -747,5 +747,8 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         then:
         def e = thrown(InvalidSyntaxException)
         e.message.contains("Invalid syntax")
+        e.sourcePreview == input + "\n"
+        e.location.line == 3
+        e.location.column == 20
     }
 }

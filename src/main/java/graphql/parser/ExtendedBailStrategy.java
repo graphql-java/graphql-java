@@ -1,5 +1,6 @@
 package graphql.parser;
 
+import graphql.Internal;
 import graphql.language.SourceLocation;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.Parser;
@@ -7,10 +8,7 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
-import java.util.List;
-
-import static graphql.parser.SourceLocationHelper.mkSourceLocation;
-
+@Internal
 public class ExtendedBailStrategy extends BailErrorStrategy {
     private final MultiSourceReader multiSourceReader;
 
@@ -37,8 +35,8 @@ public class ExtendedBailStrategy extends BailErrorStrategy {
     }
 
     InvalidSyntaxException mkMoreTokensException(Token token) {
-        SourceLocation sourceLocation = mkSourceLocation(multiSourceReader, token);
-        String sourcePreview = mkPreview(token);
+        SourceLocation sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, token);
+        String sourcePreview = AntlrHelper.createPreview(multiSourceReader, token.getLine());
         return new InvalidSyntaxException(sourceLocation,
                 "There are more tokens in the query that have not been consumed",
                 sourcePreview, token.getText(), null);
@@ -51,26 +49,11 @@ public class ExtendedBailStrategy extends BailErrorStrategy {
         SourceLocation sourceLocation = null;
         Token currentToken = recognizer.getCurrentToken();
         if (currentToken != null) {
-            sourceLocation = mkSourceLocation(multiSourceReader, currentToken);
+            sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, currentToken);
             offendingToken = currentToken.getText();
-            sourcePreview = mkPreview(currentToken);
+            sourcePreview = AntlrHelper.createPreview(multiSourceReader, currentToken.getLine());
         }
         return new InvalidSyntaxException(sourceLocation, null, sourcePreview, offendingToken, cause);
-    }
-
-    /* grabs 3 lines before and after the syntax error */
-    private String mkPreview(Token token) {
-        int line = token.getLine() - 1;
-        StringBuilder sb = new StringBuilder();
-        int startLine = line - 3;
-        int endLine = line + 3;
-        List<String> lines = multiSourceReader.getData();
-        for (int i = 0; i < lines.size(); i++) {
-            if (i >= startLine && i <= endLine) {
-                sb.append(lines.get(i)).append('\n');
-            }
-        }
-        return sb.toString();
     }
 
 }
