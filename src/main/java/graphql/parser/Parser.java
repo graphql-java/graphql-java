@@ -18,6 +18,11 @@ import java.util.List;
 @Internal
 public class Parser {
 
+
+    public static Document parse(String input) {
+        return new Parser().parseDocument(input);
+    }
+
     public Document parseDocument(String input) throws InvalidSyntaxException {
         return parseDocument(input, null);
     }
