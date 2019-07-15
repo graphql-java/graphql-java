@@ -121,7 +121,7 @@ TripleQuotedStringValue
 // Fragments never become a token of their own: they are only used inside other lexer rules
 fragment TripleQuotedStringPart : ( EscapedTripleQuote | SourceCharacter )+?;
 fragment EscapedTripleQuote : '\\"""';
-fragment SourceCharacter :[\u0009\u000A\u000D\u0020-\uFFFF];
+fragment SourceCharacter :[\u0009\u000A\u000D\u0020-\u{10FFFF}];
 
 Comment: '#' ~[\n\r\u2028\u2029]* -> channel(2);
 

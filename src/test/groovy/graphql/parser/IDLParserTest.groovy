@@ -833,5 +833,25 @@ input Gun {
         name == "Query"
     }
 
+
+    def "parse description with emoji characters"() {
+        def input = '''
+        enum ReactionContent {
+              """
+              Represents the 😕 emoji.
+              """
+              someValue
+        }
+    '''
+        when:
+        Document document = Parser.parse(input)
+        EnumTypeDefinition enumType = (document.definitions[0] as EnumTypeDefinition)
+        String description = enumType.enumValueDefinitions[0].description.content
+
+        then:
+        description == "Represents the 😕 emoji."
+    }
+
+
 }
 
