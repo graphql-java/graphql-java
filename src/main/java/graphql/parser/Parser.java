@@ -2,11 +2,15 @@ package graphql.parser;
 
 import graphql.Internal;
 import graphql.language.Document;
+import graphql.language.SourceLocation;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
+import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CodePointCharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
 
@@ -51,6 +55,13 @@ public class Parser {
         }
 
         GraphqlLexer lexer = new GraphqlLexer(charStream);
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(new BaseErrorListener() {
+            @Override
+            public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
+                throw new InvalidSyntaxException(new SourceLocation(line, charPositionInLine), "Invalid syntax: " + msg, null, null, null);
+            }
+        });
 
         CommonTokenStream tokens = new CommonTokenStream(lexer);
 

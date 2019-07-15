@@ -733,4 +733,19 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         fragmentDefinition.name == "Foo"
 
     }
+
+    def "parser should throw syntax errors"() {
+        given:
+        def input = """
+            type Foo {
+              name / String
+            }
+        """
+        when:
+        def document = Parser.parse(input)
+        println document
+        then:
+        def e = thrown(InvalidSyntaxException)
+        e.message.contains("Invalid syntax")
+    }
 }
