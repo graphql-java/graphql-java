@@ -748,4 +748,22 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         def e = thrown(InvalidSyntaxException)
         e.message.contains("Invalid syntax")
     }
+
+    def "allow emoji in comments"() {
+        def input = '''
+              # Represents the 😕 emoji.
+              {
+              foo
+               }
+    '''
+        when:
+        Document document = Parser.parse(input)
+        OperationDefinition operationDefinition = (document.definitions[0] as OperationDefinition)
+
+
+        then:
+        operationDefinition.getComments()[0].content == " Represents the 😕 emoji."
+    }
+
+
 }
