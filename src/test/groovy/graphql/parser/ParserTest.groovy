@@ -751,4 +751,22 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         e.location.line == 3
         e.location.column == 20
     }
+
+    def "allow emoji in comments"() {
+        def input = '''
+              # Represents the 😕 emoji.
+              {
+              foo
+               }
+    '''
+        when:
+        Document document = Parser.parse(input)
+        OperationDefinition operationDefinition = (document.definitions[0] as OperationDefinition)
+
+
+        then:
+        operationDefinition.getComments()[0].content == " Represents the 😕 emoji."
+    }
+
+
 }

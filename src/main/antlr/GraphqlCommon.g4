@@ -119,11 +119,18 @@ TripleQuotedStringValue
 
 
 // Fragments never become a token of their own: they are only used inside other lexer rules
-fragment TripleQuotedStringPart : ( EscapedTripleQuote | SourceCharacter )+?;
+fragment TripleQuotedStringPart : ( EscapedTripleQuote | ExtendedSourceCharacter )+?;
 fragment EscapedTripleQuote : '\\"""';
-fragment SourceCharacter :[\u0009\u000A\u000D\u0020-\u{10FFFF}];
 
-Comment: '#' ~[\n\r\u2028\u2029]* -> channel(2);
+// this is currently not covered by the spec because we allow all unicode chars
+fragment ExtendedSourceCharacter :[\u0009\u000A\u000D\u0020-\u{10FFFF}];
+fragment ExtendedSourceCharacterWitoutLineFeed :[\u0009\u000D\u0020-\u{10FFFF}];
+
+// this is the spec definition
+// fragment SourceCharacter :[\u0009\u000A\u000D\u0020-\uFFFF];
+
+
+Comment: '#' ExtendedSourceCharacterWitoutLineFeed* -> channel(2);
 
 fragment EscapedChar :   '\\' (["\\/bfnrt] | Unicode) ;
 fragment Unicode : 'u' Hex Hex Hex Hex ;
