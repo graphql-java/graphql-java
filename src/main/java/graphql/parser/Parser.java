@@ -59,7 +59,9 @@ public class Parser {
         lexer.addErrorListener(new BaseErrorListener() {
             @Override
             public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
-                throw new InvalidSyntaxException(new SourceLocation(line, charPositionInLine), "Invalid syntax: " + msg, null, null, null);
+                SourceLocation sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, line, charPositionInLine);
+                String preview = AntlrHelper.createPreview(multiSourceReader, line);
+                throw new InvalidSyntaxException(sourceLocation, "Invalid syntax: " + msg, preview, null, null);
             }
         });
 

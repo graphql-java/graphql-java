@@ -810,7 +810,7 @@ public class GraphqlAntlrToLanguage {
     }
 
     protected SourceLocation getSourceLocation(Token token) {
-        return SourceLocationHelper.mkSourceLocation(multiSourceReader, token);
+        return AntlrHelper.createSourceLocation(multiSourceReader, token);
     }
 
     protected SourceLocation getSourceLocation(ParserRuleContext parserRuleContext) {
