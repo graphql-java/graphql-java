@@ -16,9 +16,7 @@ import static graphql.schema.GraphqlTypeComparatorEnvironment.newEnvironment;
 @PublicApi
 public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparatorRegistry {
 
-    public static final Comparator<GraphQLSchemaElement> DEFAULT_COMPARATOR = Comparator.comparing(graphQLSchemaElement -> {
-        return ((GraphQLNamedType) graphQLSchemaElement).getName();
-    });
+    public static final Comparator<GraphQLSchemaElement> DEFAULT_COMPARATOR = Comparator.comparing(graphQLSchemaElement -> ((GraphQLNamedSchemaElement) graphQLSchemaElement).getName());
 
     private Map<GraphqlTypeComparatorEnvironment, Comparator<?>> registry = new HashMap<>();
 

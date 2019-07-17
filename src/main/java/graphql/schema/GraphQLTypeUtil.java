@@ -34,6 +34,16 @@ public class GraphQLTypeUtil {
         return sb.toString();
     }
 
+    public static String simplePrint(GraphQLSchemaElement schemaElement) {
+        if (schemaElement instanceof GraphQLType) {
+            return simplePrint((GraphQLType) schemaElement);
+        }
+        if (schemaElement instanceof GraphQLNamedSchemaElement) {
+            return ((GraphQLNamedSchemaElement) schemaElement).getName();
+        }
+        return "null";
+    }
+
     /**
      * Returns true if the given type is a non null type
      *

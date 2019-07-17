@@ -41,7 +41,7 @@ public class GraphqlTypeComparators {
      * @return a comparator that compares {@link graphql.schema.GraphQLType} objects by ascending name
      */
     public static Comparator<? super GraphQLSchemaElement> byNameAsc() {
-        return Comparator.comparing(graphQLSchemaElement -> ((GraphQLNamedType) graphQLSchemaElement).getName());
+        return Comparator.comparing(graphQLSchemaElement -> ((GraphQLNamedSchemaElement) graphQLSchemaElement).getName());
     }
 
 }

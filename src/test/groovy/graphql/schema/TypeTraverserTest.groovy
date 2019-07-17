@@ -130,7 +130,7 @@ class TypeTraverserTest extends Specification {
         def visitor = new GraphQLTestingVisitor()
         new TypeTraverser().depthFirst(visitor, GraphQLList.list(Scalars.GraphQLString))
         then:
-        visitor.getStack() == ["list: String", "fallback: null",
+        visitor.getStack() == ["list: String", "fallback: [String]",
                                "scalar: String", "fallback: String"]
     }
 
@@ -140,7 +140,7 @@ class TypeTraverserTest extends Specification {
         def visitor = new GraphQLTestingVisitor()
         new TypeTraverser().depthFirst(visitor, GraphQLNonNull.nonNull(Scalars.GraphQLString))
         then:
-        visitor.getStack() == ["nonNull: String", "fallback: null",
+        visitor.getStack() == ["nonNull: String", "fallback: String!",
                                "scalar: String", "fallback: String"]
     }
 
@@ -395,7 +395,7 @@ class TypeTraverserTest extends Specification {
 
         @Override
         protected TraversalControl visitGraphQLType(GraphQLSchemaElement node, TraverserContext<GraphQLSchemaElement> context) {
-            stack.add("fallback: ${node.getName()}")
+            stack.add("fallback: ${GraphQLTypeUtil.simplePrint(node)}")
             return super.visitGraphQLType(node, context)
         }
 
