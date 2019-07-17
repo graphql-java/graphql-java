@@ -16,7 +16,9 @@ import static graphql.schema.GraphqlTypeComparatorEnvironment.newEnvironment;
 @PublicApi
 public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparatorRegistry {
 
-    public static final Comparator<GraphQLType> DEFAULT_COMPARATOR = Comparator.comparing(GraphQLType::getName);
+    public static final Comparator<GraphQLSchemaElement> DEFAULT_COMPARATOR = Comparator.comparing(graphQLSchemaElement -> {
+        return ((GraphQLNamedType) graphQLSchemaElement).getName();
+    });
 
     private Map<GraphqlTypeComparatorEnvironment, Comparator<?>> registry = new HashMap<>();
 
@@ -31,7 +33,7 @@ public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparat
      * Search for the most to least specific registered {@code Comparator} otherwise a default is returned.
      */
     @Override
-    public <T extends GraphQLType> Comparator<? super T> getComparator(GraphqlTypeComparatorEnvironment environment) {
+    public <T extends GraphQLSchemaElement> Comparator<? super T> getComparator(GraphqlTypeComparatorEnvironment environment) {
         Comparator<?> comparator = registry.get(environment);
         if (comparator != null) {
             //noinspection unchecked

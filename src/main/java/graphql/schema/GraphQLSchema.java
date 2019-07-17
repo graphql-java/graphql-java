@@ -40,7 +40,7 @@ public class GraphQLSchema {
     private final GraphQLObjectType queryType;
     private final GraphQLObjectType mutationType;
     private final GraphQLObjectType subscriptionType;
-    private final Map<String, GraphQLType> typeMap;
+    private final Map<String, GraphQLNamedType> typeMap;
     private final Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
     private final Set<GraphQLDirective> directives = new LinkedHashSet<>();
     private final Map<String, List<GraphQLObjectType>> byInterface;
@@ -149,11 +149,11 @@ public class GraphQLSchema {
         return (GraphQLObjectType) graphQLType;
     }
 
-    public Map<String, GraphQLType> getTypeMap() {
+    public Map<String, GraphQLNamedType> getTypeMap() {
         return Collections.unmodifiableMap(typeMap);
     }
 
-    public List<GraphQLType> getAllTypesAsList() {
+    public List<GraphQLNamedType> getAllTypesAsList() {
         return sortTypes(byNameAsc(), typeMap.values());
     }
 
@@ -183,14 +183,14 @@ public class GraphQLSchema {
      *
      * @return true if possible type, false otherwise.
      */
-    public boolean isPossibleType(GraphQLType abstractType, GraphQLObjectType concreteType) {
+    public boolean isPossibleType(GraphQLNamedType abstractType, GraphQLObjectType concreteType) {
         if (abstractType instanceof GraphQLInterfaceType) {
             return getImplementations((GraphQLInterfaceType) abstractType).stream()
-                    .map(GraphQLType::getName)
+                    .map(GraphQLObjectType::getName)
                     .anyMatch(name -> concreteType.getName().equals(name));
         } else if (abstractType instanceof GraphQLUnionType) {
             return ((GraphQLUnionType) abstractType).getTypes().stream()
-                    .map(GraphQLType::getName)
+                    .map(GraphQLNamedType::getName)
                     .anyMatch(name -> concreteType.getName().equals(name));
         }
 

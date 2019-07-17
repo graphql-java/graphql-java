@@ -65,17 +65,12 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
     }
 
     @Override
-    public String getName() {
-        return null;
-    }
-
-    @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLList(this, context);
     }
 
     @Override
-    public List<GraphQLType> getChildren() {
+    public List<GraphQLSchemaElement> getChildren() {
         return Collections.singletonList(wrappedType);
     }
 

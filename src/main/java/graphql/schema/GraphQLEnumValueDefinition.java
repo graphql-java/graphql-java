@@ -146,12 +146,12 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLEnumValueDefinition(this, context);
     }
 
     @Override
-    public List<GraphQLType> getChildren() {
+    public List<GraphQLSchemaElement> getChildren() {
         return new ArrayList<>(directives);
     }
 

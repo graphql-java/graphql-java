@@ -2,7 +2,6 @@ package graphql.schema;
 
 
 import graphql.PublicApi;
-
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -13,7 +12,7 @@ import static graphql.Assert.assertValidName;
  * object when the schema is built.
  */
 @PublicApi
-public class GraphQLTypeReference implements GraphQLType, GraphQLOutputType, GraphQLInputType {
+public class GraphQLTypeReference implements GraphQLNamedOutputType, GraphQLNamedInputType {
 
     /**
      * A factory method for creating type references so that when used with static imports allows
@@ -41,7 +40,7 @@ public class GraphQLTypeReference implements GraphQLType, GraphQLOutputType, Gra
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLTypeReference(this, context);
     }
 }

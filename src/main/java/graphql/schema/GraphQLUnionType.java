@@ -8,6 +8,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.util.FpKit.getByName;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
 
 /**
  * A union type is a polymorphic type that dynamically represents one of more concrete object types.
@@ -30,15 +32,16 @@ import static java.util.Collections.emptyList;
  * See http://graphql.org/learn/schema/#union-types for more details on the concept.
  */
 @PublicApi
-public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class GraphQLUnionType implements GraphQLNamedType, GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
-    private List<GraphQLOutputType> types;
+    private final List<GraphQLNamedOutputType> originalTypes;
     private final TypeResolver typeResolver;
     private final UnionTypeDefinition definition;
     private final List<GraphQLDirective> directives;
 
+    private List<GraphQLNamedOutputType> replacedTypes;
 
     /**
      * @param name         the name
@@ -50,7 +53,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
      */
     @Internal
     @Deprecated
-    public GraphQLUnionType(String name, String description, List<GraphQLOutputType> types, TypeResolver typeResolver) {
+    public GraphQLUnionType(String name, String description, List<GraphQLNamedOutputType> types, TypeResolver typeResolver) {
         this(name, description, types, typeResolver, emptyList(), null);
     }
 
@@ -66,7 +69,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
      */
     @Internal
     @Deprecated
-    public GraphQLUnionType(String name, String description, List<GraphQLOutputType> types, TypeResolver typeResolver, List<GraphQLDirective> directives, UnionTypeDefinition definition) {
+    public GraphQLUnionType(String name, String description, List<GraphQLNamedOutputType> types, TypeResolver typeResolver, List<GraphQLDirective> directives, UnionTypeDefinition definition) {
         assertValidName(name);
         assertNotNull(types, "types can't be null");
         assertNotEmpty(types, "A Union type must define one or more member types.");
@@ -74,14 +77,14 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
 
         this.name = name;
         this.description = description;
-        this.types = types;
+        this.originalTypes = types;
         this.typeResolver = typeResolver;
         this.definition = definition;
         this.directives = directives;
     }
 
-    void replaceTypes(List<GraphQLOutputType> types) {
-        this.types = types;
+    void replaceTypes(List<GraphQLNamedOutputType> types) {
+        this.replacedTypes = types;
     }
 
     /**
@@ -89,8 +92,11 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
      * references are not resolved yet. After they are resolved it contains only GraphQLObjectType.
      * Reference resolving happens when a full schema is built.
      */
-    public List<GraphQLOutputType> getTypes() {
-        return new ArrayList<>(types);
+    public List<GraphQLNamedOutputType> getTypes() {
+        if (replacedTypes != null) {
+            return Collections.unmodifiableList(replacedTypes);
+        }
+        return unmodifiableList(originalTypes);
     }
 
     // to be removed in a future version when all code is in the code registry
@@ -131,13 +137,13 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLUnionType(this, context);
     }
 
     @Override
-    public List<GraphQLType> getChildren() {
-        List<GraphQLType> children = new ArrayList<>(types);
+    public List<GraphQLSchemaElement> getChildren() {
+        List<GraphQLSchemaElement> children = new ArrayList<>(getTypes());
         children.addAll(directives);
         return children;
     }
@@ -154,7 +160,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
     public static class Builder extends GraphqlTypeBuilder {
         private TypeResolver typeResolver;
         private UnionTypeDefinition definition;
-        private final Map<String, GraphQLOutputType> types = new LinkedHashMap<>();
+        private final Map<String, GraphQLNamedOutputType> types = new LinkedHashMap<>();
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
 
         public Builder() {
@@ -165,7 +171,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
             this.description = existing.getDescription();
             this.typeResolver = existing.getTypeResolver();
             this.definition = existing.getDefinition();
-            this.types.putAll(getByName(existing.getTypes(), GraphQLType::getName));
+            this.types.putAll(getByName(existing.getTypes(), GraphQLNamedType::getName));
             this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
 

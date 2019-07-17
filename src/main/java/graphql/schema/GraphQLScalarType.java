@@ -33,7 +33,7 @@ import static java.util.Collections.emptyList;
  *
  * @see graphql.Scalars
  */
-public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
@@ -125,12 +125,12 @@ public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQL
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLScalarType(this, context);
     }
 
     @Override
-    public List<GraphQLType> getChildren() {
+    public List<GraphQLSchemaElement> getChildren() {
         return new ArrayList<>(directives);
     }
 

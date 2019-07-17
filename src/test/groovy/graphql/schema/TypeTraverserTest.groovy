@@ -382,97 +382,97 @@ class TypeTraverserTest extends Specification {
         def stack = []
 
         @Override
-        TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("argument: ${node.getName()}")
             return super.visitGraphQLArgument(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("scalar: ${node.getName()}")
             return super.visitGraphQLScalarType(node, context)
         }
 
         @Override
-        protected TraversalControl visitGraphQLType(GraphQLType node, TraverserContext<GraphQLType> context) {
+        protected TraversalControl visitGraphQLType(GraphQLSchemaElement node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("fallback: ${node.getName()}")
             return super.visitGraphQLType(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLEnumType(GraphQLEnumType node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLEnumType(GraphQLEnumType node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("enum: ${node.getName()}")
             return super.visitGraphQLEnumType(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLEnumValueDefinition(GraphQLEnumValueDefinition node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLEnumValueDefinition(GraphQLEnumValueDefinition node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("enum value: ${node.getName()}")
             return super.visitGraphQLEnumValueDefinition(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("field: ${node.getName()}")
             return super.visitGraphQLFieldDefinition(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLDirective(GraphQLDirective node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLDirective(GraphQLDirective node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("directive: ${node.getName()}")
             return super.visitGraphQLDirective(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("input object field: ${node.getName()}")
             return super.visitGraphQLInputObjectField(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("input object: ${node.getName()}")
             return super.visitGraphQLInputObjectType(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("interface: ${node.getName()}")
             return super.visitGraphQLInterfaceType(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLList(GraphQLList node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLList(GraphQLList node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("list: ${node.getWrappedType().getName()}")
             return super.visitGraphQLList(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLNonNull(GraphQLNonNull node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLNonNull(GraphQLNonNull node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("nonNull: ${node.getWrappedType().getName()}")
             return super.visitGraphQLNonNull(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("object: ${node.getName()}")
             return super.visitGraphQLObjectType(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLTypeReference(GraphQLTypeReference node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLTypeReference(GraphQLTypeReference node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("reference: ${node.getName()}")
             return super.visitGraphQLTypeReference(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("union: ${node.getName()}")
             return super.visitGraphQLUnionType(node, context)
         }
 
         @Override
-        TraversalControl visitBackRef(TraverserContext<GraphQLType> context) {
+        TraversalControl visitBackRef(TraverserContext<GraphQLSchemaElement> context) {
             stack.add("backRef: ${context.thisNode().getName()}")
             return TraversalControl.CONTINUE
         }

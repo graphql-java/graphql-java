@@ -79,17 +79,12 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
     }
 
     @Override
-    public String getName() {
-        return null;
-    }
-
-    @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLNonNull(this, context);
     }
 
     @Override
-    public List<GraphQLType> getChildren() {
+    public List<GraphQLSchemaElement> getChildren() {
         return Collections.singletonList(wrappedType);
     }
 }

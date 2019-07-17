@@ -47,6 +47,7 @@ import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
 import static graphql.schema.GraphQLTypeReference.typeRef;
+import static graphql.schema.GraphQLTypeUtil.simplePrint;
 
 @PublicApi
 public class Introspection {
@@ -501,7 +502,7 @@ public class Introspection {
                     .type(nonNull(GraphQLString)))
             .build();
 
-    public static final DataFetcher<Object> TypeNameMetaFieldDefDataFetcher = environment -> environment.getParentType().getName();
+    public static final DataFetcher<Object> TypeNameMetaFieldDefDataFetcher = environment -> simplePrint(environment.getParentType());
 
     public static final GraphQLFieldDefinition TypeNameMetaFieldDef = newFieldDefinition()
             .name("__typename")

@@ -29,7 +29,7 @@ public class GraphQLTypeUtil {
             sb.append(simplePrint(unwrapOne(type)));
             sb.append("]");
         } else {
-            sb.append(type.getName());
+            sb.append(((GraphQLNamedType) type).getName());
         }
         return sb.toString();
     }

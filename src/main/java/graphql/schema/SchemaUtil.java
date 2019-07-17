@@ -16,8 +16,8 @@ public class SchemaUtil {
     private static final TypeTraverser TRAVERSER = new TypeTraverser();
 
 
-    Map<String, GraphQLType> allTypes(final GraphQLSchema schema, final Set<GraphQLType> additionalTypes) {
-        List<GraphQLType> roots = new ArrayList<>();
+    Map<String, GraphQLNamedType> allTypes(final GraphQLSchema schema, final Set<GraphQLType> additionalTypes) {
+        List<GraphQLSchemaElement> roots = new ArrayList<>();
         roots.add(schema.getQueryType());
 
         if (schema.isSupportingMutations()) {
@@ -56,7 +56,7 @@ public class SchemaUtil {
         Map<String, List<GraphQLObjectType>> result = new LinkedHashMap<>();
         for (GraphQLType type : schema.getAllTypesAsList()) {
             if (type instanceof GraphQLObjectType) {
-                for (GraphQLOutputType interfaceType : ((GraphQLObjectType) type).getInterfaces()) {
+                for (GraphQLNamedOutputType interfaceType : ((GraphQLObjectType) type).getInterfaces()) {
                     List<GraphQLObjectType> myGroup = result.computeIfAbsent(interfaceType.getName(), k -> new ArrayList<>());
                     myGroup.add((GraphQLObjectType) type);
                 }
@@ -100,8 +100,8 @@ public class SchemaUtil {
     }
 
     void replaceTypeReferences(GraphQLSchema schema) {
-        final Map<String, GraphQLType> typeMap = schema.getTypeMap();
-        List<GraphQLType> roots = new ArrayList<>(typeMap.values());
+        final Map<String, GraphQLNamedType> typeMap = schema.getTypeMap();
+        List<GraphQLSchemaElement> roots = new ArrayList<>(typeMap.values());
         roots.addAll(schema.getDirectives());
         TRAVERSER.depthFirst(new GraphQLTypeResolvingVisitor(typeMap), roots);
     }

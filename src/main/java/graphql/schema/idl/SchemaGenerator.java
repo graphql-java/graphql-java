@@ -39,6 +39,8 @@ import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNamedInputType;
+import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
@@ -187,7 +189,7 @@ public class SchemaGenerator {
             return inputGTypes.get(typeDefinition.getName());
         }
 
-        void putOutputType(GraphQLOutputType outputType) {
+        void putOutputType(GraphQLNamedOutputType outputType) {
             outputGTypes.put(outputType.getName(), outputType);
             // certain types can be both input and output types, for example enums
             if (outputType instanceof GraphQLInputType) {
@@ -195,7 +197,7 @@ public class SchemaGenerator {
             }
         }
 
-        void putInputType(GraphQLInputType inputType) {
+        void putInputType(GraphQLNamedInputType inputType) {
             inputGTypes.put(inputType.getName(), inputType);
             // certain types can be both input and output types, for example enums
             if (inputType instanceof GraphQLOutputType) {
@@ -430,7 +432,7 @@ public class SchemaGenerator {
             throw new NotAnOutputTypeError(rawType, typeDefinition);
         }
 
-        buildCtx.putOutputType(outputType);
+        buildCtx.putOutputType((GraphQLNamedOutputType) outputType);
         buildCtx.pop();
         return (T) typeInfo.decorate(outputType);
     }
@@ -463,7 +465,7 @@ public class SchemaGenerator {
             throw new NotAnInputTypeError(rawType, typeDefinition);
         }
 
-        buildCtx.putInputType(inputType);
+        buildCtx.putInputType((GraphQLNamedInputType) inputType);
         buildCtx.pop();
         return typeInfo.decorate(inputType);
     }
@@ -503,7 +505,7 @@ public class SchemaGenerator {
     private void buildObjectTypeInterfaces(BuildContext buildCtx, ObjectTypeDefinition typeDefinition, GraphQLObjectType.Builder builder, List<ObjectTypeExtensionDefinition> extensions) {
         Map<String, GraphQLOutputType> interfaces = new LinkedHashMap<>();
         typeDefinition.getImplements().forEach(type -> {
-            GraphQLOutputType newInterfaceType = buildOutputType(buildCtx, type);
+            GraphQLNamedOutputType newInterfaceType = buildOutputType(buildCtx, type);
             interfaces.put(newInterfaceType.getName(), newInterfaceType);
         });
 
@@ -585,7 +587,7 @@ public class SchemaGenerator {
         );
 
         extensions.forEach(extension -> extension.getMemberTypes().forEach(mt -> {
-                    GraphQLOutputType outputType = buildOutputType(buildCtx, mt);
+            GraphQLNamedOutputType outputType = buildOutputType(buildCtx, mt);
                     if (!builder.containType(outputType.getName())) {
                         if (outputType instanceof GraphQLTypeReference) {
                             builder.possibleType((GraphQLTypeReference) outputType);

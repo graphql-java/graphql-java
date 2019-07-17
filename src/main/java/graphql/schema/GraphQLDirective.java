@@ -27,7 +27,7 @@ import static graphql.util.FpKit.getByName;
  */
 @SuppressWarnings("DeprecatedIsStillUsed") // because the graphql spec still has some of these deprecated fields
 @PublicApi
-public class GraphQLDirective implements GraphQLType {
+public class GraphQLDirective implements GraphQLNamedSchemaElement {
 
     private final String name;
     private final String description;
@@ -128,12 +128,12 @@ public class GraphQLDirective implements GraphQLType {
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLDirective(this, context);
     }
 
     @Override
-    public List<GraphQLType> getChildren() {
+    public List<GraphQLSchemaElement> getChildren() {
         return new ArrayList<>(arguments);
     }
 
