@@ -13,7 +13,7 @@ import java.util.Set;
 @Internal
 public class SchemaUtil {
 
-    private static final TypeTraverser TRAVERSER = new TypeTraverser();
+    private static final SchemaTraverser TRAVERSER = new SchemaTraverser();
 
 
     Map<String, GraphQLNamedType> allTypes(final GraphQLSchema schema, final Set<GraphQLType> additionalTypes) {

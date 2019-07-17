@@ -17,16 +17,16 @@ import java.util.function.Function;
 import static graphql.util.TraversalControl.CONTINUE;
 
 @PublicApi
-public class TypeTraverser {
+public class SchemaTraverser {
 
 
     private final Function<? super GraphQLSchemaElement, ? extends List<GraphQLSchemaElement>> getChildren;
 
-    public TypeTraverser(Function<? super GraphQLSchemaElement, ? extends List<GraphQLSchemaElement>> getChildren) {
+    public SchemaTraverser(Function<? super GraphQLSchemaElement, ? extends List<GraphQLSchemaElement>> getChildren) {
         this.getChildren = getChildren;
     }
 
-    public TypeTraverser() {
+    public SchemaTraverser() {
         this(GraphQLSchemaElement::getChildren);
     }
 
@@ -41,7 +41,7 @@ public class TypeTraverser {
     public TraverserResult depthFirst(final GraphQLTypeVisitor graphQLTypeVisitor,
                                       Collection<? extends GraphQLSchemaElement> roots,
                                       Map<String, GraphQLNamedType> types) {
-        Traverser<GraphQLSchemaElement> traverser = initTraverser().rootVar(TypeTraverser.class, types);
+        Traverser<GraphQLSchemaElement> traverser = initTraverser().rootVar(SchemaTraverser.class, types);
         return depthFirst(traverser, new TraverserDelegateVisitor(graphQLTypeVisitor), roots);
     }
 

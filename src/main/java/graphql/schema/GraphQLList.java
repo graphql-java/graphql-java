@@ -31,37 +31,46 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
         return new GraphQLList(wrappedType);
     }
 
-    private GraphQLType wrappedType;
+    private final GraphQLType originalWrappedType;
+    private GraphQLType replacedWrappedType;
 
     public GraphQLList(GraphQLType wrappedType) {
         assertNotNull(wrappedType, "wrappedType can't be null");
-        this.wrappedType = wrappedType;
+        this.originalWrappedType = wrappedType;
     }
 
 
     @Override
     public GraphQLType getWrappedType() {
-        return wrappedType;
+        if (replacedWrappedType != null) {
+            return replacedWrappedType;
+        }
+        return originalWrappedType;
     }
 
     void replaceType(GraphQLType type) {
-        wrappedType = type;
+        this.replacedWrappedType = type;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         GraphQLList that = (GraphQLList) o;
+        GraphQLType wrappedType = getWrappedType();
 
-        return !(wrappedType != null ? !wrappedType.equals(that.wrappedType) : that.wrappedType != null);
+        return !(wrappedType != null ? !wrappedType.equals(that.getWrappedType()) : that.getWrappedType() != null);
 
     }
 
     @Override
     public int hashCode() {
-        return wrappedType != null ? wrappedType.hashCode() : 0;
+        return getWrappedType() != null ? getWrappedType().hashCode() : 0;
     }
 
     @Override
@@ -71,7 +80,7 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
 
     @Override
     public List<GraphQLSchemaElement> getChildren() {
-        return Collections.singletonList(wrappedType);
+        return Collections.singletonList(getWrappedType());
     }
 
     @Override

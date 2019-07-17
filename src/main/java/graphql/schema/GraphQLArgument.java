@@ -42,11 +42,13 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
-    private GraphQLInputType type;
+    private final GraphQLInputType originalType;
     private final Object value;
     private final Object defaultValue;
     private final InputValueDefinition definition;
     private final List<GraphQLDirective> directives;
+
+    private GraphQLInputType replacedType;
 
     /**
      * @param name         the arg name
@@ -92,7 +94,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
         assertNotNull(type, "type can't be null");
         this.name = name;
         this.description = description;
-        this.type = type;
+        this.originalType = type;
         this.defaultValue = defaultValue;
         this.value = value;
         this.definition = definition;
@@ -101,7 +103,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
 
 
     void replaceType(GraphQLInputType type) {
-        this.type = type;
+        this.replacedType = type;
     }
 
     @Override
@@ -110,7 +112,10 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
     }
 
     public GraphQLInputType getType() {
-        return type;
+        if (replacedType != null) {
+            return replacedType;
+        }
+        return originalType;
     }
 
     /**
@@ -177,17 +182,18 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
     @Override
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>();
-        children.add(type);
+        children.add(getType());
         children.addAll(directives);
         return children;
     }
+
     @Override
     public String toString() {
         return "GraphQLArgument{" +
                 "name='" + name + '\'' +
                 ", value=" + value +
                 ", defaultValue=" + defaultValue +
-                ", type=" + type +
+                ", type=" + getType() +
                 '}';
     }
 
