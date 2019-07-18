@@ -224,7 +224,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     @Override
     public GraphQLEnumType withNewChildren(SchemaElementChildrenContainer newChildren) {
         return transform(builder ->
-                builder.directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
                         .replaceValues(newChildren.getChildren(CHILD_VALUES))
         );
     }
@@ -346,7 +346,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
             return this;
         }
 
-        public Builder directives(List<GraphQLDirective> directives) {
+        public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, "directive can't be null");
             this.directives.clear();
             for (GraphQLDirective directive : directives) {

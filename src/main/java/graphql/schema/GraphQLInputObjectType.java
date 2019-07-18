@@ -156,7 +156,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     @Override
     public GraphQLInputObjectType withNewChildren(SchemaElementChildrenContainer newChildren) {
         return transform(builder ->
-                builder.directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
                         .replaceFields(newChildren.getChildren(CHILD_FIELD_DEFINITIONS))
         );
     }
@@ -286,7 +286,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
             return this;
         }
 
-        public Builder directives(List<GraphQLDirective> directives) {
+        public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, "directive can't be null");
             this.directives.clear();
             for (GraphQLDirective directive : directives) {

@@ -201,7 +201,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
     @Override
     public GraphQLSchemaElement withNewChildren(SchemaElementChildrenContainer newChildren) {
         return transform(builder ->
-                builder.directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
                         .replaceArguments(newChildren.getChildren(CHILD_ARGUMENTS))
                         .type((GraphQLOutputType) newChildren.getChildOrNull(CHILD_TYPE))
         );
@@ -434,7 +434,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
             return this;
         }
 
-        public Builder directives(List<GraphQLDirective> directives) {
+        public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, "directive can't be null");
             this.directives.clear();
             for (GraphQLDirective directive : directives) {

@@ -164,8 +164,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
     @Override
     public GraphQLArgument withNewChildren(SchemaElementChildrenContainer newChildren) {
         return transform(builder ->
-                builder.directives(newChildren.getChildren(CHILD_DIRECTIVES)
-                ));
+                builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES)));
     }
 
     /**
@@ -287,7 +286,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
             return this;
         }
 
-        public Builder directives(List<GraphQLDirective> directives) {
+        public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, "directive can't be null");
             this.directives.clear();
             for (GraphQLDirective directive : directives) {

@@ -164,7 +164,7 @@ public class GraphQLUnionType implements GraphQLNamedType, GraphQLOutputType, Gr
     @Override
     public GraphQLUnionType withNewChildren(SchemaElementChildrenContainer newChildren) {
         return transform(builder ->
-                builder.directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
                         .replacePossibleTypes(newChildren.getChildren(CHILD_TYPES))
         );
     }
@@ -282,7 +282,7 @@ public class GraphQLUnionType implements GraphQLNamedType, GraphQLOutputType, Gr
             return this;
         }
 
-        public Builder directives(List<GraphQLDirective> directives) {
+        public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, "directive can't be null");
             this.directives.clear();
             for (GraphQLDirective directive : directives) {
