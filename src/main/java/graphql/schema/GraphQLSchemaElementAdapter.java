@@ -16,19 +16,19 @@ public class GraphQLSchemaElementAdapter implements NodeAdapter<GraphQLSchemaEle
 
     @Override
     public Map<String, List<GraphQLSchemaElement>> getNamedChildren(GraphQLSchemaElement node) {
-//        Map<String, List<GraphQLSchemaElement>> result = new LinkedHashMap<>();
-//        result.put(null, node.getChildrenWithTypeReferences());
-//        return result;
-        return null;
+        return node.getChildrenWithTypeReferences().getChildren();
     }
 
     @Override
     public GraphQLSchemaElement withNewChildren(GraphQLSchemaElement node, Map<String, List<GraphQLSchemaElement>> newChildren) {
-        return null;
+        SchemaElementChildrenContainer childrenContainer = SchemaElementChildrenContainer.newSchemaElementChildrenContainer(newChildren).build();
+        return node.withNewChildren(childrenContainer);
     }
 
     @Override
     public GraphQLSchemaElement removeChild(GraphQLSchemaElement node, NodeLocation location) {
-        return null;
+        SchemaElementChildrenContainer children = node.getChildrenWithTypeReferences();
+        SchemaElementChildrenContainer newChildren = children.transform(builder -> builder.removeChild(location.getName(), location.getIndex()));
+        return node.withNewChildren(newChildren);
     }
 }
