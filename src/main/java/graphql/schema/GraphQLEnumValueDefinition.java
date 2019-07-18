@@ -37,6 +37,8 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
     private final List<GraphQLDirective> directives;
     private final EnumValueDefinition definition;
 
+    public static final String CHILD_DIRECTIVES = "directives";
+
     /**
      * @param name        the name
      * @param description the description
@@ -153,6 +155,13 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
     @Override
     public List<GraphQLSchemaElement> getChildren() {
         return new ArrayList<>(directives);
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
     }
 
     public static Builder newEnumValueDefinition() {

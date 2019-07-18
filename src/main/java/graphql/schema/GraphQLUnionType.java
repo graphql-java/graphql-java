@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChildrenContainer;
 import static graphql.util.FpKit.getByName;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
@@ -42,6 +43,10 @@ public class GraphQLUnionType implements GraphQLNamedType, GraphQLOutputType, Gr
     private final List<GraphQLDirective> directives;
 
     private List<GraphQLNamedOutputType> replacedTypes;
+
+    public static final String CHILD_TYPES = "types";
+    public static final String CHILD_DIRECTIVES = "directives";
+
 
     /**
      * @param name         the name
@@ -147,6 +152,15 @@ public class GraphQLUnionType implements GraphQLNamedType, GraphQLOutputType, Gr
         children.addAll(directives);
         return children;
     }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return newSchemaElementChildrenContainer()
+                .children(CHILD_TYPES, originalTypes)
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
+    }
+
 
     public static Builder newUnionType() {
         return new Builder();

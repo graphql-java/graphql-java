@@ -18,6 +18,13 @@ import static graphql.Assert.assertNotNull;
 @PublicApi
 public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType, GraphQLNullableType {
 
+
+    private final GraphQLType originalWrappedType;
+    private GraphQLType replacedWrappedType;
+
+    public static final String CHILD_WRAPPED_TYPE = "wrappedType";
+
+
     /**
      * A factory method for creating list types so that when used with static imports allows
      * more readable code such as
@@ -31,8 +38,6 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
         return new GraphQLList(wrappedType);
     }
 
-    private final GraphQLType originalWrappedType;
-    private GraphQLType replacedWrappedType;
 
     public GraphQLList(GraphQLType wrappedType) {
         assertNotNull(wrappedType, "wrappedType can't be null");
@@ -81,6 +86,13 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
     @Override
     public List<GraphQLSchemaElement> getChildren() {
         return Collections.singletonList(getWrappedType());
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .child(CHILD_WRAPPED_TYPE, originalWrappedType)
+                .build();
     }
 
     @Override

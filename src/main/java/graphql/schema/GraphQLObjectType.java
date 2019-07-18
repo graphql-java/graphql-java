@@ -49,6 +49,11 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
 
     private List<GraphQLNamedOutputType> replacedInterfaces;
 
+    public static final String CHILD_INTERFACES = "interfaces";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
+
+
     /**
      * @param name             the name
      * @param description      the description
@@ -192,6 +197,15 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
         children.addAll(getInterfaces());
         children.addAll(directives);
         return children;
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .children(CHILD_FIELD_DEFINITIONS, fieldDefinitionsByName.values())
+                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_INTERFACES, originalInterfaces)
+                .build();
     }
 
     public static Builder newObject() {

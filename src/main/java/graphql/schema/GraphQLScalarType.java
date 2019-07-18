@@ -15,6 +15,7 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChildrenContainer;
 import static graphql.util.FpKit.getByName;
 import static java.util.Collections.emptyList;
 
@@ -40,6 +41,9 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
     private final Coercing coercing;
     private final ScalarTypeDefinition definition;
     private final List<GraphQLDirective> directives;
+
+    public static final String CHILD_DIRECTIVES = "directives";
+
 
     /**
      * @param name        the name
@@ -132,6 +136,13 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
     @Override
     public List<GraphQLSchemaElement> getChildren() {
         return new ArrayList<>(directives);
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return newSchemaElementChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
     }
 
     public static Builder newScalar() {

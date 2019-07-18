@@ -42,6 +42,10 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
     private final List<GraphQLDirective> directives;
     private final FieldDefinition definition;
 
+    public static final String CHILD_ARGUMENTS = "arguments";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_TYPE = "type";
+
 
     /**
      * @param name              the name
@@ -111,7 +115,9 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
 
     public GraphQLArgument getArgument(String name) {
         for (GraphQLArgument argument : arguments) {
-            if (argument.getName().equals(name)) return argument;
+            if (argument.getName().equals(name)) {
+                return argument;
+            }
         }
         return null;
     }
@@ -180,6 +186,15 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         children.addAll(arguments);
         children.addAll(directives);
         return children;
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .children(CHILD_ARGUMENTS, arguments)
+                .children(CHILD_DIRECTIVES, directives)
+                .child(CHILD_TYPE, type)
+                .build();
     }
 
     public static Builder newFieldDefinition(GraphQLFieldDefinition existing) {

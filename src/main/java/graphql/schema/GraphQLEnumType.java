@@ -38,6 +38,9 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     private final EnumTypeDefinition definition;
     private final List<GraphQLDirective> directives;
 
+    public static final String CHILD_VALUES = "values";
+    public static final String CHILD_DIRECTIVES = "directives";
+
     private final Coercing coercing = new Coercing() {
         @Override
         public Object serialize(Object input) {
@@ -121,15 +124,18 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     private void buildMap(List<GraphQLEnumValueDefinition> values) {
         for (GraphQLEnumValueDefinition valueDefinition : values) {
             String name = valueDefinition.getName();
-            if (valueDefinitionMap.containsKey(name))
+            if (valueDefinitionMap.containsKey(name)) {
                 throw new AssertException("value " + name + " redefined");
+            }
             valueDefinitionMap.put(name, valueDefinition);
         }
     }
 
     private Object getValueByName(Object value) {
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(value.toString());
-        if (enumValueDefinition != null) return enumValueDefinition.getValue();
+        if (enumValueDefinition != null) {
+            return enumValueDefinition.getValue();
+        }
         throw new CoercingParseValueException("Invalid input for Enum '" + name + "'. No value found for name '" + value.toString() + "'");
     }
 
@@ -205,6 +211,14 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         List<GraphQLSchemaElement> children = new ArrayList<>(valueDefinitionMap.values());
         children.addAll(directives);
         return children;
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .children(CHILD_VALUES, valueDefinitionMap.values())
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
     }
 
     public static Builder newEnum() {

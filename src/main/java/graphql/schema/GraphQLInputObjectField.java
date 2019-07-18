@@ -38,6 +38,9 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
 
     private GraphQLInputType replacedType;
 
+    public static final String CHILD_TYPE = "type";
+    public static final String CHILD_DIRECTIVES = "directives";
+
     /**
      * @param name the name
      * @param type the field type
@@ -147,6 +150,14 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
         children.add(getType());
         children.addAll(directives);
         return children;
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .child(CHILD_TYPE, originalType)
+                .build();
     }
 
     public static Builder newInputObjectField(GraphQLInputObjectField existing) {

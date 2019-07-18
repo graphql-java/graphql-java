@@ -1,17 +1,30 @@
 package graphql.schema;
 
-/**
- * These are called by the {@link graphql.schema.idl.SchemaGenerator} after a valid schema has been built
- * and they can then adjust it accordingly with some sort of post processing.
- */
-public interface SchemaTransformer {
+public class SchemaTransformer {
 
-    /**
-     * Called to transform the schema from its built state into something else
-     *
-     * @param originalSchema the original built schema
-     *
-     * @return a non null schema
-     */
-    GraphQLSchema transform(GraphQLSchema originalSchema);
+
+//    public GraphQLSchema transformWholeSchema(GraphQLSchema graphQLSchema, GraphQLTypeVisitor nodeVisitor) {
+//    }
+
+    public GraphQLSchemaElement transform(GraphQLSchemaElement root, GraphQLTypeVisitor graphQLTypeVisitor) {
+//        assertNotNull(root);
+//        assertNotNull(graphQLTypeVisitor);
+//
+//        TraverserVisitor<Node> traverserVisitor = new TraverserVisitor<Node>() {
+//            @Override
+//            public TraversalControl enter(TraverserContext<Node> context) {
+//                return context.thisNode().accept(context, nodeVisitor);
+//            }
+//
+//            @Override
+//            public TraversalControl leave(TraverserContext<Node> context) {
+//                return TraversalControl.CONTINUE;
+//            }
+//        };
+//
+//        TreeTransformer<Node> treeTransformer = new TreeTransformer<>(AST_NODE_ADAPTER);
+//        return treeTransformer.transform(root, traverserVisitor);
+        return null;
+
+    }
 }

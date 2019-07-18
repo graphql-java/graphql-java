@@ -36,6 +36,9 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
     private final GraphQLType originalWrappedType;
     private GraphQLType replacedWrappedType;
 
+    public static final String CHILD_WRAPPED_TYPE = "wrappedType";
+
+
     public GraphQLNonNull(GraphQLType wrappedType) {
         assertNotNull(wrappedType, "wrappedType can't be null");
         assertNonNullWrapping(wrappedType);
@@ -95,5 +98,12 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
     @Override
     public List<GraphQLSchemaElement> getChildren() {
         return Collections.singletonList(getWrappedType());
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .child(CHILD_WRAPPED_TYPE, originalWrappedType)
+                .build();
     }
 }

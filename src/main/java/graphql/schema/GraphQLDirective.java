@@ -37,6 +37,8 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
     private final boolean onFragment;
     private final boolean onField;
 
+    public static final String CHILD_ARGUMENTS = "arguments";
+
     public GraphQLDirective(String name, String description, EnumSet<DirectiveLocation> locations,
                             List<GraphQLArgument> arguments, boolean onOperation, boolean onFragment, boolean onField) {
         assertValidName(name);
@@ -61,7 +63,9 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
 
     public GraphQLArgument getArgument(String name) {
         for (GraphQLArgument argument : arguments) {
-            if (argument.getName().equals(name)) return argument;
+            if (argument.getName().equals(name)) {
+                return argument;
+            }
         }
         return null;
     }
@@ -135,6 +139,13 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
     @Override
     public List<GraphQLSchemaElement> getChildren() {
         return new ArrayList<>(arguments);
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .children(CHILD_ARGUMENTS, arguments)
+                .build();
     }
 
     public static Builder newDirective() {

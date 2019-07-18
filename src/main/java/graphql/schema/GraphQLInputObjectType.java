@@ -34,6 +34,9 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     private final InputObjectTypeDefinition definition;
     private final List<GraphQLDirective> directives;
 
+    public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
+    public static final String CHILD_DIRECTIVES = "directives";
+
     /**
      * @param name        the name
      * @param description the description
@@ -73,8 +76,9 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     private void buildMap(List<GraphQLInputObjectField> fields) {
         for (GraphQLInputObjectField field : fields) {
             String name = field.getName();
-            if (fieldMap.containsKey(name))
+            if (fieldMap.containsKey(name)) {
                 throw new AssertException("field " + name + " redefined");
+            }
             fieldMap.put(name, field);
         }
     }
@@ -139,6 +143,14 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         List<GraphQLSchemaElement> children = new ArrayList<>(fieldMap.values());
         children.addAll(directives);
         return children;
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .children(CHILD_FIELD_DEFINITIONS, fieldMap.values())
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
     }
 
     public static Builder newInputObject(GraphQLInputObjectType existing) {

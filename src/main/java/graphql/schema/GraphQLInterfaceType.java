@@ -40,6 +40,10 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
     private final InterfaceTypeDefinition definition;
     private final List<GraphQLDirective> directives;
 
+    public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
+    public static final String CHILD_DIRECTIVES = "directives";
+
+
     /**
      * @param name             the name
      * @param description      the description
@@ -157,6 +161,14 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
         List<GraphQLSchemaElement> children = new ArrayList<>(fieldDefinitionsByName.values());
         children.addAll(directives);
         return children;
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .children(CHILD_FIELD_DEFINITIONS, fieldDefinitionsByName.values())
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
     }
 
     public static Builder newInterface() {

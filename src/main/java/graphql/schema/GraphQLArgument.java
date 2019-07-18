@@ -50,6 +50,8 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
 
     private GraphQLInputType replacedType;
 
+    public static final String CHILD_DIRECTIVES = "directives";
+
     /**
      * @param name         the arg name
      * @param description  the arg description
@@ -150,6 +152,13 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
     @Override
     public List<GraphQLDirective> getDirectives() {
         return new ArrayList<>(directives);
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
     }
 
     /**
