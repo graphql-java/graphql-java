@@ -46,6 +46,7 @@ public class GraphQLSchema {
 
     private final Map<String, GraphQLNamedType> typeMap;
     private final Map<String, List<GraphQLObjectType>> byInterface;
+
     /**
      * @param queryType the query type
      *
@@ -81,7 +82,7 @@ public class GraphQLSchema {
     @Internal
     @Deprecated
     public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes) {
-        this(queryType, mutationType, subscriptionType, additionalTypes, Collections.emptySet(), GraphQLCodeRegistry.newCodeRegistry().build());
+        this(queryType, mutationType, subscriptionType, additionalTypes, Collections.emptySet(), GraphQLCodeRegistry.newCodeRegistry().build(), false);
     }
 
     @Internal
@@ -90,7 +91,8 @@ public class GraphQLSchema {
                           GraphQLObjectType subscriptionType,
                           Set<GraphQLType> additionalTypes,
                           Set<GraphQLDirective> directives,
-                          GraphQLCodeRegistry codeRegistry) {
+                          GraphQLCodeRegistry codeRegistry,
+                          boolean afterTransform) {
         assertNotNull(additionalTypes, "additionalTypes can't be null");
         assertNotNull(queryType, "queryType can't be null");
         assertNotNull(directives, "directives can't be null");
@@ -104,7 +106,7 @@ public class GraphQLSchema {
         this.directives.addAll(directives);
         // sorted by type name
         SchemaUtil schemaUtil = new SchemaUtil();
-        this.typeMap = new TreeMap<>(schemaUtil.allTypes(this, additionalTypes));
+        this.typeMap = new TreeMap<>(schemaUtil.allTypes(this, additionalTypes, afterTransform));
         this.byInterface = new TreeMap<>(schemaUtil.groupImplementations(this));
         this.codeRegistry = codeRegistry;
     }
@@ -409,11 +411,15 @@ public class GraphQLSchema {
          * @return the built schema
          */
         public GraphQLSchema build() {
+            return buildImpl(false);
+        }
+
+        GraphQLSchema buildImpl(boolean afterTransform) {
             assertNotNull(additionalTypes, "additionalTypes can't be null");
             assertNotNull(additionalDirectives, "additionalDirectives can't be null");
 
             // grab the legacy code things from types
-            final GraphQLSchema tempSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes, additionalDirectives, codeRegistry);
+            final GraphQLSchema tempSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes, additionalDirectives, codeRegistry, afterTransform);
             codeRegistry = codeRegistry.transform(codeRegistryBuilder -> schemaUtil.extractCodeFromTypes(codeRegistryBuilder, tempSchema));
 
             GraphQLSchema graphQLSchema = new GraphQLSchema(tempSchema, codeRegistry);

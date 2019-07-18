@@ -35,12 +35,14 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
-    private GraphQLOutputType type;
+    private final GraphQLOutputType originalType;
     private final DataFetcherFactory dataFetcherFactory;
     private final String deprecationReason;
     private final List<GraphQLArgument> arguments;
     private final List<GraphQLDirective> directives;
     private final FieldDefinition definition;
+
+    private GraphQLOutputType replacedType;
 
     public static final String CHILD_ARGUMENTS = "arguments";
     public static final String CHILD_DIRECTIVES = "directives";
@@ -84,7 +86,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         assertNotNull(arguments, "arguments can't be null");
         this.name = name;
         this.description = description;
-        this.type = type;
+        this.originalType = type;
         this.dataFetcherFactory = dataFetcherFactory;
         this.arguments = Collections.unmodifiableList(arguments);
         this.directives = directives;
@@ -93,7 +95,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
     }
 
     void replaceType(GraphQLOutputType type) {
-        this.type = type;
+        this.replacedType = type;
     }
 
     @Override
@@ -103,7 +105,10 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
 
 
     public GraphQLOutputType getType() {
-        return type;
+        if (replacedType != null) {
+            return replacedType;
+        }
+        return originalType;
     }
 
     // to be removed in a future version when all code is in the code registry
@@ -151,7 +156,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
     public String toString() {
         return "GraphQLFieldDefinition{" +
                 "name='" + name + '\'' +
-                ", type=" + type +
+                ", type=" + getType() +
                 ", arguments=" + arguments +
                 ", dataFetcherFactory=" + dataFetcherFactory +
                 ", description='" + description + '\'' +
@@ -182,7 +187,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
     @Override
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>();
-        children.add(type);
+        children.add(getType());
         children.addAll(arguments);
         children.addAll(directives);
         return children;
@@ -193,7 +198,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
                 .children(CHILD_ARGUMENTS, arguments)
                 .children(CHILD_DIRECTIVES, directives)
-                .child(CHILD_TYPE, type)
+                .child(CHILD_TYPE, originalType)
                 .build();
     }
 
@@ -232,7 +237,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         public Builder(GraphQLFieldDefinition existing) {
             this.name = existing.getName();
             this.description = existing.getDescription();
-            this.type = existing.getType();
+            this.type = existing.originalType;
             this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(existing.getDataFetcher());
             this.deprecationReason = existing.getDeprecationReason();
             this.definition = existing.getDefinition();

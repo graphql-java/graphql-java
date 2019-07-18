@@ -241,7 +241,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
             description = existing.getDescription();
             definition = existing.getDefinition();
             fields.putAll(getByName(existing.getFieldDefinitions(), GraphQLFieldDefinition::getName));
-            interfaces.putAll(getByName(existing.getInterfaces(), GraphQLNamedType::getName));
+            interfaces.putAll(getByName(existing.originalInterfaces, GraphQLNamedType::getName));
             directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
 

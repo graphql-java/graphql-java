@@ -192,7 +192,7 @@ public class GraphQLUnionType implements GraphQLNamedType, GraphQLOutputType, Gr
             this.description = existing.getDescription();
             this.typeResolver = existing.getTypeResolver();
             this.definition = existing.getDefinition();
-            this.types.putAll(getByName(existing.getTypes(), GraphQLNamedType::getName));
+            this.types.putAll(getByName(existing.originalTypes, GraphQLNamedType::getName));
             this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
 

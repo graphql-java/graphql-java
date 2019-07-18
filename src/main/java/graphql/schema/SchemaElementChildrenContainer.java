@@ -36,6 +36,12 @@ public class SchemaElementChildrenContainer {
         return new LinkedHashMap<>(children);
     }
 
+    public List<GraphQLSchemaElement> getChildrenAsList() {
+        List<GraphQLSchemaElement> result = new ArrayList<>();
+        children.values().forEach(result::addAll);
+        return result;
+    }
+
     public static Builder newSchemaElementChildrenContainer() {
         return new Builder();
     }

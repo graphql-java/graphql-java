@@ -102,6 +102,7 @@ public class SchemaTransformer {
         };
 
         TreeTransformer<GraphQLSchemaElement> treeTransformer = new TreeTransformer<>(SCHEMA_ELEMENT_ADAPTER);
+
         treeTransformer.transform(dummyRoot, traverserVisitor);
         GraphQLSchema newSchema = GraphQLSchema.newSchema()
                 .query(dummyRoot.query)
@@ -109,7 +110,7 @@ public class SchemaTransformer {
                 .subscription(dummyRoot.subscription)
                 .additionalTypes(dummyRoot.additionalTypes)
                 .additionalDirectives(dummyRoot.directives)
-                .build();
+                .buildImpl(true);
         return newSchema;
     }
 

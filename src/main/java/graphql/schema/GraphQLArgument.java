@@ -51,6 +51,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
     private GraphQLInputType replacedType;
 
     public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_TYPE = "type";
 
     /**
      * @param name         the arg name
@@ -154,17 +155,29 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
         return new ArrayList<>(directives);
     }
 
+
+    @Override
+    public List<GraphQLSchemaElement> getChildren() {
+        List<GraphQLSchemaElement> children = new ArrayList<>();
+        children.add(getType());
+        children.addAll(directives);
+        return children;
+    }
+
+
     @Override
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
                 .children(CHILD_DIRECTIVES, directives)
+                .child(CHILD_TYPE, originalType)
                 .build();
     }
 
     @Override
     public GraphQLArgument withNewChildren(SchemaElementChildrenContainer newChildren) {
         return transform(builder ->
-                builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES)));
+                builder.type(newChildren.getChildOrNull(CHILD_TYPE))
+                        .replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES)));
     }
 
     /**
@@ -195,14 +208,6 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
     }
 
     @Override
-    public List<GraphQLSchemaElement> getChildren() {
-        List<GraphQLSchemaElement> children = new ArrayList<>();
-        children.add(getType());
-        children.addAll(directives);
-        return children;
-    }
-
-    @Override
     public String toString() {
         return "GraphQLArgument{" +
                 "name='" + name + '\'' +
@@ -225,7 +230,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
 
         public Builder(GraphQLArgument existing) {
             this.name = existing.getName();
-            this.type = existing.getType();
+            this.type = existing.originalType;
             this.value = existing.getValue();
             this.defaultValue = existing.getDefaultValue();
             this.description = existing.getDescription();

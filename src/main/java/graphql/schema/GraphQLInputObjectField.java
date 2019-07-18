@@ -191,7 +191,7 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
             this.name = existing.getName();
             this.description = existing.getDescription();
             this.defaultValue = existing.getDefaultValue();
-            this.type = existing.getType();
+            this.type = existing.originalType;
             this.definition = existing.getDefinition();
             this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
         }

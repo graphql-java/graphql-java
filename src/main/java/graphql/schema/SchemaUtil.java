@@ -16,7 +16,7 @@ public class SchemaUtil {
     private static final SchemaTraverser TRAVERSER = new SchemaTraverser();
 
 
-    Map<String, GraphQLNamedType> allTypes(final GraphQLSchema schema, final Set<GraphQLType> additionalTypes) {
+    Map<String, GraphQLNamedType> allTypes(final GraphQLSchema schema, final Set<GraphQLType> additionalTypes, boolean afterTransform) {
         List<GraphQLSchemaElement> roots = new ArrayList<>();
         roots.add(schema.getQueryType());
 
@@ -39,7 +39,13 @@ public class SchemaUtil {
         roots.add(Introspection.__Schema);
 
         GraphQLTypeCollectingVisitor visitor = new GraphQLTypeCollectingVisitor();
-        TRAVERSER.depthFirst(visitor, roots);
+        SchemaTraverser traverser;
+        if (afterTransform) {
+            traverser = new SchemaTraverser(schemaElement -> schemaElement.getChildrenWithTypeReferences().getChildrenAsList());
+        } else {
+            traverser = new SchemaTraverser();
+        }
+        traverser.depthFirst(visitor, roots);
         return visitor.getResult();
     }
 

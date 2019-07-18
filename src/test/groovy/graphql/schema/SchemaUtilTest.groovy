@@ -13,8 +13,8 @@ import static graphql.StarWarsSchema.characterInterface
 import static graphql.StarWarsSchema.droidType
 import static graphql.StarWarsSchema.episodeEnum
 import static graphql.StarWarsSchema.humanType
-import static graphql.StarWarsSchema.mutationType
 import static graphql.StarWarsSchema.inputHumanType
+import static graphql.StarWarsSchema.mutationType
 import static graphql.StarWarsSchema.queryType
 import static graphql.StarWarsSchema.starWarsSchema
 import static graphql.TypeReferenceSchema.ArgumentDirectiveInput
@@ -41,7 +41,7 @@ class SchemaUtilTest extends Specification {
 
     def "collectAllTypes"() {
         when:
-        Map<String, GraphQLType> types = new SchemaUtil().allTypes(starWarsSchema, Collections.emptySet())
+        Map<String, GraphQLType> types = new SchemaUtil().allTypes(starWarsSchema, Collections.emptySet(), false)
         then:
         types.size() == 17
         types == [(droidType.name)                        : droidType,
@@ -65,7 +65,7 @@ class SchemaUtilTest extends Specification {
 
     def "collectAllTypesNestedInput"() {
         when:
-        Map<String, GraphQLType> types = new SchemaUtil().allTypes(NestedInputSchema.createSchema(), Collections.emptySet())
+        Map<String, GraphQLType> types = new SchemaUtil().allTypes(NestedInputSchema.createSchema(), Collections.emptySet(), false)
         Map<String, GraphQLType> expected =
 
                 [(NestedInputSchema.rootType().name)     : NestedInputSchema.rootType(),
@@ -88,7 +88,7 @@ class SchemaUtilTest extends Specification {
 
     def "collect all types defined in directives"() {
         when:
-        Map<String, GraphQLType> types = new SchemaUtil().allTypes(SchemaWithReferences, Collections.emptySet())
+        Map<String, GraphQLType> types = new SchemaUtil().allTypes(SchemaWithReferences, Collections.emptySet(), false)
         then:
         types.size() == 30
         types.containsValue(UnionDirectiveInput)
