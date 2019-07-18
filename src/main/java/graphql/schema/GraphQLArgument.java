@@ -161,6 +161,13 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
                 .build();
     }
 
+    @Override
+    public GraphQLArgument withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.directives(newChildren.getChildren(CHILD_DIRECTIVES)
+                ));
+    }
+
     /**
      * This helps you transform the current GraphQLArgument into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
@@ -277,6 +284,15 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, "directive can't be null");
             directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder directives(List<GraphQLDirective> directives) {
+            assertNotNull(directives, "directive can't be null");
+            this.directives.clear();
+            for (GraphQLDirective directive : directives) {
+                this.directives.put(directive.getName(), directive);
+            }
             return this;
         }
 

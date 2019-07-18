@@ -153,6 +153,14 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
                 .build();
     }
 
+    @Override
+    public GraphQLInputObjectType withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .replaceFields(newChildren.getChildren(CHILD_FIELD_DEFINITIONS))
+        );
+    }
+
     public static Builder newInputObject(GraphQLInputObjectType existing) {
         return new Builder(existing);
     }
@@ -244,6 +252,13 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
             return this;
         }
 
+        public Builder replaceFields(List<GraphQLInputObjectField> fields) {
+            this.fields.clear();
+            ;
+            fields.forEach(this::field);
+            return this;
+        }
+
         public boolean hasField(String fieldName) {
             return fields.containsKey(fieldName);
         }
@@ -268,6 +283,15 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, "directive can't be null");
             directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder directives(List<GraphQLDirective> directives) {
+            assertNotNull(directives, "directive can't be null");
+            this.directives.clear();
+            for (GraphQLDirective directive : directives) {
+                this.directives.put(directive.getName(), directive);
+            }
             return this;
         }
 

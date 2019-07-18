@@ -145,6 +145,13 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
                 .build();
     }
 
+    @Override
+    public GraphQLScalarType withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
+    }
+
     public static Builder newScalar() {
         return new Builder();
     }
@@ -209,6 +216,15 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, "directive can't be null");
             directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder directives(List<GraphQLDirective> directives) {
+            assertNotNull(directives, "directive can't be null");
+            this.directives.clear();
+            for (GraphQLDirective directive : directives) {
+                this.directives.put(directive.getName(), directive);
+            }
             return this;
         }
 

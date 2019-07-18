@@ -221,6 +221,14 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
                 .build();
     }
 
+    @Override
+    public GraphQLEnumType withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .replaceValues(newChildren.getChildren(CHILD_VALUES))
+        );
+    }
+
     public static Builder newEnum() {
         return new Builder();
     }
@@ -298,6 +306,12 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
             return this;
         }
 
+        public Builder replaceValues(List<GraphQLEnumValueDefinition> valueDefinitions) {
+            this.values.clear();
+            valueDefinitions.forEach(this::value);
+            return this;
+        }
+
         public Builder value(GraphQLEnumValueDefinition enumValueDefinition) {
             assertNotNull(enumValueDefinition, "enumValueDefinition can't be null");
             values.put(enumValueDefinition.getName(), enumValueDefinition);
@@ -329,6 +343,15 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, "directive can't be null");
             directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder directives(List<GraphQLDirective> directives) {
+            assertNotNull(directives, "directive can't be null");
+            this.directives.clear();
+            for (GraphQLDirective directive : directives) {
+                this.directives.put(directive.getName(), directive);
+            }
             return this;
         }
 

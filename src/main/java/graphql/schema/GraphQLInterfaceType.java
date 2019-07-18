@@ -171,6 +171,14 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
                 .build();
     }
 
+    @Override
+    public GraphQLInterfaceType withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .replaceFields(newChildren.getChildren(CHILD_FIELD_DEFINITIONS))
+        );
+    }
+
     public static Builder newInterface() {
         return new Builder();
     }
@@ -266,6 +274,13 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
             return this;
         }
 
+        public Builder replaceFields(List<GraphQLFieldDefinition> fieldDefinitions) {
+            assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
+            this.fields.clear();
+            fieldDefinitions.forEach(this::field);
+            return this;
+        }
+
         public boolean hasField(String fieldName) {
             return fields.containsKey(fieldName);
         }
@@ -297,6 +312,15 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, "directive can't be null");
             directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder directives(List<GraphQLDirective> directives) {
+            assertNotNull(directives, "directive can't be null");
+            this.directives.clear();
+            for (GraphQLDirective directive : directives) {
+                this.directives.put(directive.getName(), directive);
+            }
             return this;
         }
 

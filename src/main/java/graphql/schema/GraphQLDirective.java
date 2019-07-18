@@ -1,7 +1,6 @@
 package graphql.schema;
 
 
-import graphql.Assert;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -148,6 +147,13 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
                 .build();
     }
 
+    @Override
+    public GraphQLDirective withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.arguments(newChildren.getChildren(CHILD_ARGUMENTS))
+        );
+    }
+
     public static Builder newDirective() {
         return new Builder();
     }
@@ -212,8 +218,17 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         }
 
         public Builder argument(GraphQLArgument argument) {
-            Assert.assertNotNull(argument, "argument must not be null");
+            assertNotNull(argument, "argument must not be null");
             arguments.put(argument.getName(), argument);
+            return this;
+        }
+
+        public Builder arguments(List<GraphQLArgument> arguments) {
+            assertNotNull(arguments, "arguments must not be null");
+            this.arguments.clear();
+            for (GraphQLArgument argument : arguments) {
+                this.arguments.put(argument.getName(), argument);
+            }
             return this;
         }
 

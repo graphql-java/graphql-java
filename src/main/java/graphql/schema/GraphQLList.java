@@ -96,6 +96,11 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
     }
 
     @Override
+    public GraphQLSchemaElement withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return list(newChildren.getChildOrNull(CHILD_WRAPPED_TYPE));
+    }
+
+    @Override
     public String toString() {
         return GraphQLTypeUtil.simplePrint(this);
     }

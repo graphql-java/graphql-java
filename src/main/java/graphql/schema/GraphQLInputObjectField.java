@@ -160,6 +160,14 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
                 .build();
     }
 
+    @Override
+    public GraphQLInputObjectField withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .type((GraphQLInputType) newChildren.getChildOrNull(CHILD_TYPE))
+        );
+    }
+
     public static Builder newInputObjectField(GraphQLInputObjectField existing) {
         return new Builder(existing);
     }
@@ -238,6 +246,16 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
             directives.put(directive.getName(), directive);
             return this;
         }
+
+        public Builder directives(List<GraphQLDirective> directives) {
+            assertNotNull(directives, "directive can't be null");
+            this.directives.clear();
+            for (GraphQLDirective directive : directives) {
+                this.directives.put(directive.getName(), directive);
+            }
+            return this;
+        }
+
 
         public Builder withDirective(GraphQLDirective.Builder builder) {
             return withDirective(builder.build());

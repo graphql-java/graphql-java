@@ -208,6 +208,15 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
                 .build();
     }
 
+    @Override
+    public GraphQLObjectType withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .replaceFields(newChildren.getChildren(CHILD_FIELD_DEFINITIONS))
+                        .replaceInterfaces(newChildren.getChildren(CHILD_INTERFACES))
+        );
+    }
+
     public static Builder newObject() {
         return new Builder();
     }
@@ -302,6 +311,13 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
             return this;
         }
 
+        public Builder replaceFields(List<GraphQLFieldDefinition> fieldDefinitions) {
+            assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
+            this.fields.clear();
+            fieldDefinitions.forEach(this::field);
+            return this;
+        }
+
         /**
          * This is used to clear all the fields in the builder so far.
          *
@@ -323,6 +339,15 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
             return this;
         }
 
+        public Builder replaceInterfaces(List<GraphQLInterfaceType> interfaces) {
+            assertNotNull(interfaces, "interfaces can't be null");
+            this.interfaces.clear();
+            for (GraphQLInterfaceType interfaceType : interfaces) {
+                this.interfaces.put(interfaceType.getName(), interfaceType);
+            }
+            return this;
+        }
+
         public Builder withInterface(GraphQLTypeReference reference) {
             assertNotNull(reference, "reference can't be null");
             this.interfaces.put(reference.getName(), reference);
@@ -332,6 +357,15 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
         public Builder withInterfaces(GraphQLInterfaceType... interfaceType) {
             for (GraphQLInterfaceType type : interfaceType) {
                 withInterface(type);
+            }
+            return this;
+        }
+
+        public Builder replaceDirectives(List<GraphQLDirective> directives) {
+            assertNotNull(directives, "directive can't be null");
+            this.directives.clear();
+            for (GraphQLDirective directive : directives) {
+                this.directives.put(directive.getName(), directive);
             }
             return this;
         }

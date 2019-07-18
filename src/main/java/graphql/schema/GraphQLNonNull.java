@@ -106,4 +106,9 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
                 .child(CHILD_WRAPPED_TYPE, originalWrappedType)
                 .build();
     }
+
+    @Override
+    public GraphQLSchemaElement withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return nonNull(newChildren.getChildOrNull(CHILD_WRAPPED_TYPE));
+    }
 }

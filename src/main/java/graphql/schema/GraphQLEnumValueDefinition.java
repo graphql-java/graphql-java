@@ -164,6 +164,13 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
                 .build();
     }
 
+    @Override
+    public GraphQLEnumValueDefinition withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
+    }
+
     public static Builder newEnumValueDefinition() {
         return new Builder();
     }
@@ -234,6 +241,15 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, "directive can't be null");
             directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder directives(List<GraphQLDirective> directives) {
+            assertNotNull(directives, "directive can't be null");
+            this.directives.clear();
+            for (GraphQLDirective directive : directives) {
+                this.directives.put(directive.getName(), directive);
+            }
             return this;
         }
 

@@ -197,6 +197,15 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
                 .build();
     }
 
+    @Override
+    public GraphQLFieldDefinition withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .replaceArguments(newChildren.getChildren(CHILD_ARGUMENTS))
+                        .type((GraphQLOutputType) newChildren.getChildOrNull(CHILD_TYPE))
+        );
+    }
+
     public static Builder newFieldDefinition(GraphQLFieldDefinition existing) {
         return new Builder(existing);
     }
@@ -385,6 +394,15 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
             return this;
         }
 
+        public Builder replaceArguments(List<GraphQLArgument> arguments) {
+            assertNotNull(arguments, "arguments can't be null");
+            this.arguments.clear();
+            for (GraphQLArgument argument : arguments) {
+                argument(argument);
+            }
+            return this;
+        }
+
         /**
          * This is used to clear all the arguments in the builder so far.
          *
@@ -412,6 +430,15 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, "directive can't be null");
             directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder directives(List<GraphQLDirective> directives) {
+            assertNotNull(directives, "directive can't be null");
+            this.directives.clear();
+            for (GraphQLDirective directive : directives) {
+                this.directives.put(directive.getName(), directive);
+            }
             return this;
         }
 

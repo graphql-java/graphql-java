@@ -18,5 +18,9 @@ public interface GraphQLSchemaElement {
         return newSchemaElementChildrenContainer().build();
     }
 
+    default GraphQLSchemaElement withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return this;
+    }
+
     TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor);
 }
