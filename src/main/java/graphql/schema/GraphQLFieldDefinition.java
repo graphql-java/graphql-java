@@ -197,8 +197,9 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
                 .build();
     }
 
+    // Spock mocking fails with the real return type GraphQLFieldDefinition
     @Override
-    public GraphQLFieldDefinition withNewChildren(SchemaElementChildrenContainer newChildren) {
+    public GraphQLSchemaElement withNewChildren(SchemaElementChildrenContainer newChildren) {
         return transform(builder ->
                 builder.directives(newChildren.getChildren(CHILD_DIRECTIVES))
                         .replaceArguments(newChildren.getChildren(CHILD_ARGUMENTS))

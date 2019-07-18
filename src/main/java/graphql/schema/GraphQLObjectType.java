@@ -208,8 +208,9 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
                 .build();
     }
 
+    // Spock mocking fails with the real return type GraphQLObjectType
     @Override
-    public GraphQLObjectType withNewChildren(SchemaElementChildrenContainer newChildren) {
+    public GraphQLSchemaElement withNewChildren(SchemaElementChildrenContainer newChildren) {
         return transform(builder ->
                 builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
                         .replaceFields(newChildren.getChildren(CHILD_FIELD_DEFINITIONS))
