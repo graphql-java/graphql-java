@@ -16,8 +16,15 @@ import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChil
 
 public class SchemaTransformer {
 
+    // artificial schema element which serves as root element for the transformation
     private static class DummyRoot implements GraphQLSchemaElement {
 
+        static final String QUERY = "query";
+        static final String MUTATION = "mutation";
+        static final String SUBSCRIPTION = "subscription";
+        static final String ADD_TYPES = "addTypes";
+        static final String DIRECTIVES = "directives";
+        static final String INTROSPECTION = "introspection";
         GraphQLSchema schema;
 
         GraphQLObjectType query;
@@ -44,26 +51,26 @@ public class SchemaTransformer {
         @Override
         public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
             SchemaElementChildrenContainer.Builder builder = newSchemaElementChildrenContainer()
-                    .child("query", query);
+                    .child(QUERY, query);
             if (schema.isSupportingMutations()) {
-                builder.child("mutation", mutation);
+                builder.child(MUTATION, mutation);
             }
             if (schema.isSupportingSubscriptions()) {
-                builder.child("subscription", subscription);
+                builder.child(SUBSCRIPTION, subscription);
             }
-            builder.children("addTypes", additionalTypes);
-            builder.children("directives", directives);
-            builder.child("introspection", Introspection.__Schema);
+            builder.children(ADD_TYPES, additionalTypes);
+            builder.children(DIRECTIVES, directives);
+            builder.child(INTROSPECTION, Introspection.__Schema);
             return builder.build();
         }
 
         @Override
         public GraphQLSchemaElement withNewChildren(SchemaElementChildrenContainer newChildren) {
-            query = newChildren.getChildOrNull("query");
-            mutation = newChildren.getChildOrNull("mutation");
-            subscription = newChildren.getChildOrNull("subscription");
-            additionalTypes = new LinkedHashSet<>(newChildren.getChildren("addTypes"));
-            directives = new LinkedHashSet<>(newChildren.getChildren("directives"));
+            query = newChildren.getChildOrNull(QUERY);
+            mutation = newChildren.getChildOrNull(MUTATION);
+            subscription = newChildren.getChildOrNull(SUBSCRIPTION);
+            additionalTypes = new LinkedHashSet<>(newChildren.getChildren(ADD_TYPES));
+            directives = new LinkedHashSet<>(newChildren.getChildren(DIRECTIVES));
             return this;
         }
 
