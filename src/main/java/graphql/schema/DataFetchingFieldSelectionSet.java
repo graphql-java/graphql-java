@@ -102,6 +102,8 @@ public interface DataFetchingFieldSelectionSet extends Supplier<MergedSelectionS
     /**
      * This will return all selected fields.
      *
+     * The fields are guaranteed to be in pre-order as they appear in the query.
+     *
      * @return a list of all selected fields or empty list if none match
      */
     List<SelectedField> getFields();
@@ -112,6 +114,8 @@ public interface DataFetchingFieldSelectionSet extends Supplier<MergedSelectionS
      *
      * This will allow you to use '*', '**' and '?' as special matching characters such that "invoice/customer*" would
      * match an invoice field with child fields that start with 'customer'.
+     *
+     * The fields are guaranteed to be in pre-order as they appear in the query.
      *
      * @param fieldGlobPattern the glob pattern to match fields against
      *
