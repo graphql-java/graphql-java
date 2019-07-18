@@ -40,12 +40,12 @@ public class GraphQLSchema {
     private final GraphQLObjectType queryType;
     private final GraphQLObjectType mutationType;
     private final GraphQLObjectType subscriptionType;
-    private final Map<String, GraphQLNamedType> typeMap;
     private final Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
     private final Set<GraphQLDirective> directives = new LinkedHashSet<>();
-    private final Map<String, List<GraphQLObjectType>> byInterface;
     private final GraphQLCodeRegistry codeRegistry;
 
+    private final Map<String, GraphQLNamedType> typeMap;
+    private final Map<String, List<GraphQLObjectType>> byInterface;
     /**
      * @param queryType the query type
      *
@@ -85,7 +85,12 @@ public class GraphQLSchema {
     }
 
     @Internal
-    private GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes, Set<GraphQLDirective> directives, GraphQLCodeRegistry codeRegistry) {
+    private GraphQLSchema(GraphQLObjectType queryType,
+                          GraphQLObjectType mutationType,
+                          GraphQLObjectType subscriptionType,
+                          Set<GraphQLType> additionalTypes,
+                          Set<GraphQLDirective> directives,
+                          GraphQLCodeRegistry codeRegistry) {
         assertNotNull(additionalTypes, "additionalTypes can't be null");
         assertNotNull(queryType, "queryType can't be null");
         assertNotNull(directives, "directives can't be null");
