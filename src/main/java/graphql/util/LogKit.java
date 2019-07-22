@@ -1,8 +1,10 @@
 package graphql.util;
 
+import graphql.Internal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Internal
 public class LogKit {
 
     /**
@@ -14,7 +16,7 @@ public class LogKit {
      * @return a new Logger
      */
     public static Logger getNotPrivacySafeLogger(Class clazz) {
-        return LoggerFactory.getLogger(String.format("%s_NotPrivacySafe", clazz.getName()));
+        return LoggerFactory.getLogger(String.format("notprivacysafe.%s", clazz.getName()));
     }
 
 }
