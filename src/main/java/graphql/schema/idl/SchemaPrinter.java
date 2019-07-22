@@ -4,10 +4,17 @@ import graphql.Assert;
 import graphql.PublicApi;
 import graphql.language.AstPrinter;
 import graphql.language.AstValueHelper;
-import graphql.language.Comment;
 import graphql.language.Description;
 import graphql.language.Document;
-import graphql.language.Node;
+import graphql.language.EnumTypeDefinition;
+import graphql.language.EnumValueDefinition;
+import graphql.language.FieldDefinition;
+import graphql.language.InputObjectTypeDefinition;
+import graphql.language.InputValueDefinition;
+import graphql.language.InterfaceTypeDefinition;
+import graphql.language.ObjectTypeDefinition;
+import graphql.language.ScalarTypeDefinition;
+import graphql.language.UnionTypeDefinition;
 import graphql.schema.DefaultGraphqlTypeComparatorRegistry;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
@@ -31,17 +38,22 @@ import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static graphql.Directives.DeprecatedDirective;
+import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
+import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
@@ -50,6 +62,14 @@ import static java.util.stream.Collectors.toList;
  */
 @PublicApi
 public class SchemaPrinter {
+    //
+    // we use this so that we get the simple "@deprecated" as text and not a full exploded
+    // text with arguments (but only when we auto add this)
+    //
+    private static final GraphQLDirective DeprecatedDirective4Printing = GraphQLDirective.newDirective()
+            .name("deprecated")
+            .validLocations(FIELD_DEFINITION, ENUM_VALUE)
+            .build();
 
     /**
      * Options to use when printing a schema
@@ -66,6 +86,8 @@ public class SchemaPrinter {
 
         private final boolean includeDirectives;
 
+        private final boolean descriptionsAsHashComments;
+
         private final GraphqlTypeComparatorRegistry comparatorRegistry;
 
         private Options(boolean includeIntrospectionTypes,
@@ -73,12 +95,14 @@ public class SchemaPrinter {
                         boolean includeExtendedScalars,
                         boolean includeSchemaDefinition,
                         boolean includeDirectives,
+                        boolean descriptionsAsHashComments,
                         GraphqlTypeComparatorRegistry comparatorRegistry) {
             this.includeIntrospectionTypes = includeIntrospectionTypes;
             this.includeScalars = includeScalars;
             this.includeExtendedScalars = includeExtendedScalars;
             this.includeSchemaDefinition = includeSchemaDefinition;
             this.includeDirectives = includeDirectives;
+            this.descriptionsAsHashComments = descriptionsAsHashComments;
             this.comparatorRegistry = comparatorRegistry;
         }
 
@@ -102,8 +126,17 @@ public class SchemaPrinter {
             return includeDirectives;
         }
 
+        public boolean isDescriptionsAsHashComments() {
+            return descriptionsAsHashComments;
+        }
+
+        public GraphqlTypeComparatorRegistry getComparatorRegistry() {
+            return comparatorRegistry;
+        }
+
         public static Options defaultOptions() {
-            return new Options(false, false, false, false, true,
+            return new Options(false, false, false,
+                    false, true, false,
                     DefaultGraphqlTypeComparatorRegistry.defaultComparators());
         }
 
@@ -115,7 +148,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeIntrospectionTypes(boolean flag) {
-            return new Options(flag, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, this.comparatorRegistry);
+            return new Options(flag, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, this.descriptionsAsHashComments, this.comparatorRegistry);
         }
 
         /**
@@ -126,7 +159,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, flag, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, flag, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, this.descriptionsAsHashComments, this.comparatorRegistry);
         }
 
         /**
@@ -138,7 +171,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeExtendedScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag, this.includeSchemaDefinition, this.includeDirectives, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag, this.includeSchemaDefinition, this.includeDirectives, this.descriptionsAsHashComments, this.comparatorRegistry);
         }
 
         /**
@@ -151,8 +184,8 @@ public class SchemaPrinter {
          *
          * @return options
          */
-        public Options includeSchemaDefintion(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, flag, this.includeDirectives, this.comparatorRegistry);
+        public Options includeSchemaDefinition(boolean flag) {
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, flag, this.includeDirectives, this.descriptionsAsHashComments, this.comparatorRegistry);
         }
 
         /**
@@ -164,7 +197,25 @@ public class SchemaPrinter {
          * @return new instance of options
          */
         public Options includeDirectives(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, flag, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars,
+                    this.includeExtendedScalars, this.includeSchemaDefinition, flag, this.descriptionsAsHashComments,
+                    this.comparatorRegistry);
+        }
+
+        /**
+         * Descriptions are defined as preceding string literals, however an older legacy
+         * versions of SDL supported preceding '#' comments as
+         * descriptions. Setting this to true to true to enable this deprecated behavior.
+         * This option is provided to ease adoption and will be may be removed in future versions.
+         *
+         * @param flag whether to print description as # comments
+         *
+         * @return new instance of options
+         */
+        public Options descriptionsAsHashComments(boolean flag) {
+            return new Options(this.includeIntrospectionTypes, this.includeScalars,
+                    this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, flag,
+                    this.comparatorRegistry);
         }
 
         /**
@@ -177,12 +228,9 @@ public class SchemaPrinter {
          * @return options
          */
         public Options setComparators(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives,
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars,
+                    this.includeSchemaDefinition, this.includeDirectives, this.descriptionsAsHashComments,
                     comparatorRegistry);
-        }
-
-        public GraphqlTypeComparatorRegistry getComparatorRegistry() {
-            return comparatorRegistry;
         }
     }
 
@@ -306,10 +354,31 @@ public class SchemaPrinter {
                     .collect(toList());
             for (GraphQLEnumValueDefinition enumValueDefinition : values) {
                 printComments(out, enumValueDefinition, "  ");
-                out.format("  %s%s\n", enumValueDefinition.getName(), directivesString(GraphQLEnumValueDefinition.class, enumValueDefinition.getDirectives()));
+                List<GraphQLDirective> enumValueDirectives = enumValueDefinition.getDirectives();
+                if (enumValueDefinition.isDeprecated()) {
+                    enumValueDirectives = addDeprecatedDirectiveIfNeeded(enumValueDirectives);
+                }
+                out.format("  %s%s\n", enumValueDefinition.getName(), directivesString(GraphQLEnumValueDefinition.class, enumValueDirectives));
             }
             out.format("}\n\n");
         };
+    }
+
+    private void printFieldDefinitions(PrintWriter out, Comparator<? super GraphQLType> comparator, List<GraphQLFieldDefinition> fieldDefinitions) {
+        fieldDefinitions
+                .stream()
+                .sorted(comparator)
+                .forEach(fd -> {
+                    printComments(out, fd, "  ");
+                    List<GraphQLDirective> fieldDirectives = fd.getDirectives();
+                    if (fd.isDeprecated()) {
+                        fieldDirectives = addDeprecatedDirectiveIfNeeded(fieldDirectives);
+                    }
+
+                    out.format("  %s%s: %s%s\n",
+                            fd.getName(), argsString(GraphQLFieldDefinition.class, fd.getArguments()), typeString(fd.getType()),
+                            directivesString(GraphQLFieldDefinition.class, fieldDirectives));
+                });
     }
 
     private TypePrinter<GraphQLInterfaceType> interfacePrinter() {
@@ -326,15 +395,7 @@ public class SchemaPrinter {
 
             printComments(out, type, "");
             out.format("interface %s%s {\n", type.getName(), directivesString(GraphQLInterfaceType.class, type.getDirectives()));
-            visibility.getFieldDefinitions(type)
-                    .stream()
-                    .sorted(comparator)
-                    .forEach(fd -> {
-                        printComments(out, fd, "  ");
-                        out.format("  %s%s: %s%s\n",
-                                fd.getName(), argsString(GraphQLFieldDefinition.class, fd.getArguments()), typeString(fd.getType()),
-                                directivesString(GraphQLFieldDefinition.class, fd.getDirectives()));
-                    });
+            printFieldDefinitions(out, comparator, visibility.getFieldDefinitions(type));
             out.format("}\n\n");
         };
     }
@@ -400,15 +461,7 @@ public class SchemaPrinter {
                     .build();
             Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
 
-            visibility.getFieldDefinitions(type)
-                    .stream()
-                    .sorted(comparator)
-                    .forEach(fd -> {
-                        printComments(out, fd, "  ");
-                        out.format("  %s%s: %s%s\n",
-                                fd.getName(), argsString(GraphQLFieldDefinition.class, fd.getArguments()), typeString(fd.getType()),
-                                directivesString(GraphQLFieldDefinition.class, fd.getDirectives()));
-                    });
+            printFieldDefinitions(out, comparator, visibility.getFieldDefinitions(type));
             out.format("}\n\n");
         };
     }
@@ -458,7 +511,7 @@ public class SchemaPrinter {
 
             // when serializing a GraphQL schema using the type system language, a
             // schema definition should be omitted if only uses the default root type names.
-            boolean needsSchemaPrinted = options.includeSchemaDefinition;
+            boolean needsSchemaPrinted = options.isIncludeSchemaDefinition();
 
             if (!needsSchemaPrinted) {
                 if (queryType != null && !queryType.getName().equals("Query")) {
@@ -486,23 +539,18 @@ public class SchemaPrinter {
                 out.format("}\n\n");
             }
 
-            if (options.includeDirectives) {
-                out.format("%s", directiveDefinitions(getDirectives(schema)));
+            List<GraphQLDirective> directives = getSchemaDirectives(schema);
+            if (!directives.isEmpty()) {
+                out.format("%s", directiveDefinitions(directives));
             }
         };
     }
 
-    private List<GraphQLDirective> getDirectives(GraphQLSchema schema) {
-
-        // we don't print the standard directives that always ship with graphql-java
-        List<String> standardDirectives = Arrays.asList(
-                "skip",
-                "include",
-                "defer",
-                "deprecated");
-
-        Predicate<GraphQLDirective> standard = directive -> standardDirectives.contains(directive.getName());
-        return schema.getDirectives().stream().filter(standard.negate()).collect(Collectors.toList());
+    private List<GraphQLDirective> getSchemaDirectives(GraphQLSchema schema) {
+        if (!options.isIncludeDirectives()) {
+            return emptyList();
+        }
+        return schema.getDirectives();
     }
 
     String typeString(GraphQLType rawType) {
@@ -514,7 +562,7 @@ public class SchemaPrinter {
     }
 
     String argsString(Class<? extends GraphQLType> parent, List<GraphQLArgument> arguments) {
-        boolean hasDescriptions = arguments.stream().anyMatch(arg -> !isNullOrEmpty(arg.getDescription()));
+        boolean hasDescriptions = arguments.stream().anyMatch(this::hasDescription);
         String halfPrefix = hasDescriptions ? "  " : "";
         String prefix = hasDescriptions ? "    " : "";
         int count = 0;
@@ -539,19 +587,8 @@ public class SchemaPrinter {
             if (hasDescriptions) {
                 sb.append("\n");
             }
-            String description = argument.getDescription();
-            if (!isNullOrEmpty(description)) {
-                String[] descriptionSplitByNewlines = description.split("\n");
-                Stream<String> stream = Arrays.stream(descriptionSplitByNewlines);
-                if (descriptionSplitByNewlines.length > 1) {
-                    String multiLineComment = "\"\"\"";
-                    stream = Stream.concat(Stream.of(multiLineComment), stream);
-                    stream = Stream.concat(stream, Stream.of(multiLineComment));
-                    stream.map(s -> prefix + s + "\n").forEach(sb::append);
-                } else {
-                    stream.map(s -> prefix + "#" + s + "\n").forEach(sb::append);
-                }
-            }
+            sb.append(printComments(argument, prefix));
+
             sb.append(prefix).append(argument.getName()).append(": ").append(typeString(argument.getType()));
             Object defaultValue = argument.getDefaultValue();
             if (defaultValue != null) {
@@ -576,8 +613,13 @@ public class SchemaPrinter {
     }
 
     String directivesString(Class<? extends GraphQLType> parent, List<GraphQLDirective> directives) {
-        if (!options.includeDirectives) {
-            return "";
+        if (!options.isIncludeDirectives()) {
+            if (hasDeprecatedDirective(directives)) {
+                // @deprecated is special - we always print it if something is deprecated
+                directives = Collections.singletonList(DeprecatedDirective);
+            } else {
+                return "";
+            }
         }
         StringBuilder sb = new StringBuilder();
         if (!directives.isEmpty()) {
@@ -606,7 +648,10 @@ public class SchemaPrinter {
 
     private String directiveString(GraphQLDirective directive) {
         if (!options.includeDirectives) {
-            return "";
+            // @deprecated is special - we always print it if something is deprecated
+            if (!isDeprecatedDirective(directive)) {
+                return "";
+            }
         }
 
         StringBuilder sb = new StringBuilder();
@@ -642,6 +687,24 @@ public class SchemaPrinter {
             sb.append(")");
         }
         return sb.toString();
+    }
+
+    private boolean isDeprecatedDirective(GraphQLDirective directive) {
+        return directive.getName().equals(DeprecatedDirective.getName());
+    }
+
+    private boolean hasDeprecatedDirective(List<GraphQLDirective> directives) {
+        return directives.stream()
+                .filter(this::isDeprecatedDirective)
+                .count() == 1;
+    }
+
+    private List<GraphQLDirective> addDeprecatedDirectiveIfNeeded(List<GraphQLDirective> directives) {
+        if (!hasDeprecatedDirective(directives)) {
+            directives = new ArrayList<>(directives);
+            directives.add(DeprecatedDirective4Printing);
+        }
+        return directives;
     }
 
     private String directiveDefinitions(List<GraphQLDirective> directives) {
@@ -722,115 +785,104 @@ public class SchemaPrinter {
         printer.print(out, type, visibility);
     }
 
+    private String printComments(Object graphQLType, String prefix) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        printComments(pw, graphQLType, prefix);
+        return sw.toString();
+    }
+
     private void printComments(PrintWriter out, Object graphQLType, String prefix) {
 
-        AstDescriptionAndComments descriptionAndComments = getDescriptionAndComments(graphQLType);
-        if (descriptionAndComments == null) {
+        String descriptionText = getDescription(graphQLType);
+        if (isNullOrEmpty(descriptionText)) {
             return;
         }
 
-        Description astDescription = descriptionAndComments.descriptionAst;
-        if (astDescription != null) {
-            String quoteStr = "\"";
-            if (astDescription.isMultiLine()) {
-                quoteStr = "\"\"\"";
-            }
-            out.write(prefix);
-            out.write(quoteStr);
-            out.write(astDescription.getContent());
-            out.write(quoteStr);
-            out.write("\n");
-
-            return;
-        }
-
-        if (descriptionAndComments.comments != null) {
-            descriptionAndComments.comments.forEach(cmt -> {
-                String commentText = cmt.getContent() == null ? "" : cmt.getContent();
-                // it possible that in fact they manage to sneak in a multi line comment
-                // into what should be a single line comment.  So cater for that.
-                List<String> lines = Arrays.asList(commentText.split("\n"));
-                lines.forEach(t -> {
-                    out.write(prefix);
-                    out.write("#");
-                    out.write(commentText);
-                    out.write("\n");
-                });
-            });
-        } else {
-            String runtimeDescription = descriptionAndComments.runtimeDescription;
-            if (!isNullOrEmpty(runtimeDescription)) {
-                Stream<String> stream = Arrays.stream(runtimeDescription.split("\n"));
-                stream.map(s -> prefix + "#" + s + "\n").forEach(out::write);
+        if (!isNullOrEmpty(descriptionText)) {
+            List<String> lines = Arrays.asList(descriptionText.split("\n"));
+            if (options.isDescriptionsAsHashComments()) {
+                printMultiLineHashDescription(out, prefix, lines);
+            } else {
+                if (lines.size() > 1) {
+                    printMultiLineDescription(out, prefix, lines);
+                } else {
+                    printSingleLineDescription(out, prefix, lines.get(0));
+                }
             }
         }
     }
 
-    static class AstDescriptionAndComments {
-
-        String runtimeDescription;
-
-        Description descriptionAst;
-
-        List<Comment> comments;
-
-        public AstDescriptionAndComments(String runtimeDescription, Description descriptionAst, List<Comment> comments) {
-            this.runtimeDescription = runtimeDescription;
-            this.descriptionAst = descriptionAst;
-            this.comments = comments;
-        }
+    private void printMultiLineHashDescription(PrintWriter out, String prefix, List<String> lines) {
+        lines.forEach(l -> out.printf("%s#%s\n", prefix, l));
     }
 
-    private AstDescriptionAndComments getDescriptionAndComments(Object descriptionHolder) {
+    private void printMultiLineDescription(PrintWriter out, String prefix, List<String> lines) {
+        out.printf("%s\"\"\"\n", prefix);
+        lines.forEach(l -> out.printf("%s%s\n", prefix, l));
+        out.printf("%s\"\"\"\n", prefix);
+    }
+
+    private void printSingleLineDescription(PrintWriter out, String prefix, String s) {
+        out.printf("%s\"%s\"\n", prefix, s);
+    }
+
+    private boolean hasDescription(Object descriptionHolder) {
+        String description = getDescription(descriptionHolder);
+        return !isNullOrEmpty(description);
+    }
+
+    private String getDescription(Object descriptionHolder) {
         if (descriptionHolder instanceof GraphQLObjectType) {
             GraphQLObjectType type = (GraphQLObjectType) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return description(type.getDescription(), ofNullable(type.getDefinition()).map(ObjectTypeDefinition::getDescription).orElse(null));
         } else if (descriptionHolder instanceof GraphQLEnumType) {
             GraphQLEnumType type = (GraphQLEnumType) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return description(type.getDescription(), ofNullable(type.getDefinition()).map(EnumTypeDefinition::getDescription).orElse(null));
         } else if (descriptionHolder instanceof GraphQLFieldDefinition) {
             GraphQLFieldDefinition type = (GraphQLFieldDefinition) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return description(type.getDescription(), ofNullable(type.getDefinition()).map(FieldDefinition::getDescription).orElse(null));
         } else if (descriptionHolder instanceof GraphQLEnumValueDefinition) {
             GraphQLEnumValueDefinition type = (GraphQLEnumValueDefinition) descriptionHolder;
-            return descriptionAndComments(type::getDescription, () -> null, () -> null);
+            return description(type.getDescription(), ofNullable(type.getDefinition()).map(EnumValueDefinition::getDescription).orElse(null));
         } else if (descriptionHolder instanceof GraphQLUnionType) {
             GraphQLUnionType type = (GraphQLUnionType) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return description(type.getDescription(), ofNullable(type.getDefinition()).map(UnionTypeDefinition::getDescription).orElse(null));
         } else if (descriptionHolder instanceof GraphQLInputObjectType) {
             GraphQLInputObjectType type = (GraphQLInputObjectType) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return description(type.getDescription(), ofNullable(type.getDefinition()).map(InputObjectTypeDefinition::getDescription).orElse(null));
         } else if (descriptionHolder instanceof GraphQLInputObjectField) {
             GraphQLInputObjectField type = (GraphQLInputObjectField) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return description(type.getDescription(), ofNullable(type.getDefinition()).map(InputValueDefinition::getDescription).orElse(null));
         } else if (descriptionHolder instanceof GraphQLInterfaceType) {
             GraphQLInterfaceType type = (GraphQLInterfaceType) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return description(type.getDescription(), ofNullable(type.getDefinition()).map(InterfaceTypeDefinition::getDescription).orElse(null));
         } else if (descriptionHolder instanceof GraphQLScalarType) {
             GraphQLScalarType type = (GraphQLScalarType) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return description(type.getDescription(), ofNullable(type.getDefinition()).map(ScalarTypeDefinition::getDescription).orElse(null));
         } else if (descriptionHolder instanceof GraphQLArgument) {
             GraphQLArgument type = (GraphQLArgument) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return description(type.getDescription(), ofNullable(type.getDefinition()).map(InputValueDefinition::getDescription).orElse(null));
         } else if (descriptionHolder instanceof GraphQLDirective) {
             GraphQLDirective type = (GraphQLDirective) descriptionHolder;
-            return descriptionAndComments(type::getDescription, () -> null, () -> null);
+            return description(type.getDescription(), null);
         } else {
             return Assert.assertShouldNeverHappen();
         }
     }
 
-    AstDescriptionAndComments descriptionAndComments(Supplier<String> runtimeDescriptionSupplier, Supplier<Node> nodeSupplier, Supplier<Description> descriptionSupplier) {
-        String runtimeDesc = runtimeDescriptionSupplier.get();
-        Node node = nodeSupplier.get();
-        Description description = null;
-        List<Comment> comments = null;
-        if (node != null) {
-            comments = node.getComments();
-            description = descriptionSupplier.get();
+    String description(String runtimeDescription, Description descriptionAst) {
+        //
+        // 95% of the time if the schema was built from SchemaGenerator then the runtime description is the only description
+        // So the other code here is a really defensive way to get the description
+        //
+        String descriptionText = runtimeDescription;
+        if (isNullOrEmpty(descriptionText)) {
+            if (descriptionAst != null) {
+                descriptionText = descriptionAst.getContent();
+            }
         }
-        return new AstDescriptionAndComments(runtimeDesc, description, comments);
-
+        return descriptionText;
     }
 
     private static boolean isNullOrEmpty(String s) {

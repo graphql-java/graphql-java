@@ -62,15 +62,25 @@ public class SchemaGeneratorHelper {
 
     static {
         DirectiveDefinition.Builder builder = DirectiveDefinition.newDirectiveDefinition().name("deprecated");
-        builder.directiveLocation(graphql.language.DirectiveLocation.newDirectiveLocation().name(DirectiveLocation.FIELD_DEFINITION.name()).build());
-        builder.directiveLocation(graphql.language.DirectiveLocation.newDirectiveLocation().name((DirectiveLocation.ENUM_VALUE.name())).build());
+        builder.directiveLocation(createLocation(DirectiveLocation.FIELD_DEFINITION));
+        builder.directiveLocation(createLocation(DirectiveLocation.ENUM_VALUE));
         builder.inputValueDefinition(
                 InputValueDefinition.newInputValueDefinition()
                         .name("reason")
+                        .description(createDescription("The reason for the deprecation"))
                         .type(TypeName.newTypeName().name("String").build())
                         .defaultValue(StringValue.newStringValue().value(NO_LONGER_SUPPORTED).build())
                         .build());
+        builder.description(createDescription("Marks the field or enum value as deprecated"));
         DEPRECATED_DIRECTIVE_DEFINITION = builder.build();
+    }
+
+    private static graphql.language.DirectiveLocation createLocation(DirectiveLocation fieldDefinition) {
+        return graphql.language.DirectiveLocation.newDirectiveLocation().name(fieldDefinition.name()).build();
+    }
+
+    private static Description createDescription(String s) {
+        return new Description(s, null, false);
     }
 
     public Object buildValue(Value value, GraphQLType requiredType) {
