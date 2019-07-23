@@ -85,8 +85,20 @@ public class SchemaTransformer {
         }
     }
 
+    /**
+     * Transforms a GrapQLSchema and returns a new GraphQLSchema object.
+     *
+     * @param schema
+     * @param visitor
+     *
+     * @return a new GraphQLSchema instance.
+     */
+    public static GraphQLSchema transformSchema(GraphQLSchema schema, GraphQLTypeVisitor visitor) {
+        SchemaTransformer schemaTransformer = new SchemaTransformer();
+        return schemaTransformer.transform(schema, visitor);
+    }
 
-    public GraphQLSchema transformSchema(final GraphQLSchema schema, GraphQLTypeVisitor visitor) {
+    public GraphQLSchema transform(final GraphQLSchema schema, GraphQLTypeVisitor visitor) {
 
 
         DummyRoot dummyRoot = new DummyRoot(schema);

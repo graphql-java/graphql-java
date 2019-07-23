@@ -28,7 +28,7 @@ class SchemaTransformerTest extends Specification {
         schema.getQueryType();
         SchemaTransformer schemaTransformer = new SchemaTransformer()
         when:
-        GraphQLSchema newSchema = schemaTransformer.transformSchema(schema, new GraphQLTypeVisitorStub() {
+        GraphQLSchema newSchema = schemaTransformer.transform(schema, new GraphQLTypeVisitorStub() {
 
             @Override
             TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition fieldDefinition, TraverserContext<GraphQLSchemaElement> context) {
@@ -65,7 +65,7 @@ class SchemaTransformerTest extends Specification {
                 .query(query).build()
         SchemaTransformer schemaTransformer = new SchemaTransformer()
         when:
-        GraphQLSchema newSchema = schemaTransformer.transformSchema(schema, new GraphQLTypeVisitorStub() {
+        GraphQLSchema newSchema = schemaTransformer.transform(schema, new GraphQLTypeVisitorStub() {
 
             @Override
             TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition fieldDefinition, TraverserContext<GraphQLSchemaElement> context) {
