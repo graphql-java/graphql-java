@@ -52,10 +52,7 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
 
     @Override
     public GraphQLType getWrappedType() {
-        if (replacedWrappedType != null) {
-            return replacedWrappedType;
-        }
-        return originalWrappedType;
+        return replacedWrappedType != null ? replacedWrappedType : originalWrappedType;
     }
 
 

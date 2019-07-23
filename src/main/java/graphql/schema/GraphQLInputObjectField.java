@@ -102,10 +102,7 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
     }
 
     public GraphQLInputType getType() {
-        if (replacedType != null) {
-            return replacedType;
-        }
-        return originalType;
+        return replacedType != null ? replacedType : originalType;
     }
 
     public Object getDefaultValue() {

@@ -150,7 +150,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
     @Override
     public GraphQLDirective withNewChildren(SchemaElementChildrenContainer newChildren) {
         return transform(builder ->
-                builder.arguments(newChildren.getChildren(CHILD_ARGUMENTS))
+                builder.replaceArguments(newChildren.getChildren(CHILD_ARGUMENTS))
         );
     }
 
@@ -223,7 +223,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
             return this;
         }
 
-        public Builder arguments(List<GraphQLArgument> arguments) {
+        public Builder replaceArguments(List<GraphQLArgument> arguments) {
             assertNotNull(arguments, "arguments must not be null");
             this.arguments.clear();
             for (GraphQLArgument argument : arguments) {

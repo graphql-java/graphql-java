@@ -47,10 +47,7 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
 
     @Override
     public GraphQLType getWrappedType() {
-        if (replacedWrappedType != null) {
-            return replacedWrappedType;
-        }
-        return originalWrappedType;
+        return replacedWrappedType != null ? replacedWrappedType : originalWrappedType;
     }
 
     void replaceType(GraphQLType type) {

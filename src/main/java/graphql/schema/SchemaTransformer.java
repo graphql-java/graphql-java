@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.PublicApi;
 import graphql.introspection.Introspection;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -14,6 +15,10 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.schema.GraphQLSchemaElementAdapter.SCHEMA_ELEMENT_ADAPTER;
 import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChildrenContainer;
 
+/**
+ * Transforms a {@link GraphQLSchema} object.
+ */
+@PublicApi
 public class SchemaTransformer {
 
     // artificial schema element which serves as root element for the transformation
@@ -80,9 +85,8 @@ public class SchemaTransformer {
         }
     }
 
-    ;
 
-    public GraphQLSchema transformWholeSchema(final GraphQLSchema schema, GraphQLTypeVisitor visitor) {
+    public GraphQLSchema transformSchema(final GraphQLSchema schema, GraphQLTypeVisitor visitor) {
 
 
         DummyRoot dummyRoot = new DummyRoot(schema);

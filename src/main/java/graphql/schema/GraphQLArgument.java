@@ -115,10 +115,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
     }
 
     public GraphQLInputType getType() {
-        if (replacedType != null) {
-            return replacedType;
-        }
-        return originalType;
+        return replacedType != null ? replacedType : originalType;
     }
 
     /**

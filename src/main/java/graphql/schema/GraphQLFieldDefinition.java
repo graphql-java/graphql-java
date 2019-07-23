@@ -105,10 +105,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
 
 
     public GraphQLOutputType getType() {
-        if (replacedType != null) {
-            return replacedType;
-        }
-        return originalType;
+        return replacedType != null ? replacedType : originalType;
     }
 
     // to be removed in a future version when all code is in the code registry
