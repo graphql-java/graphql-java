@@ -4,7 +4,6 @@ import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
-import graphql.schema.GraphQLTypeReference
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
@@ -35,7 +34,7 @@ class NoUnbrokenInputCyclesTest extends Specification {
                 .type(PersonInputType))
                 .build()
 
-        PersonInputType.getFieldDefinition("friend").type = nonNull(PersonInputType)
+        PersonInputType.getFieldDefinition("friend").replacedType = nonNull(PersonInputType)
         when:
         new NoUnbrokenInputCycles().check(field, errorCollector)
         then:

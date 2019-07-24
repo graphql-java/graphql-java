@@ -35,12 +35,18 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
-    private GraphQLOutputType type;
+    private final GraphQLOutputType originalType;
     private final DataFetcherFactory dataFetcherFactory;
     private final String deprecationReason;
     private final List<GraphQLArgument> arguments;
     private final List<GraphQLDirective> directives;
     private final FieldDefinition definition;
+
+    private GraphQLOutputType replacedType;
+
+    public static final String CHILD_ARGUMENTS = "arguments";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_TYPE = "type";
 
 
     /**
@@ -80,7 +86,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         assertNotNull(arguments, "arguments can't be null");
         this.name = name;
         this.description = description;
-        this.type = type;
+        this.originalType = type;
         this.dataFetcherFactory = dataFetcherFactory;
         this.arguments = Collections.unmodifiableList(arguments);
         this.directives = directives;
@@ -89,7 +95,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
     }
 
     void replaceType(GraphQLOutputType type) {
-        this.type = type;
+        this.replacedType = type;
     }
 
     @Override
@@ -99,7 +105,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
 
 
     public GraphQLOutputType getType() {
-        return type;
+        return replacedType != null ? replacedType : originalType;
     }
 
     // to be removed in a future version when all code is in the code registry
@@ -111,7 +117,9 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
 
     public GraphQLArgument getArgument(String name) {
         for (GraphQLArgument argument : arguments) {
-            if (argument.getName().equals(name)) return argument;
+            if (argument.getName().equals(name)) {
+                return argument;
+            }
         }
         return null;
     }
@@ -145,7 +153,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
     public String toString() {
         return "GraphQLFieldDefinition{" +
                 "name='" + name + '\'' +
-                ", type=" + type +
+                ", type=" + getType() +
                 ", arguments=" + arguments +
                 ", dataFetcherFactory=" + dataFetcherFactory +
                 ", description='" + description + '\'' +
@@ -169,17 +177,36 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLFieldDefinition(this, context);
     }
 
     @Override
-    public List<GraphQLType> getChildren() {
-        List<GraphQLType> children = new ArrayList<>();
-        children.add(type);
+    public List<GraphQLSchemaElement> getChildren() {
+        List<GraphQLSchemaElement> children = new ArrayList<>();
+        children.add(getType());
         children.addAll(arguments);
         children.addAll(directives);
         return children;
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .children(CHILD_ARGUMENTS, arguments)
+                .children(CHILD_DIRECTIVES, directives)
+                .child(CHILD_TYPE, originalType)
+                .build();
+    }
+
+    // Spock mocking fails with the real return type GraphQLFieldDefinition
+    @Override
+    public GraphQLSchemaElement withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .replaceArguments(newChildren.getChildren(CHILD_ARGUMENTS))
+                        .type((GraphQLOutputType) newChildren.getChildOrNull(CHILD_TYPE))
+        );
     }
 
     public static Builder newFieldDefinition(GraphQLFieldDefinition existing) {
@@ -207,7 +234,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         public Builder(GraphQLFieldDefinition existing) {
             this.name = existing.getName();
             this.description = existing.getDescription();
-            this.type = existing.getType();
+            this.type = existing.originalType;
             this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(existing.getDataFetcher());
             this.deprecationReason = existing.getDeprecationReason();
             this.definition = existing.getDefinition();
@@ -370,6 +397,15 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
             return this;
         }
 
+        public Builder replaceArguments(List<GraphQLArgument> arguments) {
+            assertNotNull(arguments, "arguments can't be null");
+            this.arguments.clear();
+            for (GraphQLArgument argument : arguments) {
+                argument(argument);
+            }
+            return this;
+        }
+
         /**
          * This is used to clear all the arguments in the builder so far.
          *
@@ -397,6 +433,15 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, "directive can't be null");
             directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder replaceDirectives(List<GraphQLDirective> directives) {
+            assertNotNull(directives, "directive can't be null");
+            this.directives.clear();
+            for (GraphQLDirective directive : directives) {
+                this.directives.put(directive.getName(), directive);
+            }
             return this;
         }
 

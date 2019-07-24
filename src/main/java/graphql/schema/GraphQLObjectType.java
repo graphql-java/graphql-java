@@ -8,6 +8,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,6 +24,7 @@ import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
 
 /**
  * This is the work horse type and represents an object with one or more field values that can be retrieved
@@ -34,16 +36,23 @@ import static java.util.Collections.emptyList;
  * See http://graphql.org/learn/schema/#object-types-and-fields for more details on the concept.
  */
 @PublicApi
-public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
 
     private final String name;
     private final String description;
-    private final Comparator<? super GraphQLType> interfaceComparator;
+    private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
-    private List<GraphQLOutputType> interfaces;
+    private final List<GraphQLNamedOutputType> originalInterfaces;
     private final List<GraphQLDirective> directives;
     private final ObjectTypeDefinition definition;
+
+    private List<GraphQLNamedOutputType> replacedInterfaces;
+
+    public static final String CHILD_INTERFACES = "interfaces";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
+
 
     /**
      * @param name             the name
@@ -56,7 +65,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     @Internal
     @Deprecated
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
-                             List<GraphQLOutputType> interfaces) {
+                             List<GraphQLNamedOutputType> interfaces) {
         this(name, description, fieldDefinitions, interfaces, emptyList(), null);
     }
 
@@ -73,27 +82,32 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     @Internal
     @Deprecated
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
-                             List<GraphQLOutputType> interfaces, List<GraphQLDirective> directives, ObjectTypeDefinition definition) {
+                             List<GraphQLNamedOutputType> interfaces, List<GraphQLDirective> directives, ObjectTypeDefinition definition) {
         this(name, description, fieldDefinitions, interfaces, directives, definition, asIsOrder());
     }
 
-    private GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
-                              List<GraphQLOutputType> interfaces, List<GraphQLDirective> directives, ObjectTypeDefinition definition,
-                              Comparator<? super GraphQLType> interfaceComparator) {
+
+    private GraphQLObjectType(String name,
+                              String description,
+                              List<GraphQLFieldDefinition> fieldDefinitions,
+                              List<GraphQLNamedOutputType> interfaces,
+                              List<GraphQLDirective> directives,
+                              ObjectTypeDefinition definition,
+                              Comparator<? super GraphQLSchemaElement> interfaceComparator) {
         assertValidName(name);
         assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
         assertNotNull(interfaces, "interfaces can't be null");
         this.name = name;
         this.description = description;
-        this.interfaces = sortTypes(interfaceComparator, interfaces);
+        this.interfaceComparator = interfaceComparator;
+        this.originalInterfaces = sortTypes(interfaceComparator, interfaces);
         this.definition = definition;
         this.directives = assertNotNull(directives);
-        this.interfaceComparator = interfaceComparator;
         buildDefinitionMap(fieldDefinitions);
     }
 
-    void replaceInterfaces(List<GraphQLOutputType> interfaces) {
-        this.interfaces = sortTypes(interfaceComparator, interfaces);
+    void replaceInterfaces(List<GraphQLNamedOutputType> interfaces) {
+        this.replacedInterfaces = sortTypes(interfaceComparator, interfaces);
     }
 
     private void buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
@@ -127,8 +141,11 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
      * references are not resolved yet. After they are resolved it contains only GraphQLInterface.
      * Reference resolving happens when a full schema is built.
      */
-    public List<GraphQLOutputType> getInterfaces() {
-        return new ArrayList<>(interfaces);
+    public List<GraphQLNamedOutputType> getInterfaces() {
+        if (replacedInterfaces != null) {
+            return Collections.unmodifiableList(replacedInterfaces);
+        }
+        return unmodifiableList(originalInterfaces);
     }
 
     public String getDescription() {
@@ -151,7 +168,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
                 "name='" + name + '\'' +
                 ", description='" + description + '\'' +
                 ", fieldDefinitionsByName=" + fieldDefinitionsByName.keySet() +
-                ", interfaces=" + interfaces +
+                ", interfaces=" + getInterfaces() +
                 '}';
     }
 
@@ -170,16 +187,35 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLObjectType(this, context);
     }
 
     @Override
-    public List<GraphQLType> getChildren() {
-        List<GraphQLType> children = new ArrayList<>(fieldDefinitionsByName.values());
-        children.addAll(interfaces);
+    public List<GraphQLSchemaElement> getChildren() {
+        List<GraphQLSchemaElement> children = new ArrayList<>(fieldDefinitionsByName.values());
+        children.addAll(getInterfaces());
         children.addAll(directives);
         return children;
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .children(CHILD_FIELD_DEFINITIONS, fieldDefinitionsByName.values())
+                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_INTERFACES, originalInterfaces)
+                .build();
+    }
+
+    // Spock mocking fails with the real return type GraphQLObjectType
+    @Override
+    public GraphQLSchemaElement withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .replaceFields(newChildren.getChildren(CHILD_FIELD_DEFINITIONS))
+                        .replaceInterfaces(newChildren.getChildren(CHILD_INTERFACES))
+        );
     }
 
     public static Builder newObject() {
@@ -194,7 +230,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     public static class Builder extends GraphqlTypeBuilder {
         private ObjectTypeDefinition definition;
         private final Map<String, GraphQLFieldDefinition> fields = new LinkedHashMap<>();
-        private final Map<String, GraphQLOutputType> interfaces = new LinkedHashMap<>();
+        private final Map<String, GraphQLNamedOutputType> interfaces = new LinkedHashMap<>();
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
 
         public Builder() {
@@ -205,7 +241,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
             description = existing.getDescription();
             definition = existing.getDefinition();
             fields.putAll(getByName(existing.getFieldDefinitions(), GraphQLFieldDefinition::getName));
-            interfaces.putAll(getByName(existing.getInterfaces(), GraphQLType::getName));
+            interfaces.putAll(getByName(existing.originalInterfaces, GraphQLNamedType::getName));
             directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
 
@@ -276,6 +312,13 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
             return this;
         }
 
+        public Builder replaceFields(List<GraphQLFieldDefinition> fieldDefinitions) {
+            assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
+            this.fields.clear();
+            fieldDefinitions.forEach(this::field);
+            return this;
+        }
+
         /**
          * This is used to clear all the fields in the builder so far.
          *
@@ -297,6 +340,15 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
             return this;
         }
 
+        public Builder replaceInterfaces(List<GraphQLInterfaceType> interfaces) {
+            assertNotNull(interfaces, "interfaces can't be null");
+            this.interfaces.clear();
+            for (GraphQLInterfaceType interfaceType : interfaces) {
+                this.interfaces.put(interfaceType.getName(), interfaceType);
+            }
+            return this;
+        }
+
         public Builder withInterface(GraphQLTypeReference reference) {
             assertNotNull(reference, "reference can't be null");
             this.interfaces.put(reference.getName(), reference);
@@ -306,6 +358,15 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         public Builder withInterfaces(GraphQLInterfaceType... interfaceType) {
             for (GraphQLInterfaceType type : interfaceType) {
                 withInterface(type);
+            }
+            return this;
+        }
+
+        public Builder replaceDirectives(List<GraphQLDirective> directives) {
+            assertNotNull(directives, "directive can't be null");
+            this.directives.clear();
+            for (GraphQLDirective directive : directives) {
+                this.directives.put(directive.getName(), directive);
             }
             return this;
         }

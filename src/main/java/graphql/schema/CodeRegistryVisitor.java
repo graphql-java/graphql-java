@@ -20,7 +20,7 @@ class CodeRegistryVisitor extends GraphQLTypeVisitorStub {
     }
 
     @Override
-    public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLType> context) {
+    public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
         GraphQLFieldsContainer parentContainerType = (GraphQLFieldsContainer) context.getParentContext().thisNode();
         DataFetcher dataFetcher = node.getDataFetcher();
         if (dataFetcher == null) {
@@ -32,7 +32,7 @@ class CodeRegistryVisitor extends GraphQLTypeVisitorStub {
     }
 
     @Override
-    public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLType> context) {
+    public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLSchemaElement> context) {
         TypeResolver typeResolver = node.getTypeResolver();
         if (typeResolver != null) {
             codeRegistry.typeResolverIfAbsent(node, typeResolver);
@@ -42,7 +42,7 @@ class CodeRegistryVisitor extends GraphQLTypeVisitorStub {
     }
 
     @Override
-    public TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLType> context) {
+    public TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLSchemaElement> context) {
         TypeResolver typeResolver = node.getTypeResolver();
         if (typeResolver != null) {
             codeRegistry.typeResolverIfAbsent(node, typeResolver);
