@@ -5,6 +5,7 @@ import graphql.PublicApi;
 import java.util.Stack;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertShouldNeverHappen;
 
 /**
  * A utility class that helps work with {@link graphql.schema.GraphQLType}s
@@ -41,7 +42,8 @@ public class GraphQLTypeUtil {
         if (schemaElement instanceof GraphQLNamedSchemaElement) {
             return ((GraphQLNamedSchemaElement) schemaElement).getName();
         }
-        return "null";
+        // a schema element is either a GraphQLType or a GraphQLNamedSchemaElement
+        return assertShouldNeverHappen("unexpected schema element: " + schemaElement);
     }
 
     /**
