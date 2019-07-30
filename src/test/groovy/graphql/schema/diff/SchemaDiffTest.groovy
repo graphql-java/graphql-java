@@ -486,7 +486,7 @@ class SchemaDiffTest extends Specification {
         diff.diffSchema(diffSet, chainedReporter)
 
         expect:
-        reporter.dangerCount == 1
+        reporter.dangerCount == 13
         reporter.breakageCount == 0
         reporter.dangers.every {
             it.getCategory() == DiffCategory.DEPRECATED
