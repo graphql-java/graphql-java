@@ -375,23 +375,23 @@ public class SchemaDiff {
 
 
             if (!newField.isPresent()) {
+
+                DiffCategory category;
+                String message;
                 if (isDeprecated(oldField)) {
-                    ctx.report(DiffEvent.apiBreakage()
-                            .category(DiffCategory.DEPRECATED)
-                            .typeName(old.getName())
-                            .typeKind(getTypeKind(old))
-                            .fieldName(oldField.getName())
-                            .reasonMsg("The new API has removed a deprecated field '%s'",  mkDotName(old.getName(), oldField.getName()))
-                            .build());
+                    category = DiffCategory.DEPRECATED;
+                    message = "The new API has removed a deprecated field '%s'";
                 } else {
-                    ctx.report(DiffEvent.apiBreakage()
-                            .category(DiffCategory.MISSING)
-                            .typeName(old.getName())
-                            .typeKind(getTypeKind(old))
-                            .fieldName(oldField.getName())
-                            .reasonMsg("The new API is missing an input field '%s'", mkDotName(old.getName(), oldField.getName()))
-                            .build());
+                    category = DiffCategory.MISSING;
+                    message = "The new API is missing an input field '%s'";
                 }
+                ctx.report(DiffEvent.apiBreakage()
+                        .category(category)
+                        .typeName(old.getName())
+                        .typeKind(getTypeKind(old))
+                        .fieldName(oldField.getName())
+                        .reasonMsg(message, mkDotName(old.getName(), oldField.getName()))
+                        .build());
             } else {
                 DiffCategory category = checkTypeWithNonNullAndList(oldField.getType(), newField.get().getType());
                 if (category != null) {
@@ -442,23 +442,22 @@ public class SchemaDiff {
             Optional<EnumValueDefinition> newEnum = Optional.ofNullable(newDefinitionMap.get(enumName));
 
             if (!newEnum.isPresent()) {
+                DiffCategory category;
+                String message;
                 if (isDeprecated(oldEnum)) {
-                    ctx.report(DiffEvent.apiBreakage()
-                            .category(DiffCategory.DEPRECATED)
-                            .typeName(oldDef.getName())
-                            .typeKind(getTypeKind(oldDef))
-                            .components(oldEnum.getName())
-                            .reasonMsg("The new API has removed a deprecated enum value '%s'", mkDotName( oldDef.getName(), oldEnum.getName()))
-                            .build());
+                    category = DiffCategory.DEPRECATED;
+                    message = "The new API has removed a deprecated enum value '%s'";
                 } else {
-                    ctx.report(DiffEvent.apiBreakage()
-                            .category(DiffCategory.MISSING)
-                            .typeName(oldDef.getName())
-                            .typeKind(getTypeKind(oldDef))
-                            .components(oldEnum.getName())
-                            .reasonMsg("The new API is missing an enum value '%s'", oldEnum.getName())
-                            .build());
+                    category = DiffCategory.MISSING;
+                    message = "The new API is missing an enum value '%s'";
                 }
+                ctx.report(DiffEvent.apiBreakage()
+                        .category(category)
+                        .typeName(oldDef.getName())
+                        .typeKind(getTypeKind(oldDef))
+                        .components(oldEnum.getName())
+                        .reasonMsg(message, oldEnum.getName())
+                        .build());
             } else {
                 checkDirectives(ctx, oldDef, oldEnum.getDirectives(), newEnum.get().getDirectives());
             }
@@ -479,8 +478,8 @@ public class SchemaDiff {
                         .category(DiffCategory.DEPRECATED)
                         .typeName(oldDef.getName())
                         .typeKind(getTypeKind(oldDef))
-                        .components(oldEnum.getName())
-                        .reasonMsg("The new API has deprecated an enum value '%s'", oldEnum.getName())
+                        .components(enumName)
+                        .reasonMsg("The new API has deprecated an enum value '%s'", enumName)
                         .build());
             }
         }
@@ -545,23 +544,22 @@ public class SchemaDiff {
 
             FieldDefinition newField = newFields.get(fieldName);
             if (newField == null) {
+                DiffCategory category;
+                String message;
                 if (isDeprecated(entry.getValue())) {
-                    ctx.report(DiffEvent.apiBreakage()
-                            .category(DiffCategory.DEPRECATED)
-                            .typeName(oldDef.getName())
-                            .typeKind(getTypeKind(oldDef))
-                            .fieldName(fieldName)
-                            .reasonMsg("The new API has removed a deprecated field '%s'", mkDotName(oldDef.getName(), fieldName))
-                            .build());
+                    category = DiffCategory.DEPRECATED;
+                    message = "The new API has removed a deprecated field '%s'";
                 } else {
-                    ctx.report(DiffEvent.apiBreakage()
-                            .category(DiffCategory.MISSING)
-                            .typeName(oldDef.getName())
-                            .typeKind(getTypeKind(oldDef))
-                            .fieldName(fieldName)
-                            .reasonMsg("The new API is missing the field '%s'", mkDotName(oldDef.getName(), fieldName))
-                            .build());
+                    category = DiffCategory.MISSING;
+                    message = "The new API is missing the field '%s'";
                 }
+                ctx.report(DiffEvent.apiBreakage()
+                        .category(category)
+                        .typeName(oldDef.getName())
+                        .typeKind(getTypeKind(oldDef))
+                        .fieldName(fieldName)
+                        .reasonMsg(message, mkDotName(oldDef.getName(), fieldName))
+                        .build());
             } else {
                 checkField(ctx, oldDef, entry.getValue(), newField);
             }
