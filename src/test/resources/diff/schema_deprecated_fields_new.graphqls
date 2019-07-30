@@ -1,0 +1,81 @@
+schema {
+    query : Query
+    mutation : Mutation
+}
+
+type Query {
+    being(id : ID, type : String = "wizard") : Being
+    beings(type : String) : [Being] @deprecated
+
+    wizards : [Istari]
+    gods : [Ainur]
+    deities : [Deity] @deprecated
+
+    allCharacters : [Character!] @deprecated(reason: "no longer supported")
+
+    customScalar : CustomScalar @deprecated(reason: "because")
+}
+
+type Mutation {
+    being(questor : Questor) : Query
+    sword(bearer : Questor, name : String, alloy : String, temperament : Temperament) : String
+}
+
+input Questor {
+    beingID : ID
+    queryTarget : String
+    nestedInput : NestedInput
+}
+
+input NestedInput {
+    nestedInput: String
+}
+
+scalar CustomScalar
+
+
+interface Being {
+    id : ID
+    name : String
+    nameInQuenyan : String @deprecated
+    invitedBy(id : ID) : Being
+}
+
+
+type Ainur implements Being {
+    id : ID
+    name : String
+    nameInQuenyan : String @deprecated
+    invitedBy(id : ID) : Being
+    loves : String
+}
+
+
+type Istari implements Being {
+    id : ID
+    name : String
+    nameInQuenyan : String @deprecated
+    invitedBy(id : ID) : Being
+    colour : String @deprecated
+    temperament : Temperament!
+
+}
+
+type Deity implements Being {
+    id : ID
+    name : String
+    nameInQuenyan : String @deprecated
+    invitedBy(id : ID) : Being
+    outlook : String @deprecated
+}
+
+union Character = Ainur | Istari | Deity
+
+enum Temperament {
+    Hero
+    Duplicitous @deprecated
+    Evil
+}
+
+
+
