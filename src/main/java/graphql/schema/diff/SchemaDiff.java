@@ -375,7 +375,6 @@ public class SchemaDiff {
 
 
             if (!newField.isPresent()) {
-
                 DiffCategory category;
                 String message;
                 if (isDeprecated(oldField)) {
