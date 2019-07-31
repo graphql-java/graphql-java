@@ -4,6 +4,7 @@ import graphql.PublicApi;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,7 +102,7 @@ public class NodeZipper<T> {
         T curNode = this.curNode;
 
         Breadcrumb<T> firstBreadcrumb = breadcrumbs.get(0);
-        Map<String, List<T>> childrenForParent = new LinkedHashMap<>(nodeAdapter.getNamedChildren(firstBreadcrumb.getNode()));
+        Map<String, List<T>> childrenForParent = new HashMap<>(nodeAdapter.getNamedChildren(firstBreadcrumb.getNode()));
         NodeLocation locationInParent = firstBreadcrumb.getLocation();
         int ix = locationInParent.getIndex();
         String name = locationInParent.getName();

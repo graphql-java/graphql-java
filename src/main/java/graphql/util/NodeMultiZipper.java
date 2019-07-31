@@ -5,7 +5,6 @@ import graphql.PublicApi;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -107,7 +106,7 @@ public class NodeMultiZipper<T> {
     private NodeZipper<T> moveUp(T parent, List<NodeZipper<T>> sameParent) {
         assertNotEmpty(sameParent, "expected at least one zipper");
 
-        Map<String, List<T>> childrenMap = new LinkedHashMap<>(nodeAdapter.getNamedChildren(parent));
+        Map<String, List<T>> childrenMap = new HashMap<>(nodeAdapter.getNamedChildren(parent));
         Map<String, Integer> indexCorrection = new HashMap<>();
 
         sameParent.sort((zipper1, zipper2) -> {
