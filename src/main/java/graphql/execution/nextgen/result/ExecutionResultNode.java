@@ -8,6 +8,7 @@ import graphql.execution.MergedField;
 import graphql.execution.NonNullableFieldWasNullException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,9 +31,9 @@ public abstract class ExecutionResultNode {
         this.resolvedValue = resolvedValue;
         this.executionStepInfo = executionStepInfo;
         this.nonNullableFieldWasNullException = nonNullableFieldWasNullException;
-        this.children = assertNotNull(children);
+        this.children = Collections.unmodifiableList(assertNotNull(children));
         children.forEach(Assert::assertNotNull);
-        this.errors = new ArrayList<>(errors);
+        this.errors = Collections.unmodifiableList(errors);
     }
 
     public List<GraphQLError> getErrors() {
@@ -59,7 +60,7 @@ public abstract class ExecutionResultNode {
     }
 
     public List<ExecutionResultNode> getChildren() {
-        return new ArrayList<>(this.children);
+        return this.children;
     }
 
     public Optional<NonNullableFieldWasNullException> getChildNonNullableException() {
