@@ -73,6 +73,7 @@ dependencies {
 
     testCompile 'org.testng:testng:6.1.1' // use for reactive streams test inheritance
 
+    testCompile 'io.vavr:vavr:0.10.1'
     testCompile 'org.openjdk.jmh:jmh-core:1.21'
     testCompile 'org.openjdk.jmh:jmh-generator-annprocess:1.21'
 }

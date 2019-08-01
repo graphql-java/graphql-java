@@ -183,7 +183,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     /*
      * PRIVATE: Used by {@link Traverser}
      */
-    void setCurAccValue(Object curAccValue) {
+    public  void setCurAccValue(Object curAccValue) {
         hasNewAccValue = false;
         this.curAccValue = curAccValue;
     }
@@ -214,7 +214,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     /*
      * PRIVATE: Used by {@link Traverser}
      */
-    void setChildrenContexts(Map<String, List<TraverserContext<T>>> children) {
+    public void setChildrenContexts(Map<String, List<TraverserContext<T>>> children) {
         assertTrue(this.children == null, "children already set");
         this.children = children;
     }
@@ -229,7 +229,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     /*
      * PRIVATE: Used by {@link Traverser}
      */
-    void setPhase(Phase phase) {
+    public void setPhase(Phase phase) {
         this.phase = phase;
     }
 

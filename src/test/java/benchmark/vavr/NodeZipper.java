@@ -1,0 +1,146 @@
+package benchmark.vavr;
+
+import graphql.PublicApi;
+import graphql.util.Breadcrumb;
+import graphql.util.NodeLocation;
+import io.vavr.collection.List;
+import io.vavr.collection.Map;
+
+import java.util.function.Function;
+
+import static graphql.Assert.assertNotNull;
+
+@PublicApi
+public class NodeZipper<T> {
+
+
+    public enum ModificationType {
+        REPLACE,
+        DELETE,
+        INSERT_AFTER,
+        INSERT_BEFORE
+    }
+
+    private final T curNode;
+    private final NodeAdapter<T> nodeAdapter;
+    // reverse: the breadCrumbs start from curNode upwards
+    private final List<Breadcrumb<T>> breadcrumbs;
+
+    private final ModificationType modificationType;
+
+
+    public NodeZipper(T curNode, List<Breadcrumb<T>> breadcrumbs, NodeAdapter<T> nodeAdapter) {
+        this(curNode, breadcrumbs, nodeAdapter, ModificationType.REPLACE);
+    }
+
+    public NodeZipper(T curNode, List<Breadcrumb<T>> breadcrumbs, NodeAdapter<T> nodeAdapter, ModificationType modificationType) {
+        this.curNode = assertNotNull(curNode);
+        this.breadcrumbs = assertNotNull(breadcrumbs);
+        this.nodeAdapter = nodeAdapter;
+        this.modificationType = modificationType;
+    }
+
+    public ModificationType getModificationType() {
+        return modificationType;
+    }
+
+    public T getCurNode() {
+        return curNode;
+    }
+
+    public List<Breadcrumb<T>> getBreadcrumbs() {
+        return breadcrumbs;
+    }
+
+    public T getParent() {
+        return breadcrumbs.get(0).getNode();
+    }
+
+    public static <T> NodeZipper<T> rootZipper(T rootNode, NodeAdapter<T> nodeAdapter) {
+        return new NodeZipper<T>(rootNode, List.empty(), nodeAdapter);
+    }
+
+    public NodeZipper<T> modifyNode(Function<T, T> transform) {
+        return new NodeZipper<T>(transform.apply(curNode), breadcrumbs, nodeAdapter, this.modificationType);
+    }
+
+    public NodeZipper<T> deleteNode() {
+        return new NodeZipper<T>(this.curNode, breadcrumbs, nodeAdapter, ModificationType.DELETE);
+    }
+
+    public NodeZipper<T> insertAfter(T toInsertAfter) {
+        return new NodeZipper<T>(toInsertAfter, breadcrumbs, nodeAdapter, ModificationType.INSERT_AFTER);
+    }
+
+    public NodeZipper<T> insertBefore(T toInsertBefore) {
+        return new NodeZipper<T>(toInsertBefore, breadcrumbs, nodeAdapter, ModificationType.INSERT_BEFORE);
+    }
+
+    public NodeZipper<T> withNewNode(T newNode) {
+        return new NodeZipper<T>(newNode, breadcrumbs, nodeAdapter, this.modificationType);
+    }
+
+    public NodeZipper<T> moveUp() {
+        T node = getParent();
+        List<Breadcrumb<T>> newBreadcrumbs = breadcrumbs.subSequence(1, breadcrumbs.size());
+        return new NodeZipper<>(node, newBreadcrumbs, nodeAdapter, this.modificationType);
+    }
+
+
+    /**
+     * @return null if it is the root node and marked as deleted, otherwise never null
+     */
+    public T toRoot() {
+        if (breadcrumbs.size() == 0 && modificationType != ModificationType.DELETE) {
+            return this.curNode;
+        }
+        if (breadcrumbs.size() == 0 && modificationType == ModificationType.DELETE) {
+            return null;
+        }
+        T curNode = this.curNode;
+
+        Breadcrumb<T> firstBreadcrumb = breadcrumbs.get(0);
+        Map<String, List<T>> childrenForParent = nodeAdapter.getNamedChildren(firstBreadcrumb.getNode());
+        NodeLocation locationInParent = firstBreadcrumb.getLocation();
+        int ix = locationInParent.getIndex();
+        String name = locationInParent.getName();
+        List<T> children = childrenForParent.get(name).get();
+        switch (modificationType) {
+            case REPLACE:
+                children = children.update(ix, curNode);
+                //children.set(ix, curNode);
+                break;
+            case DELETE:
+                children = children.removeAt(ix);
+                break;
+            case INSERT_BEFORE:
+                children = children.insert(ix, curNode);
+                //children.add(ix, curNode);
+                break;
+            case INSERT_AFTER:
+                children = children.insert(ix + 1, curNode);
+                //children.add(ix + 1, curNode);
+                break;
+        }
+        childrenForParent = childrenForParent.put(name, children);
+        curNode = nodeAdapter.withNewChildren(firstBreadcrumb.getNode(), childrenForParent);
+        if (breadcrumbs.size() == 1) {
+            return curNode;
+        }
+        for (Breadcrumb<T> breadcrumb : breadcrumbs.subSequence(1, breadcrumbs.size())) {
+            // just handle replace
+            Map<String, List<T>> newChildren = nodeAdapter.getNamedChildren(breadcrumb.getNode());
+            final T newChild = curNode;
+            NodeLocation location = breadcrumb.getLocation();
+
+            List<T> newChildrenList = newChildren.get(location.getName()).get();
+            newChildrenList = newChildrenList.update(location.getIndex(), newChild);
+            newChildren = newChildren.put(name, newChildrenList);
+
+            curNode = nodeAdapter.withNewChildren(breadcrumb.getNode(), newChildren);
+        }
+        return curNode;
+    }
+
+
+}
