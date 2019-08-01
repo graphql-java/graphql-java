@@ -5,9 +5,11 @@ import graphql.PublicApi;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
@@ -35,16 +37,18 @@ public class NodeMultiZipper<T> {
             return commonRoot;
         }
 
-        List<NodeZipper<T>> curZippers = new ArrayList<>(zippers);
+        // we want to preserve the order here
+        Set<NodeZipper<T>> curZippers = new LinkedHashSet<>(zippers);
         while (curZippers.size() > 1) {
 
             List<NodeZipper<T>> deepestZippers = getDeepestZippers(curZippers);
             Map<T, List<NodeZipper<T>>> sameParent = zipperWithSameParent(deepestZippers);
 
             List<NodeZipper<T>> newZippers = new ArrayList<>();
+            Map<T, NodeZipper<T>> zipperByNode = FpKit.groupingByUniqueKey(curZippers, NodeZipper::getCurNode);
             for (Map.Entry<T, List<NodeZipper<T>>> entry : sameParent.entrySet()) {
                 NodeZipper<T> newZipper = moveUp(entry.getKey(), entry.getValue());
-                Optional<NodeZipper<T>> zipperToBeReplaced = curZippers.stream().filter(zipper -> zipper.getCurNode() == entry.getKey()).findFirst();
+                Optional<NodeZipper<T>> zipperToBeReplaced = Optional.ofNullable(zipperByNode.get(entry.getKey()));
                 zipperToBeReplaced.ifPresent(curZippers::remove);
                 newZippers.add(newZipper);
             }
@@ -52,7 +56,7 @@ public class NodeMultiZipper<T> {
             curZippers.addAll(newZippers);
         }
         assertTrue(curZippers.size() == 1, "unexpected state: all zippers must share the same root node");
-        return curZippers.get(0).toRoot();
+        return curZippers.iterator().next().toRoot();
     }
 
     public T getCommonRoot() {
@@ -96,7 +100,7 @@ public class NodeMultiZipper<T> {
     }
 
 
-    private List<NodeZipper<T>> getDeepestZippers(List<NodeZipper<T>> zippers) {
+    private List<NodeZipper<T>> getDeepestZippers(Set<NodeZipper<T>> zippers) {
         Map<Integer, List<NodeZipper<T>>> grouped = FpKit.groupingBy(zippers, astZipper -> astZipper.getBreadcrumbs().size());
 
         Integer maxLevel = Collections.max(grouped.keySet());
