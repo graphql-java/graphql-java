@@ -37,7 +37,7 @@ public class NodeZipper<T> {
 
     public NodeZipper(T curNode, List<Breadcrumb<T>> breadcrumbs, NodeAdapter<T> nodeAdapter, ModificationType modificationType) {
         this.curNode = assertNotNull(curNode);
-        this.breadcrumbs = Collections.unmodifiableList(assertNotNull(breadcrumbs));
+        this.breadcrumbs = Collections.unmodifiableList(new ArrayList<>(assertNotNull(breadcrumbs)));
         this.nodeAdapter = nodeAdapter;
         this.modificationType = modificationType;
     }

@@ -25,8 +25,24 @@ public class NodeMultiZipper<T> {
 
     public NodeMultiZipper(T commonRoot, List<NodeZipper<T>> zippers, NodeAdapter<T> nodeAdapter) {
         this.commonRoot = assertNotNull(commonRoot);
+        this.zippers = Collections.unmodifiableList(new ArrayList<>(zippers));
+        this.nodeAdapter = nodeAdapter;
+    }
+
+    /*
+     * constructor without defensive copy of the zippers
+     */
+    private NodeMultiZipper(T commonRoot, List<NodeZipper<T>> zippers, NodeAdapter<T> nodeAdapter, Object dummy) {
+        this.commonRoot = assertNotNull(commonRoot);
         this.zippers = Collections.unmodifiableList(zippers);
         this.nodeAdapter = nodeAdapter;
+    }
+
+    /*
+     * special factory method which doesn't copy the zippers list and trusts that the zippers list is not modified outside
+     */
+    public static <T> NodeMultiZipper<T> newNodeMultiZipperTrusted(T commonRoot, List<NodeZipper<T>> zippers, NodeAdapter<T> nodeAdapter) {
+        return new NodeMultiZipper<>(commonRoot, zippers, nodeAdapter, null);
     }
 
     /**
@@ -65,6 +81,10 @@ public class NodeMultiZipper<T> {
 
     public List<NodeZipper<T>> getZippers() {
         return zippers;
+    }
+
+    public int size() {
+        return zippers.size();
     }
 
     public NodeZipper<T> getZipperForNode(T node) {

@@ -23,6 +23,9 @@ public abstract class ExecutionResultNode {
     private final List<ExecutionResultNode> children;
     private final List<GraphQLError> errors;
 
+    /*
+     * we are trusting here the the children list is not modified on the outside (no defensive copy)
+     */
     protected ExecutionResultNode(ExecutionStepInfo executionStepInfo,
                                   ResolvedValue resolvedValue,
                                   NonNullableFieldWasNullException nonNullableFieldWasNullException,
