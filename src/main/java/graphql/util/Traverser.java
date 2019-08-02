@@ -5,7 +5,6 @@ import graphql.Internal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,6 +23,7 @@ public class Traverser<T> {
     private final Function<? super T, Map<String, ? extends List<T>>> getChildren;
     private final Object initialAccumulate;
     private final Map<Class<?>, Object> rootVars = new ConcurrentHashMap<>();
+    private boolean detectCycles = true;
 
     private static final List<TraversalControl> CONTINUE_OR_QUIT = Arrays.asList(CONTINUE, QUIT);
 
@@ -36,14 +36,18 @@ public class Traverser<T> {
     private static <T> Function<? super T, Map<String, ? extends List<T>>> wrapListFunction(Function<? super T, ? extends List<T>> listFn) {
         return node -> {
             List<T> childs = listFn.apply(node);
-            Map<String, List<T>> result = new LinkedHashMap<>();
-            result.put(null, childs);
-            return result;
+            return Collections.singletonMap(null, childs);
         };
     }
 
     public Traverser<T> rootVars(Map<Class<?>, Object> rootVars) {
         this.rootVars.putAll(assertNotNull(rootVars));
+        return this;
+    }
+
+    @Internal
+    public Traverser<T> noCycleDetection() {
+        detectCycles = false;
         return this;
     }
 
@@ -130,7 +134,7 @@ public class Traverser<T> {
 
             currentContext = (DefaultTraverserContext) top;
 
-            if (currentContext.isVisited()) {
+            if (detectCycles && currentContext.isVisited()) {
                 currentContext.setCurAccValue(currentAccValue);
                 currentContext.setPhase(TraverserContext.Phase.BACKREF);
                 TraversalControl traversalControl = visitor.backRef(currentContext);
@@ -147,7 +151,9 @@ public class Traverser<T> {
                 TraversalControl traversalControl = visitor.enter(currentContext);
                 currentAccValue = currentContext.getNewAccumulate();
                 assertNotNull(traversalControl, "result of enter must not be null");
-                this.traverserState.addVisited((T) nodeBeforeEnter);
+                if (detectCycles) {
+                    this.traverserState.addVisited((T) nodeBeforeEnter);
+                }
                 switch (traversalControl) {
                     case QUIT:
                         break traverseLoop;
@@ -161,6 +167,7 @@ public class Traverser<T> {
                 }
             }
         }
+
         TraverserResult traverserResult = new TraverserResult(currentAccValue);
         return traverserResult;
     }
