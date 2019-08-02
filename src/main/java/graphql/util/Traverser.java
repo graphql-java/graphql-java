@@ -5,7 +5,6 @@ import graphql.Internal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,9 +35,7 @@ public class Traverser<T> {
     private static <T> Function<? super T, Map<String, ? extends List<T>>> wrapListFunction(Function<? super T, ? extends List<T>> listFn) {
         return node -> {
             List<T> childs = listFn.apply(node);
-            Map<String, List<T>> result = new LinkedHashMap<>();
-            result.put(null, childs);
-            return result;
+            return Collections.singletonMap(null, childs);
         };
     }
 
