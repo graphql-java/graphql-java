@@ -24,7 +24,6 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.schema.GraphqlTypeComparators.byNameAsc;
 import static graphql.schema.GraphqlTypeComparators.sortTypes;
-import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
 /**
@@ -151,7 +150,7 @@ public class GraphQLSchema {
         GraphQLType graphQLType = typeMap.get(typeName);
         if (graphQLType != null) {
             assertTrue(graphQLType instanceof GraphQLObjectType,
-                    format("You have asked for named object type '%s' but its not an object type but rather a '%s'", typeName, graphQLType.getClass().getName()));
+                    "You have asked for named object type '%s' but its not an object type but rather a '%s'", typeName, graphQLType.getClass().getName());
         }
         return (GraphQLObjectType) graphQLType;
     }
