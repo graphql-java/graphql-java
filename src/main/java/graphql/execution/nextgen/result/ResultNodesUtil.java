@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static graphql.execution.nextgen.result.ResultNodeAdapter.RESULT_NODE_ADAPTER;
-import static graphql.util.FpKit.map;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 
@@ -76,11 +75,19 @@ public class ResultNodesUtil {
             if (childNonNullableException.isPresent()) {
                 return data(null, childNonNullableException.get());
             }
-            List<ExecutionResultData> list = map(root.getChildren(), ResultNodesUtil::toDataImpl);
-            List<Object> data = map(list, erd -> erd.data);
+
             List<GraphQLError> errors = new ArrayList<>();
-            list.forEach(erd -> errors.addAll(erd.errors));
-            errors.addAll(root.getErrors());
+            List<Object> data = new ArrayList<>();
+            for (ExecutionResultNode child : root.getChildren()) {
+                ExecutionResultData erd = toDataImpl(child);
+                data.add(erd.data);
+                if (!erd.errors.isEmpty()) {
+                    errors.addAll(erd.errors);
+                }
+            }
+            if (!root.getErrors().isEmpty()) {
+                errors.addAll(root.getErrors());
+            }
             return data(data, errors);
         }
 
@@ -103,7 +110,7 @@ public class ResultNodesUtil {
             errors.addAll(root.getErrors());
             return data(resultMap, errors);
         }
-        throw new RuntimeException("Unexpected root " + root);
+        return Assert.assertShouldNeverHappen("An unexpected root type %s", root.getClass());
     }
 
 

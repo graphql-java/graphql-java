@@ -5,12 +5,12 @@ import graphql.language.Argument;
 import graphql.language.Field;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotEmpty;
+import static java.util.Collections.unmodifiableList;
 
 /**
  * This represent all Fields in a query which overlap and are merged into one.
@@ -61,10 +61,16 @@ import static graphql.Assert.assertNotEmpty;
 public class MergedField {
 
     private final List<Field> fields;
+    private final Field singleField;
+    private final String name;
+    private final String resultKey;
 
     private MergedField(List<Field> fields) {
         assertNotEmpty(fields);
-        this.fields = new ArrayList<>(fields);
+        this.fields = unmodifiableList(new ArrayList<>(fields));
+        this.singleField = fields.get(0);
+        this.name = singleField.getName();
+        this.resultKey = singleField.getAlias() != null ? singleField.getAlias() : name;
     }
 
     /**
@@ -75,7 +81,7 @@ public class MergedField {
      * @return the name of of the merged fields.
      */
     public String getName() {
-        return fields.get(0).getName();
+        return name;
     }
 
     /**
@@ -85,11 +91,7 @@ public class MergedField {
      * @return the key for this MergedField.
      */
     public String getResultKey() {
-        Field singleField = getSingleField();
-        if (singleField.getAlias() != null) {
-            return singleField.getAlias();
-        }
-        return singleField.getName();
+        return resultKey;
     }
 
     /**
@@ -101,7 +103,7 @@ public class MergedField {
      * @return the fist of the merged Fields
      */
     public Field getSingleField() {
-        return fields.get(0);
+        return singleField;
     }
 
     /**
@@ -110,7 +112,7 @@ public class MergedField {
      * @return the list of arguments
      */
     public List<Argument> getArguments() {
-        return getSingleField().getArguments();
+        return singleField.getArguments();
     }
 
 
@@ -120,7 +122,7 @@ public class MergedField {
      * @return all merged fields
      */
     public List<Field> getFields() {
-        return Collections.unmodifiableList(fields);
+        return fields;
     }
 
     public static Builder newMergedField() {
