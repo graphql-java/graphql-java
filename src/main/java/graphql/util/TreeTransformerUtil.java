@@ -21,17 +21,28 @@ public class TreeTransformerUtil {
      */
     public static <T> TraversalControl changeNode(TraverserContext<T> context, T changedNode) {
         NodeZipper<T> zipperWithChangedNode = context.getVar(NodeZipper.class).withNewNode(changedNode);
-        List<NodeZipper<T>> zippers = context.getSharedContextData();
         boolean changed = context.isChanged();
-        if (changed) {
-            // this is potentially expensive
-            replaceZipperForNode(zippers, context.thisNode(), changedNode);
-            context.changeNode(changedNode);
+        if (context.isParallel()) {
+            Queue<NodeZipper<T>> zippers = context.getSharedContextData();
+            if (changed) {
+                throw new RuntimeException("multiple changes per node not supported for parallel");
+            } else {
+                zippers.add(zipperWithChangedNode);
+                context.changeNode(changedNode);
+            }
+            return TraversalControl.CONTINUE;
         } else {
-            zippers.add(zipperWithChangedNode);
-            context.changeNode(changedNode);
+            List<NodeZipper<T>> zippers = context.getSharedContextData();
+            if (changed) {
+                // this is potentially expensive
+                replaceZipperForNode(zippers, context.thisNode(), changedNode);
+                context.changeNode(changedNode);
+            } else {
+                zippers.add(zipperWithChangedNode);
+                context.changeNode(changedNode);
+            }
+            return TraversalControl.CONTINUE;
         }
-        return TraversalControl.CONTINUE;
     }
 
     private static <T> void replaceZipperForNode(List<NodeZipper<T>> zippers, T currentNode, T newNode) {
@@ -43,7 +54,7 @@ public class TreeTransformerUtil {
 
     public static <T> TraversalControl deleteNode(TraverserContext<T> context) {
         NodeZipper<T> deleteNodeZipper = context.getVar(NodeZipper.class).deleteNode();
-        List<NodeZipper<T>> zippers = context.getSharedContextData();
+        Queue<NodeZipper<T>> zippers = context.getSharedContextData();
         zippers.add(deleteNodeZipper);
         context.deleteNode();
         return TraversalControl.CONTINUE;
@@ -51,51 +62,17 @@ public class TreeTransformerUtil {
 
     public static <T> TraversalControl insertAfter(TraverserContext<T> context, T toInsertAfter) {
         NodeZipper<T> insertNodeZipper = context.getVar(NodeZipper.class).insertAfter(toInsertAfter);
-        List<NodeZipper<T>> zippers = context.getSharedContextData();
+        Queue<NodeZipper<T>> zippers = context.getSharedContextData();
         zippers.add(insertNodeZipper);
         return TraversalControl.CONTINUE;
     }
 
     public static <T> TraversalControl insertBefore(TraverserContext<T> context, T toInsertBefore) {
         NodeZipper<T> insertNodeZipper = context.getVar(NodeZipper.class).insertBefore(toInsertBefore);
-        List<NodeZipper<T>> zippers = context.getSharedContextData();
-        zippers.add(insertNodeZipper);
-        return TraversalControl.CONTINUE;
-    }
-
-    public static <T> TraversalControl changeNodeParallel(TraverserContext<T> context, T changedNode) {
-        NodeZipper<T> zipperWithChangedNode = context.getVar(NodeZipper.class).withNewNode(changedNode);
-        Queue<NodeZipper<T>> zippers = context.getSharedContextData();
-        boolean changed = context.isChanged();
-        if (changed) {
-            throw new RuntimeException("multiple changes per node not supported for parallel");
-        } else {
-            zippers.add(zipperWithChangedNode);
-            context.changeNode(changedNode);
-        }
-        return TraversalControl.CONTINUE;
-    }
-
-    public static <T> TraversalControl deleteNodeParallel(TraverserContext<T> context) {
-        NodeZipper<T> deleteNodeZipper = context.getVar(NodeZipper.class).deleteNode();
-        Queue<NodeZipper<T>> zippers = context.getSharedContextData();
-        zippers.add(deleteNodeZipper);
-        context.deleteNode();
-        return TraversalControl.CONTINUE;
-    }
-
-    public static <T> TraversalControl insertAfterParallel(TraverserContext<T> context, T toInsertAfter) {
-        NodeZipper<T> insertNodeZipper = context.getVar(NodeZipper.class).insertAfter(toInsertAfter);
         Queue<NodeZipper<T>> zippers = context.getSharedContextData();
         zippers.add(insertNodeZipper);
         return TraversalControl.CONTINUE;
     }
 
-    public static <T> TraversalControl insertBeforeParallel(TraverserContext<T> context, T toInsertBefore) {
-        NodeZipper<T> insertNodeZipper = context.getVar(NodeZipper.class).insertBefore(toInsertBefore);
-        Queue<NodeZipper<T>> zippers = context.getSharedContextData();
-        zippers.add(insertNodeZipper);
-        return TraversalControl.CONTINUE;
-    }
 
 }

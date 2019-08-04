@@ -159,7 +159,7 @@ public class ParallelTraverser<T> {
                                                       NodeLocation nodeLocation,
                                                       boolean isRootContext) {
         assertNotNull(vars);
-        return new DefaultTraverserContext<>(curNode, parent, null, vars, sharedContextData, nodeLocation, isRootContext);
+        return new DefaultTraverserContext<>(curNode, parent, null, vars, sharedContextData, nodeLocation, isRootContext, true);
     }
 }
 

@@ -7,13 +7,9 @@ import spock.lang.Specification
 
 import static graphql.language.AstPrinter.printAstCompact
 import static graphql.util.TreeTransformerUtil.changeNode
-import static graphql.util.TreeTransformerUtil.changeNodeParallel
 import static graphql.util.TreeTransformerUtil.deleteNode
-import static graphql.util.TreeTransformerUtil.deleteNodeParallel
 import static graphql.util.TreeTransformerUtil.insertAfter
-import static graphql.util.TreeTransformerUtil.insertAfterParallel
 import static graphql.util.TreeTransformerUtil.insertBefore
-import static graphql.util.TreeTransformerUtil.insertBeforeParallel
 
 class AstTransformerTest extends Specification {
 
@@ -59,7 +55,7 @@ class AstTransformerTest extends Specification {
                 String newName = node.name + "-modified"
 
                 Field changedField = node.transform({ builder -> builder.name(newName) })
-                return changeNodeParallel(context, changedField)
+                return changeNode(context, changedField)
             }
         }
 
@@ -132,7 +128,7 @@ class AstTransformerTest extends Specification {
             @Override
             TraversalControl visitField(Field node, TraverserContext<Node> context) {
                 Field changedField = node.transform({ builder -> builder.name("foo2") })
-                return changeNodeParallel(context, changedField)
+                return changeNode(context, changedField)
             }
         }
 
@@ -184,7 +180,7 @@ class AstTransformerTest extends Specification {
                 if (node.name != "foo") return TraversalControl.CONTINUE;
                 def newSelectionSet = SelectionSet.newSelectionSet([new Field("a"), new Field("b")]).build()
                 Field changedField = node.transform({ builder -> builder.name("foo2").selectionSet(newSelectionSet) })
-                return changeNodeParallel(context, changedField)
+                return changeNode(context, changedField)
             }
         }
 
@@ -236,7 +232,7 @@ class AstTransformerTest extends Specification {
                 def selections = node.getSelections()
                 Collections.sort(selections, { o1, o2 -> (o1.name <=> o2.name) })
                 Node changed = node.transform({ builder -> builder.selections(selections) })
-                return changeNodeParallel(context, changed)
+                return changeNode(context, changed)
             }
         }
 
@@ -285,7 +281,7 @@ class AstTransformerTest extends Specification {
             TraversalControl visitSelectionSet(SelectionSet node, TraverserContext<Node> context) {
                 if (context.getParentContext().thisNode().name == "root") {
                     def newNode = node.transform({ builder -> builder.selections([node.selections[0]]) })
-                    return changeNodeParallel(context, newNode)
+                    return changeNode(context, newNode)
                 }
                 return TraversalControl.CONTINUE
             }
@@ -334,7 +330,7 @@ class AstTransformerTest extends Specification {
             @Override
             TraversalControl visitField(Field field, TraverserContext<Node> context) {
                 if (field.name == "toDelete") {
-                    return deleteNodeParallel(context);
+                    return deleteNode(context);
                 } else {
                     return TraversalControl.CONTINUE;
                 }
@@ -459,8 +455,8 @@ class AstTransformerTest extends Specification {
 
             @Override
             TraversalControl visitField(Field node, TraverserContext<Node> context) {
-                insertBeforeParallel(context, new Field("foo2"))
-                insertAfterParallel(context, new Field("foo3"))
+                insertBefore(context, new Field("foo2"))
+                insertAfter(context, new Field("foo3"))
                 TraversalControl.CONTINUE
             }
         }
