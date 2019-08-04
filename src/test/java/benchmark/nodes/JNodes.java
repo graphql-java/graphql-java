@@ -1,4 +1,4 @@
-package benchmark;
+package benchmark.nodes;
 
 import graphql.Assert;
 import graphql.util.NodeAdapter;

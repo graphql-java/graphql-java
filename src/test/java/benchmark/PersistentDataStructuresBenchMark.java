@@ -1,8 +1,9 @@
 package benchmark;
 
-import benchmark.JNodes.JNode;
-import benchmark.VNodes.VLeafNode;
-import benchmark.VNodes.VNode;
+import benchmark.nodes.JNodes.JNode;
+import benchmark.nodes.VNodes;
+import benchmark.nodes.VNodes.VLeafNode;
+import benchmark.nodes.VNodes.VNode;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitor;
@@ -21,10 +22,10 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
-import static benchmark.JNodeData.buildJNodeRoot;
-import static benchmark.JNodes.JLeafNode;
-import static benchmark.JNodes.JNodeAdapter;
-import static benchmark.VNodeData.buildVNodeRoot;
+import static benchmark.nodes.JNodeData.buildJNodeRoot;
+import static benchmark.nodes.JNodes.JLeafNode;
+import static benchmark.nodes.JNodes.JNodeAdapter;
+import static benchmark.nodes.VNodeData.buildVNodeRoot;
 
 /**
  * See http://hg.openjdk.java.net/code-tools/jmh/file/tip/jmh-samples/src/main/java/org/openjdk/jmh/samples/ for more samples
@@ -41,29 +42,36 @@ public class PersistentDataStructuresBenchMark {
     static JNode rootJNode = buildJNodeRoot();
     static VNode rootVNode = buildVNodeRoot();
 
-//    @Benchmark
-//    @BenchmarkMode(Mode.Throughput)
-//    @OutputTimeUnit(TimeUnit.SECONDS)
-//    public void benchMarkResultTransformThroughput() {
-//        jNodeTransformEveryLeafToUpper();
-//    }
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public void benchMarkJNodeThroughput() {
+        jNodeTransformEveryLeafToUpper(rootJNode);
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public void benchMarkVNodeThroughput() {
+        vNodeTransformEveryLeafToUpper(rootVNode);
+    }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void benchMarkJNodeAvgTime() {
-        jNodeTransformEveryLeafToUpper();
+        jNodeTransformEveryLeafToUpper(rootJNode);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void benchMarkVNodeAvgTime() {
-        vNodeTransformEveryLeafToUpper();
+        vNodeTransformEveryLeafToUpper(rootVNode);
     }
 
 
-    public static JNode jNodeTransformEveryLeafToUpper() {
+    public static JNode jNodeTransformEveryLeafToUpper(JNode rootJNode) {
         TraverserVisitor<JNode> visitor = new TraverserVisitorStub<JNode>() {
             @Override
             public TraversalControl enter(TraverserContext<JNode> context) {
@@ -80,7 +88,7 @@ public class PersistentDataStructuresBenchMark {
         return treeTransformer.transform(rootJNode, visitor, Collections.emptyMap());
     }
 
-    public static VNode vNodeTransformEveryLeafToUpper() {
+    public static VNode vNodeTransformEveryLeafToUpper(VNode rootVNode) {
         TraverserVisitor<VNode> visitor = new TraverserVisitorStub<VNode>() {
             @Override
             public TraversalControl enter(TraverserContext<VNode> context) {
@@ -103,12 +111,12 @@ public class PersistentDataStructuresBenchMark {
 
 
         then = System.currentTimeMillis();
-        VNode vNode = vNodeTransformEveryLeafToUpper();
+        VNode vNode = vNodeTransformEveryLeafToUpper(rootVNode);
         now = System.currentTimeMillis() - then;
         System.out.printf("VNode Took : %d\n", Duration.ofMillis(now).toMillis());
 
         then = System.currentTimeMillis();
-        JNode jNode = jNodeTransformEveryLeafToUpper();
+        JNode jNode = jNodeTransformEveryLeafToUpper(rootJNode);
         now = System.currentTimeMillis() - then;
         System.out.printf("JNode Took : %d\n", Duration.ofMillis(now).toMillis());
 

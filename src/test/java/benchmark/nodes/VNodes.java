@@ -1,4 +1,4 @@
-package benchmark;
+package benchmark.nodes;
 
 import benchmark.vavr.NodeAdapter;
 import graphql.Assert;

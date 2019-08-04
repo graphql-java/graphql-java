@@ -1,20 +1,20 @@
-package benchmark;
+package benchmark.nodes;
 
-import benchmark.VNodes.VLeafNode;
-import benchmark.VNodes.VNode;
-import benchmark.VNodes.VObjectNode;
+import benchmark.nodes.VNodes.VLeafNode;
+import benchmark.nodes.VNodes.VNode;
+import benchmark.nodes.VNodes.VObjectNode;
 import io.vavr.collection.List;
 
 import java.util.concurrent.atomic.AtomicLong;
 
 public class VNodeData {
 
-    static VObjectNode buildVNodeRoot() {
+    public static VObjectNode buildVNodeRoot() {
         AtomicLong count = new AtomicLong();
-        System.out.println("\tBuilding tree...");
+        System.out.println("\tBuilding Vnode tree...");
         List<VNode> children = buildChildren(0, 3, 5, 20, count);
         VObjectNode rootNode = new VObjectNode(children);
-        System.out.printf("\tBuilt tree of %d nodes\n", count.get());
+        System.out.printf("\tBuilt tree of %d Vnodes\n", count.get());
         return rootNode;
     }
 

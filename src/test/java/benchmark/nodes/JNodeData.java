@@ -1,4 +1,4 @@
-package benchmark;
+package benchmark.nodes;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -7,12 +7,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class JNodeData {
 
-    static JNodes.JObjectNode buildJNodeRoot() {
+    public static JNodes.JObjectNode buildJNodeRoot() {
         AtomicLong count = new AtomicLong();
-        System.out.println("\tBuilding tree...");
+        System.out.println("\tBuilding Jnode tree...");
         List<JNodes.JNode> children = buildChildren(0, 3, 5, 20, count);
         JNodes.JObjectNode rootNode = new JNodes.JObjectNode(children);
-        System.out.printf("\tBuilt tree of %d nodes\n", count.get());
+        System.out.printf("\tBuilt tree of %d Jnodes\n", count.get());
         return rootNode;
     }
 
