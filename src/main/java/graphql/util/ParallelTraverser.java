@@ -41,8 +41,13 @@ public class ParallelTraverser<T> {
     }
 
     public static <T> ParallelTraverser<T> parallelTraverser(Function<? super T, ? extends List<T>> getChildren, Object sharedContextData) {
-        return new ParallelTraverser<T>(wrapListFunction(getChildren), null);
+        return new ParallelTraverser<>(wrapListFunction(getChildren), sharedContextData);
     }
+
+    public static <T> ParallelTraverser<T> parallelTraverserWithNamedChildren(Function<? super T, Map<String, ? extends List<T>>> getNamedChildren, Object sharedContextData) {
+        return new ParallelTraverser<>(getNamedChildren, sharedContextData);
+    }
+
 
     private static <T> Function<? super T, Map<String, ? extends List<T>>> wrapListFunction(Function<? super T, ? extends List<T>> listFn) {
         return node -> {

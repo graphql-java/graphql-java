@@ -4,6 +4,7 @@ import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitor;
+import graphql.util.TraverserVisitorStub;
 import graphql.util.TreeTransformer;
 
 import static graphql.Assert.assertNotNull;
@@ -37,5 +38,20 @@ public class AstTransformer {
         return treeTransformer.transform(root, traverserVisitor);
     }
 
+    public Node transformParallel(Node root, NodeVisitor nodeVisitor) {
+        assertNotNull(root);
+        assertNotNull(nodeVisitor);
+
+        TraverserVisitor<Node> traverserVisitor = new TraverserVisitorStub<Node>() {
+            @Override
+            public TraversalControl enter(TraverserContext<Node> context) {
+                return context.thisNode().accept(context, nodeVisitor);
+            }
+
+        };
+
+        TreeTransformer<Node> treeTransformer = new TreeTransformer<>(AST_NODE_ADAPTER);
+        return treeTransformer.transformParallel(root, traverserVisitor);
+    }
 
 }
