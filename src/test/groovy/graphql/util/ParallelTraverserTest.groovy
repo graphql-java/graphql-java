@@ -23,14 +23,14 @@ class ParallelTraverserTest extends Specification {
     ]
 
 
-    def "test"() {
+    def "test parallel traversing"() {
         given:
         Queue nodes = new ConcurrentLinkedQueue()
         def visitor = [
                 enter: { TraverserContext context ->
                     def number = context.thisNode().number
                     if (number == 1) {
-                        Thread.sleep(100);
+                        Thread.sleep(100)
                     }
                     nodes.add(number)
                     TraversalControl.CONTINUE

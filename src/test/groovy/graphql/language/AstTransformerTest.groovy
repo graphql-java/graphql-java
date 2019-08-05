@@ -49,6 +49,7 @@ class AstTransformerTest extends Specification {
 
             @Override
             TraversalControl visitField(Field node, TraverserContext<Node> context) {
+                Thread.sleep(50);
                 if (!node.name.startsWith("mid")) {
                     return TraversalControl.CONTINUE
                 }
@@ -330,6 +331,7 @@ class AstTransformerTest extends Specification {
             @Override
             TraversalControl visitField(Field field, TraverserContext<Node> context) {
                 if (field.name == "toDelete") {
+                    Thread.sleep(250)
                     return deleteNode(context);
                 } else {
                     return TraversalControl.CONTINUE;

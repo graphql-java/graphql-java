@@ -10,9 +10,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinTask;
-import java.util.concurrent.RecursiveAction;
 import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
@@ -78,30 +77,33 @@ public class ParallelTraverser<T> {
         return newContextImpl(null, null, vars, null, true);
     }
 
+
     public void traverseImpl(Collection<? extends T> roots, TraverserVisitor<? super T> visitor) {
         assertNotNull(roots);
         assertNotNull(visitor);
 
         DefaultTraverserContext<T> rootContext = newRootContext(rootVars);
-        ForkJoinPool.commonPool().invoke(new RecursiveAction() {
+        ForkJoinPool.commonPool().invoke(new CountedCompleter<Void>() {
             @Override
-            protected void compute() {
-                List<ForkJoinTask> tasks = new ArrayList<>();
+            public void compute() {
+                setPendingCount(roots.size());
                 for (T root : roots) {
                     DefaultTraverserContext context = newContext(root, rootContext, null);
-                    EnterAction enterAction = new EnterAction(context, visitor);
-                    tasks.add(enterAction);
+                    EnterAction enterAction = new EnterAction(this, context, visitor);
+                    enterAction.fork();
                 }
-                invokeAll(tasks);
+                tryComplete();
             }
+
         });
     }
 
-    private class EnterAction extends RecursiveAction {
+    private class EnterAction extends CountedCompleter {
         private DefaultTraverserContext currentContext;
         private TraverserVisitor<? super T> visitor;
 
-        private EnterAction(DefaultTraverserContext currentContext, TraverserVisitor<? super T> visitor) {
+        private EnterAction(CountedCompleter parent, DefaultTraverserContext currentContext, TraverserVisitor<? super T> visitor) {
+            super(parent);
             this.currentContext = currentContext;
             this.visitor = visitor;
         }
@@ -112,17 +114,21 @@ public class ParallelTraverser<T> {
             TraversalControl traversalControl = visitor.enter(currentContext);
             assertNotNull(traversalControl, "result of enter must not be null");
             assertTrue(QUIT != traversalControl, "can't return QUIT for parallel traversing");
-            if (ABORT == traversalControl) {
+            if (traversalControl == ABORT) {
+                tryComplete();
                 return;
             }
             assertTrue(traversalControl == CONTINUE);
             List<DefaultTraverserContext> children = pushAll(currentContext);
-            List<EnterAction> subTasks = new ArrayList<>();
-            for (int i = 0; i < children.size(); i++) {
-                subTasks.add(new EnterAction(children.get(i), visitor));
+            if (children.size() == 0) {
+                tryComplete();
+                return;
             }
-            invokeAll(subTasks);
-
+            setPendingCount(children.size() - 1);
+            for (int i = 1; i < children.size(); i++) {
+                new EnterAction(this, children.get(i), visitor).fork();
+            }
+            new EnterAction(this, children.get(0), visitor).compute();
         }
     }
 
