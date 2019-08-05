@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ForkJoinPool;
 
 import static graphql.Assert.assertNotNull;
 
@@ -57,11 +58,11 @@ public class TreeTransformer<T> {
     }
 
     public T transformParallel(T root, TraverserVisitor<T> traverserVisitor) {
-        return transformParallel(root, traverserVisitor, Collections.emptyMap());
+        return transformParallel(root, traverserVisitor, Collections.emptyMap(), ForkJoinPool.commonPool());
 
     }
 
-    public T transformParallel(T root, TraverserVisitor<T> traverserVisitor, Map<Class<?>, Object> rootVars) {
+    public T transformParallel(T root, TraverserVisitor<T> traverserVisitor, Map<Class<?>, Object> rootVars, ForkJoinPool forkJoinPool) {
         assertNotNull(root);
 
 
@@ -82,7 +83,7 @@ public class TreeTransformer<T> {
         };
 
         Queue<NodeZipper<T>> zippers = new ConcurrentLinkedQueue<>();
-        ParallelTraverser<T> traverser = ParallelTraverser.parallelTraverserWithNamedChildren(nodeAdapter::getNamedChildren, zippers);
+        ParallelTraverser<T> traverser = ParallelTraverser.parallelTraverserWithNamedChildren(nodeAdapter::getNamedChildren, zippers, forkJoinPool);
         traverser.rootVars(rootVars);
         traverser.traverse(root, nodeTraverserVisitor);
 

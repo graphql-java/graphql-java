@@ -7,6 +7,9 @@ import graphql.util.TraverserVisitor;
 import graphql.util.TraverserVisitorStub;
 import graphql.util.TreeTransformer;
 
+import java.util.Collections;
+import java.util.concurrent.ForkJoinPool;
+
 import static graphql.Assert.assertNotNull;
 import static graphql.language.AstNodeAdapter.AST_NODE_ADAPTER;
 
@@ -39,6 +42,10 @@ public class AstTransformer {
     }
 
     public Node transformParallel(Node root, NodeVisitor nodeVisitor) {
+        return transformParallel(root, nodeVisitor, ForkJoinPool.commonPool());
+    }
+
+    public Node transformParallel(Node root, NodeVisitor nodeVisitor, ForkJoinPool forkJoinPool) {
         assertNotNull(root);
         assertNotNull(nodeVisitor);
 
@@ -51,7 +58,7 @@ public class AstTransformer {
         };
 
         TreeTransformer<Node> treeTransformer = new TreeTransformer<>(AST_NODE_ADAPTER);
-        return treeTransformer.transformParallel(root, traverserVisitor);
+        return treeTransformer.transformParallel(root, traverserVisitor, Collections.emptyMap(), forkJoinPool);
     }
 
 }
