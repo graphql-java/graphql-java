@@ -26,25 +26,44 @@ public class ParallelTraverser<T> {
     private final Function<? super T, Map<String, ? extends List<T>>> getChildren;
     private final Map<Class<?>, Object> rootVars = new ConcurrentHashMap<>();
 
+    private final ForkJoinPool forkJoinPool;
 
     private Object sharedContextData;
 
 
-    private ParallelTraverser(Function<? super T, Map<String, ? extends List<T>>> getChildren, Object sharedContextData) {
+    private ParallelTraverser(Function<? super T, Map<String, ? extends List<T>>> getChildren,
+                              Object sharedContextData,
+                              ForkJoinPool forkJoinPool) {
         this.getChildren = assertNotNull(getChildren);
         this.sharedContextData = sharedContextData;
+        this.forkJoinPool = forkJoinPool;
     }
 
     public static <T> ParallelTraverser<T> parallelTraverser(Function<? super T, ? extends List<T>> getChildren) {
-        return parallelTraverser(getChildren, null);
+        return parallelTraverser(getChildren, null, ForkJoinPool.commonPool());
     }
 
-    public static <T> ParallelTraverser<T> parallelTraverser(Function<? super T, ? extends List<T>> getChildren, Object sharedContextData) {
-        return new ParallelTraverser<>(wrapListFunction(getChildren), sharedContextData);
+    public static <T> ParallelTraverser<T> parallelTraverser(Function<? super T, ? extends List<T>> getChildren,
+                                                             Object sharedContextData) {
+        return new ParallelTraverser<>(wrapListFunction(getChildren), sharedContextData, ForkJoinPool.commonPool());
     }
 
-    public static <T> ParallelTraverser<T> parallelTraverserWithNamedChildren(Function<? super T, Map<String, ? extends List<T>>> getNamedChildren, Object sharedContextData) {
-        return new ParallelTraverser<>(getNamedChildren, sharedContextData);
+    public static <T> ParallelTraverser<T> parallelTraverser(Function<? super T, ? extends List<T>> getChildren,
+                                                             Object sharedContextData,
+                                                             ForkJoinPool forkJoinPool) {
+        return new ParallelTraverser<>(wrapListFunction(getChildren), sharedContextData, forkJoinPool);
+    }
+
+
+    public static <T> ParallelTraverser<T> parallelTraverserWithNamedChildren(Function<? super T, Map<String, ? extends List<T>>> getNamedChildren,
+                                                                              Object sharedContextData) {
+        return new ParallelTraverser<>(getNamedChildren, sharedContextData, ForkJoinPool.commonPool());
+    }
+
+    public static <T> ParallelTraverser<T> parallelTraverserWithNamedChildren(Function<? super T, Map<String, ? extends List<T>>> getNamedChildren,
+                                                                              Object sharedContextData,
+                                                                              ForkJoinPool forkJoinPool) {
+        return new ParallelTraverser<>(getNamedChildren, sharedContextData, forkJoinPool);
     }
 
 
@@ -83,7 +102,7 @@ public class ParallelTraverser<T> {
         assertNotNull(visitor);
 
         DefaultTraverserContext<T> rootContext = newRootContext(rootVars);
-        ForkJoinPool.commonPool().invoke(new CountedCompleter<Void>() {
+        forkJoinPool.invoke(new CountedCompleter<Void>() {
             @Override
             public void compute() {
                 setPendingCount(roots.size());

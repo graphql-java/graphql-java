@@ -25,7 +25,7 @@ public class TreeTransformerUtil {
         if (context.isParallel()) {
             Queue<NodeZipper<T>> zippers = context.getSharedContextData();
             if (changed) {
-                throw new RuntimeException("multiple changes per node not supported for parallel");
+                throw new RuntimeException("multiple changes per node is not supported for parallel traversing");
             } else {
                 zippers.add(zipperWithChangedNode);
                 context.changeNode(changedNode);
