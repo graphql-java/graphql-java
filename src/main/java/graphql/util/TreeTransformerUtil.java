@@ -2,8 +2,11 @@ package graphql.util;
 
 import graphql.PublicApi;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.Queue;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
 
 @PublicApi
@@ -20,17 +23,45 @@ public class TreeTransformerUtil {
      */
     public static <T> TraversalControl changeNode(TraverserContext<T> context, T changedNode) {
         NodeZipper<T> zipperWithChangedNode = context.getVar(NodeZipper.class).withNewNode(changedNode);
-        List<NodeZipper<T>> zippers = context.getSharedContextData();
         boolean changed = context.isChanged();
-        if (changed) {
-            // this is potentially expensive
-            replaceZipperForNode(zippers, context.thisNode(), changedNode);
-            context.changeNode(changedNode);
+        if (context.isParallel()) {
+            Queue<NodeZipper<T>> zippers = context.getSharedContextData();
+            if (changed) {
+                replaceZipperForNodeParallel(zippers, context.thisNode(), changedNode);
+                context.changeNode(changedNode);
+            } else {
+                zippers.add(zipperWithChangedNode);
+                context.changeNode(changedNode);
+            }
+            return TraversalControl.CONTINUE;
         } else {
-            zippers.add(zipperWithChangedNode);
-            context.changeNode(changedNode);
+            List<NodeZipper<T>> zippers = context.getSharedContextData();
+            if (changed) {
+                // this is potentially expensive
+                replaceZipperForNode(zippers, context.thisNode(), changedNode);
+                context.changeNode(changedNode);
+            } else {
+                zippers.add(zipperWithChangedNode);
+                context.changeNode(changedNode);
+            }
+            return TraversalControl.CONTINUE;
         }
-        return TraversalControl.CONTINUE;
+    }
+
+    private static <T> void replaceZipperForNodeParallel(Queue<NodeZipper<T>> zippers, T currentNode, T newNode) {
+        Iterator<NodeZipper<T>> iterator = zippers.iterator();
+        NodeZipper<T> currentZipper = null;
+        while (iterator.hasNext()) {
+            NodeZipper<T> zipper = iterator.next();
+            if (zipper.getCurNode() == currentNode) {
+                iterator.remove();
+                currentZipper = zipper;
+                break;
+            }
+        }
+        assertNotNull(currentZipper, "No current zipper found for provided node");
+        NodeZipper<T> newZipper = currentZipper.withNewNode(newNode);
+        zippers.add(newZipper);
     }
 
     private static <T> void replaceZipperForNode(List<NodeZipper<T>> zippers, T currentNode, T newNode) {
@@ -42,7 +73,7 @@ public class TreeTransformerUtil {
 
     public static <T> TraversalControl deleteNode(TraverserContext<T> context) {
         NodeZipper<T> deleteNodeZipper = context.getVar(NodeZipper.class).deleteNode();
-        List<NodeZipper<T>> zippers = context.getSharedContextData();
+        Queue<NodeZipper<T>> zippers = context.getSharedContextData();
         zippers.add(deleteNodeZipper);
         context.deleteNode();
         return TraversalControl.CONTINUE;
@@ -50,16 +81,17 @@ public class TreeTransformerUtil {
 
     public static <T> TraversalControl insertAfter(TraverserContext<T> context, T toInsertAfter) {
         NodeZipper<T> insertNodeZipper = context.getVar(NodeZipper.class).insertAfter(toInsertAfter);
-        List<NodeZipper<T>> zippers = context.getSharedContextData();
+        Queue<NodeZipper<T>> zippers = context.getSharedContextData();
         zippers.add(insertNodeZipper);
         return TraversalControl.CONTINUE;
     }
 
     public static <T> TraversalControl insertBefore(TraverserContext<T> context, T toInsertBefore) {
         NodeZipper<T> insertNodeZipper = context.getVar(NodeZipper.class).insertBefore(toInsertBefore);
-        List<NodeZipper<T>> zippers = context.getSharedContextData();
+        Queue<NodeZipper<T>> zippers = context.getSharedContextData();
         zippers.add(insertNodeZipper);
         return TraversalControl.CONTINUE;
     }
+
 
 }

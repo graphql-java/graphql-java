@@ -1,12 +1,17 @@
 package graphql.util;
 
 
+import graphql.Assert;
 import graphql.PublicApi;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ForkJoinPool;
 
 import static graphql.Assert.assertNotNull;
 
@@ -49,6 +54,45 @@ public class TreeTransformer<T> {
         traverser.traverse(root, nodeTraverserVisitor);
 
         NodeMultiZipper<T> multiZipper = NodeMultiZipper.newNodeMultiZipperTrusted(root, zippers, nodeAdapter);
+        return multiZipper.toRootNode();
+    }
+
+    public T transformParallel(T root, TraverserVisitor<T> traverserVisitor) {
+        return transformParallel(root, traverserVisitor, Collections.emptyMap(), ForkJoinPool.commonPool());
+
+    }
+
+    public T transformParallel(T root, TraverserVisitor<T> traverserVisitor, Map<Class<?>, Object> rootVars) {
+        return transformParallel(root, traverserVisitor, rootVars, ForkJoinPool.commonPool());
+
+    }
+
+    public T transformParallel(T root, TraverserVisitor<T> traverserVisitor, Map<Class<?>, Object> rootVars, ForkJoinPool forkJoinPool) {
+        assertNotNull(root);
+
+
+        TraverserVisitor<T> nodeTraverserVisitor = new TraverserVisitor<T>() {
+
+            @Override
+            public TraversalControl enter(TraverserContext<T> context) {
+                NodeZipper<T> nodeZipper = new NodeZipper<>(context.thisNode(), context.getBreadcrumbs(), nodeAdapter);
+                context.setVar(NodeZipper.class, nodeZipper);
+                context.setVar(NodeAdapter.class, nodeAdapter);
+                return traverserVisitor.enter(context);
+            }
+
+            @Override
+            public TraversalControl leave(TraverserContext<T> context) {
+                return Assert.assertShouldNeverHappen("not supposed to be called for parallel traversing");
+            }
+        };
+
+        Queue<NodeZipper<T>> zippers = new ConcurrentLinkedQueue<>();
+        ParallelTraverser<T> traverser = ParallelTraverser.parallelTraverserWithNamedChildren(nodeAdapter::getNamedChildren, zippers, forkJoinPool);
+        traverser.rootVars(rootVars);
+        traverser.traverse(root, nodeTraverserVisitor);
+
+        NodeMultiZipper<T> multiZipper = NodeMultiZipper.newNodeMultiZipperTrusted(root, new ArrayList<>(zippers), nodeAdapter);
         return multiZipper.toRootNode();
     }
 }
