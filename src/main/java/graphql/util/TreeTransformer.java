@@ -62,6 +62,11 @@ public class TreeTransformer<T> {
 
     }
 
+    public T transformParallel(T root, TraverserVisitor<T> traverserVisitor, Map<Class<?>, Object> rootVars) {
+        return transformParallel(root, traverserVisitor, rootVars, ForkJoinPool.commonPool());
+
+    }
+
     public T transformParallel(T root, TraverserVisitor<T> traverserVisitor, Map<Class<?>, Object> rootVars, ForkJoinPool forkJoinPool) {
         assertNotNull(root);
 

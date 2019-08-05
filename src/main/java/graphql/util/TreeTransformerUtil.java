@@ -2,9 +2,11 @@ package graphql.util;
 
 import graphql.PublicApi;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
 
 @PublicApi
@@ -25,7 +27,8 @@ public class TreeTransformerUtil {
         if (context.isParallel()) {
             Queue<NodeZipper<T>> zippers = context.getSharedContextData();
             if (changed) {
-                throw new RuntimeException("multiple changes per node is not supported for parallel traversing");
+                replaceZipperForNodeParallel(zippers, context.thisNode(), changedNode);
+                context.changeNode(changedNode);
             } else {
                 zippers.add(zipperWithChangedNode);
                 context.changeNode(changedNode);
@@ -43,6 +46,22 @@ public class TreeTransformerUtil {
             }
             return TraversalControl.CONTINUE;
         }
+    }
+
+    private static <T> void replaceZipperForNodeParallel(Queue<NodeZipper<T>> zippers, T currentNode, T newNode) {
+        Iterator<NodeZipper<T>> iterator = zippers.iterator();
+        NodeZipper<T> currentZipper = null;
+        while (iterator.hasNext()) {
+            NodeZipper<T> zipper = iterator.next();
+            if (zipper.getCurNode() == currentNode) {
+                iterator.remove();
+                currentZipper = zipper;
+                break;
+            }
+        }
+        assertNotNull(currentZipper, "No current zipper found for provided node");
+        NodeZipper<T> newZipper = currentZipper.withNewNode(newNode);
+        zippers.add(newZipper);
     }
 
     private static <T> void replaceZipperForNode(List<NodeZipper<T>> zippers, T currentNode, T newNode) {
