@@ -45,7 +45,7 @@ class SchemaTransformerTest extends Specification {
         (newSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("barChanged") != null
     }
 
-    def "can change schema with cycles"() {
+    def "can change schema with logical cycles"() {
         given:
         GraphQLObjectType foo = newObject()
                 .name("Foo")
@@ -82,5 +82,50 @@ class SchemaTransformerTest extends Specification {
         newSchema.typeMap.size() == schema.typeMap.size()
         (newSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("fooChanged") != null
         (newSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("fooChanged").getType() == newSchema.getType("Foo")
+    }
+
+
+    def "elements having more than one parent"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+        type Query {
+            parent: Parent 
+        }
+        type Parent {
+           child1: Child
+           child2: Child
+       } 
+        type Child {
+            hello: String
+        }
+        """)
+        schema.getQueryType();
+        SchemaTransformer schemaTransformer = new SchemaTransformer()
+        when:
+        GraphQLSchema newSchema = schemaTransformer.transform(schema, new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition fieldDefinition, TraverserContext<GraphQLSchemaElement> context) {
+                if (fieldDefinition.name == "hello") {
+                    def changedNode = fieldDefinition.transform({ builder -> builder.name("helloChanged") })
+                    return changeNode(context, changedNode)
+                }
+                return TraversalControl.CONTINUE;
+            }
+
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.name == "Child") {
+                    println "CHILD VISIT: " + context
+                }
+                return super.visitGraphQLObjectType(node, context)
+            }
+        })
+
+        then:
+        newSchema != schema
+        (newSchema.getType("Child") as GraphQLObjectType).getFieldDefinition("helloChanged") != null
+
+
     }
 }

@@ -115,6 +115,12 @@ public class SchemaTransformer {
             public TraversalControl leave(TraverserContext<GraphQLSchemaElement> context) {
                 return TraversalControl.CONTINUE;
             }
+
+            @Override
+            public TraversalControl backRef(TraverserContext<GraphQLSchemaElement> context) {
+                return TraversalControl.CONTINUE;
+            }
+
         };
 
         TreeTransformer<GraphQLSchemaElement> treeTransformer = new TreeTransformer<>(SCHEMA_ELEMENT_ADAPTER);
