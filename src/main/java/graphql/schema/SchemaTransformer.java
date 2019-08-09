@@ -119,6 +119,7 @@ public class SchemaTransformer {
         DummyRoot dummyRoot = new DummyRoot(schema);
 
         List<NodeZipper<GraphQLSchemaElement>> zippers = new LinkedList<>();
+        Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByNodeAfterTraversing = new LinkedHashMap<>();
         Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByOriginalNode = new LinkedHashMap<>();
 
         Map<NodeZipper<GraphQLSchemaElement>, List<List<Breadcrumb<GraphQLSchemaElement>>>> breadcrumbsByZipper = new LinkedHashMap<>();
@@ -132,7 +133,6 @@ public class SchemaTransformer {
                 NodeZipper<GraphQLSchemaElement> nodeZipper = new NodeZipper<>(context.thisNode(), context.getBreadcrumbs(), SCHEMA_ELEMENT_ADAPTER);
                 context.setVar(NodeZipper.class, nodeZipper);
                 context.setVar(NodeAdapter.class, SCHEMA_ELEMENT_ADAPTER);
-                zipperByOriginalNode.put(context.thisNode(), nodeZipper);
 
                 int zippersBefore = zippers.size();
                 TraversalControl result = context.thisNode().accept(context, visitor);
@@ -140,6 +140,8 @@ public class SchemaTransformer {
                 if (zippersBefore + 1 == zippers.size()) {
                     nodeZipper = zippers.get(zippers.size() - 1);
                 }
+                zipperByOriginalNode.put(context.originalThisNode(), nodeZipper);
+                zipperByNodeAfterTraversing.put(context.thisNode(), nodeZipper);
                 breadcrumbsByZipper.put(nodeZipper, new ArrayList<>());
                 breadcrumbsByZipper.get(nodeZipper).add(context.getBreadcrumbs());
                 return result;
@@ -162,7 +164,7 @@ public class SchemaTransformer {
         Traverser<GraphQLSchemaElement> traverser = Traverser.depthFirstWithNamedChildren(SCHEMA_ELEMENT_ADAPTER::getNamedChildren, zippers, null);
         traverser.traverse(dummyRoot, nodeTraverserVisitor);
 
-        toRootNode(zippers, breadcrumbsByZipper, zipperByOriginalNode);
+        toRootNode(zippers, breadcrumbsByZipper, zipperByNodeAfterTraversing);
 
         GraphQLSchema newSchema = GraphQLSchema.newSchema()
                 .query(dummyRoot.query)
@@ -176,11 +178,15 @@ public class SchemaTransformer {
 
     private void toRootNode(List<NodeZipper<GraphQLSchemaElement>> zippers,
                             Map<NodeZipper<GraphQLSchemaElement>, List<List<Breadcrumb<GraphQLSchemaElement>>>> breadcrumbsByZipper,
-                            Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByOriginalNode) {
+                            Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByNodeAfterTraversing) {
         if (zippers.size() == 0) {
             return;
         }
 
+        /*
+         * Because every node can have multiple parents (not a tree, but a graph) we have a list of breadcrumbs per zipper.
+         * Or to put it differently: there is not one path from a node to the dummyRoot, but multiple ones with a different length
+         */
 
         // we want to preserve the order here
         Set<NodeZipper<GraphQLSchemaElement>> curZippers = new LinkedHashSet<>(zippers);
@@ -194,21 +200,24 @@ public class SchemaTransformer {
             Map<GraphQLSchemaElement, List<NodeZipper<GraphQLSchemaElement>>> sameParentByParent = zipperWithSameParent(deepestZippers, breadcrumbsUsed);
 
             List<NodeZipper<GraphQLSchemaElement>> newZippers = new ArrayList<>();
-            Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByNode = FpKit.groupingByUniqueKey(curZippers, NodeZipper::getCurNode);
 
             for (Map.Entry<GraphQLSchemaElement, List<NodeZipper<GraphQLSchemaElement>>> entry : sameParentByParent.entrySet()) {
+                // this is the parenNode we want to replace
                 GraphQLSchemaElement parentNode = entry.getKey();
                 NodeZipper<GraphQLSchemaElement> newZipper = moveUp(parentNode, entry.getValue(), breadcrumbsUsed);
-                NodeZipper<GraphQLSchemaElement> originalZipperForParent = zipperByOriginalNode.get(parentNode);
+
+                // updating curBreadcrumbsByZipper to use the new zipper for parent
+                NodeZipper<GraphQLSchemaElement> originalZipperForParent = zipperByNodeAfterTraversing.get(parentNode);
+                // the parent might have been changed itself, we can get rid of this zipper because moveUp already
+                // used the changed parent
+                curZippers.remove(originalZipperForParent);
                 List<List<Breadcrumb<GraphQLSchemaElement>>> breadcrumbsForOriginalParent = curBreadcrumbsByZipper.get(originalZipperForParent);
                 curBreadcrumbsByZipper.remove(originalZipperForParent);
                 curBreadcrumbsByZipper.put(newZipper, breadcrumbsForOriginalParent);
 
-//                //special case where we have an additional zipper on the parent
-//                Optional<NodeZipper<GraphQLSchemaElement>> zipperToBeReplaced = Optional.ofNullable(zipperByNode.get(parentNode));
-//                zipperToBeReplaced.ifPresent(curZippers::remove);
                 newZippers.add(newZipper);
             }
+            // remove all breadcrumbs we and remove the zipper if no breadcrumbs are left
             for (Map.Entry<NodeZipper<GraphQLSchemaElement>, List<List<Breadcrumb<GraphQLSchemaElement>>>> entry : breadcrumbsUsed.entrySet()) {
                 List<List<Breadcrumb<GraphQLSchemaElement>>> all = curBreadcrumbsByZipper.get(entry.getKey());
                 all.removeAll(entry.getValue());

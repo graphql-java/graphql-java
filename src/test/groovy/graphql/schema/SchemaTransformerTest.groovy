@@ -2,6 +2,7 @@ package graphql.schema
 
 
 import graphql.TestUtil
+import graphql.schema.idl.SchemaPrinter
 import graphql.util.TraversalControl
 import graphql.util.TraverserContext
 import spock.lang.Specification
@@ -94,9 +95,14 @@ class SchemaTransformerTest extends Specification {
         type Parent {
            child1: Child
            child2: Child
+           subChild: SubChild
            otherParent: Parent
        }
         type Child {
+            hello: String
+            subChild: SubChild
+        }
+        type SubChild {
             hello: String
         }
         """)
@@ -117,16 +123,40 @@ class SchemaTransformerTest extends Specification {
 
             @Override
             TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
-//                if (node.name == "Parent") {
-//                    def changedNode = node.transform({ builder -> builder.name("ParentChanged") })
-//                    return changeNode(context, changedNode)
-//                }
+                if (node.name == "Parent") {
+                    def changedNode = node.transform({ builder -> builder.name("ParentChanged") })
+                    return changeNode(context, changedNode)
+                }
+                if (node.name == "SubChild") {
+                    def changedNode = node.transform({ builder -> builder.name("SubChildChanged") })
+                    return changeNode(context, changedNode)
+                }
                 return super.visitGraphQLObjectType(node, context)
             }
 
         })
-
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions())
         then:
+        printer.print(newSchema) == """type Child {
+  helloChanged: String
+  subChild: SubChildChanged
+}
+
+type ParentChanged {
+  child1: Child
+  child2: Child
+  otherParent: Parent
+  subChild: SubChildChanged
+}
+
+type Query {
+  parent: ParentChanged
+}
+
+type SubChildChanged {
+  helloChanged: String
+}
+"""
         newSchema != schema
         (newSchema.getType("Child") as GraphQLObjectType).getFieldDefinition("helloChanged") != null
 
