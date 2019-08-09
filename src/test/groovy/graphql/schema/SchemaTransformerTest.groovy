@@ -89,16 +89,18 @@ class SchemaTransformerTest extends Specification {
         given:
         GraphQLSchema schema = TestUtil.schema("""
         type Query {
-            parent: Parent 
+            parent: Parent
         }
         type Parent {
            child1: Child
            child2: Child
-       } 
+           otherParent: Parent
+       }
         type Child {
             hello: String
         }
         """)
+
         schema.getQueryType();
         SchemaTransformer schemaTransformer = new SchemaTransformer()
         when:
@@ -115,11 +117,13 @@ class SchemaTransformerTest extends Specification {
 
             @Override
             TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
-                if (node.name == "Child") {
-                    println "CHILD VISIT: " + context
-                }
+//                if (node.name == "Parent") {
+//                    def changedNode = node.transform({ builder -> builder.name("ParentChanged") })
+//                    return changeNode(context, changedNode)
+//                }
                 return super.visitGraphQLObjectType(node, context)
             }
+
         })
 
         then:
