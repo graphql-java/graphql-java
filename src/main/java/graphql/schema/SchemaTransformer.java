@@ -197,11 +197,11 @@ public class SchemaTransformer {
             int depth = getDeepestZippers(curZippers, curBreadcrumbsByZipper, deepestZippers);
             Map<NodeZipper<GraphQLSchemaElement>, List<List<Breadcrumb<GraphQLSchemaElement>>>> breadcrumbsUsed = getBreadcrumbsUsed(curZippers, curBreadcrumbsByZipper, depth);
 
-            Map<GraphQLSchemaElement, List<NodeZipper<GraphQLSchemaElement>>> sameParentByParent = zipperWithSameParent(deepestZippers, breadcrumbsUsed);
+            Map<GraphQLSchemaElement, List<NodeZipper<GraphQLSchemaElement>>> zippersByParent = groupBySameParent(deepestZippers, breadcrumbsUsed);
 
             List<NodeZipper<GraphQLSchemaElement>> newZippers = new ArrayList<>();
 
-            for (Map.Entry<GraphQLSchemaElement, List<NodeZipper<GraphQLSchemaElement>>> entry : sameParentByParent.entrySet()) {
+            for (Map.Entry<GraphQLSchemaElement, List<NodeZipper<GraphQLSchemaElement>>> entry : zippersByParent.entrySet()) {
                 // this is the parenNode we want to replace
                 GraphQLSchemaElement parentNode = entry.getKey();
                 NodeZipper<GraphQLSchemaElement> newZipper = moveUp(parentNode, entry.getValue(), breadcrumbsUsed);
@@ -354,7 +354,7 @@ public class SchemaTransformer {
         return new NodeZipper<>(newNode, newBreadcrumbs, SCHEMA_ELEMENT_ADAPTER);
     }
 
-    private Map<GraphQLSchemaElement, List<NodeZipper<GraphQLSchemaElement>>> zipperWithSameParent
+    private Map<GraphQLSchemaElement, List<NodeZipper<GraphQLSchemaElement>>> groupBySameParent
             (List<NodeZipper<GraphQLSchemaElement>> zippers,
              Map<NodeZipper<GraphQLSchemaElement>, List<List<Breadcrumb<GraphQLSchemaElement>>>> breadcrumbsByZipper) {
         Map<GraphQLSchemaElement, List<NodeZipper<GraphQLSchemaElement>>> result = new LinkedHashMap<>();

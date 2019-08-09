@@ -106,8 +106,6 @@ class SchemaTransformerTest extends Specification {
             hello: String
         }
         """)
-
-        schema.getQueryType();
         SchemaTransformer schemaTransformer = new SchemaTransformer()
         when:
         GraphQLSchema newSchema = schemaTransformer.transform(schema, new GraphQLTypeVisitorStub() {
