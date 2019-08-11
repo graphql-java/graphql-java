@@ -4,7 +4,7 @@ import spock.lang.Specification
 
 import java.util.concurrent.ConcurrentLinkedQueue
 
-class ParallelTraverserTest extends Specification {
+class TreeParallelTraverserTest extends Specification {
     /**
      *          0
      *       1      2
@@ -37,7 +37,7 @@ class ParallelTraverserTest extends Specification {
                 }
         ] as TraverserVisitor
         when:
-        ParallelTraverser.parallelTraverser({ n -> n.children }).traverse(root, visitor)
+        TreeParallelTraverser.parallelTraverser({ n -> n.children }).traverse(root, visitor)
 
 
         then:
