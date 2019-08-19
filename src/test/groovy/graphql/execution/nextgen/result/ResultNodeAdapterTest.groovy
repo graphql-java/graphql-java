@@ -4,14 +4,15 @@ import graphql.AssertException
 import graphql.util.NodeLocation
 import spock.lang.Specification
 
-import static graphql.execution.nextgen.result.ExecutionResultNodeTestUtils.fvaForValue
+import static graphql.execution.nextgen.result.ExecutionResultNodeTestUtils.esi
+import static graphql.execution.nextgen.result.ExecutionResultNodeTestUtils.resolvedValue
 
 class ResultNodeAdapterTest extends Specification {
 
-    def parentNode = new ObjectExecutionResultNode(null, [
-            new LeafExecutionResultNode(fvaForValue("v1"), null),
-            new LeafExecutionResultNode(fvaForValue("v2"), null),
-            new LeafExecutionResultNode(fvaForValue("v3"), null),
+    def parentNode = new ObjectExecutionResultNode(null, null, [
+            new LeafExecutionResultNode(esi(), resolvedValue("v1"), null),
+            new LeafExecutionResultNode(esi(), resolvedValue("v2"), null),
+            new LeafExecutionResultNode(esi(), resolvedValue("v3"), null),
     ])
 
     def "can remove a child from a node"() {
@@ -29,7 +30,7 @@ class ResultNodeAdapterTest extends Specification {
         def newNode = ResultNodeAdapter.RESULT_NODE_ADAPTER.removeChild(parentNode, new NodeLocation(null, 1))
         then:
         newNode.children.size() == 2
-        newNode.children[0].getFetchedValueAnalysis().getCompletedValue() == "v1"
-        newNode.children[1].getFetchedValueAnalysis().getCompletedValue() == "v3"
+        newNode.children[0].getResolvedValue().getCompletedValue() == "v1"
+        newNode.children[1].getResolvedValue().getCompletedValue() == "v3"
     }
 }

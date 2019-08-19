@@ -20,7 +20,7 @@ public class GraphqlTypeComparators {
      *
      * @return a new allocated list of sorted things
      */
-    public static <T extends GraphQLType> List<T> sortTypes(Comparator<? super GraphQLType> comparator, Collection<T> types) {
+    public static <T extends GraphQLSchemaElement> List<T> sortTypes(Comparator<? super GraphQLSchemaElement> comparator, Collection<T> types) {
         List<T> sorted = new ArrayList<>(types);
         sorted.sort(comparator);
         return sorted;
@@ -31,7 +31,7 @@ public class GraphqlTypeComparators {
      *
      * @return a comparator that laves {@link graphql.schema.GraphQLType} objects as they are
      */
-    public static Comparator<? super GraphQLType> asIsOrder() {
+    public static Comparator<? super GraphQLSchemaElement> asIsOrder() {
         return (o1, o2) -> 0;
     }
 
@@ -40,8 +40,8 @@ public class GraphqlTypeComparators {
      *
      * @return a comparator that compares {@link graphql.schema.GraphQLType} objects by ascending name
      */
-    public static Comparator<? super GraphQLType> byNameAsc() {
-        return Comparator.comparing(GraphQLType::getName);
+    public static Comparator<? super GraphQLSchemaElement> byNameAsc() {
+        return Comparator.comparing(graphQLSchemaElement -> ((GraphQLNamedSchemaElement) graphQLSchemaElement).getName());
     }
 
 }

@@ -23,13 +23,11 @@ alias : name ':';
 
 
 
-
 fragmentSpread : '...' fragmentName directives?;
 
 inlineFragment : '...' typeCondition? directives? selectionSet;
 
-fragmentDefinition : 'fragment' fragmentName typeCondition directives? selectionSet;
+fragmentDefinition : FRAGMENT fragmentName typeCondition directives? selectionSet;
 
-fragmentName :  name;
 
-typeCondition : 'on' typeName;
+typeCondition : ON_KEYWORD typeName;

@@ -33,12 +33,16 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
         return new GraphQLNonNull(wrappedType);
     }
 
-    private GraphQLType wrappedType;
+    private final GraphQLType originalWrappedType;
+    private GraphQLType replacedWrappedType;
+
+    public static final String CHILD_WRAPPED_TYPE = "wrappedType";
+
 
     public GraphQLNonNull(GraphQLType wrappedType) {
         assertNotNull(wrappedType, "wrappedType can't be null");
         assertNonNullWrapping(wrappedType);
-        this.wrappedType = wrappedType;
+        this.originalWrappedType = wrappedType;
     }
 
     private void assertNonNullWrapping(GraphQLType wrappedType) {
@@ -48,29 +52,34 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
 
     @Override
     public GraphQLType getWrappedType() {
-        return wrappedType;
+        return replacedWrappedType != null ? replacedWrappedType : originalWrappedType;
     }
 
 
     void replaceType(GraphQLType type) {
         assertNonNullWrapping(type);
-        wrappedType = type;
+        this.replacedWrappedType = type;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         GraphQLNonNull that = (GraphQLNonNull) o;
+        GraphQLType wrappedType = getWrappedType();
 
-        return !(wrappedType != null ? !wrappedType.equals(that.wrappedType) : that.wrappedType != null);
+        return !(wrappedType != null ? !wrappedType.equals(that.getWrappedType()) : that.getWrappedType() != null);
 
     }
 
     @Override
     public int hashCode() {
-        return wrappedType != null ? wrappedType.hashCode() : 0;
+        return getWrappedType() != null ? getWrappedType().hashCode() : 0;
     }
 
     @Override
@@ -79,17 +88,24 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
     }
 
     @Override
-    public String getName() {
-        return null;
-    }
-
-    @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLNonNull(this, context);
     }
 
     @Override
-    public List<GraphQLType> getChildren() {
-        return Collections.singletonList(wrappedType);
+    public List<GraphQLSchemaElement> getChildren() {
+        return Collections.singletonList(getWrappedType());
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .child(CHILD_WRAPPED_TYPE, originalWrappedType)
+                .build();
+    }
+
+    @Override
+    public GraphQLSchemaElement withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return nonNull(newChildren.getChildOrNull(CHILD_WRAPPED_TYPE));
     }
 }

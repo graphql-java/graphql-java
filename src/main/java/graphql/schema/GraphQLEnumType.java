@@ -30,13 +30,16 @@ import static java.util.Collections.emptyList;
  * See http://graphql.org/learn/schema/#enumeration-types for more details
  */
 @PublicApi
-public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
     private final Map<String, GraphQLEnumValueDefinition> valueDefinitionMap = new LinkedHashMap<>();
     private final EnumTypeDefinition definition;
     private final List<GraphQLDirective> directives;
+
+    public static final String CHILD_VALUES = "values";
+    public static final String CHILD_DIRECTIVES = "directives";
 
     private final Coercing coercing = new Coercing() {
         @Override
@@ -121,15 +124,18 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
     private void buildMap(List<GraphQLEnumValueDefinition> values) {
         for (GraphQLEnumValueDefinition valueDefinition : values) {
             String name = valueDefinition.getName();
-            if (valueDefinitionMap.containsKey(name))
+            if (valueDefinitionMap.containsKey(name)) {
                 throw new AssertException("value " + name + " redefined");
+            }
             valueDefinitionMap.put(name, valueDefinition);
         }
     }
 
     private Object getValueByName(Object value) {
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(value.toString());
-        if (enumValueDefinition != null) return enumValueDefinition.getValue();
+        if (enumValueDefinition != null) {
+            return enumValueDefinition.getValue();
+        }
         throw new CoercingParseValueException("Invalid input for Enum '" + name + "'. No value found for name '" + value.toString() + "'");
     }
 
@@ -196,15 +202,31 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLEnumType(this, context);
     }
 
     @Override
-    public List<GraphQLType> getChildren() {
-        List<GraphQLType> children = new ArrayList<>(valueDefinitionMap.values());
+    public List<GraphQLSchemaElement> getChildren() {
+        List<GraphQLSchemaElement> children = new ArrayList<>(valueDefinitionMap.values());
         children.addAll(directives);
         return children;
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .children(CHILD_VALUES, valueDefinitionMap.values())
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
+    }
+
+    @Override
+    public GraphQLEnumType withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .replaceValues(newChildren.getChildren(CHILD_VALUES))
+        );
     }
 
     public static Builder newEnum() {
@@ -284,6 +306,12 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
             return this;
         }
 
+        public Builder replaceValues(List<GraphQLEnumValueDefinition> valueDefinitions) {
+            this.values.clear();
+            valueDefinitions.forEach(this::value);
+            return this;
+        }
+
         public Builder value(GraphQLEnumValueDefinition enumValueDefinition) {
             assertNotNull(enumValueDefinition, "enumValueDefinition can't be null");
             values.put(enumValueDefinition.getName(), enumValueDefinition);
@@ -315,6 +343,15 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, "directive can't be null");
             directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder replaceDirectives(List<GraphQLDirective> directives) {
+            assertNotNull(directives, "directive can't be null");
+            this.directives.clear();
+            for (GraphQLDirective directive : directives) {
+                this.directives.put(directive.getName(), directive);
+            }
             return this;
         }
 

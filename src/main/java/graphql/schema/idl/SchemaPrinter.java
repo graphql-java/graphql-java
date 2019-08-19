@@ -18,10 +18,13 @@ import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNamedOutputType;
+import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
@@ -237,7 +240,7 @@ public class SchemaPrinter {
 
         List<GraphQLType> typesAsList = schema.getAllTypesAsList()
                 .stream()
-                .sorted(Comparator.comparing(GraphQLType::getName))
+                .sorted(Comparator.comparing(GraphQLNamedType::getName))
                 .collect(toList());
 
         printType(out, typesAsList, GraphQLInterfaceType.class, visibility);
@@ -260,7 +263,7 @@ public class SchemaPrinter {
 
     }
 
-    private boolean isIntrospectionType(GraphQLType type) {
+    private boolean isIntrospectionType(GraphQLNamedType type) {
         return !options.isIncludeIntrospectionTypes() && type.getName().startsWith("__");
     }
 
@@ -296,7 +299,7 @@ public class SchemaPrinter {
                     .parentType(GraphQLEnumType.class)
                     .elementType(GraphQLEnumValueDefinition.class)
                     .build();
-            Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
+            Comparator<? super GraphQLSchemaElement> comparator = options.comparatorRegistry.getComparator(environment);
 
             printComments(out, type, "");
             out.format("enum %s%s {\n", type.getName(), directivesString(GraphQLEnumType.class, type.getDirectives()));
@@ -322,7 +325,7 @@ public class SchemaPrinter {
                     .parentType(GraphQLInterfaceType.class)
                     .elementType(GraphQLFieldDefinition.class)
                     .build();
-            Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
+            Comparator<? super GraphQLSchemaElement> comparator = options.comparatorRegistry.getComparator(environment);
 
             printComments(out, type, "");
             out.format("interface %s%s {\n", type.getName(), directivesString(GraphQLInterfaceType.class, type.getDirectives()));
@@ -349,16 +352,16 @@ public class SchemaPrinter {
                     .parentType(GraphQLUnionType.class)
                     .elementType(GraphQLOutputType.class)
                     .build();
-            Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
+            Comparator<? super GraphQLSchemaElement> comparator = options.comparatorRegistry.getComparator(environment);
 
             printComments(out, type, "");
             out.format("union %s%s = ", type.getName(), directivesString(GraphQLUnionType.class, type.getDirectives()));
-            List<GraphQLOutputType> types = type.getTypes()
+            List<GraphQLNamedOutputType> types = type.getTypes()
                     .stream()
                     .sorted(comparator)
                     .collect(toList());
             for (int i = 0; i < types.size(); i++) {
-                GraphQLOutputType objectType = types.get(i);
+                GraphQLNamedOutputType objectType = types.get(i);
                 if (i > 0) {
                     out.format(" | ");
                 }
@@ -382,12 +385,12 @@ public class SchemaPrinter {
                         .parentType(GraphQLObjectType.class)
                         .elementType(GraphQLOutputType.class)
                         .build();
-                Comparator<? super GraphQLType> implementsComparator = options.comparatorRegistry.getComparator(environment);
+                Comparator<? super GraphQLSchemaElement> implementsComparator = options.comparatorRegistry.getComparator(environment);
 
                 Stream<String> interfaceNames = type.getInterfaces()
                         .stream()
                         .sorted(implementsComparator)
-                        .map(GraphQLType::getName);
+                        .map(GraphQLNamedType::getName);
                 out.format("type %s implements %s%s {\n",
                         type.getName(),
                         interfaceNames.collect(joining(" & ")),
@@ -398,7 +401,7 @@ public class SchemaPrinter {
                     .parentType(GraphQLObjectType.class)
                     .elementType(GraphQLFieldDefinition.class)
                     .build();
-            Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
+            Comparator<? super GraphQLSchemaElement> comparator = options.comparatorRegistry.getComparator(environment);
 
             visibility.getFieldDefinitions(type)
                     .stream()
@@ -424,7 +427,7 @@ public class SchemaPrinter {
                     .parentType(GraphQLInputObjectType.class)
                     .elementType(GraphQLInputObjectField.class)
                     .build();
-            Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
+            Comparator<? super GraphQLSchemaElement> comparator = options.comparatorRegistry.getComparator(environment);
 
             out.format("input %s%s {\n", type.getName(), directivesString(GraphQLInputObjectType.class, type.getDirectives()));
             visibility.getFieldDefinitions(type)
@@ -513,7 +516,7 @@ public class SchemaPrinter {
         return argsString(null, arguments);
     }
 
-    String argsString(Class<? extends GraphQLType> parent, List<GraphQLArgument> arguments) {
+    String argsString(Class<? extends GraphQLSchemaElement> parent, List<GraphQLArgument> arguments) {
         boolean hasDescriptions = arguments.stream().anyMatch(arg -> !isNullOrEmpty(arg.getDescription()));
         String halfPrefix = hasDescriptions ? "  " : "";
         String prefix = hasDescriptions ? "    " : "";
@@ -524,7 +527,7 @@ public class SchemaPrinter {
                 .parentType(parent)
                 .elementType(GraphQLArgument.class)
                 .build();
-        Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
+        Comparator<? super GraphQLSchemaElement> comparator = options.comparatorRegistry.getComparator(environment);
 
         arguments = arguments
                 .stream()
@@ -575,7 +578,7 @@ public class SchemaPrinter {
         return sb.toString();
     }
 
-    String directivesString(Class<? extends GraphQLType> parent, List<GraphQLDirective> directives) {
+    String directivesString(Class<? extends GraphQLSchemaElement> parent, List<GraphQLDirective> directives) {
         if (!options.includeDirectives) {
             return "";
         }
@@ -588,7 +591,7 @@ public class SchemaPrinter {
                 .parentType(parent)
                 .elementType(GraphQLDirective.class)
                 .build();
-        Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
+        Comparator<? super GraphQLSchemaElement> comparator = options.comparatorRegistry.getComparator(environment);
 
         directives = directives
                 .stream()
@@ -616,7 +619,7 @@ public class SchemaPrinter {
                 .parentType(GraphQLDirective.class)
                 .elementType(GraphQLArgument.class)
                 .build();
-        Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
+        Comparator<? super GraphQLSchemaElement> comparator = options.comparatorRegistry.getComparator(environment);
 
         List<GraphQLArgument> args = directive.getArguments();
         args = args
@@ -667,7 +670,7 @@ public class SchemaPrinter {
                 .parentType(GraphQLDirective.class)
                 .elementType(GraphQLArgument.class)
                 .build();
-        Comparator<? super GraphQLType> comparator = options.comparatorRegistry.getComparator(environment);
+        Comparator<? super GraphQLSchemaElement> comparator = options.comparatorRegistry.getComparator(environment);
 
         List<GraphQLArgument> args = directive.getArguments();
         args = args

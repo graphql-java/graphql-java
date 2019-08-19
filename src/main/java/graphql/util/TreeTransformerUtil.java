@@ -2,6 +2,11 @@ package graphql.util;
 
 import graphql.PublicApi;
 
+import java.util.List;
+import java.util.Queue;
+
+import static graphql.Assert.assertTrue;
+
 @PublicApi
 public class TreeTransformerUtil {
 
@@ -15,38 +20,87 @@ public class TreeTransformerUtil {
      * @return
      */
     public static <T> TraversalControl changeNode(TraverserContext<T> context, T changedNode) {
-        NodeZipper<T> zipperWithChangedNode = context.getVar(NodeZipper.class).withNewNode(changedNode);
-        NodeMultiZipper<T> multiZipper = context.getNewAccumulate();
-        if (context.isChanged()) {
-            context.setAccumulate(multiZipper.withReplacedZipperForNode(context.thisNode(), changedNode));
-            context.changeNode(changedNode);
+        boolean changed = context.isChanged();
+        if (context.isParallel()) {
+            List<NodeZipper<T>> zippers = context.getVar(List.class);
+            NodeAdapter adaper = context.getVar(NodeAdapter.class);
+            if (changed) {
+                replaceZipperForNode(zippers, context.thisNode(), changedNode);
+                context.changeNode(changedNode);
+            } else {
+                NodeZipper<T> nodeZipper = new NodeZipper<>(changedNode, context.getBreadcrumbs(), adaper);
+                zippers.add(nodeZipper);
+                context.changeNode(changedNode);
+            }
+            return TraversalControl.CONTINUE;
         } else {
-            context.setAccumulate(multiZipper.withNewZipper(zipperWithChangedNode));
-            context.changeNode(changedNode);
+            NodeZipper<T> zipperWithChangedNode = context.getVar(NodeZipper.class).withNewNode(changedNode);
+            List<NodeZipper<T>> zippers = context.getSharedContextData();
+            if (changed) {
+                // this is potentially expensive
+                replaceZipperForNode(zippers, context.thisNode(), changedNode);
+                context.changeNode(changedNode);
+            } else {
+                zippers.add(zipperWithChangedNode);
+                context.changeNode(changedNode);
+            }
+            return TraversalControl.CONTINUE;
         }
-        return TraversalControl.CONTINUE;
+    }
+
+    private static <T> void replaceZipperForNode(List<NodeZipper<T>> zippers, T currentNode, T newNode) {
+        int index = FpKit.findIndex(zippers, zipper -> zipper.getCurNode() == currentNode);
+        assertTrue(index >= 0, "No current zipper found for provided node");
+        NodeZipper<T> newZipper = zippers.get(index).withNewNode(newNode);
+        zippers.set(index, newZipper);
     }
 
     public static <T> TraversalControl deleteNode(TraverserContext<T> context) {
-        NodeZipper<T> deleteNodeZipper = context.getVar(NodeZipper.class).deleteNode();
-        NodeMultiZipper<T> multiZipper = context.getNewAccumulate();
-        context.setAccumulate(multiZipper.withNewZipper(deleteNodeZipper));
-        context.deleteNode();
-        return TraversalControl.CONTINUE;
+        if (context.isParallel()) {
+            NodeAdapter adaper = context.getVar(NodeAdapter.class);
+            NodeZipper<T> deleteNodeZipper = new NodeZipper<>(context.thisNode(), context.getBreadcrumbs(), adaper).deleteNode();
+            List<NodeZipper<T>> zippers = context.getVar(List.class);
+            zippers.add(deleteNodeZipper);
+            context.deleteNode();
+            return TraversalControl.CONTINUE;
+        } else {
+            NodeZipper<T> deleteNodeZipper = context.getVar(NodeZipper.class).deleteNode();
+            Queue<NodeZipper<T>> zippers = context.getSharedContextData();
+            zippers.add(deleteNodeZipper);
+            context.deleteNode();
+            return TraversalControl.CONTINUE;
+        }
     }
 
     public static <T> TraversalControl insertAfter(TraverserContext<T> context, T toInsertAfter) {
-        NodeZipper<T> insertNodeZipper = context.getVar(NodeZipper.class).insertAfter(toInsertAfter);
-        NodeMultiZipper<T> multiZipper = context.getNewAccumulate();
-        context.setAccumulate(multiZipper.withNewZipper(insertNodeZipper));
-        return TraversalControl.CONTINUE;
+        if (context.isParallel()) {
+            NodeAdapter adaper = context.getVar(NodeAdapter.class);
+            NodeZipper<T> insertNodeZipper = new NodeZipper<>(context.originalThisNode(), context.getBreadcrumbs(), adaper).insertAfter(toInsertAfter);
+            List<NodeZipper<T>> zippers = context.getVar(List.class);
+            zippers.add(insertNodeZipper);
+            return TraversalControl.CONTINUE;
+        } else {
+            NodeZipper<T> insertNodeZipper = context.getVar(NodeZipper.class).insertAfter(toInsertAfter);
+            Queue<NodeZipper<T>> zippers = context.getSharedContextData();
+            zippers.add(insertNodeZipper);
+            return TraversalControl.CONTINUE;
+        }
     }
 
     public static <T> TraversalControl insertBefore(TraverserContext<T> context, T toInsertBefore) {
-        NodeZipper<T> insertNodeZipper = context.getVar(NodeZipper.class).insertBefore(toInsertBefore);
-        NodeMultiZipper<T> multiZipper = context.getNewAccumulate();
-        context.setAccumulate(multiZipper.withNewZipper(insertNodeZipper));
-        return TraversalControl.CONTINUE;
+        if (context.isParallel()) {
+            NodeAdapter adaper = context.getVar(NodeAdapter.class);
+            NodeZipper<T> insertNodeZipper = new NodeZipper<>(context.originalThisNode(), context.getBreadcrumbs(), adaper).insertBefore(toInsertBefore);
+            List<NodeZipper<T>> zippers = context.getVar(List.class);
+            zippers.add(insertNodeZipper);
+            return TraversalControl.CONTINUE;
+        } else {
+            NodeZipper<T> insertNodeZipper = context.getVar(NodeZipper.class).insertBefore(toInsertBefore);
+            Queue<NodeZipper<T>> zippers = context.getSharedContextData();
+            zippers.add(insertNodeZipper);
+            return TraversalControl.CONTINUE;
+        }
     }
+
 
 }

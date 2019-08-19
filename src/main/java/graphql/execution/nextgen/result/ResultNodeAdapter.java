@@ -4,7 +4,8 @@ import graphql.PublicApi;
 import graphql.util.NodeAdapter;
 import graphql.util.NodeLocation;
 
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -22,9 +23,7 @@ public class ResultNodeAdapter implements NodeAdapter<ExecutionResultNode> {
 
     @Override
     public Map<String, List<ExecutionResultNode>> getNamedChildren(ExecutionResultNode parentNode) {
-        Map<String, List<ExecutionResultNode>> result = new LinkedHashMap<>();
-        result.put(null, parentNode.getChildren());
-        return result;
+        return Collections.singletonMap(null, parentNode.getChildren());
     }
 
     @Override
@@ -38,7 +37,7 @@ public class ResultNodeAdapter implements NodeAdapter<ExecutionResultNode> {
     @Override
     public ExecutionResultNode removeChild(ExecutionResultNode parentNode, NodeLocation location) {
         int index = location.getIndex();
-        List<ExecutionResultNode> childrenList = parentNode.getChildren();
+        List<ExecutionResultNode> childrenList = new ArrayList<>(parentNode.getChildren());
         assertTrue(index >= 0 && index < childrenList.size(), "The remove index MUST be within the range of the children");
         childrenList.remove(index);
         return parentNode.withNewChildren(childrenList);

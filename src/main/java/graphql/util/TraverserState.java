@@ -140,6 +140,6 @@ public abstract class TraverserState<T> {
                                                       NodeLocation nodeLocation,
                                                       boolean isRootContext) {
         assertNotNull(vars);
-        return new DefaultTraverserContext<>(curNode, parent, visited, vars, sharedContextData, nodeLocation, isRootContext);
+        return new DefaultTraverserContext<>(curNode, parent, visited, vars, sharedContextData, nodeLocation, isRootContext, false);
     }
 }

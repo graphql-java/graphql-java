@@ -26,13 +26,9 @@ public class ExecutionInput {
     private final ExecutionId executionId;
 
 
-    public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables) {
-        this(query, operationName, context, root, variables, new DataLoaderRegistry(), null, null);
-    }
-
     @Internal
     private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, ExecutionId executionId) {
-        this.query = query;
+        this.query = assertNotNull(query, "query can't be null");
         this.operationName = operationName;
         this.context = context;
         this.root = root;
@@ -103,18 +99,19 @@ public class ExecutionInput {
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new ExecutionInput object based on calling build on that builder
      */
     public ExecutionInput transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder()
-            .query(this.query)
-            .operationName(this.operationName)
-            .context(this.context)
-            .root(this.root)
-            .dataLoaderRegistry(this.dataLoaderRegistry)
-            .cacheControl(this.cacheControl)
-            .variables(this.variables)
-            .executionId(executionId);
+                .query(this.query)
+                .operationName(this.operationName)
+                .context(this.context)
+                .root(this.root)
+                .dataLoaderRegistry(this.dataLoaderRegistry)
+                .cacheControl(this.cacheControl)
+                .variables(this.variables)
+                .executionId(executionId);
 
         builderConsumer.accept(builder);
 
@@ -125,14 +122,14 @@ public class ExecutionInput {
     @Override
     public String toString() {
         return "ExecutionInput{" +
-            "query='" + query + '\'' +
-            ", operationName='" + operationName + '\'' +
-            ", context=" + context +
-            ", root=" + root +
-            ", variables=" + variables +
-            ", dataLoaderRegistry=" + dataLoaderRegistry +
-            ", executionId= " + executionId +
-            '}';
+                "query='" + query + '\'' +
+                ", operationName='" + operationName + '\'' +
+                ", context=" + context +
+                ", root=" + root +
+                ", variables=" + variables +
+                ", dataLoaderRegistry=" + dataLoaderRegistry +
+                ", executionId= " + executionId +
+                '}';
     }
 
     /**
@@ -146,6 +143,7 @@ public class ExecutionInput {
      * Creates a new builder of ExecutionInput objects with the given query
      *
      * @param query the query to execute
+     *
      * @return a new builder of ExecutionInput objects
      */
     public static Builder newExecutionInput(String query) {
@@ -164,7 +162,7 @@ public class ExecutionInput {
         private ExecutionId executionId = null;
 
         public Builder query(String query) {
-            this.query = query;
+            this.query = assertNotNull(query, "query can't be null");
             return this;
         }
 
@@ -175,7 +173,9 @@ public class ExecutionInput {
 
         /**
          * A default one will be assigned, but you can set your own.
+         *
          * @param executionId an execution id object
+         *
          * @return this builder
          */
         public Builder executionId(ExecutionId executionId) {
@@ -187,6 +187,7 @@ public class ExecutionInput {
          * By default you will get a {@link GraphQLContext} object but you can set your own.
          *
          * @param context the context object to use
+         *
          * @return this builder
          */
         public Builder context(Object context) {
@@ -211,7 +212,7 @@ public class ExecutionInput {
         }
 
         public Builder variables(Map<String, Object> variables) {
-            this.variables = variables;
+            this.variables = assertNotNull(variables, "variables map can't be null");
             return this;
         }
 
@@ -221,6 +222,7 @@ public class ExecutionInput {
          * instances as this will create unexpected results.
          *
          * @param dataLoaderRegistry a registry of {@link org.dataloader.DataLoader}s
+         *
          * @return this builder
          */
         public Builder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {

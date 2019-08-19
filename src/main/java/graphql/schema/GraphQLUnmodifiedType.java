@@ -1,5 +1,8 @@
 package graphql.schema;
 
 
-public interface GraphQLUnmodifiedType extends GraphQLType {
+import graphql.PublicApi;
+
+@PublicApi
+public interface GraphQLUnmodifiedType extends GraphQLNamedType {
 }

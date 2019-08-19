@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static graphql.schema.GraphQLTypeUtil.simplePrint;
+
 /**
  * This creates a map of tracing information as outlined in https://github.com/apollographql/apollo-tracing
  * <p>
@@ -76,7 +78,7 @@ public class TracingSupport implements InstrumentationState {
 
             Map<String, Object> fetchMap = new LinkedHashMap<>();
             fetchMap.put("path", executionStepInfo.getPath().toList());
-            fetchMap.put("parentType", executionStepInfo.getParent().getUnwrappedNonNullType().getName());
+            fetchMap.put("parentType", simplePrint(executionStepInfo.getParent().getUnwrappedNonNullType()));
             fetchMap.put("returnType", executionStepInfo.simplePrint());
             fetchMap.put("fieldName", executionStepInfo.getFieldDefinition().getName());
             fetchMap.put("startOffset", startOffset);

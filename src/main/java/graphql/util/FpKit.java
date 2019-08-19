@@ -38,9 +38,26 @@ public class FpKit {
     }
 
     // normal groupingBy but with LinkedHashMap
-    public static <T, NewKey> Map<NewKey, List<T>> groupingBy(List<T> list, Function<T, NewKey> function) {
+    public static <T, NewKey> Map<NewKey, List<T>> groupingBy(Collection<T> list, Function<T, NewKey> function) {
         return list.stream().collect(Collectors.groupingBy(function, LinkedHashMap::new, mapping(Function.identity(), Collectors.toList())));
     }
+
+    public static <T, NewKey> Map<NewKey, T> groupingByUniqueKey(Collection<T> list, Function<T, NewKey> keyFunction) {
+        return list.stream().collect(Collectors.toMap(
+                keyFunction,
+                identity(),
+                throwingMerger(),
+                LinkedHashMap::new)
+        );
+    }
+
+    private static <T> BinaryOperator<T> throwingMerger() {
+        return (u, v) -> {
+            throw new IllegalStateException(String.format("Duplicate key %s", u));
+        };
+    }
+
+
 
     //
     // From a list of named things, get a map of them by name, merging them first one added

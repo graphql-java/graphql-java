@@ -35,7 +35,7 @@ class ExecutionTest extends Specification {
     def mutationStrategy = new CountingExecutionStrategy()
     def queryStrategy = new CountingExecutionStrategy()
     def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, SimpleInstrumentation.INSTANCE)
-    def emptyExecutionInput = ExecutionInput.newExecutionInput().build()
+    def emptyExecutionInput = ExecutionInput.newExecutionInput().query("query").build()
     def instrumentationState = new InstrumentationState() {}
 
     def "query strategy is used for query requests"() {

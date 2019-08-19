@@ -31,7 +31,7 @@ import static java.lang.String.format;
  * See http://graphql.org/learn/schema/#interfaces for more details on the concept.
  */
 @PublicApi
-public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
@@ -39,6 +39,10 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
     private final TypeResolver typeResolver;
     private final InterfaceTypeDefinition definition;
     private final List<GraphQLDirective> directives;
+
+    public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
+    public static final String CHILD_DIRECTIVES = "directives";
+
 
     /**
      * @param name             the name
@@ -148,15 +152,31 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLInterfaceType(this, context);
     }
 
     @Override
-    public List<GraphQLType> getChildren() {
-        List<GraphQLType> children = new ArrayList<>(fieldDefinitionsByName.values());
+    public List<GraphQLSchemaElement> getChildren() {
+        List<GraphQLSchemaElement> children = new ArrayList<>(fieldDefinitionsByName.values());
         children.addAll(directives);
         return children;
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .children(CHILD_FIELD_DEFINITIONS, fieldDefinitionsByName.values())
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
+    }
+
+    @Override
+    public GraphQLInterfaceType withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .replaceFields(newChildren.getChildren(CHILD_FIELD_DEFINITIONS))
+        );
     }
 
     public static Builder newInterface() {
@@ -254,6 +274,13 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
             return this;
         }
 
+        public Builder replaceFields(List<GraphQLFieldDefinition> fieldDefinitions) {
+            assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
+            this.fields.clear();
+            fieldDefinitions.forEach(this::field);
+            return this;
+        }
+
         public boolean hasField(String fieldName) {
             return fields.containsKey(fieldName);
         }
@@ -285,6 +312,15 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, "directive can't be null");
             directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder replaceDirectives(List<GraphQLDirective> directives) {
+            assertNotNull(directives, "directive can't be null");
+            this.directives.clear();
+            for (GraphQLDirective directive : directives) {
+                this.directives.put(directive.getName(), directive);
+            }
             return this;
         }
 

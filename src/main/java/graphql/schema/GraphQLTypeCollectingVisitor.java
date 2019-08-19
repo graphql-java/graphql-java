@@ -13,27 +13,27 @@ import static java.lang.String.format;
 @Internal
 public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
 
-    private final Map<String, GraphQLType> result = new LinkedHashMap<>();
+    private final Map<String, GraphQLNamedType> result = new LinkedHashMap<>();
 
     public GraphQLTypeCollectingVisitor() {
     }
 
     @Override
-    public TraversalControl visitGraphQLEnumType(GraphQLEnumType node, TraverserContext<GraphQLType> context) {
+    public TraversalControl visitGraphQLEnumType(GraphQLEnumType node, TraverserContext<GraphQLSchemaElement> context) {
         assertTypeUniqueness(node, result);
         save(node.getName(), node);
         return super.visitGraphQLEnumType(node, context);
     }
 
     @Override
-    public TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLType> context) {
+    public TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLSchemaElement> context) {
         assertTypeUniqueness(node, result);
         save(node.getName(), node);
         return super.visitGraphQLScalarType(node, context);
     }
 
     @Override
-    public TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLType> context) {
+    public TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
         if (isTypeReference(node.getName())) {
             assertTypeUniqueness(node, result);
         } else {
@@ -43,7 +43,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
     }
 
     @Override
-    public TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType node, TraverserContext<GraphQLType> context) {
+    public TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType node, TraverserContext<GraphQLSchemaElement> context) {
         if (isTypeReference(node.getName())) {
             assertTypeUniqueness(node, result);
         } else {
@@ -53,7 +53,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
     }
 
     @Override
-    public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLType> context) {
+    public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLSchemaElement> context) {
         if (isTypeReference(node.getName())) {
             assertTypeUniqueness(node, result);
         } else {
@@ -64,14 +64,14 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
     }
 
     @Override
-    public TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLType> context) {
+    public TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLSchemaElement> context) {
         assertTypeUniqueness(node, result);
         save(node.getName(), node);
         return super.visitGraphQLUnionType(node, context);
     }
 
     @Override
-    public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLType> context) {
+    public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
 
         return super.visitGraphQLFieldDefinition(node, context);
     }
@@ -81,7 +81,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
         return result.containsKey(name) && !(result.get(name) instanceof GraphQLTypeReference);
     }
 
-    private void save(String name, GraphQLType type) {
+    private void save(String name, GraphQLNamedType type) {
         result.put(name, type);
     }
 
@@ -94,7 +94,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
 
         Enforcing this helps avoid problems later down the track fo example https://github.com/graphql-java/graphql-java/issues/373
     */
-    private void assertTypeUniqueness(GraphQLType type, Map<String, GraphQLType> result) {
+    private void assertTypeUniqueness(GraphQLNamedType type, Map<String, GraphQLNamedType> result) {
         GraphQLType existingType = result.get(type.getName());
         // do we have an existing definition
         if (existingType != null) {
@@ -110,7 +110,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
         }
     }
 
-    public Map<String, GraphQLType> getResult() {
+    public Map<String, GraphQLNamedType> getResult() {
         return result;
     }
 }

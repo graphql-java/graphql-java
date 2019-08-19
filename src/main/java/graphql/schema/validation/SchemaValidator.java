@@ -3,9 +3,9 @@ package graphql.schema.validation;
 import graphql.Internal;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLType;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -48,7 +48,7 @@ public class SchemaValidator {
     }
 
     private void checkTypes(GraphQLSchema schema, SchemaValidationErrorCollector validationErrorCollector) {
-        List<GraphQLType> types = schema.getAllTypesAsList();
+        List<GraphQLNamedType> types = schema.getAllTypesAsList();
         types.forEach(type -> {
             for (SchemaValidationRule rule : rules) {
                 rule.check(type, validationErrorCollector);

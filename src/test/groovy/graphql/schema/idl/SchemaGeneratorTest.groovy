@@ -19,7 +19,6 @@ import graphql.schema.GraphQLType
 import graphql.schema.GraphQLUnionType
 import graphql.schema.GraphqlTypeComparatorRegistry
 import graphql.schema.PropertyDataFetcher
-import graphql.schema.SchemaTransformer
 import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
 import graphql.schema.visibility.GraphqlFieldVisibility

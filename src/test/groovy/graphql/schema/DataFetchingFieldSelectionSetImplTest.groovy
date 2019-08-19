@@ -364,4 +364,37 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         allFieldsViaAsterAsterSorted.collect({ sf -> sf.qualifiedName }) == expectedFieldName
         allFieldsSorted.collect({ sf -> sf.qualifiedName }) == expectedFieldName
     }
+
+    def "fields are returned in pre order"() {
+
+        def startField = firstFields(relayDocument)
+        def startingType = replaySchema.getType('ThingConnection')
+
+        when:
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(replayExecutionContext, startingType, mergedField(startField))
+        List<SelectedField> fieldsGlob = selectionSet.getFields("**")
+        List<SelectedField> fields = selectionSet.getFields()
+
+        def expectedFieldName = [
+                "nodes",
+                "nodes/key",
+                "nodes/summary",
+                "nodes/status",
+                "nodes/status/name",
+                "nodes/stuff",
+                "nodes/stuff/name",
+                "edges",
+                "edges/cursor",
+                "edges/node",
+                "edges/node/description",
+                "edges/node/status",
+                "edges/node/status/name",
+                "totalCount"
+        ]
+
+        then:
+        fieldsGlob.collect({ field -> field.qualifiedName }) == expectedFieldName
+        fields.collect({ field -> field.qualifiedName }) == expectedFieldName
+
+    }
 }
