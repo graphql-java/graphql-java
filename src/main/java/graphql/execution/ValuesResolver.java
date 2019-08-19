@@ -40,26 +40,9 @@ import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FI
 public class ValuesResolver {
 
     /**
-     * The http://facebook.github.io/graphql/#sec-Coercing-Variable-Values says :
-     *
-     * <pre>
-     * 1. Let coercedValues be an empty unordered Map.
-     * 2. Let variableDefinitions be the variables defined by operation.
-     * 3. For each variableDefinition in variableDefinitions:
-     *      a. Let variableName be the name of variableDefinition.
-     *      b. Let variableType be the expected type of variableDefinition.
-     *      c. Let defaultValue be the default value for variableDefinition.
-     *      d. Let value be the value provided in variableValues for the name variableName.
-     *      e. If value does not exist (was not provided in variableValues):
-     *          i. If defaultValue exists (including null):
-     *              1. Add an entry to coercedValues named variableName with the value defaultValue.
-     *          ii. Otherwise if variableType is a Non‐Nullable type, throw a query error.
-     *          iii. Otherwise, continue to the next variable definition.
-     *      f. Otherwise, if value cannot be coerced according to the input coercion rules of variableType, throw a query error.
-     *      g. Let coercedValue be the result of coercing value according to the input coercion rules of variableType.
-     *      h. Add an entry to coercedValues named variableName with the value coercedValue.
-     * 4. Return coercedValues.
-     * </pre>
+     * This method coerces the "raw" variables values provided to the engine. The coerced values will be used to
+     * provide arguments to {@link graphql.schema.DataFetchingEnvironment}
+     * The coercing is ultimately done via {@link Coercing}.
      *
      * @param schema              the schema
      * @param variableDefinitions the variable definitions
@@ -67,29 +50,24 @@ public class ValuesResolver {
      *
      * @return coerced variable values as a map
      */
-    public Map<String, Object> coerceArgumentValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> variableValues) {
+    public Map<String, Object> coerceVariableValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> variableValues) {
         GraphqlFieldVisibility fieldVisibility = schema.getFieldVisibility();
         Map<String, Object> coercedValues = new LinkedHashMap<>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
             String variableName = variableDefinition.getName();
             GraphQLType variableType = TypeFromAST.getTypeFromAST(schema, variableDefinition.getType());
 
-            // 3.e
             if (!variableValues.containsKey(variableName)) {
                 Value defaultValue = variableDefinition.getDefaultValue();
                 if (defaultValue != null) {
-                    // 3.e.i
                     Object coercedValue = coerceValueAst(fieldVisibility, variableType, variableDefinition.getDefaultValue(), null);
                     coercedValues.put(variableName, coercedValue);
                 } else if (isNonNull(variableType)) {
-                    // 3.e.ii
                     throw new NonNullableValueCoercedAsNullException(variableDefinition, variableType);
                 }
             } else {
                 Object value = variableValues.get(variableName);
-                // 3.f
                 Object coercedValue = getVariableValue(fieldVisibility, variableDefinition, variableType, value);
-                // 3.g
                 coercedValues.put(variableName, coercedValue);
             }
         }
