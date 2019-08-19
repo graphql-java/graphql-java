@@ -41,7 +41,7 @@ public class ValuesResolver {
 
     /**
      * This method coerces the "raw" variables values provided to the engine. The coerced values will be used to
-     * provide arguments to {@link graphql.schema.DataFetcherFactoryEnvironment}.
+     * provide arguments to {@link graphql.schema.DataFetchingEnvironment}
      * The coercing is ultimately done via {@link Coercing}.
      *
      * @param schema              the schema
