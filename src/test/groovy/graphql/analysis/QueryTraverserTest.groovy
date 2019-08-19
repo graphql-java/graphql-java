@@ -161,17 +161,13 @@ class QueryTraverserTest extends Specification {
 
         then:
 
-        2 * visitor.visitArgument(_) >> {
-            QueryVisitorFieldArgumentEnvironment env = it[0] as QueryVisitorFieldArgumentEnvironment
-            if (env.argument.name == "complexArg") {
-                assert env.graphQLArgument.type.name == "Complex"
-            } else if (env.argument.name == "simpleArg") {
-                assert env.graphQLArgument.type.name == "String"
-            } else {
-                assert false, "This should not happen"
-            }
-            TraversalControl.CONTINUE
-        }
+        1 * visitor.visitArgument({
+         env -> env.argument.name == "complexArg" && env.graphQLArgument.type.name == "Complex"
+        }) >> TraversalControl.CONTINUE
+
+        1 * visitor.visitArgument({
+         env -> env.argument.name == "simpleArg" && env.graphQLArgument.type.name == "String"
+        }) >> TraversalControl.CONTINUE
     }
 
     def "test preOrder order for inline fragments"() {
