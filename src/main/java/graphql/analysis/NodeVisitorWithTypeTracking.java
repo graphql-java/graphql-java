@@ -4,6 +4,7 @@ import graphql.Internal;
 import graphql.execution.ConditionalNodes;
 import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
+import graphql.language.Argument;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
@@ -11,6 +12,7 @@ import graphql.language.InlineFragment;
 import graphql.language.Node;
 import graphql.language.NodeVisitorStub;
 import graphql.language.TypeName;
+import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
@@ -20,6 +22,7 @@ import graphql.schema.GraphQLUnmodifiedType;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
@@ -58,7 +61,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
             return TraversalControl.ABORT;
         }
 
-        QueryVisitorInlineFragmentEnvironment inlineFragmentEnvironment = new QueryVisitorInlineFragmentEnvironmentImpl(inlineFragment, context);
+        QueryVisitorInlineFragmentEnvironment inlineFragmentEnvironment = new QueryVisitorInlineFragmentEnvironmentImpl(inlineFragment, context, schema);
 
         if (context.getPhase() == LEAVE) {
             postOrderCallback.visitInlineFragment(inlineFragmentEnvironment);
@@ -88,7 +91,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
             return TraversalControl.ABORT;
         }
 
-        QueryVisitorFragmentDefinitionEnvironment fragmentEnvironment = new QueryVisitorFragmentDefinitionEnvironmentImpl(node, context);
+        QueryVisitorFragmentDefinitionEnvironment fragmentEnvironment = new QueryVisitorFragmentDefinitionEnvironmentImpl(node, context, schema);
 
         if (context.getPhase() == LEAVE) {
             postOrderCallback.visitFragmentDefinition(fragmentEnvironment);
@@ -98,8 +101,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
 
         QueryTraversalContext parentEnv = context.getVarFromParents(QueryTraversalContext.class);
         GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(node.getTypeCondition().getName());
-        context
-                .setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, parentEnv.getEnvironment(), node));
+        context.setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, parentEnv.getEnvironment(), node));
         return TraversalControl.CONTINUE;
     }
 
@@ -114,7 +116,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
             return TraversalControl.ABORT;
         }
 
-        QueryVisitorFragmentSpreadEnvironment fragmentSpreadEnvironment = new QueryVisitorFragmentSpreadEnvironmentImpl(fragmentSpread, fragmentDefinition, context);
+        QueryVisitorFragmentSpreadEnvironment fragmentSpreadEnvironment = new QueryVisitorFragmentSpreadEnvironmentImpl(fragmentSpread, fragmentDefinition, context, schema);
         if (context.getPhase() == LEAVE) {
             postOrderCallback.visitFragmentSpread(fragmentSpreadEnvironment);
             return TraversalControl.CONTINUE;
@@ -127,8 +129,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
         assertNotNull(typeCondition, "Invalid type condition '%s' in fragment '%s'", fragmentDefinition.getTypeCondition().getName(),
                 fragmentDefinition.getName());
-        context
-                .setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, parentEnv.getEnvironment(), fragmentDefinition));
+        context.setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, parentEnv.getEnvironment(), fragmentDefinition));
         return TraversalControl.CONTINUE;
     }
 
@@ -149,7 +150,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
                 parentEnv.getEnvironment(),
                 argumentValues,
                 parentEnv.getSelectionSetContainer(),
-                context);
+                context, schema);
 
         if (context.getPhase() == LEAVE) {
             postOrderCallback.visitField(environment);
@@ -172,4 +173,32 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         return traversalControl;
     }
 
+
+    @Override
+    public TraversalControl visitArgument(Argument argument, TraverserContext<Node> context) {
+
+        QueryTraversalContext fieldCtx = context.getVarFromParents(QueryTraversalContext.class);
+        Field field = (Field) fieldCtx.getSelectionSetContainer();
+
+        QueryVisitorFieldEnvironment fieldEnv = fieldCtx.getEnvironment();
+        GraphQLFieldsContainer fieldsContainer = fieldEnv.getFieldsContainer();
+
+        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, fieldsContainer, field.getName());
+        GraphQLArgument graphQLArgument = fieldDefinition.getArgument(argument.getName());
+        String argumentName = graphQLArgument.getName();
+
+        Map<String, Object> allArgs = fieldEnv.getArguments();
+        Map<String, Object> arguments = new LinkedHashMap<>();
+        if (allArgs.containsKey(argumentName)) {
+            arguments.put(argumentName, allArgs.get(argumentName));
+        }
+
+        QueryVisitorFieldArgumentEnvironment environment = new QueryVisitorFieldArgumentEnvironmentImpl(
+                fieldDefinition, argument, graphQLArgument, arguments, variables, fieldEnv, context, schema);
+
+        if (context.getPhase() == LEAVE) {
+            return postOrderCallback.visitArgument(environment);
+        }
+        return preOrderCallback.visitArgument(environment);
+    }
 }

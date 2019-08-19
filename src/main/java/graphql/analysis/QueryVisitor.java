@@ -18,7 +18,6 @@ public interface QueryVisitor {
      * default implementation calls visitField for backwards compatibility reason
      *
      * @param queryVisitorFieldEnvironment
-     *
      * @return
      */
     default TraversalControl visitFieldWithControl(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
@@ -34,4 +33,7 @@ public interface QueryVisitor {
 
     }
 
+    default TraversalControl visitArgument(QueryVisitorFieldArgumentEnvironment environment) {
+        return TraversalControl.CONTINUE;
+    }
 }

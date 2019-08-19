@@ -3,6 +3,7 @@ package graphql.analysis;
 import graphql.Internal;
 import graphql.language.FragmentDefinition;
 import graphql.language.Node;
+import graphql.schema.GraphQLSchema;
 import graphql.util.TraverserContext;
 
 import java.util.Objects;
@@ -12,11 +13,18 @@ public class QueryVisitorFragmentDefinitionEnvironmentImpl implements QueryVisit
 
     private final FragmentDefinition fragmentDefinition;
     private final TraverserContext<Node> traverserContext;
+    private final GraphQLSchema schema;
 
 
-    public QueryVisitorFragmentDefinitionEnvironmentImpl(FragmentDefinition fragmentDefinition, TraverserContext<Node> traverserContext) {
+    public QueryVisitorFragmentDefinitionEnvironmentImpl(FragmentDefinition fragmentDefinition, TraverserContext<Node> traverserContext, GraphQLSchema schema) {
         this.fragmentDefinition = fragmentDefinition;
         this.traverserContext = traverserContext;
+        this.schema = schema;
+    }
+
+    @Override
+    public GraphQLSchema getSchema() {
+        return schema;
     }
 
     @Override

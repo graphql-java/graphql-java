@@ -1,6 +1,7 @@
 package graphql.analysis
 
 import graphql.TestUtil
+import graphql.execution.ValuesResolver
 import graphql.language.Document
 import graphql.language.Field
 import graphql.language.FragmentDefinition
@@ -8,11 +9,13 @@ import graphql.language.FragmentSpread
 import graphql.language.InlineFragment
 import graphql.language.NodeUtil
 import graphql.language.OperationDefinition
+import graphql.language.Value
 import graphql.parser.Parser
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLType
 import graphql.schema.GraphQLUnionType
 import graphql.util.TraversalControl
 import spock.lang.Specification
@@ -46,6 +49,9 @@ class QueryTraverserTest extends Specification {
 
         mock.visitFieldWithControl(_) >> { params ->
             mock.visitField(params)
+            TraversalControl.CONTINUE
+        }
+        mock.visitArgument(_) >> { params ->
             TraversalControl.CONTINUE
         }
         return mock
@@ -121,6 +127,52 @@ class QueryTraverserTest extends Specification {
 
     }
 
+    def "test postOrder for visitArgs"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo (complexArg : Complex, simpleArg : String) : Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+            
+            input Complex {
+                name : String
+                moreComplex : [MoreComplex]
+            }
+            
+            input MoreComplex {
+                height : Int
+                weight : Int
+            }
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery('''{
+            foo( complexArg : { name : "Ted", moreComplex : [{height : 100, weight : 200}] } , simpleArg : "Hi" ) { 
+                subFoo
+            } 
+            bar 
+        }''')
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal.visitPostOrder(visitor)
+
+        then:
+
+        2 * visitor.visitArgument(_) >> {
+            QueryVisitorFieldArgumentEnvironment env = it[0] as QueryVisitorFieldArgumentEnvironment
+            if (env.argument.name == "complexArg") {
+                assert env.graphQLArgument.type.name == "Complex"
+            } else if (env.argument.name == "simpleArg") {
+                assert env.graphQLArgument.type.name == "String"
+            } else {
+                assert false, "This should not happen"
+            }
+            TraversalControl.CONTINUE
+        }
+    }
 
     def "test preOrder order for inline fragments"() {
         given:

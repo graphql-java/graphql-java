@@ -3,6 +3,7 @@ package graphql.analysis;
 import graphql.Internal;
 import graphql.language.InlineFragment;
 import graphql.language.Node;
+import graphql.schema.GraphQLSchema;
 import graphql.util.TraverserContext;
 
 import java.util.Objects;
@@ -11,10 +12,17 @@ import java.util.Objects;
 public class QueryVisitorInlineFragmentEnvironmentImpl implements QueryVisitorInlineFragmentEnvironment {
     private final InlineFragment inlineFragment;
     private final TraverserContext<Node> traverserContext;
+    private final GraphQLSchema schema;
 
-    public QueryVisitorInlineFragmentEnvironmentImpl(InlineFragment inlineFragment, TraverserContext<Node> traverserContext) {
+    public QueryVisitorInlineFragmentEnvironmentImpl(InlineFragment inlineFragment, TraverserContext<Node> traverserContext, GraphQLSchema schema) {
         this.inlineFragment = inlineFragment;
         this.traverserContext = traverserContext;
+        this.schema = schema;
+    }
+
+    @Override
+    public GraphQLSchema getSchema() {
+        return schema;
     }
 
     @Override
