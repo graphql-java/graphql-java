@@ -1,6 +1,5 @@
 package graphql.analysis;
 
-import graphql.language.Argument;
 import graphql.language.Node;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
@@ -9,7 +8,7 @@ import graphql.util.TraverserContext;
 
 import java.util.Map;
 
-public interface QueryVisitorFieldArgumentEnvironment {
+public interface QueryVisitorFieldArgumentValueEnvironment {
 
     GraphQLSchema getSchema();
 
@@ -17,13 +16,10 @@ public interface QueryVisitorFieldArgumentEnvironment {
 
     GraphQLArgument getGraphQLArgument();
 
-    Argument getArgument();
-
-    Object getArgumentValue();
+    QueryVisitorFieldArgumentInputValue getArgumentInputValue();
 
     Map<String, Object> getVariables();
 
-    QueryVisitorFieldEnvironment getParentEnvironment();
-
     TraverserContext<Node> getTraverserContext();
+
 }

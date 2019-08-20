@@ -11,18 +11,22 @@ import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.Node;
 import graphql.language.NodeVisitorStub;
+import graphql.language.ObjectField;
 import graphql.language.TypeName;
+import graphql.language.Value;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
@@ -187,18 +191,49 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         GraphQLArgument graphQLArgument = fieldDefinition.getArgument(argument.getName());
         String argumentName = graphQLArgument.getName();
 
-        Map<String, Object> allArgs = fieldEnv.getArguments();
-        Map<String, Object> arguments = new LinkedHashMap<>();
-        if (allArgs.containsKey(argumentName)) {
-            arguments.put(argumentName, allArgs.get(argumentName));
-        }
+        Object argumentValue = fieldEnv.getArguments().getOrDefault(argumentName, null);
 
         QueryVisitorFieldArgumentEnvironment environment = new QueryVisitorFieldArgumentEnvironmentImpl(
-                fieldDefinition, argument, graphQLArgument, arguments, variables, fieldEnv, context, schema);
+                fieldDefinition, argument, graphQLArgument, argumentValue, variables, fieldEnv, context, schema);
 
+        QueryVisitorFieldArgumentInputValue inputValue = QueryVisitorFieldArgumentInputValueImpl.incompleteArgumentInputValue(
+                fieldDefinition, graphQLArgument,
+                graphQLArgument.getName(), graphQLArgument.getType());
+
+        context.setVar(QueryVisitorFieldArgumentInputValue.class, inputValue);
         if (context.getPhase() == LEAVE) {
             return postOrderCallback.visitArgument(environment);
         }
         return preOrderCallback.visitArgument(environment);
+    }
+
+    @Override
+    public TraversalControl visitObjectField(ObjectField node, TraverserContext<Node> context) {
+
+        QueryVisitorFieldArgumentInputValueImpl inputValue = context.getVarFromParents(QueryVisitorFieldArgumentInputValue.class);
+        GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) GraphQLTypeUtil.unwrapAll(inputValue.getInputType());
+        GraphQLInputObjectField inputObjectTypeField = inputObjectType.getField(node.getName());
+
+        inputValue = inputValue.incompleteNewChild(inputObjectTypeField.getName(), inputObjectTypeField.getType());
+
+        context.setVar(QueryVisitorFieldArgumentInputValue.class, inputValue);
+        return TraversalControl.CONTINUE;
+    }
+
+    @Override
+    protected TraversalControl visitValue(Value<?> value, TraverserContext<Node> context) {
+        QueryVisitorFieldArgumentInputValueImpl inputValue = context.getVarFromParents(QueryVisitorFieldArgumentInputValue.class);
+        // previous visits have set up the previous information
+        inputValue = inputValue.completeArgumentInputValue(value);
+        context.setVar(QueryVisitorFieldArgumentInputValue.class, inputValue);
+
+        QueryVisitorFieldArgumentValueEnvironment environment = new QueryVisitorFieldArgumentValueEnvironmentImpl(
+                schema, inputValue.getGraphQLFieldDefinition(), inputValue.getGraphQLArgument(), inputValue, context,
+                variables);
+
+        if (context.getPhase() == LEAVE) {
+            return postOrderCallback.visitArgumentValue(environment);
+        }
+        return preOrderCallback.visitArgumentValue(environment);
     }
 }

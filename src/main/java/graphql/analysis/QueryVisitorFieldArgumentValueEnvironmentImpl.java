@@ -1,7 +1,6 @@
 package graphql.analysis;
 
 import graphql.Internal;
-import graphql.language.Argument;
 import graphql.language.Node;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
@@ -11,26 +10,22 @@ import graphql.util.TraverserContext;
 import java.util.Map;
 
 @Internal
-public class QueryVisitorFieldArgumentEnvironmentImpl implements QueryVisitorFieldArgumentEnvironment {
+public class QueryVisitorFieldArgumentValueEnvironmentImpl implements QueryVisitorFieldArgumentValueEnvironment {
 
     private final GraphQLFieldDefinition fieldDefinition;
-    private final Argument argument;
     private final GraphQLArgument graphQLArgument;
-    private final Object argumentValue;
-    private final Map<String, Object> variables;
-    private final QueryVisitorFieldEnvironment parentEnvironment;
+    private final QueryVisitorFieldArgumentInputValue argumentInputValue;
     private final TraverserContext<Node> traverserContext;
     private final GraphQLSchema schema;
+    private final Map<String, Object> variables;
 
-    public QueryVisitorFieldArgumentEnvironmentImpl(GraphQLFieldDefinition fieldDefinition, Argument argument, GraphQLArgument graphQLArgument, Object argumentValue, Map<String, Object> variables, QueryVisitorFieldEnvironment parentEnvironment, TraverserContext<Node> traverserContext, GraphQLSchema schema) {
+    public QueryVisitorFieldArgumentValueEnvironmentImpl(GraphQLSchema schema, GraphQLFieldDefinition fieldDefinition, GraphQLArgument graphQLArgument, QueryVisitorFieldArgumentInputValue argumentInputValue, TraverserContext<Node> traverserContext, Map<String, Object> variables) {
         this.fieldDefinition = fieldDefinition;
-        this.argument = argument;
         this.graphQLArgument = graphQLArgument;
-        this.argumentValue = argumentValue;
-        this.variables = variables;
-        this.parentEnvironment = parentEnvironment;
+        this.argumentInputValue = argumentInputValue;
         this.traverserContext = traverserContext;
         this.schema = schema;
+        this.variables = variables;
     }
 
     @Override
@@ -39,10 +34,6 @@ public class QueryVisitorFieldArgumentEnvironmentImpl implements QueryVisitorFie
     }
 
     @Override
-    public Argument getArgument() {
-        return argument;
-    }
-
     public GraphQLFieldDefinition getFieldDefinition() {
         return fieldDefinition;
     }
@@ -53,18 +44,13 @@ public class QueryVisitorFieldArgumentEnvironmentImpl implements QueryVisitorFie
     }
 
     @Override
-    public Object getArgumentValue() {
-        return argumentValue;
+    public QueryVisitorFieldArgumentInputValue getArgumentInputValue() {
+        return argumentInputValue;
     }
 
     @Override
     public Map<String, Object> getVariables() {
         return variables;
-    }
-
-    @Override
-    public QueryVisitorFieldEnvironment getParentEnvironment() {
-        return parentEnvironment;
     }
 
     @Override
@@ -74,13 +60,10 @@ public class QueryVisitorFieldArgumentEnvironmentImpl implements QueryVisitorFie
 
     @Override
     public String toString() {
-        return "QueryVisitorFieldArgumentEnvironmentImpl{" +
+        return "QueryVisitorFieldArgumentValueEnvironmentImpl{" +
                 "fieldDefinition=" + fieldDefinition +
-                ", argument=" + argument +
                 ", graphQLArgument=" + graphQLArgument +
-                ", argumentValue=" + argumentValue +
-                ", variables=" + variables +
-                ", parentEnvironment=" + parentEnvironment +
+                ", argumentInputValue=" + argumentInputValue +
                 ", traverserContext=" + traverserContext +
                 ", schema=" + schema +
                 '}';

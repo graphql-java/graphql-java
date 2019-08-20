@@ -36,4 +36,8 @@ public interface QueryVisitor {
     default TraversalControl visitArgument(QueryVisitorFieldArgumentEnvironment environment) {
         return TraversalControl.CONTINUE;
     }
+
+    default TraversalControl visitArgumentValue(QueryVisitorFieldArgumentValueEnvironment environment) {
+        return TraversalControl.CONTINUE;
+    }
 }
