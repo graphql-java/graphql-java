@@ -7,6 +7,7 @@ import graphql.language.SelectionSetContainer;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLSchema;
 import graphql.util.TraverserContext;
 
 import java.util.Map;
@@ -24,6 +25,7 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
     private final QueryVisitorFieldEnvironment parentEnvironment;
     private final SelectionSetContainer selectionSetContainer;
     private final TraverserContext<Node> traverserContext;
+    private final GraphQLSchema schema;
 
     public QueryVisitorFieldEnvironmentImpl(boolean typeNameIntrospectionField,
                                             Field field,
@@ -33,7 +35,8 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
                                             QueryVisitorFieldEnvironment parentEnvironment,
                                             Map<String, Object> arguments,
                                             SelectionSetContainer selectionSetContainer,
-                                            TraverserContext<Node> traverserContext) {
+                                            TraverserContext<Node> traverserContext,
+                                            GraphQLSchema schema) {
         this.typeNameIntrospectionField = typeNameIntrospectionField;
         this.field = field;
         this.fieldDefinition = fieldDefinition;
@@ -43,6 +46,12 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
         this.arguments = arguments;
         this.selectionSetContainer = selectionSetContainer;
         this.traverserContext = traverserContext;
+        this.schema = schema;
+    }
+
+    @Override
+    public GraphQLSchema getSchema() {
+        return schema;
     }
 
     @Override

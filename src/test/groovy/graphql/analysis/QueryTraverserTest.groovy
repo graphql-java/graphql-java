@@ -1,13 +1,17 @@
 package graphql.analysis
 
 import graphql.TestUtil
+import graphql.language.ArrayValue
 import graphql.language.Document
 import graphql.language.Field
 import graphql.language.FragmentDefinition
 import graphql.language.FragmentSpread
 import graphql.language.InlineFragment
+import graphql.language.IntValue
 import graphql.language.NodeUtil
+import graphql.language.ObjectValue
 import graphql.language.OperationDefinition
+import graphql.language.StringValue
 import graphql.parser.Parser
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLNonNull
@@ -46,6 +50,12 @@ class QueryTraverserTest extends Specification {
 
         mock.visitFieldWithControl(_) >> { params ->
             mock.visitField(params)
+            TraversalControl.CONTINUE
+        }
+        mock.visitArgument(_) >> { params ->
+            TraversalControl.CONTINUE
+        }
+        mock.visitArgumentValue(_) >> { params ->
             TraversalControl.CONTINUE
         }
         return mock
@@ -121,6 +131,101 @@ class QueryTraverserTest extends Specification {
 
     }
 
+    def "test for visitArgs and visitArgsValue"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo (complexArg : Complex, simpleArg : String) : Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+            
+            input Complex {
+                name : String
+                moreComplex : [MoreComplex]
+            }
+            
+            input MoreComplex {
+                height : Int
+                weight : Int
+            }
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery('''{
+            foo( complexArg : { name : "Ted", moreComplex : [{height : 100, weight : 200}] } , simpleArg : "Hi" ) { 
+                subFoo
+            } 
+            bar 
+        }''')
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+
+        1 * visitor.visitArgument({ QueryVisitorFieldArgumentEnvironment env ->
+            env.argument.name == "complexArg" && env.graphQLArgument.type.name == "Complex"
+        }) >> TraversalControl.CONTINUE
+
+        1 * visitor.visitArgument({ QueryVisitorFieldArgumentEnvironment env ->
+            env.argument.name == "simpleArg" && env.graphQLArgument.type.name == "String"
+        }) >> TraversalControl.CONTINUE
+
+        1 * visitor.visitArgumentValue({ QueryVisitorFieldArgumentValueEnvironment env ->
+            env.graphQLArgument.name == "complexArg" &&
+                    env.argumentInputValue.name == "complexArg" &&
+                    env.argumentInputValue.value instanceof ObjectValue
+        }) >> TraversalControl.CONTINUE
+
+        1 * visitor.visitArgumentValue({ QueryVisitorFieldArgumentValueEnvironment env ->
+            env.graphQLArgument.name == "complexArg" &&
+                    env.argumentInputValue.name == "name" &&
+                    env.argumentInputValue.value instanceof StringValue
+        }) >> TraversalControl.CONTINUE
+
+        1 * visitor.visitArgumentValue({ QueryVisitorFieldArgumentValueEnvironment env ->
+            env.graphQLArgument.name == "complexArg" &&
+                    env.argumentInputValue.name == "moreComplex" &&
+                    env.argumentInputValue.value instanceof ArrayValue
+        }) >> TraversalControl.CONTINUE
+
+        1 * visitor.visitArgumentValue({ QueryVisitorFieldArgumentValueEnvironment env ->
+            env.graphQLArgument.name == "complexArg" &&
+                    env.argumentInputValue.parent.name == "moreComplex" &&
+                    env.argumentInputValue.name == "weight" &&
+                    env.argumentInputValue.value instanceof IntValue
+        }) >> TraversalControl.CONTINUE
+
+        1 * visitor.visitArgumentValue({ QueryVisitorFieldArgumentValueEnvironment env ->
+            env.graphQLArgument.name == "complexArg" &&
+                    env.argumentInputValue.parent.name == "moreComplex" &&
+                    env.argumentInputValue.name == "height" &&
+                    env.argumentInputValue.value instanceof IntValue
+        }) >> TraversalControl.CONTINUE
+
+        1 * visitor.visitArgumentValue({ QueryVisitorFieldArgumentValueEnvironment env ->
+            env.graphQLArgument.name == "simpleArg" &&
+                    env.argumentInputValue.name == "simpleArg" &&
+                    env.argumentInputValue.value instanceof StringValue
+        }) >> TraversalControl.CONTINUE
+
+
+        when:
+        queryTraversal.visitPostOrder(visitor)
+
+        then:
+
+        1 * visitor.visitArgument({ QueryVisitorFieldArgumentEnvironment env ->
+            env.argument.name == "complexArg" && env.graphQLArgument.type.name == "Complex"
+        }) >> TraversalControl.CONTINUE
+
+        1 * visitor.visitArgument({ QueryVisitorFieldArgumentEnvironment env ->
+            env.argument.name == "simpleArg" && env.graphQLArgument.type.name == "String"
+        }) >> TraversalControl.CONTINUE
+
+    }
 
     def "test preOrder order for inline fragments"() {
         given:

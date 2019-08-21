@@ -161,6 +161,17 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         );
     }
 
+    @Override
+    public String toString() {
+        return "GraphQLInputObjectType{" +
+                "name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", fieldMap=" + fieldMap +
+                ", definition=" + definition +
+                ", directives=" + directives +
+                '}';
+    }
+
     public static Builder newInputObject(GraphQLInputObjectType existing) {
         return new Builder(existing);
     }

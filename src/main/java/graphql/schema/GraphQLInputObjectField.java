@@ -165,6 +165,19 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
         );
     }
 
+    @Override
+    public String toString() {
+        return "GraphQLInputObjectField{" +
+                "name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", originalType=" + originalType +
+                ", defaultValue=" + defaultValue +
+                ", definition=" + definition +
+                ", directives=" + directives +
+                ", replacedType=" + replacedType +
+                '}';
+    }
+
     public static Builder newInputObjectField(GraphQLInputObjectField existing) {
         return new Builder(existing);
     }
