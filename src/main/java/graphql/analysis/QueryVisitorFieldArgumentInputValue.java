@@ -1,5 +1,6 @@
 package graphql.analysis;
 
+import graphql.PublicApi;
 import graphql.language.Value;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
@@ -10,6 +11,7 @@ import graphql.schema.GraphQLInputType;
  * especially with `input ComplexType { ....}` types that might in turn contain other complex
  * types and hence form a tree of values.
  */
+@PublicApi
 public interface QueryVisitorFieldArgumentInputValue {
     
     GraphQLFieldDefinition getGraphQLFieldDefinition();

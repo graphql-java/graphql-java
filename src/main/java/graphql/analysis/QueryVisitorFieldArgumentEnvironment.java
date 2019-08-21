@@ -1,5 +1,6 @@
 package graphql.analysis;
 
+import graphql.PublicApi;
 import graphql.language.Argument;
 import graphql.language.Node;
 import graphql.schema.GraphQLArgument;
@@ -9,6 +10,7 @@ import graphql.util.TraverserContext;
 
 import java.util.Map;
 
+@PublicApi
 public interface QueryVisitorFieldArgumentEnvironment {
 
     GraphQLSchema getSchema();

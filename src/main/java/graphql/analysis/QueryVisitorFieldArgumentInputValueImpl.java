@@ -7,7 +7,7 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputType;
 
-@PublicApi
+@Internal
 public class QueryVisitorFieldArgumentInputValueImpl implements QueryVisitorFieldArgumentInputValue {
     private final GraphQLFieldDefinition graphQLFieldDefinition;
     private final GraphQLArgument graphQLArgument;
