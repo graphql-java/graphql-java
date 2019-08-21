@@ -13,6 +13,8 @@ import graphql.language.ObjectValue
 import graphql.language.OperationDefinition
 import graphql.language.StringValue
 import graphql.parser.Parser
+import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
@@ -202,13 +204,15 @@ class QueryTraverserTest extends Specification {
             env.graphQLArgument.name == "complexArg" &&
                     env.argumentInputValue.parent.name == "moreComplex" &&
                     env.argumentInputValue.name == "height" &&
-                    env.argumentInputValue.value instanceof IntValue
+                    env.argumentInputValue.value instanceof IntValue &&
+                    env.argumentInputValue.directiveContainer instanceof GraphQLInputObjectField
         }) >> TraversalControl.CONTINUE
 
         1 * visitor.visitArgumentValue({ QueryVisitorFieldArgumentValueEnvironment env ->
             env.graphQLArgument.name == "simpleArg" &&
                     env.argumentInputValue.name == "simpleArg" &&
-                    env.argumentInputValue.value instanceof StringValue
+                    env.argumentInputValue.value instanceof StringValue &&
+                    env.argumentInputValue.directiveContainer instanceof GraphQLArgument
         }) >> TraversalControl.CONTINUE
 
 

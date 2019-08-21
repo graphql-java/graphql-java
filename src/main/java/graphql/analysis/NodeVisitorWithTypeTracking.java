@@ -196,9 +196,8 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         QueryVisitorFieldArgumentEnvironment environment = new QueryVisitorFieldArgumentEnvironmentImpl(
                 fieldDefinition, argument, graphQLArgument, argumentValue, variables, fieldEnv, context, schema);
 
-        QueryVisitorFieldArgumentInputValue inputValue = QueryVisitorFieldArgumentInputValueImpl.incompleteArgumentInputValue(
-                fieldDefinition, graphQLArgument,
-                graphQLArgument.getName(), graphQLArgument.getType());
+        QueryVisitorFieldArgumentInputValue inputValue = QueryVisitorFieldArgumentInputValueImpl
+                .incompleteArgumentInputValue(fieldDefinition, graphQLArgument);
 
         context.setVar(QueryVisitorFieldArgumentInputValue.class, inputValue);
         if (context.getPhase() == LEAVE) {
@@ -214,7 +213,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) GraphQLTypeUtil.unwrapAll(inputValue.getInputType());
         GraphQLInputObjectField inputObjectTypeField = inputObjectType.getField(node.getName());
 
-        inputValue = inputValue.incompleteNewChild(inputObjectTypeField.getName(), inputObjectTypeField.getType());
+        inputValue = inputValue.incompleteNewChild(inputObjectTypeField);
 
         context.setVar(QueryVisitorFieldArgumentInputValue.class, inputValue);
         return TraversalControl.CONTINUE;

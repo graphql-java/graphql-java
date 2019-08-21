@@ -3,6 +3,7 @@ package graphql.analysis;
 import graphql.PublicApi;
 import graphql.language.Value;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLDirectiveContainer;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputType;
 
@@ -13,12 +14,14 @@ import graphql.schema.GraphQLInputType;
  */
 @PublicApi
 public interface QueryVisitorFieldArgumentInputValue {
-    
+
     GraphQLFieldDefinition getGraphQLFieldDefinition();
 
     GraphQLArgument getGraphQLArgument();
 
     QueryVisitorFieldArgumentInputValue getParent();
+
+    GraphQLDirectiveContainer getDirectiveContainer();
 
     String getName();
 
