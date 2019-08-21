@@ -61,6 +61,7 @@ public class ScalarInfo {
         STANDARD_SCALAR_DEFINITIONS.put("Long", ScalarTypeDefinition.newScalarTypeDefinition().name("Long").build());
         STANDARD_SCALAR_DEFINITIONS.put("BigInteger", ScalarTypeDefinition.newScalarTypeDefinition().name("BigInteger").build());
         STANDARD_SCALAR_DEFINITIONS.put("BigDecimal", ScalarTypeDefinition.newScalarTypeDefinition().name("BigDecimal").build());
+        STANDARD_SCALAR_DEFINITIONS.put("Byte", ScalarTypeDefinition.newScalarTypeDefinition().name("Byte").build());
         STANDARD_SCALAR_DEFINITIONS.put("Short", ScalarTypeDefinition.newScalarTypeDefinition().name("Short").build());
         STANDARD_SCALAR_DEFINITIONS.put("Char", ScalarTypeDefinition.newScalarTypeDefinition().name("Char").build());
 
