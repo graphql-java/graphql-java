@@ -197,8 +197,9 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
                 fieldDefinition, argument, graphQLArgument, argumentValue, variables, fieldEnv, context, schema);
 
         QueryVisitorFieldArgumentInputValue inputValue = QueryVisitorFieldArgumentInputValueImpl
-                .incompleteArgumentInputValue(fieldDefinition, graphQLArgument);
+                .incompleteArgumentInputValue(graphQLArgument);
 
+        context.setVar(QueryVisitorFieldArgumentEnvironment.class, environment);
         context.setVar(QueryVisitorFieldArgumentInputValue.class, inputValue);
         if (context.getPhase() == LEAVE) {
             return postOrderCallback.visitArgument(environment);
@@ -221,13 +222,14 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
 
     @Override
     protected TraversalControl visitValue(Value<?> value, TraverserContext<Node> context) {
+        QueryVisitorFieldArgumentEnvironment fieldArgEnv = context.getVarFromParents(QueryVisitorFieldArgumentEnvironment.class);
         QueryVisitorFieldArgumentInputValueImpl inputValue = context.getVarFromParents(QueryVisitorFieldArgumentInputValue.class);
         // previous visits have set up the previous information
         inputValue = inputValue.completeArgumentInputValue(value);
         context.setVar(QueryVisitorFieldArgumentInputValue.class, inputValue);
 
         QueryVisitorFieldArgumentValueEnvironment environment = new QueryVisitorFieldArgumentValueEnvironmentImpl(
-                schema, inputValue.getGraphQLFieldDefinition(), inputValue.getGraphQLArgument(), inputValue, context,
+                schema, fieldArgEnv.getFieldDefinition(), fieldArgEnv.getGraphQLArgument(), inputValue, context,
                 variables);
 
         if (context.getPhase() == LEAVE) {

@@ -3,78 +3,55 @@ package graphql.analysis;
 import graphql.Internal;
 import graphql.language.Value;
 import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLDirectiveContainer;
-import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLInputValueDefinition;
 
 @Internal
 public class QueryVisitorFieldArgumentInputValueImpl implements QueryVisitorFieldArgumentInputValue {
-    private final GraphQLFieldDefinition graphQLFieldDefinition;
-    private final GraphQLArgument graphQLArgument;
-    private final QueryVisitorFieldArgumentInputValue parent;
-    private final GraphQLDirectiveContainer directiveContainer;
-    private final String name;
-    private final GraphQLInputType inputType;
+    private final GraphQLInputValueDefinition inputValueDefinition;
     private final Value value;
+    private final QueryVisitorFieldArgumentInputValue parent;
 
-    private QueryVisitorFieldArgumentInputValueImpl(QueryVisitorFieldArgumentInputValue parent, GraphQLFieldDefinition graphQLFieldDefinition, GraphQLArgument graphQLArgument, GraphQLDirectiveContainer directiveContainer, String name, GraphQLInputType inputType, Value value) {
-        this.graphQLFieldDefinition = graphQLFieldDefinition;
-        this.graphQLArgument = graphQLArgument;
+    private QueryVisitorFieldArgumentInputValueImpl(QueryVisitorFieldArgumentInputValue parent, GraphQLInputValueDefinition inputValueDefinition, Value value) {
         this.parent = parent;
-        this.directiveContainer = directiveContainer;
-        this.name = name;
-        this.inputType = inputType;
+        this.inputValueDefinition = inputValueDefinition;
         this.value = value;
     }
 
-    @Internal
-    public static QueryVisitorFieldArgumentInputValue incompleteArgumentInputValue(GraphQLFieldDefinition graphQLFieldDefinition, GraphQLArgument graphQLArgument) {
-        return new QueryVisitorFieldArgumentInputValueImpl(null, graphQLFieldDefinition, graphQLArgument,
-                graphQLArgument, graphQLArgument.getName(), graphQLArgument.getType(), null);
-    }
-
-    @Internal
-    public QueryVisitorFieldArgumentInputValueImpl incompleteNewChild(GraphQLInputObjectField inputObjectField) {
+    static QueryVisitorFieldArgumentInputValue incompleteArgumentInputValue(GraphQLArgument graphQLArgument) {
         return new QueryVisitorFieldArgumentInputValueImpl(
-                this, this.graphQLFieldDefinition, this.graphQLArgument, inputObjectField, inputObjectField.getName(), inputObjectField.getType(), null);
+                null, graphQLArgument, null);
     }
 
-    @Internal
-    public QueryVisitorFieldArgumentInputValueImpl completeArgumentInputValue(Value<?> value) {
+    QueryVisitorFieldArgumentInputValueImpl incompleteNewChild(GraphQLInputObjectField inputObjectField) {
         return new QueryVisitorFieldArgumentInputValueImpl(
-                this.parent, this.graphQLFieldDefinition, this.graphQLArgument,
-                this.directiveContainer, this.name, this.inputType, value);
+                this, inputObjectField, null);
     }
 
-
-    @Override
-    public GraphQLFieldDefinition getGraphQLFieldDefinition() {
-        return graphQLFieldDefinition;
+    QueryVisitorFieldArgumentInputValueImpl completeArgumentInputValue(Value<?> value) {
+        return new QueryVisitorFieldArgumentInputValueImpl(
+                this.parent, this.inputValueDefinition, value);
     }
 
-    @Override
-    public GraphQLArgument getGraphQLArgument() {
-        return graphQLArgument;
-    }
 
     @Override
     public QueryVisitorFieldArgumentInputValue getParent() {
         return parent;
     }
 
-    public GraphQLDirectiveContainer getDirectiveContainer() {
-        return directiveContainer;
+    public GraphQLInputValueDefinition getInputValueDefinition() {
+        return inputValueDefinition;
     }
 
     @Override
     public String getName() {
-        return name;
+        return inputValueDefinition.getName();
     }
 
     @Override
     public GraphQLInputType getInputType() {
-        return inputType;
+        return inputValueDefinition.getType();
     }
 
     @Override
@@ -84,11 +61,10 @@ public class QueryVisitorFieldArgumentInputValueImpl implements QueryVisitorFiel
 
     @Override
     public String toString() {
-        return "{" +
-                "parent=" + parent +
-                ", name='" + name + '\'' +
-                ", inputType=" + inputType +
+        return "QueryVisitorFieldArgumentInputValueImpl{" +
+                "inputValue=" + inputValueDefinition +
                 ", value=" + value +
+                ", parent=" + parent +
                 '}';
     }
 }
