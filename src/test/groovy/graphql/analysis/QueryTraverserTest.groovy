@@ -205,14 +205,14 @@ class QueryTraverserTest extends Specification {
                     env.argumentInputValue.parent.name == "moreComplex" &&
                     env.argumentInputValue.name == "height" &&
                     env.argumentInputValue.value instanceof IntValue &&
-                    env.argumentInputValue.directiveContainer instanceof GraphQLInputObjectField
+                    env.argumentInputValue.inputValueDefinition instanceof GraphQLInputObjectField
         }) >> TraversalControl.CONTINUE
 
         1 * visitor.visitArgumentValue({ QueryVisitorFieldArgumentValueEnvironment env ->
             env.graphQLArgument.name == "simpleArg" &&
                     env.argumentInputValue.name == "simpleArg" &&
                     env.argumentInputValue.value instanceof StringValue &&
-                    env.argumentInputValue.directiveContainer instanceof GraphQLArgument
+                    env.argumentInputValue.inputValueDefinition instanceof GraphQLArgument
         }) >> TraversalControl.CONTINUE
 
 
