@@ -3,7 +3,7 @@ package graphql.schema;
 import graphql.PublicApi;
 
 /**
- * Named schema elements that contain input value type information.
+ * Named schema elements that contain input type information.
  *
  *
  * @see graphql.schema.GraphQLInputType
