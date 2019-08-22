@@ -54,7 +54,7 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
     }
 
-    @Ignore("This test flakes on Travis for some reason.  Clearly this indicates some sort of problem.  However it also stop releases.")
+    @Ignore("This test flakes on Travis for some reason.  Clearly this indicates some sort of problem to investigate.  However it also stop releases.")
     def "chainedInstrumentation: 970 ensure data loader is performant for multiple field with lists"() {
 
         when:
