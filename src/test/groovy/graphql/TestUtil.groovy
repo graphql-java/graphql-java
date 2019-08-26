@@ -259,6 +259,17 @@ class TestUtil {
             def builder = newDirective().name(directiveName)
 
             names.each { argName ->
+                builder.argument(newArgument().name(argName).type(GraphQLInt).value(BigInteger.valueOf(0)).build())
+            }
+            return builder.build()
+        }.toArray() as GraphQLDirective[]
+    }
+
+    static GraphQLDirective[] mockDirectivesWithNoValueArguments(String... names) {
+        return names.collect { directiveName ->
+            def builder = newDirective().name(directiveName)
+
+            names.each { argName ->
                 builder.argument(newArgument().name(argName).type(GraphQLInt).build())
             }
             return builder.build()
