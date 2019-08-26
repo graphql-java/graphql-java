@@ -630,16 +630,19 @@ public class SchemaPrinter {
             sb.append("(");
             for (int i = 0; i < args.size(); i++) {
                 GraphQLArgument arg = args.get(i);
-                sb.append(arg.getName());
+                String argValue = null;
                 if (arg.getValue() != null) {
-                    sb.append(" : ");
-                    sb.append(printAst(arg.getValue(), arg.getType()));
+                    argValue = printAst(arg.getValue(), arg.getType());
                 } else if (arg.getDefaultValue() != null) {
-                    sb.append(" : ");
-                    sb.append(printAst(arg.getDefaultValue(), arg.getType()));
+                    argValue = printAst(arg.getDefaultValue(), arg.getType());
                 }
-                if (i < args.size() - 1) {
-                    sb.append(", ");
+                if (!isNullOrEmpty(argValue)) {
+                    sb.append(arg.getName());
+                    sb.append(" : ");
+                    sb.append(argValue);
+                    if (i < args.size() - 1) {
+                        sb.append(", ");
+                    }
                 }
             }
             sb.append(")");
