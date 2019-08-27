@@ -211,12 +211,16 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
     public TraversalControl visitObjectField(ObjectField node, TraverserContext<Node> context) {
 
         QueryVisitorFieldArgumentInputValueImpl inputValue = context.getVarFromParents(QueryVisitorFieldArgumentInputValue.class);
-        GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) GraphQLTypeUtil.unwrapAll(inputValue.getInputType());
-        GraphQLInputObjectField inputObjectTypeField = inputObjectType.getField(node.getName());
+        GraphQLUnmodifiedType unmodifiedType = unwrapAll(inputValue.getInputType());
+        //
+        // technically a scalar type can have an AST object field - eg field( arg : Json) -> field(arg : { ast : "here" })
+        if (unmodifiedType instanceof GraphQLInputObjectType) {
+            GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) unmodifiedType;
+            GraphQLInputObjectField inputObjectTypeField = inputObjectType.getField(node.getName());
 
-        inputValue = inputValue.incompleteNewChild(inputObjectTypeField);
-
-        context.setVar(QueryVisitorFieldArgumentInputValue.class, inputValue);
+            inputValue = inputValue.incompleteNewChild(inputObjectTypeField);
+            context.setVar(QueryVisitorFieldArgumentInputValue.class, inputValue);
+        }
         return TraversalControl.CONTINUE;
     }
 

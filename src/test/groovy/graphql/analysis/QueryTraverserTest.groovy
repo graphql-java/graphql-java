@@ -26,6 +26,7 @@ import spock.lang.Unroll
 
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
+import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
 import static graphql.util.TraverserContext.Phase.ENTER
 import static graphql.util.TraverserContext.Phase.LEAVE
 import static java.util.Collections.emptyMap
@@ -1651,6 +1652,34 @@ class QueryTraverserTest extends Specification {
 
         then:
         1 * visitor.visitFieldWithControl(_) >> { TraversalControl.ABORT }
+
+    }
+
+    def "can copy with Scalar ObjectField visits"() {
+        given:
+        def schema = TestUtil.schema('''
+            scalar JSON
+            
+            type Query{
+                field(arg :  JSON): String 
+            }
+        ''', newRuntimeWiring().scalar(TestUtil.mockScalar("JSON")).build())
+        def visitor = mockQueryVisitor()
+        def query = createQuery('''
+            {field(arg : {a : "x", b : "y"}) }
+            ''')
+        QueryTraverser queryTraversal = QueryTraverser.newQueryTraverser()
+                .schema(schema)
+                .document(query)
+                .variables(emptyMap())
+                .build()
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.fieldDefinition.name  == "field"
+        })
 
     }
 
