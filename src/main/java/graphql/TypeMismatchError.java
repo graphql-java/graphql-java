@@ -83,7 +83,7 @@ public class TypeMismatchError implements GraphQLError {
     public String toString() {
         return "TypeMismatchError{" +
                 "path=" + path +
-                "expectedType=" + expectedType +
+                ", expectedType=" + expectedType +
                 '}';
     }
 
