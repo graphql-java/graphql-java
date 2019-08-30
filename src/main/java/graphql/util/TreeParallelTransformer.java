@@ -78,70 +78,85 @@ public class TreeParallelTransformer<T> {
 
         DefaultTraverserContext<T> rootContext = newRootContext(rootVars);
         DefaultTraverserContext context = newContext(root, rootContext, null);
-        EnterAction enterAction = new EnterAction(null, context, visitor);
+        EnterAction enterAction = new EnterAction(null, Collections.singletonList(context), visitor);
         T result = (T) forkJoinPool.invoke(enterAction);
         return result;
     }
 
     private class EnterAction extends CountedCompleter {
-        private DefaultTraverserContext currentContext;
+        private List<DefaultTraverserContext> currentContexts;
         private TraverserVisitor<? super T> visitor;
-        private List<DefaultTraverserContext> children;
-        private List<NodeZipper<T>> myZippers = new LinkedList<>();
+        private final List<List<DefaultTraverserContext>> children = new ArrayList<>();
+        private List<List<NodeZipper<T>>> allMyZippers = new LinkedList<>();
         private T result;
 
-        private EnterAction(CountedCompleter parent, DefaultTraverserContext currentContext, TraverserVisitor<? super T> visitor) {
+        private EnterAction(CountedCompleter parent, List<DefaultTraverserContext> currentContexts, TraverserVisitor<? super T> visitor) {
             super(parent);
-            this.currentContext = currentContext;
+            this.currentContexts = currentContexts;
             this.visitor = visitor;
         }
 
         @Override
         public void compute() {
-            currentContext.setPhase(TraverserContext.Phase.ENTER);
-            currentContext.setVar(List.class, myZippers);
-            TraversalControl traversalControl = visitor.enter(currentContext);
-            assertNotNull(traversalControl, "result of enter must not be null");
-            assertTrue(QUIT != traversalControl, "can't return QUIT for parallel traversing");
-            if (traversalControl == ABORT) {
-                this.children = Collections.emptyList();
-                tryComplete();
-                return;
-            }
-            assertTrue(traversalControl == CONTINUE);
+            List<DefaultTraverserContext> flattenChilds = new ArrayList<>();
+            for (DefaultTraverserContext currentContext : currentContexts) {
+                currentContext.setPhase(TraverserContext.Phase.ENTER);
+                List<NodeZipper<T>> curMyZippers = new LinkedList<>();
+                allMyZippers.add(curMyZippers);
+                currentContext.setVar(List.class, curMyZippers);
+                TraversalControl traversalControl = visitor.enter(currentContext);
+                assertNotNull(traversalControl, "result of enter must not be null");
+                assertTrue(QUIT != traversalControl, "can't return QUIT for parallel traversing");
+                if (traversalControl == ABORT) {
+                    return;
+                }
+                assertTrue(traversalControl == CONTINUE);
+                List<DefaultTraverserContext> currentChildren = pushAll(currentContext);
+                this.children.add(currentChildren);
 
-            this.children = pushAll(currentContext);
-            if (children.size() == 0) {
+                flattenChilds.addAll(currentChildren);
+            }
+            if (flattenChilds.size() == 0) {
                 tryComplete();
                 return;
             }
-            setPendingCount(children.size() - 1);
-            for (int i = 1; i < children.size(); i++) {
-                new EnterAction(this, children.get(i), visitor).fork();
+            if (flattenChilds.size() == 1) {
+                new EnterAction(this, flattenChilds, visitor).compute();
+                return;
             }
-            new EnterAction(this, children.get(0), visitor).compute();
+            int half = flattenChilds.size() / 2;
+            List<DefaultTraverserContext> firstHalf = flattenChilds.subList(0, half);
+            List<DefaultTraverserContext> secondHalf = flattenChilds.subList(half, flattenChilds.size());
+            addToPendingCount(1);
+            new EnterAction(this, firstHalf, visitor).fork();
+            new EnterAction(this, secondHalf, visitor).compute();
         }
 
         @Override
         public void onCompletion(CountedCompleter caller) {
-            if (currentContext.isDeleted()) {
-                this.result = null;
-                return;
-            }
-            List<NodeZipper<T>> childZippers = new LinkedList<>();
-            for (DefaultTraverserContext childContext : this.children) {
-                childZippers.addAll((Collection<? extends NodeZipper<T>>) childContext.getVar(List.class));
-            }
-            if (childZippers.size() > 0) {
-                NodeZipper<T> newNode = moveUp((T) currentContext.thisNode(), childZippers);
-                myZippers.add(newNode);
-                this.result = (T) newNode.getCurNode();
-            } else if (currentContext.isChanged()) {
-                NodeZipper<T> newNode = new NodeZipper(currentContext.thisNode(), currentContext.getBreadcrumbs(), nodeAdapter);
-                myZippers.add(newNode);
-                this.result = (T) currentContext.thisNode();
-            } else {
-                this.result = (T) currentContext.thisNode();
+            int ix = -1;
+            for (DefaultTraverserContext currentContext : currentContexts) {
+                ix++;
+                if (currentContext.isDeleted()) {
+                    this.result = null;
+                    continue;
+                }
+                List<NodeZipper<T>> childZippers = new LinkedList<>();
+                for (DefaultTraverserContext childContext : this.children.get(ix)) {
+                    childZippers.addAll((Collection<? extends NodeZipper<T>>) childContext.getVar(List.class));
+                }
+                List<NodeZipper<T>> curMyZippers = allMyZippers.get(ix);
+                if (childZippers.size() > 0) {
+                    NodeZipper<T> newNode = moveUp((T) currentContext.thisNode(), childZippers);
+                    curMyZippers.add(newNode);
+                    this.result = (T) newNode.getCurNode();
+                } else if (currentContext.isChanged()) {
+                    NodeZipper<T> newNode = new NodeZipper(currentContext.thisNode(), currentContext.getBreadcrumbs(), nodeAdapter);
+                    curMyZippers.add(newNode);
+                    this.result = (T) currentContext.thisNode();
+                } else {
+                    this.result = (T) currentContext.thisNode();
+                }
             }
         }
 
