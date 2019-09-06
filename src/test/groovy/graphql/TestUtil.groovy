@@ -162,7 +162,7 @@ class TestUtil {
         new GraphQLScalarType(name, name, mockCoercing())
     }
 
-    private static Coercing mockCoercing() {
+    static Coercing mockCoercing() {
         new Coercing() {
             @Override
             Object serialize(Object dataFetcherResult) {

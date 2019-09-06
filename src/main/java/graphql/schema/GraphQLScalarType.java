@@ -4,10 +4,12 @@ package graphql.schema;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.ScalarTypeDefinition;
+import graphql.language.ScalarTypeExtensionDefinition;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +42,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
     private final String description;
     private final Coercing coercing;
     private final ScalarTypeDefinition definition;
+    private final List<ScalarTypeExtensionDefinition> extensionDefinitions;
     private final List<GraphQLDirective> directives;
 
     public static final String CHILD_DIRECTIVES = "directives";
@@ -70,6 +73,10 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
     @Internal
     @Deprecated
     public GraphQLScalarType(String name, String description, Coercing coercing, List<GraphQLDirective> directives, ScalarTypeDefinition definition) {
+        this(name,description,coercing,directives,definition,emptyList());
+    }
+
+    private GraphQLScalarType(String name, String description, Coercing coercing, List<GraphQLDirective> directives, ScalarTypeDefinition definition, List<ScalarTypeExtensionDefinition> extensionDefinitions) {
         assertValidName(name);
         assertNotNull(coercing, "coercing can't be null");
         assertNotNull(directives, "directives can't be null");
@@ -79,6 +86,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         this.coercing = coercing;
         this.definition = definition;
         this.directives = directives;
+        this.extensionDefinitions = Collections.unmodifiableList(extensionDefinitions);
     }
 
     @Override
@@ -98,6 +106,10 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
     public ScalarTypeDefinition getDefinition() {
         return definition;
+    }
+
+    public List<ScalarTypeExtensionDefinition> getExtensionDefinitions() {
+        return extensionDefinitions;
     }
 
     @Override
@@ -165,6 +177,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
     public static class Builder extends GraphqlTypeBuilder {
         private Coercing coercing;
         private ScalarTypeDefinition definition;
+        private List<ScalarTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
 
         public Builder() {
@@ -175,6 +188,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
             description = existing.getDescription();
             coercing = existing.getCoercing();
             definition = existing.getDefinition();
+            extensionDefinitions = existing.getExtensionDefinitions();
             directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
 
@@ -198,6 +212,11 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
         public Builder definition(ScalarTypeDefinition definition) {
             this.definition = definition;
+            return this;
+        }
+
+        public Builder extensionDefinitions(List<ScalarTypeExtensionDefinition> extensionDefinitions) {
+            this.extensionDefinitions = extensionDefinitions;
             return this;
         }
 
@@ -247,7 +266,8 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
                     description,
                     coercing,
                     sort(directives, GraphQLScalarType.class, GraphQLDirective.class),
-                    definition);
+                    definition,
+                    extensionDefinitions);
         }
     }
 }

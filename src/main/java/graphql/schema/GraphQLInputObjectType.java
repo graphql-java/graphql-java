@@ -4,10 +4,12 @@ import graphql.AssertException;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputObjectTypeDefinition;
+import graphql.language.InputObjectTypeExtensionDefinition;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     private final String description;
     private final Map<String, GraphQLInputObjectField> fieldMap = new LinkedHashMap<>();
     private final InputObjectTypeDefinition definition;
+    private final List<InputObjectTypeExtensionDefinition> extensionDefinitions;
     private final List<GraphQLDirective> directives;
 
     public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
@@ -62,6 +65,10 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     @Internal
     @Deprecated
     public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields, List<GraphQLDirective> directives, InputObjectTypeDefinition definition) {
+        this(name,description,fields,directives,definition,emptyList());
+    }
+
+    public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields, List<GraphQLDirective> directives, InputObjectTypeDefinition definition, List<InputObjectTypeExtensionDefinition> extensionDefinitions) {
         assertValidName(name);
         assertNotNull(fields, "fields can't be null");
         assertNotNull(directives, "directives cannot be null");
@@ -69,6 +76,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         this.name = name;
         this.description = description;
         this.definition = definition;
+        this.extensionDefinitions = Collections.unmodifiableList(extensionDefinitions);
         this.directives = directives;
         buildMap(fields);
     }
@@ -117,6 +125,10 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
     public InputObjectTypeDefinition getDefinition() {
         return definition;
+    }
+
+    public List<InputObjectTypeExtensionDefinition> getExtensionDefinitions() {
+        return extensionDefinitions;
     }
 
     /**
@@ -183,6 +195,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     @PublicApi
     public static class Builder extends GraphqlTypeBuilder {
         private InputObjectTypeDefinition definition;
+        private List<InputObjectTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLInputObjectField> fields = new LinkedHashMap<>();
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
 
@@ -193,6 +206,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
             this.name = existing.getName();
             this.description = existing.getDescription();
             this.definition = existing.getDefinition();
+            this.extensionDefinitions = existing.getExtensionDefinitions();
             this.fields.putAll(getByName(existing.getFields(), GraphQLInputObjectField::getName));
             this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
@@ -217,6 +231,11 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
         public Builder definition(InputObjectTypeDefinition definition) {
             this.definition = definition;
+            return this;
+        }
+
+        public Builder extensionDefinitions(List<InputObjectTypeExtensionDefinition> extensionDefinitions) {
+            this.extensionDefinitions = extensionDefinitions;
             return this;
         }
 
@@ -326,7 +345,8 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
                     description,
                     sort(fields, GraphQLInputObjectType.class, GraphQLInputObjectField.class),
                     sort(directives, GraphQLInputObjectType.class, GraphQLDirective.class),
-                    definition);
+                    definition,
+                    extensionDefinitions);
         }
     }
 }

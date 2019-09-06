@@ -477,6 +477,7 @@ public class SchemaGenerator {
         builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
         List<ObjectTypeExtensionDefinition> extensions = objectTypeExtensions(typeDefinition, buildCtx);
+        builder.extensionDefinitions(extensions);
         builder.withDirectives(
                 buildDirectives(typeDefinition.getDirectives(),
                         directivesOf(extensions), OBJECT, buildCtx.getDirectiveDefinitions(), buildCtx.getComparatorRegistry())
@@ -535,6 +536,7 @@ public class SchemaGenerator {
 
 
         List<InterfaceTypeExtensionDefinition> extensions = interfaceTypeExtensions(typeDefinition, buildCtx);
+        builder.extensionDefinitions(extensions);
         builder.withDirectives(
                 buildDirectives(typeDefinition.getDirectives(),
                         directivesOf(extensions), OBJECT, buildCtx.getDirectiveDefinitions(), buildCtx.getComparatorRegistry())
@@ -570,6 +572,7 @@ public class SchemaGenerator {
         builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
         List<UnionTypeExtensionDefinition> extensions = unionTypeExtensions(typeDefinition, buildCtx);
+        builder.extensionDefinitions(extensions);
 
         typeDefinition.getMemberTypes().forEach(mt -> {
             GraphQLOutputType outputType = buildOutputType(buildCtx, mt);
@@ -614,6 +617,7 @@ public class SchemaGenerator {
         builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
         List<EnumTypeExtensionDefinition> extensions = enumTypeExtensions(typeDefinition, buildCtx);
+        builder.extensionDefinitions(extensions);
 
         EnumValuesProvider enumValuesProvider = buildCtx.getWiring().getEnumValuesProviders().get(typeDefinition.getName());
         typeDefinition.getEnumValueDefinitions().forEach(evd -> {
@@ -775,6 +779,7 @@ public class SchemaGenerator {
         builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
         List<InputObjectTypeExtensionDefinition> extensions = inputObjectTypeExtensions(typeDefinition, buildCtx);
+        builder.extensionDefinitions(extensions);
 
         builder.withDirectives(
                 buildDirectives(typeDefinition.getDirectives(),

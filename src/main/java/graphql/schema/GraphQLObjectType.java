@@ -4,6 +4,7 @@ import graphql.AssertException;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.ObjectTypeDefinition;
+import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -46,6 +47,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
     private final List<GraphQLNamedOutputType> originalInterfaces;
     private final List<GraphQLDirective> directives;
     private final ObjectTypeDefinition definition;
+    private final List<ObjectTypeExtensionDefinition> extensionDefinitions;
 
     private List<GraphQLNamedOutputType> replacedInterfaces;
 
@@ -83,7 +85,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
     @Deprecated
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
                              List<GraphQLNamedOutputType> interfaces, List<GraphQLDirective> directives, ObjectTypeDefinition definition) {
-        this(name, description, fieldDefinitions, interfaces, directives, definition, asIsOrder());
+        this(name, description, fieldDefinitions, interfaces, directives, definition, emptyList(), asIsOrder());
     }
 
 
@@ -93,6 +95,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
                               List<GraphQLNamedOutputType> interfaces,
                               List<GraphQLDirective> directives,
                               ObjectTypeDefinition definition,
+                              List<ObjectTypeExtensionDefinition> extensionDefinitions,
                               Comparator<? super GraphQLSchemaElement> interfaceComparator) {
         assertValidName(name);
         assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
@@ -102,6 +105,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
         this.interfaceComparator = interfaceComparator;
         this.originalInterfaces = sortTypes(interfaceComparator, interfaces);
         this.definition = definition;
+        this.extensionDefinitions = Collections.unmodifiableList(extensionDefinitions);
         this.directives = assertNotNull(directives);
         buildDefinitionMap(fieldDefinitions);
     }
@@ -160,6 +164,10 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
 
     public ObjectTypeDefinition getDefinition() {
         return definition;
+    }
+
+    public List<ObjectTypeExtensionDefinition> getExtensionDefinitions() {
+        return extensionDefinitions;
     }
 
     @Override
@@ -229,6 +237,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
     @PublicApi
     public static class Builder extends GraphqlTypeBuilder {
         private ObjectTypeDefinition definition;
+        private List<ObjectTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLFieldDefinition> fields = new LinkedHashMap<>();
         private final Map<String, GraphQLNamedOutputType> interfaces = new LinkedHashMap<>();
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
@@ -240,6 +249,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
             name = existing.getName();
             description = existing.getDescription();
             definition = existing.getDefinition();
+            extensionDefinitions = existing.getExtensionDefinitions();
             fields.putAll(getByName(existing.getFieldDefinitions(), GraphQLFieldDefinition::getName));
             interfaces.putAll(getByName(existing.originalInterfaces, GraphQLNamedType::getName));
             directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
@@ -265,6 +275,11 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
 
         public Builder definition(ObjectTypeDefinition definition) {
             this.definition = definition;
+            return this;
+        }
+
+        public Builder extensionDefinitions(List<ObjectTypeExtensionDefinition> extensionDefinitions) {
+            this.extensionDefinitions = extensionDefinitions;
             return this;
         }
 
@@ -424,6 +439,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
                     valuesToList(interfaces),
                     sort(directives, GraphQLObjectType.class, GraphQLDirective.class),
                     definition,
+                    extensionDefinitions,
                     getComparator(GraphQLObjectType.class, GraphQLInterfaceType.class)
             );
         }
