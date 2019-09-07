@@ -417,7 +417,7 @@ public class GraphQLSchema {
             assertNotNull(additionalTypes, "additionalTypes can't be null");
             assertNotNull(additionalDirectives, "additionalDirectives can't be null");
 
-            // schemas build via schema generator have the deprecated directive BUT we want it present for hand built
+            // schemas built via the schema generator have the deprecated directive BUT we want it present for hand built
             // schemas - its inherently part of the spec!
             if (additionalDirectives.stream().noneMatch(d -> d.getName().equals(Directives.DeprecatedDirective.getName()))) {
                 additionalDirectives.add(Directives.DeprecatedDirective);
