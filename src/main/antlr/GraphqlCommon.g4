@@ -4,7 +4,7 @@ operationType : SUBSCRIPTION | MUTATION | QUERY;
 
 description : stringValue;
 
-enumValue : name ;
+enumValue : enumValueName ;
 
 
 arrayValue: '[' value* ']';
@@ -28,7 +28,11 @@ arguments : '(' argument+ ')';
 
 argument : name ':' valueWithVariable;
 
-name: NAME | FRAGMENT | QUERY | MUTATION | SUBSCRIPTION | SCHEMA | SCALAR | TYPE | INTERFACE | IMPLEMENTS | ENUM | UNION | INPUT | EXTEND | DIRECTIVE;
+baseName: NAME | FRAGMENT | QUERY | MUTATION | SUBSCRIPTION | SCHEMA | SCALAR | TYPE | INTERFACE | IMPLEMENTS | ENUM | UNION | INPUT | EXTEND | DIRECTIVE;
+fragmentName: baseName | BooleanValue | NullValue;
+enumValueName: baseName | ON_KEYWORD;
+
+name: baseName | BooleanValue | NullValue | ON_KEYWORD;
 
 value :
 stringValue |
@@ -86,6 +90,7 @@ UNION: 'union';
 INPUT: 'input';
 EXTEND: 'extend';
 DIRECTIVE: 'directive';
+ON_KEYWORD: 'on';
 NAME: [_A-Za-z][_0-9A-Za-z]*;
 
 
@@ -114,11 +119,18 @@ TripleQuotedStringValue
 
 
 // Fragments never become a token of their own: they are only used inside other lexer rules
-fragment TripleQuotedStringPart : ( EscapedTripleQuote | SourceCharacter )+?;
+fragment TripleQuotedStringPart : ( EscapedTripleQuote | ExtendedSourceCharacter )+?;
 fragment EscapedTripleQuote : '\\"""';
-fragment SourceCharacter :[\u0009\u000A\u000D\u0020-\uFFFF];
 
-Comment: '#' ~[\n\r\u2028\u2029]* -> channel(2);
+// this is currently not covered by the spec because we allow all unicode chars
+fragment ExtendedSourceCharacter :[\u0009\u000A\u000D\u0020-\u{10FFFF}];
+fragment ExtendedSourceCharacterWitoutLineFeed :[\u0009\u000D\u0020-\u{10FFFF}];
+
+// this is the spec definition
+// fragment SourceCharacter :[\u0009\u000A\u000D\u0020-\uFFFF];
+
+
+Comment: '#' ExtendedSourceCharacterWitoutLineFeed* -> channel(2);
 
 fragment EscapedChar :   '\\' (["\\/bfnrt] | Unicode) ;
 fragment Unicode : 'u' Hex Hex Hex Hex ;

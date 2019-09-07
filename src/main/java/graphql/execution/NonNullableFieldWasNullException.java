@@ -3,6 +3,7 @@ package graphql.execution;
 import graphql.schema.GraphQLType;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.schema.GraphQLTypeUtil.simplePrint;
 
 /**
  * See (http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability), but if a non nullable field
@@ -41,9 +42,9 @@ public class NonNullableFieldWasNullException extends RuntimeException {
         GraphQLType unwrappedTyped = executionStepInfo.getUnwrappedNonNullType();
         if (executionStepInfo.hasParent()) {
             GraphQLType unwrappedParentType = executionStepInfo.getParent().getUnwrappedNonNullType();
-            return String.format("Cannot return null for non-nullable type: '%s' within parent '%s' (%s)", unwrappedTyped.getName(), unwrappedParentType.getName(), path);
+            return String.format("Cannot return null for non-nullable type: '%s' within parent '%s' (%s)", simplePrint(unwrappedTyped), simplePrint(unwrappedParentType), path);
         }
-        return String.format("Cannot return null for non-nullable type: '%s' (%s)", unwrappedTyped.getName(), path);
+        return String.format("Cannot return null for non-nullable type: '%s' (%s)", simplePrint(unwrappedTyped), path);
     }
 
     public ExecutionStepInfo getExecutionStepInfo() {

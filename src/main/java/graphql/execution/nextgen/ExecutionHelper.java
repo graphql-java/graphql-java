@@ -50,7 +50,7 @@ public class ExecutionHelper {
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
 
         Map<String, Object> coercedVariables;
-        coercedVariables = valuesResolver.coerceArgumentValues(graphQLSchema, variableDefinitions, inputVariables);
+        coercedVariables = valuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables);
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .executionId(executionId)

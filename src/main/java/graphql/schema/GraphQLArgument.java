@@ -38,15 +38,20 @@ import static graphql.Assert.assertValidName;
  * specific value on that directive.
  */
 @PublicApi
-public class GraphQLArgument implements GraphQLDirectiveContainer {
+public class GraphQLArgument implements GraphQLInputValueDefinition {
 
     private final String name;
     private final String description;
-    private GraphQLInputType type;
+    private final GraphQLInputType originalType;
     private final Object value;
     private final Object defaultValue;
     private final InputValueDefinition definition;
     private final List<GraphQLDirective> directives;
+
+    private GraphQLInputType replacedType;
+
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_TYPE = "type";
 
     /**
      * @param name         the arg name
@@ -92,7 +97,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
         assertNotNull(type, "type can't be null");
         this.name = name;
         this.description = description;
-        this.type = type;
+        this.originalType = type;
         this.defaultValue = defaultValue;
         this.value = value;
         this.definition = definition;
@@ -101,7 +106,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
 
 
     void replaceType(GraphQLInputType type) {
-        this.type = type;
+        this.replacedType = type;
     }
 
     @Override
@@ -110,7 +115,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
     }
 
     public GraphQLInputType getType() {
-        return type;
+        return replacedType != null ? replacedType : originalType;
     }
 
     /**
@@ -147,6 +152,31 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
         return new ArrayList<>(directives);
     }
 
+
+    @Override
+    public List<GraphQLSchemaElement> getChildren() {
+        List<GraphQLSchemaElement> children = new ArrayList<>();
+        children.add(getType());
+        children.addAll(directives);
+        return children;
+    }
+
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .child(CHILD_TYPE, originalType)
+                .build();
+    }
+
+    @Override
+    public GraphQLArgument withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.type(newChildren.getChildOrNull(CHILD_TYPE))
+                        .replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES)));
+    }
+
     /**
      * This helps you transform the current GraphQLArgument into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
@@ -170,24 +200,17 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLArgument(this, context);
     }
 
-    @Override
-    public List<GraphQLType> getChildren() {
-        List<GraphQLType> children = new ArrayList<>();
-        children.add(type);
-        children.addAll(directives);
-        return children;
-    }
     @Override
     public String toString() {
         return "GraphQLArgument{" +
                 "name='" + name + '\'' +
                 ", value=" + value +
                 ", defaultValue=" + defaultValue +
-                ", type=" + type +
+                ", type=" + getType() +
                 '}';
     }
 
@@ -204,7 +227,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
 
         public Builder(GraphQLArgument existing) {
             this.name = existing.getName();
-            this.type = existing.getType();
+            this.type = existing.originalType;
             this.value = existing.getValue();
             this.defaultValue = existing.getDefaultValue();
             this.description = existing.getDescription();
@@ -262,6 +285,15 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, "directive can't be null");
             directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder replaceDirectives(List<GraphQLDirective> directives) {
+            assertNotNull(directives, "directive can't be null");
+            this.directives.clear();
+            for (GraphQLDirective directive : directives) {
+                this.directives.put(directive.getName(), directive);
+            }
             return this;
         }
 

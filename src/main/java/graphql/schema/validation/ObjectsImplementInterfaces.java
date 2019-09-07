@@ -3,6 +3,7 @@ package graphql.schema.validation;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
@@ -11,9 +12,9 @@ import graphql.schema.GraphQLUnionType;
 import java.util.List;
 import java.util.Objects;
 
-import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static graphql.schema.validation.SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces;
 import static java.lang.String.format;
@@ -36,7 +37,7 @@ public class ObjectsImplementInterfaces implements SchemaValidationRule {
     }
 
     private void check(GraphQLObjectType objectType, SchemaValidationErrorCollector validationErrorCollector) {
-        List<GraphQLOutputType> interfaces = objectType.getInterfaces();
+        List<GraphQLNamedOutputType> interfaces = objectType.getInterfaces();
         interfaces.forEach(interfaceType -> {
             // we have resolved the interfaces at this point and hence the cast is ok
             checkObjectImplementsInterface(objectType, (GraphQLInterfaceType) interfaceType, validationErrorCollector);

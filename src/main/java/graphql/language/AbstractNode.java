@@ -4,10 +4,15 @@ package graphql.language;
 import graphql.Assert;
 import graphql.PublicApi;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableMap;
 
 @PublicApi
 public abstract class AbstractNode<T extends Node> implements Node<T> {
@@ -27,8 +32,8 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
         Assert.assertNotNull(additionalData, "additionalData can't be null");
 
         this.sourceLocation = sourceLocation;
-        this.additionalData = Collections.unmodifiableMap(additionalData);
-        this.comments = Collections.unmodifiableList(comments);
+        this.additionalData = unmodifiableMap(new LinkedHashMap<>(additionalData));
+        this.comments = unmodifiableList(new ArrayList<>(comments));
         this.ignoredChars = ignoredChars;
     }
 

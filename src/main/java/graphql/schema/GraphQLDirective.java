@@ -1,7 +1,6 @@
 package graphql.schema;
 
 
-import graphql.Assert;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -27,7 +26,7 @@ import static graphql.util.FpKit.getByName;
  */
 @SuppressWarnings("DeprecatedIsStillUsed") // because the graphql spec still has some of these deprecated fields
 @PublicApi
-public class GraphQLDirective implements GraphQLType {
+public class GraphQLDirective implements GraphQLNamedSchemaElement {
 
     private final String name;
     private final String description;
@@ -36,6 +35,8 @@ public class GraphQLDirective implements GraphQLType {
     private final boolean onOperation;
     private final boolean onFragment;
     private final boolean onField;
+
+    public static final String CHILD_ARGUMENTS = "arguments";
 
     public GraphQLDirective(String name, String description, EnumSet<DirectiveLocation> locations,
                             List<GraphQLArgument> arguments, boolean onOperation, boolean onFragment, boolean onField) {
@@ -61,7 +62,9 @@ public class GraphQLDirective implements GraphQLType {
 
     public GraphQLArgument getArgument(String name) {
         for (GraphQLArgument argument : arguments) {
-            if (argument.getName().equals(name)) return argument;
+            if (argument.getName().equals(name)) {
+                return argument;
+            }
         }
         return null;
     }
@@ -128,13 +131,27 @@ public class GraphQLDirective implements GraphQLType {
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLDirective(this, context);
     }
 
     @Override
-    public List<GraphQLType> getChildren() {
+    public List<GraphQLSchemaElement> getChildren() {
         return new ArrayList<>(arguments);
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .children(CHILD_ARGUMENTS, arguments)
+                .build();
+    }
+
+    @Override
+    public GraphQLDirective withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.replaceArguments(newChildren.getChildren(CHILD_ARGUMENTS))
+        );
     }
 
     public static Builder newDirective() {
@@ -201,8 +218,17 @@ public class GraphQLDirective implements GraphQLType {
         }
 
         public Builder argument(GraphQLArgument argument) {
-            Assert.assertNotNull(argument, "argument must not be null");
+            assertNotNull(argument, "argument must not be null");
             arguments.put(argument.getName(), argument);
+            return this;
+        }
+
+        public Builder replaceArguments(List<GraphQLArgument> arguments) {
+            assertNotNull(arguments, "arguments must not be null");
+            this.arguments.clear();
+            for (GraphQLArgument argument : arguments) {
+                this.arguments.put(argument.getName(), argument);
+            }
             return this;
         }
 

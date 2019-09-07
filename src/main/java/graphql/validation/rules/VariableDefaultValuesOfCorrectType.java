@@ -8,6 +8,7 @@ import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.schema.GraphQLTypeUtil.simplePrint;
 
 
 public class VariableDefaultValuesOfCorrectType extends AbstractRule {
@@ -28,7 +29,7 @@ public class VariableDefaultValuesOfCorrectType extends AbstractRule {
         }
         if (variableDefinition.getDefaultValue() != null
                 && !getValidationUtil().isValidLiteralValue(variableDefinition.getDefaultValue(), inputType, getValidationContext().getSchema())) {
-            String message = String.format("Bad default value %s for type %s", variableDefinition.getDefaultValue(), inputType.getName());
+            String message = String.format("Bad default value %s for type %s", variableDefinition.getDefaultValue(), simplePrint(inputType));
             addError(ValidationErrorType.BadValueForDefaultArg, variableDefinition.getSourceLocation(), message);
         }
     }

@@ -32,6 +32,7 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.util.FpKit;
+import graphql.util.LogKit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,6 +114,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 public abstract class ExecutionStrategy {
 
     private static final Logger log = LoggerFactory.getLogger(ExecutionStrategy.class);
+    private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(ExecutionStrategy.class);
 
     protected final ValuesResolver valuesResolver = new ValuesResolver();
     protected final FieldCollector fieldCollector = new FieldCollector();
@@ -268,11 +270,11 @@ public abstract class ExecutionStrategy {
         try {
             log.debug("'{}' fetching field '{}' using data fetcher '{}'...", executionId, executionStepInfo.getPath(), dataFetcher.getClass().getName());
             Object fetchedValueRaw = dataFetcher.get(environment);
-            log.debug("'{}' field '{}' fetch returned '{}'", executionId, executionStepInfo.getPath(), fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
+            logNotSafe.debug("'{}' field '{}' fetch returned '{}'", executionId, executionStepInfo.getPath(), fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
 
             fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
         } catch (Exception e) {
-            log.debug(String.format("'%s', field '%s' fetch threw exception", executionId, executionStepInfo.getPath()), e);
+            logNotSafe.debug(String.format("'%s', field '%s' fetch threw exception", executionId, executionStepInfo.getPath()), e);
 
             fetchedValue = new CompletableFuture<>();
             fetchedValue.completeExceptionally(e);
@@ -449,7 +451,7 @@ public abstract class ExecutionStrategy {
 
     private void handleUnresolvedTypeProblem(ExecutionContext context, ExecutionStrategyParameters parameters, UnresolvedTypeException e) {
         UnresolvedTypeError error = new UnresolvedTypeError(parameters.getPath(), parameters.getExecutionStepInfo(), e);
-        log.warn(error.getMessage(), e);
+        logNotSafe.warn(error.getMessage(), e);
         context.addError(error);
 
         parameters.deferredErrorSupport().onError(error);
@@ -657,7 +659,7 @@ public abstract class ExecutionStrategy {
     @SuppressWarnings("SameReturnValue")
     private Object handleCoercionProblem(ExecutionContext context, ExecutionStrategyParameters parameters, CoercingSerializeException e) {
         SerializationError error = new SerializationError(parameters.getPath(), e);
-        log.warn(error.getMessage(), e);
+        logNotSafe.warn(error.getMessage(), e);
         context.addError(error);
 
         parameters.deferredErrorSupport().onError(error);
@@ -696,7 +698,7 @@ public abstract class ExecutionStrategy {
 
     private void handleTypeMismatchProblem(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
         TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getUnwrappedNonNullType());
-        log.warn("{} got {}", error.getMessage(), result.getClass());
+        logNotSafe.warn("{} got {}", error.getMessage(), result.getClass());
         context.addError(error);
 
         parameters.deferredErrorSupport().onError(error);

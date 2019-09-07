@@ -45,6 +45,7 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLTypeUtil.isList;
+import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
@@ -93,7 +94,7 @@ public class SchemaGeneratorHelper {
             result = buildObjectValue((ObjectValue) value, (GraphQLInputObjectType) requiredType);
         } else if (!(value instanceof NullValue)) {
             assertShouldNeverHappen(
-                    "cannot build value of type %s from object class %s with instance %s", requiredType.getName(), value.getClass().getSimpleName(), String.valueOf(value));
+                    "cannot build value of type %s from object class %s with instance %s", simplePrint(requiredType), value.getClass().getSimpleName(), String.valueOf(value));
         }
         return result;
     }

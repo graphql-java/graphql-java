@@ -7,12 +7,18 @@ import graphql.language.SelectionSetContainer;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLSchema;
 import graphql.util.TraverserContext;
 
 import java.util.Map;
 
 @PublicApi
 public interface QueryVisitorFieldEnvironment {
+
+    /**
+     * @return the graphql schema in play
+     */
+    GraphQLSchema getSchema();
 
     /**
      * @return true if the current field is __typename

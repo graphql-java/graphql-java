@@ -278,6 +278,9 @@ public class Scalars {
             if (input instanceof UUID) {
                 return String.valueOf(input);
             }
+            if (input instanceof BigInteger) {
+                return String.valueOf(input);
+            }
             return null;
 
         }

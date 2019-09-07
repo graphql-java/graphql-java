@@ -28,10 +28,6 @@ public class ExecutionInput {
     private final Locale locale;
 
 
-    public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables) {
-        this(query, operationName, context, root, variables, new DataLoaderRegistry(), null, null, null);
-    }
-
     @Internal
     private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, ExecutionId executionId, Locale locale) {
         this.query = query;
@@ -180,7 +176,7 @@ public class ExecutionInput {
         private ExecutionId executionId;
 
         public Builder query(String query) {
-            this.query = query;
+            this.query = assertNotNull(query, "query can't be null");
             return this;
         }
 
@@ -243,7 +239,7 @@ public class ExecutionInput {
         }
 
         public Builder variables(Map<String, Object> variables) {
-            this.variables = variables;
+            this.variables = assertNotNull(variables, "variables map can't be null");
             return this;
         }
 

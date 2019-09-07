@@ -34,6 +34,7 @@ import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.isNotWrapped;
 import static graphql.schema.GraphQLTypeUtil.isNullable;
 import static graphql.schema.GraphQLTypeUtil.isScalar;
+import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static graphql.validation.ValidationErrorType.FieldsConflict;
@@ -208,8 +209,8 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
     private Conflict mkNotSameTypeError(String responseName, Field fieldA, Field fieldB, GraphQLType typeA, GraphQLType typeB) {
-        String name1 = typeA != null ? typeA.getName() : "null";
-        String name2 = typeB != null ? typeB.getName() : "null";
+        String name1 = typeA != null ? simplePrint(typeA) : "null";
+        String name2 = typeB != null ? simplePrint(typeB) : "null";
         String reason = format("%s: they return differing types %s and %s", responseName, name1, name2);
         return new Conflict(responseName, reason, fieldA, fieldB);
     }

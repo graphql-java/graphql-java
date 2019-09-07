@@ -25,6 +25,7 @@ import graphql.language.Document;
 import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
+import graphql.util.LogKit;
 import graphql.validation.ValidationError;
 import graphql.validation.Validator;
 import org.slf4j.Logger;
@@ -44,6 +45,7 @@ import static graphql.execution.instrumentation.DocumentAndVariables.newDocument
 @Internal
 public class GraphQL {
     private static final Logger log = LoggerFactory.getLogger(graphql.GraphQL.class);
+    private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(ExecutionStrategy.class);
 
     private final GraphQLSchema graphQLSchema;
     private final ExecutionStrategy executionStrategy;
@@ -155,7 +157,7 @@ public class GraphQL {
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
         try {
-            log.debug("Executing request. operation name: '{}'. query: '{}'. variables '{}'", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
+            logNotSafe.debug("Executing request. operation name: '{}'. query: '{}'. variables '{}'", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
 
             InstrumentationState instrumentationState = instrumentation.createState(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInput));
 
@@ -195,18 +197,18 @@ public class GraphQL {
     }
 
     private PreparsedDocumentEntry parseAndValidate(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
-        log.debug("Parsing query: '{}'...", executionInput.getQuery());
+        logNotSafe.debug("Parsing query: '{}'...", executionInput.getQuery());
         ParseResult parseResult = parse(executionInput, graphQLSchema, instrumentationState);
         if (parseResult.isFailure()) {
-            log.warn("Query failed to parse : '{}'", executionInput.getQuery());
+            logNotSafe.warn("Query failed to parse : '{}'", executionInput.getQuery());
             return new PreparsedDocumentEntry(parseResult.getException().toInvalidSyntaxError());
         } else {
             final Document document = parseResult.getDocument();
 
-            log.debug("Validating query: '{}'", executionInput.getQuery());
+            logNotSafe.debug("Validating query: '{}'", executionInput.getQuery());
             final List<ValidationError> errors = validate(executionInput, document, graphQLSchema, instrumentationState);
             if (!errors.isEmpty()) {
-                log.warn("Query failed to validate : '{}'", executionInput.getQuery());
+                logNotSafe.warn("Query failed to validate : '{}'", executionInput.getQuery());
                 return new PreparsedDocumentEntry(errors);
             }
 
@@ -253,7 +255,7 @@ public class GraphQL {
         Execution execution = new Execution();
         ExecutionId executionId = idProvider.provide(query, operationName, context);
 
-        log.debug("Executing '{}'. operation name: '{}'. query: '{}'. variables '{}'", executionId, executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
+        logNotSafe.debug("Executing '{}'. operation name: '{}'. query: '{}'. variables '{}'", executionId, executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
         CompletableFuture<ExecutionResult> future = execution.execute(executionStrategy, document, graphQLSchema, executionId, executionInput, instrumentationState);
         future = future.whenComplete((result, throwable) -> {
             if (throwable != null) {

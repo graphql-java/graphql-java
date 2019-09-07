@@ -14,11 +14,11 @@ import java.util.function.Consumer;
 @PublicApi
 public class GraphqlTypeComparatorEnvironment {
 
-    private Class<? extends GraphQLType> parentType;
+    private Class<? extends GraphQLSchemaElement> parentType;
 
-    private Class<? extends GraphQLType> elementType;
+    private Class<? extends GraphQLSchemaElement> elementType;
 
-    private GraphqlTypeComparatorEnvironment(Class<? extends GraphQLType> parentType, Class<? extends GraphQLType> elementType) {
+    private GraphqlTypeComparatorEnvironment(Class<? extends GraphQLSchemaElement> parentType, Class<? extends GraphQLSchemaElement> elementType) {
         Assert.assertNotNull(elementType, "elementType can't be null");
         this.parentType = parentType;
         this.elementType = elementType;
@@ -27,14 +27,14 @@ public class GraphqlTypeComparatorEnvironment {
     /**
      * @return The parent type or {@code null} if not supplied.
      */
-    public Class<? extends GraphQLType> getParentType() {
+    public Class<? extends GraphQLSchemaElement> getParentType() {
         return parentType;
     }
 
     /**
      * @return The valid element type.
      */
-    public Class<? extends GraphQLType> getElementType() {
+    public Class<? extends GraphQLSchemaElement> getElementType() {
         return elementType;
     }
 
@@ -43,6 +43,7 @@ public class GraphqlTypeComparatorEnvironment {
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform.
+     *
      * @return a new object based on calling build on that builder.
      */
     public GraphqlTypeComparatorEnvironment transform(Consumer<GraphqlTypeComparatorEnvironment.Builder> builderConsumer) {
@@ -85,9 +86,9 @@ public class GraphqlTypeComparatorEnvironment {
 
     public static class Builder {
 
-        private Class<? extends GraphQLType> parentType;
+        private Class<? extends GraphQLSchemaElement> parentType;
 
-        private Class<? extends GraphQLType> elementType;
+        private Class<? extends GraphQLSchemaElement> elementType;
 
         public Builder() {
         }
@@ -97,12 +98,12 @@ public class GraphqlTypeComparatorEnvironment {
             this.elementType = existing.elementType;
         }
 
-        public <T extends GraphQLType> Builder parentType(Class<T> parentType) {
+        public <T extends GraphQLSchemaElement> Builder parentType(Class<T> parentType) {
             this.parentType = parentType;
             return this;
         }
 
-        public <T extends GraphQLType> Builder elementType(Class<T> elementType) {
+        public <T extends GraphQLSchemaElement> Builder elementType(Class<T> elementType) {
             this.elementType = elementType;
             return this;
         }

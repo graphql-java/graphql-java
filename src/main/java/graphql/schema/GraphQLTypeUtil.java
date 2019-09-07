@@ -5,6 +5,7 @@ import graphql.PublicApi;
 import java.util.Stack;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertShouldNeverHappen;
 
 /**
  * A utility class that helps work with {@link graphql.schema.GraphQLType}s
@@ -29,9 +30,20 @@ public class GraphQLTypeUtil {
             sb.append(simplePrint(unwrapOne(type)));
             sb.append("]");
         } else {
-            sb.append(type.getName());
+            sb.append(((GraphQLNamedType) type).getName());
         }
         return sb.toString();
+    }
+
+    public static String simplePrint(GraphQLSchemaElement schemaElement) {
+        if (schemaElement instanceof GraphQLType) {
+            return simplePrint((GraphQLType) schemaElement);
+        }
+        if (schemaElement instanceof GraphQLNamedSchemaElement) {
+            return ((GraphQLNamedSchemaElement) schemaElement).getName();
+        }
+        // a schema element is either a GraphQLType or a GraphQLNamedSchemaElement
+        return assertShouldNeverHappen("unexpected schema element: " + schemaElement);
     }
 
     /**

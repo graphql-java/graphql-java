@@ -3,6 +3,9 @@ package graphql.util;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -34,7 +37,7 @@ public class NodeZipper<T> {
 
     public NodeZipper(T curNode, List<Breadcrumb<T>> breadcrumbs, NodeAdapter<T> nodeAdapter, ModificationType modificationType) {
         this.curNode = assertNotNull(curNode);
-        this.breadcrumbs = assertNotNull(breadcrumbs);
+        this.breadcrumbs = Collections.unmodifiableList(new ArrayList<>(assertNotNull(breadcrumbs)));
         this.nodeAdapter = nodeAdapter;
         this.modificationType = modificationType;
     }
@@ -48,7 +51,7 @@ public class NodeZipper<T> {
     }
 
     public List<Breadcrumb<T>> getBreadcrumbs() {
-        return new ArrayList<>(breadcrumbs);
+        return breadcrumbs;
     }
 
     public T getParent() {
@@ -99,34 +102,38 @@ public class NodeZipper<T> {
         T curNode = this.curNode;
 
         Breadcrumb<T> firstBreadcrumb = breadcrumbs.get(0);
-        Map<String, List<T>> childrenForParent = nodeAdapter.getNamedChildren(firstBreadcrumb.getNode());
+        Map<String, List<T>> childrenForParent = new HashMap<>(nodeAdapter.getNamedChildren(firstBreadcrumb.getNode()));
         NodeLocation locationInParent = firstBreadcrumb.getLocation();
         int ix = locationInParent.getIndex();
         String name = locationInParent.getName();
+        List<T> childList = new ArrayList<>(childrenForParent.get(name));
         switch (modificationType) {
             case REPLACE:
-                childrenForParent.get(name).set(ix, curNode);
+                childList.set(ix, curNode);
                 break;
             case DELETE:
-                childrenForParent.get(name).remove(ix);
+                childList.remove(ix);
                 break;
             case INSERT_BEFORE:
-                childrenForParent.get(name).add(ix, curNode);
+                childList.add(ix, curNode);
                 break;
             case INSERT_AFTER:
-                childrenForParent.get(name).add(ix + 1, curNode);
+                childList.add(ix + 1, curNode);
                 break;
         }
+        childrenForParent.put(name, childList);
         curNode = nodeAdapter.withNewChildren(firstBreadcrumb.getNode(), childrenForParent);
         if (breadcrumbs.size() == 1) {
             return curNode;
         }
         for (Breadcrumb<T> breadcrumb : breadcrumbs.subList(1, breadcrumbs.size())) {
             // just handle replace
-            Map<String, List<T>> newChildren = nodeAdapter.getNamedChildren(breadcrumb.getNode());
+            Map<String, List<T>> newChildren = new LinkedHashMap<>(nodeAdapter.getNamedChildren(breadcrumb.getNode()));
             final T newChild = curNode;
             NodeLocation location = breadcrumb.getLocation();
-            newChildren.get(location.getName()).set(location.getIndex(), newChild);
+            List<T> list = new ArrayList<>(newChildren.get(location.getName()));
+            list.set(location.getIndex(), newChild);
+            newChildren.put(location.getName(), list);
             curNode = nodeAdapter.withNewChildren(breadcrumb.getNode(), newChildren);
         }
         return curNode;

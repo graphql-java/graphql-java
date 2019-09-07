@@ -18,6 +18,13 @@ import static graphql.Assert.assertNotNull;
 @PublicApi
 public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType, GraphQLNullableType {
 
+
+    private final GraphQLType originalWrappedType;
+    private GraphQLType replacedWrappedType;
+
+    public static final String CHILD_WRAPPED_TYPE = "wrappedType";
+
+
     /**
      * A factory method for creating list types so that when used with static imports allows
      * more readable code such as
@@ -31,52 +38,63 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
         return new GraphQLList(wrappedType);
     }
 
-    private GraphQLType wrappedType;
 
     public GraphQLList(GraphQLType wrappedType) {
         assertNotNull(wrappedType, "wrappedType can't be null");
-        this.wrappedType = wrappedType;
+        this.originalWrappedType = wrappedType;
     }
 
 
     @Override
     public GraphQLType getWrappedType() {
-        return wrappedType;
+        return replacedWrappedType != null ? replacedWrappedType : originalWrappedType;
     }
 
     void replaceType(GraphQLType type) {
-        wrappedType = type;
+        this.replacedWrappedType = type;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         GraphQLList that = (GraphQLList) o;
+        GraphQLType wrappedType = getWrappedType();
 
-        return !(wrappedType != null ? !wrappedType.equals(that.wrappedType) : that.wrappedType != null);
+        return !(wrappedType != null ? !wrappedType.equals(that.getWrappedType()) : that.getWrappedType() != null);
 
     }
 
     @Override
     public int hashCode() {
-        return wrappedType != null ? wrappedType.hashCode() : 0;
+        return getWrappedType() != null ? getWrappedType().hashCode() : 0;
     }
 
     @Override
-    public String getName() {
-        return null;
-    }
-
-    @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLList(this, context);
     }
 
     @Override
-    public List<GraphQLType> getChildren() {
-        return Collections.singletonList(wrappedType);
+    public List<GraphQLSchemaElement> getChildren() {
+        return Collections.singletonList(getWrappedType());
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .child(CHILD_WRAPPED_TYPE, originalWrappedType)
+                .build();
+    }
+
+    @Override
+    public GraphQLSchemaElement withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return list(newChildren.getChildOrNull(CHILD_WRAPPED_TYPE));
     }
 
     @Override

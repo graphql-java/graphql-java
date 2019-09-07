@@ -34,7 +34,7 @@ public class NoUnbrokenInputCycles implements SchemaValidationRule {
             GraphQLInputType argumentType = argument.getType();
             if (argumentType instanceof GraphQLInputObjectType) {
                 List<String> path = new ArrayList<>();
-                path.add(argumentType.getName());
+//                path.add(argumentType.getName());
                 check((GraphQLInputObjectType) argumentType, new LinkedHashSet<>(), path, validationErrorCollector);
             }
         }

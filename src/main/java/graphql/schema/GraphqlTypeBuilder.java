@@ -31,20 +31,20 @@ public abstract class GraphqlTypeBuilder {
     }
 
 
-    <T extends GraphQLType> List<T> sort(Map<String, T> types, Class<? extends GraphQLType> parentType, Class<? extends GraphQLType> elementType) {
+    <T extends GraphQLSchemaElement> List<T> sort(Map<String, T> types, Class<? extends GraphQLSchemaElement> parentType, Class<? extends GraphQLSchemaElement> elementType) {
         return sort(valuesToList(types), parentType, elementType);
     }
 
-    <T extends GraphQLType> List<T> sort(List<T> types, Class<? extends GraphQLType> parentType, Class<? extends GraphQLType> elementType) {
-        Comparator<? super GraphQLType> comparator = getComparatorImpl(comparatorRegistry, parentType, elementType);
+    <T extends GraphQLSchemaElement> List<T> sort(List<T> types, Class<? extends GraphQLSchemaElement> parentType, Class<? extends GraphQLSchemaElement> elementType) {
+        Comparator<? super GraphQLSchemaElement> comparator = getComparatorImpl(comparatorRegistry, parentType, elementType);
         return GraphqlTypeComparators.sortTypes(comparator, types);
     }
 
-    Comparator<? super GraphQLType> getComparator(Class<? extends GraphQLType> parentType, Class<? extends GraphQLType> elementType) {
+    Comparator<? super GraphQLSchemaElement> getComparator(Class<? extends GraphQLSchemaElement> parentType, Class<? extends GraphQLNamedSchemaElement> elementType) {
         return getComparatorImpl(comparatorRegistry, parentType, elementType);
     }
 
-    private static Comparator<? super GraphQLType> getComparatorImpl(GraphqlTypeComparatorRegistry comparatorRegistry, Class<? extends GraphQLType> parentType, Class<? extends GraphQLType> elementType) {
+    private static Comparator<? super GraphQLSchemaElement> getComparatorImpl(GraphqlTypeComparatorRegistry comparatorRegistry, Class<? extends GraphQLSchemaElement> parentType, Class<? extends GraphQLSchemaElement> elementType) {
         GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
                 .parentType(parentType)
                 .elementType(elementType)
