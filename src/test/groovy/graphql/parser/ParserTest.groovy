@@ -718,4 +718,55 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         ((FloatValue) argumentValue).value.toString() == "1.7976931348155E+308"
     }
 
+    def "parse fragment definition"() {
+        given:
+        def input = """
+            fragment Foo on Bar {
+                hello
+            }
+        """
+        when:
+        Document document = Parser.parse(input)
+        FragmentDefinition fragmentDefinition = (document.definitions[0] as FragmentDefinition)
+
+        then:
+        fragmentDefinition.name == "Foo"
+
+    }
+
+    def "parser should throw syntax errors"() {
+        given:
+        def input = """
+            type Foo {
+              name / String
+            }
+        """
+        when:
+        def document = Parser.parse(input)
+        println document
+        then:
+        def e = thrown(InvalidSyntaxException)
+        e.message.contains("Invalid syntax")
+        e.sourcePreview == input + "\n"
+        e.location.line == 3
+        e.location.column == 20
+    }
+
+    def "allow emoji in comments"() {
+        def input = '''
+              # Represents the 😕 emoji.
+              {
+              foo
+               }
+    '''
+        when:
+        Document document = Parser.parse(input)
+        OperationDefinition operationDefinition = (document.definitions[0] as OperationDefinition)
+
+
+        then:
+        operationDefinition.getComments()[0].content == " Represents the 😕 emoji."
+    }
+
+
 }

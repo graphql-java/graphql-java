@@ -2,8 +2,9 @@ package graphql.execution;
 
 import graphql.GraphQLException;
 import graphql.PublicApi;
-import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeUtil;
 
 /**
  * This is thrown if a {@link graphql.schema.TypeResolver} fails to give back a concrete type
@@ -12,7 +13,7 @@ import graphql.schema.GraphQLType;
 @PublicApi
 public class UnresolvedTypeException extends GraphQLException {
 
-    private final GraphQLOutputType interfaceOrUnionType;
+    private final GraphQLNamedOutputType interfaceOrUnionType;
 
     /**
      * Constructor to use a custom error message
@@ -21,21 +22,21 @@ public class UnresolvedTypeException extends GraphQLException {
      * @param message              custom error message.
      * @param interfaceOrUnionType expected type.
      */
-    public UnresolvedTypeException(String message, GraphQLOutputType interfaceOrUnionType) {
+    public UnresolvedTypeException(String message, GraphQLNamedOutputType interfaceOrUnionType) {
         super(message);
         this.interfaceOrUnionType = interfaceOrUnionType;
     }
 
-    public UnresolvedTypeException(GraphQLOutputType interfaceOrUnionType) {
+    public UnresolvedTypeException(GraphQLNamedOutputType interfaceOrUnionType) {
         this("Could not determine the exact type of '" + interfaceOrUnionType.getName() + "'", interfaceOrUnionType);
     }
 
-    public UnresolvedTypeException(GraphQLOutputType interfaceOrUnionType, GraphQLType providedType) {
-        this("Runtime Object type '" + providedType.getName() + "' is not a possible type for "
+    public UnresolvedTypeException(GraphQLNamedOutputType interfaceOrUnionType, GraphQLType providedType) {
+        this("Runtime Object type '" + GraphQLTypeUtil.simplePrint(providedType) + "' is not a possible type for "
                 + "'" + interfaceOrUnionType.getName() + "'.", interfaceOrUnionType);
     }
 
-    public GraphQLOutputType getInterfaceOrUnionType() {
+    public GraphQLNamedOutputType getInterfaceOrUnionType() {
         return interfaceOrUnionType;
     }
 

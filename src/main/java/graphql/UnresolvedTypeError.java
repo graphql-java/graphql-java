@@ -8,6 +8,7 @@ import graphql.language.SourceLocation;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static java.lang.String.format;
 
 @PublicApi
@@ -28,7 +29,7 @@ public class UnresolvedTypeError implements GraphQLError {
         return format("Can't resolve '%s'. Abstract type '%s' must resolve to an Object type at runtime for field '%s.%s'. %s",
                 path,
                 exception.getInterfaceOrUnionType().getName(),
-                info.getParent().getUnwrappedNonNullType().getName(),
+                simplePrint(info.getParent().getUnwrappedNonNullType()),
                 info.getFieldDefinition().getName(),
                 exception.getMessage());
     }
@@ -62,7 +63,7 @@ public class UnresolvedTypeError implements GraphQLError {
     public String toString() {
         return "UnresolvedTypeError{" +
                 "path=" + path +
-                "exception=" + exception +
+                ", exception=" + exception +
                 '}';
     }
 

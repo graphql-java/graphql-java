@@ -42,7 +42,7 @@ class ValuesResolverTest extends Specification {
         def schema = TestUtil.schemaWithInputType(inputType)
         VariableDefinition variableDefinition = new VariableDefinition("variable", variableType)
         when:
-        def resolvedValues = resolver.coerceArgumentValues(schema, [variableDefinition], [variable: inputValue])
+        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], [variable: inputValue])
         then:
         resolvedValues['variable'] == outputValue
 
@@ -72,7 +72,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Person"))
 
         when:
-        def resolvedValues = resolver.coerceArgumentValues(schema, [variableDefinition], [variable: inputValue])
+        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], [variable: inputValue])
         then:
         resolvedValues['variable'] == outputValue
         where:
@@ -112,7 +112,7 @@ class ValuesResolverTest extends Specification {
 
         when:
         def obj = new Person('a', 123)
-        resolver.coerceArgumentValues(schema, [variableDefinition], [variable: obj])
+        resolver.coerceVariableValues(schema, [variableDefinition], [variable: obj])
         then:
         thrown(CoercingParseValueException)
     }
@@ -123,7 +123,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new ListType(new TypeName("String")))
         String value = "world"
         when:
-        def resolvedValues = resolver.coerceArgumentValues(schema, [variableDefinition], [variable: value])
+        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], [variable: value])
         then:
         resolvedValues['variable'] == ['world']
 
@@ -333,7 +333,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Test"))
 
         when:
-        def resolvedValues = resolver.coerceArgumentValues(schema, [variableDefinition], [variable: inputValue])
+        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], [variable: inputValue])
         then:
         resolvedValues['variable'] == outputValue
         where:
@@ -361,7 +361,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("InputObject"))
 
         when:
-        def resolvedValues = resolver.coerceArgumentValues(schema, [variableDefinition], [variable: inputValue])
+        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], [variable: inputValue])
 
         then:
         resolvedValues['variable'] == outputValue
@@ -390,7 +390,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("InputObject"))
 
         when:
-        resolver.coerceArgumentValues(schema, [variableDefinition], [variable: inputValue])
+        resolver.coerceVariableValues(schema, [variableDefinition], [variable: inputValue])
 
         then:
         thrown(GraphQLException)
@@ -409,7 +409,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition barVarDef = new VariableDefinition("bar", new TypeName("String"))
 
         when:
-        def resolvedValues = resolver.coerceArgumentValues(schema, [fooVarDef, barVarDef], InputValue)
+        def resolvedValues = resolver.coerceVariableValues(schema, [fooVarDef, barVarDef], InputValue)
 
         then:
         resolvedValues == outputValue
@@ -427,7 +427,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition fooVarDef = new VariableDefinition("foo", new NonNullType(new TypeName("String")))
 
         when:
-        resolver.coerceArgumentValues(schema, [fooVarDef], [:])
+        resolver.coerceVariableValues(schema, [fooVarDef], [:])
 
         then:
         thrown(GraphQLException)

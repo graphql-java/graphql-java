@@ -12,36 +12,36 @@ import static graphql.util.TraversalControl.CONTINUE;
 
 @Internal
 public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {
-    protected final Map<String, GraphQLType> typeMap;
+    protected final Map<String, GraphQLNamedType> typeMap;
 
-    public GraphQLTypeResolvingVisitor(Map<String, GraphQLType> typeMap) {
+    public GraphQLTypeResolvingVisitor(Map<String, GraphQLNamedType> typeMap) {
         this.typeMap = typeMap;
     }
 
     @Override
-    public TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLType> context) {
+    public TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
 
         node.replaceInterfaces(node.getInterfaces().stream()
-                .map(type -> (GraphQLOutputType) typeMap.get(type.getName()))
+                .map(type -> (GraphQLNamedOutputType) typeMap.get(type.getName()))
                 .collect(Collectors.toList()));
         return super.visitGraphQLObjectType(node, context);
     }
 
     @Override
-    public TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLType> context) {
+    public TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLSchemaElement> context) {
 
         node.replaceTypes(node.getTypes().stream()
-                .map(type -> (GraphQLOutputType) typeMap.get(type.getName()))
+                .map(type -> (GraphQLNamedOutputType) typeMap.get(type.getName()))
                 .collect(Collectors.toList()));
         return super.visitGraphQLUnionType(node, context);
     }
 
     @Override
-    public TraversalControl visitGraphQLTypeReference(GraphQLTypeReference node, TraverserContext<GraphQLType> context) {
+    public TraversalControl visitGraphQLTypeReference(GraphQLTypeReference node, TraverserContext<GraphQLSchemaElement> context) {
         return handleTypeReference(node, context);
     }
 
-    public TraversalControl handleTypeReference(GraphQLTypeReference node, TraverserContext<GraphQLType> context) {
+    public TraversalControl handleTypeReference(GraphQLTypeReference node, TraverserContext<GraphQLSchemaElement> context) {
         final GraphQLType resolvedType = typeMap.get(node.getName());
         assertNotNull(resolvedType, "type %s not found in schema", node.getName());
         context.getParentContext().thisNode().accept(context, new TypeRefResolvingVisitor(resolvedType));
@@ -49,10 +49,10 @@ public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {
     }
 
     @Override
-    public TraversalControl visitBackRef(TraverserContext<GraphQLType> context) {
-        GraphQLType graphQLType = context.thisNode();
-        if (graphQLType instanceof GraphQLTypeReference) {
-            return handleTypeReference((GraphQLTypeReference) graphQLType, context);
+    public TraversalControl visitBackRef(TraverserContext<GraphQLSchemaElement> context) {
+        GraphQLSchemaElement schemaElement = context.thisNode();
+        if (schemaElement instanceof GraphQLTypeReference) {
+            return handleTypeReference((GraphQLTypeReference) schemaElement, context);
         }
         return CONTINUE;
     }
@@ -65,31 +65,31 @@ public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {
         }
 
         @Override
-        public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLType> context) {
+        public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
             node.replaceType((GraphQLOutputType) resolvedType);
             return super.visitGraphQLFieldDefinition(node, context);
         }
 
         @Override
-        public TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLType> context) {
+        public TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLSchemaElement> context) {
             node.replaceType((GraphQLInputType) resolvedType);
             return super.visitGraphQLArgument(node, context);
         }
 
         @Override
-        public TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField node, TraverserContext<GraphQLType> context) {
+        public TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField node, TraverserContext<GraphQLSchemaElement> context) {
             node.replaceType((GraphQLInputType) resolvedType);
             return super.visitGraphQLInputObjectField(node, context);
         }
 
         @Override
-        public TraversalControl visitGraphQLList(GraphQLList node, TraverserContext<GraphQLType> context) {
+        public TraversalControl visitGraphQLList(GraphQLList node, TraverserContext<GraphQLSchemaElement> context) {
             node.replaceType(resolvedType);
             return super.visitGraphQLList(node, context);
         }
 
         @Override
-        public TraversalControl visitGraphQLNonNull(GraphQLNonNull node, TraverserContext<GraphQLType> context) {
+        public TraversalControl visitGraphQLNonNull(GraphQLNonNull node, TraverserContext<GraphQLSchemaElement> context) {
             node.replaceType(resolvedType);
             return super.visitGraphQLNonNull(node, context);
         }

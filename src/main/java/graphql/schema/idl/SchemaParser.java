@@ -11,6 +11,8 @@ import graphql.parser.Parser;
 import graphql.schema.idl.errors.NonSDLDefinitionError;
 import graphql.schema.idl.errors.SchemaProblem;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -44,6 +46,19 @@ public class SchemaParser {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Parse a inputStream of schema definitions and create a {@link TypeDefinitionRegistry}
+     *
+     * @param inputStream the inputStream to parse
+     *
+     * @return registry of type definitions
+     *
+     * @throws SchemaProblem if there are problems compiling the schema definitions
+     */
+    public TypeDefinitionRegistry parse(InputStream inputStream) throws SchemaProblem {
+        return parse(new InputStreamReader(inputStream));
     }
 
     /**

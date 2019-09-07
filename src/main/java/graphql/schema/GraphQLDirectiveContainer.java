@@ -9,7 +9,7 @@ import static graphql.DirectivesUtil.directivesByName;
 /**
  * Represents a graphql object that can have {@link graphql.schema.GraphQLDirective}s
  */
-public interface GraphQLDirectiveContainer extends GraphQLType {
+public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
 
     /**
      * @return a list of directives associated with the type or field

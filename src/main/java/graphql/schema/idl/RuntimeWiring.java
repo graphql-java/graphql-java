@@ -6,7 +6,6 @@ import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphqlTypeComparatorRegistry;
-import graphql.schema.SchemaTransformer;
 import graphql.schema.TypeResolver;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 

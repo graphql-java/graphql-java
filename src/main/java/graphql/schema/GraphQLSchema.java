@@ -24,7 +24,6 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.schema.GraphqlTypeComparators.byNameAsc;
 import static graphql.schema.GraphqlTypeComparators.sortTypes;
-import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
 /**
@@ -40,11 +39,12 @@ public class GraphQLSchema {
     private final GraphQLObjectType queryType;
     private final GraphQLObjectType mutationType;
     private final GraphQLObjectType subscriptionType;
-    private final Map<String, GraphQLType> typeMap;
     private final Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
     private final Set<GraphQLDirective> directives = new LinkedHashSet<>();
-    private final Map<String, List<GraphQLObjectType>> byInterface;
     private final GraphQLCodeRegistry codeRegistry;
+
+    private final Map<String, GraphQLNamedType> typeMap;
+    private final Map<String, List<GraphQLObjectType>> byInterface;
 
     /**
      * @param queryType the query type
@@ -81,11 +81,17 @@ public class GraphQLSchema {
     @Internal
     @Deprecated
     public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes) {
-        this(queryType, mutationType, subscriptionType, additionalTypes, Collections.emptySet(), GraphQLCodeRegistry.newCodeRegistry().build());
+        this(queryType, mutationType, subscriptionType, additionalTypes, Collections.emptySet(), GraphQLCodeRegistry.newCodeRegistry().build(), false);
     }
 
     @Internal
-    private GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes, Set<GraphQLDirective> directives, GraphQLCodeRegistry codeRegistry) {
+    private GraphQLSchema(GraphQLObjectType queryType,
+                          GraphQLObjectType mutationType,
+                          GraphQLObjectType subscriptionType,
+                          Set<GraphQLType> additionalTypes,
+                          Set<GraphQLDirective> directives,
+                          GraphQLCodeRegistry codeRegistry,
+                          boolean afterTransform) {
         assertNotNull(additionalTypes, "additionalTypes can't be null");
         assertNotNull(queryType, "queryType can't be null");
         assertNotNull(directives, "directives can't be null");
@@ -99,7 +105,7 @@ public class GraphQLSchema {
         this.directives.addAll(directives);
         // sorted by type name
         SchemaUtil schemaUtil = new SchemaUtil();
-        this.typeMap = new TreeMap<>(schemaUtil.allTypes(this, additionalTypes));
+        this.typeMap = new TreeMap<>(schemaUtil.allTypes(this, additionalTypes, afterTransform));
         this.byInterface = new TreeMap<>(schemaUtil.groupImplementations(this));
         this.codeRegistry = codeRegistry;
     }
@@ -144,16 +150,16 @@ public class GraphQLSchema {
         GraphQLType graphQLType = typeMap.get(typeName);
         if (graphQLType != null) {
             assertTrue(graphQLType instanceof GraphQLObjectType,
-                    format("You have asked for named object type '%s' but its not an object type but rather a '%s'", typeName, graphQLType.getClass().getName()));
+                    "You have asked for named object type '%s' but its not an object type but rather a '%s'", typeName, graphQLType.getClass().getName());
         }
         return (GraphQLObjectType) graphQLType;
     }
 
-    public Map<String, GraphQLType> getTypeMap() {
+    public Map<String, GraphQLNamedType> getTypeMap() {
         return Collections.unmodifiableMap(typeMap);
     }
 
-    public List<GraphQLType> getAllTypesAsList() {
+    public List<GraphQLNamedType> getAllTypesAsList() {
         return sortTypes(byNameAsc(), typeMap.values());
     }
 
@@ -183,14 +189,14 @@ public class GraphQLSchema {
      *
      * @return true if possible type, false otherwise.
      */
-    public boolean isPossibleType(GraphQLType abstractType, GraphQLObjectType concreteType) {
+    public boolean isPossibleType(GraphQLNamedType abstractType, GraphQLObjectType concreteType) {
         if (abstractType instanceof GraphQLInterfaceType) {
             return getImplementations((GraphQLInterfaceType) abstractType).stream()
-                    .map(GraphQLType::getName)
+                    .map(GraphQLObjectType::getName)
                     .anyMatch(name -> concreteType.getName().equals(name));
         } else if (abstractType instanceof GraphQLUnionType) {
             return ((GraphQLUnionType) abstractType).getTypes().stream()
-                    .map(GraphQLType::getName)
+                    .map(GraphQLNamedType::getName)
                     .anyMatch(name -> concreteType.getName().equals(name));
         }
 
@@ -404,6 +410,10 @@ public class GraphQLSchema {
          * @return the built schema
          */
         public GraphQLSchema build() {
+            return buildImpl(false);
+        }
+
+        GraphQLSchema buildImpl(boolean afterTransform) {
             assertNotNull(additionalTypes, "additionalTypes can't be null");
             assertNotNull(additionalDirectives, "additionalDirectives can't be null");
 
@@ -414,7 +424,7 @@ public class GraphQLSchema {
             }
 
             // grab the legacy code things from types
-            final GraphQLSchema tempSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes, additionalDirectives, codeRegistry);
+            final GraphQLSchema tempSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes, additionalDirectives, codeRegistry, afterTransform);
             codeRegistry = codeRegistry.transform(codeRegistryBuilder -> schemaUtil.extractCodeFromTypes(codeRegistryBuilder, tempSchema));
 
             GraphQLSchema graphQLSchema = new GraphQLSchema(tempSchema, codeRegistry);

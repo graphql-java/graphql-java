@@ -56,7 +56,7 @@ public class SerializationError implements GraphQLError {
     public String toString() {
         return "SerializationError{" +
                 "path=" + path +
-                "exception=" + exception +
+                ", exception=" + exception +
                 '}';
     }
 

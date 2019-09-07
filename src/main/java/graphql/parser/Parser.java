@@ -2,11 +2,15 @@ package graphql.parser;
 
 import graphql.Internal;
 import graphql.language.Document;
+import graphql.language.SourceLocation;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
+import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CodePointCharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
 
@@ -17,6 +21,11 @@ import java.util.List;
 
 @Internal
 public class Parser {
+
+
+    public static Document parse(String input) {
+        return new Parser().parseDocument(input);
+    }
 
     public Document parseDocument(String input) throws InvalidSyntaxException {
         return parseDocument(input, null);
@@ -46,6 +55,15 @@ public class Parser {
         }
 
         GraphqlLexer lexer = new GraphqlLexer(charStream);
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(new BaseErrorListener() {
+            @Override
+            public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
+                SourceLocation sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, line, charPositionInLine);
+                String preview = AntlrHelper.createPreview(multiSourceReader, line);
+                throw new InvalidSyntaxException(sourceLocation, "Invalid syntax: " + msg, preview, null, null);
+            }
+        });
 
         CommonTokenStream tokens = new CommonTokenStream(lexer);
 

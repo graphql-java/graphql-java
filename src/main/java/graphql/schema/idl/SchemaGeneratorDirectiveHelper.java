@@ -16,7 +16,7 @@ import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
-import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphqlElementParentTree;
 
@@ -33,7 +33,7 @@ import static java.util.stream.Collectors.toList;
  * to be invoked during schema generation.
  */
 @Internal
-class SchemaGeneratorDirectiveHelper {
+public class SchemaGeneratorDirectiveHelper {
 
     static class Parameters {
         private final TypeDefinitionRegistry typeRegistry;
@@ -113,9 +113,9 @@ class SchemaGeneratorDirectiveHelper {
         return new NodeParentTree<>(nodeStack);
     }
 
-    private GraphqlElementParentTree buildRuntimeTree(GraphQLType... elements) {
-        Deque<GraphQLType> nodeStack = new ArrayDeque<>();
-        for (GraphQLType element : elements) {
+    private GraphqlElementParentTree buildRuntimeTree(GraphQLSchemaElement... elements) {
+        Deque<GraphQLSchemaElement> nodeStack = new ArrayDeque<>();
+        for (GraphQLSchemaElement element : elements) {
             nodeStack.push(element);
         }
         return new GraphqlElementParentTree(nodeStack);

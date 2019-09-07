@@ -10,7 +10,7 @@ import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLTypeReference.typeRef
 import static graphql.schema.GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY
 
-class TypeTraverserTest extends Specification {
+class SchemaTraverserTest extends Specification {
 
 
     def "reachable scalar type"() {
@@ -18,7 +18,7 @@ class TypeTraverserTest extends Specification {
         when:
 
         def visitor = new GraphQLTestingVisitor()
-        new TypeTraverser().depthFirst(visitor, Scalars.GraphQLString)
+        new SchemaTraverser().depthFirst(visitor, Scalars.GraphQLString)
 
         then:
 
@@ -31,7 +31,7 @@ class TypeTraverserTest extends Specification {
         when:
         def visitor = new GraphQLTestingVisitor()
 
-        new TypeTraverser().depthFirst(visitor, newArgument()
+        new SchemaTraverser().depthFirst(visitor, newArgument()
                 .name("Test")
                 .type(Scalars.GraphQLString)
                 .build())
@@ -42,7 +42,7 @@ class TypeTraverserTest extends Specification {
     def "reachable number argument type"() {
         when:
         def visitor = new GraphQLTestingVisitor()
-        new TypeTraverser().depthFirst(visitor, newArgument()
+        new SchemaTraverser().depthFirst(visitor, newArgument()
                 .name("Test")
                 .type(Scalars.GraphQLInt)
                 .build())
@@ -54,7 +54,7 @@ class TypeTraverserTest extends Specification {
     def "reachable enum type"() {
         when:
         def visitor = new GraphQLTestingVisitor()
-        new TypeTraverser().depthFirst(visitor, GraphQLEnumType
+        new SchemaTraverser().depthFirst(visitor, GraphQLEnumType
                 .newEnum()
                 .name("foo")
                 .value("bar")
@@ -71,7 +71,7 @@ class TypeTraverserTest extends Specification {
     def "reachable field definition type"() {
         when:
         def visitor = new GraphQLTestingVisitor()
-        new TypeTraverser().depthFirst(visitor, GraphQLFieldDefinition.newFieldDefinition()
+        new SchemaTraverser().depthFirst(visitor, GraphQLFieldDefinition.newFieldDefinition()
                 .name("foo")
                 .type(Scalars.GraphQLString)
                 .build())
@@ -83,7 +83,7 @@ class TypeTraverserTest extends Specification {
     def "reachable input object field type"() {
         when:
         def visitor = new GraphQLTestingVisitor()
-        new TypeTraverser().depthFirst(visitor, GraphQLInputObjectField.newInputObjectField()
+        new SchemaTraverser().depthFirst(visitor, GraphQLInputObjectField.newInputObjectField()
                 .name("bar")
                 .type(Scalars.GraphQLString)
                 .build())
@@ -94,7 +94,7 @@ class TypeTraverserTest extends Specification {
     def "reachable input object type"() {
         when:
         def visitor = new GraphQLTestingVisitor()
-        new TypeTraverser().depthFirst(visitor, GraphQLInputObjectType.newInputObject()
+        new SchemaTraverser().depthFirst(visitor, GraphQLInputObjectType.newInputObject()
                 .name("foo")
                 .field(GraphQLInputObjectField.newInputObjectField()
                 .name("bar")
@@ -111,7 +111,7 @@ class TypeTraverserTest extends Specification {
     def "reachable interface type"() {
         when:
         def visitor = new GraphQLTestingVisitor()
-        new TypeTraverser().depthFirst(visitor, GraphQLInterfaceType.newInterface()
+        new SchemaTraverser().depthFirst(visitor, GraphQLInterfaceType.newInterface()
                 .name("foo")
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                 .name("bar")
@@ -128,9 +128,9 @@ class TypeTraverserTest extends Specification {
     def "reachable list type"() {
         when:
         def visitor = new GraphQLTestingVisitor()
-        new TypeTraverser().depthFirst(visitor, GraphQLList.list(Scalars.GraphQLString))
+        new SchemaTraverser().depthFirst(visitor, GraphQLList.list(Scalars.GraphQLString))
         then:
-        visitor.getStack() == ["list: String", "fallback: null",
+        visitor.getStack() == ["list: String", "fallback: [String]",
                                "scalar: String", "fallback: String"]
     }
 
@@ -138,16 +138,16 @@ class TypeTraverserTest extends Specification {
     def "reachable nonNull type"() {
         when:
         def visitor = new GraphQLTestingVisitor()
-        new TypeTraverser().depthFirst(visitor, GraphQLNonNull.nonNull(Scalars.GraphQLString))
+        new SchemaTraverser().depthFirst(visitor, GraphQLNonNull.nonNull(Scalars.GraphQLString))
         then:
-        visitor.getStack() == ["nonNull: String", "fallback: null",
+        visitor.getStack() == ["nonNull: String", "fallback: String!",
                                "scalar: String", "fallback: String"]
     }
 
     def "reachable object type"() {
         when:
         def visitor = new GraphQLTestingVisitor()
-        new TypeTraverser().depthFirst(visitor, GraphQLObjectType.newObject()
+        new SchemaTraverser().depthFirst(visitor, GraphQLObjectType.newObject()
                 .name("myObject")
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                 .name("foo")
@@ -169,7 +169,7 @@ class TypeTraverserTest extends Specification {
     def "reachable reference type"() {
         when:
         def visitor = new GraphQLTestingVisitor()
-        new TypeTraverser().depthFirst(visitor, typeRef("something"))
+        new SchemaTraverser().depthFirst(visitor, typeRef("something"))
         then:
         visitor.getStack() == ["reference: something", "fallback: something"]
     }
@@ -177,7 +177,7 @@ class TypeTraverserTest extends Specification {
     def "reachable union type"() {
         when:
         def visitor = new GraphQLTestingVisitor()
-        new TypeTraverser().depthFirst(visitor, GraphQLUnionType.newUnionType()
+        new SchemaTraverser().depthFirst(visitor, GraphQLUnionType.newUnionType()
                 .name("foo")
                 .possibleType(GraphQLObjectType.newObject().name("dummy").build())
                 .possibleType(typeRef("dummyRef"))
@@ -216,7 +216,7 @@ class TypeTraverserTest extends Specification {
                 .withDirective(GraphQLDirective.newDirective()
                 .name("bar"))
                 .build()
-        new TypeTraverser().depthFirst(visitor, scalarType)
+        new SchemaTraverser().depthFirst(visitor, scalarType)
         then:
         visitor.getStack() == ["scalar: foo", "fallback: foo", "directive: bar", "fallback: bar"]
     }
@@ -229,7 +229,7 @@ class TypeTraverserTest extends Specification {
                 .withDirective(GraphQLDirective.newDirective()
                 .name("bar"))
                 .build()
-        new TypeTraverser().depthFirst(visitor, objectType)
+        new SchemaTraverser().depthFirst(visitor, objectType)
         then:
         visitor.getStack() == ["object: foo", "fallback: foo", "directive: bar", "fallback: bar"]
     }
@@ -243,7 +243,7 @@ class TypeTraverserTest extends Specification {
                 .withDirective(GraphQLDirective.newDirective()
                 .name("bar"))
                 .build()
-        new TypeTraverser().depthFirst(visitor, fieldDefinition)
+        new SchemaTraverser().depthFirst(visitor, fieldDefinition)
         then:
         visitor.getStack() == ["field: foo", "fallback: foo", "scalar: String", "fallback: String", "directive: bar", "fallback: bar"]
     }
@@ -257,7 +257,7 @@ class TypeTraverserTest extends Specification {
                 .withDirective(GraphQLDirective.newDirective()
                 .name("bar"))
                 .build()
-        new TypeTraverser().depthFirst(visitor, argument)
+        new SchemaTraverser().depthFirst(visitor, argument)
         then:
         visitor.getStack() == ["argument: foo", "fallback: foo", "scalar: String", "fallback: String", "directive: bar", "fallback: bar"]
     }
@@ -271,7 +271,7 @@ class TypeTraverserTest extends Specification {
                 .withDirective(GraphQLDirective.newDirective()
                 .name("bar"))
                 .build()
-        new TypeTraverser().depthFirst(visitor, interfaceType)
+        new SchemaTraverser().depthFirst(visitor, interfaceType)
         then:
         visitor.getStack() == ["interface: foo", "fallback: foo", "directive: bar", "fallback: bar"]
     }
@@ -286,7 +286,7 @@ class TypeTraverserTest extends Specification {
                 .withDirective(GraphQLDirective.newDirective()
                 .name("bar"))
                 .build()
-        new TypeTraverser().depthFirst(visitor, unionType)
+        new SchemaTraverser().depthFirst(visitor, unionType)
         then:
         visitor.getStack() == ["union: foo", "fallback: foo", "object: dummy", "fallback: dummy", "directive: bar", "fallback: bar"]
     }
@@ -300,7 +300,7 @@ class TypeTraverserTest extends Specification {
                 .withDirective(GraphQLDirective.newDirective()
                 .name("bar"))
                 .build()
-        new TypeTraverser().depthFirst(visitor, enumType)
+        new SchemaTraverser().depthFirst(visitor, enumType)
         then:
         visitor.getStack() == ["enum: foo", "fallback: foo", "enum value: dummy", "fallback: dummy", "directive: bar", "fallback: bar"]
     }
@@ -313,7 +313,7 @@ class TypeTraverserTest extends Specification {
                 .withDirective(GraphQLDirective.newDirective()
                 .name("bar"))
                 .build()
-        new TypeTraverser().depthFirst(visitor, enumValue)
+        new SchemaTraverser().depthFirst(visitor, enumValue)
         then:
         visitor.getStack() == ["enum value: foo", "fallback: foo", "directive: bar", "fallback: bar"]
     }
@@ -326,7 +326,7 @@ class TypeTraverserTest extends Specification {
                 .withDirective(GraphQLDirective.newDirective()
                 .name("bar"))
                 .build()
-        new TypeTraverser().depthFirst(visitor, inputObjectType)
+        new SchemaTraverser().depthFirst(visitor, inputObjectType)
         then:
         visitor.getStack() == ["input object: foo", "fallback: foo", "directive: bar", "fallback: bar"]
     }
@@ -340,7 +340,7 @@ class TypeTraverserTest extends Specification {
                 .withDirective(GraphQLDirective.newDirective()
                 .name("bar"))
                 .build()
-        new TypeTraverser().depthFirst(visitor, inputField)
+        new SchemaTraverser().depthFirst(visitor, inputField)
         then:
         visitor.getStack() == ["input object field: foo", "fallback: foo", "scalar: String", "fallback: String", "directive: bar", "fallback: bar"]
     }
@@ -351,7 +351,7 @@ class TypeTraverserTest extends Specification {
 
         def typeRef = typeRef("String")
 
-        new TypeTraverser().depthFirst(visitor, [
+        new SchemaTraverser().depthFirst(visitor, [
                 newArgument()
                         .name("Test1")
                         .type(typeRef)
@@ -382,97 +382,97 @@ class TypeTraverserTest extends Specification {
         def stack = []
 
         @Override
-        TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("argument: ${node.getName()}")
             return super.visitGraphQLArgument(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("scalar: ${node.getName()}")
             return super.visitGraphQLScalarType(node, context)
         }
 
         @Override
-        protected TraversalControl visitGraphQLType(GraphQLType node, TraverserContext<GraphQLType> context) {
-            stack.add("fallback: ${node.getName()}")
+        protected TraversalControl visitGraphQLType(GraphQLSchemaElement node, TraverserContext<GraphQLSchemaElement> context) {
+            stack.add("fallback: ${GraphQLTypeUtil.simplePrint(node)}")
             return super.visitGraphQLType(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLEnumType(GraphQLEnumType node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLEnumType(GraphQLEnumType node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("enum: ${node.getName()}")
             return super.visitGraphQLEnumType(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLEnumValueDefinition(GraphQLEnumValueDefinition node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLEnumValueDefinition(GraphQLEnumValueDefinition node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("enum value: ${node.getName()}")
             return super.visitGraphQLEnumValueDefinition(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("field: ${node.getName()}")
             return super.visitGraphQLFieldDefinition(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLDirective(GraphQLDirective node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLDirective(GraphQLDirective node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("directive: ${node.getName()}")
             return super.visitGraphQLDirective(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("input object field: ${node.getName()}")
             return super.visitGraphQLInputObjectField(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("input object: ${node.getName()}")
             return super.visitGraphQLInputObjectType(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("interface: ${node.getName()}")
             return super.visitGraphQLInterfaceType(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLList(GraphQLList node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLList(GraphQLList node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("list: ${node.getWrappedType().getName()}")
             return super.visitGraphQLList(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLNonNull(GraphQLNonNull node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLNonNull(GraphQLNonNull node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("nonNull: ${node.getWrappedType().getName()}")
             return super.visitGraphQLNonNull(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("object: ${node.getName()}")
             return super.visitGraphQLObjectType(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLTypeReference(GraphQLTypeReference node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLTypeReference(GraphQLTypeReference node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("reference: ${node.getName()}")
             return super.visitGraphQLTypeReference(node, context)
         }
 
         @Override
-        TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLType> context) {
+        TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("union: ${node.getName()}")
             return super.visitGraphQLUnionType(node, context)
         }
 
         @Override
-        TraversalControl visitBackRef(TraverserContext<GraphQLType> context) {
+        TraversalControl visitBackRef(TraverserContext<GraphQLSchemaElement> context) {
             stack.add("backRef: ${context.thisNode().getName()}")
             return TraversalControl.CONTINUE
         }

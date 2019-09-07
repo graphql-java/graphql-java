@@ -12,7 +12,7 @@ public interface GraphqlTypeComparatorRegistry {
      */
     GraphqlTypeComparatorRegistry AS_IS_REGISTRY = new GraphqlTypeComparatorRegistry() {
         @Override
-        public <T extends GraphQLType> Comparator<? super T> getComparator(GraphqlTypeComparatorEnvironment environment) {
+        public <T extends GraphQLSchemaElement> Comparator<? super T> getComparator(GraphqlTypeComparatorEnvironment environment) {
             return GraphqlTypeComparators.asIsOrder();
         }
     };
@@ -23,7 +23,7 @@ public interface GraphqlTypeComparatorRegistry {
      */
     GraphqlTypeComparatorRegistry BY_NAME_REGISTRY = new GraphqlTypeComparatorRegistry() {
         @Override
-        public <T extends GraphQLType> Comparator<? super T> getComparator(GraphqlTypeComparatorEnvironment environment) {
+        public <T extends GraphQLSchemaElement> Comparator<? super T> getComparator(GraphqlTypeComparatorEnvironment environment) {
             return GraphqlTypeComparators.byNameAsc();
         }
     };
@@ -35,5 +35,5 @@ public interface GraphqlTypeComparatorRegistry {
      *
      * @return The registered {@code Comparator} or {@code null} if not found.
      */
-    <T extends GraphQLType> Comparator<? super T> getComparator(GraphqlTypeComparatorEnvironment environment);
+    <T extends GraphQLSchemaElement> Comparator<? super T> getComparator(GraphqlTypeComparatorEnvironment environment);
 }

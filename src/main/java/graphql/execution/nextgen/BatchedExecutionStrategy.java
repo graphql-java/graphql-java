@@ -84,7 +84,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
         assertTrue(unresolvedNodes.size() > 0, "unresolvedNodes can't be empty");
 
         List<FieldSubSelection> fieldSubSelections = map(unresolvedNodes,
-                node -> util.createFieldSubSelection(executionContext, node.getCurNode().getFetchedValueAnalysis()));
+                node -> util.createFieldSubSelection(executionContext, node.getCurNode().getExecutionStepInfo(), node.getCurNode().getResolvedValue()));
 
         //constrain: all fieldSubSelections have the same mergedSelectionSet
         MergedSelectionSet mergedSelectionSet = fieldSubSelections.get(0).getMergedSelectionSet();

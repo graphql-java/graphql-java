@@ -1,12 +1,12 @@
 package graphql.execution.nextgen.result
 
-
+import graphql.Scalars
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
 import static graphql.GraphqlErrorBuilder.newError
-import static graphql.execution.nextgen.result.ExecutionResultNodeTestUtils.fvaForValue
+import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo
 
 class ExecutionResultNodeTest extends Specification {
 
@@ -14,10 +14,12 @@ class ExecutionResultNodeTest extends Specification {
     def startingErrors = [newError().message("Starting").build()]
 
     @Shared
-    def startingFetchValueAnalysis = fvaForValue("Starting")
+    def startingExecutionStepInfo = newExecutionStepInfo().type(Scalars.GraphQLString).build()
+    @Shared
+    def startingResolveValue = ResolvedValue.newResolvedValue().completedValue("start").build();
 
     @Shared
-    def startingChildren = [new LeafExecutionResultNode(startingFetchValueAnalysis, null)]
+    def startingChildren = [new LeafExecutionResultNode(startingExecutionStepInfo, startingResolveValue, null)]
 
     @Unroll
     def "construction of objects with new errors works"() {
@@ -33,33 +35,32 @@ class ExecutionResultNodeTest extends Specification {
 
         where:
 
-        node                                                                                        | _
-        new RootExecutionResultNode([], startingErrors)                                             | _
-        new ObjectExecutionResultNode(startingFetchValueAnalysis, startingChildren, startingErrors) | _
-        new ListExecutionResultNode(startingFetchValueAnalysis, startingChildren, startingErrors)   | _
-        new LeafExecutionResultNode(startingFetchValueAnalysis, null, startingErrors)               | _
+        node                                                                                                             | _
+        new RootExecutionResultNode([], startingErrors)                                                                  | _
+        new ObjectExecutionResultNode(startingExecutionStepInfo, startingResolveValue, startingChildren, startingErrors) | _
+        new ListExecutionResultNode(startingExecutionStepInfo, startingResolveValue, startingChildren, startingErrors)   | _
+        new LeafExecutionResultNode(startingExecutionStepInfo, startingResolveValue, null, startingErrors)               | _
     }
 
     @Unroll
-    def "construction of objects with new fetched value analysis  works"() {
+    def "construction of objects with new esi works"() {
 
         given:
-        def newFetchValueAnalysis = fvaForValue("hi")
+        def newEsi = newExecutionStepInfo().type(Scalars.GraphQLString).build()
 
         expect:
         ExecutionResultNode nodeUnderTest = node
-        def newNode = nodeUnderTest.withNewFetchedValueAnalysis(newFetchValueAnalysis)
+        def newNode = nodeUnderTest.withNewExecutionStepInfo(newEsi)
         newNode != nodeUnderTest
-        newNode.getFetchedValueAnalysis() != startingFetchValueAnalysis
-        newNode.getFetchedValueAnalysis().getCompletedValue() == "hi"
+        newNode.getExecutionStepInfo() == newEsi
 
 
         where:
 
-        node                                                                                        | _
-        new ObjectExecutionResultNode(startingFetchValueAnalysis, startingChildren, startingErrors) | _
-        new ListExecutionResultNode(startingFetchValueAnalysis, startingChildren, startingErrors)   | _
-        new LeafExecutionResultNode(startingFetchValueAnalysis, null, startingErrors)               | _
+        node                                                                                                             | _
+        new ObjectExecutionResultNode(startingExecutionStepInfo, startingResolveValue, startingChildren, startingErrors) | _
+        new ListExecutionResultNode(startingExecutionStepInfo, startingResolveValue, startingChildren, startingErrors)   | _
+        new LeafExecutionResultNode(startingExecutionStepInfo, startingResolveValue, null, startingErrors)               | _
     }
 
     @Unroll
@@ -67,8 +68,8 @@ class ExecutionResultNodeTest extends Specification {
 
         given:
         def newChildren = [
-                new LeafExecutionResultNode(startingFetchValueAnalysis, null),
-                new LeafExecutionResultNode(startingFetchValueAnalysis, null),
+                new LeafExecutionResultNode(startingExecutionStepInfo, startingResolveValue, null),
+                new LeafExecutionResultNode(startingExecutionStepInfo, startingResolveValue, null),
         ]
 
         expect:
@@ -81,9 +82,9 @@ class ExecutionResultNodeTest extends Specification {
 
         where:
 
-        node                                                                                        | _
-        new RootExecutionResultNode(startingChildren, startingErrors)                               | _
-        new ObjectExecutionResultNode(startingFetchValueAnalysis, startingChildren, startingErrors) | _
-        new ListExecutionResultNode(startingFetchValueAnalysis, startingChildren, startingErrors)   | _
+        node                                                                                                             | _
+        new RootExecutionResultNode(startingChildren, startingErrors)                                                    | _
+        new ObjectExecutionResultNode(startingExecutionStepInfo, startingResolveValue, startingChildren, startingErrors) | _
+        new ListExecutionResultNode(startingExecutionStepInfo, startingResolveValue, startingChildren, startingErrors)   | _
     }
 }

@@ -44,7 +44,7 @@ public interface Coercing<I, O> {
      * Called to resolve a input from a query variable into a Java object acceptable for the scalar type.
      * <p>
      * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseValue method, but rather
-     * catch them and fire them as {@link graphql.schema.CoercingSerializeException} instead as per the method contract.
+     * catch them and fire them as {@link graphql.schema.CoercingParseValueException} instead as per the method contract.
      *
      * @param input is never null
      *

@@ -27,14 +27,19 @@ import static java.util.Collections.emptyList;
  * See http://graphql.org/learn/schema/#input-types for more details on the concept.
  */
 @PublicApi
-public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
+public class GraphQLInputObjectField implements GraphQLInputValueDefinition {
 
     private final String name;
     private final String description;
-    private GraphQLInputType type;
+    private final GraphQLInputType originalType;
     private final Object defaultValue;
     private final InputValueDefinition definition;
     private final List<GraphQLDirective> directives;
+
+    private GraphQLInputType replacedType;
+
+    public static final String CHILD_TYPE = "type";
+    public static final String CHILD_DIRECTIVES = "directives";
 
     /**
      * @param name the name
@@ -80,7 +85,7 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
         assertNotNull(directives, "directives cannot be null");
 
         this.name = name;
-        this.type = type;
+        this.originalType = type;
         this.defaultValue = defaultValue;
         this.description = description;
         this.directives = directives;
@@ -88,7 +93,7 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
     }
 
     void replaceType(GraphQLInputType type) {
-        this.type = type;
+        this.replacedType = type;
     }
 
     @Override
@@ -97,7 +102,7 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
     }
 
     public GraphQLInputType getType() {
-        return type;
+        return replacedType != null ? replacedType : originalType;
     }
 
     public Object getDefaultValue() {
@@ -132,16 +137,45 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLInputObjectField(this, context);
     }
 
     @Override
-    public List<GraphQLType> getChildren() {
-        List<GraphQLType> children = new ArrayList<>();
-        children.add(type);
+    public List<GraphQLSchemaElement> getChildren() {
+        List<GraphQLSchemaElement> children = new ArrayList<>();
+        children.add(getType());
         children.addAll(directives);
         return children;
+    }
+
+    @Override
+    public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+        return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .child(CHILD_TYPE, originalType)
+                .build();
+    }
+
+    @Override
+    public GraphQLInputObjectField withNewChildren(SchemaElementChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .type((GraphQLInputType) newChildren.getChildOrNull(CHILD_TYPE))
+        );
+    }
+
+    @Override
+    public String toString() {
+        return "GraphQLInputObjectField{" +
+                "name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", originalType=" + originalType +
+                ", defaultValue=" + defaultValue +
+                ", definition=" + definition +
+                ", directives=" + directives +
+                ", replacedType=" + replacedType +
+                '}';
     }
 
     public static Builder newInputObjectField(GraphQLInputObjectField existing) {
@@ -167,7 +201,7 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
             this.name = existing.getName();
             this.description = existing.getDescription();
             this.defaultValue = existing.getDefaultValue();
-            this.type = existing.getType();
+            this.type = existing.originalType;
             this.definition = existing.getDefinition();
             this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
@@ -222,6 +256,16 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
             directives.put(directive.getName(), directive);
             return this;
         }
+
+        public Builder replaceDirectives(List<GraphQLDirective> directives) {
+            assertNotNull(directives, "directive can't be null");
+            this.directives.clear();
+            for (GraphQLDirective directive : directives) {
+                this.directives.put(directive.getName(), directive);
+            }
+            return this;
+        }
+
 
         public Builder withDirective(GraphQLDirective.Builder builder) {
             return withDirective(builder.build());

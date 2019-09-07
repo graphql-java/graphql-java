@@ -20,15 +20,15 @@ import static graphql.Assert.assertTrue;
 @PublicApi
 public class GraphqlElementParentTree {
 
-    private final GraphQLType element;
+    private final GraphQLSchemaElement element;
     private final GraphqlElementParentTree parent;
 
     @Internal
-    public GraphqlElementParentTree(Deque<GraphQLType> nodeStack) {
+    public GraphqlElementParentTree(Deque<GraphQLSchemaElement> nodeStack) {
         assertNotNull(nodeStack, "You MUST have a non null stack of elements");
         assertTrue(!nodeStack.isEmpty(), "You MUST have a non empty stack of element");
 
-        Deque<GraphQLType> copy = new ArrayDeque<>(nodeStack);
+        Deque<GraphQLSchemaElement> copy = new ArrayDeque<>(nodeStack);
         element = copy.pop();
         if (!copy.isEmpty()) {
             parent = new GraphqlElementParentTree(copy);
@@ -42,7 +42,7 @@ public class GraphqlElementParentTree {
      *
      * @return the element in play
      */
-    public GraphQLType getElement() {
+    public GraphQLSchemaElement getElement() {
         return element;
     }
 
@@ -56,8 +56,8 @@ public class GraphqlElementParentTree {
     /**
      * @return the tree as a list of types
      */
-    public List<GraphQLType> toList() {
-        List<GraphQLType> types = new ArrayList<>();
+    public List<GraphQLSchemaElement> toList() {
+        List<GraphQLSchemaElement> types = new ArrayList<>();
         types.add(element);
         Optional<GraphqlElementParentTree> parentInfo = this.getParentInfo();
         while (parentInfo.isPresent()) {

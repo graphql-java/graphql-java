@@ -3,6 +3,7 @@ package graphql.util;
 import graphql.Internal;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,8 +30,10 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     private Object curAccValue;
     private final NodeLocation location;
     private final boolean isRootContext;
+    private boolean parallel;
     private Map<String, List<TraverserContext<T>>> children;
     private Phase phase;
+    private final List<Breadcrumb<T>> breadcrumbs;
 
     public DefaultTraverserContext(T curNode,
                                    TraverserContext<T> parent,
@@ -38,7 +41,8 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
                                    Map<Class<?>, Object> vars,
                                    Object sharedContextData,
                                    NodeLocation location,
-                                   boolean isRootContext) {
+                                   boolean isRootContext,
+                                   boolean parallel) {
         this.curNode = curNode;
         this.parent = parent;
         this.visited = visited;
@@ -46,14 +50,24 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
         this.sharedContextData = sharedContextData;
         this.location = location;
         this.isRootContext = isRootContext;
+        this.parallel = parallel;
+
+        if (parent == null || parent.isRootContext()) {
+            this.breadcrumbs = Collections.unmodifiableList(Collections.emptyList());
+        } else {
+            List<Breadcrumb<T>> breadcrumbs = new ArrayList<>(parent.getBreadcrumbs().size() + 1);
+            breadcrumbs.add(new Breadcrumb<>(this.parent.thisNode(), this.location));
+            breadcrumbs.addAll(parent.getBreadcrumbs());
+            this.breadcrumbs = Collections.unmodifiableList(breadcrumbs);
+        }
     }
 
     public static <T> DefaultTraverserContext<T> dummy() {
-        return new DefaultTraverserContext<>(null, null, null, null, null, null, true);
+        return new DefaultTraverserContext<>(null, null, null, null, null, null, true, false);
     }
 
     public static <T> DefaultTraverserContext<T> simple(T node) {
-        return new DefaultTraverserContext<>(node, null, null, null, null, null, true);
+        return new DefaultTraverserContext<>(node, null, null, null, null, null, true, false);
     }
 
     @Override
@@ -114,15 +128,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
 
     @Override
     public List<Breadcrumb<T>> getBreadcrumbs() {
-        List<Breadcrumb<T>> result = new ArrayList<>();
-        TraverserContext<T> curContext = parent;
-        NodeLocation childLocation = this.location;
-        while (!curContext.isRootContext()) {
-            result.add(new Breadcrumb<>(curContext.thisNode(), childLocation));
-            childLocation = curContext.getLocation();
-            curContext = curContext.getParentContext();
-        }
-        return result;
+        return breadcrumbs;
     }
 
     @Override
@@ -236,5 +242,10 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     @Override
     public Phase getPhase() {
         return phase;
+    }
+
+    @Override
+    public boolean isParallel() {
+        return parallel;
     }
 }
