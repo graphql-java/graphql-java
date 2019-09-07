@@ -130,22 +130,22 @@ class GraphQLSchemaTest extends Specification {
         when: "no additional directives have been specified"
         def schema = schemaBuilder.build()
         then:
-        schema.directives.size() == 2
+        schema.directives.size() == 3
 
         when: "clear directives is called"
         schema = schemaBuilder.clearDirectives().build()
         then:
-        schema.directives.empty
+        schema.directives.size() == 1 // @deprecated is ALWAYS added if missing
 
         when: "clear directives is called with more directives"
         schema = schemaBuilder.clearDirectives().additionalDirective(Directives.SkipDirective).build()
         then:
-        schema.directives.size() == 1
+        schema.directives.size() == 2
 
         when: "the schema is transformed, things are copied"
         schema = schema.transform({ bldr -> bldr.additionalDirective(Directives.IncludeDirective) })
         then:
-        schema.directives.size() == 2
+        schema.directives.size() == 3
     }
 
     def "clear additional types  works as expected"() {

@@ -546,7 +546,8 @@ input CharacterInput {
 
 
         when:
-        def printedSchema = new SchemaPrinter().print(graphQLSchema)
+        def options = SchemaPrinter.Options.defaultOptions().includeDirectives(false)
+        def printedSchema = new SchemaPrinter(options).print(graphQLSchema)
 
         def graphQL = TestUtil.graphQL(printedSchema).build()
 
@@ -588,8 +589,9 @@ input CharacterInput {
             }
             '''
 
+        def options = SchemaPrinter.Options.defaultOptions().includeDirectives(false)
         def schema = TestUtil.schema(schemaSpec)
-        def printedSchema = new SchemaPrinter().print(schema)
+        def printedSchema = new SchemaPrinter(options).print(schema)
 
         when:
         StringWriter sw = new StringWriter()
@@ -609,7 +611,7 @@ input CharacterInput {
         def astPrinterResult = printAst(schemaDefinitionDocument)
 
         def actualSchema = TestUtil.schema(astPrinterResult)
-        def actualPrintedSchema = new SchemaPrinter().print(actualSchema)
+        def actualPrintedSchema = new SchemaPrinter(options).print(actualSchema)
 
         then:
         printedSchema == actualPrintedSchema
