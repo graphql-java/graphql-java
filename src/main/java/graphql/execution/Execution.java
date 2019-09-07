@@ -151,11 +151,11 @@ public class Execution {
         try {
             ExecutionStrategy executionStrategy;
             if (operation == OperationDefinition.Operation.MUTATION) {
-                executionStrategy = mutationStrategy;
+                executionStrategy = executionContext.getMutationStrategy();
             } else if (operation == SUBSCRIPTION) {
-                executionStrategy = subscriptionStrategy;
+                executionStrategy = executionContext.getSubscriptionStrategy();
             } else {
-                executionStrategy = queryStrategy;
+                executionStrategy = executionContext.getQueryStrategy();
             }
             log.debug("Executing '{}' query operation: '{}' using '{}' execution strategy", executionContext.getExecutionId(), operation, executionStrategy.getClass().getName());
             result = executionStrategy.execute(executionContext, parameters);
