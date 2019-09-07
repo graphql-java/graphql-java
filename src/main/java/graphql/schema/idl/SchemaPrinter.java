@@ -203,7 +203,7 @@ public class SchemaPrinter {
         /**
          * Descriptions are defined as preceding string literals, however an older legacy
          * versions of SDL supported preceding '#' comments as
-         * descriptions. Setting this to true to true to enable this deprecated behavior.
+         * descriptions. Set this to true to enable this deprecated behavior.
          * This option is provided to ease adoption and will be may be removed in future versions.
          *
          * @param flag whether to print description as # comments
