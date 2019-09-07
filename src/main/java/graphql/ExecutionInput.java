@@ -30,7 +30,7 @@ public class ExecutionInput {
 
     @Internal
     private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, ExecutionId executionId, Locale locale) {
-        this.query = query;
+        this.query = assertNotNull(query, "query can't be null");
         this.operationName = operationName;
         this.context = context;
         this.root = root;
