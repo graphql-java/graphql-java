@@ -64,6 +64,8 @@ public class SchemaPrinter {
 
         private final boolean includeScalars;
 
+        private final boolean useAstDefinitions;
+
         private final boolean includeExtendedScalars;
 
         private final boolean includeSchemaDefinition;
@@ -77,12 +79,14 @@ public class SchemaPrinter {
                         boolean includeExtendedScalars,
                         boolean includeSchemaDefinition,
                         boolean includeDirectives,
+                        boolean useAstDefinitions,
                         GraphqlTypeComparatorRegistry comparatorRegistry) {
             this.includeIntrospectionTypes = includeIntrospectionTypes;
             this.includeScalars = includeScalars;
             this.includeExtendedScalars = includeExtendedScalars;
             this.includeSchemaDefinition = includeSchemaDefinition;
             this.includeDirectives = includeDirectives;
+            this.useAstDefinitions = useAstDefinitions;
             this.comparatorRegistry = comparatorRegistry;
         }
 
@@ -106,9 +110,13 @@ public class SchemaPrinter {
             return includeDirectives;
         }
 
+        public boolean isUseAstDefinitions() {
+            return useAstDefinitions;
+        }
+
         public static Options defaultOptions() {
             return new Options(false, false, false, false, true,
-                    DefaultGraphqlTypeComparatorRegistry.defaultComparators());
+                    false, DefaultGraphqlTypeComparatorRegistry.defaultComparators());
         }
 
         /**
@@ -118,7 +126,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeIntrospectionTypes(boolean flag) {
-            return new Options(flag, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, this.comparatorRegistry);
+            return new Options(flag, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, this.useAstDefinitions, this.comparatorRegistry);
         }
 
         /**
@@ -128,7 +136,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, flag, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, flag, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, this.useAstDefinitions, this.comparatorRegistry);
         }
 
         /**
@@ -139,7 +147,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeExtendedScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag, this.includeSchemaDefinition, this.includeDirectives, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag, this.includeSchemaDefinition, this.includeDirectives, this.useAstDefinitions, this.comparatorRegistry);
         }
 
         /**
@@ -152,7 +160,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeSchemaDefintion(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, flag, this.includeDirectives, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, flag, this.includeDirectives, this.useAstDefinitions, this.comparatorRegistry);
         }
 
         /**
@@ -163,7 +171,18 @@ public class SchemaPrinter {
          * @return new instance of options
          */
         public Options includeDirectives(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, flag, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, flag, this.useAstDefinitions, this.comparatorRegistry);
+        }
+
+        /**
+         * This flag controls whether schema printer will use the {@link graphql.schema.GraphQLType}'s original Ast {@link graphql.language.TypeDefinition}s when printing the type.  This
+         * allows access to any `extend type` declarations that might have been originally made.
+         *
+         * @param flag whether to print via AST type definitions
+         * @return new instance of options
+         */
+        public Options useAstDefinitions(boolean flag) {
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, flag, this.comparatorRegistry);
         }
 
         /**
@@ -175,7 +194,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options setComparators(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives,
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.useAstDefinitions, this.includeDirectives,
                     comparatorRegistry);
         }
 
@@ -473,7 +492,7 @@ public class SchemaPrinter {
      * @return true if we should print using AST nodes
      */
     private boolean shouldPrintAsAst(TypeDefinition definition) {
-        return definition != null && false; // TODO - get this from options
+        return options.isUseAstDefinitions() && definition != null;
     }
 
     /**

@@ -20,7 +20,6 @@ import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLUnionType
 import graphql.schema.TypeResolver
-import spock.lang.Ignore
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
@@ -967,7 +966,6 @@ type Query {
 '''
     }
 
-    @Ignore("until we have the option in the SchemaPrinter")
     def "can print a schema as AST elements"() {
         def sdl = '''
             type Query {
@@ -1063,7 +1061,8 @@ type Query {
         def types = new SchemaParser().parse(sdl)
         GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(options, types, runtimeWiring)
 
-        def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true)).print(schema)
+        def printOptions = defaultOptions().includeScalarTypes(true).useAstDefinitions(true)
+        def result = new SchemaPrinter(printOptions).print(schema)
 
         then:
         result == '''interface Interface {
@@ -1129,6 +1128,26 @@ extend input Input {
 extend input Input {
   faz: String
 }
+'''
+
+        when:
+        // we can print by direct type using AST
+        def queryType = schema.getType("Query")
+        result = new SchemaPrinter(printOptions).print(queryType)
+
+        then:
+        result == '''type Query {
+  foo: String
+}
+
+extend type Query {
+  bar: String
+}
+
+extend type Query {
+  baz: String
+}
+
 '''
     }
 }
