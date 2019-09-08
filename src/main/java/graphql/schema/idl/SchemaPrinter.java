@@ -497,7 +497,7 @@ public class SchemaPrinter {
 
     /**
      * This will print out a runtime graphql schema element using its contained AST type definition.  This
-     * must be guarded by a called to `shouldPrintAsAst`
+     * must be guarded by a called to {@link #shouldPrintAsAst(TypeDefinition)}
      *
      * @param out        the output writer
      * @param definition the AST type definition
