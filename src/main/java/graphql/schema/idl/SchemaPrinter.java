@@ -194,7 +194,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options setComparators(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.useAstDefinitions, this.includeDirectives,
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, this.useAstDefinitions,
                     comparatorRegistry);
         }
 
