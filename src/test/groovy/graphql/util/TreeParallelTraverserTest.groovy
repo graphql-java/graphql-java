@@ -1,8 +1,10 @@
 package graphql.util
 
+import org.awaitility.Awaitility
 import spock.lang.Specification
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicBoolean
 
 class TreeParallelTraverserTest extends Specification {
     /**
@@ -26,19 +28,22 @@ class TreeParallelTraverserTest extends Specification {
     def "test parallel traversing"() {
         given:
         Queue nodes = new ConcurrentLinkedQueue()
+        AtomicBoolean proceed = new AtomicBoolean()
         def visitor = [
                 enter: { TraverserContext context ->
                     def number = context.thisNode().number
                     if (number == 1) {
-                        Thread.sleep(100)
+                        Awaitility.await().untilTrue(proceed)
                     }
                     nodes.add(number)
                     TraversalControl.CONTINUE
                 }
         ] as TraverserVisitor
         when:
-        TreeParallelTraverser.parallelTraverser({ n -> n.children }).traverse(root, visitor)
 
+        Timer timer = new Timer()
+        timer.schedule({ -> proceed.set(true) }, 1000)
+        TreeParallelTraverser.parallelTraverser({ n -> n.children }).traverse(root, visitor)
 
         then:
         new ArrayList(nodes) == [0, 2, 4, 5, 1, 3]
