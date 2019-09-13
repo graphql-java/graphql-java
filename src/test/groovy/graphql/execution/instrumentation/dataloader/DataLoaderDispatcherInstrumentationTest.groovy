@@ -57,7 +57,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         chainedInstrumentation.instrumentations.any { instr -> instr instanceof DataLoaderDispatcherInstrumentation }
     }
 
-    def "dispatch is never called if there are no data loaders"() {
+    def "dispatch is never called if not data loader registry is set in"() {
         def dataLoaderRegistry = new DataLoaderRegistry() {
             @Override
             void dispatchAll() {
@@ -65,7 +65,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
             }
         }
         def graphQL = GraphQL.newGraphQL(starWarsSchema).build()
-        def executionInput = newExecutionInput().dataLoaderRegistry(dataLoaderRegistry).query('{ hero { name } }').build()
+        def executionInput = newExecutionInput().query('{ hero { name } }').build()
 
         when:
         def er = graphQL.execute(executionInput)
