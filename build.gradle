@@ -53,7 +53,7 @@ jar {
 dependencies {
     compile 'org.antlr:antlr4-runtime:4.7.2'
     compile 'org.slf4j:slf4j-api:' + slf4jVersion
-    compile 'com.graphql-java:java-dataloader:2.1.1'
+    compile 'com.graphql-java:java-dataloader:2.2.3'
     compile 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
     antlr "org.antlr:antlr4:4.7.2"
     testCompile group: 'junit', name: 'junit', version: '4.12'

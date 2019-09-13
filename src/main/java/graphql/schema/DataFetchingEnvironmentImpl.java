@@ -167,6 +167,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
+    public DataLoaderRegistry getDataLoaderRegistry() {
+        return dataLoaderRegistry;
+    }
+
+    @Override
     public CacheControl getCacheControl() {
         return cacheControl;
     }

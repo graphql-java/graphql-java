@@ -11,6 +11,7 @@ import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
+import org.dataloader.DataLoaderRegistry;
 
 import java.util.List;
 import java.util.Map;
@@ -31,7 +32,6 @@ public interface DataFetchingEnvironment {
      * For the root query, it is equal to {{@link DataFetchingEnvironment#getRoot}
      *
      * @param <T> you decide what type it is
-     *
      * @return can be null for the root query, otherwise it is never null
      */
     <T> T getSource();
@@ -45,7 +45,6 @@ public interface DataFetchingEnvironment {
      * Returns true of the named argument is present
      *
      * @param name the name of the argument
-     *
      * @return true of the named argument is present
      */
     boolean containsArgument(String name);
@@ -55,19 +54,17 @@ public interface DataFetchingEnvironment {
      *
      * @param name the name of the argument
      * @param <T>  you decide what type it is
-     *
      * @return the named argument or null if its not [present
      */
     <T> T getArgument(String name);
 
     /**
-     * Returns a context argument that is set up when the {@link graphql.GraphQL#execute} method
+     * Returns a context argument that is set up when the {@link graphql.GraphQL#execute(graphql.ExecutionInput)} )} method
      * is invoked.
      * <p>
      * This is a info object which is provided to all DataFetchers, but never used by graphql-java itself.
      *
      * @param <T> you decide what type it is
-     *
      * @return can be null
      */
     <T> T getContext();
@@ -83,7 +80,6 @@ public interface DataFetchingEnvironment {
      * If the field is a top level field then 'localContext' equals the global 'context'
      *
      * @param <T> you decide what type it is
-     *
      * @return can be null if no field context objects are passed back by previous parent fields
      */
     <T> T getLocalContext();
@@ -92,7 +88,6 @@ public interface DataFetchingEnvironment {
      * This is the source object for the root query.
      *
      * @param <T> you decide what type it is
-     *
      * @return can be null
      */
     <T> T getRoot();
@@ -105,7 +100,6 @@ public interface DataFetchingEnvironment {
 
     /**
      * @return the list of fields
-     *
      * @deprecated Use {@link #getMergedField()}.
      */
     @Deprecated
@@ -116,9 +110,9 @@ public interface DataFetchingEnvironment {
      * are querying the same data. If this is the case they get merged
      * together and fetched only once, but this method returns all of the Fields
      * from the query.
-     *
+     * <p>
      * Most of the time you probably want to use {@link #getField()}.
-     *
+     * <p>
      * Example query with more than one Field returned:
      *
      * <pre>
@@ -184,7 +178,6 @@ public interface DataFetchingEnvironment {
      * This gives you access to the directives related to this field
      *
      * @return the {@link graphql.execution.directives.QueryDirectives} for the currently executing field
-     *
      * @see graphql.execution.directives.QueryDirectives for more information
      */
     QueryDirectives getQueryDirectives();
@@ -195,13 +188,15 @@ public interface DataFetchingEnvironment {
      * @param dataLoaderName the name of the data loader to fetch
      * @param <K>            the key type
      * @param <V>            the value type
-     *
      * @return the named data loader or null
-     *
-     * @see graphql.execution.ExecutionContext#getDataLoaderRegistry()
      * @see org.dataloader.DataLoaderRegistry#getDataLoader(String)
      */
     <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
+
+    /**
+     * @return the {@link org.dataloader.DataLoaderRegistry} in play
+     */
+    DataLoaderRegistry getDataLoaderRegistry();
 
     /**
      * @return the current {@link CacheControl} instance used to add cache hints to the response

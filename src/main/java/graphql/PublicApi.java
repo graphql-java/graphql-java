@@ -6,6 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.CONSTRUCTOR;
+import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;
 
@@ -17,7 +18,7 @@ import static java.lang.annotation.ElementType.TYPE;
  * maybe be added which would break derivations but not callers.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(value = {CONSTRUCTOR, METHOD, TYPE})
+@Target(value = {CONSTRUCTOR, METHOD, TYPE, FIELD})
 @Documented
 public @interface PublicApi {
 }
