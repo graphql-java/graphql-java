@@ -1,7 +1,9 @@
 package graphql.execution.instrumentation.dataloader;
 
+import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.instrumentation.InstrumentationState;
+import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 import org.slf4j.Logger;
 
@@ -11,7 +13,12 @@ import org.slf4j.Logger;
 public class DataLoaderDispatcherInstrumentationState implements InstrumentationState {
 
     @Internal
-    public static final DataLoaderRegistry EMPTY_DATALOADER_REGISTRY = new DataLoaderRegistry();
+    public static final DataLoaderRegistry EMPTY_DATALOADER_REGISTRY = new DataLoaderRegistry() {
+        @Override
+        public DataLoaderRegistry register(String key, DataLoader<?, ?> dataLoader) {
+            return Assert.assertShouldNeverHappen("You MUST set in your own DataLoaderRegistry to use data loader");
+        }
+    };
 
     private final FieldLevelTrackingApproach approach;
     private final DataLoaderRegistry dataLoaderRegistry;
