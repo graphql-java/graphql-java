@@ -68,7 +68,7 @@ public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 

@@ -162,7 +162,7 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
             this.directives = existing.getDirectives();
             this.enumValueDefinitions = existing.getEnumValueDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {

@@ -167,7 +167,7 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
             this.directives = existing.getDirectives();
             this.definitions = existing.getFieldDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 

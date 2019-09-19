@@ -186,7 +186,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
             this.directives = existing.getDirectives();
             this.selectionSet = existing.getSelectionSet();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 

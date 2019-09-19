@@ -135,7 +135,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
             this.name = existing.getName();
             this.value = existing.getValue();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {

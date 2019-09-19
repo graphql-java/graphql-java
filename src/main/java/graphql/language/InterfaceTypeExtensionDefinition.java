@@ -79,7 +79,7 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
             this.directives = existing.getDirectives();
             this.definitions = existing.getFieldDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {

@@ -137,7 +137,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
             this.comments = existing.getComments();
             this.selections = existing.getSelections();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
         public Builder selections(Collection<? extends Selection> selections) {

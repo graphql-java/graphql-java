@@ -85,7 +85,7 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
             this.directives = existing.getDirectives();
             this.memberTypes = existing.getMemberTypes();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {

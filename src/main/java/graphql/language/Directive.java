@@ -149,7 +149,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
             this.name = existing.getName();
             this.arguments = existing.getArguments();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 

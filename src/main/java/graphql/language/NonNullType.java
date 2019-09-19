@@ -122,7 +122,7 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
             this.comments = existing.getComments();
             this.type = existing.getType();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 
