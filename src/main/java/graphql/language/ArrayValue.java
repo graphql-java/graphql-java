@@ -115,7 +115,7 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
             this.comments = existing.getComments();
             this.values = existing.getValues();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
