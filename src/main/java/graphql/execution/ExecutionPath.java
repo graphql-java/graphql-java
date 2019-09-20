@@ -84,7 +84,6 @@ public class ExecutionPath {
      * Parses an execution path from the provided path string in the format /segment1/segment2[index]/segmentN
      *
      * @param pathString the path string
-     *
      * @return a parsed execution path
      */
     public static ExecutionPath parse(String pathString) {
@@ -113,7 +112,6 @@ public class ExecutionPath {
      * This will create an execution path from the list of objects
      *
      * @param objects the path objects
-     *
      * @return a new execution path
      */
     public static ExecutionPath fromList(List<?> objects) {
@@ -137,7 +135,6 @@ public class ExecutionPath {
      * Takes the current path and adds a new segment to it, returning a new path
      *
      * @param segment the string path segment to add
-     *
      * @return a new path containing that segment
      */
     public ExecutionPath segment(String segment) {
@@ -148,12 +145,88 @@ public class ExecutionPath {
      * Takes the current path and adds a new segment to it, returning a new path
      *
      * @param segment the int path segment to add
-     *
      * @return a new path containing that segment
      */
     public ExecutionPath segment(int segment) {
         return new ExecutionPath(this, new IntPathSegment(segment));
     }
+
+    /**
+     * Drops the last segment off the path
+     *
+     * @return a new path with the last segment dropped off
+     */
+    public ExecutionPath dropSegment() {
+        if (this == rootPath()) {
+            return null;
+        }
+        return this.parent;
+    }
+
+    /**
+     * Replaces the last segment on the path eg ExecutionPath.parse("/a/b[1]").replaceSegment(9)
+     * equals "/a/b[9]"
+     *
+     * @param segment the integer segment to use
+     * @return a new path with the last segment replaced
+     */
+    public ExecutionPath replaceSegment(int segment) {
+        Assert.assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
+
+        List<Object> objects = this.toList();
+        objects.set(objects.size() - 1, new IntPathSegment(segment).getValue());
+        return fromList(objects);
+    }
+
+    /**
+     * Replaces the last segment on the path eg ExecutionPath.parse("/a/b[1]").replaceSegment("x")
+     * equals "/a/b/x"
+     *
+     * @param segment the string segment to use
+     * @return a new path with the last segment replaced
+     */
+    public ExecutionPath replaceSegment(String segment) {
+        Assert.assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
+
+        List<Object> objects = this.toList();
+        objects.set(objects.size() - 1, new StringPathSegment(segment).getValue());
+        return fromList(objects);
+    }
+
+
+    /**
+     * @return true if the end of the path has a list style segment eg 'a/b[2]'
+     */
+    public boolean isListSegment() {
+        return segment instanceof IntPathSegment;
+    }
+
+    /**
+     * @return true if the end of the path has a named style segment eg 'a/b[2]/c'
+     */
+    public boolean isNamedSegment() {
+        return segment instanceof StringPathSegment;
+    }
+
+    /**
+     * @return true if the path is the {@link #rootPath()}
+     */
+    public boolean isRootPath() {
+        return this == ROOT_PATH;
+    }
+
+    /**
+     * Appends the provided path to the current one
+     *
+     * @param path the path to append
+     * @return a new path
+     */
+    public ExecutionPath append(ExecutionPath path) {
+        List<Object> objects = this.toList();
+        objects.addAll(assertNotNull(path).toList());
+        return fromList(objects);
+    }
+
 
     public ExecutionPath sibling(String siblingField) {
         Assert.assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
@@ -180,6 +253,7 @@ public class ExecutionPath {
         Collections.reverse(list);
         return list;
     }
+
 
     /**
      * @return the path as a string which represents the call hierarchy
@@ -212,7 +286,8 @@ public class ExecutionPath {
         return pathList.hashCode();
     }
 
-    public interface PathSegment<T> {
+
+    private interface PathSegment<T> {
         T getValue();
     }
 
