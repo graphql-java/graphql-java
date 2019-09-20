@@ -118,4 +118,15 @@ class DataFetchingEnvironmentImplTest extends Specification {
         dfe.getCacheControl() == cacheControl
     }
 
+    def "get or default support"() {
+        when:
+        def dfe = newDataFetchingEnvironment(executionContext)
+                .arguments([x: "y"])
+                .build()
+        then:
+        dfe.getArgument("z") == null
+        dfe.getArgumentOrDefault("z", "default") == "default"
+        dfe.getArgument("x") == "y"
+        dfe.getArgumentOrDefault("x", "default") == "y"
+    }
 }
