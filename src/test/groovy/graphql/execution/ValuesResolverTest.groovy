@@ -1,5 +1,6 @@
 package graphql.execution
 
+import graphql.GraphQLArgumentInstrumentation
 import graphql.GraphQLException
 import graphql.TestUtil
 import graphql.language.Argument
@@ -142,6 +143,55 @@ class ValuesResolverTest extends Specification {
         then:
         values['arg'] == 'hello'
     }
+
+    def "getArgumentValues: resolves argument with variable reference with argument instrumentation"() {
+        given:
+        def variables = [var: 'hello']
+        GraphQLArgumentInstrumentation instrumentation = new GraphQLArgumentInstrumentation() {
+            @Override
+            Object instrumentValue(Object argumentValue) {
+                if (argumentValue instanceof String) {
+                    return (String) argumentValue + " bla";
+                } else return argumentValue;
+            }
+        }
+        def fieldArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLString).instrumentation(instrumentation).build()
+
+        def argument = new Argument("arg", new VariableReference("var"))
+
+        when:
+        def values = resolver.getArgumentValues([fieldArgument], [argument], variables)
+
+        then:
+        values['arg'] == 'hello bla'
+    }
+
+    def "getArgumentValues: resolves argument with variable reference with argument instrumentation that throws exception"() {
+        given:
+        def variables = [var: 'throw!']
+        GraphQLArgumentInstrumentation validationInstrumentation = new GraphQLArgumentInstrumentation() {
+            @Override
+            Object instrumentValue(Object argumentValue) {
+                if (argumentValue instanceof String) {
+                    if (argumentValue.equals("throw!")) {
+                        throw new Exception("throw!")
+                    }
+                }
+                return argumentValue
+            }
+        }
+
+        def fieldArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLString).instrumentation(validationInstrumentation).build()
+
+        def argument = new Argument("arg", new VariableReference("var"))
+
+        when:
+        resolver.getArgumentValues([fieldArgument], [argument], variables)
+
+        then:
+        thrown Exception
+    }
+
 
     def "getArgumentValues: resolves object literal"() {
         given: "schema defining input object"

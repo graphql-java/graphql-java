@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.GraphQLArgumentInstrumentation;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
@@ -20,19 +21,19 @@ import static graphql.Assert.assertValidName;
 
 /**
  * This defines an argument that can be supplied to a graphql field (via {@link graphql.schema.GraphQLFieldDefinition}.
- *
+ * <p>
  * Fields can be thought of as "functions" that take arguments and return a value.
- *
+ * <p>
  * See http://graphql.org/learn/queries/#arguments for more details on the concept.
- *
+ * <p>
  * {@link graphql.schema.GraphQLArgument} is used in two contexts, one context is graphql queries where it represents the arguments that can be
  * set on a field and the other is in Schema Definition Language (SDL) where it can be used to represent the argument value instances
  * that have been supplied on a {@link graphql.schema.GraphQLDirective}.
- *
+ * <p>
  * The difference is the 'value' and 'defaultValue' properties.  In a query argument, the 'value' is never in the GraphQLArgument
  * object but rather in the AST direct or in the query variables map and the 'defaultValue' represents a value to use if both of these are
  * not present. You can think of them like a descriptor of what shape an argument might have.
- *
+ * <p>
  * However with directives on SDL elements, the value is specified in AST only and transferred into the GraphQLArgument object and the
  * 'defaultValue' comes instead from the directive definition elsewhere in the SDL.  You can think of them as 'instances' of arguments, their shape and their
  * specific value on that directive.
@@ -47,6 +48,7 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
     private final Object defaultValue;
     private final InputValueDefinition definition;
     private final List<GraphQLDirective> directives;
+    private GraphQLArgumentInstrumentation instrumentation;
 
     private GraphQLInputType replacedType;
 
@@ -58,7 +60,6 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
      * @param description  the arg description
      * @param type         the arg type
      * @param defaultValue the default value
-     *
      * @deprecated use the {@link #newArgument()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -70,7 +71,6 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
     /**
      * @param name the arg name
      * @param type the arg type
-     *
      * @deprecated use the {@link #newArgument()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -85,7 +85,6 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
      * @param type         the arg type
      * @param defaultValue the default value
      * @param definition   the AST definition
-     *
      * @deprecated use the {@link #newArgument()} builder pattern instead, as this constructor will be made private in a future version.
      */
     public GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, InputValueDefinition definition) {
@@ -102,6 +101,12 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
         this.value = value;
         this.definition = definition;
         this.directives = directives;
+    }
+
+    private GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, Object value,
+                            InputValueDefinition definition, List<GraphQLDirective> directives, GraphQLArgumentInstrumentation instrumentation){
+        this(name, description, type, defaultValue, value, definition, directives);
+        this.instrumentation = instrumentation;
     }
 
 
@@ -147,6 +152,10 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
         return definition;
     }
 
+    public GraphQLArgumentInstrumentation getInstrumentation() {
+        return instrumentation;
+    }
+
     @Override
     public List<GraphQLDirective> getDirectives() {
         return new ArrayList<>(directives);
@@ -182,7 +191,6 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
-     *
      * @return a new field based on calling build on that builder
      */
     public GraphQLArgument transform(Consumer<Builder> builderConsumer) {
@@ -221,6 +229,7 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
         private Object value;
         private InputValueDefinition definition;
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+        private GraphQLArgumentInstrumentation instrumentation;
 
         public Builder() {
         }
@@ -233,6 +242,7 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
             this.description = existing.getDescription();
             this.definition = existing.getDefinition();
             this.directives.putAll(FpKit.getByName(existing.getDirectives(), GraphQLDirective::getName));
+            this.instrumentation = existing.instrumentation;
         }
 
         @Override
@@ -301,6 +311,12 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
             return withDirective(builder.build());
         }
 
+        public Builder instrumentation(GraphQLArgumentInstrumentation instrumentation) {
+            assertNotNull(instrumentation, "instrumentation can't be null");
+            this.instrumentation = instrumentation;
+            return this;
+        }
+
         /**
          * This is used to clear all the directives in the builder so far.
          *
@@ -320,7 +336,8 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
                     defaultValue,
                     value,
                     definition,
-                    sort(directives, GraphQLArgument.class, GraphQLDirective.class)
+                    sort(directives, GraphQLArgument.class, GraphQLDirective.class),
+                    instrumentation
             );
         }
     }

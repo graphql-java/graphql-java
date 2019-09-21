@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import graphql.GraphQLArgumentInstrumentation;
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -104,10 +105,16 @@ public class ValuesResolver {
             String argName = fieldArgument.getName();
             Argument argument = argumentMap.get(argName);
             Object value;
+            GraphQLArgumentInstrumentation argumentInstrumentation = fieldArgument.getInstrumentation();
+
             if (argument != null) {
                 value = coerceValueAst(codeRegistry.getFieldVisibility(), fieldArgument.getType(), argument.getValue(), variables);
             } else {
                 value = fieldArgument.getDefaultValue();
+            }
+
+            if (argumentInstrumentation!=null){
+                value = argumentInstrumentation.instrumentValue(value);
             }
             // only put an arg into the result IF they specified a variable at all or
             // the default value ended up being something non null

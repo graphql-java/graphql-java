@@ -1,5 +1,6 @@
 package graphql.schema
 
+import graphql.GraphQLArgumentInstrumentation
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLInt
@@ -10,10 +11,22 @@ class GraphQLArgumentTest extends Specification {
 
     def "object can be transformed"() {
         given:
+        def instrumentation = new GraphQLArgumentInstrumentation() {
+            @Override
+            Object instrumentValue(Object argumentValue) {
+                return null
+            }
+        }
+        def instrumentation2 = new GraphQLArgumentInstrumentation() {
+            @Override
+            Object instrumentValue(Object argumentValue) {
+                return null
+            }
+        }
         def startingArgument = GraphQLArgument.newArgument().name("A1")
                 .description("A1_description")
                 .type(GraphQLInt)
-                .withDirective(newDirective().name("directive1"))
+                .withDirective(newDirective().name("directive1")).instrumentation(instrumentation)
                 .build()
         when:
         def transformedArgument = startingArgument.transform({
@@ -23,7 +36,7 @@ class GraphQLArgumentTest extends Specification {
                     .type(GraphQLString)
                     .withDirective(newDirective().name("directive1"))
                     .withDirective(newDirective().name("directive3"))
-                    .value("VALUE")
+                    .value("VALUE").instrumentation(instrumentation2)
                     .defaultValue("DEFAULT")
         })
 
@@ -34,6 +47,7 @@ class GraphQLArgumentTest extends Specification {
         startingArgument.defaultValue == null
         startingArgument.getDirectives().size() == 1
         startingArgument.getDirective("directive1") != null
+        startingArgument.getInstrumentation() == instrumentation
 
         transformedArgument.name == "A2"
         transformedArgument.description == "A2_description"
@@ -43,6 +57,7 @@ class GraphQLArgumentTest extends Specification {
         transformedArgument.getDirectives().size() == 2
         transformedArgument.getDirective("directive1") != null
         transformedArgument.getDirective("directive3") != null
+        transformedArgument.getInstrumentation() == instrumentation2
     }
 
     def "directive support on arguments via builder"() {
