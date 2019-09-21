@@ -21,19 +21,19 @@ import static graphql.Assert.assertValidName;
 
 /**
  * This defines an argument that can be supplied to a graphql field (via {@link graphql.schema.GraphQLFieldDefinition}.
- * <p>
+ *
  * Fields can be thought of as "functions" that take arguments and return a value.
- * <p>
+ *
  * See http://graphql.org/learn/queries/#arguments for more details on the concept.
- * <p>
+ *
  * {@link graphql.schema.GraphQLArgument} is used in two contexts, one context is graphql queries where it represents the arguments that can be
  * set on a field and the other is in Schema Definition Language (SDL) where it can be used to represent the argument value instances
  * that have been supplied on a {@link graphql.schema.GraphQLDirective}.
- * <p>
+ *
  * The difference is the 'value' and 'defaultValue' properties.  In a query argument, the 'value' is never in the GraphQLArgument
  * object but rather in the AST direct or in the query variables map and the 'defaultValue' represents a value to use if both of these are
  * not present. You can think of them like a descriptor of what shape an argument might have.
- * <p>
+ *
  * However with directives on SDL elements, the value is specified in AST only and transferred into the GraphQLArgument object and the
  * 'defaultValue' comes instead from the directive definition elsewhere in the SDL.  You can think of them as 'instances' of arguments, their shape and their
  * specific value on that directive.
