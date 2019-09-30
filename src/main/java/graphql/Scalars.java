@@ -184,7 +184,13 @@ public class Scalars {
 
         @Override
         public String parseValue(Object input) {
-            return serialize(input);
+            if (input instanceof Boolean || isNumberIsh(input)) {
+                return input.toString();
+            }
+
+            throw new CoercingParseValueException(
+                    "Expected type 'String' but was '" + typeName(input) + "'."
+            );
         }
 
         @Override

@@ -50,10 +50,35 @@ class ScalarsStringTest extends Specification {
 
         where:
         value        | result
+        true         | "true"
+        false        | "false"
         "123ab"      | "123ab"
         123          | "123"
+    }
+
+    @Unroll
+    def "String serialize complex #value into #result (#result.class)"() {
+        expect:
+        Scalars.GraphQLString.getCoercing().serialize(value) == result
+
+        where:
+        value        | result
         customObject | "foo"
     }
 
+    @Unroll
+    def "String parseValue throws exception for complex input #value"() {
+        when:
+        Scalars.GraphQLString.getCoercing().parseValue(value)
+        then:
+        thrown(CoercingParseValueException)
+
+        where:
+        value        | _
+        customObject | _
+        new Object() | _
+        [:]          | _
+        []           | _
+    }
 
 }
