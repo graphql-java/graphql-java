@@ -4,24 +4,23 @@ import graphql.execution.instrumentation.InstrumentationState;
 import org.dataloader.DataLoaderRegistry;
 import org.slf4j.Logger;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
  * A base class that keeps track of whether aggressive batching can be used
  */
 public class DataLoaderDispatcherInstrumentationState implements InstrumentationState {
 
     private final FieldLevelTrackingApproach approach;
-    private final DataLoaderRegistry dataLoaderRegistry;
+    private final AtomicReference<DataLoaderRegistry> dataLoaderRegistry;
     private final InstrumentationState state;
-    private final boolean hasNoDataLoaders;
     private boolean aggressivelyBatching = true;
 
     public DataLoaderDispatcherInstrumentationState(Logger log, DataLoaderRegistry dataLoaderRegistry) {
 
-        this.dataLoaderRegistry = dataLoaderRegistry;
-        this.approach = new FieldLevelTrackingApproach(log, dataLoaderRegistry);
+        this.dataLoaderRegistry = new AtomicReference<>(dataLoaderRegistry);
+        this.approach = new FieldLevelTrackingApproach(log, this::getDataLoaderRegistry);
         this.state = approach.createState();
-        hasNoDataLoaders = dataLoaderRegistry.getKeys().isEmpty();
-
     }
 
     boolean isAggressivelyBatching() {
@@ -37,11 +36,15 @@ public class DataLoaderDispatcherInstrumentationState implements Instrumentation
     }
 
     DataLoaderRegistry getDataLoaderRegistry() {
-        return dataLoaderRegistry;
+        return dataLoaderRegistry.get();
+    }
+
+    void setDataLoaderRegistry(DataLoaderRegistry newRegistry) {
+        dataLoaderRegistry.set(newRegistry);
     }
 
     boolean hasNoDataLoaders() {
-        return hasNoDataLoaders;
+        return getDataLoaderRegistry().getKeys().isEmpty();
     }
 
     InstrumentationState getState() {

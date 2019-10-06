@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation.dataloader
 
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.execution.AsyncExecutionStrategy
@@ -11,6 +12,7 @@ import graphql.execution.batched.BatchedExecutionStrategy
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderRegistry
@@ -35,6 +37,30 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
             return super.execute(executionContext, parameters)
         }
     }
+
+
+    def query = """
+        query {
+            hero {
+                name 
+                friends {
+                    name
+                    friends {
+                       name
+                    } 
+                }
+            }
+        }
+        """
+
+    def expectedQueryData = [hero: [name: 'R2-D2', friends: [
+            [name: 'Luke Skywalker', friends: [
+                    [name: 'Han Solo'], [name: 'Leia Organa'], [name: 'C-3PO'], [name: 'R2-D2']]],
+            [name: 'Han Solo', friends: [
+                    [name: 'Luke Skywalker'], [name: 'Leia Organa'], [name: 'R2-D2']]],
+            [name: 'Leia Organa', friends: [
+                    [name: 'Luke Skywalker'], [name: 'Han Solo'], [name: 'C-3PO'], [name: 'R2-D2']]]]]
+    ]
 
 
     def "dataloader instrumentation is always added and an empty data loader registry is in place"() {
@@ -95,19 +121,38 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         dispatchedCalled
     }
 
-    def query = """
-        query {
-            hero {
-                name 
-                friends {
-                    name
-                    friends {
-                       name
-                    } 
-                }
+    def "enhanced execution input is respected"() {
+
+        def starWarsWiring = new StarWarsDataLoaderWiring()
+
+
+        DataLoaderRegistry startingDataLoaderRegistry = new DataLoaderRegistry();
+        def enhancedDataLoaderRegistry = starWarsWiring.newDataLoaderRegistry()
+
+        def dlInstrumentation = new DataLoaderDispatcherInstrumentation()
+        def enhancingInstrumentation = new SimpleInstrumentation() {
+            @Override
+            ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters) {
+                assert executionInput.getDataLoaderRegistry() == startingDataLoaderRegistry
+                return executionInput.transform({ builder -> builder.dataLoaderRegistry(enhancedDataLoaderRegistry) })
             }
         }
-        """
+
+        def chainedInstrumentation = new ChainedInstrumentation([dlInstrumentation, enhancingInstrumentation])
+
+        def graphql = GraphQL.newGraphQL(starWarsWiring.schema)
+                .instrumentation(chainedInstrumentation).build()
+
+        def executionInput = newExecutionInput()
+                .dataLoaderRegistry(startingDataLoaderRegistry)
+                .query(query).build()
+
+        when:
+        def er = graphql.executeAsync(executionInput).join()
+        then:
+        er.data == expectedQueryData
+    }
+
 
     @Unroll
     def "ensure DataLoaderDispatcherInstrumentation works for #executionStrategyName"() {
@@ -129,14 +174,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         def er = asyncResult.join()
 
         then:
-        er.data == [hero: [name: 'R2-D2', friends: [
-                [name: 'Luke Skywalker', friends: [
-                        [name: 'Han Solo'], [name: 'Leia Organa'], [name: 'C-3PO'], [name: 'R2-D2']]],
-                [name: 'Han Solo', friends: [
-                        [name: 'Luke Skywalker'], [name: 'Leia Organa'], [name: 'R2-D2']]],
-                [name: 'Leia Organa', friends: [
-                        [name: 'Luke Skywalker'], [name: 'Han Solo'], [name: 'C-3PO'], [name: 'R2-D2']]]]]
-        ]
+        er.data == expectedQueryData
 
         where:
         executionStrategyName              | executionStrategy                                               || _
