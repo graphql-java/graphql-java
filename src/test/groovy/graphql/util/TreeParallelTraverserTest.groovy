@@ -35,6 +35,7 @@ class TreeParallelTraverserTest extends Specification {
                         await().until({ nodes.size() == 4 })
                     }
                     nodes.add(number)
+                    println "added new node: $nodes"
                     TraversalControl.CONTINUE
                 }
         ] as TraverserVisitor
