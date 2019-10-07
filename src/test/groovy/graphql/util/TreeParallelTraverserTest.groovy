@@ -4,6 +4,8 @@ import spock.lang.Specification
 
 import java.util.concurrent.ConcurrentLinkedQueue
 
+import static org.awaitility.Awaitility.await
+
 class TreeParallelTraverserTest extends Specification {
     /**
      *          0
@@ -30,7 +32,7 @@ class TreeParallelTraverserTest extends Specification {
                 enter: { TraverserContext context ->
                     def number = context.thisNode().number
                     if (number == 1) {
-                        Thread.sleep(100)
+                        await().until({ nodes.size() == 4 })
                     }
                     nodes.add(number)
                     TraversalControl.CONTINUE
