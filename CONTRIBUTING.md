@@ -1,8 +1,8 @@
 Thanks for contributing to graphql-java!
 
 
-Please be sure that you read the [Code of Conduct](CODE_OF_CONDUCT.md) before contributing to this project
-and please create a new Issue and discuss first what your are planing todo for bigger changes.
+Please be sure that you read the [Code of Conduct](CODE_OF_CONDUCT.md) before contributing to this project and please
+create a new Issue and discuss first what your are planning to do for bigger changes.
 
 
 The overall goal of graphql-java is to have a correct implementation of the [GraphQL Spec](https://github.com/facebook/graphql/) in a production ready way.
