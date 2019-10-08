@@ -35,7 +35,7 @@ class TreeParallelTraverserTest extends Specification {
                     println "number: $number"
                     if (number == 1) {
                         println "awaiting"
-                        latch.await(30, TimeUnit.SECONDS)
+                        assert latch.await(120, TimeUnit.SECONDS)
                     }
                     nodes.add(number)
                     latch.countDown()
