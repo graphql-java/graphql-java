@@ -34,7 +34,11 @@ class TreeParallelTraverserTest extends Specification {
                     def number = context.thisNode().number
                     println "number: $number"
                     if (number == 1) {
-                        await().atMost(30, TimeUnit.SECONDS).until({ nodes.size() == 4 })
+                        println "awaiting"
+                        await().atMost(30, TimeUnit.SECONDS).until({
+                            println "testing ... size is ${nodes.size()}"
+                            return nodes.size() == 4
+                        })
                     }
                     nodes.add(number)
                     println "added new node: $nodes with size: ${nodes.size()}"
