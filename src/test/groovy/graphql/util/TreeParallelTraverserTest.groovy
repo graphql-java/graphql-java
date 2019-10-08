@@ -34,15 +34,16 @@ class TreeParallelTraverserTest extends Specification {
         def visitor = [
                 enter: { TraverserContext context ->
                     def number = context.thisNode().number
-                    println "number: $number"
+                    println "number: $number in ${Thread.currentThread()}"
                     if (number == 1) {
 //                        while (latch.getCount() > 0) {
 //                        }
+                        println "wating in ${Thread.currentThread()}"
                         assert latch.await(30, TimeUnit.SECONDS)
                     }
                     nodes.add(number)
                     latch.countDown()
-                    println "added new node: $nodes with size: ${nodes.size()} and latch: ${latch.getCount()}"
+                    println "added new node: $nodes with size: ${nodes.size()} and latch: ${latch.getCount()} in ${Thread.currentThread()}"
                     TraversalControl.CONTINUE
                 }
         ] as TraverserVisitor
