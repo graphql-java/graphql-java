@@ -4,6 +4,7 @@ import spock.lang.Specification
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ForkJoinPool
 
 class TreeParallelTraverserTest extends Specification {
     /**
@@ -43,7 +44,8 @@ class TreeParallelTraverserTest extends Specification {
                 }
         ] as TraverserVisitor
         when:
-        TreeParallelTraverser.parallelTraverser({ n -> n.children }).traverse(root, visitor)
+        def pool = new ForkJoinPool(4)
+        TreeParallelTraverser.parallelTraverser({ n -> n.children }, pool).traverse(root, visitor)
 
 
         then:
