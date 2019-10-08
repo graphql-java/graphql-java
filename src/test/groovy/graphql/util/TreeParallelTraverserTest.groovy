@@ -3,9 +3,8 @@ package graphql.util
 import spock.lang.Specification
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-
-import static org.awaitility.Awaitility.await
 
 class TreeParallelTraverserTest extends Specification {
     /**
@@ -29,18 +28,17 @@ class TreeParallelTraverserTest extends Specification {
     def "test parallel traversing"() {
         given:
         Queue nodes = new ConcurrentLinkedQueue()
+        CountDownLatch latch = new CountDownLatch(4)
         def visitor = [
                 enter: { TraverserContext context ->
                     def number = context.thisNode().number
                     println "number: $number"
                     if (number == 1) {
                         println "awaiting"
-                        await().atMost(30, TimeUnit.SECONDS).until({
-                            println "testing ... size is ${nodes.size()}"
-                            return nodes.size() == 4
-                        })
+                        latch.await(30, TimeUnit.SECONDS)
                     }
                     nodes.add(number)
+                    latch.countDown()
                     println "added new node: $nodes with size: ${nodes.size()}"
                     TraversalControl.CONTINUE
                 }
