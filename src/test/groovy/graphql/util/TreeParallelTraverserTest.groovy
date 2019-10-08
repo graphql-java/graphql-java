@@ -4,7 +4,6 @@ import spock.lang.Specification
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 class TreeParallelTraverserTest extends Specification {
     /**
@@ -34,8 +33,8 @@ class TreeParallelTraverserTest extends Specification {
                     def number = context.thisNode().number
                     println "number: $number"
                     if (number == 1) {
-                        println "awaiting"
-                        assert latch.await(120, TimeUnit.SECONDS)
+                        while (latch.getCount() > 0) {
+                        }
                     }
                     nodes.add(number)
                     latch.countDown()
