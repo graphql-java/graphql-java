@@ -3,6 +3,7 @@ package graphql.util
 import spock.lang.Specification
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.TimeUnit
 
 import static org.awaitility.Awaitility.await
 
@@ -33,7 +34,7 @@ class TreeParallelTraverserTest extends Specification {
                     def number = context.thisNode().number
                     println "number: $number"
                     if (number == 1) {
-                        await().until({ nodes.size() == 4 })
+                        await().atMost(30, TimeUnit.SECONDS).until({ nodes.size() == 4 })
                     }
                     nodes.add(number)
                     println "added new node: $nodes"
