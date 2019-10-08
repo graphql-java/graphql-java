@@ -31,6 +31,7 @@ class TreeParallelTraverserTest extends Specification {
         def visitor = [
                 enter: { TraverserContext context ->
                     def number = context.thisNode().number
+                    println "number: $number"
                     if (number == 1) {
                         await().until({ nodes.size() == 4 })
                     }
