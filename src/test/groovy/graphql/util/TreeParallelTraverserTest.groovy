@@ -39,7 +39,7 @@ class TreeParallelTraverserTest extends Specification {
                     }
                     nodes.add(number)
                     latch.countDown()
-                    println "added new node: $nodes with size: ${nodes.size()}"
+                    println "added new node: $nodes with size: ${nodes.size()} and latch: ${latch.getCount()}"
                     TraversalControl.CONTINUE
                 }
         ] as TraverserVisitor
