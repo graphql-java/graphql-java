@@ -25,18 +25,14 @@ import java.util.Map;
 @PublicApi
 public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironment {
 
+    protected final DataFetchingEnvironment delegateEnvironment;
+
     /**
      * Called to wrap an existing {@link graphql.schema.DataFetchingEnvironment}.
      *
      * @param delegateEnvironment the environment to wrap and delegate all method called to
      * @return a wrapped environment
      */
-    public static DelegatingDataFetchingEnvironment wrap(DataFetchingEnvironment delegateEnvironment) {
-        return new DelegatingDataFetchingEnvironment(delegateEnvironment);
-    }
-
-    protected final DataFetchingEnvironment delegateEnvironment;
-
     public DelegatingDataFetchingEnvironment(DataFetchingEnvironment delegateEnvironment) {
         this.delegateEnvironment = delegateEnvironment;
     }
