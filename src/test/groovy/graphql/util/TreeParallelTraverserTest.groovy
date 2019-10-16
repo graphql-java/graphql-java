@@ -1,8 +1,12 @@
 package graphql.util
 
+
 import spock.lang.Specification
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ForkJoinPool
+import java.util.concurrent.TimeUnit
 
 class TreeParallelTraverserTest extends Specification {
     /**
@@ -26,18 +30,28 @@ class TreeParallelTraverserTest extends Specification {
     def "test parallel traversing"() {
         given:
         Queue nodes = new ConcurrentLinkedQueue()
+        CountDownLatch latch = new CountDownLatch(4)
         def visitor = [
                 enter: { TraverserContext context ->
                     def number = context.thisNode().number
+                    println "number: $number in ${Thread.currentThread()}"
                     if (number == 1) {
-                        Thread.sleep(100)
+//                        while (latch.getCount() > 0) {
+//                        }
+                        println "wating in ${Thread.currentThread()}"
+                        assert latch.await(30, TimeUnit.SECONDS)
                     }
                     nodes.add(number)
+                    latch.countDown()
+                    println "added new node: $nodes with size: ${nodes.size()} and latch: ${latch.getCount()} in ${Thread.currentThread()}"
                     TraversalControl.CONTINUE
                 }
         ] as TraverserVisitor
         when:
-        TreeParallelTraverser.parallelTraverser({ n -> n.children }).traverse(root, visitor)
+        def pool = new ForkJoinPool(4)
+        println "parellism: ${pool.getParallelism()}"
+        println "processors: ${Runtime.getRuntime().availableProcessors()}"
+        TreeParallelTraverser.parallelTraverser({ n -> n.children }, pool).traverse(root, visitor)
 
 
         then:

@@ -3,7 +3,6 @@ package graphql.execution
 import graphql.AssertException
 import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionInput
-import graphql.GraphQL
 import graphql.GraphQLError
 import graphql.SerializationError
 import graphql.TestUtil
@@ -199,4 +198,128 @@ class ExecutionPathTest extends Specification {
         "/a/b[0]/c[1]" | ["a", "b", 0, "c", 1]
     }
 
+    def "get path without list end"() {
+        when:
+        def path = ExecutionPath.fromList(["a", "b", 9])
+        path = path.getPathWithoutListEnd()
+        then:
+        path.toList() == ["a", "b"]
+
+        when:
+        path = path.getPathWithoutListEnd()
+        then:
+        path.toList() == ["a", "b"]
+    }
+
+    def "path segment naming and types"() {
+        when:
+        def path = ExecutionPath.fromList(["a", 0, "b", 9])
+
+        then:
+        path.getSegmentName() == "b"
+        path.isListSegment()
+        !path.isNamedSegment()
+
+        when:
+        path = path.dropSegment()
+
+        then:
+        path.getSegmentName() == "b"
+        !path.isListSegment()
+        path.isNamedSegment()
+
+        when:
+        path = path.dropSegment()
+
+        then:
+        path.getSegmentName() == "a"
+        path.isListSegment()
+        !path.isNamedSegment()
+
+        when:
+        path = path.dropSegment()
+
+        then:
+        path.getSegmentName() == "a"
+
+        !path.isListSegment()
+        path.isNamedSegment()
+
+        when:
+        path = path.dropSegment()
+
+        then:
+        path.getSegmentName() == null
+        !path.isListSegment()
+        !path.isNamedSegment()
+        path.isRootPath()
+    }
+
+    def "can append paths"() {
+        when:
+        def path = ExecutionPath.fromList(["a", "b", 0])
+        def path2 = ExecutionPath.fromList(["x", "y", 9])
+
+        def newPath = path.append(path2)
+
+        then:
+        newPath.toList() == ["a", "b", 0, "x", "y", 9]
+
+
+        when:
+        newPath = ExecutionPath.rootPath().append(path2)
+
+        then:
+        newPath.toList() == ["x", "y", 9]
+
+        when:
+        newPath = path2.append(ExecutionPath.rootPath())
+
+        then:
+        newPath.toList() == ["x", "y", 9]
+
+        when:
+        newPath = ExecutionPath.rootPath().append(ExecutionPath.rootPath())
+
+        then:
+        newPath.toList() == []
+    }
+
+    def "replace support"() {
+        when:
+        def path = ExecutionPath.fromList(["a", "b", 0])
+        def newPath = path.replaceSegment(1)
+
+        then:
+        newPath.toList() == ["a", "b", 1]
+
+        when:
+        newPath = path.replaceSegment("x")
+
+        then:
+        newPath.toList() == ["a", "b", "x"]
+
+        when:
+        newPath = path.replaceSegment(99)
+
+        then:
+        newPath.toList() == ["a", "b", 99]
+
+        when:
+        ExecutionPath.rootPath().replaceSegment(1)
+
+        then:
+        thrown(AssertException)
+
+        when:
+        ExecutionPath.rootPath().replaceSegment("x")
+
+        then:
+        thrown(AssertException)
+
+        when:
+        newPath = ExecutionPath.parse("/a/b[1]").replaceSegment("x")
+        then:
+        newPath.toList() == ["a", "b", "x"]
+    }
 }
