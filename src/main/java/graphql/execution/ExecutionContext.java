@@ -98,8 +98,9 @@ public class ExecutionContext {
         return variables;
     }
 
-    public Object getContext() {
-        return context;
+    @SuppressWarnings("unchecked")
+    public <T> T getContext() {
+        return (T) context;
     }
 
     @SuppressWarnings("unchecked")
