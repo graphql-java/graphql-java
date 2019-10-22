@@ -1,7 +1,6 @@
 package graphql.schema;
 
 
-import graphql.GraphQLArgumentMapper;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
@@ -15,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
@@ -48,7 +48,7 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
     private final Object defaultValue;
     private final InputValueDefinition definition;
     private final List<GraphQLDirective> directives;
-    private GraphQLArgumentMapper valueMapper;
+    private Function<Object,Object> valueMapper;
 
     private GraphQLInputType replacedType;
 
@@ -104,9 +104,9 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
     }
 
     private GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, Object value,
-                            InputValueDefinition definition, List<GraphQLDirective> directives, GraphQLArgumentMapper instrumentation){
+                            InputValueDefinition definition, List<GraphQLDirective> directives, Function<Object,Object> valueMapper){
         this(name, description, type, defaultValue, value, definition, directives);
-        this.valueMapper = instrumentation;
+        this.valueMapper = valueMapper;
     }
 
 
@@ -152,7 +152,7 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
         return definition;
     }
 
-    public GraphQLArgumentMapper getArgumentMapper() {
+    public Function<Object,Object> getArgumentMapper() {
         return valueMapper;
     }
 
@@ -229,7 +229,7 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
         private Object value;
         private InputValueDefinition definition;
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
-        private GraphQLArgumentMapper valueMapper;
+        private Function<Object,Object> valueMapper;
 
         public Builder() {
         }
@@ -311,7 +311,7 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
             return withDirective(builder.build());
         }
 
-        public Builder valueMapper(GraphQLArgumentMapper valueMapper) {
+        public Builder valueMapper(Function<Object,Object> valueMapper) {
             assertNotNull(valueMapper, "instrumentation can't be null");
             this.valueMapper = valueMapper;
             return this;

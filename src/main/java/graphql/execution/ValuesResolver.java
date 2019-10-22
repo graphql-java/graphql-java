@@ -1,7 +1,6 @@
 package graphql.execution;
 
 
-import graphql.GraphQLArgumentMapper;
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -29,6 +28,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertShouldNeverHappen;
@@ -105,7 +105,7 @@ public class ValuesResolver {
             String argName = fieldArgument.getName();
             Argument argument = argumentMap.get(argName);
             Object value;
-            GraphQLArgumentMapper argumentMapper = fieldArgument.getArgumentMapper();
+            Function<Object,Object> argumentValueMapper = fieldArgument.getArgumentMapper();
 
             if (argument != null) {
                 value = coerceValueAst(codeRegistry.getFieldVisibility(), fieldArgument.getType(), argument.getValue(), variables);
@@ -113,8 +113,8 @@ public class ValuesResolver {
                 value = fieldArgument.getDefaultValue();
             }
 
-            if (argumentMapper!=null){
-                value = argumentMapper.mapArgumentValue(value);
+            if (argumentValueMapper!=null){
+                value = argumentValueMapper.apply(value);
             }
             // only put an arg into the result IF they specified a variable at all or
             // the default value ended up being something non null

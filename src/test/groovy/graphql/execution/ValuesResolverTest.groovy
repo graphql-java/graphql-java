@@ -1,6 +1,5 @@
 package graphql.execution
 
-import graphql.GraphQLArgumentMapper
 import graphql.GraphQLException
 import graphql.TestUtil
 import graphql.language.Argument
@@ -21,6 +20,8 @@ import graphql.schema.CoercingParseValueException
 import graphql.schema.GraphQLArgument
 import spock.lang.Specification
 import spock.lang.Unroll
+
+import java.util.function.Function
 
 import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLFloat
@@ -147,13 +148,10 @@ class ValuesResolverTest extends Specification {
     def "getArgumentValues: resolves argument with variable reference with argument valueMapper"() {
         given:
         def variables = [var: 'hello']
-        GraphQLArgumentMapper valueMapper = new GraphQLArgumentMapper() {
-            @Override
-            Object mapArgumentValue(Object argumentValue) {
-                if (argumentValue instanceof String) {
-                    return (String) argumentValue + " bla"
-                } else return argumentValue
-            }
+        Function<Object, Object> valueMapper = { argumentValue ->
+            if (argumentValue instanceof String) {
+                return (String) argumentValue + " bla"
+            } else return argumentValue
         }
         def fieldArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLString).valueMapper(valueMapper).build()
 
@@ -166,18 +164,41 @@ class ValuesResolverTest extends Specification {
         values['arg'] == 'hello bla'
     }
 
+    def "getArgumentValues: resolves argument with variable reference with chained argument valueMapper"() {
+        given:
+        def variables = [var: 'hello']
+        Function<Object, Object> suffixMapper = { argumentValue ->
+            if (argumentValue instanceof String) {
+                return (String) argumentValue + " bla"
+            } else return argumentValue
+        }
+
+        Function<Object, Object> prefixMapper = { argumentValue ->
+            if (argumentValue instanceof String) {
+                return "be " + (String) argumentValue
+            } else return argumentValue
+        }
+
+        def fieldArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLString).valueMapper(suffixMapper.andThen(prefixMapper)).build()
+
+        def argument = new Argument("arg", new VariableReference("var"))
+
+        when:
+        def values = resolver.getArgumentValues([fieldArgument], [argument], variables)
+
+        then:
+        values['arg'] == 'be hello bla'
+    }
+
+
     def "getArgumentValues: resolves argument with variable reference with argument valueMapper that throws exception"() {
         given:
         def variables = [var: 'throw!']
-        GraphQLArgumentMapper valueMapper = new GraphQLArgumentMapper() {
-            @Override
-            Object mapArgumentValue(Object argumentValue) {
-                if (argumentValue instanceof String) {
-                    if (argumentValue.equals("throw!")) {
-                        throw new Exception("throw!")
-                    }
+        def valueMapper = { argumentValue ->
+            if (argumentValue instanceof String) {
+                if (argumentValue.equals("throw!")) {
+                    throw new Exception("throw!")
                 }
-                return argumentValue
             }
         }
 

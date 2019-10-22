@@ -1,7 +1,8 @@
 package graphql.schema
 
-import graphql.GraphQLArgumentMapper
 import spock.lang.Specification
+
+import java.util.function.Function
 
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
@@ -11,18 +12,8 @@ class GraphQLArgumentTest extends Specification {
 
     def "object can be transformed"() {
         given:
-        def valueMapper = new GraphQLArgumentMapper() {
-            @Override
-            Object mapArgumentValue(Object argumentValue) {
-                return null
-            }
-        }
-        def valueMapper2 = new GraphQLArgumentMapper() {
-            @Override
-            Object mapArgumentValue(Object argumentValue) {
-                return null
-            }
-        }
+        Function<Object,Object> valueMapper = { o->null}
+        Function<Object,Object> valueMapper2 = {o->null}
         def startingArgument = GraphQLArgument.newArgument().name("A1")
                 .description("A1_description")
                 .type(GraphQLInt)
