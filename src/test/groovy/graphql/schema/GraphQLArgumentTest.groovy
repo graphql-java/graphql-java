@@ -1,6 +1,6 @@
 package graphql.schema
 
-import graphql.GraphQLArgumentInstrumentation
+import graphql.GraphQLArgumentMapper
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLInt
@@ -11,22 +11,22 @@ class GraphQLArgumentTest extends Specification {
 
     def "object can be transformed"() {
         given:
-        def instrumentation = new GraphQLArgumentInstrumentation() {
+        def valueMapper = new GraphQLArgumentMapper() {
             @Override
-            Object instrumentValue(Object argumentValue) {
+            Object mapArgumentValue(Object argumentValue) {
                 return null
             }
         }
-        def instrumentation2 = new GraphQLArgumentInstrumentation() {
+        def valueMapper2 = new GraphQLArgumentMapper() {
             @Override
-            Object instrumentValue(Object argumentValue) {
+            Object mapArgumentValue(Object argumentValue) {
                 return null
             }
         }
         def startingArgument = GraphQLArgument.newArgument().name("A1")
                 .description("A1_description")
                 .type(GraphQLInt)
-                .withDirective(newDirective().name("directive1")).instrumentation(instrumentation)
+                .withDirective(newDirective().name("directive1")).valueMapper(valueMapper)
                 .build()
         when:
         def transformedArgument = startingArgument.transform({
@@ -36,7 +36,8 @@ class GraphQLArgumentTest extends Specification {
                     .type(GraphQLString)
                     .withDirective(newDirective().name("directive1"))
                     .withDirective(newDirective().name("directive3"))
-                    .value("VALUE").instrumentation(instrumentation2)
+                    .value("VALUE")
+                    .valueMapper(valueMapper2)
                     .defaultValue("DEFAULT")
         })
 
@@ -47,7 +48,7 @@ class GraphQLArgumentTest extends Specification {
         startingArgument.defaultValue == null
         startingArgument.getDirectives().size() == 1
         startingArgument.getDirective("directive1") != null
-        startingArgument.getInstrumentation() == instrumentation
+        startingArgument.getInstrumentation() == valueMapper
 
         transformedArgument.name == "A2"
         transformedArgument.description == "A2_description"
@@ -57,7 +58,7 @@ class GraphQLArgumentTest extends Specification {
         transformedArgument.getDirectives().size() == 2
         transformedArgument.getDirective("directive1") != null
         transformedArgument.getDirective("directive3") != null
-        transformedArgument.getInstrumentation() == instrumentation2
+        transformedArgument.getInstrumentation() == valueMapper2
     }
 
     def "directive support on arguments via builder"() {

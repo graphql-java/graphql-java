@@ -1,7 +1,7 @@
 package graphql.schema;
 
 
-import graphql.GraphQLArgumentInstrumentation;
+import graphql.GraphQLArgumentMapper;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
@@ -48,7 +48,7 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
     private final Object defaultValue;
     private final InputValueDefinition definition;
     private final List<GraphQLDirective> directives;
-    private GraphQLArgumentInstrumentation instrumentation;
+    private GraphQLArgumentMapper valueMapper;
 
     private GraphQLInputType replacedType;
 
@@ -104,9 +104,9 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
     }
 
     private GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, Object value,
-                            InputValueDefinition definition, List<GraphQLDirective> directives, GraphQLArgumentInstrumentation instrumentation){
+                            InputValueDefinition definition, List<GraphQLDirective> directives, GraphQLArgumentMapper instrumentation){
         this(name, description, type, defaultValue, value, definition, directives);
-        this.instrumentation = instrumentation;
+        this.valueMapper = instrumentation;
     }
 
 
@@ -152,8 +152,8 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
         return definition;
     }
 
-    public GraphQLArgumentInstrumentation getInstrumentation() {
-        return instrumentation;
+    public GraphQLArgumentMapper getInstrumentation() {
+        return valueMapper;
     }
 
     @Override
@@ -229,7 +229,7 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
         private Object value;
         private InputValueDefinition definition;
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
-        private GraphQLArgumentInstrumentation instrumentation;
+        private GraphQLArgumentMapper valueMapper;
 
         public Builder() {
         }
@@ -242,7 +242,7 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
             this.description = existing.getDescription();
             this.definition = existing.getDefinition();
             this.directives.putAll(FpKit.getByName(existing.getDirectives(), GraphQLDirective::getName));
-            this.instrumentation = existing.instrumentation;
+            this.valueMapper = existing.valueMapper;
         }
 
         @Override
@@ -311,9 +311,9 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
             return withDirective(builder.build());
         }
 
-        public Builder instrumentation(GraphQLArgumentInstrumentation instrumentation) {
-            assertNotNull(instrumentation, "instrumentation can't be null");
-            this.instrumentation = instrumentation;
+        public Builder valueMapper(GraphQLArgumentMapper valueMapper) {
+            assertNotNull(valueMapper, "instrumentation can't be null");
+            this.valueMapper = valueMapper;
             return this;
         }
 
@@ -337,7 +337,7 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
                     value,
                     definition,
                     sort(directives, GraphQLArgument.class, GraphQLDirective.class),
-                    instrumentation
+                    valueMapper
             );
         }
     }

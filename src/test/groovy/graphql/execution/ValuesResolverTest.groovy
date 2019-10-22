@@ -1,6 +1,6 @@
 package graphql.execution
 
-import graphql.GraphQLArgumentInstrumentation
+import graphql.GraphQLArgumentMapper
 import graphql.GraphQLException
 import graphql.TestUtil
 import graphql.language.Argument
@@ -144,18 +144,18 @@ class ValuesResolverTest extends Specification {
         values['arg'] == 'hello'
     }
 
-    def "getArgumentValues: resolves argument with variable reference with argument instrumentation"() {
+    def "getArgumentValues: resolves argument with variable reference with argument valueMapper"() {
         given:
         def variables = [var: 'hello']
-        GraphQLArgumentInstrumentation instrumentation = new GraphQLArgumentInstrumentation() {
+        GraphQLArgumentMapper valueMapper = new GraphQLArgumentMapper() {
             @Override
-            Object instrumentValue(Object argumentValue) {
+            Object mapArgumentValue(Object argumentValue) {
                 if (argumentValue instanceof String) {
-                    return (String) argumentValue + " bla";
-                } else return argumentValue;
+                    return (String) argumentValue + " bla"
+                } else return argumentValue
             }
         }
-        def fieldArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLString).instrumentation(instrumentation).build()
+        def fieldArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLString).valueMapper(valueMapper).build()
 
         def argument = new Argument("arg", new VariableReference("var"))
 
@@ -166,12 +166,12 @@ class ValuesResolverTest extends Specification {
         values['arg'] == 'hello bla'
     }
 
-    def "getArgumentValues: resolves argument with variable reference with argument instrumentation that throws exception"() {
+    def "getArgumentValues: resolves argument with variable reference with argument valueMapper that throws exception"() {
         given:
         def variables = [var: 'throw!']
-        GraphQLArgumentInstrumentation validationInstrumentation = new GraphQLArgumentInstrumentation() {
+        GraphQLArgumentMapper valueMapper = new GraphQLArgumentMapper() {
             @Override
-            Object instrumentValue(Object argumentValue) {
+            Object mapArgumentValue(Object argumentValue) {
                 if (argumentValue instanceof String) {
                     if (argumentValue.equals("throw!")) {
                         throw new Exception("throw!")
@@ -181,7 +181,7 @@ class ValuesResolverTest extends Specification {
             }
         }
 
-        def fieldArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLString).instrumentation(validationInstrumentation).build()
+        def fieldArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLString).valueMapper(valueMapper).build()
 
         def argument = new Argument("arg", new VariableReference("var"))
 
