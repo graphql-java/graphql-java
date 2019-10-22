@@ -48,7 +48,7 @@ class GraphQLArgumentTest extends Specification {
         startingArgument.defaultValue == null
         startingArgument.getDirectives().size() == 1
         startingArgument.getDirective("directive1") != null
-        startingArgument.getInstrumentation() == valueMapper
+        startingArgument.getArgumentMapper() == valueMapper
 
         transformedArgument.name == "A2"
         transformedArgument.description == "A2_description"
@@ -58,7 +58,7 @@ class GraphQLArgumentTest extends Specification {
         transformedArgument.getDirectives().size() == 2
         transformedArgument.getDirective("directive1") != null
         transformedArgument.getDirective("directive3") != null
-        transformedArgument.getInstrumentation() == valueMapper2
+        transformedArgument.getArgumentMapper() == valueMapper2
     }
 
     def "directive support on arguments via builder"() {

@@ -152,7 +152,7 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
         return definition;
     }
 
-    public GraphQLArgumentMapper getInstrumentation() {
+    public GraphQLArgumentMapper getArgumentMapper() {
         return valueMapper;
     }
 

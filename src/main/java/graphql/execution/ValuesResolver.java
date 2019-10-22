@@ -105,7 +105,7 @@ public class ValuesResolver {
             String argName = fieldArgument.getName();
             Argument argument = argumentMap.get(argName);
             Object value;
-            GraphQLArgumentMapper argumentInstrumentation = fieldArgument.getInstrumentation();
+            GraphQLArgumentMapper argumentMapper = fieldArgument.getArgumentMapper();
 
             if (argument != null) {
                 value = coerceValueAst(codeRegistry.getFieldVisibility(), fieldArgument.getType(), argument.getValue(), variables);
@@ -113,8 +113,8 @@ public class ValuesResolver {
                 value = fieldArgument.getDefaultValue();
             }
 
-            if (argumentInstrumentation!=null){
-                value = argumentInstrumentation.mapArgumentValue(value);
+            if (argumentMapper!=null){
+                value = argumentMapper.mapArgumentValue(value);
             }
             // only put an arg into the result IF they specified a variable at all or
             // the default value ended up being something non null
