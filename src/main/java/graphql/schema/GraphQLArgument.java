@@ -48,7 +48,7 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
     private final Object defaultValue;
     private final InputValueDefinition definition;
     private final List<GraphQLDirective> directives;
-    private Function<Object,Object> valueMapper;
+    private Function<Object, Object> valueMapper;
 
     private GraphQLInputType replacedType;
 
@@ -92,6 +92,11 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
     }
 
     private GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, Object value, InputValueDefinition definition, List<GraphQLDirective> directives) {
+        this(name, description, type, defaultValue, value, definition, directives, null);
+    }
+
+    private GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, Object value,
+                            InputValueDefinition definition, List<GraphQLDirective> directives, Function<Object, Object> valueMapper) {
         assertValidName(name);
         assertNotNull(type, "type can't be null");
         this.name = name;
@@ -101,11 +106,6 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
         this.value = value;
         this.definition = definition;
         this.directives = directives;
-    }
-
-    private GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, Object value,
-                            InputValueDefinition definition, List<GraphQLDirective> directives, Function<Object,Object> valueMapper){
-        this(name, description, type, defaultValue, value, definition, directives);
         this.valueMapper = valueMapper;
     }
 
@@ -152,7 +152,7 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
         return definition;
     }
 
-    public Function<Object,Object> getArgumentMapper() {
+    public Function<Object, Object> getArgumentMapper() {
         return valueMapper;
     }
 
@@ -229,7 +229,7 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
         private Object value;
         private InputValueDefinition definition;
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
-        private Function<Object,Object> valueMapper;
+        private Function<Object, Object> valueMapper;
 
         public Builder() {
         }
@@ -311,7 +311,7 @@ public class GraphQLArgument implements GraphQLInputValueDefinition {
             return withDirective(builder.build());
         }
 
-        public Builder valueMapper(Function<Object,Object> valueMapper) {
+        public Builder valueMapper(Function<Object, Object> valueMapper) {
             assertNotNull(valueMapper, "instrumentation can't be null");
             this.valueMapper = valueMapper;
             return this;
