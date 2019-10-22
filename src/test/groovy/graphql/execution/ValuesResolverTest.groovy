@@ -18,6 +18,7 @@ import graphql.language.VariableDefinition
 import graphql.language.VariableReference
 import graphql.schema.CoercingParseValueException
 import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLTypeReference
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -163,6 +164,43 @@ class ValuesResolverTest extends Specification {
         then:
         values['arg'] == 'hello bla'
     }
+
+    def "getArgumentValues: resolves complex argument with variable reference with argument valueMapper"() {
+        given:
+        def parents = new ArrayList<Personality>()
+        def dad = new Personality("x", 50, null)
+        parents.add(dad)
+        def mom = new Personality("y", 55, null)
+        parents.add(mom)
+
+        def variables = [var: new Personality("yarin", 24, parents)]
+
+        Function<Object, Object> valueMapper = {
+            argumentValue ->
+                def person = (Personality) argumentValue
+                return new Personality(person.name + " bla", person.age + 1, person.parents.subList(0, 1))
+        }
+
+        def inputObjectType = newInputObject().name("PersonInput")
+                .field(newInputObjectField().name("name").type(GraphQLString))
+                .field(newInputObjectField().name("age").type(GraphQLInt))
+                .field(newInputObjectField().name("parents").type(list(GraphQLTypeReference.typeRef("PersonInput")))).build()
+
+        def fieldArgument = GraphQLArgument.newArgument().name("arg").type(inputObjectType).valueMapper(valueMapper).build()
+
+        def argument = new Argument("arg", new VariableReference("var"))
+
+        when:
+        def values = resolver.getArgumentValues([fieldArgument], [argument], variables)
+        def transformedPerson = (Personality) values['arg']
+
+        then:
+        transformedPerson.name == "yarin bla"
+        transformedPerson.age == 25
+        transformedPerson.parents.size() == 1
+        transformedPerson.parents.get(0) == dad
+    }
+
 
     def "getArgumentValues: resolves argument with variable reference with chained argument valueMapper"() {
         given:
@@ -502,5 +540,17 @@ class ValuesResolverTest extends Specification {
 
         then:
         thrown(GraphQLException)
+    }
+
+    class Personality {
+        String name
+        int age
+        List<Personality> parents
+
+        Personality(String name, int age, List<Personality> parents) {
+            this.name = name
+            this.age = age
+            this.parents = parents
+        }
     }
 }
