@@ -178,7 +178,7 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
             this.directives = existing.getDirectives();
             this.selectionSet = existing.getSelectionSet();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 

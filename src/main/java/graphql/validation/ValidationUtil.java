@@ -150,8 +150,8 @@ public class ValidationUtil {
     private Set<String> getMissingFields(GraphQLInputObjectType type, Map<String, ObjectField> objectFieldMap, GraphqlFieldVisibility fieldVisibility) {
         return fieldVisibility.getFieldDefinitions(type).stream()
                 .filter(field -> isNonNull(field.getType()))
+                .filter(value -> (value.getDefaultValue() == null) && !objectFieldMap.containsKey(value.getName()))
                 .map(GraphQLInputObjectField::getName)
-                .filter(((Predicate<String>) objectFieldMap::containsKey).negate())
                 .collect(Collectors.toSet());
     }
 

@@ -79,7 +79,7 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
             this.directives = existing.getDirectives();
             this.inputValueDefinitions = existing.getInputValueDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 

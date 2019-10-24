@@ -118,7 +118,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, 
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.name = existing.getName();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 

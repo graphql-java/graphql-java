@@ -119,7 +119,7 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarVa
             this.comments = existing.getComments();
             this.value = existing.isValue();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 

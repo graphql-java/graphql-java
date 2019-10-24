@@ -25,6 +25,7 @@ import graphql.language.Value;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError;
+import graphql.util.LogKit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,7 @@ import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.UNKNOW
 @Internal
 class ArgValueOfAllowedTypeChecker {
 
-    private static final Logger log = LoggerFactory.getLogger(ArgValueOfAllowedTypeChecker.class);
+    private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(ArgValueOfAllowedTypeChecker.class);
 
     private final Directive directive;
     private final Node element;
@@ -263,7 +264,7 @@ class ArgValueOfAllowedTypeChecker {
             scalarType.getCoercing().parseLiteral(instanceValue);
             return true;
         } catch (CoercingParseLiteralException ex) {
-            log.debug("Attempted parsing literal into '{}' but got the following error: ", scalarType.getName(), ex);
+            logNotSafe.debug("Attempted parsing literal into '{}' but got the following error: ", scalarType.getName(), ex);
             return false;
         }
     }

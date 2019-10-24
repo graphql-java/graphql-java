@@ -131,7 +131,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
             this.comments = existing.getComments();
             this.name = existing.getName();
             this.value = existing.getValue();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 

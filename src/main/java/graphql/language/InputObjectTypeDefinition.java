@@ -155,7 +155,7 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
             this.inputValueDefinitions = existing.getInputValueDefinitions();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 

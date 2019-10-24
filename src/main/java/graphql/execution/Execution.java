@@ -21,9 +21,9 @@ import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import graphql.util.LogKit;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -41,7 +41,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @Internal
 public class Execution {
-    private static final Logger log = LoggerFactory.getLogger(Execution.class);
+    private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(Execution.class);
 
     private final FieldCollector fieldCollector = new FieldCollector();
     private final ValuesResolver valuesResolver = new ValuesResolver();
@@ -151,13 +151,13 @@ public class Execution {
         try {
             ExecutionStrategy executionStrategy;
             if (operation == OperationDefinition.Operation.MUTATION) {
-                executionStrategy = mutationStrategy;
+                executionStrategy = executionContext.getMutationStrategy();
             } else if (operation == SUBSCRIPTION) {
-                executionStrategy = subscriptionStrategy;
+                executionStrategy = executionContext.getSubscriptionStrategy();
             } else {
-                executionStrategy = queryStrategy;
+                executionStrategy = executionContext.getQueryStrategy();
             }
-            log.debug("Executing '{}' query operation: '{}' using '{}' execution strategy", executionContext.getExecutionId(), operation, executionStrategy.getClass().getName());
+            logNotSafe.debug("Executing '{}' query operation: '{}' using '{}' execution strategy", executionContext.getExecutionId(), operation, executionStrategy.getClass().getName());
             result = executionStrategy.execute(executionContext, parameters);
         } catch (NonNullableFieldWasNullException e) {
             // this means it was non null types all the way from an offending non null type

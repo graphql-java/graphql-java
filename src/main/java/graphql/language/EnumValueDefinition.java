@@ -153,7 +153,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {

@@ -175,7 +175,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
             this.inputValueDefinitions = existing.getInputValueDefinitions();
             this.directives = existing.getDirectives();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 

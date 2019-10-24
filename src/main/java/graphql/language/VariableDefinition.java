@@ -185,7 +185,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
             this.type = existing.getType();
             this.defaultValue = existing.getDefaultValue();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {

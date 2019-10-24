@@ -119,7 +119,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.name = existing.getName();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 

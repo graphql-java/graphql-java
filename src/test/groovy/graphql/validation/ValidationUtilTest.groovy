@@ -182,4 +182,19 @@ class ValidationUtilTest extends Specification {
         expect:
         !validationUtil.isValidLiteralValue(objectValue, inputObjectType,schema)
     }
+
+    def "a valid ObjectValue with a nonNull field and default value"() {
+        given:
+        def inputObjectType = GraphQLInputObjectType.newInputObject()
+                .name("inputObjectType")
+                .field(GraphQLInputObjectField.newInputObjectField()
+                .name("hello")
+                .type(nonNull(GraphQLString))
+                .defaultValue("default"))
+                .build()
+        def objectValue = ObjectValue.newObjectValue()
+
+        expect:
+        validationUtil.isValidLiteralValue(objectValue.build(), inputObjectType, schema)
+    }
 }

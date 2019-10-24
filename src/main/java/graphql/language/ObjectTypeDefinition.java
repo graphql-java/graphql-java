@@ -176,7 +176,7 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
             this.implementz = existing.getImplements();
             this.fieldDefinitions = existing.getFieldDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {

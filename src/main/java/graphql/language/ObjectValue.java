@@ -119,7 +119,7 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.objectFields = existing.getObjectFields();
-            this.additionalData  =existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {

@@ -136,7 +136,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
             this.name = existing.getName();
             this.directives = existing.getDirectives();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
