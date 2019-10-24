@@ -73,7 +73,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
     @Internal
     @Deprecated
     public GraphQLScalarType(String name, String description, Coercing coercing, List<GraphQLDirective> directives, ScalarTypeDefinition definition) {
-        this(name,description,coercing,directives,definition,emptyList());
+        this(name, description, coercing, directives, definition, emptyList());
     }
 
     private GraphQLScalarType(String name, String description, Coercing coercing, List<GraphQLDirective> directives, ScalarTypeDefinition definition, List<ScalarTypeExtensionDefinition> extensionDefinitions) {
@@ -86,7 +86,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         this.coercing = coercing;
         this.definition = definition;
         this.directives = directives;
-        this.extensionDefinitions = Collections.unmodifiableList(extensionDefinitions);
+        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
     }
 
     @Override

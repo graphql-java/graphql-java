@@ -76,7 +76,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         this.name = name;
         this.description = description;
         this.definition = definition;
-        this.extensionDefinitions = Collections.unmodifiableList(extensionDefinitions);
+        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
         this.directives = directives;
         buildMap(fields);
     }

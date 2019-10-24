@@ -90,7 +90,7 @@ public class GraphQLUnionType implements GraphQLNamedType, GraphQLOutputType, Gr
         this.originalTypes = types;
         this.typeResolver = typeResolver;
         this.definition = definition;
-        this.extensionDefinitions = Collections.unmodifiableList(extensionDefinitions);
+        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
         this.directives = directives;
     }
 

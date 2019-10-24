@@ -105,7 +105,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsC
         this.interfaceComparator = interfaceComparator;
         this.originalInterfaces = sortTypes(interfaceComparator, interfaces);
         this.definition = definition;
-        this.extensionDefinitions = Collections.unmodifiableList(extensionDefinitions);
+        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
         this.directives = assertNotNull(directives);
         buildDefinitionMap(fieldDefinitions);
     }

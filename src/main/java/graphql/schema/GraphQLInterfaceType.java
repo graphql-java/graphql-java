@@ -52,6 +52,7 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
      * @param description      the description
      * @param fieldDefinitions the fields
      * @param typeResolver     the type resolver function
+     *
      * @deprecated use the {@link #newInterface()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -67,6 +68,7 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
      * @param typeResolver     the type resolver function
      * @param directives       the directives on this type element
      * @param definition       the AST definition
+     *
      * @deprecated use the {@link #newInterface()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -84,7 +86,7 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
         this.description = description;
         this.typeResolver = typeResolver;
         this.definition = definition;
-        this.extensionDefinitions = Collections.unmodifiableList(extensionDefinitions);
+        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
         this.directives = directives;
         buildDefinitionMap(fieldDefinitions);
     }
@@ -152,6 +154,7 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new object based on calling build on that builder
      */
     public GraphQLInterfaceType transform(Consumer<Builder> builderConsumer) {
@@ -262,6 +265,7 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
          * </pre>
          *
          * @param builderFunction a supplier for the builder impl
+         *
          * @return this
          */
         public Builder field(UnaryOperator<GraphQLFieldDefinition.Builder> builderFunction) {
@@ -276,6 +280,7 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
          * from within
          *
          * @param builder an un-built/incomplete GraphQLFieldDefinition
+         *
          * @return this
          */
         public Builder field(GraphQLFieldDefinition.Builder builder) {

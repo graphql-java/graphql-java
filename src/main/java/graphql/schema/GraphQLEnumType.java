@@ -85,6 +85,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
      * @param name        the name
      * @param description the description
      * @param values      the values
+     *
      * @deprecated use the {@link #newEnum()}  builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -99,6 +100,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
      * @param values      the values
      * @param directives  the directives on this type element
      * @param definition  the AST definition
+     *
      * @deprecated use the {@link #newEnum()}  builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -114,7 +116,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         this.name = name;
         this.description = description;
         this.definition = definition;
-        this.extensionDefinitions = Collections.unmodifiableList(extensionDefinitions);
+        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
         this.directives = directives;
         buildMap(values);
     }
@@ -202,6 +204,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new field based on calling build on that builder
      */
     public GraphQLEnumType transform(Consumer<Builder> builderConsumer) {
