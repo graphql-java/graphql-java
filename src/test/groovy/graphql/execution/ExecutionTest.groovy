@@ -4,7 +4,6 @@ import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.ExecutionResultImpl
 import graphql.MutationSchema
-import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
@@ -36,7 +35,7 @@ class ExecutionTest extends Specification {
     def subscriptionStrategy = new CountingExecutionStrategy()
     def mutationStrategy = new CountingExecutionStrategy()
     def queryStrategy = new CountingExecutionStrategy()
-    def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, SimpleInstrumentation.INSTANCE)
+    def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, SimpleInstrumentation.INSTANCE, possibleOptionalUnboxer)
     def emptyExecutionInput = ExecutionInput.newExecutionInput().query("query").build()
     def instrumentationState = new InstrumentationState() {}
 
@@ -123,8 +122,8 @@ class ExecutionTest extends Specification {
 					.build();
 			}
 		}
-		
-		def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation)
+
+        def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, possibleOptionalUnboxer)
 		
 		
 		when:

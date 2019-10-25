@@ -314,14 +314,14 @@ public abstract class ExecutionStrategy {
                 localContext = parameters.getLocalContext();
             }
             return FetchedValue.newFetchedValue()
-                    .fetchedValue(UnboxPossibleOptional.unboxPossibleOptional(dataFetcherResult.getData()))
+                    .fetchedValue(executionContext.getPossibleOptionalUnboxer().unbox(dataFetcherResult.getData()))
                     .rawFetchedValue(dataFetcherResult.getData())
                     .errors(dataFetcherResult.getErrors())
                     .localContext(localContext)
                     .build();
         } else {
             return FetchedValue.newFetchedValue()
-                    .fetchedValue(UnboxPossibleOptional.unboxPossibleOptional(result))
+                    .fetchedValue(executionContext.getPossibleOptionalUnboxer().unbox(result))
                     .rawFetchedValue(result)
                     .localContext(parameters.getLocalContext())
                     .build();
@@ -414,7 +414,7 @@ public abstract class ExecutionStrategy {
      */
     protected FieldValueInfo completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
-        Object result = UnboxPossibleOptional.unboxPossibleOptional(parameters.getSource());
+        Object result = executionContext.getPossibleOptionalUnboxer().unbox(parameters.getSource());
         GraphQLType fieldType = executionStepInfo.getUnwrappedNonNullType();
         CompletableFuture<ExecutionResult> fieldValue;
 

@@ -304,7 +304,7 @@ class FieldValidationTest extends Specification {
         def document = TestUtil.parseQuery(query)
         def strategy = new AsyncExecutionStrategy()
         def instrumentation = new FieldValidationInstrumentation(validation)
-        def execution = new Execution(strategy, strategy, strategy, instrumentation)
+        def execution = new Execution(strategy, strategy, strategy, instrumentation, possibleOptionalUnboxer)
 
         def executionInput = ExecutionInput.newExecutionInput().query(query).variables(variables).build()
         execution.execute(document, schema, ExecutionId.generate(), executionInput, SimpleInstrumentation.INSTANCE.createState())

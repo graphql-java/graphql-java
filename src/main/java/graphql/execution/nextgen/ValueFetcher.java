@@ -8,13 +8,13 @@ import graphql.Internal;
 import graphql.execution.AbsoluteGraphQLError;
 import graphql.execution.Async;
 import graphql.execution.DataFetcherResult;
+import graphql.execution.DefaultOptionalUnboxer;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.FetchedValue;
 import graphql.execution.MergedField;
-import graphql.execution.UnboxPossibleOptional;
 import graphql.execution.ValuesResolver;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.language.Field;
@@ -154,7 +154,7 @@ public class ValueFetcher {
 
     private FetchedValue unboxPossibleOptional(FetchedValue result) {
         return result.transform(
-                builder -> builder.fetchedValue(UnboxPossibleOptional.unboxPossibleOptional(result.getFetchedValue()))
+                builder -> builder.fetchedValue(DefaultOptionalUnboxer.unboxPossibleOptional(result.getFetchedValue()))
         );
     }
 

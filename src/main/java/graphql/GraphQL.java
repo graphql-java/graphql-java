@@ -7,6 +7,7 @@ import graphql.execution.Execution;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionIdProvider;
 import graphql.execution.ExecutionStrategy;
+import graphql.execution.PossibleOptionalUnboxer;
 import graphql.execution.SubscriptionExecutionStrategy;
 import graphql.execution.instrumentation.ChainedInstrumentation;
 import graphql.execution.instrumentation.DocumentAndVariables;
@@ -104,6 +105,7 @@ public class GraphQL {
     private final ExecutionIdProvider idProvider;
     private final Instrumentation instrumentation;
     private final PreparsedDocumentProvider preparsedDocumentProvider;
+    private final PossibleOptionalUnboxer possibleOptionalUnboxer;
 
 
     /**
@@ -147,7 +149,7 @@ public class GraphQL {
     @Internal
     @Deprecated
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
-        this(graphQLSchema, queryStrategy, mutationStrategy, null, DEFAULT_EXECUTION_ID_PROVIDER, DEFAULT_INSTRUMENTATION, NoOpPreparsedDocumentProvider.INSTANCE);
+        this(graphQLSchema, queryStrategy, mutationStrategy, null, DEFAULT_EXECUTION_ID_PROVIDER, DEFAULT_INSTRUMENTATION, NoOpPreparsedDocumentProvider.INSTANCE, PossibleOptionalUnboxer.DEFAULT);
     }
 
     /**
@@ -163,10 +165,17 @@ public class GraphQL {
     @Internal
     @Deprecated
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy) {
-        this(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, DEFAULT_EXECUTION_ID_PROVIDER, DEFAULT_INSTRUMENTATION, NoOpPreparsedDocumentProvider.INSTANCE);
+        this(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, DEFAULT_EXECUTION_ID_PROVIDER, DEFAULT_INSTRUMENTATION, NoOpPreparsedDocumentProvider.INSTANCE, PossibleOptionalUnboxer.DEFAULT);
     }
 
-    private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation, PreparsedDocumentProvider preparsedDocumentProvider) {
+    private GraphQL(GraphQLSchema graphQLSchema,
+                    ExecutionStrategy queryStrategy,
+                    ExecutionStrategy mutationStrategy,
+                    ExecutionStrategy subscriptionStrategy,
+                    ExecutionIdProvider idProvider,
+                    Instrumentation instrumentation,
+                    PreparsedDocumentProvider preparsedDocumentProvider,
+                    PossibleOptionalUnboxer possibleOptionalUnboxer) {
         this.graphQLSchema = assertNotNull(graphQLSchema, "graphQLSchema must be non null");
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
@@ -174,6 +183,7 @@ public class GraphQL {
         this.idProvider = assertNotNull(idProvider, "idProvider must be non null");
         this.instrumentation = assertNotNull(instrumentation);
         this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, "preparsedDocumentProvider must be non null");
+        this.possibleOptionalUnboxer = possibleOptionalUnboxer;
     }
 
     /**
@@ -224,6 +234,7 @@ public class GraphQL {
         private Instrumentation instrumentation = null; // deliberate default here
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
         private boolean doNotAddDefaultInstrumentations = false;
+        private PossibleOptionalUnboxer possibleOptionalUnboxer = PossibleOptionalUnboxer.DEFAULT;
 
 
         public Builder(GraphQLSchema graphQLSchema) {
@@ -282,12 +293,17 @@ public class GraphQL {
             return this;
         }
 
+        public Builder possibleOptionalUnboxer(PossibleOptionalUnboxer possibleOptionalUnboxer) {
+            this.possibleOptionalUnboxer = possibleOptionalUnboxer;
+            return this;
+        }
+
         public GraphQL build() {
             assertNotNull(graphQLSchema, "graphQLSchema must be non null");
             assertNotNull(queryExecutionStrategy, "queryStrategy must be non null");
             assertNotNull(idProvider, "idProvider must be non null");
             final Instrumentation augmentedInstrumentation = checkInstrumentationDefaultState(instrumentation, doNotAddDefaultInstrumentations);
-            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, augmentedInstrumentation, preparsedDocumentProvider);
+            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, augmentedInstrumentation, preparsedDocumentProvider, possibleOptionalUnboxer);
         }
     }
 
@@ -600,7 +616,7 @@ public class GraphQL {
 
     private CompletableFuture<ExecutionResult> execute(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
 
-        Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation);
+        Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, possibleOptionalUnboxer);
         ExecutionId executionId = executionInput.getExecutionId();
 
         logNotSafe.debug("Executing '{}'. operation name: '{}'. query: '{}'. variables '{}'", executionId, executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
