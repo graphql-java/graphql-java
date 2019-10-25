@@ -54,7 +54,6 @@ public interface DataFetchingEnvironment {
      *
      * @param name the name of the argument
      * @param <T>  you decide what type it is
-     *
      * @return the named argument or null if its not present
      */
     <T> T getArgument(String name);
@@ -62,10 +61,9 @@ public interface DataFetchingEnvironment {
     /**
      * Returns the named argument or the default value
      *
-     * @param name the name of the argument
-     * @param defaultValue  the default value if the argument is not present
-     * @param <T>  you decide what type it is
-     *
+     * @param name         the name of the argument
+     * @param defaultValue the default value if the argument is not present
+     * @param <T>          you decide what type it is
      * @return the named argument or the default if its not present
      */
     <T> T getArgumentOrDefault(String name, T defaultValue);
@@ -89,7 +87,8 @@ public interface DataFetchingEnvironment {
      * This differs from {@link #getContext()} in that its field specific and passed from parent field to child field,
      * whilst {@link #getContext()} is global for the whole query.
      * <p>
-     * If the field is a top level field then 'localContext' equals the global 'context'
+     * If the field is a top level field then 'localContext' equals null since its never be set until those
+     * fields execute.
      *
      * @param <T> you decide what type it is
      * @return can be null if no field context objects are passed back by previous parent fields

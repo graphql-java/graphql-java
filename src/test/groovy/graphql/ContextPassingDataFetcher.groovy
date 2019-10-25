@@ -24,6 +24,9 @@ class ContextPassingDataFetcher implements DataFetcher {
         String data = env.getSource()
 
         Integer localCtx = env.getLocalContext()
+        if (localCtx == null) {
+            localCtx = env.getContext()
+        }
 
         def newData = data + localCtx + ","
         def newCtx = localCtx + 1
