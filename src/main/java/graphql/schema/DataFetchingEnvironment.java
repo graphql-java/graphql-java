@@ -54,9 +54,21 @@ public interface DataFetchingEnvironment {
      *
      * @param name the name of the argument
      * @param <T>  you decide what type it is
-     * @return the named argument or null if its not [present
+     *
+     * @return the named argument or null if its not present
      */
     <T> T getArgument(String name);
+
+    /**
+     * Returns the named argument or the default value
+     *
+     * @param name the name of the argument
+     * @param defaultValue  the default value if the argument is not present
+     * @param <T>  you decide what type it is
+     *
+     * @return the named argument or the default if its not present
+     */
+    <T> T getArgumentOrDefault(String name, T defaultValue);
 
     /**
      * Returns a context argument that is set up when the {@link graphql.GraphQL#execute(graphql.ExecutionInput)} )} method

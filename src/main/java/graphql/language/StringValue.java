@@ -119,7 +119,7 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
             this.comments = existing.getComments();
             this.value = existing.getValue();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 

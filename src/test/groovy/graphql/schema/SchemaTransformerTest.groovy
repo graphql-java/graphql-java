@@ -2,6 +2,7 @@ package graphql.schema
 
 
 import graphql.TestUtil
+import graphql.schema.idl.SchemaPrinter
 import graphql.util.TraversalControl
 import graphql.util.TraverserContext
 import spock.lang.Specification
@@ -45,7 +46,7 @@ class SchemaTransformerTest extends Specification {
         (newSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("barChanged") != null
     }
 
-    def "can change schema with cycles"() {
+    def "can change schema with logical cycles"() {
         given:
         GraphQLObjectType foo = newObject()
                 .name("Foo")
@@ -82,5 +83,81 @@ class SchemaTransformerTest extends Specification {
         newSchema.typeMap.size() == schema.typeMap.size()
         (newSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("fooChanged") != null
         (newSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("fooChanged").getType() == newSchema.getType("Foo")
+    }
+
+
+    def "elements having more than one parent"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+        type Query {
+            parent: Parent
+        }
+        type Parent {
+           child1: Child
+           child2: Child
+           subChild: SubChild
+           otherParent: Parent
+       }
+        type Child {
+            hello: String
+            subChild: SubChild
+        }
+        type SubChild {
+            hello: String
+        }
+        """)
+        SchemaTransformer schemaTransformer = new SchemaTransformer()
+        when:
+        GraphQLSchema newSchema = schemaTransformer.transform(schema, new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition fieldDefinition, TraverserContext<GraphQLSchemaElement> context) {
+                if (fieldDefinition.name == "hello") {
+                    def changedNode = fieldDefinition.transform({ builder -> builder.name("helloChanged") })
+                    return changeNode(context, changedNode)
+                }
+                return TraversalControl.CONTINUE;
+            }
+
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.name == "Parent") {
+                    def changedNode = node.transform({ builder -> builder.name("ParentChanged") })
+                    return changeNode(context, changedNode)
+                }
+                if (node.name == "SubChild") {
+                    def changedNode = node.transform({ builder -> builder.name("SubChildChanged") })
+                    return changeNode(context, changedNode)
+                }
+                return super.visitGraphQLObjectType(node, context)
+            }
+
+        })
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions())
+        then:
+        printer.print(newSchema) == """type Child {
+  helloChanged: String
+  subChild: SubChildChanged
+}
+
+type ParentChanged {
+  child1: Child
+  child2: Child
+  otherParent: Parent
+  subChild: SubChildChanged
+}
+
+type Query {
+  parent: ParentChanged
+}
+
+type SubChildChanged {
+  helloChanged: String
+}
+"""
+        newSchema != schema
+        (newSchema.getType("Child") as GraphQLObjectType).getFieldDefinition("helloChanged") != null
+
+
     }
 }

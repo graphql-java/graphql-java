@@ -131,7 +131,7 @@ public class Document extends AbstractNode<Document> {
             this.comments = existing.getComments();
             this.definitions = existing.getDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
         public Builder definitions(List<Definition> definitions) {

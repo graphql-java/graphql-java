@@ -76,4 +76,38 @@ class GraphqlErrorBuilderTest extends Specification {
         graphQLError.getPath() == ["field"]
         graphQLError.getLocations() == [new SourceLocation(1, 3)]
     }
+
+    def "java string format is safe"() {
+        when:
+        def gqlErr = GraphqlErrorBuilder.newError().message("This has %s in it").build()
+        then:
+        gqlErr.getMessage() == "This has %s in it"
+
+        when:
+        gqlErr = GraphqlErrorBuilder.newError().message("This has %s in it", null).build()
+        then:
+        gqlErr.getMessage() == "This has %s in it"
+
+        when:
+        gqlErr = GraphqlErrorBuilder.newError().message("This has %s in it", new Object[0]).build()
+        then:
+        gqlErr.getMessage() == "This has %s in it"
+
+        when:
+        gqlErr = GraphqlErrorBuilder.newError().message("This has %s in it", "data").build()
+        then:
+        gqlErr.getMessage() == "This has data in it"
+    }
+
+    def "null message is not acceptable"() {
+        when:
+        GraphqlErrorBuilder.newError().message(null, "a", "b").build()
+        then:
+        thrown(AssertException)
+
+        when:
+        GraphqlErrorBuilder.newError().message(null).build()
+        then:
+        thrown(AssertException)
+    }
 }

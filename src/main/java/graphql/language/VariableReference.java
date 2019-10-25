@@ -114,7 +114,7 @@ public class VariableReference extends AbstractNode<VariableReference> implement
             this.comments = existing.getComments();
             this.name = existing.getName();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {

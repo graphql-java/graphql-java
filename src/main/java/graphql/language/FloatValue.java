@@ -118,7 +118,7 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.value = existing.getValue();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 

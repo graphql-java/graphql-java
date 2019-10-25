@@ -87,6 +87,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
+    public <T> T getArgumentOrDefault(String name, T defaultValue) {
+        return (T) arguments.getOrDefault(name, defaultValue);
+    }
+
+    @Override
     public <T> T getContext() {
         return (T) context;
     }

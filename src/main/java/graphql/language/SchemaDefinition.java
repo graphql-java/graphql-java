@@ -135,7 +135,7 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
             this.directives = existing.getDirectives();
             this.operationTypeDefinitions = existing.getOperationTypeDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 
