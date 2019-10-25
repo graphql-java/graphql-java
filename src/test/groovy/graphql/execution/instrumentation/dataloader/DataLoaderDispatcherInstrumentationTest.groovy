@@ -253,10 +253,6 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         def graphql = TestUtil.graphQL(sdl, runtimeWiring).build()
 
         DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
-        //
-        // this the work around - but if the code is fixed we can take it away and watch it still work!
-        //
-        //dataLoaderRegistry.register("placeholder", DataLoader.newDataLoader(batchLoader))
 
         when:
         def executionInput = newExecutionInput().dataLoaderRegistry(dataLoaderRegistry).query('{ field }').build()
