@@ -11,6 +11,7 @@ import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
+import org.dataloader.DataLoaderRegistry;
 
 import java.util.List;
 import java.util.Map;
@@ -120,6 +121,11 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
 
     public <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName) {
         return delegateEnvironment.getDataLoader(dataLoaderName);
+    }
+
+    @Override
+    public DataLoaderRegistry getDataLoaderRegistry() {
+        return delegateEnvironment.getDataLoaderRegistry();
     }
 
     public CacheControl getCacheControl() {

@@ -1,7 +1,9 @@
 package graphql.execution.instrumentation.dataloader
 
+
 import graphql.ExecutionResult
 import graphql.GraphQL
+import graphql.TestUtil
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.AsyncSerialExecutionStrategy
 import graphql.execution.ExecutionContext
@@ -11,6 +13,7 @@ import graphql.execution.batched.BatchedExecutionStrategy
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.schema.DataFetcher
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderRegistry
@@ -23,6 +26,8 @@ import java.util.concurrent.ForkJoinPool
 
 import static graphql.ExecutionInput.newExecutionInput
 import static graphql.StarWarsSchema.starWarsSchema
+import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
+import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class DataLoaderDispatcherInstrumentationTest extends Specification {
 
@@ -52,7 +57,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         chainedInstrumentation.instrumentations.any { instr -> instr instanceof DataLoaderDispatcherInstrumentation }
     }
 
-    def "dispatch is never called if there are no data loaders"() {
+    def "dispatch is never called if not data loader registry is set in"() {
         def dataLoaderRegistry = new DataLoaderRegistry() {
             @Override
             void dispatchAll() {
@@ -60,7 +65,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
             }
         }
         def graphQL = GraphQL.newGraphQL(starWarsSchema).build()
-        def executionInput = newExecutionInput().dataLoaderRegistry(dataLoaderRegistry).query('{ hero { name } }').build()
+        def executionInput = newExecutionInput().query('{ hero { name } }').build()
 
         when:
         def er = graphQL.execute(executionInput)
@@ -224,5 +229,37 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         starWarsWiring.rawCharacterLoadCount == 4
         starWarsWiring.batchFunctionLoadCount == 2
         starWarsWiring.naiveLoadCount == 8
+    }
+
+    def "can be efficient with lazily computed data loaders"() {
+
+        def sdl = '''
+            type Query {
+                field : String
+            }
+        '''
+
+        BatchLoader batchLoader = { keys -> CompletableFuture.completedFuture(keys) }
+
+        DataFetcher df = { env ->
+            def dataLoader = env.getDataLoaderRegistry().computeIfAbsent("key", { key -> DataLoader.newDataLoader(batchLoader) })
+
+            return dataLoader.load("working as expected")
+        }
+        def runtimeWiring = newRuntimeWiring().type(
+                newTypeWiring("Query").dataFetcher("field", df).build()
+        ).build()
+
+        def graphql = TestUtil.graphQL(sdl, runtimeWiring).build()
+
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
+
+        when:
+        def executionInput = newExecutionInput().dataLoaderRegistry(dataLoaderRegistry).query('{ field }').build()
+        def er = graphql.execute(executionInput)
+
+        then:
+        er.errors.isEmpty()
+        er.data["field"] == "working as expected"
     }
 }
