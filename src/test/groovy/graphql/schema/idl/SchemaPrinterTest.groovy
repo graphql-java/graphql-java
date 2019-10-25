@@ -1050,6 +1050,208 @@ type Query {
 '''
     }
 
+    def "can print a schema as AST elements"() {
+        def sdl = '''
+            type Query {
+                foo : String
+            }
+            
+            extend type Query {
+                bar : String
+            }
+
+            extend type Query {
+                baz : String
+            }
+
+            enum Enum {
+                A
+            }
+            
+            extend enum Enum {
+                B
+            }
+
+            interface Interface {
+                foo : String
+            }
+
+            extend interface Interface {
+                bar : String
+            }
+
+            extend interface Interface {
+                baz : String
+            }
+            
+            type Foo {
+                foo : String
+            }
+            
+            type Bar {
+                bar : Scalar
+            }
+
+            union Union = Foo
+            
+            extend union Union = Bar
+            
+            input Input {
+                foo: String
+            }
+            
+            extend input Input {
+                bar: String
+            }
+
+            extend input Input {
+                baz: String
+            }
+
+            extend input Input {
+                faz: String
+            }
+            
+            scalar Scalar
+            
+            extend scalar Scalar @directive1
+        '''
+
+
+        when:
+        def wiringFactory = new MockedWiringFactory() {
+            @Override
+            boolean providesScalar(ScalarWiringEnvironment env) {
+                return env.getScalarTypeDefinition().getName() == "Scalar"
+            }
+
+            @Override
+            GraphQLScalarType getScalar(ScalarWiringEnvironment env) {
+                def definition = env.getScalarTypeDefinition()
+                return GraphQLScalarType.newScalar()
+                        .name(definition.getName())
+                        .definition(definition)
+                        .extensionDefinitions(env.getExtensions())
+                        .coercing(TestUtil.mockCoercing())
+                        .build()
+            }
+        }
+
+        def runtimeWiring = newRuntimeWiring()
+                .wiringFactory(wiringFactory)
+                .build()
+
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def types = new SchemaParser().parse(sdl)
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(options, types, runtimeWiring)
+
+        def printOptions = defaultOptions().includeScalarTypes(true).useAstDefinitions(true)
+        def result = new SchemaPrinter(printOptions).print(schema)
+
+        then:
+        result == '''"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to skip this field or fragment when the `if`'argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Marks the field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ENUM_VALUE
+
+interface Interface {
+  foo: String
+}
+
+extend interface Interface {
+  bar: String
+}
+
+extend interface Interface {
+  baz: String
+}
+
+union Union = Foo
+
+extend union Union = Bar
+
+type Bar {
+  bar: Scalar
+}
+
+type Foo {
+  foo: String
+}
+
+type Query {
+  foo: String
+}
+
+extend type Query {
+  bar: String
+}
+
+extend type Query {
+  baz: String
+}
+
+enum Enum {
+  A
+}
+
+extend enum Enum {
+  B
+}
+
+scalar Scalar
+
+extend scalar Scalar @directive1
+
+input Input {
+  foo: String
+}
+
+extend input Input {
+  bar: String
+}
+
+extend input Input {
+  baz: String
+}
+
+extend input Input {
+  faz: String
+}
+'''
+
+        when:
+        // we can print by direct type using AST
+        def queryType = schema.getType("Query")
+        result = new SchemaPrinter(printOptions).print(queryType)
+
+        then:
+        result == '''type Query {
+  foo: String
+}
+
+extend type Query {
+  bar: String
+}
+
+extend type Query {
+  baz: String
+}
+
+'''
+    }
 
     def "@deprecated directives are always printed"() {
         given:

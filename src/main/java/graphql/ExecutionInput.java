@@ -2,9 +2,11 @@ package graphql;
 
 import graphql.cachecontrol.CacheControl;
 import graphql.execution.ExecutionId;
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentationState;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
@@ -24,10 +26,11 @@ public class ExecutionInput {
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
     private final ExecutionId executionId;
+    private final Locale locale;
 
 
     @Internal
-    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, ExecutionId executionId) {
+    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, ExecutionId executionId, Locale locale) {
         this.query = assertNotNull(query, "query can't be null");
         this.operationName = operationName;
         this.context = context;
@@ -36,6 +39,7 @@ public class ExecutionInput {
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.cacheControl = cacheControl;
         this.executionId = executionId;
+        this.locale = locale;
     }
 
     /**
@@ -95,11 +99,19 @@ public class ExecutionInput {
     }
 
     /**
+     * This returns the locale of this operation.
+     *
+     * @return the locale of this operation
+     */
+    public Locale getLocale() {
+        return locale;
+    }
+
+    /**
      * This helps you transform the current ExecutionInput object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
-     *
      * @return a new ExecutionInput object based on calling build on that builder
      */
     public ExecutionInput transform(Consumer<Builder> builderConsumer) {
@@ -111,13 +123,13 @@ public class ExecutionInput {
                 .dataLoaderRegistry(this.dataLoaderRegistry)
                 .cacheControl(this.cacheControl)
                 .variables(this.variables)
-                .executionId(executionId);
+                .executionId(this.executionId)
+                .locale(this.locale);
 
         builderConsumer.accept(builder);
 
         return builder.build();
     }
-
 
     @Override
     public String toString() {
@@ -129,6 +141,7 @@ public class ExecutionInput {
                 ", variables=" + variables +
                 ", dataLoaderRegistry=" + dataLoaderRegistry +
                 ", executionId= " + executionId +
+                ", locale= " + locale +
                 '}';
     }
 
@@ -143,7 +156,6 @@ public class ExecutionInput {
      * Creates a new builder of ExecutionInput objects with the given query
      *
      * @param query the query to execute
-     *
      * @return a new builder of ExecutionInput objects
      */
     public static Builder newExecutionInput(String query) {
@@ -157,9 +169,14 @@ public class ExecutionInput {
         private Object context = GraphQLContext.newContext().build();
         private Object root;
         private Map<String, Object> variables = Collections.emptyMap();
-        private DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
+        //
+        // this is important - it allows code to later known if we never really set a dataloader and hence it can optimize
+        // dataloader field tracking away.
+        //
+        private DataLoaderRegistry dataLoaderRegistry = DataLoaderDispatcherInstrumentationState.EMPTY_DATALOADER_REGISTRY;
         private CacheControl cacheControl = CacheControl.newCacheControl();
-        private ExecutionId executionId = null;
+        private Locale locale;
+        private ExecutionId executionId;
 
         public Builder query(String query) {
             this.query = assertNotNull(query, "query can't be null");
@@ -175,7 +192,6 @@ public class ExecutionInput {
          * A default one will be assigned, but you can set your own.
          *
          * @param executionId an execution id object
-         *
          * @return this builder
          */
         public Builder executionId(ExecutionId executionId) {
@@ -183,11 +199,23 @@ public class ExecutionInput {
             return this;
         }
 
+
+        /**
+         * Sets the locale to use for this operation
+         *
+         * @param locale the locale to use
+         *
+         * @return this builder
+         */
+        public Builder locale(Locale locale) {
+            this.locale = locale;
+            return this;
+        }
+
         /**
          * By default you will get a {@link GraphQLContext} object but you can set your own.
          *
          * @param context the context object to use
-         *
          * @return this builder
          */
         public Builder context(Object context) {
@@ -222,7 +250,6 @@ public class ExecutionInput {
          * instances as this will create unexpected results.
          *
          * @param dataLoaderRegistry a registry of {@link org.dataloader.DataLoader}s
-         *
          * @return this builder
          */
         public Builder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {
@@ -236,7 +263,7 @@ public class ExecutionInput {
         }
 
         public ExecutionInput build() {
-            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry, cacheControl, executionId);
+            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry, cacheControl, executionId, locale);
         }
     }
 }

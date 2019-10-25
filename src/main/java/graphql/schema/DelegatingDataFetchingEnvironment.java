@@ -11,8 +11,10 @@ import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
+import org.dataloader.DataLoaderRegistry;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 
@@ -31,7 +33,6 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
      * Called to wrap an existing {@link graphql.schema.DataFetchingEnvironment}.
      *
      * @param delegateEnvironment the environment to wrap and delegate all method called to
-     * @return a wrapped environment
      */
     public DelegatingDataFetchingEnvironment(DataFetchingEnvironment delegateEnvironment) {
         this.delegateEnvironment = delegateEnvironment;
@@ -120,6 +121,16 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
 
     public <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName) {
         return delegateEnvironment.getDataLoader(dataLoaderName);
+    }
+
+    @Override
+    public DataLoaderRegistry getDataLoaderRegistry() {
+        return delegateEnvironment.getDataLoaderRegistry();
+    }
+
+    @Override
+    public Locale getLocale() {
+        return delegateEnvironment.getLocale();
     }
 
     public CacheControl getCacheControl() {

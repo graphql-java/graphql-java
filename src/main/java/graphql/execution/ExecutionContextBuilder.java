@@ -15,6 +15,7 @@ import org.dataloader.DataLoaderRegistry;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
@@ -37,6 +38,7 @@ public class ExecutionContextBuilder {
     private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
     private DataLoaderRegistry dataLoaderRegistry;
     private CacheControl cacheControl;
+    private Locale locale;
     private List<GraphQLError> errors = new ArrayList<>();
 
     /**
@@ -78,6 +80,7 @@ public class ExecutionContextBuilder {
         fragmentsByName = new LinkedHashMap<>(other.getFragmentsByName());
         dataLoaderRegistry = other.getDataLoaderRegistry();
         cacheControl = other.getCacheControl();
+        locale = other.getLocale();
         errors = new ArrayList<>(other.getErrors());
     }
 
@@ -156,6 +159,11 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    public ExecutionContextBuilder locale(Locale locale) {
+        this.locale = locale;
+        return this;
+    }
+
     public ExecutionContext build() {
         // preconditions
         assertNotNull(executionId, "You must provide a query identifier");
@@ -176,6 +184,7 @@ public class ExecutionContextBuilder {
                 root,
                 dataLoaderRegistry,
                 cacheControl,
+                locale,
                 errors
         );
     }

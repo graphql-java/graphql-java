@@ -20,6 +20,12 @@ public interface TraverserVisitor<T> {
     TraversalControl leave(TraverserContext<T> context);
 
     /**
+     * This method is called when a node was already visited before.
+     *
+     * This can happen for two reasons:
+     * 1. There is a cycle.
+     * 2. A node has more than one parent. This means the structure is not a tree but a graph.
+     *
      * @param context the context in place
      *
      * @return Only Continue or Quit allowed
