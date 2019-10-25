@@ -92,6 +92,7 @@ public class Execution {
                 .operationDefinition(operationDefinition)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
                 .cacheControl(executionInput.getCacheControl())
+                .locale(executionInput.getLocale())
                 .build();
 
 

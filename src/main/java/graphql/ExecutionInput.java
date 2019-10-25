@@ -6,6 +6,7 @@ import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrume
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
@@ -25,10 +26,11 @@ public class ExecutionInput {
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
     private final ExecutionId executionId;
+    private final Locale locale;
 
 
     @Internal
-    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, ExecutionId executionId) {
+    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, ExecutionId executionId, Locale locale) {
         this.query = assertNotNull(query, "query can't be null");
         this.operationName = operationName;
         this.context = context;
@@ -37,6 +39,7 @@ public class ExecutionInput {
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.cacheControl = cacheControl;
         this.executionId = executionId;
+        this.locale = locale;
     }
 
     /**
@@ -96,6 +99,15 @@ public class ExecutionInput {
     }
 
     /**
+     * This returns the locale of this operation.
+     *
+     * @return the locale of this operation
+     */
+    public Locale getLocale() {
+        return locale;
+    }
+
+    /**
      * This helps you transform the current ExecutionInput object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
      *
@@ -111,13 +123,13 @@ public class ExecutionInput {
                 .dataLoaderRegistry(this.dataLoaderRegistry)
                 .cacheControl(this.cacheControl)
                 .variables(this.variables)
-                .executionId(executionId);
+                .executionId(this.executionId)
+                .locale(this.locale);
 
         builderConsumer.accept(builder);
 
         return builder.build();
     }
-
 
     @Override
     public String toString() {
@@ -129,6 +141,7 @@ public class ExecutionInput {
                 ", variables=" + variables +
                 ", dataLoaderRegistry=" + dataLoaderRegistry +
                 ", executionId= " + executionId +
+                ", locale= " + locale +
                 '}';
     }
 
@@ -162,7 +175,8 @@ public class ExecutionInput {
         //
         private DataLoaderRegistry dataLoaderRegistry = DataLoaderDispatcherInstrumentationState.EMPTY_DATALOADER_REGISTRY;
         private CacheControl cacheControl = CacheControl.newCacheControl();
-        private ExecutionId executionId = null;
+        private Locale locale;
+        private ExecutionId executionId;
 
         public Builder query(String query) {
             this.query = assertNotNull(query, "query can't be null");
@@ -182,6 +196,19 @@ public class ExecutionInput {
          */
         public Builder executionId(ExecutionId executionId) {
             this.executionId = executionId;
+            return this;
+        }
+
+
+        /**
+         * Sets the locale to use for this operation
+         *
+         * @param locale the locale to use
+         *
+         * @return this builder
+         */
+        public Builder locale(Locale locale) {
+            this.locale = locale;
             return this;
         }
 
@@ -236,7 +263,7 @@ public class ExecutionInput {
         }
 
         public ExecutionInput build() {
-            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry, cacheControl, executionId);
+            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry, cacheControl, executionId, locale);
         }
     }
 }

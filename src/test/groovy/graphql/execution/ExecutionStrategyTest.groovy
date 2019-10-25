@@ -63,7 +63,8 @@ class ExecutionStrategyTest extends Specification {
         new ExecutionContext(SimpleInstrumentation.INSTANCE, executionId, schema ?: StarWarsSchema.starWarsSchema, null,
                 executionStrategy, executionStrategy, executionStrategy,
                 [:], null, null,
-                variables, "context", "root", new DataLoaderRegistry(), null, Collections.emptyList())
+                variables, "context", "root", new DataLoaderRegistry(),
+                null, Locale.getDefault(), Collections.emptyList())
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")
