@@ -90,6 +90,7 @@ class ExecutionStrategyTest extends Specification {
         builder.mutationStrategy(Mock(ExecutionStrategy))
         builder.subscriptionStrategy(Mock(ExecutionStrategy))
         builder.graphQLSchema(schema)
+        builder.possibleOptionalUnboxer(PossibleOptionalUnboxer.DEFAULT)
 
         builder.operationDefinition(operation)
         builder.executionId(ExecutionId.generate())
