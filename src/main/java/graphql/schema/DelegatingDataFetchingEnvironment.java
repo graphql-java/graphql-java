@@ -137,6 +137,11 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
         return delegateEnvironment.getCacheControl();
     }
 
+    @Override
+    public Locale getLocale() {
+        return delegateEnvironment.getLocale();
+    }
+
     public OperationDefinition getOperationDefinition() {
         return delegateEnvironment.getOperationDefinition();
     }

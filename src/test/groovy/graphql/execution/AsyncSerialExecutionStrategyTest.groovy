@@ -85,6 +85,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
+                .possibleOptionalUnboxer(PossibleOptionalUnboxer.DEFAULT)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -128,6 +129,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
+                .possibleOptionalUnboxer(PossibleOptionalUnboxer.DEFAULT)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
