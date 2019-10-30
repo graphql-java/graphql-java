@@ -32,7 +32,6 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
      * Called to wrap an existing {@link graphql.schema.DataFetchingEnvironment}.
      *
      * @param delegateEnvironment the environment to wrap and delegate all method called to
-     * @return a wrapped environment
      */
     public DelegatingDataFetchingEnvironment(DataFetchingEnvironment delegateEnvironment) {
         this.delegateEnvironment = delegateEnvironment;
