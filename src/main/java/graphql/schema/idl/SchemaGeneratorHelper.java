@@ -43,6 +43,10 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
+import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
+import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
+import static graphql.introspection.Introspection.DirectiveLocation.valueOf;
+import static graphql.language.DirectiveLocation.newDirectiveLocation;
 import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
@@ -62,16 +66,21 @@ public class SchemaGeneratorHelper {
     static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
 
     static {
-        DirectiveDefinition.Builder builder = DirectiveDefinition.newDirectiveDefinition().name("deprecated");
-        builder.directiveLocation(graphql.language.DirectiveLocation.newDirectiveLocation().name(DirectiveLocation.FIELD_DEFINITION.name()).build());
-        builder.directiveLocation(graphql.language.DirectiveLocation.newDirectiveLocation().name((DirectiveLocation.ENUM_VALUE.name())).build());
-        builder.inputValueDefinition(
-                InputValueDefinition.newInputValueDefinition()
-                        .name("reason")
-                        .type(TypeName.newTypeName().name("String").build())
-                        .defaultValue(StringValue.newStringValue().value(NO_LONGER_SUPPORTED).build())
-                        .build());
-        DEPRECATED_DIRECTIVE_DEFINITION = builder.build();
+        DEPRECATED_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition().name("deprecated")
+                .directiveLocation(newDirectiveLocation().name(FIELD_DEFINITION.name()).build())
+                .directiveLocation(newDirectiveLocation().name(ENUM_VALUE.name()).build())
+                .inputValueDefinition(
+                        InputValueDefinition.newInputValueDefinition()
+                                .name("reason")
+                                .description(createDescription("The reason for the deprecation"))
+                                .type(TypeName.newTypeName().name("String").build())
+                                .defaultValue(StringValue.newStringValue().value(NO_LONGER_SUPPORTED).build())
+                                .build())
+                .description(createDescription("Marks the field or enum value as deprecated")).build();
+    }
+
+    private static Description createDescription(String s) {
+        return new Description(s, null, false);
     }
 
     public Object buildValue(Value value, GraphQLType requiredType) {
@@ -166,7 +175,6 @@ public class SchemaGeneratorHelper {
      * We support the basic types as directive types
      *
      * @param value the value to use
-     *
      * @return a graphql input type
      */
     public GraphQLInputType buildDirectiveInputType(Value value) {
@@ -322,7 +330,7 @@ public class SchemaGeneratorHelper {
 
     private List<DirectiveLocation> buildLocations(DirectiveDefinition directiveDefinition) {
         return directiveDefinition.getDirectiveLocations().stream()
-                .map(dl -> DirectiveLocation.valueOf(dl.getName().toUpperCase()))
+                .map(dl -> valueOf(dl.getName().toUpperCase()))
                 .collect(toList());
     }
 

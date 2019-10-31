@@ -14,6 +14,7 @@ import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 
@@ -125,6 +126,11 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     @Override
     public DataLoaderRegistry getDataLoaderRegistry() {
         return delegateEnvironment.getDataLoaderRegistry();
+    }
+
+    @Override
+    public Locale getLocale() {
+        return delegateEnvironment.getLocale();
     }
 
     public CacheControl getCacheControl() {

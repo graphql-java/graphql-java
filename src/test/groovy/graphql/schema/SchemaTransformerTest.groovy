@@ -133,7 +133,7 @@ class SchemaTransformerTest extends Specification {
             }
 
         })
-        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions())
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
         then:
         printer.print(newSchema) == """type Child {
   helloChanged: String

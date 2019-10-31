@@ -34,7 +34,7 @@ class SchemaPrinterComparatorsTest extends Specification {
         def result = new SchemaPrinter(options).print(scalarType)
 
         then:
-        result == '''#TestScalar
+        result == '''"TestScalar"
 scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 
 '''
@@ -206,7 +206,7 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
         def result = new SchemaPrinter(options).print(scalarType)
 
         then:
-        result == '''#TestScalar
+        result == '''"TestScalar"
 scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
 '''
@@ -228,7 +228,7 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         def result = new SchemaPrinter(options).print(scalarType)
 
         then:
-        result == '''#TestScalar
+        result == '''"TestScalar"
 scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
 '''
@@ -692,7 +692,7 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
         then:
 
-        scalarResult == '''#TestScalar
+        scalarResult == '''"TestScalar"
 scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
 '''
@@ -765,7 +765,7 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         def result = new SchemaPrinter(options).print(scalarType)
 
         then:
-        result == '''#TestScalar
+        result == '''"TestScalar"
 scalar TestScalar @a() @bb()
 
 '''
