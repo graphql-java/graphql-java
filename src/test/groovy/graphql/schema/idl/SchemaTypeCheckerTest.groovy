@@ -14,6 +14,7 @@ import graphql.schema.idl.errors.DirectiveIllegalLocationError
 import graphql.schema.idl.errors.DirectiveUndeclaredError
 import graphql.schema.idl.errors.MissingTypeError
 import graphql.schema.idl.errors.NonUniqueNameError
+import graphql.schema.idl.errors.QueryOperationMissingError
 import graphql.schema.idl.errors.SchemaMissingError
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -254,7 +255,7 @@ class SchemaTypeCheckerTest extends Specification {
 
         expect:
 
-        result.get(0) instanceof SchemaMissingError
+        result.get(0) instanceof QueryOperationMissingError
     }
 
     def "test missing schema operation types"() {
