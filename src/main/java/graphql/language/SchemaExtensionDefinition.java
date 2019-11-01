@@ -1,10 +1,6 @@
 package graphql.language;
 
-
-import graphql.Internal;
 import graphql.PublicApi;
-import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -13,108 +9,43 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static graphql.language.NodeUtil.directivesByName;
 
 @PublicApi
-public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements SDLDefinition<SchemaDefinition> {
+public class SchemaExtensionDefinition extends SchemaDefinition {
 
-    private final List<Directive> directives;
-    private final List<OperationTypeDefinition> operationTypeDefinitions;
-
-    public static final String CHILD_DIRECTIVES = "directives";
-    public static final String CHILD_OPERATION_TYPE_DEFINITIONS = "operationTypeDefinitions";
-
-    @Internal
-    protected SchemaDefinition(List<Directive> directives,
-                               List<OperationTypeDefinition> operationTypeDefinitions,
-                               SourceLocation sourceLocation,
-                               List<Comment> comments,
-                               IgnoredChars ignoredChars,
-                               Map<String, String> additionalData) {
-        super(sourceLocation, comments, ignoredChars, additionalData);
-        this.directives = directives;
-        this.operationTypeDefinitions = operationTypeDefinitions;
-    }
-
-    public List<Directive> getDirectives() {
-        return new ArrayList<>(directives);
-    }
-
-    public Map<String, Directive> getDirectivesByName() {
-        return directivesByName(directives);
-    }
-
-    public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
-    }
-
-
-    public List<OperationTypeDefinition> getOperationTypeDefinitions() {
-        return new ArrayList<>(operationTypeDefinitions);
+    protected SchemaExtensionDefinition(List<Directive> directives, List<OperationTypeDefinition> operationTypeDefinitions, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+        super(directives, operationTypeDefinitions, sourceLocation, comments, ignoredChars, additionalData);
     }
 
     @Override
-    public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
-        result.addAll(directives);
-        result.addAll(operationTypeDefinitions);
-        return result;
-    }
-
-    @Override
-    public NodeChildrenContainer getNamedChildren() {
-        return newNodeChildrenContainer()
-                .children(CHILD_DIRECTIVES, directives)
-                .children(CHILD_OPERATION_TYPE_DEFINITIONS, operationTypeDefinitions)
-                .build();
-    }
-
-    @Override
-    public SchemaDefinition withNewChildren(NodeChildrenContainer newChildren) {
-        return transform(builder -> builder
+    public SchemaExtensionDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transformExtension(builder -> builder
                 .directives(newChildren.getChildren(CHILD_DIRECTIVES))
                 .operationTypeDefinitions(newChildren.getChildren(CHILD_OPERATION_TYPE_DEFINITIONS))
         );
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public SchemaDefinition deepCopy() {
-        return new SchemaDefinition(deepCopy(directives), deepCopy(operationTypeDefinitions), getSourceLocation(), getComments(),
+    public SchemaExtensionDefinition deepCopy() {
+        return new SchemaExtensionDefinition(deepCopy(getDirectives()), deepCopy(getOperationTypeDefinitions()), getSourceLocation(), getComments(),
                 getIgnoredChars(), getAdditionalData());
     }
 
     @Override
     public String toString() {
-        return "SchemaDefinition{" +
-                "directives=" + directives +
-                ", operationTypeDefinitions=" + operationTypeDefinitions +
+        return "SchemaExtensionDefinition{" +
+                "directives=" + getDirectives() +
+                ", operationTypeDefinitions=" + getOperationTypeDefinitions() +
                 "}";
     }
 
-    @Override
-    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
-        return visitor.visitSchemaDefinition(this, context);
-    }
-
-    public SchemaDefinition transform(Consumer<Builder> builderConsumer) {
+    public SchemaExtensionDefinition transformExtension(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
         return builder.build();
     }
 
-    public static Builder newSchemaDefinition() {
+    public static Builder newSchemaExtensionDefinition() {
         return new Builder();
     }
 
@@ -184,8 +115,8 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
             return this;
         }
 
-        public SchemaDefinition build() {
-            return new SchemaDefinition(directives,
+        public SchemaExtensionDefinition build() {
+            return new SchemaExtensionDefinition(directives,
                     operationTypeDefinitions,
                     sourceLocation,
                     comments,
@@ -193,4 +124,5 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
                     additionalData);
         }
     }
+
 }

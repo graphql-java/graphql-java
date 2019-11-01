@@ -1908,6 +1908,50 @@ class SchemaGeneratorTest extends Specification {
 
         // scalars are special - they are created via a WiringFactory - but this tests they are given the extensions
         (schema.getType("Scalar") as GraphQLScalarType).getExtensionDefinitions().size() == 1
+    }
+
+    def "schema extensions and directives can be generated"() {
+        def sdl = '''
+
+            directive @sd1 on SCHEMA
+            directive @sd2 on SCHEMA
+            directive @sd3 on SCHEMA
+
+            schema @sd1 {
+                query : Query
+            }
+            
+            extend schema @sd2 {
+                mutation : Mutation
+            }
+            
+            extend schema @sd3 
+            
+            type Query {
+                f : String
+            }
+
+            type Mutation {
+                f : String
+            }
+        '''
+
+        when:
+        def typeDefinitionRegistry = new SchemaParser().parse(sdl)
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(typeDefinitionRegistry, TestUtil.mockRuntimeWiring)
+
+        then:
+
+        schema.getQueryType().name == 'Query'
+        schema.getMutationType().name == 'Mutation'
+
+        def directives = schema.getSchemaDirectives()
+        directives.size() == 3
+
+        schema.getSchemaDirective("sd1") != null
+        schema.getSchemaDirective("sd2") != null
+        schema.getSchemaDirective("sd3") != null
+
 
     }
 }
