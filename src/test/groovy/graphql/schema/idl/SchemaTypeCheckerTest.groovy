@@ -307,7 +307,7 @@ class SchemaTypeCheckerTest extends Specification {
 
         expect:
 
-        result.get(0) instanceof SchemaMissingError
+        result.get(0) instanceof QueryOperationMissingError
     }
 
     def "test operation type is not an object"() {

@@ -279,10 +279,7 @@ public class SchemaGenerator {
         schemaBuilder.additionalDirectives(additionalDirectives);
         buildCtx.setDirectiveDefinitions(additionalDirectives);
 
-        List<Directive> schemaDirectiveList = SchemaExtensionsChecker.gatherSchemaDirectives(buildCtx.getTypeRegistry());
-        schemaBuilder.withSchemaDirectives(
-                buildDirectives(schemaDirectiveList, emptyList(), DirectiveLocation.SCHEMA, buildCtx.getDirectiveDefinitions(), buildCtx.getComparatorRegistry())
-        );
+        buildSchemaDirectivesAndExtensions(buildCtx, schemaBuilder);
 
         buildOperations(buildCtx, schemaBuilder);
 
@@ -301,6 +298,17 @@ public class SchemaGenerator {
             graphQLSchema = schemaTransformer.transform(graphQLSchema);
         }
         return graphQLSchema;
+    }
+
+    private void buildSchemaDirectivesAndExtensions(BuildContext buildCtx, GraphQLSchema.Builder schemaBuilder) {
+        TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
+        List<Directive> schemaDirectiveList = SchemaExtensionsChecker.gatherSchemaDirectives(typeRegistry);
+        schemaBuilder.withSchemaDirectives(
+                buildDirectives(schemaDirectiveList, emptyList(), DirectiveLocation.SCHEMA, buildCtx.getDirectiveDefinitions(), buildCtx.getComparatorRegistry())
+        );
+
+        schemaBuilder.definition(typeRegistry.schemaDefinition().orElse(null));
+        schemaBuilder.extensionDefinitions(typeRegistry.getSchemaExtensionDefinitions());
     }
 
     private void buildOperations(BuildContext buildCtx, GraphQLSchema.Builder schemaBuilder) {
