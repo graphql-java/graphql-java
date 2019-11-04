@@ -393,8 +393,11 @@ public class GraphqlAntlrToLanguage {
         for (GraphqlParser.DirectivesContext directiveCtx : directivesCtx) {
             directives.addAll(createDirectives(directiveCtx));
         }
-        def.operationTypeDefinitions(ctx.operationTypeDefinition().stream()
-                .map(this::createOperationTypeDefinition).collect(toList()));
+        def.directives(directives);
+
+        List<OperationTypeDefinition> operationTypeDefs = ctx.operationTypeDefinition().stream()
+                .map(this::createOperationTypeDefinition).collect(toList());
+        def.operationTypeDefinitions(operationTypeDefs);
         return def.build();
     }
 
