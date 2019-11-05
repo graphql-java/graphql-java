@@ -28,7 +28,7 @@ import static java.util.Collections.emptyList;
  * @see graphql.schema.GraphQLEnumType
  */
 @PublicApi
-public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
+public class GraphQLEnumValueDefinition implements GraphQLNamedDescriptionType, GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;

@@ -23,6 +23,8 @@ import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLModifiedType;
+import graphql.schema.GraphQLNamedDescriptionType;
+import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
@@ -113,6 +115,20 @@ public class Introspection {
             return Assert.assertShouldNeverHappen("Unknown kind of type: %s", type);
         }
     };
+    public static final DataFetcher nameGraphQLElementDataFetcher = environment -> {
+        Object type = environment.getSource();
+        if (type instanceof GraphQLNamedSchemaElement) {
+            return ((GraphQLNamedSchemaElement) type).getName();
+        }
+        return null;
+    };
+    public static final DataFetcher descriptionGraphQLElementDataFetcher = environment -> {
+        Object type = environment.getSource();
+        if (type instanceof GraphQLNamedDescriptionType) {
+            return ((GraphQLNamedDescriptionType) type).getDescription();
+        }
+        return null;
+    };
 
     public static final GraphQLObjectType __InputValue = newObject()
             .name("__InputValue")
@@ -141,6 +157,8 @@ public class Introspection {
             }
             return null;
         });
+        register(__InputValue, "name", nameGraphQLElementDataFetcher);
+        register(__InputValue, "description", descriptionGraphQLElementDataFetcher);
     }
 
     private static String print(Object value, GraphQLInputType type) {
@@ -179,6 +197,8 @@ public class Introspection {
             Object type = environment.getSource();
             return ((GraphQLFieldDefinition) type).isDeprecated();
         });
+        register(__Field, "name", nameGraphQLElementDataFetcher);
+        register(__Field, "description", descriptionGraphQLElementDataFetcher);
     }
 
 
@@ -203,6 +223,8 @@ public class Introspection {
             GraphQLEnumValueDefinition enumValue = environment.getSource();
             return enumValue.isDeprecated();
         });
+        register(__EnumValue, "name", nameGraphQLElementDataFetcher);
+        register(__EnumValue, "description", descriptionGraphQLElementDataFetcher);
     }
 
 
@@ -215,10 +237,14 @@ public class Introspection {
                     .getGraphQLSchema()
                     .getFieldVisibility()
                     .getFieldDefinitions(fieldsContainer);
-            if (includeDeprecated) return fieldDefinitions;
+            if (includeDeprecated) {
+                return fieldDefinitions;
+            }
             List<GraphQLFieldDefinition> filtered = new ArrayList<>(fieldDefinitions);
             for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
-                if (fieldDefinition.isDeprecated()) filtered.remove(fieldDefinition);
+                if (fieldDefinition.isDeprecated()) {
+                    filtered.remove(fieldDefinition);
+                }
             }
             return filtered;
         }
@@ -250,10 +276,14 @@ public class Introspection {
         Boolean includeDeprecated = environment.getArgument("includeDeprecated");
         if (type instanceof GraphQLEnumType) {
             List<GraphQLEnumValueDefinition> values = ((GraphQLEnumType) type).getValues();
-            if (includeDeprecated) return values;
+            if (includeDeprecated) {
+                return values;
+            }
             List<GraphQLEnumValueDefinition> filtered = new ArrayList<>(values);
             for (GraphQLEnumValueDefinition valueDefinition : values) {
-                if (valueDefinition.isDeprecated()) filtered.remove(valueDefinition);
+                if (valueDefinition.isDeprecated()) {
+                    filtered.remove(valueDefinition);
+                }
             }
             return filtered;
         }
@@ -327,6 +357,8 @@ public class Introspection {
         register(__Type, "enumValues", enumValuesTypesFetcher);
         register(__Type, "inputFields", inputFieldsFetcher);
         register(__Type, "ofType", OfTypeFetcher);
+        register(__Type, "name", nameGraphQLElementDataFetcher);
+        register(__Type, "description", descriptionGraphQLElementDataFetcher);
     }
 
 
@@ -377,8 +409,8 @@ public class Introspection {
             .value("ENUM_VALUE", DirectiveLocation.ENUM_VALUE, "Indicates the directive is valid on an enum value SDL definition.")
             .value("INPUT_OBJECT", DirectiveLocation.INPUT_OBJECT, "Indicates the directive is valid on an input object SDL definition.")
             .value("INPUT_FIELD_DEFINITION", DirectiveLocation.INPUT_FIELD_DEFINITION, "Indicates the directive is valid on an input object field SDL definition.")
-
             .build();
+
 
     @SuppressWarnings("deprecation") // because graphql spec still has the deprecated fields
     public static final GraphQLObjectType __Directive = newObject()
@@ -433,6 +465,9 @@ public class Introspection {
             return directive.isOnField() ||
                     directive.validLocations().contains(DirectiveLocation.FIELD);
         });
+
+        register(__Directive, "name", nameGraphQLElementDataFetcher);
+        register(__Directive, "description", descriptionGraphQLElementDataFetcher);
     }
 
     public static final GraphQLObjectType __Schema = newObject()
