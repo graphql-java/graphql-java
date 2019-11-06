@@ -287,7 +287,7 @@ public class Scalars {
 
         @Override
         public String serialize(Object input) {
-            String result = convertImpl(input);
+            String result = String.valueOf(input);
             if (result == null) {
                 throw new CoercingSerializeException(
                         "Expected type 'ID' but was '" + typeName(input) + "'."
