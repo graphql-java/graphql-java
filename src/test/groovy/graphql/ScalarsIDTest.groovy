@@ -51,11 +51,11 @@ class ScalarsIDTest extends Specification {
     }
 
     @Unroll
-    def "serialize throws exception for invalid input #value"() {
+    def "serialize allows any object via String.valueOf #value"() {
         when:
         Scalars.GraphQLID.getCoercing().serialize(value)
         then:
-        thrown(CoercingSerializeException)
+        noExceptionThrown()
 
         where:
         value        | _
