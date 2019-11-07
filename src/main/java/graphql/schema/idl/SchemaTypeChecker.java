@@ -14,6 +14,7 @@ import graphql.language.InputObjectTypeDefinition;
 import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.Node;
+import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.OperationTypeDefinition;
@@ -24,6 +25,7 @@ import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.idl.errors.DirectiveIllegalLocationError;
+import graphql.schema.idl.errors.InterfaceFieldArgumentNotOptionalError;
 import graphql.schema.idl.errors.InterfaceFieldArgumentRedefinitionError;
 import graphql.schema.idl.errors.InterfaceFieldRedefinitionError;
 import graphql.schema.idl.errors.InvalidDeprecationDirectiveError;
@@ -500,7 +502,7 @@ public class SchemaTypeChecker {
                         // look at arguments
                         List<InputValueDefinition> objectArgs = objectFieldDef.getInputValueDefinitions();
                         List<InputValueDefinition> interfaceArgs = interfaceFieldDef.getInputValueDefinitions();
-                        if (objectArgs.size() != interfaceArgs.size()) {
+                        if (objectArgs.size() < interfaceArgs.size()) {
                             errors.add(new MissingInterfaceFieldArgumentsError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef));
                         } else {
                             checkArgumentConsistency(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, interfaceFieldDef, errors);
@@ -522,6 +524,16 @@ public class SchemaTypeChecker {
             String objectArgStr = AstPrinter.printAst(objectArg);
             if (!interfaceArgStr.equals(objectArgStr)) {
                 errors.add(new InterfaceFieldArgumentRedefinitionError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectArgStr, interfaceArgStr));
+            }
+        }
+
+        if (objectArgs.size() > interfaceArgs.size()) {
+            for (int i = interfaceArgs.size(); i < objectArgs.size(); i++) {
+                InputValueDefinition objectArg = objectArgs.get(i);
+                if (objectArg.getType() instanceof NonNullType) {
+                    String objectArgStr = AstPrinter.printAst(objectArg);
+                    errors.add(new InterfaceFieldArgumentNotOptionalError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectArgStr));
+                }
             }
         }
     }
