@@ -1683,5 +1683,32 @@ class QueryTraverserTest extends Specification {
 
     }
 
+    def "test preOrder order for visitArgument on directives"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+            
+            directive @cache(
+                ttl: Int!
+            ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery("""
+            {foo { subFoo @cache(ttl:100) } bar @cache(ttl:200) }
+            """)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal.visitPreOrder(visitor)
 
+        then:
+        2 * visitor.visitArgument({ QueryVisitorFieldArgumentEnvironment it ->
+            it.argument.name == "ttl"
+        })
+    }
 }
