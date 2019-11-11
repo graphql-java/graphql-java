@@ -1683,5 +1683,36 @@ class QueryTraverserTest extends Specification {
 
     }
 
+    def "test preOrder order for visitField with repeated fragments"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+            }
+            type Foo {
+                subFoo: String  
+                moreFoos: Foo
+            }
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery("""
+            {foo { ...fooData moreFoos { ...fooData }}} fragment fooData on Foo { subFoo }
+            """)
 
+        def fragmentFooData = query.definitions[1]
+        assert fragmentFooData instanceof FragmentDefinition
+
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        2 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
+                    it.parentType.name == "Foo" &&
+                    it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.name == "Foo" &&
+                    it.selectionSetContainer == fragmentFooData
+
+        })
+    }
 }
