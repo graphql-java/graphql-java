@@ -48,4 +48,15 @@ class DataFetcherResultTest extends Specification {
         then:
         result.isMapRelativeErrors()
     }
+
+    def "transforming"() {
+        when:
+        def original = DataFetcherResult.newResult().data("hello")
+                .errors([error1]).localContext("world").build()
+        def result = original.transform({ builder -> builder.error(error2) })
+        then:
+        result.getData() == "hello"
+        result.getLocalContext() == "world"
+        result.getErrors() == [error1, error2]
+    }
 }
