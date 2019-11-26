@@ -116,6 +116,40 @@ class SchemaTransformerTest extends Specification {
         (newSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("fooChanged").getType() == newSchema.getType("Foo")
     }
 
+    def "transform with interface"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+        type Query {
+            hello: Foo 
+        }
+        
+        interface Foo {
+            bar: String
+        }
+        
+        type FooImpl implements Foo {
+           bar: String
+           baz: String
+        } 
+        """)
+        schema.getQueryType();
+        SchemaTransformer schemaTransformer = new SchemaTransformer()
+        when:
+        GraphQLSchema newSchema = schemaTransformer.transform(schema, new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition fieldDefinition, TraverserContext<GraphQLSchemaElement> context) {
+                if (fieldDefinition.name == "baz") {
+                    return deleteNode(context)
+                }
+                return TraversalControl.CONTINUE;
+            }
+        })
+
+        then:
+        newSchema != schema
+        (newSchema.getType("FooImpl") as GraphQLObjectType).getFieldDefinition("baz") == null
+    }
 
     def "elements having more than one parent"() {
         given:

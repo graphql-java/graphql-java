@@ -178,6 +178,7 @@ public class SchemaTransformer {
                 .subscription(dummyRoot.subscription)
                 .additionalTypes(dummyRoot.additionalTypes)
                 .additionalDirectives(dummyRoot.directives)
+                .codeRegistry(schema.getCodeRegistry())
                 .buildImpl(true);
         return newSchema;
     }
