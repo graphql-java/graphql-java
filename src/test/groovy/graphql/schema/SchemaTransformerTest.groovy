@@ -12,6 +12,7 @@ import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
 import static graphql.schema.GraphQLTypeReference.typeRef
 import static graphql.util.TreeTransformerUtil.changeNode
+import static graphql.util.TreeTransformerUtil.deleteNode
 
 class SchemaTransformerTest extends Specification {
 
@@ -44,6 +45,36 @@ class SchemaTransformerTest extends Specification {
         then:
         newSchema != schema
         (newSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("barChanged") != null
+    }
+
+    def "can remove field in schema"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+        type Query {
+            hello: Foo 
+        }
+        type Foo {
+           bar: String
+           baz: String
+       } 
+        """)
+        schema.getQueryType();
+        SchemaTransformer schemaTransformer = new SchemaTransformer()
+        when:
+        GraphQLSchema newSchema = schemaTransformer.transform(schema, new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition fieldDefinition, TraverserContext<GraphQLSchemaElement> context) {
+                if (fieldDefinition.name == "baz") {
+                    return deleteNode(context)
+                }
+                return TraversalControl.CONTINUE;
+            }
+        })
+
+        then:
+        newSchema != schema
+        (newSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("baz") == null
     }
 
     def "can change schema with logical cycles"() {

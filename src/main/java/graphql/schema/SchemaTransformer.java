@@ -141,7 +141,13 @@ public class SchemaTransformer {
                     nodeZipper = zippers.get(zippers.size() - 1);
                 }
                 zipperByOriginalNode.put(context.originalThisNode(), nodeZipper);
-                zipperByNodeAfterTraversing.put(context.thisNode(), nodeZipper);
+
+                if (context.isDeleted()) {
+                    zipperByNodeAfterTraversing.put(context.originalThisNode(), nodeZipper);
+                } else {
+                    zipperByNodeAfterTraversing.put(context.thisNode(), nodeZipper);
+                }
+
                 breadcrumbsByZipper.put(nodeZipper, new ArrayList<>());
                 breadcrumbsByZipper.get(nodeZipper).add(context.getBreadcrumbs());
                 return result;
