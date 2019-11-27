@@ -164,7 +164,7 @@ public class SchemaTransformer {
 
 
     /**
-     * Transforms a GrapQLSchema and returns a new GraphQLSchema object.
+     * Transforms a GraphQLSchema and returns a new GraphQLSchema object.
      *
      * @param schema
      * @param visitor
@@ -172,8 +172,12 @@ public class SchemaTransformer {
      * @return a new GraphQLSchema instance.
      */
     public static GraphQLSchema transformSchema(GraphQLSchema schema, GraphQLTypeVisitor visitor) {
+        return transformSchema(schema, TraversalType.ALL, visitor);
+    }
+
+    public static GraphQLSchema transformSchema(GraphQLSchema schema, TraversalType traversalType, GraphQLTypeVisitor visitor) {
         SchemaTransformer schemaTransformer = new SchemaTransformer();
-        return schemaTransformer.transform(schema, visitor);
+        return schemaTransformer.transform(schema, traversalType, visitor);
     }
 
     public GraphQLSchema transform(final GraphQLSchema schema, GraphQLTypeVisitor visitor) {
