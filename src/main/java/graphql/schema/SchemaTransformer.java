@@ -36,13 +36,17 @@ public class SchemaTransformer {
 
     /**
      * Different ways to traverse a schema object during transformation.
-     *
-     * ALL - traverse all top level types (query, mutations, additional types etc)
-     * QUERY_ONLY - traverse Query only, basically ignoring schema elements that are not referenced in the query.
      */
     public enum TraversalType {
+        /**
+         * traverse all top level types (query, mutations, additional types etc)
+         */
         ALL,
-        QUERY_ONLY;
+
+        /**
+         * traverse operation types only, basically ignoring schema elements that may not be referenced.
+         */
+        OPERATION_TYPES_ONLY;
     }
 
     /**
@@ -55,30 +59,28 @@ public class SchemaTransformer {
         private boolean includeDirectives = true;
         private boolean includeIntrospection = true;
 
-        public void queryOnly() {
-            includeMutations = false;
-            includeSubscriptions = false;
+        void operationTypesOnly() {
             includeAdditionalTypes = false;
             includeDirectives = false;
         }
 
-        public boolean isIncludeMutations() {
+        boolean isIncludeMutations() {
             return includeMutations;
         }
 
-        public boolean isIncludeSubscriptions() {
+        boolean isIncludeSubscriptions() {
             return includeSubscriptions;
         }
 
-        public boolean isIncludeAdditionalTypes() {
+        boolean isIncludeAdditionalTypes() {
             return includeAdditionalTypes;
         }
 
-        public boolean isIncludeDirectives() {
+        boolean isIncludeDirectives() {
             return includeDirectives;
         }
 
-        public boolean isIncludeIntrospection() {
+        boolean isIncludeIntrospection() {
             return includeIntrospection;
         }
     }
@@ -127,6 +129,7 @@ public class SchemaTransformer {
             if (schema.isSupportingMutations() && config.isIncludeMutations()) {
                 builder.child(MUTATION, mutation);
             }
+
             if (schema.isSupportingSubscriptions() && config.isIncludeSubscriptions()) {
                 builder.child(SUBSCRIPTION, subscription);
             }
@@ -188,8 +191,8 @@ public class SchemaTransformer {
 
         DummyRootConfiguration rootConfiguration = new DummyRootConfiguration();
 
-        if (traversalType == TraversalType.QUERY_ONLY) {
-            rootConfiguration.queryOnly();
+        if (traversalType == TraversalType.OPERATION_TYPES_ONLY) {
+            rootConfiguration.operationTypesOnly();
         }
 
         DummyRoot dummyRoot = new DummyRoot(schema, rootConfiguration);

@@ -1,6 +1,7 @@
 package graphql.schema
 
-
+import graphql.GraphQL
+import graphql.Scalars
 import graphql.TestUtil
 import graphql.schema.idl.SchemaPrinter
 import graphql.util.TraversalControl
@@ -246,7 +247,7 @@ type SubChildChanged {
 
         when:
         final Set<String> visitedTypeNames = []
-        schemaTransformer.transform(schema, SchemaTransformer.TraversalType.QUERY_ONLY, new GraphQLTypeVisitorStub() {
+        schemaTransformer.transform(schema, SchemaTransformer.TraversalType.OPERATION_TYPES_ONLY, new GraphQLTypeVisitorStub() {
             @Override
             TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
                 visitedTypeNames << node.name
@@ -257,6 +258,55 @@ type SubChildChanged {
 
         then:
         !visitedTypeNames.contains('Bar')
+
+    }
+
+    def "transformed schema can be executed"() {
+
+        given:
+        def queryObject = newObject()
+                .name("Query")
+                .field({ builder ->
+                    builder.name("foo").type(Scalars.GraphQLString).dataFetcher(new DataFetcher<Object>() {
+                        @Override
+                        Object get(DataFetchingEnvironment environment) throws Exception {
+                            return "bar";
+                        }
+                    })
+                }).build();
+
+        def schemaObject = GraphQLSchema.newSchema()
+                .query(queryObject)
+                .build()
+
+        when:
+        def result = GraphQL.newGraphQL(schemaObject)
+        .build().execute('''
+            { foo } 
+        ''').getData()
+
+        then:
+        (result as Map)['foo'] == 'bar'
+
+        when:
+        def newSchema = SchemaTransformer.transformSchema(schemaObject, new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.name == 'foo') {
+                    def changedNode = node.transform({ builder -> builder.name('fooChanged')})
+                    return changeNode(context, changedNode)
+                }
+
+                return TraversalControl.CONTINUE
+            }
+        })
+        result = GraphQL.newGraphQL(newSchema)
+        .build().execute('''
+            { fooChanged }
+        ''').getData()
+
+        then:
+        (result as Map)['fooChanged'] == 'bar'
 
     }
 }
