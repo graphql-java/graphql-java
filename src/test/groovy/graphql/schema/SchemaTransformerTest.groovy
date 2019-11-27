@@ -225,4 +225,38 @@ type SubChildChanged {
 
 
     }
+
+    def "traverses query only"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+        type Query {
+            hello: Foo 
+        }
+        
+        type Foo {
+           bar: String
+        } 
+        
+        type Bar {
+            baz: String
+        }
+        
+        """)
+        SchemaTransformer schemaTransformer = new SchemaTransformer()
+
+        when:
+        final Set<String> visitedTypeNames = []
+        schemaTransformer.transform(schema, SchemaTransformer.TraversalType.QUERY_ONLY, new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                visitedTypeNames << node.name
+
+                TraversalControl.CONTINUE
+            }
+        })
+
+        then:
+        !visitedTypeNames.contains('Bar')
+
+    }
 }
