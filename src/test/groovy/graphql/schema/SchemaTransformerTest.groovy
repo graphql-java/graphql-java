@@ -227,19 +227,40 @@ type SubChildChanged {
 
     }
 
-    def "traverses query only"() {
+    def "traverses operation types"() {
         given:
         GraphQLSchema schema = TestUtil.schema("""
         type Query {
             hello: Foo 
         }
         
+        type Subscription {
+            fooHappened: FooEvent
+        }
+        
+        type Mutation {
+            updateFoo(foo: FooUpdate): Boolean
+        }
+        
+        type FooEvent {
+            foo: Foo
+            timestamp: Int
+        }
+        
         type Foo {
-           bar: String
+           bar: Bar
         } 
+        
+        input FooUpdate {
+            newBarBaz: String
+        }
         
         type Bar {
             baz: String
+        }
+        
+        type Baz {
+            bing: String
         }
         
         """)
@@ -254,12 +275,23 @@ type SubChildChanged {
 
                 TraversalControl.CONTINUE
             }
+
+            @Override
+            TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                visitedTypeNames << node.name
+
+                TraversalControl.CONTINUE
+            }
         })
 
         then:
-        !visitedTypeNames.contains('Bar')
-
+        visitedTypeNames.contains('Foo')
+        visitedTypeNames.contains('FooUpdate')
+        visitedTypeNames.contains('FooEvent')
+        visitedTypeNames.contains('Bar')
+        !visitedTypeNames.contains('Baz')
     }
+
 
     def "transformed schema can be executed"() {
 
