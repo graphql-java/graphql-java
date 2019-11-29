@@ -32,6 +32,7 @@ import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.schema.GraphQLEnumType.graphQLEnumType
 import static graphql.schema.GraphQLList.list
 
 class SchemaGeneratorTest extends Specification {
@@ -952,6 +953,7 @@ class SchemaGeneratorTest extends Specification {
         "arrayNullsArg"     | "[null, null]"    || list(GraphQLString)
         "arrayArg"          | "[3,4,6]"         || list(GraphQLInt)
         "arrayWithNullsArg" | "[null,3,null,6]" || list(GraphQLInt)
+        "enumArg"           | "MONDAY"          || graphQLEnumType
     }
 
     @Unroll
@@ -974,7 +976,6 @@ class SchemaGeneratorTest extends Specification {
         where:
         argumentName          | argumentValue               || expectedErrorMessage
         "objArg"              | '{ hi: "John"}'             || "Internal error: should never happen: Directive values of type 'ObjectValue' are not supported yet"
-        "enumArg"             | "MONDAY"                    || "Internal error: should never happen: Directive values of type 'EnumValue' are not supported yet"
         "polymorphicArrayArg" | '["one", { hi: "John"}, 5]' || "Arrays containing multiple types of values are not supported yet. Detected the following types [IntValue,ObjectValue,StringValue]"
     }
 

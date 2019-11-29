@@ -33,7 +33,8 @@ import static java.util.Collections.emptyList;
  */
 @PublicApi
 public class GraphQLEnumType implements GraphQLNamedDescriptionType, GraphQLNamedInputType, GraphQLNamedOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
-
+    
+    public static final GraphQLEnumType graphQLEnumType = newEnum().name("BUILT_IN").build();
     private final String name;
     private final String description;
     private final Map<String, GraphQLEnumValueDefinition> valueDefinitionMap = new LinkedHashMap<>();

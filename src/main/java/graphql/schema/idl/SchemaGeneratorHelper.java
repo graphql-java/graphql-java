@@ -197,6 +197,9 @@ public class SchemaGeneratorHelper {
             ArrayValue arrayValue = (ArrayValue) value;
             return list(buildDirectiveInputType(getArrayValueWrappedType(arrayValue)));
         }
+        if (value instanceof EnumValue) {
+            return GraphQLEnumType.graphQLEnumType;
+        }
         return assertShouldNeverHappen("Directive values of type '%s' are not supported yet", value.getClass().getSimpleName());
     }
 
