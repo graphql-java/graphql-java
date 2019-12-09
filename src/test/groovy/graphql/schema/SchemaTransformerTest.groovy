@@ -171,7 +171,7 @@ type SubChildChanged {
             type QueryType {
                 dummy: String
             }
-//            """)
+            """)
             GraphQLSchema schema2 = schema.transform {
                 it.query { it.field("dummy") { it.argument  { it.name("testQuery").type(typeRef("String"))}}}
                 .mutation { it.field("testMutation") {it.type(typeRef("Boolean"))}}
