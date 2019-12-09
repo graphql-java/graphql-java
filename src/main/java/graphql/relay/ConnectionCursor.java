@@ -1,5 +1,6 @@
 package graphql.relay;
 
+import graphql.GraphQLIDValue;
 import graphql.PublicApi;
 
 /**
@@ -11,7 +12,7 @@ import graphql.PublicApi;
  * See <a href="https://facebook.github.io/relay/graphql/connections.htm#sec-Cursor">https://facebook.github.io/relay/graphql/connections.htm#sec-Cursor</a>
  */
 @PublicApi
-public interface ConnectionCursor {
+public interface ConnectionCursor extends GraphQLIDValue {
 
     /**
      * @return an opaque string that represents this cursor.
