@@ -160,4 +160,28 @@ type SubChildChanged {
 
 
     }
+
+    def "test query, mutation and subscription transformers in schema.builder and field transformers in object type.builder"() {
+        when:
+            GraphQLSchema schema = TestUtil.schema("""
+            schema {
+                query: QueryType
+            }
+            
+            type QueryType {
+                dummy: String
+            }
+//            """)
+            GraphQLSchema schema2 = schema.transform {
+                it.query { it.field("dummy") { it.argument  { it.name("testQuery").type(typeRef("String"))}}}
+                .mutation { it.field("testMutation") {it.type(typeRef("Boolean"))}}
+                .subscription { it.field("testSubscription") {it.type(typeRef("Boolean"))}}}
+        then:
+            schema2.queryType?.name == "QueryType"
+            schema2.queryType.getFieldDefinition("dummy")?.arguments[0]?.name == "testQuery"
+            schema2.mutationType?.name == "Mutation"
+            schema2.mutationType.getFieldDefinition("testMutation")?.type instanceof GraphQLScalarType
+            schema2.subscriptionType?.name == "Subscription"
+            schema2.subscriptionType.getFieldDefinition("testSubscription")?.type instanceof GraphQLScalarType
+    }
 }

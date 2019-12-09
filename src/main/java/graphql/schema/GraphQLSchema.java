@@ -15,6 +15,8 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
@@ -304,6 +306,17 @@ public class GraphQLSchema {
             return query(builder.build());
         }
 
+        /**
+         * Transform the query type. If query type is not yet defined a new instance
+         * of {@link GraphQLObjectType.Builder} with default type name "Query" is used
+         * @param transformer a {@link Consumer} instance that performs transformation on {@link GraphQLObjectType.Builder}
+         * @return this builder
+         * @see GraphQLObjectType#transform(Consumer)
+         */
+        public Builder query(Consumer<GraphQLObjectType.Builder> transformer) {
+            return query(transform0(queryType, transformer, "Query"));
+        }
+
         public Builder query(GraphQLObjectType queryType) {
             this.queryType = queryType;
             return this;
@@ -312,6 +325,17 @@ public class GraphQLSchema {
         public Builder mutation(GraphQLObjectType.Builder builder) {
             return mutation(builder.build());
         }
+        /**
+         * Transform the mutation type. If mutation type is not yet defined, a new instance
+         * of {@link GraphQLObjectType.Builder} with default type name "Mutation" is used
+         * @param transformer a {@link Consumer} instance that performs transformation on {@link GraphQLObjectType.Builder}
+         * @return this builder
+         * @see GraphQLObjectType#transform(Consumer)
+         */
+        public Builder mutation(Consumer<GraphQLObjectType.Builder> transformer) {
+            return mutation(transform0(mutationType, transformer, "Mutation"));
+        }
+
 
         public Builder mutation(GraphQLObjectType mutationType) {
             this.mutationType = mutationType;
@@ -325,6 +349,16 @@ public class GraphQLSchema {
         public Builder subscription(GraphQLObjectType subscriptionType) {
             this.subscriptionType = subscriptionType;
             return this;
+        }
+        /**
+         * Transform the subscription type. If subscription type is not yet defined, a new instance
+         * of {@link GraphQLObjectType.Builder} with default type name "Subscription" is used
+         * @param transformer a {@link Consumer} instance that performs transformation on {@link GraphQLObjectType.Builder}
+         * @return this builder
+         * @see GraphQLObjectType#transform(Consumer)
+         */
+        public Builder subscription(Consumer<GraphQLObjectType.Builder> transformer) {
+            return subscription(transform0(subscriptionType, transformer, "Subscription"));
         }
 
         /**
@@ -434,6 +468,13 @@ public class GraphQLSchema {
                 throw new InvalidSchemaException(errors);
             }
             return graphQLSchema;
+        }
+
+        private GraphQLObjectType transform0(GraphQLObjectType type, Consumer<GraphQLObjectType.Builder> transformer, String typeName) {
+            GraphQLObjectType.Builder builder = Optional.ofNullable(type).map(GraphQLObjectType::newObject).orElseGet(() -> GraphQLObjectType.newObject().name(typeName));
+            transformer.accept(builder);
+            return builder.build();
+
         }
     }
 }

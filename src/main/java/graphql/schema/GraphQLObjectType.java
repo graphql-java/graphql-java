@@ -309,6 +309,17 @@ public class GraphQLObjectType implements GraphQLNamedDescriptionType, GraphQLNa
             return field(builder.build());
         }
 
+        public Builder field(String name, Consumer<GraphQLFieldDefinition.Builder> transformer) {
+            assertNotNull(transformer, "builderFunction can't be null");
+            GraphQLFieldDefinition.Builder builder;
+            if (name != null && fields.containsKey(name)) {
+                builder = GraphQLFieldDefinition.newFieldDefinition(fields.get(name));
+            } else {
+                builder = GraphQLFieldDefinition.newFieldDefinition().name(name);
+            }
+            transformer.accept(builder);
+            return field(builder);
+        }
         /**
          * Same effect as the field(GraphQLFieldDefinition). Builder.build() is called
          * from within
@@ -320,6 +331,8 @@ public class GraphQLObjectType implements GraphQLNamedDescriptionType, GraphQLNa
         public Builder field(GraphQLFieldDefinition.Builder builder) {
             return field(builder.build());
         }
+
+
 
         public Builder fields(List<GraphQLFieldDefinition> fieldDefinitions) {
             assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
