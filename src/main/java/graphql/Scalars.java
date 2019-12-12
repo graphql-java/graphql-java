@@ -281,7 +281,7 @@ public class Scalars {
             if (input instanceof BigInteger) {
                 return String.valueOf(input);
             }
-            return null;
+            return String.valueOf(input);
 
         }
 

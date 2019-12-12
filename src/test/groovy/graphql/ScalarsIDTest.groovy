@@ -65,11 +65,11 @@ class ScalarsIDTest extends Specification {
     }
 
     @Unroll
-    def "parseValue throws exception for invalid input #value"() {
+    def "parseValue allows any object via String.valueOf #value"() {
         when:
         Scalars.GraphQLID.getCoercing().parseValue(value)
         then:
-        thrown(CoercingParseValueException)
+        noExceptionThrown()
 
         where:
         value        | _
