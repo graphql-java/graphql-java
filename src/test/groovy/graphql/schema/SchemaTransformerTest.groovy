@@ -3,15 +3,18 @@ package graphql.schema
 import graphql.GraphQL
 import graphql.Scalars
 import graphql.TestUtil
+import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaPrinter
 import graphql.util.TraversalControl
 import graphql.util.TraverserContext
 import spock.lang.Specification
 
+import static graphql.schema.FieldCoordinates.coordinates
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
 import static graphql.schema.GraphQLTypeReference.typeRef
+import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 import static graphql.util.TreeTransformerUtil.changeNode
 import static graphql.util.TreeTransformerUtil.deleteNode
 
@@ -293,9 +296,10 @@ type SubChildChanged {
     }
 
 
-    def "transformed schema can be executed"() {
+    def "transformed schema can be executed programmatically"() {
 
         given:
+        // build query and schema manually so we have a test that uses a programmatic approach rather than the SDL.
         def queryObject = newObject()
                 .name("Query")
                 .field({ builder ->
@@ -313,7 +317,7 @@ type SubChildChanged {
 
         when:
         def result = GraphQL.newGraphQL(schemaObject)
-        .build().execute('''
+                .build().execute('''
             { foo } 
         ''').getData()
 
@@ -325,7 +329,7 @@ type SubChildChanged {
             @Override
             TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
                 if (node.name == 'foo') {
-                    def changedNode = node.transform({ builder -> builder.name('fooChanged')})
+                    def changedNode = node.transform({ builder -> builder.name('fooChanged') })
                     return changeNode(context, changedNode)
                 }
 
@@ -333,7 +337,59 @@ type SubChildChanged {
             }
         })
         result = GraphQL.newGraphQL(newSchema)
-        .build().execute('''
+                .build().execute('''
+            { fooChanged }
+        ''').getData()
+
+        then:
+        (result as Map)['fooChanged'] == 'bar'
+
+    }
+
+    def "transformed schema can be executed"() {
+
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+        type Query {
+            foo: String
+        }
+        """, RuntimeWiring.newRuntimeWiring()
+                .type(newTypeWiring("Query")
+                        .dataFetcher("foo",
+                                { env ->
+                                    return "bar"
+                                })
+                ).build()
+        )
+
+        when:
+        def result = GraphQL.newGraphQL(schema)
+                .build().execute('''
+            { foo } 
+        ''').getData()
+
+        then:
+        (result as Map)['foo'] == 'bar'
+
+        when:
+        def newSchema = SchemaTransformer.transformSchema(schema, new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                GraphQLCodeRegistry.Builder registryBuilder = context.getVarFromParents(GraphQLCodeRegistry.Builder.class)
+
+                if (node.name == 'foo') {
+                    def changedNode = node.transform({ builder -> builder.name('fooChanged') })
+                    registryBuilder.dataFetcher(coordinates("Query", "fooChanged"),
+                            schema.getCodeRegistry().getDataFetcher(coordinates("Query", "foo"), node))
+
+                    return changeNode(context, changedNode)
+                }
+
+                return TraversalControl.CONTINUE
+            }
+        })
+        result = GraphQL.newGraphQL(newSchema)
+                .build().execute('''
             { fooChanged }
         ''').getData()
 

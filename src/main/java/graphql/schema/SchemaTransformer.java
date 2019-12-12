@@ -247,6 +247,8 @@ public class SchemaTransformer {
         };
 
         Traverser<GraphQLSchemaElement> traverser = Traverser.depthFirstWithNamedChildren(SCHEMA_ELEMENT_ADAPTER::getNamedChildren, zippers, null);
+        GraphQLCodeRegistry.Builder builder = GraphQLCodeRegistry.newCodeRegistry(schema.getCodeRegistry());
+        traverser.rootVar(GraphQLCodeRegistry.Builder.class, builder);
         traverser.traverse(dummyRoot, nodeTraverserVisitor);
 
         toRootNode(zippers, breadcrumbsByZipper, zipperByNodeAfterTraversing);
@@ -257,7 +259,7 @@ public class SchemaTransformer {
                 .subscription(dummyRoot.subscription)
                 .additionalTypes(dummyRoot.additionalTypes)
                 .additionalDirectives(dummyRoot.directives)
-                .codeRegistry(schema.getCodeRegistry())
+                .codeRegistry(builder.build())
                 .buildImpl(true);
         return newSchema;
     }
