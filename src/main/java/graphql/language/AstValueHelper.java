@@ -79,7 +79,7 @@ public class AstValueHelper {
         }
 
         if (!(type instanceof GraphQLScalarType || type instanceof GraphQLEnumType)) {
-            throw new AssertException("Must provide Input Type, cannot use: " + type.getClass());
+            throw new AssertException("Must provide input type, type " + type.getName() + " cannot be: " + type.getClass());
         }
 
         // Since value is an internally represented value, it must be serialized
