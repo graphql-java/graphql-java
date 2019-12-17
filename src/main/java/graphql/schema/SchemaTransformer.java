@@ -60,6 +60,7 @@ public class SchemaTransformer {
             directives = new LinkedHashSet<>(schema.getDirectives());
         }
 
+
         @Override
         public List<GraphQLSchemaElement> getChildren() {
             return assertShouldNeverHappen();
@@ -72,15 +73,12 @@ public class SchemaTransformer {
             if (schema.isSupportingMutations()) {
                 builder.child(MUTATION, mutation);
             }
-
             if (schema.isSupportingSubscriptions()) {
                 builder.child(SUBSCRIPTION, subscription);
             }
-
             builder.children(ADD_TYPES, additionalTypes);
             builder.children(DIRECTIVES, directives);
             builder.child(INTROSPECTION, Introspection.__Schema);
-
             return builder.build();
         }
 
@@ -111,11 +109,12 @@ public class SchemaTransformer {
      */
     public static GraphQLSchema transformSchema(GraphQLSchema schema, GraphQLTypeVisitor visitor) {
         SchemaTransformer schemaTransformer = new SchemaTransformer();
-
         return schemaTransformer.transform(schema, visitor);
     }
 
+
     public GraphQLSchema transform(final GraphQLSchema schema, GraphQLTypeVisitor visitor) {
+
 
         DummyRoot dummyRoot = new DummyRoot(schema);
 
