@@ -230,7 +230,7 @@ type SubChildChanged {
 
     }
 
-    def "traverses operation types"() {
+    def "traverses all types"() {
         given:
         GraphQLSchema schema = TestUtil.schema("""
         type Query {
@@ -271,7 +271,7 @@ type SubChildChanged {
 
         when:
         final Set<String> visitedTypeNames = []
-        schemaTransformer.transform(schema, SchemaTransformer.TraversalType.OPERATION_TYPES_ONLY, new GraphQLTypeVisitorStub() {
+        schemaTransformer.transform(schema, new GraphQLTypeVisitorStub() {
             @Override
             TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
                 visitedTypeNames << node.name
@@ -288,11 +288,7 @@ type SubChildChanged {
         })
 
         then:
-        visitedTypeNames.contains('Foo')
-        visitedTypeNames.contains('FooUpdate')
-        visitedTypeNames.contains('FooEvent')
-        visitedTypeNames.contains('Bar')
-        !visitedTypeNames.contains('Baz')
+        visitedTypeNames.containsAll(['Foo', 'FooUpdate', 'FooEvent', 'Bar', 'Baz'])
     }
 
 
