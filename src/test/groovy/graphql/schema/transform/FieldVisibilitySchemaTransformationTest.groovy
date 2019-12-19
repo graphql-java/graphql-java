@@ -1,18 +1,14 @@
 package graphql.schema.transform
 
 import graphql.TestUtil
-import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
 class FieldVisibilitySchemaTransformationTest extends Specification {
 
-    def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation(new VisibleFieldPredicate() {
-        @Override
-        boolean isVisible(GraphQLFieldDefinition definition) {
-            return definition.directives.find({ directive -> directive.name == "private" }) == null
-        }
+    def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation({ definition, context ->
+        return definition.directives.find({ directive -> directive.name == "private" }) == null
     })
 
     def "can remove a private field"() {
@@ -329,6 +325,35 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("Boolean") != null
     }
 
+    def "root types with different names are supported"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
 
+        directive @private on FIELD_DEFINITION
+
+        schema {
+           query: FooQuery
+        }
+
+        type FooQuery {
+            account: Account
+        }
+        
+        type Account {
+            name: String
+            billingStatus: BillingStatus @private
+        }
+        
+        type BillingStatus {
+            accountNumber: String
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
+    }
 
 }

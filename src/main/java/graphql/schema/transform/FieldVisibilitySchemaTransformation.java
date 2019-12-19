@@ -3,6 +3,7 @@ package graphql.schema.transform;
 import static graphql.schema.SchemaTransformer.transformSchema;
 import static graphql.util.TreeTransformerUtil.deleteNode;
 
+import graphql.PublicApi;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
@@ -11,6 +12,7 @@ import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.idl.ScalarInfo;
+import graphql.schema.transform.VisibleFieldPredicateEnvironment.VisibleFieldPredicateEnvironmentImpl;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import java.util.HashSet;
@@ -19,6 +21,7 @@ import java.util.Set;
 /**
  * Transforms a schema by applying a visibility predicate to every field.
  */
+@PublicApi
 public class FieldVisibilitySchemaTransformation {
 
     private final VisibleFieldPredicate visibleFieldPredicate;
@@ -37,6 +40,7 @@ public class FieldVisibilitySchemaTransformation {
     public final GraphQLSchema apply(GraphQLSchema schema) {
         Set<GraphQLType> observedTypes = new HashSet<>();
         Set<GraphQLType> removedTypes = new HashSet<>();
+        final String queryTypeName = schema.getQueryType().getName();
 
         beforeTransformation();
 
@@ -45,7 +49,7 @@ public class FieldVisibilitySchemaTransformation {
 
         // remove types that are not used
         GraphQLSchema finalSchema = transformSchema(interimSchema,
-                new TypeVisibilityVisitor(observedTypes, removedTypes));
+                new TypeVisibilityVisitor(queryTypeName, observedTypes, removedTypes));
 
         afterTransformation();
 
@@ -59,7 +63,7 @@ public class FieldVisibilitySchemaTransformation {
         private final Set<GraphQLType> observedTypes;
 
         private FieldVisibilityVisitor(VisibleFieldPredicate visibilityPredicate,
-                               Set<GraphQLType> removedTypes, Set<GraphQLType> observedTypes) {
+                                       Set<GraphQLType> removedTypes, Set<GraphQLType> observedTypes) {
             this.visibilityPredicate = visibilityPredicate;
             this.removedTypes = removedTypes;
             this.observedTypes = observedTypes;
@@ -90,7 +94,9 @@ public class FieldVisibilitySchemaTransformation {
         @Override
         public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition definition,
                                                             TraverserContext<GraphQLSchemaElement> context) {
-            if (!visibilityPredicate.isVisible(definition)) {
+            VisibleFieldPredicateEnvironment environment = new VisibleFieldPredicateEnvironmentImpl(
+                    context.getParentNode());
+            if (!visibilityPredicate.isVisible(definition, environment)) {
                 deleteNode(context);
                 removedTypes.add(definition.getType());
             }
@@ -101,10 +107,14 @@ public class FieldVisibilitySchemaTransformation {
 
     private static class TypeVisibilityVisitor extends GraphQLTypeVisitorStub {
 
+        private final String queryTypeName;
         private final Set<GraphQLType> observedTypes;
         private final Set<GraphQLType> removedTypes;
 
-        private TypeVisibilityVisitor(Set<GraphQLType> observedTypes, Set<GraphQLType> removedTypes) {
+        private TypeVisibilityVisitor(String queryTypeName,
+                                      Set<GraphQLType> observedTypes,
+                                      Set<GraphQLType> removedTypes) {
+            this.queryTypeName = queryTypeName;
             this.observedTypes = observedTypes;
             this.removedTypes = removedTypes;
         }
@@ -115,7 +125,7 @@ public class FieldVisibilitySchemaTransformation {
             if (!observedTypes.contains(node) &&
                     node.getInterfaces().stream().anyMatch(removedTypes::contains) &&
                     !ScalarInfo.isStandardScalar(node.getName()) &&
-                    !node.getName().equalsIgnoreCase("Query")) {
+                    !node.getName().equalsIgnoreCase(queryTypeName)) {
                 return deleteNode(context);
             }
 
