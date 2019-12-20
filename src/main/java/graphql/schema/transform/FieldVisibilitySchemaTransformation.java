@@ -95,8 +95,8 @@ public class FieldVisibilitySchemaTransformation {
         public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition definition,
                                                             TraverserContext<GraphQLSchemaElement> context) {
             VisibleFieldPredicateEnvironment environment = new VisibleFieldPredicateEnvironmentImpl(
-                    context.getParentNode());
-            if (!visibilityPredicate.isVisible(definition, environment)) {
+                    definition, context.getParentNode());
+            if (!visibilityPredicate.isVisible(environment)) {
                 deleteNode(context);
                 removedTypes.add(definition.getType());
             }
