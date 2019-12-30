@@ -1929,4 +1929,22 @@ class SchemaGeneratorTest extends Specification {
         then:
         schema.getDirective("MyDirective").getArgument("arg").description == "DOC"
     }
+
+    def "capture DirectiveDefinitions"() {
+        given:
+        def spec = '''
+        type Query {
+            foo: String
+        }
+        directive @MyDirective on FIELD
+        '''
+        when:
+        def schema = schema(spec)
+        def directiveDefinition = schema.getDirective("MyDirective").getDefinition()
+        then:
+        directiveDefinition != null
+        directiveDefinition.getName() == "MyDirective"
+
+
+    }
 }
