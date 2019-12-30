@@ -145,7 +145,9 @@ public class SchemaGeneratorHelper {
                 lines.add(commentLine);
             }
         }
-        if (lines.size() == 0) return null;
+        if (lines.size() == 0) {
+            return null;
+        }
         return lines.stream().collect(joining("\n"));
     }
 
@@ -175,6 +177,7 @@ public class SchemaGeneratorHelper {
      * We support the basic types as directive types
      *
      * @param value the value to use
+     *
      * @return a graphql input type
      */
     public GraphQLInputType buildDirectiveInputType(Value value) {
@@ -325,6 +328,7 @@ public class SchemaGeneratorHelper {
         builder.type(inputType);
         builder.value(buildValue(arg.getDefaultValue(), inputType));
         builder.defaultValue(buildValue(arg.getDefaultValue(), inputType));
+        builder.description(buildDescription(arg, arg.getDescription()));
         return builder.build();
     }
 
