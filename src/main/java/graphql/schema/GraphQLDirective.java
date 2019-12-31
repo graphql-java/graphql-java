@@ -27,7 +27,7 @@ import static graphql.util.FpKit.getByName;
  */
 @SuppressWarnings("DeprecatedIsStillUsed") // because the graphql spec still has some of these deprecated fields
 @PublicApi
-public class GraphQLDirective implements GraphQLNamedDescriptionType, GraphQLNamedSchemaElement {
+public class GraphQLDirective implements GraphQLNamedSchemaElement {
 
     private final String name;
     private final String description;

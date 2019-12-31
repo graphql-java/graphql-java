@@ -33,7 +33,7 @@ import static java.util.Collections.emptyList;
  * See http://graphql.org/learn/schema/#interfaces for more details on the concept.
  */
 @PublicApi
-public class GraphQLInterfaceType implements GraphQLNamedDescriptionType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
