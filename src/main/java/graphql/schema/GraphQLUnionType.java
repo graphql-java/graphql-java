@@ -34,7 +34,7 @@ import static java.util.Collections.unmodifiableList;
  * See http://graphql.org/learn/schema/#union-types for more details on the concept.
  */
 @PublicApi
-public class GraphQLUnionType implements GraphQLNamedDescriptionType, GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
@@ -56,6 +56,7 @@ public class GraphQLUnionType implements GraphQLNamedDescriptionType, GraphQLOut
      * @param description  the description
      * @param types        the possible types
      * @param typeResolver the type resolver function
+     *
      * @deprecated use the {@link #newUnionType()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -71,6 +72,7 @@ public class GraphQLUnionType implements GraphQLNamedDescriptionType, GraphQLOut
      * @param typeResolver the type resolver function
      * @param directives   the directives on this type element
      * @param definition   the AST definition
+     *
      * @deprecated use the {@link #newUnionType()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -142,6 +144,7 @@ public class GraphQLUnionType implements GraphQLNamedDescriptionType, GraphQLOut
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new object based on calling build on that builder
      */
     public GraphQLUnionType transform(Consumer<Builder> builderConsumer) {

@@ -38,7 +38,7 @@ import static graphql.Assert.assertValidName;
  * specific value on that directive.
  */
 @PublicApi
-public class GraphQLArgument implements GraphQLNamedDescriptionType, GraphQLInputValueDefinition {
+public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputValueDefinition {
 
     private final String name;
     private final String description;
