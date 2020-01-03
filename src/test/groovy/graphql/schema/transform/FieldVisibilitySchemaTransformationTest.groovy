@@ -180,7 +180,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("SuperSecretCustomerData") != null
     }
 
-    def "leaves interface type if has restricted and non-restricted reference"() {
+    def "leaves interface type if has private and public reference"() {
 
         given:
         GraphQLSchema schema = TestUtil.schema("""
@@ -222,7 +222,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("SuperSecretCustomerData") != null
     }
 
-    def "leaves concrete type if has restricted and non-restricted"() {
+    def "leaves concrete type if has public and private"() {
         given:
         GraphQLSchema schema = TestUtil.schema("""
 
@@ -258,7 +258,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("BillingStatus") != null
     }
 
-    def "removes interface type if only restricted reference with multiple interfaces"() {
+    def "removes interface type if only private reference with multiple interfaces"() {
         given:
         GraphQLSchema schema = TestUtil.schema("""
 
@@ -356,4 +356,142 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
     }
 
+    def "fields and types are removed from subscriptions and mutations"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+        
+        schema {
+           query: Query
+           mutation: Mutation
+           subscription: Subscription
+        }
+        
+        type Query {
+            something: String
+        }
+
+        type Mutation {
+            setFoo(foo: String): Foo @private
+        }
+        
+        type Subscription {
+            barAdded: Bar @private
+        }
+        
+        type Foo {
+            foo: String
+        }
+        
+        type Bar {
+            bar: String
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        restrictedSchema.getType("Foo") == null
+        restrictedSchema.getType("Bar") == null
+    }
+
+    def "type with both private and public transitive references is retained"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+        
+        type Query {
+            private: Foo # calls Baz privately
+            public: Bar # calls Baz publicly
+        }
+        
+        type Foo {
+            baz: Baz @private
+        }
+        
+        type Bar {
+            baz: Baz
+        }
+        
+        type Baz {
+            bing: String
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        (restrictedSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("baz") == null
+        restrictedSchema.getType("Baz") != null
+    }
+
+    def "type with multiple private parent references is removed"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+        
+        type Query {
+            foo: Foo
+            bar: Bar
+        }
+        
+        type Foo {
+            baz: Baz @private
+        }
+        
+        type Bar {
+            baz: Baz @private
+        }
+        
+        type Baz {
+            bing: String
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        (restrictedSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("baz") == null
+        (restrictedSchema.getType("Bar") as GraphQLObjectType).getFieldDefinition("baz") == null
+        restrictedSchema.getType("Baz") == null
+    }
+
+    def "type with multiple private grandparent references is removed"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+        
+        type Query {
+            foo: Foo @private
+            bar: Bar @private
+        }
+        
+        type Foo {
+            baz: Baz 
+        }
+        
+        type Bar {
+            baz: Baz
+        }
+        
+        type Baz {
+            bing: String
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        restrictedSchema.getType("Foo") == null
+        restrictedSchema.getType("Bar") == null
+        restrictedSchema.getType("Baz") == null
+    }
 }

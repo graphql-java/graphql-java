@@ -15,8 +15,11 @@ import graphql.schema.idl.ScalarInfo;
 import graphql.schema.transform.VisibleFieldPredicateEnvironment.VisibleFieldPredicateEnvironmentImpl;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Transforms a schema by applying a visibility predicate to every field.
@@ -40,7 +43,16 @@ public class FieldVisibilitySchemaTransformation {
     public final GraphQLSchema apply(GraphQLSchema schema) {
         Set<GraphQLType> observedTypes = new HashSet<>();
         Set<GraphQLType> removedTypes = new HashSet<>();
-        final String queryTypeName = schema.getQueryType().getName();
+
+        // query, mutation, and subscription types should not be removed
+        final Set<String> protectedTypeNames = new HashSet<>(Arrays.asList(
+                schema.getQueryType(),
+                schema.getSubscriptionType(),
+                schema.getMutationType()
+        )).stream()
+                .filter(Objects::nonNull)
+                .map(GraphQLObjectType::getName)
+                .collect(Collectors.toSet());
 
         beforeTransformation();
 
@@ -49,7 +61,7 @@ public class FieldVisibilitySchemaTransformation {
 
         // remove types that are not used
         GraphQLSchema finalSchema = transformSchema(interimSchema,
-                new TypeVisibilityVisitor(queryTypeName, observedTypes, removedTypes));
+                new TypeVisibilityVisitor(protectedTypeNames, observedTypes, removedTypes));
 
         afterTransformation();
 
@@ -107,14 +119,14 @@ public class FieldVisibilitySchemaTransformation {
 
     private static class TypeVisibilityVisitor extends GraphQLTypeVisitorStub {
 
-        private final String queryTypeName;
+        private final Set<String> protectedTypeNames;
         private final Set<GraphQLType> observedTypes;
         private final Set<GraphQLType> removedTypes;
 
-        private TypeVisibilityVisitor(String queryTypeName,
+        private TypeVisibilityVisitor(Set<String> protectedTypeNames,
                                       Set<GraphQLType> observedTypes,
                                       Set<GraphQLType> removedTypes) {
-            this.queryTypeName = queryTypeName;
+            this.protectedTypeNames = protectedTypeNames;
             this.observedTypes = observedTypes;
             this.removedTypes = removedTypes;
         }
@@ -125,7 +137,7 @@ public class FieldVisibilitySchemaTransformation {
             if (!observedTypes.contains(node) &&
                     node.getInterfaces().stream().anyMatch(removedTypes::contains) &&
                     !ScalarInfo.isStandardScalar(node.getName()) &&
-                    !node.getName().equalsIgnoreCase(queryTypeName)) {
+                    !protectedTypeNames.contains(node.getName())) {
                 return deleteNode(context);
             }
 
