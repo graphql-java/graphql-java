@@ -179,7 +179,9 @@ class PossibleFragmentSpreadsTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors().get(0).message == 'Validation error of type InvalidFragmentType: Fragment cannot be spread here as objects of type Cat can never be of type Dog @ \'invalidObjectWithinObjectAnon\''
+        errorCollector.getErrors().get(0).message == 'Fragment cannot be spread here as objects of type Cat can never be of type Dog'
+        errorCollector.getErrors()[0].extensions["validationErrorType"] == "InvalidFragmentType"
+        errorCollector.getErrors()[0].extensions["queryPath"] == ["invalidObjectWithinObjectAnon"]
     }
 
     def 'object into not implementing interface'() {
@@ -192,7 +194,9 @@ class PossibleFragmentSpreadsTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors().get(0).message == 'Validation error of type InvalidFragmentType: Fragment humanFragment cannot be spread here as objects of type Pet can never be of type Human @ \'invalidObjectWithinInterface\''
+        errorCollector.getErrors().get(0).message == 'Fragment humanFragment cannot be spread here as objects of type Pet can never be of type Human'
+        errorCollector.getErrors()[0].extensions["validationErrorType"] == "InvalidFragmentType"
+        errorCollector.getErrors()[0].extensions["queryPath"] == ["invalidObjectWithinInterface"]
     }
 
     def 'object into not containing union'() {

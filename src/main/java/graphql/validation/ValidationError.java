@@ -6,9 +6,7 @@ import graphql.GraphQLError;
 import graphql.GraphqlErrorHelper;
 import graphql.language.SourceLocation;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ValidationError implements GraphQLError {
@@ -18,6 +16,7 @@ public class ValidationError implements GraphQLError {
     private final String description;
     private final ValidationErrorType validationErrorType;
     private final List<String> queryPath;
+    private final Map<String, Object> extensions;
 
     public ValidationError(ValidationErrorType validationErrorType) {
         this(validationErrorType, (SourceLocation) null, null);
@@ -31,25 +30,35 @@ public class ValidationError implements GraphQLError {
         this(validationErrorType, nullOrList(sourceLocation), description, queryPath);
     }
 
+    public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description, List<String> queryPath, Map<String, Object> extensions) {
+        this(validationErrorType, nullOrList(sourceLocation), description, queryPath, extensions);
+    }
+
     public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description) {
         this(validationErrorType, sourceLocations, description, null);
     }
 
     public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description, List<String> queryPath) {
+        this(validationErrorType, sourceLocations, description, queryPath, Collections.emptyMap());
+    }
+
+    public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description, List<String> queryPath, Map<String, Object> extensions) {
         this.validationErrorType = validationErrorType;
         if (sourceLocations != null)
             this.locations.addAll(sourceLocations);
         this.description = description;
-        this.message = mkMessage(validationErrorType, description, queryPath);
+        this.message = description;
         this.queryPath = queryPath;
+
+        Map<String, Object> newExtensions = new LinkedHashMap<>(extensions);
+        newExtensions.put("validationErrorType", validationErrorType.name());
+        if (queryPath != null)
+            newExtensions.put("queryPath", queryPath);
+        this.extensions = Collections.unmodifiableMap(newExtensions);
     }
 
     private static List<SourceLocation> nullOrList(SourceLocation sourceLocation) {
         return sourceLocation == null ? null : Collections.singletonList(sourceLocation);
-    }
-
-    private String mkMessage(ValidationErrorType validationErrorType, String description, List<String> queryPath) {
-        return String.format("Validation error of type %s: %s%s", validationErrorType, description, toPath(queryPath));
     }
 
     private String toPath(List<String> queryPath) {
@@ -86,6 +95,10 @@ public class ValidationError implements GraphQLError {
         return queryPath;
     }
 
+    @Override
+    public Map<String, Object> getExtensions() {
+        return extensions;
+    }
 
     @Override
     public String toString() {

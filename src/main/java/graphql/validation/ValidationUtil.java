@@ -2,41 +2,18 @@ package graphql.validation;
 
 
 import graphql.Assert;
-import graphql.language.ArrayValue;
-import graphql.language.ListType;
-import graphql.language.NonNullType;
-import graphql.language.NullValue;
-import graphql.language.ObjectField;
-import graphql.language.ObjectValue;
-import graphql.language.Type;
-import graphql.language.TypeName;
-import graphql.language.Value;
-import graphql.language.VariableReference;
-import graphql.schema.Coercing;
-import graphql.schema.CoercingParseLiteralException;
-import graphql.schema.GraphQLEnumType;
-import graphql.schema.GraphQLInputObjectField;
-import graphql.schema.GraphQLInputObjectType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLScalarType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLType;
+import graphql.language.*;
+import graphql.schema.*;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Predicate;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import static graphql.schema.GraphQLTypeUtil.isList;
-import static graphql.schema.GraphQLTypeUtil.isNonNull;
-import static graphql.schema.GraphQLTypeUtil.unwrapOne;
+import static graphql.schema.GraphQLTypeUtil.*;
 
 public class ValidationUtil {
 
-    public TypeName getUnmodifiedType(Type type) {
+    public static TypeName getUnmodifiedType(Type type) {
         if (type instanceof ListType) {
             return getUnmodifiedType(((ListType) type).getType());
         } else if (type instanceof NonNullType) {
@@ -50,7 +27,7 @@ public class ValidationUtil {
     protected void handleNullError(Value value, GraphQLType type) {
     }
 
-    protected void handleScalarError(Value value, GraphQLScalarType type) {
+    protected void handleScalarError(Value value, GraphQLScalarType type, String message) {
     }
 
     protected void handleEnumError(Value value, GraphQLEnumType type) {
@@ -87,18 +64,16 @@ public class ValidationUtil {
         }
 
         if (type instanceof GraphQLScalarType) {
-            boolean valid = parseLiteral(value, ((GraphQLScalarType) type).getCoercing());
-            if (!valid) {
-                handleScalarError(value, (GraphQLScalarType) type);
-            }
-            return valid;
+            Optional<String> errorMessage = parseLiteral(value, ((GraphQLScalarType) type).getCoercing());
+            errorMessage.ifPresent(message -> handleScalarError(value, (GraphQLScalarType) type, message));
+            return !errorMessage.isPresent();
         }
         if (type instanceof GraphQLEnumType) {
-            boolean valid = parseLiteral(value, ((GraphQLEnumType) type).getCoercing());
-            if (!valid) {
+            Optional<String> errorMessage = parseLiteral(value, ((GraphQLEnumType) type).getCoercing());
+            if (errorMessage.isPresent()) {
                 handleEnumError(value, (GraphQLEnumType) type);
             }
-            return valid;
+            return !errorMessage.isPresent();
         }
 
         if (isList(type)) {
@@ -108,11 +83,15 @@ public class ValidationUtil {
 
     }
 
-    private boolean parseLiteral(Value value, Coercing coercing) {
+    private Optional<String> parseLiteral(Value value, Coercing coercing) {
         try {
-            return coercing.parseLiteral(value) != null;
+            if (coercing.parseLiteral(value) != null) {
+                return Optional.empty();
+            } else {
+                return Optional.of("Failed to parse value");
+            }
         } catch (CoercingParseLiteralException e) {
-            return false;
+            return Optional.of(e.getMessage());
         }
     }
 
@@ -179,4 +158,31 @@ public class ValidationUtil {
         }
     }
 
+    public static String renderValue(Object value) {
+        if (value instanceof StringValue) {
+            return ((StringValue) value).getValue();
+        } else if (value instanceof ArrayValue) {
+            return ((ArrayValue) value).getValues().stream()
+                    .map(ValidationUtil::renderValue)
+                    .collect(Collectors.joining(", ", "[", "]"));
+        } else if (value instanceof BooleanValue) {
+            return Boolean.toString(((BooleanValue) value).isValue());
+        } else if (value instanceof IntValue) {
+            return ((IntValue) value).getValue().toString();
+        } else if (value instanceof FloatValue) {
+            return ((FloatValue) value).getValue().toString();
+        } else if (value instanceof NullValue) {
+            return "null";
+        }
+        return value.toString();
+    }
+
+    public static String renderType(Object type) {
+        if (type instanceof GraphQLNamedSchemaElement) {
+            return ((GraphQLNamedSchemaElement) type).getName();
+        } else if (type instanceof Type) {
+            return getUnmodifiedType(((Type<?>) type)).getName();
+        }
+        return String.valueOf(type);
+    }
 }

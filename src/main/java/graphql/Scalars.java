@@ -5,11 +5,8 @@ import graphql.language.BooleanValue;
 import graphql.language.FloatValue;
 import graphql.language.IntValue;
 import graphql.language.StringValue;
-import graphql.schema.Coercing;
-import graphql.schema.CoercingParseLiteralException;
-import graphql.schema.CoercingParseValueException;
-import graphql.schema.CoercingSerializeException;
-import graphql.schema.GraphQLScalarType;
+import graphql.schema.*;
+import graphql.validation.ValidationUtil;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -248,9 +245,7 @@ public class Scalars {
         @Override
         public Boolean parseLiteral(Object input) {
             if (!(input instanceof BooleanValue)) {
-                throw new CoercingParseLiteralException(
-                        "Expected AST type 'BooleanValue' but was '" + typeName(input) + "'."
-                );
+                throw new CoercingParseLiteralException(String.format("'%s' is not a valid Boolean", ValidationUtil.renderValue(input)));
             }
             return ((BooleanValue) input).isValue();
         }

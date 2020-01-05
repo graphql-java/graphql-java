@@ -28,8 +28,8 @@ class GraphQLErrorTest extends Specification {
         new ValidationError(ValidationErrorType.UnknownType, mkLocations(), "Test ValidationError")    |
                 [
                         locations: [[line: 666, column: 999], [line: 333, column: 0]],
-                        message  : "Validation error of type UnknownType: Test ValidationError",
-                        extensions:[classification:"ValidationError"],
+                        message  : "Test ValidationError",
+                        extensions:[validationErrorType: "UnknownType", classification:"ValidationError"],
                 ]
 
         new MissingRootTypeException("Mutations are not supported on this schema", null)               |
