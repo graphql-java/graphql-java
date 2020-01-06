@@ -23,7 +23,6 @@ import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLModifiedType;
-import graphql.schema.GraphQLNamedDescriptionType;
 import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
@@ -124,8 +123,8 @@ public class Introspection {
     };
     private static final DataFetcher descriptionDataFetcher = environment -> {
         Object type = environment.getSource();
-        if (type instanceof GraphQLNamedDescriptionType) {
-            return ((GraphQLNamedDescriptionType) type).getDescription();
+        if (type instanceof GraphQLNamedSchemaElement) {
+            return ((GraphQLNamedSchemaElement) type).getDescription();
         }
         return null;
     };

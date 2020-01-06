@@ -3,6 +3,8 @@ package graphql.relay;
 import graphql.Assert;
 import graphql.PublicApi;
 
+import java.util.Objects;
+
 @PublicApi
 public class DefaultConnectionCursor implements ConnectionCursor {
 
@@ -27,7 +29,7 @@ public class DefaultConnectionCursor implements ConnectionCursor {
             return false;
         }
         DefaultConnectionCursor that = (DefaultConnectionCursor) o;
-        return value != null ? value.equals(that.value) : that.value == null;
+        return Objects.equals(value, that.value);
     }
 
     @Override

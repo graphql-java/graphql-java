@@ -1910,4 +1910,41 @@ class SchemaGeneratorTest extends Specification {
         (schema.getType("Scalar") as GraphQLScalarType).getExtensionDefinitions().size() == 1
 
     }
+
+    def "directive arg descriptions are captured correctly"() {
+        given:
+        def spec = '''
+        type Query {
+            foo: String
+        }
+        directive @MyDirective(
+        """
+            DOC
+        """
+        arg: String) on FIELD
+        '''
+        when:
+        def schema = schema(spec)
+
+        then:
+        schema.getDirective("MyDirective").getArgument("arg").description == "DOC"
+    }
+
+    def "capture DirectiveDefinitions"() {
+        given:
+        def spec = '''
+        type Query {
+            foo: String
+        }
+        directive @MyDirective on FIELD
+        '''
+        when:
+        def schema = schema(spec)
+        def directiveDefinition = schema.getDirective("MyDirective").getDefinition()
+        then:
+        directiveDefinition != null
+        directiveDefinition.getName() == "MyDirective"
+
+
+    }
 }

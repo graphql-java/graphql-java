@@ -44,11 +44,11 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -56,7 +56,6 @@ import static graphql.Directives.DeprecatedDirective;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
-import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -90,9 +89,9 @@ public class SchemaPrinter {
 
         private final boolean includeSchemaDefinition;
 
-        private final boolean includeDirectives;
-
         private final boolean descriptionsAsHashComments;
+
+        private final Predicate<GraphQLDirective> includeDirective;
 
         private final GraphqlTypeComparatorRegistry comparatorRegistry;
 
@@ -100,15 +99,15 @@ public class SchemaPrinter {
                         boolean includeScalars,
                         boolean includeExtendedScalars,
                         boolean includeSchemaDefinition,
-                        boolean includeDirectives,
                         boolean useAstDefinitions,
                         boolean descriptionsAsHashComments,
+                        Predicate<GraphQLDirective> includeDirective,
                         GraphqlTypeComparatorRegistry comparatorRegistry) {
             this.includeIntrospectionTypes = includeIntrospectionTypes;
             this.includeScalars = includeScalars;
             this.includeExtendedScalars = includeExtendedScalars;
             this.includeSchemaDefinition = includeSchemaDefinition;
-            this.includeDirectives = includeDirectives;
+            this.includeDirective = includeDirective;
             this.useAstDefinitions = useAstDefinitions;
             this.descriptionsAsHashComments = descriptionsAsHashComments;
             this.comparatorRegistry = comparatorRegistry;
@@ -130,8 +129,8 @@ public class SchemaPrinter {
             return includeSchemaDefinition;
         }
 
-        public boolean isIncludeDirectives() {
-            return includeDirectives;
+        public Predicate<GraphQLDirective> getIncludeDirective() {
+            return includeDirective;
         }
 
         public boolean isDescriptionsAsHashComments() {
@@ -148,8 +147,8 @@ public class SchemaPrinter {
 
         public static Options defaultOptions() {
             return new Options(false, false, false,
-                    false, true, false, false,
-                    DefaultGraphqlTypeComparatorRegistry.defaultComparators());
+                    false, false, false,
+                    directive -> true, DefaultGraphqlTypeComparatorRegistry.defaultComparators());
         }
 
         /**
@@ -159,7 +158,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeIntrospectionTypes(boolean flag) {
-            return new Options(flag, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, this.useAstDefinitions, this.descriptionsAsHashComments, this.comparatorRegistry);
+            return new Options(flag, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, this.includeDirective, this.comparatorRegistry);
         }
 
         /**
@@ -169,7 +168,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, flag, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, this.useAstDefinitions, this.descriptionsAsHashComments, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, flag, this.includeExtendedScalars, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, this.includeDirective, this.comparatorRegistry);
         }
 
         /**
@@ -180,7 +179,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeExtendedScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag, this.includeSchemaDefinition, this.includeDirectives, this.useAstDefinitions, this.descriptionsAsHashComments, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, this.includeDirective, this.comparatorRegistry);
         }
 
         /**
@@ -193,7 +192,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeSchemaDefinition(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, flag, this.includeDirectives, this.useAstDefinitions, this.descriptionsAsHashComments, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, flag, this.useAstDefinitions, this.descriptionsAsHashComments, this.includeDirective, this.comparatorRegistry);
         }
 
         /**
@@ -204,7 +203,11 @@ public class SchemaPrinter {
          * @return new instance of options
          */
         public Options includeDirectives(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, flag, this.useAstDefinitions, this.descriptionsAsHashComments, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, directive -> flag, this.comparatorRegistry);
+        }
+
+        public Options includeDirectives(Predicate<GraphQLDirective> includeDirective) {
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, includeDirective, this.comparatorRegistry);
         }
 
         /**
@@ -215,7 +218,7 @@ public class SchemaPrinter {
          * @return new instance of options
          */
         public Options useAstDefinitions(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, flag, this.descriptionsAsHashComments, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, flag, this.descriptionsAsHashComments, this.includeDirective, this.comparatorRegistry);
         }
 
         /**
@@ -228,7 +231,7 @@ public class SchemaPrinter {
          * @return new instance of options
          */
         public Options descriptionsAsHashComments(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, this.useAstDefinitions, flag, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.useAstDefinitions, flag, this.includeDirective, this.comparatorRegistry);
         }
 
         /**
@@ -240,7 +243,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options setComparators(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.includeDirectives, this.useAstDefinitions, this.descriptionsAsHashComments, comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, this.includeDirective, comparatorRegistry);
         }
     }
 
@@ -608,10 +611,9 @@ public class SchemaPrinter {
     }
 
     private List<GraphQLDirective> getSchemaDirectives(GraphQLSchema schema) {
-        if (!options.isIncludeDirectives()) {
-            return emptyList();
-        }
-        return schema.getDirectives();
+        return schema.getDirectives().stream()
+                .filter(options.getIncludeDirective())
+                .collect(toList());
     }
 
     String typeString(GraphQLType rawType) {
@@ -674,13 +676,13 @@ public class SchemaPrinter {
     }
 
     String directivesString(Class<? extends GraphQLSchemaElement> parent, List<GraphQLDirective> directives) {
-        if (!options.isIncludeDirectives()) {
-            if (hasDeprecatedDirective(directives)) {
+        directives = directives.stream()
                 // @deprecated is special - we always print it if something is deprecated
-                directives = Collections.singletonList(DeprecatedDirective);
-            } else {
-                return "";
-            }
+                .filter(directive -> options.getIncludeDirective().test(directive) || isDeprecatedDirective(directive))
+                .collect(toList());
+
+        if (directives.isEmpty()) {
+            return "";
         }
         StringBuilder sb = new StringBuilder();
         if (!directives.isEmpty()) {
@@ -708,7 +710,7 @@ public class SchemaPrinter {
     }
 
     private String directiveString(GraphQLDirective directive) {
-        if (!options.includeDirectives) {
+        if (!options.getIncludeDirective().test(directive)) {
             // @deprecated is special - we always print it if something is deprecated
             if (!isDeprecatedDirective(directive)) {
                 return "";

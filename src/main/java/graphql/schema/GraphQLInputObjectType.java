@@ -28,7 +28,7 @@ import static java.util.Collections.emptyList;
  * See http://graphql.org/learn/schema/#input-types for more details on the concept
  */
 @PublicApi
-public class GraphQLInputObjectType implements GraphQLNamedDescriptionType, GraphQLNamedInputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLInputFieldsContainer, GraphQLDirectiveContainer {
+public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLInputFieldsContainer, GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;

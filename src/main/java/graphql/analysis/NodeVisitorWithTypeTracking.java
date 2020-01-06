@@ -5,6 +5,7 @@ import graphql.execution.ConditionalNodes;
 import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
+import graphql.language.Directive;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
@@ -22,7 +23,6 @@ import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -57,6 +57,12 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         this.variables = variables;
         this.schema = schema;
         this.fragmentsByName = fragmentsByName;
+    }
+
+    @Override
+    public TraversalControl visitDirective(Directive node, TraverserContext<Node> context) {
+        // to avoid visiting arguments for directives we abort the traversal here
+        return TraversalControl.ABORT;
     }
 
     @Override
