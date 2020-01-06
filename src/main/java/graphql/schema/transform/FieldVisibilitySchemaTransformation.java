@@ -5,7 +5,9 @@ import static graphql.util.TreeTransformerUtil.deleteNode;
 
 import graphql.PublicApi;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
@@ -84,7 +86,10 @@ public class FieldVisibilitySchemaTransformation {
         @Override
         public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node,
                                                           TraverserContext<GraphQLSchemaElement> context) {
-            observedTypes.add(node);
+            if (context.getBreadcrumbs().stream()
+                    .noneMatch(crumb -> crumb.getLocation().getName().equalsIgnoreCase("addTypes"))) {
+                observedTypes.add(node);
+            }
 
             return TraversalControl.CONTINUE;
         }
@@ -94,11 +99,9 @@ public class FieldVisibilitySchemaTransformation {
                                                        TraverserContext<GraphQLSchemaElement> context) {
 
             if (context.getBreadcrumbs().stream()
-                    .anyMatch(crumb -> crumb.getLocation().getName().equalsIgnoreCase("addTypes"))) {
-                return TraversalControl.ABORT;
+                    .noneMatch(crumb -> crumb.getLocation().getName().equalsIgnoreCase("addTypes"))) {
+                observedTypes.add(node);
             }
-
-            observedTypes.add(node);
 
             return TraversalControl.CONTINUE;
         }
@@ -106,11 +109,39 @@ public class FieldVisibilitySchemaTransformation {
         @Override
         public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition definition,
                                                             TraverserContext<GraphQLSchemaElement> context) {
+            return visitField(definition, context);
+        }
+
+        @Override
+        public TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField definition,
+                                                             TraverserContext<GraphQLSchemaElement> context) {
+            return visitField(definition, context);
+        }
+
+        @Override
+        public TraversalControl visitBackRef(TraverserContext<GraphQLSchemaElement> context) {
+            if (context.thisNode() instanceof GraphQLInterfaceType || context.thisNode() instanceof GraphQLObjectType) {
+                if (context.getBreadcrumbs().stream()
+                        .noneMatch(crumb -> crumb.getLocation().getName().equalsIgnoreCase("addTypes"))) {
+                    observedTypes.add((GraphQLType) context.thisNode());
+                }
+            }
+            return TraversalControl.CONTINUE;
+        }
+
+        private TraversalControl visitField(GraphQLNamedSchemaElement element,
+                                            TraverserContext<GraphQLSchemaElement> context) {
+
             VisibleFieldPredicateEnvironment environment = new VisibleFieldPredicateEnvironmentImpl(
-                    definition, context.getParentNode());
+                    element, context.getParentNode());
             if (!visibilityPredicate.isVisible(environment)) {
                 deleteNode(context);
-                removedTypes.add(definition.getType());
+
+                if (element instanceof GraphQLFieldDefinition) {
+                    removedTypes.add(((GraphQLFieldDefinition) element).getType());
+                } else if (element instanceof GraphQLInputObjectField) {
+                    removedTypes.add(((GraphQLInputObjectField) element).getType());
+                }
             }
 
             return TraversalControl.CONTINUE;
@@ -132,9 +163,16 @@ public class FieldVisibilitySchemaTransformation {
         }
 
         @Override
+        public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node,
+                                                          TraverserContext<GraphQLSchemaElement> context) {
+            return super.visitGraphQLInterfaceType(node, context);
+        }
+
+        @Override
         public TraversalControl visitGraphQLObjectType(GraphQLObjectType node,
                                                        TraverserContext<GraphQLSchemaElement> context) {
             if (!observedTypes.contains(node) &&
+                    node.getInterfaces().stream().noneMatch(observedTypes::contains) &&
                     node.getInterfaces().stream().anyMatch(removedTypes::contains) &&
                     !ScalarInfo.isStandardScalar(node.getName()) &&
                     !protectedTypeNames.contains(node.getName())) {

@@ -163,6 +163,7 @@ public class SchemaTransformer {
             public TraversalControl backRef(TraverserContext<GraphQLSchemaElement> context) {
                 NodeZipper<GraphQLSchemaElement> zipper = zipperByOriginalNode.get(context.thisNode());
                 breadcrumbsByZipper.get(zipper).add(context.getBreadcrumbs());
+                visitor.visitBackRef(context);
                 return TraversalControl.CONTINUE;
             }
         };

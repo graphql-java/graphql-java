@@ -1,7 +1,7 @@
 package graphql.schema.transform;
 
 import graphql.PublicApi;
-import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLSchemaElement;
 
 /**
@@ -10,7 +10,7 @@ import graphql.schema.GraphQLSchemaElement;
 @PublicApi
 public interface VisibleFieldPredicateEnvironment {
 
-    GraphQLFieldDefinition getFieldDefinition();
+    GraphQLNamedSchemaElement getFieldDefinition();
 
     /**
      * Get the field's immediate parent node.
@@ -21,17 +21,17 @@ public interface VisibleFieldPredicateEnvironment {
 
     class VisibleFieldPredicateEnvironmentImpl implements VisibleFieldPredicateEnvironment {
 
-        private final GraphQLFieldDefinition fieldDefinition;
+        private final GraphQLNamedSchemaElement fieldDefinition;
         private final GraphQLSchemaElement parentElement;
 
-        public VisibleFieldPredicateEnvironmentImpl(GraphQLFieldDefinition fieldDefinition,
+        public VisibleFieldPredicateEnvironmentImpl(GraphQLNamedSchemaElement fieldDefinition,
                                                     GraphQLSchemaElement parentElement) {
             this.fieldDefinition = fieldDefinition;
             this.parentElement = parentElement;
         }
 
         @Override
-        public GraphQLFieldDefinition getFieldDefinition() {
+        public GraphQLNamedSchemaElement getFieldDefinition() {
             return fieldDefinition;
         }
 

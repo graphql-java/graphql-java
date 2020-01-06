@@ -1,6 +1,7 @@
 package graphql.schema.transform
 
 import graphql.TestUtil
+import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
@@ -110,6 +111,171 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("SuperSecretCustomerData") == null
     }
 
+    def "interface and its implementations that have both private and public reference is retained"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            account: Account
+        }
+        
+        type Account {
+            name: String
+            billingStatus: SuperSecretCustomerData @private
+            billingStatus2: SuperSecretCustomerData 
+        }
+        
+        type BillingStatus implements SuperSecretCustomerData {
+            accountNumber: String
+            secrets: SuperSecretCustomerData
+            otherBillingStatus: BillingStatus
+            cardLast4: Int
+        }
+        
+        interface SuperSecretCustomerData {
+            cardLast4: Int
+        }
+        
+        """)
+
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        restrictedSchema.getType("SuperSecretCustomerData") != null
+        restrictedSchema.getType("BillingStatus") != null
+    }
+
+
+    def "types with both private and public references are retained"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            public: Foo
+            private: Bar @private
+        }
+        
+        type Foo {
+            x: X
+        }
+        
+        type Bar {
+            x: X
+            bar2: Bar2
+        }
+        
+        type Bar2 {
+            id: Int
+        }
+        
+        type X {
+            x2: X2
+        }
+        
+        type X2 {
+            id: Int 
+        }
+        
+        """)
+
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        restrictedSchema.getType("Bar") == null
+        restrictedSchema.getType("Bar2") == null
+        restrictedSchema.getType("X") != null
+        restrictedSchema.getType("Foo") != null
+        restrictedSchema.getType("X2") != null
+    }
+
+    def "union types"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            public: FooOrBar @private
+            private: Bar @private
+        }
+        
+        union FooOrBar = Foo | Bar
+        
+        type Foo {
+            id: ID
+        }
+        
+        type Bar {
+            id: ID
+        }
+        
+        """)
+
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("private") == null
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("public") == null
+        restrictedSchema.getType("Bar") == null
+        restrictedSchema.getType("Foo") == null
+        restrictedSchema.getType("FooOrBar") == null
+    }
+
+    def "union type with public reference by interface field is retained"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            public: Bar
+            private: Baz @private
+        }
+        
+        union FooOrBar = Foo | Bar
+        
+        interface Baz {
+            fooOrBar: FooOrBar
+        }
+        
+        type Bing implements Baz {
+            fooOrBar: FooOrBar
+        }
+        
+        type Foo {
+            id: ID
+        }
+        
+        type Bar {
+            id: ID
+        }
+        
+        """)
+
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("private") == null
+        restrictedSchema.getType("Foo") == null
+        restrictedSchema.getType("Bar") != null
+        restrictedSchema.getType("Baz") == null
+        restrictedSchema.getType("Bing") == null
+        restrictedSchema.getType("FooOrBar") == null
+    }
+
+
     def "leaves concrete types referenced only by interfaces"() {
         given:
         GraphQLSchema schema = TestUtil.schema("""
@@ -145,7 +311,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("SuperSecretCustomerData") != null
     }
 
-    def "leaves interface types referenced only by concrete classes"() {
+    def "leaves interface types referenced only by concrete types"() {
         given:
         GraphQLSchema schema = TestUtil.schema("""
 
@@ -494,4 +660,146 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("Bar") == null
         restrictedSchema.getType("Baz") == null
     }
+
+    def "type with circular reference can be traversed"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+        
+        type Query {
+            foo: Foo 
+        }
+        
+        type Foo {
+            foo2: Foo @private
+            bar: String
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        (restrictedSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("foo2") == null
+        restrictedSchema.getType("Foo") != null
+    }
+
+    def "input types can have private fields"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+        
+        type Query {
+            foo: Foo 
+        }
+        
+        type Mutation {
+            setFoo(fooInput: FooInput): Foo 
+        }
+        
+        type Foo {
+            id: ID
+        }
+        
+        input FooInput {
+            foo: BarInput @private
+            bar: String
+        }
+        
+        input BarInput {
+            id: ID
+        }
+               
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        (restrictedSchema.getType("FooInput") as GraphQLInputObjectType).getFieldDefinition("foo") == null
+        restrictedSchema.getType("FooInput") != null
+        restrictedSchema.getType("BarInput") == null
+    }
+
+    def "enum types can be removed"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+        
+        type Query {
+            foo: Foo 
+        }
+        
+        type Mutation {
+            setFoo(fooInput: FooInput): Foo 
+        }
+        
+        type Foo {
+            id: ID
+            fooEnum: FooEnum @private
+        }
+        
+        input FooInput {
+            foo: BarEnum @private
+            bar: String
+        }
+        
+        enum BarEnum {
+            FOO
+            BAR
+            BAZ
+        }
+        
+        enum FooEnum {
+            BING
+            BOO
+        }
+               
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        (restrictedSchema.getType("FooInput") as GraphQLInputObjectType).getFieldDefinition("foo") == null
+        restrictedSchema.getType("FooInput") != null
+        restrictedSchema.getType("BarEnum") == null
+        restrictedSchema.getType("FooEnum") == null
+    }
+
+    def "unreferenced types can have fields removed"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+        
+        type Query {
+            foo: Foo 
+        }
+        
+        type Foo {
+            id: ID
+        }
+        
+        type Bar {
+            baz: String
+            bing: Bing @private
+        }
+        
+        type Bing {
+            id: ID
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        (restrictedSchema.getType("Bar") as GraphQLObjectType).getFieldDefinition("bing") == null
+        restrictedSchema.getType("Bing") == null
+    }
+
 }
