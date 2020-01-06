@@ -1,13 +1,15 @@
 package graphql.validation;
 
+import graphql.GraphQLError;
 import graphql.language.Argument;
 import graphql.language.ObjectField;
 import graphql.language.Value;
-import graphql.schema.*;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLScalarType;
+import graphql.schema.GraphQLType;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ArgumentValidationUtil extends ValidationUtil {
@@ -16,6 +18,7 @@ public class ArgumentValidationUtil extends ValidationUtil {
     private Value<?> argumentValue;
     private String errorMessage;
     private final List<Object> arguments = new ArrayList<>();
+    private Map<String, Object> errorExtensions;
     private GraphQLType requiredType;
     private GraphQLType objectType;
 
@@ -27,43 +30,46 @@ public class ArgumentValidationUtil extends ValidationUtil {
     }
 
     @Override
-    protected void handleNullError(Value value, GraphQLType type) {
+    protected void handleNullError(Value<?> value, GraphQLType type) {
         errorMessage = "Value must not be null";
         argumentValue = value;
         setObjectField(type);
     }
 
     @Override
-    protected void handleScalarError(Value value, GraphQLScalarType type, String message) {
-        errorMessage = message;
+    protected void handleScalarError(Value<?> value, GraphQLScalarType type, GraphQLError invalid) {
+        errorMessage = invalid.getMessage();
         arguments.add(type.getName());
+        arguments.add(invalid.getMessage());
         argumentValue = value;
+        errorExtensions = invalid.getExtensions();
         setObjectField(type);
     }
 
     @Override
-    protected void handleEnumError(Value value, GraphQLEnumType type) {
-        errorMessage = "is not a valid '%s'";
+    protected void handleEnumError(Value<?> value, GraphQLEnumType type, GraphQLError invalid) {
+        errorMessage = invalid.getMessage();
         arguments.add(type.getName());
+        arguments.add(invalid.getMessage());
         argumentValue = value;
         requiredType = type;
     }
 
     @Override
-    protected void handleNotObjectError(Value value, GraphQLInputObjectType type) {
+    protected void handleNotObjectError(Value<?> value, GraphQLInputObjectType type) {
         errorMessage = "Value must be an object type";
         setObjectField(type);
     }
 
     @Override
-    protected void handleMissingFieldsError(Value value, GraphQLInputObjectType type, Set<String> missingFields) {
+    protected void handleMissingFieldsError(Value<?> value, GraphQLInputObjectType type, Set<String> missingFields) {
         errorMessage = String.format("Required fields are missing: '%s'", missingFields.stream().collect(Collectors.joining(", ", "[", "]")));
         arguments.add(missingFields);
         setObjectField(type);
     }
 
     @Override
-    protected void handleExtraFieldError(Value value, GraphQLInputObjectType type, ObjectField objectField) {
+    protected void handleExtraFieldError(Value<?> value, GraphQLInputObjectType type, ObjectField objectField) {
         errorMessage = String.format("Value contains a field not in '%s': '%s'", ValidationUtil.renderType(type), objectField.getName());
         arguments.add(type.getName());
         arguments.add(objectField.getName());
@@ -77,7 +83,7 @@ public class ArgumentValidationUtil extends ValidationUtil {
     }
 
     @Override
-    protected void handleFieldNotValidError(Value value, GraphQLType type, int index) {
+    protected void handleFieldNotValidError(Value<?> value, GraphQLType type, int index) {
         argumentNames.add(0, String.format("[%s]", index));
         setObjectField(type);
     }
@@ -114,5 +120,9 @@ public class ArgumentValidationUtil extends ValidationUtil {
             argument.append(name);
         }
         return argument.toString();
+    }
+
+    public Map<String, Object> getErrorExtensions() {
+        return errorExtensions;
     }
 }

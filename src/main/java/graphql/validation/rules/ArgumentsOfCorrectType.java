@@ -3,10 +3,18 @@ package graphql.validation.rules;
 
 import graphql.language.Argument;
 import graphql.schema.GraphQLArgument;
-import graphql.validation.*;
+import graphql.validation.AbstractRule;
+import graphql.validation.ArgumentValidationUtil;
+import graphql.validation.ValidationContext;
+import graphql.validation.ValidationError;
+import graphql.validation.ValidationErrorCollector;
+import graphql.validation.ValidationErrorType;
+import graphql.validation.ValidationUtil;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class ArgumentsOfCorrectType extends AbstractRule {
 
@@ -17,15 +25,21 @@ public class ArgumentsOfCorrectType extends AbstractRule {
     @Override
     public void checkArgument(Argument argument) {
         GraphQLArgument fieldArgument = getValidationContext().getArgument();
-        if (fieldArgument == null) return;
+        if (fieldArgument == null) {
+            return;
+        }
         ArgumentValidationUtil validationUtil = new ArgumentValidationUtil(argument);
         if (!validationUtil.isValidLiteralValue(argument.getValue(), fieldArgument.getType(), getValidationContext().getSchema())) {
-            Map<String, Object> extensions = new HashMap<>();
+            Map<String, Object> extensions = new HashMap<>(Optional.ofNullable(validationUtil.getErrorExtensions()).orElse(Collections.emptyMap()));
             extensions.put("argument", validationUtil.renderArgument());
             extensions.put("value", ValidationUtil.renderValue(validationUtil.getArgumentValue()));
             extensions.put("requiredType", ValidationUtil.renderType(validationUtil.getRequiredType()));
             extensions.put("objectType", ValidationUtil.renderType(validationUtil.getObjectType()));
-            addError(ValidationErrorType.WrongType, argument.getSourceLocation(), validationUtil.getErrorMessage(), extensions);
+            addError(ValidationError.newValidationError()
+                    .validationErrorType(ValidationErrorType.WrongType)
+                    .sourceLocation(argument.getSourceLocation())
+                    .description(validationUtil.getErrorMessage())
+                    .extensions(extensions));
         }
     }
 }

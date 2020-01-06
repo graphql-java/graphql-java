@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.validation.ValidationError.newValidationError;
+
 @Internal
 public class AbstractRule {
 
@@ -17,7 +19,7 @@ public class AbstractRule {
 
     private boolean visitFragmentSpreads;
 
-    private ValidationUtil validationUtil = new ValidationUtil();
+    private final ValidationUtil validationUtil = new ValidationUtil();
 
     public AbstractRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         this.validationContext = validationContext;
@@ -37,20 +39,26 @@ public class AbstractRule {
         return validationUtil;
     }
 
-    public void setValidationUtil(ValidationUtil validationUtil) {
-        this.validationUtil = validationUtil;
-    }
-
-    public void addError(ValidationErrorType validationErrorType, List<? extends Node> locations, String description) {
+    public void addError(ValidationErrorType validationErrorType, List<? extends Node<?>> locations, String description) {
         List<SourceLocation> locationList = new ArrayList<>();
-        for (Node node : locations) {
+        for (Node<?> node : locations) {
             locationList.add(node.getSourceLocation());
         }
-        validationErrorCollector.addError(new ValidationError(validationErrorType, locationList, description, getQueryPath()));
+        addError(newValidationError()
+                .validationErrorType(validationErrorType)
+                .sourceLocations(locationList)
+                .description(description));
     }
 
     public void addError(ValidationErrorType validationErrorType, SourceLocation location, String description) {
-        validationErrorCollector.addError(new ValidationError(validationErrorType, location, description, getQueryPath()));
+        addError(newValidationError()
+                .validationErrorType(validationErrorType)
+                .sourceLocation(location)
+                .description(description));
+    }
+
+    public void addError(ValidationError.Builder validationError) {
+        validationErrorCollector.addError(validationError.queryPath(getQueryPath()).build());
     }
 
     public void addError(ValidationErrorType validationErrorType, SourceLocation location, String description, Map<String, Object> extensions) {

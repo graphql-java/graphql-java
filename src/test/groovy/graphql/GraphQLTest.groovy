@@ -2,27 +2,14 @@ package graphql
 
 import graphql.analysis.MaxQueryComplexityInstrumentation
 import graphql.analysis.MaxQueryDepthInstrumentation
-import graphql.execution.AsyncExecutionStrategy
-import graphql.execution.ExecutionContext
-import graphql.execution.ExecutionId
-import graphql.execution.ExecutionIdProvider
-import graphql.execution.ExecutionStrategyParameters
-import graphql.execution.MissingRootTypeException
+import graphql.execution.*
 import graphql.execution.batched.BatchedExecutionStrategy
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation
 import graphql.language.SourceLocation
-import graphql.schema.DataFetcher
-import graphql.schema.DataFetchingEnvironment
-import graphql.schema.GraphQLEnumType
-import graphql.schema.GraphQLFieldDefinition
-import graphql.schema.GraphQLInterfaceType
-import graphql.schema.GraphQLNonNull
-import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLSchema
-import graphql.schema.StaticDataFetcher
+import graphql.schema.*
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
@@ -308,10 +295,15 @@ class GraphQLTest extends Specification {
 
         then:
         result.errors.size() == 1
-        result.errors[0].description == "Expected value to be in the Integer range but it was '12345678910'"
-        result.errors[0].getExtensions()["argument"] == "bar"
-        result.errors[0].getExtensions()["value"] == "12345678910"
-        result.errors[0].getExtensions()["requiredType"] == "Int"
+        result.errors[0].message == "Expected value to be in the Integer range but it was '12345678910'"
+        result.errors[0].getExtensions() == [
+                argument: "bar",
+                requiredType: "Int",
+                queryPath: ["foo"],
+                value: "12345678910",
+                objectType: "Int",
+                validationErrorType: "WrongType"
+        ]
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")

@@ -7,7 +7,6 @@ import graphql.GraphqlErrorHelper;
 import graphql.language.SourceLocation;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ValidationError implements GraphQLError {
 
@@ -19,23 +18,39 @@ public class ValidationError implements GraphQLError {
     private final Map<String, Object> extensions;
 
     public ValidationError(ValidationErrorType validationErrorType) {
-        this(validationErrorType, (SourceLocation) null, null);
+        this(newValidationError()
+                .validationErrorType(validationErrorType));
     }
 
     public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description) {
-        this(validationErrorType, nullOrList(sourceLocation), description, null);
+        this(newValidationError()
+                .validationErrorType(validationErrorType)
+                .sourceLocation(sourceLocation)
+                .description(description));
     }
 
     public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description, List<String> queryPath) {
-        this(validationErrorType, nullOrList(sourceLocation), description, queryPath);
+        this(newValidationError()
+                .validationErrorType(validationErrorType)
+                .sourceLocation(sourceLocation)
+                .description(description)
+                .queryPath(queryPath));
     }
 
     public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description, List<String> queryPath, Map<String, Object> extensions) {
-        this(validationErrorType, nullOrList(sourceLocation), description, queryPath, extensions);
+        this(newValidationError()
+                .validationErrorType(validationErrorType)
+                .sourceLocation(sourceLocation)
+                .description(description)
+                .queryPath(queryPath)
+                .extensions(extensions));
     }
 
     public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description) {
-        this(validationErrorType, sourceLocations, description, null);
+        this(newValidationError()
+                .validationErrorType(validationErrorType)
+                .sourceLocations(sourceLocations)
+                .description(description));
     }
 
     public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description, List<String> queryPath) {
@@ -43,29 +58,28 @@ public class ValidationError implements GraphQLError {
     }
 
     public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description, List<String> queryPath, Map<String, Object> extensions) {
-        this.validationErrorType = validationErrorType;
-        if (sourceLocations != null)
-            this.locations.addAll(sourceLocations);
-        this.description = description;
-        this.message = description;
-        this.queryPath = queryPath;
-
-        Map<String, Object> newExtensions = new LinkedHashMap<>(extensions);
-        newExtensions.put("validationErrorType", validationErrorType.name());
-        if (queryPath != null)
-            newExtensions.put("queryPath", queryPath);
-        this.extensions = Collections.unmodifiableMap(newExtensions);
+        this(newValidationError()
+                .validationErrorType(validationErrorType)
+                .sourceLocations(sourceLocations)
+                .description(description)
+                .queryPath(queryPath)
+                .extensions(extensions));
     }
 
-    private static List<SourceLocation> nullOrList(SourceLocation sourceLocation) {
-        return sourceLocation == null ? null : Collections.singletonList(sourceLocation);
-    }
-
-    private String toPath(List<String> queryPath) {
-        if (queryPath == null) {
-            return "";
+    private ValidationError(Builder builder) {
+        this.validationErrorType = builder.validationErrorType;
+        if (builder.sourceLocations != null) {
+            this.locations.addAll(builder.sourceLocations);
         }
-        return String.format(" @ '%s'", queryPath.stream().collect(Collectors.joining("/")));
+        this.description = builder.description;
+        this.message = builder.description;
+        this.queryPath = builder.queryPath;
+
+        builder.addExtension("validationErrorType", validationErrorType.name());
+        if (builder.queryPath != null) {
+            builder.addExtension("queryPath", builder.queryPath);
+        }
+        this.extensions = builder.extensions;
     }
 
     public ValidationErrorType getValidationErrorType() {
@@ -122,4 +136,56 @@ public class ValidationError implements GraphQLError {
         return GraphqlErrorHelper.hashCode(this);
     }
 
+
+    public static Builder newValidationError() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private List<SourceLocation> sourceLocations;
+        private Map<String, Object> extensions = new LinkedHashMap<>();
+        private String description;
+        private ValidationErrorType validationErrorType;
+        private List<String> queryPath;
+
+
+        public Builder validationErrorType(ValidationErrorType validationErrorType) {
+            this.validationErrorType = validationErrorType;
+            return this;
+        }
+
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public Builder queryPath(List<String> queryPath) {
+            this.queryPath = queryPath;
+            return this;
+        }
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocations = sourceLocation == null ? null : Collections.singletonList(sourceLocation);
+            return this;
+        }
+
+        public Builder sourceLocations(List<SourceLocation> sourceLocations) {
+            this.sourceLocations = sourceLocations;
+            return this;
+        }
+
+        public Builder extensions(Map<String, Object> extensions) {
+            this.extensions = extensions;
+            return this;
+        }
+
+        public Builder addExtension(String key, Object value) {
+            extensions.put(key, value);
+            return this;
+        }
+
+        public ValidationError build() {
+            return new ValidationError(this);
+        }
+    }
 }

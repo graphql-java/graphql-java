@@ -61,6 +61,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         errorCollector.errors[0].getExtensions()["value"] == "string"
         errorCollector.errors[0].getExtensions()["requiredType"] == "Boolean"
         errorCollector.errors[0].getExtensions()["objectType"] == "Boolean"
+        errorCollector.errors[0].getExtensions()["validationErrorType"] == "WrongType"
     }
 
     def "invalid input object type results in error"() {
@@ -159,9 +160,9 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         def argumentLiteral = new Argument("arg", objectValue)
         def graphQLArgument = new GraphQLArgument("arg", GraphQLInputObjectType.newInputObject().name("ArgumentObjectType")
                 .field(GraphQLInputObjectField.newInputObjectField()
-                .name("foo").type(GraphQLNonNull.nonNull(GraphQLString)))
+                        .name("foo").type(GraphQLNonNull.nonNull(GraphQLString)))
                 .field(GraphQLInputObjectField.newInputObjectField()
-                .name("bar").type(GraphQLNonNull.nonNull(GraphQLString)))
+                        .name("bar").type(GraphQLNonNull.nonNull(GraphQLString)))
                 .build())
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
@@ -185,9 +186,9 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         def argumentLiteral = new Argument("arg", objectValue)
         def graphQLArgument = new GraphQLArgument("arg", GraphQLInputObjectType.newInputObject().name("ArgumentObjectType")
                 .field(GraphQLInputObjectField.newInputObjectField()
-                .name("foo").type(GraphQLNonNull.nonNull(GraphQLString)))
+                        .name("foo").type(GraphQLNonNull.nonNull(GraphQLString)))
                 .field(GraphQLInputObjectField.newInputObjectField()
-                .name("bar").type(GraphQLNonNull.nonNull(GraphQLString)))
+                        .name("bar").type(GraphQLNonNull.nonNull(GraphQLString)))
                 .build())
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
@@ -209,9 +210,9 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         def argumentLiteral = new Argument("arg", objectValue)
         def graphQLArgument = new GraphQLArgument("arg", GraphQLInputObjectType.newInputObject().name("ArgumentObjectType")
                 .field(GraphQLInputObjectField.newInputObjectField()
-                .name("foo").type(GraphQLNonNull.nonNull(GraphQLString)))
+                        .name("foo").type(GraphQLNonNull.nonNull(GraphQLString)))
                 .field(GraphQLInputObjectField.newInputObjectField()
-                .name("bar").type(GraphQLNonNull.nonNull(GraphQLString)))
+                        .name("bar").type(GraphQLNonNull.nonNull(GraphQLString)))
                 .build())
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
@@ -235,9 +236,9 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         def argumentLiteral = new Argument("arg", objectValue)
         def graphQLArgument = new GraphQLArgument("arg", GraphQLInputObjectType.newInputObject().name("ArgumentObjectType")
                 .field(GraphQLInputObjectField.newInputObjectField()
-                .name("foo").type(GraphQLNonNull.nonNull(GraphQLString)))
+                        .name("foo").type(GraphQLNonNull.nonNull(GraphQLString)))
                 .field(GraphQLInputObjectField.newInputObjectField()
-                .name("bar").type(GraphQLNonNull.nonNull(GraphQLString)))
+                        .name("bar").type(GraphQLNonNull.nonNull(GraphQLString)))
                 .build())
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
