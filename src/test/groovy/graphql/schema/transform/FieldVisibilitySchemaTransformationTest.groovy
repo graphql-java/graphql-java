@@ -9,7 +9,7 @@ import spock.lang.Specification
 class FieldVisibilitySchemaTransformationTest extends Specification {
 
     def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation({ environment ->
-        return environment.fieldDefinition.directives.find({ directive -> directive.name == "private" }) == null
+        return environment.schemaElement.directives.find({ directive -> directive.name == "private" }) == null
     })
 
     def "can remove a private field"() {

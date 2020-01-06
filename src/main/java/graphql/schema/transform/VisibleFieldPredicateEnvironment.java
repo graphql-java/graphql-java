@@ -5,15 +5,15 @@ import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLSchemaElement;
 
 /**
- * Container to pass additional context about a field to {@link VisibleFieldPredicate}.
+ * Container to pass additional context about a schema element (ie., field) to {@link VisibleFieldPredicate}.
  */
 @PublicApi
 public interface VisibleFieldPredicateEnvironment {
 
-    GraphQLNamedSchemaElement getFieldDefinition();
+    GraphQLNamedSchemaElement getSchemaElement();
 
     /**
-     * Get the field's immediate parent node.
+     * Get the element's immediate parent node.
      *
      * @return parent node
      */
@@ -21,18 +21,18 @@ public interface VisibleFieldPredicateEnvironment {
 
     class VisibleFieldPredicateEnvironmentImpl implements VisibleFieldPredicateEnvironment {
 
-        private final GraphQLNamedSchemaElement fieldDefinition;
+        private final GraphQLNamedSchemaElement schemaElement;
         private final GraphQLSchemaElement parentElement;
 
-        public VisibleFieldPredicateEnvironmentImpl(GraphQLNamedSchemaElement fieldDefinition,
+        public VisibleFieldPredicateEnvironmentImpl(GraphQLNamedSchemaElement schemaElement,
                                                     GraphQLSchemaElement parentElement) {
-            this.fieldDefinition = fieldDefinition;
+            this.schemaElement = schemaElement;
             this.parentElement = parentElement;
         }
 
         @Override
-        public GraphQLNamedSchemaElement getFieldDefinition() {
-            return fieldDefinition;
+        public GraphQLNamedSchemaElement getSchemaElement() {
+            return schemaElement;
         }
 
         @Override
