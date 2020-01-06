@@ -1019,6 +1019,17 @@ enum Enum {
 '''
 
         when:
+        def resultWithSomeDirectives = new SchemaPrinter(defaultOptions().includeDirectives({it.name == "example" })).print(schema)
+
+        then:
+        resultWithSomeDirectives == '''directive @example on FIELD_DEFINITION
+
+type Query {
+  fieldA: String @example
+}
+'''
+
+        when:
         def resultWithDirectives = new SchemaPrinter(defaultOptions().includeDirectives(true)).print(schema)
 
         then:
