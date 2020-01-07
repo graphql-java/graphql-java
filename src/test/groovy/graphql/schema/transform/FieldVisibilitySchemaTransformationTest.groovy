@@ -2,6 +2,7 @@ package graphql.schema.transform
 
 import graphql.Scalars
 import graphql.TestUtil
+import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
@@ -18,7 +19,8 @@ import static graphql.schema.GraphQLTypeReference.typeRef
 class FieldVisibilitySchemaTransformationTest extends Specification {
 
     def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation({ environment ->
-        return environment.schemaElement.directives.find({ directive -> directive.name == "private" }) == null
+        def directives = (environment.schemaElement as GraphQLDirectiveContainer).directives
+        return directives.find({ directive -> directive.name == "private" }) == null
     })
 
     def "can remove a private field"() {
@@ -353,6 +355,42 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         restrictedSchema.getType("BillingStatus") != null
         restrictedSchema.getType("SuperSecretCustomerData") != null
+    }
+
+
+    def "removes interface types implemented by types used in a private field"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            account: Account
+        }
+        
+        type Account {
+            name: String
+            billingStatus: BillingStatus @private
+        }
+        
+        type BillingStatus implements SuperSecretCustomerData {
+            accountNumber: String
+            cardLast4: Int
+        }
+        
+        interface SuperSecretCustomerData {
+            cardLast4: Int
+        }
+        
+        """)
+
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        restrictedSchema.getType("BillingStatus") == null
+        restrictedSchema.getType("SuperSecretCustomerData") == null
     }
 
     def "leaves interface type if has private and public reference"() {
@@ -811,7 +849,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("Bing") == null
     }
 
-    def "use type references"() {
+    def "use type references - private field declared with interface type removes both concrete and interface"() {
         given:
         def query = newObject()
                 .name("Query")
@@ -846,14 +884,91 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .build()
         when:
 
-        (new SchemaPrinter()).print(schema)
+        System.out.println((new SchemaPrinter()).print(schema))
         GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
 
         then:
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         restrictedSchema.getType("BillingStatus") == null
         restrictedSchema.getType("SuperSecretCustomerData") == null
-
     }
 
+
+    def "use type references - private field declared with concrete type removes both concrete and interface"() {
+        given:
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("account").type(typeRef("Account")).build())
+                .build()
+
+        def privateDirective = newDirective().name("private").build()
+        def account = newObject()
+                .name("Account")
+                .field(newFieldDefinition().name("name").type(Scalars.GraphQLString).build())
+                .field(newFieldDefinition().name("billingStatus").type(typeRef("BillingStatus")).withDirective(privateDirective).build())
+                .build()
+
+        def billingStatus = newObject()
+                .name("BillingStatus")
+                .field(newFieldDefinition().name("id").type(Scalars.GraphQLString).build())
+                .withInterface(typeRef("SuperSecretCustomerData"))
+                .build()
+
+        def secretData = newInterface()
+                .name("SuperSecretCustomerData")
+                .field(newFieldDefinition().name("id").type(Scalars.GraphQLString).build())
+                .typeResolver(Mock(TypeResolver))
+                .build()
+
+        def schema = GraphQLSchema.newSchema()
+                .query(query)
+                .additionalType(billingStatus)
+                .additionalType(account)
+                .additionalType(billingStatus)
+                .additionalType(secretData)
+                .build()
+        when:
+
+        System.out.println((new SchemaPrinter()).print(schema))
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
+        restrictedSchema.getType("BillingStatus") == null
+        restrictedSchema.getType("SuperSecretCustomerData") == null
+    }
+
+    def "use type references - unreferenced types are removed"() {
+        given:
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("account").type(typeRef("Account")).build())
+                .build()
+
+        def privateDirective = newDirective().name("private").build()
+        def account = newObject()
+                .name("Account")
+                .field(newFieldDefinition().name("name").type(Scalars.GraphQLString).build())
+                .field(newFieldDefinition().name("billingStatus").type(typeRef("BillingStatus")).withDirective(privateDirective).build())
+                .build()
+
+        def billingStatus = newObject()
+                .name("BillingStatus")
+                .field(newFieldDefinition().name("id").type(Scalars.GraphQLString).build())
+                .build()
+
+        def schema = GraphQLSchema.newSchema()
+                .query(query)
+                .additionalType(billingStatus)
+                .additionalType(account)
+                .build()
+        when:
+
+        System.out.println((new SchemaPrinter()).print(schema))
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
+        restrictedSchema.getType("BillingStatus") == null
+    }
 }
