@@ -1,9 +1,7 @@
 package graphql.schema.transform;
 
-import static graphql.schema.SchemaTransformer.transformSchema;
-import static graphql.util.TreeTransformerUtil.deleteNode;
-
 import graphql.PublicApi;
+import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInterfaceType;
@@ -13,16 +11,21 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeVisitorStub;
+import graphql.schema.GraphQLUnionType;
 import graphql.schema.SchemaTraverser;
 import graphql.schema.transform.VisibleFieldPredicateEnvironment.VisibleFieldPredicateEnvironmentImpl;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static graphql.schema.SchemaTransformer.transformSchema;
+import static graphql.util.TreeTransformerUtil.deleteNode;
 
 /**
  * Transforms a schema by applying a visibility predicate to every field.
@@ -57,13 +60,13 @@ public class FieldVisibilitySchemaTransformation {
 
         beforeTransformation();
 
-        new SchemaTraverser().depthFirst(new TypeObservingVisitor(observedBeforeTransform), getRootTypes(schema));
+        new SchemaTraverser().depthFirst(new TypeObservingVisitor(observedBeforeTransform, schema), getRootTypes(schema));
 
         // remove fields
         GraphQLSchema interimSchema = transformSchema(schema,
                 new FieldRemovalVisitor(visibleFieldPredicate, removedTypes));
 
-        new SchemaTraverser().depthFirst(new TypeObservingVisitor(observedAfterTransform), getRootTypes(interimSchema));
+        new SchemaTraverser().depthFirst(new TypeObservingVisitor(observedAfterTransform, interimSchema), getRootTypes(interimSchema));
 
         // remove types that are not used
         GraphQLSchema finalSchema = transformSchema(interimSchema,
@@ -78,10 +81,12 @@ public class FieldVisibilitySchemaTransformation {
     private static class TypeObservingVisitor extends GraphQLTypeVisitorStub {
 
         private final Set<GraphQLType> observedTypes;
+        private GraphQLSchema graphQLSchema;
 
 
-        private TypeObservingVisitor(Set<GraphQLType> observedTypes) {
+        private TypeObservingVisitor(Set<GraphQLType> observedTypes, GraphQLSchema graphQLSchema) {
             this.observedTypes = observedTypes;
+            this.graphQLSchema = graphQLSchema;
         }
 
         @Override
@@ -89,6 +94,9 @@ public class FieldVisibilitySchemaTransformation {
                                                     TraverserContext<GraphQLSchemaElement> context) {
             if (node instanceof GraphQLType) {
                 observedTypes.add((GraphQLType) node);
+            }
+            if (node instanceof GraphQLInterfaceType) {
+                observedTypes.addAll(graphQLSchema.getImplementations((GraphQLInterfaceType) node));
             }
 
             return TraversalControl.CONTINUE;
@@ -163,9 +171,13 @@ public class FieldVisibilitySchemaTransformation {
         @Override
         public TraversalControl visitGraphQLType(GraphQLSchemaElement node,
                                                  TraverserContext<GraphQLSchemaElement> context) {
-
             if (observedBeforeTransform.contains(node) &&
-                    !observedAfterTransform.contains(node)) {
+                    !observedAfterTransform.contains(node) &&
+                    (node instanceof GraphQLObjectType ||
+                            node instanceof GraphQLEnumType ||
+                            node instanceof GraphQLInterfaceType ||
+                            node instanceof GraphQLUnionType)) {
+
                 return deleteNode(context);
             }
 

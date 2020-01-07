@@ -242,7 +242,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("FooOrBar") == null
     }
 
-    def "union type with public reference by interface field is retained"() {
+    def "union type with reference by private interface removed"() {
         given:
         GraphQLSchema schema = TestUtil.schema("""
 
@@ -253,7 +253,9 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
             private: Baz @private
         }
         
-        union FooOrBar = Foo | Bar
+        type Bar {
+            id: ID
+        }
         
         interface Baz {
             fooOrBar: FooOrBar
@@ -262,14 +264,12 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         type Bing implements Baz {
             fooOrBar: FooOrBar
         }
+        union FooOrBar = Foo | Bar
         
         type Foo {
             id: ID
         }
         
-        type Bar {
-            id: ID
-        }
         
         """)
 

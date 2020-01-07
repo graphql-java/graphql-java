@@ -201,6 +201,13 @@ class SchemaTransformerTest extends Specification {
                 return super.visitGraphQLObjectType(node, context)
             }
 
+            @Override
+            TraversalControl visitGraphQLTypeReference(GraphQLTypeReference node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.name == "Parent") {
+                    return changeNode(context, typeRef("ParentChanged"));
+                }
+                return super.visitGraphQLTypeReference(node, context)
+            }
         })
         def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
         then:
@@ -212,7 +219,7 @@ class SchemaTransformerTest extends Specification {
 type ParentChanged {
   child1: Child
   child2: Child
-  otherParent: Parent
+  otherParent: ParentChanged
   subChild: SubChildChanged
 }
 
@@ -393,4 +400,48 @@ type SubChildChanged {
         (result as Map)['fooChanged'] == 'bar'
 
     }
+
+    def "type references are replaced again after transformation"() {
+        given:
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("account").type(typeRef("Account")).build())
+                .build()
+
+        def account = newObject()
+                .name("Account")
+                .field(newFieldDefinition().name("name").type(Scalars.GraphQLString).build())
+                .field(newFieldDefinition().name("billingStatus").type(typeRef("BillingStatus")).build())
+                .build()
+
+        def billingStatus = newObject()
+                .name("BillingStatus")
+                .field(newFieldDefinition().name("id").type(Scalars.GraphQLString).build())
+                .build()
+
+        def schema = newSchema()
+                .query(query)
+                .additionalType(billingStatus)
+                .additionalType(account)
+                .build()
+        when:
+        SchemaTransformer schemaTransformer = new SchemaTransformer()
+        GraphQLSchema newSchema = schemaTransformer.transform(schema, new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition fieldDefinition, TraverserContext<GraphQLSchemaElement> context) {
+                if (fieldDefinition.name == "billingStatus") {
+                    return deleteNode(context)
+                }
+                return TraversalControl.CONTINUE;
+            }
+        })
+
+        then:
+        newSchema != schema
+        (newSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
+        newSchema.getType("Account") == (newSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("account").getType()
+
+    }
+
 }
