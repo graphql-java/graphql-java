@@ -971,4 +971,39 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         restrictedSchema.getType("BillingStatus") == null
     }
+
+    def "before and after transformation hooks are run"() {
+
+        given:
+        def callbacks = []
+
+        def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation({ environment ->
+            def directives = (environment.schemaElement as GraphQLDirectiveContainer).directives
+            return directives.find({ directive -> directive.name == "private" }) == null
+        }, { -> callbacks << "before" }, { -> callbacks << "after"} )
+
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            account: Account
+        }
+        
+        type Account {
+            name: String
+            billingStatus: BillingStatus @private
+        }
+        
+        type BillingStatus {
+            accountNumber: String
+        }
+        """)
+
+        when:
+        visibilitySchemaTransformation.apply(schema)
+
+        then:
+        callbacks.containsAll(["before", "after"])
+    }
 }

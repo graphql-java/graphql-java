@@ -34,18 +34,19 @@ import static graphql.util.TreeTransformerUtil.deleteNode;
 public class FieldVisibilitySchemaTransformation {
 
     private final VisibleFieldPredicate visibleFieldPredicate;
+    private final Runnable beforeTransformationHook;
+    private final Runnable afterTransformationHook;
 
     public FieldVisibilitySchemaTransformation(VisibleFieldPredicate visibleFieldPredicate) {
+        this(visibleFieldPredicate, () -> {}, () -> {});
+    }
+
+    public FieldVisibilitySchemaTransformation(VisibleFieldPredicate visibleFieldPredicate,
+                                               Runnable beforeTransformationHook,
+                                               Runnable afterTransformationHook) {
         this.visibleFieldPredicate = visibleFieldPredicate;
-    }
-
-    /**
-     * Before and after callbacks useful for side effects (logs, stopwatches etc).
-     */
-    protected void beforeTransformation() {
-    }
-
-    protected void afterTransformation() {
+        this.beforeTransformationHook = beforeTransformationHook;
+        this.afterTransformationHook = afterTransformationHook;
     }
 
     public final GraphQLSchema apply(GraphQLSchema schema) {
@@ -58,7 +59,7 @@ public class FieldVisibilitySchemaTransformation {
                 .map(GraphQLObjectType::getName)
                 .collect(Collectors.toSet());
 
-        beforeTransformation();
+        beforeTransformationHook.run();
 
         new SchemaTraverser().depthFirst(new TypeObservingVisitor(observedBeforeTransform, schema), getRootTypes(schema));
 
@@ -73,7 +74,7 @@ public class FieldVisibilitySchemaTransformation {
                 new TypeVisibilityVisitor(protectedTypeNames, observedBeforeTransform, observedAfterTransform,
                         removedTypes));
 
-        afterTransformation();
+        afterTransformationHook.run();
 
         return finalSchema;
     }
@@ -182,16 +183,6 @@ public class FieldVisibilitySchemaTransformation {
             }
 
             return TraversalControl.CONTINUE;
-
-//            if (!observedBeforeTransform.contains(node) &&
-//                    node.getInterfaces().stream().noneMatch(observedBeforeTransform::contains) &&
-//                    node.getInterfaces().stream().anyMatch(removedTypes::contains) &&
-//                    !ScalarInfo.isStandardScalar(node.getName()) &&
-//                    !protectedTypeNames.contains(node.getName())) {
-//                return deleteNode(context);
-//            }
-//
-//            return TraversalControl.CONTINUE;
         }
     }
 
