@@ -116,7 +116,7 @@ public class FieldCollectorQueryExecution {
             return;
         }
         visitedFragments.add(fragmentSpread.getName());
-        FragmentDefinition fragmentDefinition = parameters.getFragmentsByName().get(fragmentSpread.getName());
+        FragmentDefinition fragmentDefinition = Assert.assertNotNull(parameters.getFragmentsByName().get(fragmentSpread.getName()));
 
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), fragmentDefinition.getDirectives())) {
             return;

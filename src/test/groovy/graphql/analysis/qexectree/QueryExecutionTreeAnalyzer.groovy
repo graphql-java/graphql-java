@@ -3,7 +3,6 @@ package graphql.analysis.qexectree
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.language.Document
-import graphql.language.OperationDefinition
 import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
 import graphql.util.TraversalControl
@@ -86,10 +85,9 @@ type Dog implements Animal{
         assert graphQL.execute(query).errors.size() == 0
 
         Document document = new Parser().parseDocument(query)
-        OperationDefinition operationDefinition = (OperationDefinition) document.getDefinitions().get(0);
 
         QueryExecutionTreeAnalyzer dependencyGraph = new QueryExecutionTreeAnalyzer();
-        def tree = dependencyGraph.createExecutionTree(graphQLSchema, operationDefinition)
+        def tree = dependencyGraph.createExecutionTree(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
         expect:
@@ -174,10 +172,9 @@ type Dog implements Animal{
         assert graphQL.execute(query).errors.size() == 0
 
         Document document = new Parser().parseDocument(query)
-        OperationDefinition operationDefinition = (OperationDefinition) document.getDefinitions().get(0);
 
         QueryExecutionTreeAnalyzer dependencyGraph = new QueryExecutionTreeAnalyzer();
-        def tree = dependencyGraph.createExecutionTree(graphQLSchema, operationDefinition)
+        def tree = dependencyGraph.createExecutionTree(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
         expect:
@@ -258,10 +255,9 @@ type Dog implements Animal{
         assert graphQL.execute(query).errors.size() == 0
 
         Document document = new Parser().parseDocument(query)
-        OperationDefinition operationDefinition = (OperationDefinition) document.getDefinitions().get(0);
 
         QueryExecutionTreeAnalyzer dependencyGraph = new QueryExecutionTreeAnalyzer();
-        def tree = dependencyGraph.createExecutionTree(graphQLSchema, operationDefinition)
+        def tree = dependencyGraph.createExecutionTree(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
         expect:
@@ -311,10 +307,9 @@ type Dog implements Animal{
         assert graphQL.execute(query).errors.size() == 0
 
         Document document = new Parser().parseDocument(query)
-        OperationDefinition operationDefinition = (OperationDefinition) document.getDefinitions().get(0);
 
         QueryExecutionTreeAnalyzer dependencyGraph = new QueryExecutionTreeAnalyzer();
-        def tree = dependencyGraph.createExecutionTree(graphQLSchema, operationDefinition)
+        def tree = dependencyGraph.createExecutionTree(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
         expect:
@@ -373,10 +368,9 @@ type Dog implements Animal{
         assert graphQL.execute(query).errors.size() == 0
 
         Document document = new Parser().parseDocument(query)
-        OperationDefinition operationDefinition = (OperationDefinition) document.getDefinitions().get(0);
 
         QueryExecutionTreeAnalyzer dependencyGraph = new QueryExecutionTreeAnalyzer();
-        def tree = dependencyGraph.createExecutionTree(graphQLSchema, operationDefinition)
+        def tree = dependencyGraph.createExecutionTree(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
         expect:
@@ -423,10 +417,9 @@ type Dog implements Animal{
         assert graphQL.execute(query).errors.size() == 0
 
         Document document = new Parser().parseDocument(query)
-        OperationDefinition operationDefinition = (OperationDefinition) document.getDefinitions().get(0);
 
         QueryExecutionTreeAnalyzer dependencyGraph = new QueryExecutionTreeAnalyzer();
-        def tree = dependencyGraph.createExecutionTree(graphQLSchema, operationDefinition)
+        def tree = dependencyGraph.createExecutionTree(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
         expect:
@@ -469,10 +462,9 @@ type Dog implements Animal{
         assert graphQL.execute(query).errors.size() == 0
 
         Document document = new Parser().parseDocument(query)
-        OperationDefinition operationDefinition = (OperationDefinition) document.getDefinitions().get(0);
 
         QueryExecutionTreeAnalyzer dependencyGraph = new QueryExecutionTreeAnalyzer();
-        def tree = dependencyGraph.createExecutionTree(graphQLSchema, operationDefinition)
+        def tree = dependencyGraph.createExecutionTree(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
         expect:
@@ -482,6 +474,35 @@ type Dog implements Animal{
                         'User.friends: [User] (conditional: false)',
                         'User.name: String (conditional: false)']
 
+    }
+
+    def "query with fragment definition"() {
+        def graphQLSchema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+            }
+            type Foo {
+                subFoo: String  
+                moreFoos: Foo
+            }
+        """)
+        def query = """
+            {foo { ...fooData moreFoos { ...fooData }}} fragment fooData on Foo { subFoo }
+            """
+        GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build();
+        assert graphQL.execute(query).errors.size() == 0
+
+        Document document = new Parser().parseDocument(query)
+
+        QueryExecutionTreeAnalyzer dependencyGraph = new QueryExecutionTreeAnalyzer();
+        def tree = dependencyGraph.createExecutionTree(graphQLSchema, document, null, [:])
+        def printedTree = printTree(tree)
+
+        expect:
+        printedTree == ['Query.foo: Foo (conditional: false)',
+                        'Foo.subFoo: String (conditional: false)',
+                        'Foo.moreFoos: Foo (conditional: false)',
+                        'Foo.subFoo: String (conditional: false)']
     }
 
     List<String> printTree(QueryExecutionTree queryExecutionTree) {
