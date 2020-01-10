@@ -1,4 +1,4 @@
-package graphql.analysis.qet;
+package graphql.analysis.qexectree;
 
 import graphql.Assert;
 import graphql.Internal;
@@ -8,11 +8,8 @@ import graphql.schema.GraphQLSchema;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Internal because FieldCollectorWTC is internal.
- */
 @Internal
-public class FieldCollectorParameters {
+public class FieldCollectorQueryExecutionParams {
     private final GraphQLSchema graphQLSchema;
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final Map<String, Object> variables;
@@ -30,9 +27,9 @@ public class FieldCollectorParameters {
     }
 
 
-    private FieldCollectorParameters(GraphQLSchema graphQLSchema,
-                                     Map<String, Object> variables,
-                                     Map<String, FragmentDefinition> fragmentsByName) {
+    private FieldCollectorQueryExecutionParams(GraphQLSchema graphQLSchema,
+                                               Map<String, Object> variables,
+                                               Map<String, FragmentDefinition> fragmentsByName) {
         this.fragmentsByName = fragmentsByName;
         this.graphQLSchema = graphQLSchema;
         this.variables = variables;
@@ -48,7 +45,7 @@ public class FieldCollectorParameters {
         private final Map<String, Object> variables = new LinkedHashMap<>();
 
         /**
-         * @see FieldCollectorParameters#newParameters()
+         * @see FieldCollectorQueryExecutionParams#newParameters()
          */
         private Builder() {
 
@@ -69,9 +66,9 @@ public class FieldCollectorParameters {
             return this;
         }
 
-        public FieldCollectorParameters build() {
+        public FieldCollectorQueryExecutionParams build() {
             Assert.assertNotNull(graphQLSchema, "You must provide a schema");
-            return new FieldCollectorParameters(graphQLSchema, variables, fragmentsByName);
+            return new FieldCollectorQueryExecutionParams(graphQLSchema, variables, fragmentsByName);
         }
 
     }

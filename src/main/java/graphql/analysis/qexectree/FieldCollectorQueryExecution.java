@@ -1,4 +1,4 @@
-package graphql.analysis.qet;
+package graphql.analysis.qexectree;
 
 
 import graphql.Assert;
@@ -40,7 +40,7 @@ public class FieldCollectorQueryExecution {
 
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
-    public List<QueryExecutionField> collectFields(FieldCollectorParameters parameters, QueryExecutionField mergedField) {
+    public List<QueryExecutionField> collectFields(FieldCollectorQueryExecutionParams parameters, QueryExecutionField mergedField) {
         GraphQLUnmodifiedType fieldType = GraphQLTypeUtil.unwrapAll(mergedField.getFieldDefinition().getType());
         // if not composite we don't have any selectionSet because it is a Scalar or enum
         if (!(fieldType instanceof GraphQLCompositeType)) {
@@ -69,7 +69,7 @@ public class FieldCollectorQueryExecution {
         return result;
     }
 
-    public List<QueryExecutionField> collectFromOperation(FieldCollectorParameters parameters,
+    public List<QueryExecutionField> collectFromOperation(FieldCollectorQueryExecutionParams parameters,
                                                           OperationDefinition operationDefinition,
                                                           GraphQLObjectType rootType) {
         Map<String, Map<GraphQLObjectType, QueryExecutionField>> subFields = new LinkedHashMap<>();
@@ -85,7 +85,7 @@ public class FieldCollectorQueryExecution {
     }
 
 
-    private void collectFields(FieldCollectorParameters parameters,
+    private void collectFields(FieldCollectorQueryExecutionParams parameters,
                                SelectionSet selectionSet,
                                List<String> visitedFragments,
                                Map<String, Map<GraphQLObjectType, QueryExecutionField>> result,
@@ -103,7 +103,7 @@ public class FieldCollectorQueryExecution {
         }
     }
 
-    private void collectFragmentSpread(FieldCollectorParameters parameters,
+    private void collectFragmentSpread(FieldCollectorQueryExecutionParams parameters,
                                        List<String> visitedFragments,
                                        Map<String, Map<GraphQLObjectType, QueryExecutionField>> result,
                                        FragmentSpread fragmentSpread,
@@ -128,7 +128,7 @@ public class FieldCollectorQueryExecution {
         collectFields(parameters, fragmentDefinition.getSelectionSet(), visitedFragments, result, newConditions, newParentType);
     }
 
-    private void collectInlineFragment(FieldCollectorParameters parameters,
+    private void collectInlineFragment(FieldCollectorQueryExecutionParams parameters,
                                        List<String> visitedFragments,
                                        Map<String, Map<GraphQLObjectType, QueryExecutionField>> result,
                                        InlineFragment inlineFragment,
@@ -150,7 +150,7 @@ public class FieldCollectorQueryExecution {
         collectFields(parameters, inlineFragment.getSelectionSet(), visitedFragments, result, newPossibleOjects, newParentType);
     }
 
-    private void collectField(FieldCollectorParameters parameters,
+    private void collectField(FieldCollectorQueryExecutionParams parameters,
                               Map<String, Map<GraphQLObjectType, QueryExecutionField>> result,
                               Field field,
                               Set<GraphQLObjectType> objectTypes,

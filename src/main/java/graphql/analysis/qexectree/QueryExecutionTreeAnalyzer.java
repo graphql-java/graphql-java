@@ -1,4 +1,4 @@
-package graphql.analysis.qet;
+package graphql.analysis.qexectree;
 
 import graphql.PublicApi;
 import graphql.language.OperationDefinition;
@@ -21,7 +21,7 @@ public class QueryExecutionTreeAnalyzer {
     public QueryExecutionTree createExecutionTree(GraphQLSchema graphQLSchema, OperationDefinition operationDefinition) {
 
         FieldCollectorQueryExecution fieldCollector = new FieldCollectorQueryExecution();
-        FieldCollectorParameters parameters = FieldCollectorParameters
+        FieldCollectorQueryExecutionParams parameters = FieldCollectorQueryExecutionParams
                 .newParameters()
                 .schema(graphQLSchema)
                 .build();
@@ -36,11 +36,11 @@ public class QueryExecutionTreeAnalyzer {
         return new QueryExecutionTree(realRoots);
     }
 
-    private QueryExecutionField buildFieldWithChildren(QueryExecutionField field, FieldCollectorQueryExecution fieldCollector, FieldCollectorParameters fieldCollectorParameters) {
-        List<QueryExecutionField> fieldsWithoutChildren = fieldCollector.collectFields(fieldCollectorParameters, field);
+    private QueryExecutionField buildFieldWithChildren(QueryExecutionField field, FieldCollectorQueryExecution fieldCollector, FieldCollectorQueryExecutionParams fieldCollectorQueryExecutionParams) {
+        List<QueryExecutionField> fieldsWithoutChildren = fieldCollector.collectFields(fieldCollectorQueryExecutionParams, field);
         List<QueryExecutionField> realChildren = new ArrayList<>();
         for (QueryExecutionField fieldWithoutChildren : fieldsWithoutChildren) {
-            QueryExecutionField realChild = buildFieldWithChildren(fieldWithoutChildren, fieldCollector, fieldCollectorParameters);
+            QueryExecutionField realChild = buildFieldWithChildren(fieldWithoutChildren, fieldCollector, fieldCollectorQueryExecutionParams);
             realChildren.add(realChild);
         }
         return field.transform(builder -> builder.children(realChildren));

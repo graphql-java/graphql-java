@@ -1,4 +1,4 @@
-package graphql.analysis.qet;
+package graphql.analysis.qexectree;
 
 import graphql.PublicApi;
 import graphql.language.Argument;
