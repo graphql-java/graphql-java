@@ -61,7 +61,7 @@ public class DataLoaderDispatcherInstrumentationState implements Instrumentation
 
     void setDataLoaderRegistry(DataLoaderRegistry newRegistry) {
         dataLoaderRegistry.set(newRegistry);
-        hasNoDataLoaders = checkForNoDataLoader(dataLoaderRegistry.get());
+        hasNoDataLoaders = checkForNoDataLoader(newRegistry);
     }
 
     boolean hasNoDataLoaders() {
