@@ -26,7 +26,8 @@ class FragmentsOnCompositeTypeTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.InlineFragmentTypeConditionInvalid)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message == "Validation error of type InlineFragmentTypeConditionInvalid: Inline fragment type condition is invalid, must be on Object/Interface/Union"
+        errorCollector.errors[0].message == "Inline fragment type condition is invalid, must be on Object/Interface/Union"
+        errorCollector.errors[0].extensions["validationErrorType"] == "InlineFragmentTypeConditionInvalid"
     }
 
     def "should results in no error"(InlineFragment inlineFragment) {

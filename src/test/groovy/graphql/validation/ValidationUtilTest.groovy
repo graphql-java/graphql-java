@@ -32,21 +32,21 @@ class ValidationUtilTest extends Specification {
         given:
         def unmodifiedType = new TypeName("String")
         expect:
-        validationUtil.getUnmodifiedType(new ListType(new NonNullType(unmodifiedType))) == unmodifiedType
+        ValidationUtil.getUnmodifiedType(new ListType(new NonNullType(unmodifiedType))) == unmodifiedType
     }
 
     def "getUnmodified type of string"() {
         given:
         def unmodifiedType = new TypeName("String")
         expect:
-        validationUtil.getUnmodifiedType(unmodifiedType) == unmodifiedType
+        ValidationUtil.getUnmodifiedType(unmodifiedType) == unmodifiedType
     }
 
     def "getUnmodified type of nonNull"() {
         given:
         def unmodifiedType = new TypeName("String")
         expect:
-        validationUtil.getUnmodifiedType(new NonNullType(unmodifiedType)) == unmodifiedType
+        ValidationUtil.getUnmodifiedType(new NonNullType(unmodifiedType)) == unmodifiedType
     }
 
     def "null and NonNull is invalid"() {

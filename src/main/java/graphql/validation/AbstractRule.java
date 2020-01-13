@@ -1,24 +1,12 @@
 package graphql.validation;
 
 
+import graphql.Internal;
+import graphql.language.*;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import graphql.Internal;
-import graphql.language.Argument;
-import graphql.language.Directive;
-import graphql.language.Document;
-import graphql.language.Field;
-import graphql.language.FragmentDefinition;
-import graphql.language.FragmentSpread;
-import graphql.language.InlineFragment;
-import graphql.language.Node;
-import graphql.language.OperationDefinition;
-import graphql.language.SelectionSet;
-import graphql.language.SourceLocation;
-import graphql.language.TypeName;
-import graphql.language.VariableDefinition;
-import graphql.language.VariableReference;
+import java.util.Map;
 
 @Internal
 public class AbstractRule {
@@ -63,6 +51,10 @@ public class AbstractRule {
 
     public void addError(ValidationErrorType validationErrorType, SourceLocation location, String description) {
         validationErrorCollector.addError(new ValidationError(validationErrorType, location, description, getQueryPath()));
+    }
+
+    public void addError(ValidationErrorType validationErrorType, SourceLocation location, String description, Map<String, Object> extensions) {
+        validationErrorCollector.addError(new ValidationError(validationErrorType, location, description, getQueryPath(), extensions));
     }
 
     public List<ValidationError> getErrors() {

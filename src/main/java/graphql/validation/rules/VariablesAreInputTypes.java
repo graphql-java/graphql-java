@@ -4,10 +4,7 @@ package graphql.validation.rules;
 import graphql.language.TypeName;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLType;
-import graphql.validation.AbstractRule;
-import graphql.validation.ValidationContext;
-import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
+import graphql.validation.*;
 
 import static graphql.schema.GraphQLTypeUtil.isInput;
 
@@ -19,7 +16,7 @@ public class VariablesAreInputTypes extends AbstractRule {
 
     @Override
     public void checkVariableDefinition(VariableDefinition variableDefinition) {
-        TypeName unmodifiedAstType = getValidationUtil().getUnmodifiedType(variableDefinition.getType());
+        TypeName unmodifiedAstType = ValidationUtil.getUnmodifiedType(variableDefinition.getType());
 
         GraphQLType type = getValidationContext().getSchema().getType(unmodifiedAstType.getName());
         if (type == null) return;
