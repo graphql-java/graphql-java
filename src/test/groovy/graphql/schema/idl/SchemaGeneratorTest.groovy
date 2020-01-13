@@ -1741,9 +1741,9 @@ class SchemaGeneratorTest extends Specification {
 
         def extraDirective = (GraphQLDirective.newDirective()).name("extra")
                 .argument(GraphQLArgument.newArgument().name("value").type(GraphQLString)).build()
-        def transformer = new SchemaTransformer() {
+        def transformer = new SchemaGeneratorPostProcessing() {
             @Override
-            GraphQLSchema transform(GraphQLSchema originalSchema) {
+            GraphQLSchema process(GraphQLSchema originalSchema) {
                 originalSchema.transform({ builder -> builder.additionalDirective(extraDirective) })
             }
         }

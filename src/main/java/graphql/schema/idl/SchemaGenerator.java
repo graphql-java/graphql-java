@@ -339,9 +339,9 @@ public class SchemaGenerator {
 
         GraphQLSchema graphQLSchema = schemaBuilder.build();
 
-        Collection<SchemaTransformer> schemaTransformers = buildCtx.getWiring().getSchemaTransformers();
-        for (SchemaTransformer schemaTransformer : schemaTransformers) {
-            graphQLSchema = schemaTransformer.transform(graphQLSchema);
+        Collection<SchemaGeneratorPostProcessing> schemaGeneratorPostProcessings = buildCtx.getWiring().getSchemaGeneratorPostProcessings();
+        for (SchemaGeneratorPostProcessing schemaGeneratorPostProcessing : schemaGeneratorPostProcessings) {
+            graphQLSchema = schemaGeneratorPostProcessing.process(graphQLSchema);
         }
         return graphQLSchema;
     }
