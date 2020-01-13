@@ -28,7 +28,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
  * maps and POJO java beans for values that match the desired name, typically the field name
  * or it will use a provided function to obtain values.
  * maps and POJO java beans for values that match the desired name.
- *
+ * <p>
  * It uses the following strategies
  * <ul>
  * <li>If the source is null, return null</li>
@@ -40,7 +40,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
  * <li>Find any field named `propertyName` and call field.setAccessible(true)</li>
  * <li>If this cant find anything, then null is returned</li>
  * </ul>
- *
+ * <p>
  * You can write your own data fetchers to get data from some other backing system
  * if you need highly customised behaviour.
  *
@@ -53,8 +53,10 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
     private final Function<Object, Object> function;
 
     private static final AtomicBoolean USE_SET_ACCESSIBLE = new AtomicBoolean(true);
+    private static final AtomicBoolean USE_NEGATIVE_CACHE = new AtomicBoolean(true);
     private static final ConcurrentMap<String, Method> METHOD_CACHE = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, Field> FIELD_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, String> NEGATIVE_CACHE = new ConcurrentHashMap<>();
 
 
     /**
@@ -78,7 +80,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      * Returns a data fetcher that will use the property name to examine the {@link DataFetchingEnvironment#getSource()} object
      * for a getter method or field with that name, or if its a map, it will look up a value using
      * property name as a key.
-     *
+     * <p>
      * For example :
      * <pre>
      * {@code
@@ -90,7 +92,6 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      *
      * @param propertyName the name of the property to retrieve
      * @param <T>          the type of result
-     *
      * @return a new PropertyDataFetcher using the provided function as its source of values
      */
     public static <T> PropertyDataFetcher<T> fetching(String propertyName) {
@@ -101,7 +102,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      * Returns a data fetcher that will present the {@link DataFetchingEnvironment#getSource()} object to the supplied
      * function to obtain a value, which allows you to use Java 8 method references say obtain values in a
      * more type safe way.
-     *
+     * <p>
      * For example :
      * <pre>
      * {@code
@@ -114,7 +115,6 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      * @param function the function to use to obtain a value from the source object
      * @param <O>      the type of the source object
      * @param <T>      the type of result
-     *
      * @return a new PropertyDataFetcher using the provided function as its source of values
      */
     public static <T, O> PropertyDataFetcher<T> fetching(Function<O, T> function) {
@@ -147,14 +147,37 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
     }
 
     private Object getPropertyViaGetter(Object object, GraphQLOutputType outputType, DataFetchingEnvironment environment) {
+        String key = mkKey(object);
+        if (isNegativelyCached(key)) {
+            return null;
+        }
         try {
             return getPropertyViaGetterMethod(object, outputType, this::findPubliclyAccessibleMethod, environment);
         } catch (NoSuchMethodException ignored) {
             try {
                 return getPropertyViaGetterMethod(object, outputType, this::findViaSetAccessible, environment);
             } catch (NoSuchMethodException ignored2) {
-                return getPropertyViaFieldAccess(object);
+                try {
+                    return getPropertyViaFieldAccess(object);
+                } catch (FastNoSuchMethodException e) {
+                    // we have nothing to ask for and we have exhausted our lookup strategies
+                    putInNegativeCache(key);
+                    return null;
+                }
             }
+        }
+    }
+
+    private boolean isNegativelyCached(String key) {
+        if (USE_NEGATIVE_CACHE.get()) {
+            return NEGATIVE_CACHE.containsKey(key);
+        }
+        return false;
+    }
+
+    private void putInNegativeCache(String key) {
+        if (USE_NEGATIVE_CACHE.get()) {
+            NEGATIVE_CACHE.put(key, key);
         }
     }
 
@@ -201,8 +224,9 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
     }
 
     /**
-     * PropertyDataFetcher caches the methods and fields that map from a class to a property for runtime performance reasons.
-     *
+     * PropertyDataFetcher caches the methods and fields that map from a class to a property for runtime performance reasons
+     * as well as negative misses.
+     * <p>
      * However during development you might be using an assistance tool like JRebel to allow you to tweak your code base and this
      * caching may interfere with this.  So you can call this method to clear the cache.  A JRebel plugin could
      * be developed to do just that.
@@ -211,6 +235,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
     public static void clearReflectionCache() {
         METHOD_CACHE.clear();
         FIELD_CACHE.clear();
+        NEGATIVE_CACHE.clear();
     }
 
     /**
@@ -218,15 +243,28 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      * values.  By default it PropertyDataFetcher WILL use setAccessible.
      *
      * @param flag whether to use setAccessible
-     *
      * @return the previous value of the flag
      */
     public static boolean setUseSetAccessible(boolean flag) {
         return USE_SET_ACCESSIBLE.getAndSet(flag);
     }
 
+    /**
+     * This can be used to control whether PropertyDataFetcher will cache negative lookups for a property for performance reasons.  By default it PropertyDataFetcher WILL cache misses.
+     *
+     * @param flag whether to cache misses
+     * @return the previous value of the flag
+     */
+    public static boolean setUseNegativeCache(boolean flag) {
+        return USE_NEGATIVE_CACHE.getAndSet(flag);
+    }
+
+    private String mkKey(Object object) {
+        return mkKey(object.getClass(), propertyName);
+    }
+
     private String mkKey(Class clazz, String propertyName) {
-        return clazz.getName() + "__" + propertyName;
+        return clazz.getCanonicalName() + "__" + propertyName;
     }
 
     // by not filling out the stack trace, we gain speed when using the exception as flow control
@@ -324,7 +362,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
         return Comparator.comparingInt(Method::getParameterCount).reversed();
     }
 
-    private Object getPropertyViaFieldAccess(Object object) {
+    private Object getPropertyViaFieldAccess(Object object) throws FastNoSuchMethodException {
         Class<?> aClass = object.getClass();
         String key = mkKey(aClass, propertyName);
         try {
@@ -336,7 +374,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
             return field.get(object);
         } catch (NoSuchFieldException e) {
             if (!USE_SET_ACCESSIBLE.get()) {
-                return null;
+                throw new FastNoSuchMethodException(key);
             }
             // if not public fields then try via setAccessible
             try {
@@ -345,7 +383,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
                 FIELD_CACHE.putIfAbsent(key, field);
                 return field.get(object);
             } catch (SecurityException | NoSuchFieldException ignored2) {
-                return null;
+                throw new FastNoSuchMethodException(key);
             } catch (IllegalAccessException e1) {
                 throw new GraphQLException(e);
             }

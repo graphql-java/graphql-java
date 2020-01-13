@@ -63,7 +63,8 @@ class ExecutionStrategyTest extends Specification {
         new ExecutionContext(SimpleInstrumentation.INSTANCE, executionId, schema ?: StarWarsSchema.starWarsSchema, null,
                 executionStrategy, executionStrategy, executionStrategy,
                 [:], null, null,
-                variables, "context", "root", new DataLoaderRegistry(), null, Collections.emptyList())
+                variables, "context", "root", new DataLoaderRegistry(),
+                null, Locale.getDefault(), Collections.emptyList(), ValueUnboxer.DEFAULT)
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")
@@ -89,6 +90,7 @@ class ExecutionStrategyTest extends Specification {
         builder.mutationStrategy(Mock(ExecutionStrategy))
         builder.subscriptionStrategy(Mock(ExecutionStrategy))
         builder.graphQLSchema(schema)
+        builder.valueUnboxer(ValueUnboxer.DEFAULT)
 
         builder.operationDefinition(operation)
         builder.executionId(ExecutionId.generate())

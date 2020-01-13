@@ -180,9 +180,6 @@ public class AstValueHelper {
                 case '\\':
                     sb.append("\\\\");
                     break;
-                case '/':
-                    sb.append("\\/");
-                    break;
                 case '\b':
                     sb.append("\\b");
                     break;

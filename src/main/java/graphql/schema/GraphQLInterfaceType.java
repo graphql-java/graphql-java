@@ -4,6 +4,7 @@ import graphql.AssertException;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InterfaceTypeDefinition;
+import graphql.language.InterfaceTypeExtensionDefinition;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -19,25 +20,27 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.util.FpKit.getByName;
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 
 /**
  * In graphql, an interface is an abstract type that defines the set of fields that a type must include to
  * implement that interface.
- *
+ * <p>
  * At runtime a {@link graphql.schema.TypeResolver} is used to take an interface object value and decide what {@link graphql.schema.GraphQLObjectType}
  * represents this interface type.
- *
- *
+ * <p>
+ * <p>
  * See http://graphql.org/learn/schema/#interfaces for more details on the concept.
  */
 @PublicApi
-public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
     private final TypeResolver typeResolver;
     private final InterfaceTypeDefinition definition;
+    private final List<InterfaceTypeExtensionDefinition> extensionDefinitions;
     private final List<GraphQLDirective> directives;
 
     public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
@@ -55,7 +58,7 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
     @Internal
     @Deprecated
     public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver) {
-        this(name, description, fieldDefinitions, typeResolver, Collections.emptyList(), null);
+        this(name, description, fieldDefinitions, typeResolver, emptyList(), null);
     }
 
     /**
@@ -71,6 +74,10 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
     @Internal
     @Deprecated
     public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver, List<GraphQLDirective> directives, InterfaceTypeDefinition definition) {
+        this(name, description, fieldDefinitions, typeResolver, directives, definition, emptyList());
+    }
+
+    public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver, List<GraphQLDirective> directives, InterfaceTypeDefinition definition, List<InterfaceTypeExtensionDefinition> extensionDefinitions) {
         assertValidName(name);
         assertNotNull(fieldDefinitions, "fieldDefinitions can't null");
         assertNotNull(directives, "directives cannot be null");
@@ -79,6 +86,7 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
         this.description = description;
         this.typeResolver = typeResolver;
         this.definition = definition;
+        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
         this.directives = directives;
         buildDefinitionMap(fieldDefinitions);
     }
@@ -120,6 +128,10 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
 
     public InterfaceTypeDefinition getDefinition() {
         return definition;
+    }
+
+    public List<InterfaceTypeExtensionDefinition> getExtensionDefinitions() {
+        return extensionDefinitions;
     }
 
     @Override
@@ -192,6 +204,7 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
     public static class Builder extends GraphqlTypeBuilder {
         private TypeResolver typeResolver;
         private InterfaceTypeDefinition definition;
+        private List<InterfaceTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLFieldDefinition> fields = new LinkedHashMap<>();
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
 
@@ -203,6 +216,7 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
             this.description = existing.getDescription();
             this.typeResolver = existing.getTypeResolver();
             this.definition = existing.getDefinition();
+            this.extensionDefinitions = existing.getExtensionDefinitions();
             this.fields.putAll(getByName(existing.getFieldDefinitions(), GraphQLFieldDefinition::getName));
             this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
@@ -227,6 +241,11 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
 
         public Builder definition(InterfaceTypeDefinition definition) {
             this.definition = definition;
+            return this;
+        }
+
+        public Builder extensionDefinitions(List<InterfaceTypeExtensionDefinition> extensionDefinitions) {
+            this.extensionDefinitions = extensionDefinitions;
             return this;
         }
 
@@ -345,7 +364,8 @@ public class GraphQLInterfaceType implements GraphQLNamedOutputType, GraphQLFiel
                     sort(fields, GraphQLInterfaceType.class, GraphQLFieldDefinition.class),
                     typeResolver,
                     sort(directives, GraphQLInterfaceType.class, GraphQLDirective.class),
-                    definition);
+                    definition,
+                    extensionDefinitions);
         }
     }
 }

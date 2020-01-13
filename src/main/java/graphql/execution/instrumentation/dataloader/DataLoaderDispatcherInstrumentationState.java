@@ -1,6 +1,9 @@
 package graphql.execution.instrumentation.dataloader;
 
+import graphql.Assert;
+import graphql.Internal;
 import graphql.execution.instrumentation.InstrumentationState;
+import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 import org.slf4j.Logger;
 
@@ -11,13 +14,20 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class DataLoaderDispatcherInstrumentationState implements InstrumentationState {
 
+    @Internal
+    public static final DataLoaderRegistry EMPTY_DATALOADER_REGISTRY = new DataLoaderRegistry() {
+        @Override
+        public DataLoaderRegistry register(String key, DataLoader<?, ?> dataLoader) {
+            return Assert.assertShouldNeverHappen("You MUST set in your own DataLoaderRegistry to use data loader");
+        }
+    };
+
     private final FieldLevelTrackingApproach approach;
     private final AtomicReference<DataLoaderRegistry> dataLoaderRegistry;
     private final InstrumentationState state;
     private boolean aggressivelyBatching = true;
 
     public DataLoaderDispatcherInstrumentationState(Logger log, DataLoaderRegistry dataLoaderRegistry) {
-
         this.dataLoaderRegistry = new AtomicReference<>(dataLoaderRegistry);
         this.approach = new FieldLevelTrackingApproach(log, this::getDataLoaderRegistry);
         this.state = approach.createState();
@@ -50,6 +60,4 @@ public class DataLoaderDispatcherInstrumentationState implements Instrumentation
     InstrumentationState getState() {
         return state;
     }
-
-
 }

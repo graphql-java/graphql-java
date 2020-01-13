@@ -13,7 +13,7 @@ apply plugin: 'osgi'
 def getDevelopmentVersion() {
     def output = new StringBuilder()
     def error = new StringBuilder()
-    def gitShortHash = "git -C ${projectDir} rev-parse --short HEAD".execute()
+    def gitShortHash = ["git", "-C", projectDir.toString(), "rev-parse", "--short", "HEAD"].execute()
     gitShortHash.waitForProcessOutput(output, error)
     def gitHash = output.toString().trim()
     if (gitHash.isEmpty()) {
@@ -53,17 +53,17 @@ jar {
 dependencies {
     compile 'org.antlr:antlr4-runtime:4.7.2'
     compile 'org.slf4j:slf4j-api:' + slf4jVersion
-    compile 'com.graphql-java:java-dataloader:2.1.1'
+    compile 'com.graphql-java:java-dataloader:2.2.3'
     compile 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
     antlr "org.antlr:antlr4:4.7.2"
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
     testCompile 'org.codehaus.groovy:groovy-all:2.4.13'
-    testCompile 'cglib:cglib-nodep:3.1'
+    testCompile 'cglib:cglib-nodep:3.3.0'
     testCompile 'org.objenesis:objenesis:2.1'
     testCompile 'com.google.code.gson:gson:2.8.0'
     testCompile 'org.eclipse.jetty:jetty-server:9.4.5.v20170502'
-    testCompile 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
+    testCompile 'com.fasterxml.jackson.core:jackson-databind:2.10.0'
     testCompile 'org.slf4j:slf4j-simple:' + slf4jVersion
     testCompile 'org.awaitility:awaitility-groovy:3.0.0'
     testCompile 'com.github.javafaker:javafaker:0.13'

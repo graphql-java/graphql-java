@@ -63,8 +63,6 @@ class AstValueHelperTest extends Specification {
 
         astFromValue('VA\n\t\f\r\b\\LUE', GraphQLString).isEqualTo(new StringValue('VA\\n\\t\\f\\r\\b\\\\LUE'))
 
-        astFromValue('VA/LUE', GraphQLString).isEqualTo(new StringValue('VA\\/LUE'))
-
         astFromValue('VA\\L\"UE', GraphQLString).isEqualTo(new StringValue('VA\\\\L\\"UE'))
 
         astFromValue(123, GraphQLString).isEqualTo(new StringValue('123'))
@@ -193,7 +191,6 @@ class AstValueHelperTest extends Specification {
         'json'                                    | 'json'
         'quotation-"'                             | 'quotation-\\"'
         'reverse-solidus-\\'                      | 'reverse-solidus-\\\\'
-        'solidus-/'                               | 'solidus-\\/'
         'backspace-\b'                            | 'backspace-\\b'
         'formfeed-\f'                             | 'formfeed-\\f'
         'newline-\n'                              | 'newline-\\n'

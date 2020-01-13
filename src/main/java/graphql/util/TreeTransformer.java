@@ -41,6 +41,11 @@ public class TreeTransformer<T> {
             public TraversalControl leave(TraverserContext<T> context) {
                 return traverserVisitor.leave(context);
             }
+
+            @Override
+            public TraversalControl backRef(TraverserContext<T> context) {
+                return traverserVisitor.backRef(context);
+            }
         };
 
         List<NodeZipper<T>> zippers = new LinkedList<>();

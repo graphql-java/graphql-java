@@ -68,7 +68,7 @@ public interface Node<T extends Node> extends Serializable {
      *
      * <p>
      * NOTE: The reason this is a map of strings is so the Node
-     * can stay an immutable object, which Map String,Object  would not allow
+     * can stay an immutable object, which Map&lt;String,Object&gt; would not allow
      * say.
      *
      * @return the map of additional data about this node

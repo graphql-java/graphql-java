@@ -14,6 +14,7 @@ import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLUnionType
@@ -1305,7 +1306,7 @@ class SchemaGeneratorTest extends Specification {
 
         expect:
 
-        schema.getFieldVisibility() == fieldVisibility
+        schema.getCodeRegistry().getFieldVisibility() == fieldVisibility
 
     }
 
@@ -1782,5 +1783,168 @@ class SchemaGeneratorTest extends Specification {
         def fieldWithString = queryType.getFieldDefinition("fieldWithString")
         def arg2 = fieldWithString.getArgument("arg")
         arg2.defaultValue == [value: "ONE"]
+    }
+
+    def "extensions are captured into runtime objects"() {
+        def sdl = '''
+            ######## Objects
+             
+            type Query {
+                foo : String
+            }
+            
+            extend type Query {
+                bar : String
+            }
+
+            extend type Query {
+                baz : String
+            }
+
+            ######## Enums 
+          
+            enum Enum {
+                A
+            }
+            
+            extend enum Enum {
+                B
+            }
+
+            ######## Interface 
+            
+            interface Interface {
+                foo : String
+            }
+
+            extend interface Interface {
+                bar : String
+            }
+
+            extend interface Interface {
+                baz : String
+            }
+            
+            ######## Unions 
+            
+            type Foo {
+                foo : String
+            }
+            
+            type Bar {
+                bar : Scalar
+            }
+
+            union Union = Foo
+            
+            extend union Union = Bar
+            
+            ######## Input Objects 
+
+            input Input {
+                foo: String
+            }
+            
+            extend input Input {
+                bar: String
+            }
+
+            extend input Input {
+                baz: String
+            }
+
+            extend input Input {
+                faz: String
+            }
+            
+            ######## Scalar 
+
+            scalar Scalar
+            
+            extend scalar Scalar @directive1
+        '''
+
+
+        when:
+        def wiringFactory = new MockedWiringFactory() {
+            @Override
+            boolean providesScalar(ScalarWiringEnvironment env) {
+                return env.getScalarTypeDefinition().getName() == "Scalar"
+            }
+
+            @Override
+            GraphQLScalarType getScalar(ScalarWiringEnvironment env) {
+                def definition = env.getScalarTypeDefinition()
+                return GraphQLScalarType.newScalar()
+                        .name(definition.getName())
+                        .definition(definition)
+                        .extensionDefinitions(env.getExtensions())
+                        .coercing(TestUtil.mockCoercing())
+                        .build()
+            }
+        }
+
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .wiringFactory(wiringFactory)
+                .build()
+
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+
+        def types = new SchemaParser().parse(sdl)
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(options, types, runtimeWiring)
+
+        then:
+        schema != null
+
+        (schema.getType("Query") as GraphQLObjectType).getExtensionDefinitions().size() == 2
+
+        (schema.getType("Enum") as GraphQLEnumType).getExtensionDefinitions().size() == 1
+
+        (schema.getType("Interface") as GraphQLInterfaceType).getExtensionDefinitions().size() == 2
+
+        (schema.getType("Union") as GraphQLUnionType).getExtensionDefinitions().size() == 1
+
+        (schema.getType("Input") as GraphQLInputObjectType).getExtensionDefinitions().size() == 3
+
+        // scalars are special - they are created via a WiringFactory - but this tests they are given the extensions
+        (schema.getType("Scalar") as GraphQLScalarType).getExtensionDefinitions().size() == 1
+
+    }
+
+    def "directive arg descriptions are captured correctly"() {
+        given:
+        def spec = '''
+        type Query {
+            foo: String
+        }
+        directive @MyDirective(
+        """
+            DOC
+        """
+        arg: String) on FIELD
+        '''
+        when:
+        def schema = schema(spec)
+
+        then:
+        schema.getDirective("MyDirective").getArgument("arg").description == "DOC"
+    }
+
+    def "capture DirectiveDefinitions"() {
+        given:
+        def spec = '''
+        type Query {
+            foo: String
+        }
+        directive @MyDirective on FIELD
+        '''
+        when:
+        def schema = schema(spec)
+        def directiveDefinition = schema.getDirective("MyDirective").getDefinition()
+        then:
+        directiveDefinition != null
+        directiveDefinition.getName() == "MyDirective"
+
+
     }
 }

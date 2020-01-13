@@ -18,6 +18,7 @@ class PropertyDataFetcherTest extends Specification {
 
     void setup() {
         PropertyDataFetcher.setUseSetAccessible(true)
+        PropertyDataFetcher.setUseNegativeCache(true)
         PropertyDataFetcher.clearReflectionCache()
     }
 
@@ -355,6 +356,35 @@ class PropertyDataFetcherTest extends Specification {
         result = fetcher.get(environment)
         then:
         result == "value2"
+    }
+
+    def "negative caching works as expected"() {
+        def environment = env(new ClassWithDFEMethods())
+        def fetcher = new PropertyDataFetcher("doesNotExist")
+        when:
+        def result = fetcher.get(environment)
+        then:
+        result == null
+
+        when:
+        result = fetcher.get(environment)
+        then:
+        result == null
+
+        when:
+        PropertyDataFetcher.setUseNegativeCache(false)
+        PropertyDataFetcher.clearReflectionCache()
+        result = fetcher.get(environment)
+        then:
+        result == null
+
+        when:
+        PropertyDataFetcher.setUseNegativeCache(true)
+        PropertyDataFetcher.clearReflectionCache()
+        result = fetcher.get(environment)
+        then:
+        result == null
+
     }
 
     class ProductDTO {
