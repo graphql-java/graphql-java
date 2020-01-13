@@ -3,9 +3,9 @@ package graphql.execution;
 import graphql.PublicSpi;
 
 @PublicSpi
-public interface PossibleOptionalUnboxer {
+public interface ValueUnboxer {
 
-    PossibleOptionalUnboxer DEFAULT = new DefaultOptionalUnboxer();
+    ValueUnboxer DEFAULT = new DefaultValueUnboxer();
 
     /**
      * Unboxes 'object' if it is boxed in an {@link java.util.Optional } like

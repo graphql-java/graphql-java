@@ -9,19 +9,19 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 
 /**
- * Public API because it should be used as a delegate when implementing a custom PossibleOptionalUnboxer
+ * Public API because it should be used as a delegate when implementing a custom {@link ValueUnboxer}
  */
 @PublicApi
-public class DefaultOptionalUnboxer implements PossibleOptionalUnboxer {
+public class DefaultValueUnboxer implements ValueUnboxer {
 
 
     @Override
     public Object unbox(final Object object) {
-        return unboxPossibleOptional(object);
+        return unboxValue(object);
     }
 
     @Internal // used by next-gen at the moment
-    public static Object unboxPossibleOptional(Object result) {
+    public static Object unboxValue(Object result) {
         if (result instanceof Optional) {
             Optional optional = (Optional) result;
             if (optional.isPresent()) {

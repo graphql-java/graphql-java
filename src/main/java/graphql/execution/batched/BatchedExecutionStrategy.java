@@ -309,7 +309,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             List<Object> values = result;
             List<FetchedValue> retVal = new ArrayList<>();
             for (int i = 0; i < parentResults.size(); i++) {
-                Object value = executionContext.getPossibleOptionalUnboxer().unbox(values.get(i));
+                Object value = executionContext.getValueUnboxer().unbox(values.get(i));
                 retVal.add(new FetchedValue(parentResults.get(i), value));
             }
             return new FetchedValues(retVal, parameters.getExecutionStepInfo(), parameters.getPath());
@@ -375,7 +375,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
             MapOrList listResult = mapOrList.createAndPutList(fieldName);
             for (Object rawValue : toIterable(value.getValue())) {
-                rawValue = executionContext.getPossibleOptionalUnboxer().unbox(rawValue);
+                rawValue = executionContext.getValueUnboxer().unbox(rawValue);
                 flattenedValues.add(new FetchedValue(listResult, rawValue));
             }
         }

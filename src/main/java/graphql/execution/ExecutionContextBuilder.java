@@ -40,7 +40,7 @@ public class ExecutionContextBuilder {
     private CacheControl cacheControl;
     private Locale locale;
     private List<GraphQLError> errors = new ArrayList<>();
-    private PossibleOptionalUnboxer possibleOptionalUnboxer;
+    private ValueUnboxer valueUnboxer;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -83,7 +83,7 @@ public class ExecutionContextBuilder {
         cacheControl = other.getCacheControl();
         locale = other.getLocale();
         errors = new ArrayList<>(other.getErrors());
-        possibleOptionalUnboxer = other.getPossibleOptionalUnboxer();
+        valueUnboxer = other.getValueUnboxer();
 
     }
 
@@ -167,8 +167,8 @@ public class ExecutionContextBuilder {
         return this;
     }
 
-    public ExecutionContextBuilder possibleOptionalUnboxer(PossibleOptionalUnboxer possibleOptionalUnboxer) {
-        this.possibleOptionalUnboxer = possibleOptionalUnboxer;
+    public ExecutionContextBuilder valueUnboxer(ValueUnboxer valueUnboxer) {
+        this.valueUnboxer = valueUnboxer;
         return this;
     }
 
@@ -194,7 +194,7 @@ public class ExecutionContextBuilder {
                 cacheControl,
                 locale,
                 errors,
-                possibleOptionalUnboxer);
+                valueUnboxer);
     }
 
 }

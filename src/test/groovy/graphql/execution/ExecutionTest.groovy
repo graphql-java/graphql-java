@@ -35,7 +35,7 @@ class ExecutionTest extends Specification {
     def subscriptionStrategy = new CountingExecutionStrategy()
     def mutationStrategy = new CountingExecutionStrategy()
     def queryStrategy = new CountingExecutionStrategy()
-    def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, SimpleInstrumentation.INSTANCE, PossibleOptionalUnboxer.DEFAULT)
+    def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, SimpleInstrumentation.INSTANCE, ValueUnboxer.DEFAULT)
     def emptyExecutionInput = ExecutionInput.newExecutionInput().query("query").build()
     def instrumentationState = new InstrumentationState() {}
 
@@ -123,7 +123,7 @@ class ExecutionTest extends Specification {
 			}
 		}
 
-        def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, PossibleOptionalUnboxer.DEFAULT)
+        def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, ValueUnboxer.DEFAULT)
 		
 		
 		when:

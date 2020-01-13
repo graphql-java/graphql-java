@@ -81,7 +81,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
-                .possibleOptionalUnboxer(PossibleOptionalUnboxer.DEFAULT)
+                .valueUnboxer(ValueUnboxer.DEFAULT)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -119,7 +119,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
-                .possibleOptionalUnboxer(PossibleOptionalUnboxer.DEFAULT)
+                .valueUnboxer(ValueUnboxer.DEFAULT)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
@@ -160,7 +160,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
-                .possibleOptionalUnboxer(PossibleOptionalUnboxer.DEFAULT)
+                .valueUnboxer(ValueUnboxer.DEFAULT)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
@@ -201,7 +201,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
-                .possibleOptionalUnboxer(PossibleOptionalUnboxer.DEFAULT)
+                .valueUnboxer(ValueUnboxer.DEFAULT)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -239,7 +239,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
-                .possibleOptionalUnboxer(PossibleOptionalUnboxer.DEFAULT)
+                .valueUnboxer(ValueUnboxer.DEFAULT)
                 .instrumentation(new SimpleInstrumentation() {
                     @Override
                     ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {

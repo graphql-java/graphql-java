@@ -64,7 +64,7 @@ class ExecutionStrategyTest extends Specification {
                 executionStrategy, executionStrategy, executionStrategy,
                 [:], null, null,
                 variables, "context", "root", new DataLoaderRegistry(),
-                null, Locale.getDefault(), Collections.emptyList(), PossibleOptionalUnboxer.DEFAULT)
+                null, Locale.getDefault(), Collections.emptyList(), ValueUnboxer.DEFAULT)
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")
@@ -90,7 +90,7 @@ class ExecutionStrategyTest extends Specification {
         builder.mutationStrategy(Mock(ExecutionStrategy))
         builder.subscriptionStrategy(Mock(ExecutionStrategy))
         builder.graphQLSchema(schema)
-        builder.possibleOptionalUnboxer(PossibleOptionalUnboxer.DEFAULT)
+        builder.valueUnboxer(ValueUnboxer.DEFAULT)
 
         builder.operationDefinition(operation)
         builder.executionId(ExecutionId.generate())

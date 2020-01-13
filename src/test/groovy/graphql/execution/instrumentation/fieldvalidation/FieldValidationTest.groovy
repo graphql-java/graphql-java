@@ -10,7 +10,7 @@ import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.Execution
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionPath
-import graphql.execution.PossibleOptionalUnboxer
+import graphql.execution.ValueUnboxer
 import graphql.execution.instrumentation.SimpleInstrumentation
 import spock.lang.Specification
 
@@ -305,7 +305,7 @@ class FieldValidationTest extends Specification {
         def document = TestUtil.parseQuery(query)
         def strategy = new AsyncExecutionStrategy()
         def instrumentation = new FieldValidationInstrumentation(validation)
-        def execution = new Execution(strategy, strategy, strategy, instrumentation, PossibleOptionalUnboxer.DEFAULT)
+        def execution = new Execution(strategy, strategy, strategy, instrumentation, ValueUnboxer.DEFAULT)
 
         def executionInput = ExecutionInput.newExecutionInput().query(query).variables(variables).build()
         execution.execute(document, schema, ExecutionId.generate(), executionInput, SimpleInstrumentation.INSTANCE.createState())
