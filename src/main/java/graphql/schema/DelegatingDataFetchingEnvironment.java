@@ -128,11 +128,6 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
         return delegateEnvironment.getDataLoaderRegistry();
     }
 
-    @Override
-    public Locale getLocale() {
-        return delegateEnvironment.getLocale();
-    }
-
     public CacheControl getCacheControl() {
         return delegateEnvironment.getCacheControl();
     }
