@@ -24,13 +24,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 /**
  * This approach uses field level tracking to achieve its aims of making the data loader more efficient
  */
 @Internal
 public class FieldLevelTrackingApproach {
-    private final DataLoaderRegistry dataLoaderRegistry;
+    private final Supplier<DataLoaderRegistry> dataLoaderRegistrySupplier;
     private final Logger log;
 
     private static class CallStack implements InstrumentationState {
@@ -118,8 +119,8 @@ public class FieldLevelTrackingApproach {
         }
     }
 
-    public FieldLevelTrackingApproach(Logger log, DataLoaderRegistry dataLoaderRegistry) {
-        this.dataLoaderRegistry = dataLoaderRegistry;
+    public FieldLevelTrackingApproach(Logger log, Supplier<DataLoaderRegistry> dataLoaderRegistrySupplier) {
+        this.dataLoaderRegistrySupplier = dataLoaderRegistrySupplier;
         this.log = log;
     }
 
@@ -286,7 +287,12 @@ public class FieldLevelTrackingApproach {
     }
 
     void dispatch() {
+        DataLoaderRegistry dataLoaderRegistry = getDataLoaderRegistry();
         log.debug("Dispatching data loaders ({})", dataLoaderRegistry.getKeys());
         dataLoaderRegistry.dispatchAll();
+    }
+
+    private DataLoaderRegistry getDataLoaderRegistry() {
+        return dataLoaderRegistrySupplier.get();
     }
 }

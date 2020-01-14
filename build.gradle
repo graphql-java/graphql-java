@@ -59,7 +59,7 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
     testCompile 'org.codehaus.groovy:groovy-all:2.4.13'
-    testCompile 'cglib:cglib-nodep:3.1'
+    testCompile 'cglib:cglib-nodep:3.3.0'
     testCompile 'org.objenesis:objenesis:2.1'
     testCompile 'com.google.code.gson:gson:2.8.0'
     testCompile 'org.eclipse.jetty:jetty-server:9.4.5.v20170502'

@@ -1678,9 +1678,35 @@ class QueryTraverserTest extends Specification {
 
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
-            it.fieldDefinition.name  == "field"
+            it.fieldDefinition.name == "field"
         })
 
+    }
+
+    def "directive arguments are not visited"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+
+            directive @cache(
+                ttl: Int!
+            ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery("""
+            {foo { subFoo @cache(ttl:100) } bar @cache(ttl:200) }
+            """)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal.visitPreOrder(visitor)
+        then:
+        0 * visitor.visitArgument(_)
     }
 
 

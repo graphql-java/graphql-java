@@ -100,7 +100,7 @@ public class SchemaTransformer {
 
 
     /**
-     * Transforms a GrapQLSchema and returns a new GraphQLSchema object.
+     * Transforms a GraphQLSchema and returns a new GraphQLSchema object.
      *
      * @param schema
      * @param visitor
@@ -141,7 +141,13 @@ public class SchemaTransformer {
                     nodeZipper = zippers.get(zippers.size() - 1);
                 }
                 zipperByOriginalNode.put(context.originalThisNode(), nodeZipper);
-                zipperByNodeAfterTraversing.put(context.thisNode(), nodeZipper);
+
+                if (context.isDeleted()) {
+                    zipperByNodeAfterTraversing.put(context.originalThisNode(), nodeZipper);
+                } else {
+                    zipperByNodeAfterTraversing.put(context.thisNode(), nodeZipper);
+                }
+
                 breadcrumbsByZipper.put(nodeZipper, new ArrayList<>());
                 breadcrumbsByZipper.get(nodeZipper).add(context.getBreadcrumbs());
                 return result;
@@ -157,11 +163,14 @@ public class SchemaTransformer {
             public TraversalControl backRef(TraverserContext<GraphQLSchemaElement> context) {
                 NodeZipper<GraphQLSchemaElement> zipper = zipperByOriginalNode.get(context.thisNode());
                 breadcrumbsByZipper.get(zipper).add(context.getBreadcrumbs());
+                visitor.visitBackRef(context);
                 return TraversalControl.CONTINUE;
             }
         };
 
         Traverser<GraphQLSchemaElement> traverser = Traverser.depthFirstWithNamedChildren(SCHEMA_ELEMENT_ADAPTER::getNamedChildren, zippers, null);
+        GraphQLCodeRegistry.Builder builder = GraphQLCodeRegistry.newCodeRegistry(schema.getCodeRegistry());
+        traverser.rootVar(GraphQLCodeRegistry.Builder.class, builder);
         traverser.traverse(dummyRoot, nodeTraverserVisitor);
 
         toRootNode(zippers, breadcrumbsByZipper, zipperByNodeAfterTraversing);
@@ -172,6 +181,7 @@ public class SchemaTransformer {
                 .subscription(dummyRoot.subscription)
                 .additionalTypes(dummyRoot.additionalTypes)
                 .additionalDirectives(dummyRoot.directives)
+                .codeRegistry(builder.build())
                 .buildImpl(true);
         return newSchema;
     }

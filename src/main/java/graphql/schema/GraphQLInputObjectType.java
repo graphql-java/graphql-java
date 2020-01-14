@@ -65,7 +65,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     @Internal
     @Deprecated
     public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields, List<GraphQLDirective> directives, InputObjectTypeDefinition definition) {
-        this(name,description,fields,directives,definition,emptyList());
+        this(name, description, fields, directives, definition, emptyList());
     }
 
     public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields, List<GraphQLDirective> directives, InputObjectTypeDefinition definition, List<InputObjectTypeExtensionDefinition> extensionDefinitions) {

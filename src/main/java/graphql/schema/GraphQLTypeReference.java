@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.PublicApi;
+import graphql.language.Node;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -37,6 +38,16 @@ public class GraphQLTypeReference implements GraphQLNamedOutputType, GraphQLName
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String getDescription() {
+        return null;
+    }
+
+    @Override
+    public Node getDefinition() {
+        return null;
     }
 
     @Override

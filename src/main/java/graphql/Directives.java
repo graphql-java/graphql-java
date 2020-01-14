@@ -4,7 +4,10 @@ package graphql;
 import graphql.schema.GraphQLDirective;
 
 import static graphql.Scalars.GraphQLBoolean;
+import static graphql.Scalars.GraphQLString;
+import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD;
+import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_SPREAD;
 import static graphql.introspection.Introspection.DirectiveLocation.INLINE_FRAGMENT;
 import static graphql.schema.GraphQLArgument.newArgument;
@@ -50,5 +53,22 @@ public class Directives {
             )
             .validLocations(FIELD)
             .build();
+
+    /**
+     * The "deprecated" directive is special and is always available in a graphql schema
+     *
+     * See https://graphql.github.io/graphql-spec/June2018/#sec--deprecated
+     */
+    public static final GraphQLDirective DeprecatedDirective = GraphQLDirective.newDirective()
+            .name("deprecated")
+            .description("Marks the field or enum value as deprecated")
+            .argument(newArgument()
+                    .name("reason")
+                    .type(nonNull(GraphQLString))
+                    .defaultValue("No longer supported")
+                    .description("The reason for the deprecation"))
+            .validLocations(FIELD_DEFINITION, ENUM_VALUE)
+            .build();
+
 
 }
