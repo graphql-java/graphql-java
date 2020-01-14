@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
+import static graphql.DirectivesUtil.directivesByName;
 import static graphql.schema.GraphqlTypeComparators.byNameAsc;
 import static graphql.schema.GraphqlTypeComparators.sortTypes;
 import static java.util.Arrays.asList;
@@ -225,8 +226,24 @@ public class GraphQLSchema {
         return codeRegistry.getFieldVisibility();
     }
 
+    /**
+     * This returns the list of directives that are associated with this schema object including
+     * built in ones.
+     *
+     * @return a list of directives
+     */
     public List<GraphQLDirective> getDirectives() {
         return new ArrayList<>(directives);
+    }
+
+    /**
+     * This returns a map of directives that are associated with this schema object including
+     * built in ones.
+     *
+     * @return a map of directives
+     */
+    public Map<String, GraphQLDirective> getDirectiveByName() {
+        return directivesByName(getDirectives());
     }
 
     public GraphQLDirective getDirective(String name) {
@@ -248,6 +265,18 @@ public class GraphQLSchema {
      */
     public List<GraphQLDirective> getSchemaDirectives() {
         return new ArrayList<>(schemaDirectives.values());
+    }
+
+    /**
+     * This returns a map of directives that have been explicitly put on the
+     * schema object.  Note that {@link {@link #getDirectives()}} will return
+     * directives for all schema elements, whereas this is just for the schema
+     * element itself
+     *
+     * @return a list of directives
+     */
+    public Map<String, GraphQLDirective> getSchemaDirectiveByName() {
+        return directivesByName(getSchemaDirectives());
     }
 
     /**

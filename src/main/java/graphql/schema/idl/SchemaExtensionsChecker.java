@@ -2,6 +2,7 @@ package graphql.schema.idl;
 
 import graphql.Assert;
 import graphql.GraphQLError;
+import graphql.Internal;
 import graphql.language.Directive;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.OperationTypeDefinition;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+@Internal
 public class SchemaExtensionsChecker {
 
     static Map<String, OperationTypeDefinition> gatherOperationDefs(TypeDefinitionRegistry typeRegistry) {
