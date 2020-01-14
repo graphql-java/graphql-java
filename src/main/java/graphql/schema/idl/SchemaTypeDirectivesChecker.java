@@ -15,6 +15,7 @@ import graphql.language.InterfaceTypeDefinition;
 import graphql.language.Node;
 import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
+import graphql.language.SchemaDefinition;
 import graphql.language.TypeDefinition;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.idl.errors.DirectiveIllegalLocationError;
@@ -85,6 +86,10 @@ class SchemaTypeDirectivesChecker {
         typeRegistry.scalars().values()
                 .forEach(typeDef -> checkDirectives(SCALAR, errors, typeDef));
 
+        List<Directive> schemaDirectives = SchemaExtensionsChecker.gatherSchemaDirectives(typeRegistry, errors);
+        // we need to have a Node for error reporting so we make one in case there is not one
+        SchemaDefinition schemaDefinition = typeRegistry.schemaDefinition().orElse(SchemaDefinition.newSchemaDefinition().build());
+        checkDirectives(DirectiveLocation.SCHEMA, errors, typeRegistry, schemaDefinition, "schema", schemaDirectives);
     }
 
 

@@ -87,8 +87,7 @@ class Issue739 extends Specification {
         varResult.data == null
         varResult.errors.size() == 1
         varResult.errors[0].errorType == ErrorType.ValidationError
-        varResult.errors[0].message == "Variable 'input' has an invalid value. Expected type 'Map' but was 'Integer'." +
-                " Variables for input objects must be an instance of type 'Map'.";
+        varResult.errors[0].message == "Variable 'input' has an invalid value : Expected type 'Map' but was 'Integer'. Variables for input objects must be an instance of type 'Map'.";
         varResult.errors[0].locations == [new SourceLocation(1, 11)]
 
         when:
@@ -107,7 +106,7 @@ class Issue739 extends Specification {
         varResult.data == null
         varResult.errors.size() == 1
         varResult.errors[0].errorType == ErrorType.ValidationError
-        varResult.errors[0].message == "Variable 'boom' has an invalid value. Expected type 'Int' but was 'String'."
+        varResult.errors[0].message == "Variable 'boom' has an invalid value : Expected type 'Int' but was 'String'."
         varResult.errors[0].locations == [new SourceLocation(1, 11)]
     }
 }

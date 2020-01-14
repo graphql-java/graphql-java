@@ -1,6 +1,7 @@
 package graphql.schema.idl
 
 import graphql.GraphQLError
+import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
 import graphql.language.StringValue
 import graphql.schema.Coercing
@@ -14,6 +15,7 @@ import graphql.schema.idl.errors.DirectiveIllegalLocationError
 import graphql.schema.idl.errors.DirectiveUndeclaredError
 import graphql.schema.idl.errors.MissingTypeError
 import graphql.schema.idl.errors.NonUniqueNameError
+import graphql.schema.idl.errors.QueryOperationMissingError
 import graphql.schema.idl.errors.SchemaMissingError
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -254,7 +256,7 @@ class SchemaTypeCheckerTest extends Specification {
 
         expect:
 
-        result.get(0) instanceof SchemaMissingError
+        result.get(0) instanceof QueryOperationMissingError
     }
 
     def "test missing schema operation types"() {
@@ -306,7 +308,7 @@ class SchemaTypeCheckerTest extends Specification {
 
         expect:
 
-        result.get(0) instanceof SchemaMissingError
+        result.get(0) instanceof QueryOperationMissingError
     }
 
     def "test operation type is not an object"() {
@@ -1522,6 +1524,100 @@ class SchemaTypeCheckerTest extends Specification {
         "UserInput"    | '{ fieldNonNull: "str", fieldArray: ["Hey", "Low"] }'
         "UserInput"    | '{ fieldNonNull: "str", fieldArrayOfArray: [["Hey"], ["Low"]] }'
         "UserInput"    | '{ fieldNonNull: "str", fieldNestedInput: { street: "nestedStr"} }'
+    }
+
+
+    def "different field descriptions on interface vs implementation should not cause an error "() {
+        given:
+        def sdl = """
+        type Query { hello: String }
+        interface Customer {
+            "The display name of the customer"
+            displayName: String!
+        }
+
+        type PersonCustomer implements Customer {
+            "The display name of the customer. For persons, this is the first and last name."
+            displayName: String!
+        }
+
+        type CompanyCustomer implements Customer {
+            "The display name of the customer. For companies, this is the company name and its form."
+            displayName: String!
+        }"""
+
+        when:
+        def schema = TestUtil.schema(sdl);
+
+        then:
+        schema != null
+
+    }
+
+    def "different argument descriptions on interface vs implementation should not cause an error "() {
+        given:
+        def sdl = """
+        type Query { hello: String }
+        
+        interface Customer {
+            displayName(
+            "interface arg"
+            arg: String
+            ): String!
+        }
+
+        type PersonCustomer implements Customer {
+            displayName(
+            "impl arg 1"
+            arg: String
+            ): String!
+        }
+
+        type CompanyCustomer implements Customer {
+            displayName(
+            arg: String
+            ): String!
+        }"""
+
+        when:
+        def schema = TestUtil.schema(sdl);
+
+        then:
+        schema != null
+
+    }
+
+    def "different argument comments on interface vs implementation should not cause an error "() {
+        given:
+        def sdl = """
+        type Query { hello: String }
+        
+        interface Customer {
+            displayName(
+            # interface arg
+            arg: String
+            ): String!
+        }
+
+        type PersonCustomer implements Customer {
+            displayName(
+            # impl arg 1
+            arg: String
+            ): String!
+        }
+
+        type CompanyCustomer implements Customer {
+            displayName(
+            arg: String
+            ): String!
+        }"""
+
+        when:
+        def schema = TestUtil.schema(sdl);
+
+        then:
+        schema != null
+
     }
 
 }

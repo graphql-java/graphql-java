@@ -6,6 +6,7 @@ import graphql.schema.GraphQLArgument;
 import graphql.validation.AbstractRule;
 import graphql.validation.ArgumentValidationUtil;
 import graphql.validation.ValidationContext;
+import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
@@ -18,10 +19,16 @@ public class ArgumentsOfCorrectType extends AbstractRule {
     @Override
     public void checkArgument(Argument argument) {
         GraphQLArgument fieldArgument = getValidationContext().getArgument();
-        if (fieldArgument == null) return;
+        if (fieldArgument == null) {
+            return;
+        }
         ArgumentValidationUtil validationUtil = new ArgumentValidationUtil(argument);
         if (!validationUtil.isValidLiteralValue(argument.getValue(), fieldArgument.getType(), getValidationContext().getSchema())) {
-            addError(ValidationErrorType.WrongType, argument.getSourceLocation(), validationUtil.getMessage());
+            addError(ValidationError.newValidationError()
+                    .validationErrorType(ValidationErrorType.WrongType)
+                    .sourceLocation(argument.getSourceLocation())
+                    .description(validationUtil.getMessage())
+                    .extensions(validationUtil.getErrorExtensions()));
         }
     }
 }

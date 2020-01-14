@@ -11,7 +11,8 @@ document : definition+;
 definition:
 operationDefinition |
 fragmentDefinition |
-typeSystemDefinition
+typeSystemDefinition |
+typeSystemExtension
 ;
 
 
