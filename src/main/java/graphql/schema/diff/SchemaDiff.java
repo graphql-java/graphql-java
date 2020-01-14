@@ -378,7 +378,7 @@ public class SchemaDiff {
                 DiffCategory category;
                 String message;
                 if (isDeprecated(oldField)) {
-                    category = DiffCategory.DEPRECATED;
+                    category = DiffCategory.DEPRECATION_REMOVED;
                     message = "The new API has removed a deprecated field '%s'";
                 } else {
                     category = DiffCategory.MISSING;
@@ -444,7 +444,7 @@ public class SchemaDiff {
                 DiffCategory category;
                 String message;
                 if (isDeprecated(oldEnum)) {
-                    category = DiffCategory.DEPRECATED;
+                    category = DiffCategory.DEPRECATION_REMOVED;
                     message = "The new API has removed a deprecated enum value '%s'";
                 } else {
                     category = DiffCategory.MISSING;
@@ -474,7 +474,7 @@ public class SchemaDiff {
                         .build());
             } else if (isDeprecated(newDefinitionMap.get(enumName))) {
                 ctx.report(DiffEvent.apiDanger()
-                        .category(DiffCategory.DEPRECATED)
+                        .category(DiffCategory.DEPRECATION_ADDED)
                         .typeName(oldDef.getName())
                         .typeKind(getTypeKind(oldDef))
                         .components(enumName)
@@ -546,7 +546,7 @@ public class SchemaDiff {
                 DiffCategory category;
                 String message;
                 if (isDeprecated(entry.getValue())) {
-                    category = DiffCategory.DEPRECATED;
+                    category = DiffCategory.DEPRECATION_REMOVED;
                     message = "The new API has removed a deprecated field '%s'";
                 } else {
                     category = DiffCategory.MISSING;
@@ -592,7 +592,7 @@ public class SchemaDiff {
                         .build());
             } else if (!isDeprecated(oldField) && isDeprecated(entry.getValue())) {
                 ctx.report(DiffEvent.apiDanger()
-                        .category(DiffCategory.DEPRECATED)
+                        .category(DiffCategory.DEPRECATION_ADDED)
                         .typeName(newDef.getName())
                         .typeKind(getTypeKind(newDef))
                         .fieldName(fieldName)
