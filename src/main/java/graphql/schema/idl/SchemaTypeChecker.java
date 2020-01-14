@@ -484,8 +484,8 @@ public class SchemaTypeChecker {
         for (int i = 0; i < interfaceArgs.size(); i++) {
             InputValueDefinition interfaceArg = interfaceArgs.get(i);
             InputValueDefinition objectArg = objectArgs.get(i);
-            String interfaceArgStr = AstPrinter.printAst(interfaceArg);
-            String objectArgStr = AstPrinter.printAst(objectArg);
+            String interfaceArgStr = AstPrinter.printAstCompact(interfaceArg);
+            String objectArgStr = AstPrinter.printAstCompact(objectArg);
             if (!interfaceArgStr.equals(objectArgStr)) {
                 errors.add(new InterfaceFieldArgumentRedefinitionError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectArgStr, interfaceArgStr));
             }
