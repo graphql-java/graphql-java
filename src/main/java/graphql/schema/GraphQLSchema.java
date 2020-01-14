@@ -257,7 +257,7 @@ public class GraphQLSchema {
 
     /**
      * This returns the list of directives that have been explicitly put on the
-     * schema object.  Note that {@link {@link #getDirectives()}} will return
+     * schema object.  Note that {@link #getDirectives()} will return
      * directives for all schema elements, whereas this is just for the schema
      * element itself
      *
@@ -269,7 +269,7 @@ public class GraphQLSchema {
 
     /**
      * This returns a map of directives that have been explicitly put on the
-     * schema object.  Note that {@link {@link #getDirectives()}} will return
+     * schema object.  Note that {@link #getDirectives()} will return
      * directives for all schema elements, whereas this is just for the schema
      * element itself
      *
@@ -281,7 +281,7 @@ public class GraphQLSchema {
 
     /**
      * This returns the named directive that have been explicitly put on the
-     * schema object.  Note that {@link {@link #getDirective(String)} ()}} will return
+     * schema object.  Note that {@link #getDirective(String)} will return
      * directives for all schema elements, whereas this is just for the schema
      * element itself
      *

@@ -34,7 +34,7 @@ public class RuntimeWiring {
     private final List<SchemaDirectiveWiring> directiveWiring;
     private final WiringFactory wiringFactory;
     private final Map<String, EnumValuesProvider> enumValuesProviders;
-    private final Collection<SchemaTransformer> schemaTransformers;
+    private final Collection<SchemaGeneratorPostProcessing> schemaGeneratorPostProcessings;
     private final GraphqlFieldVisibility fieldVisibility;
     private final GraphQLCodeRegistry codeRegistry;
     private final GraphqlTypeComparatorRegistry comparatorRegistry;
@@ -48,7 +48,7 @@ public class RuntimeWiring {
         this.directiveWiring = builder.directiveWiring;
         this.wiringFactory = builder.wiringFactory;
         this.enumValuesProviders = builder.enumValuesProviders;
-        this.schemaTransformers = builder.schemaTransformers;
+        this.schemaGeneratorPostProcessings = builder.schemaGeneratorPostProcessings;
         this.fieldVisibility = builder.fieldVisibility;
         this.codeRegistry = builder.codeRegistry;
         this.comparatorRegistry = builder.comparatorRegistry;
@@ -105,8 +105,8 @@ public class RuntimeWiring {
         return directiveWiring;
     }
 
-    public Collection<SchemaTransformer> getSchemaTransformers() {
-        return schemaTransformers;
+    public Collection<SchemaGeneratorPostProcessing> getSchemaGeneratorPostProcessings() {
+        return schemaGeneratorPostProcessings;
     }
 
     public GraphqlTypeComparatorRegistry getComparatorRegistry() {
@@ -122,7 +122,7 @@ public class RuntimeWiring {
         private final Map<String, EnumValuesProvider> enumValuesProviders = new LinkedHashMap<>();
         private final Map<String, SchemaDirectiveWiring> registeredDirectiveWiring = new LinkedHashMap<>();
         private final List<SchemaDirectiveWiring> directiveWiring = new ArrayList<>();
-        private final Collection<SchemaTransformer> schemaTransformers = new ArrayList<>();
+        private final Collection<SchemaGeneratorPostProcessing> schemaGeneratorPostProcessings = new ArrayList<>();
         private WiringFactory wiringFactory = new NoopWiringFactory();
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
         private GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().build();
@@ -304,12 +304,12 @@ public class RuntimeWiring {
         /**
          * Adds a schema transformer into the mix
          *
-         * @param schemaTransformer the non null schema transformer to add
+         * @param schemaGeneratorPostProcessing the non null schema transformer to add
          *
          * @return the runtime wiring builder
          */
-        public Builder transformer(SchemaTransformer schemaTransformer) {
-            this.schemaTransformers.add(assertNotNull(schemaTransformer));
+        public Builder transformer(SchemaGeneratorPostProcessing schemaGeneratorPostProcessing) {
+            this.schemaGeneratorPostProcessings.add(assertNotNull(schemaGeneratorPostProcessing));
             return this;
         }
 
