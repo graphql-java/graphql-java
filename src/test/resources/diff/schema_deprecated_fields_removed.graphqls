@@ -1,0 +1,68 @@
+schema {
+    query : Query
+    mutation : Mutation
+}
+
+type Query {
+    being(id : ID, type : String = "wizard") : Being
+
+    wizards : [Istari]
+    gods : [Ainur]
+}
+
+type Mutation {
+    being(questor : Questor) : Query
+    sword(bearer : Questor, name : String, alloy : String, temperament : Temperament) : String
+}
+
+input Questor {
+    beingID : ID
+    queryTarget : String
+    nestedInput : NestedInput
+}
+
+input NestedInput {
+    nestedInput: String
+}
+
+scalar CustomScalar
+
+
+interface Being {
+    id : ID
+    name : String
+    invitedBy(id : ID) : Being
+}
+
+
+type Ainur implements Being {
+    id : ID
+    name : String
+    invitedBy(id : ID) : Being
+    loves : String
+}
+
+
+type Istari implements Being {
+    id : ID
+    name : String
+    invitedBy(id : ID) : Being
+    temperament : Temperament!
+
+}
+
+type Deity implements Being {
+    id : ID
+    name : String
+    invitedBy(id : ID) : Being
+}
+
+union Character = Ainur | Istari | Deity
+
+enum Temperament {
+    Hero
+    Evil
+}
+
+
+
