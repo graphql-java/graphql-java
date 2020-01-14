@@ -1945,14 +1945,47 @@ class SchemaGeneratorTest extends Specification {
         schema.getQueryType().name == 'Query'
         schema.getMutationType().name == 'Mutation'
 
+        when:
         def directives = schema.getSchemaDirectives()
-        directives.size() == 3
 
+        then:
+        directives.size() == 3
         schema.getSchemaDirective("sd1") != null
         schema.getSchemaDirective("sd2") != null
         schema.getSchemaDirective("sd3") != null
 
+        when:
+        def directivesMap = schema.getSchemaDirectiveByName()
+        then:
+        directives.size() == 3
+        directivesMap["sd1"] != null
+        directivesMap["sd2"] != null
+        directivesMap["sd3"] != null
 
+        when:
+        directives = schema.getDirectives()
+
+        then:
+        directives.size() == 6 // built in ones :  include / skip and deprecated
+        def directiveNames = directives.collect { it.name }
+        directiveNames.contains("include")
+        directiveNames.contains("skip")
+        directiveNames.contains("deprecated")
+        directiveNames.contains("sd1")
+        directiveNames.contains("sd2")
+        directiveNames.contains("sd3")
+
+        when:
+        directivesMap = schema.getDirectiveByName()
+
+        then:
+        directivesMap.size() == 6 // built in ones
+        directivesMap.containsKey("include")
+        directivesMap.containsKey("skip")
+        directivesMap.containsKey("deprecated")
+        directivesMap.containsKey("sd1")
+        directivesMap.containsKey("sd2")
+        directivesMap.containsKey("sd3")
     }
 
     def "directive arg descriptions are captured correctly"() {
