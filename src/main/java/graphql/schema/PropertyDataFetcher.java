@@ -92,6 +92,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      *
      * @param propertyName the name of the property to retrieve
      * @param <T>          the type of result
+     *
      * @return a new PropertyDataFetcher using the provided function as its source of values
      */
     public static <T> PropertyDataFetcher<T> fetching(String propertyName) {
@@ -115,6 +116,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      * @param function the function to use to obtain a value from the source object
      * @param <O>      the type of the source object
      * @param <T>      the type of result
+     *
      * @return a new PropertyDataFetcher using the provided function as its source of values
      */
     public static <T, O> PropertyDataFetcher<T> fetching(Function<O, T> function) {
@@ -243,6 +245,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      * values.  By default it PropertyDataFetcher WILL use setAccessible.
      *
      * @param flag whether to use setAccessible
+     *
      * @return the previous value of the flag
      */
     public static boolean setUseSetAccessible(boolean flag) {
@@ -253,6 +256,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      * This can be used to control whether PropertyDataFetcher will cache negative lookups for a property for performance reasons.  By default it PropertyDataFetcher WILL cache misses.
      *
      * @param flag whether to cache misses
+     *
      * @return the previous value of the flag
      */
     public static boolean setUseNegativeCache(boolean flag) {
@@ -324,27 +328,30 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
         if (!USE_SET_ACCESSIBLE.get()) {
             throw new FastNoSuchMethodException(methodName);
         }
-        String key = mkKey(aClass, propertyName);
-        Method method = METHOD_CACHE.get(key);
-        if (method != null) {
-            return method;
-        }
-
-        Method[] declaredMethods = aClass.getDeclaredMethods();
-        Optional<Method> m = Arrays.stream(declaredMethods)
-                .filter(mth -> methodName.equals(mth.getName()))
-                .filter(mth -> hasZeroArgs(mth) || takesDataFetcherEnvironmentAsOnlyArgument(mth))
-                .sorted(mostMethodArgsFirst())
-                .findFirst();
-        if (m.isPresent()) {
-            try {
-                // few JVMs actually enforce this but it might happen
-                method = m.get();
-                method.setAccessible(true);
-                METHOD_CACHE.putIfAbsent(key, method);
+        Class currentClass = aClass;
+        while (currentClass != null) {
+            String key = mkKey(currentClass, propertyName);
+            Method method = METHOD_CACHE.get(key);
+            if (method != null) {
                 return method;
-            } catch (SecurityException ignored) {
             }
+
+            Method[] declaredMethods = currentClass.getDeclaredMethods();
+            Optional<Method> m = Arrays.stream(declaredMethods)
+                    .filter(mth -> methodName.equals(mth.getName()))
+                    .filter(mth -> hasZeroArgs(mth) || takesDataFetcherEnvironmentAsOnlyArgument(mth))
+                    .min(mostMethodArgsFirst());
+            if (m.isPresent()) {
+                try {
+                    // few JVMs actually enforce this but it might happen
+                    method = m.get();
+                    method.setAccessible(true);
+                    METHOD_CACHE.putIfAbsent(key, method);
+                    return method;
+                } catch (SecurityException ignored) {
+                }
+            }
+            currentClass = currentClass.getSuperclass();
         }
         throw new FastNoSuchMethodException(methodName);
     }

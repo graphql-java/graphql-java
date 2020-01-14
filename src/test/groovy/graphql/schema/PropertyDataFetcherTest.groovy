@@ -433,4 +433,30 @@ class PropertyDataFetcherTest extends Specification {
         er.errors.isEmpty()
         er.data == [products: [[name: "odarP", model: "GLX"], [name: "yrmaC", model: "Momento"]]]
     }
+
+    interface Foo {
+        String getSomething();
+    }
+
+    private static class Bar implements Foo {
+        @Override
+        public String getSomething() {
+            return "bar";
+        }
+    }
+
+    private static class Baz extends Bar implements Foo {}
+
+    def "search for private getter in class hierarchy"() {
+        given:
+        Bar bar = new Baz()
+        PropertyDataFetcher propertyDataFetcher = new PropertyDataFetcher("something")
+        def dfe = Mock(DataFetchingEnvironment)
+        dfe.getSource() >> bar
+        when:
+        def result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == "bar"
+    }
 }
