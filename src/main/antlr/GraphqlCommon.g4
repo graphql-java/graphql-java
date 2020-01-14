@@ -123,8 +123,13 @@ fragment TripleQuotedStringPart : ( EscapedTripleQuote | ExtendedSourceCharacter
 fragment EscapedTripleQuote : '\\"""';
 
 // this is currently not covered by the spec because we allow all unicode chars
+// u0009 = \t Horizontal tab
+// u000a = \n line feed
+// u000d = \r carriage return
+// u0020 = space
 fragment ExtendedSourceCharacter :[\u0009\u000A\u000D\u0020-\u{10FFFF}];
-fragment ExtendedSourceCharacterWitoutLineFeed :[\u0009\u000D\u0020-\u{10FFFF}];
+
+fragment ExtendedSourceCharacterWitoutLineFeed :[\u0009\u0020-\u{10FFFF}];
 
 // this is the spec definition
 // fragment SourceCharacter :[\u0009\u000A\u000D\u0020-\uFFFF];
