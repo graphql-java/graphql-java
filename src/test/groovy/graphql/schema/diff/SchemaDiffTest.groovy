@@ -489,7 +489,7 @@ class SchemaDiffTest extends Specification {
         reporter.dangerCount == 13
         reporter.breakageCount == 0
         reporter.dangers.every {
-            it.getCategory() == DiffCategory.DEPRECATED
+            it.getCategory() == DiffCategory.DEPRECATION_ADDED
         }
 
     }
@@ -507,7 +507,7 @@ class SchemaDiffTest extends Specification {
         reporter.dangerCount == 0
         reporter.breakageCount == 11
         reporter.breakages.every {
-            it.getCategory() == DiffCategory.DEPRECATED
+            it.getCategory() == DiffCategory.DEPRECATION_REMOVED
         }
     }
 
