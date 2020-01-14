@@ -709,6 +709,63 @@ class SchemaTypeCheckerTest extends Specification {
 
     }
 
+    def "test field arguments on object can contain additional optional arguments"() {
+        def spec = """
+            interface InterfaceType {
+                fieldA : Int
+                fieldB(arg1 : String = "defaultVal") : String
+            }
+
+            type BaseType {
+                fieldX : Int
+            }
+
+            extend type BaseType implements InterfaceType {
+                fieldA(arg1 : String) : Int
+                fieldB(arg1 : String = "defaultVal", arg2 : String) : String
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.isEmpty()
+    }
+
+    def "test field arguments on object cannot contain additional required arguments"() {
+        def spec = """
+            interface InterfaceType {
+                fieldA : Int
+                fieldB(arg1 : String = "defaultVal") : String
+            }
+
+            type BaseType {
+                fieldX : Int
+            }
+
+            extend type BaseType implements InterfaceType {
+                fieldA(arg1 : String!) : Int
+                fieldB(arg1 : String = "defaultVal", arg2 : String!) : String
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.get(0).getMessage().contains("field 'fieldA' defines an additional non-optional argument 'arg1: String!' which is not allowed because field is also defined in interface 'InterfaceType'")
+        result.get(1).getMessage().contains("field 'fieldB' defines an additional non-optional argument 'arg2: String!' which is not allowed because field is also defined in interface 'InterfaceType'")
+    }
+
     def "test field arguments on objects must match the interface"() {
         def spec = """    
             interface InterfaceType {
