@@ -83,6 +83,14 @@ class SchemaPrinterTest extends Specification {
         }
     }
 
+    static class MyTestGraphQLObjectType extends MyGraphQLObjectType {
+
+        MyTestGraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions) {
+            super(name, description, fieldDefinitions)
+        }
+    }
+
+
     def "typeString"() {
 
         GraphQLType type1 = nonNull(list(nonNull(list(nonNull(Scalars.GraphQLInt)))))
@@ -589,6 +597,23 @@ scalar Scalar
 About Query
 Second Line
 """
+type Query {
+  field: String
+}
+'''
+    }
+
+    def "concurrentModificationException should not occur"() {
+        given:
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition().name("field").type(GraphQLString).build()
+        def queryType = new MyTestGraphQLObjectType("Query", "test", Arrays.asList(fieldDefinition))
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+
+        when:
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+
+        then:
+        result == '''"test"
 type Query {
   field: String
 }
