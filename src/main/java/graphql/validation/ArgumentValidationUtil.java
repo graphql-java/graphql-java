@@ -4,15 +4,13 @@ import graphql.GraphQLError;
 import graphql.language.Argument;
 import graphql.language.ObjectField;
 import graphql.language.Value;
-import graphql.schema.GraphQLEnumType;
-import graphql.schema.GraphQLInputObjectType;
-import graphql.schema.GraphQLScalarType;
-import graphql.schema.GraphQLType;
+import graphql.schema.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ArgumentValidationUtil extends ValidationUtil {
 
@@ -20,6 +18,8 @@ public class ArgumentValidationUtil extends ValidationUtil {
     private Value<?> argumentValue;
     private String errorMessage;
     private final List<Object> arguments = new ArrayList<>();
+    private GraphQLType requiredType;
+    private GraphQLType objectType;
     private Map<String, Object> errorExtensions;
 
     private final String argumentName;
@@ -30,18 +30,19 @@ public class ArgumentValidationUtil extends ValidationUtil {
     }
 
     @Override
-    protected void handleNullError(Value<?> value, GraphQLType type) {
-        errorMessage = "must not be null";
+    protected void handleNullError(Value value, GraphQLType type) {
+        errorMessage = "Value must not be null";
         argumentValue = value;
+        setObjectField(type);
     }
 
     @Override
-    protected void handleScalarError(Value<?> value, GraphQLScalarType type, GraphQLError invalid) {
-        errorMessage = "is not a valid '%s' - %s";
+    protected void handleScalarError(Value value, GraphQLScalarType type, String message) {
+        errorMessage = message;
         arguments.add(type.getName());
         arguments.add(invalid.getMessage());
         argumentValue = value;
-        errorExtensions = invalid.getExtensions();
+        setObjectField(type);
     }
 
     @Override
@@ -50,51 +51,74 @@ public class ArgumentValidationUtil extends ValidationUtil {
         arguments.add(type.getName());
         arguments.add(invalid.getMessage());
         argumentValue = value;
+        requiredType = type;
     }
 
     @Override
-    protected void handleNotObjectError(Value<?> value, GraphQLInputObjectType type) {
-        errorMessage = "must be an object type";
+    protected void handleNotObjectError(Value value, GraphQLInputObjectType type) {
+        errorMessage = "Value must be an object type";
+        setObjectField(type);
     }
 
     @Override
-    protected void handleMissingFieldsError(Value<?> value, GraphQLInputObjectType type, Set<String> missingFields) {
-        errorMessage = "is missing required fields '%s'";
+    protected void handleMissingFieldsError(Value value, GraphQLInputObjectType type, Set<String> missingFields) {
+        errorMessage = String.format("Required fields are missing: '%s'", missingFields.stream().collect(Collectors.joining(", ", "[", "]")));
         arguments.add(missingFields);
+        setObjectField(type);
     }
 
     @Override
-    protected void handleExtraFieldError(Value<?> value, GraphQLInputObjectType type, ObjectField objectField) {
-        errorMessage = "contains a field not in '%s': '%s'";
+    protected void handleExtraFieldError(Value value, GraphQLInputObjectType type, ObjectField objectField) {
+        errorMessage = String.format("Value contains a field not in '%s': '%s'", ValidationUtil.renderType(type), objectField.getName());
         arguments.add(type.getName());
         arguments.add(objectField.getName());
+        setObjectField(type);
     }
 
     @Override
     protected void handleFieldNotValidError(ObjectField objectField, GraphQLInputObjectType type) {
         argumentNames.add(0, objectField.getName());
+        setObjectField(type);
     }
 
     @Override
     protected void handleFieldNotValidError(Value<?> value, GraphQLType type, int index) {
         argumentNames.add(0, String.format("[%s]", index));
+        setObjectField(type);
     }
 
-    public String getMessage() {
+    private void setObjectField(GraphQLType type) {
+        objectType = type;
+        if (requiredType == null) {
+            requiredType = type;
+        }
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public Value<?> getArgumentValue() {
+        return argumentValue;
+    }
+
+    public GraphQLType getRequiredType() {
+        return requiredType;
+    }
+
+    public GraphQLType getObjectType() {
+        return objectType;
+    }
+
+    public String renderArgument() {
         StringBuilder argument = new StringBuilder(argumentName);
         for (String name : argumentNames) {
-            if (name.startsWith("[")) {
-                argument.append(name);
-            } else {
-                argument.append(".").append(name);
+            if (!name.startsWith("[")) {
+                argument.append('.');
             }
+            argument.append(name);
         }
-        arguments.add(0, argument.toString());
-        arguments.add(1, argumentValue);
-
-        String message = "argument '%s' with value '%s'" + " " + errorMessage;
-
-        return String.format(message, arguments.toArray());
+        return argument.toString();
     }
 
     public Map<String, Object> getErrorExtensions() {

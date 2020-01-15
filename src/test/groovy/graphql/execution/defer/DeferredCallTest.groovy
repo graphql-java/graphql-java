@@ -40,9 +40,9 @@ class DeferredCallTest extends Specification {
 
         then:
         er.errors.size() == 3
-        er.errors[0].message.contains("Validation error of type FieldUndefined")
-        er.errors[1].message.contains("Validation error of type MissingFieldArgument")
-        er.errors[2].message.contains("Validation error of type FieldsConflict")
+        er.errors[0].extensions["validationErrorType"] == "FieldUndefined"
+        er.errors[1].extensions["validationErrorType"] == "MissingFieldArgument"
+        er.errors[2].extensions["validationErrorType"] == "FieldsConflict"
         er.path == ["path"]
     }
 }

@@ -31,13 +31,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static graphql.schema.GraphQLTypeUtil.isList;
-import static graphql.schema.GraphQLTypeUtil.isNonNull;
-import static graphql.schema.GraphQLTypeUtil.unwrapOne;
+import static graphql.schema.GraphQLTypeUtil.*;
 
 public class ValidationUtil {
 
-    public TypeName getUnmodifiedType(Type<?> type) {
+    public static TypeName getUnmodifiedType(Type<?> type) {
         if (type instanceof ListType) {
             return getUnmodifiedType(((ListType) type).getType());
         } else if (type instanceof NonNullType) {
@@ -51,7 +49,7 @@ public class ValidationUtil {
     protected void handleNullError(Value<?> value, GraphQLType type) {
     }
 
-    protected void handleScalarError(Value<?> value, GraphQLScalarType type, GraphQLError invalid) {
+    protected void handleScalarError(Value value, GraphQLScalarType type, String message) {
     }
 
     protected void handleEnumError(Value<?> value, GraphQLEnumType type, GraphQLError invalid) {
@@ -88,14 +86,16 @@ public class ValidationUtil {
         }
 
         if (type instanceof GraphQLScalarType) {
-            Optional<GraphQLError> invalid = parseLiteral(value, ((GraphQLScalarType) type).getCoercing());
-            invalid.ifPresent(graphQLError -> handleScalarError(value, (GraphQLScalarType) type, graphQLError));
-            return !invalid.isPresent();
+            Optional<String> errorMessage = parseLiteral(value, ((GraphQLScalarType) type).getCoercing());
+            errorMessage.ifPresent(message -> handleScalarError(value, (GraphQLScalarType) type, message));
+            return !errorMessage.isPresent();
         }
         if (type instanceof GraphQLEnumType) {
-            Optional<GraphQLError> invalid = parseLiteral(value, ((GraphQLEnumType) type).getCoercing());
-            invalid.ifPresent(graphQLError -> handleEnumError(value, (GraphQLEnumType) type, graphQLError));
-            return !invalid.isPresent();
+            Optional<String> errorMessage = parseLiteral(value, ((GraphQLEnumType) type).getCoercing());
+            if (errorMessage.isPresent()) {
+                handleEnumError(value, (GraphQLEnumType) type);
+            }
+            return !errorMessage.isPresent();
         }
 
         if (isList(type)) {
@@ -105,12 +105,15 @@ public class ValidationUtil {
 
     }
 
-    private Optional<GraphQLError> parseLiteral(Value<?> value, Coercing<?,?> coercing) {
+    private Optional<String> parseLiteral(Value value, Coercing coercing) {
         try {
-            coercing.parseLiteral(value);
-            return Optional.empty();
+            if (coercing.parseLiteral(value) != null) {
+                return Optional.empty();
+            } else {
+                return Optional.of("Failed to parse value");
+            }
         } catch (CoercingParseLiteralException e) {
-            return Optional.of(e);
+            return Optional.of(e.getMessage());
         }
     }
 
@@ -177,4 +180,31 @@ public class ValidationUtil {
         }
     }
 
+    public static String renderValue(Object value) {
+        if (value instanceof StringValue) {
+            return ((StringValue) value).getValue();
+        } else if (value instanceof ArrayValue) {
+            return ((ArrayValue) value).getValues().stream()
+                    .map(ValidationUtil::renderValue)
+                    .collect(Collectors.joining(", ", "[", "]"));
+        } else if (value instanceof BooleanValue) {
+            return Boolean.toString(((BooleanValue) value).isValue());
+        } else if (value instanceof IntValue) {
+            return ((IntValue) value).getValue().toString();
+        } else if (value instanceof FloatValue) {
+            return ((FloatValue) value).getValue().toString();
+        } else if (value instanceof NullValue) {
+            return "null";
+        }
+        return value.toString();
+    }
+
+    public static String renderType(Object type) {
+        if (type instanceof GraphQLNamedSchemaElement) {
+            return ((GraphQLNamedSchemaElement) type).getName();
+        } else if (type instanceof Type) {
+            return getUnmodifiedType(((Type<?>) type)).getName();
+        }
+        return String.valueOf(type);
+    }
 }

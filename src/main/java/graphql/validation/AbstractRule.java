@@ -19,6 +19,7 @@ import graphql.language.VariableReference;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static graphql.validation.ValidationError.newValidationError;
 
@@ -71,6 +72,10 @@ public class AbstractRule {
 
     public void addError(ValidationError.Builder validationError) {
         validationErrorCollector.addError(validationError.queryPath(getQueryPath()).build());
+    }
+
+    public void addError(ValidationErrorType validationErrorType, SourceLocation location, String description, Map<String, Object> extensions) {
+        validationErrorCollector.addError(new ValidationError(validationErrorType, location, description, getQueryPath(), extensions));
     }
 
     public List<ValidationError> getErrors() {

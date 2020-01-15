@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ValidationError implements GraphQLError {
 
@@ -40,6 +41,10 @@ public class ValidationError implements GraphQLError {
                 .queryPath(queryPath));
     }
 
+    public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description, List<String> queryPath, Map<String, Object> extensions) {
+        this(validationErrorType, nullOrList(sourceLocation), description, queryPath, extensions);
+    }
+
     public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description) {
         this(newValidationError()
                 .validationErrorType(validationErrorType)
@@ -64,10 +69,11 @@ public class ValidationError implements GraphQLError {
         this.message = mkMessage(builder.validationErrorType, builder.description, builder.queryPath);
         this.queryPath = builder.queryPath;
         this.extensions = builder.extensions;
-    }
-
-    private String mkMessage(ValidationErrorType validationErrorType, String description, List<String> queryPath) {
-        return String.format("Validation error of type %s: %s%s", validationErrorType, description, toPath(queryPath));
+        Map<String, Object> newExtensions = new LinkedHashMap<>(extensions);
+        newExtensions.put("validationErrorType", validationErrorType.name());
+        if (queryPath != null)
+            newExtensions.put("queryPath", queryPath);
+        this.extensions = Collections.unmodifiableMap(newExtensions);
     }
 
     private String toPath(List<String> queryPath) {
