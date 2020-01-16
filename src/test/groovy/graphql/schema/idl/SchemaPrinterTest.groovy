@@ -603,7 +603,7 @@ type Query {
 '''
     }
 
-    def "concurrentModificationException should not occur"() {
+    def "concurrentModificationException should not occur when multiple extended graphQL types are used"() {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition().name("field").type(GraphQLString).build()
         def queryType = new MyTestGraphQLObjectType("Query", "test", Arrays.asList(fieldDefinition))
