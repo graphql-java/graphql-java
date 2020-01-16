@@ -5,11 +5,13 @@ import graphql.language.BooleanValue;
 import graphql.language.FloatValue;
 import graphql.language.IntValue;
 import graphql.language.StringValue;
+import graphql.language.Value;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLScalarType;
+import graphql.schema.GraphQLType;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -111,6 +113,12 @@ public class Scalars {
                 );
             }
             return value.intValue();
+        }
+
+        @Override
+        public Value<?> internalInputValueToAst(Object internalInputValue, GraphQLType graphQLType) {
+            Integer value = (Integer) internalInputValue;
+            return IntValue.newIntValue().value(BigInteger.valueOf(value)).build();
         }
     });
 
@@ -318,6 +326,15 @@ public class Scalars {
             throw new CoercingParseLiteralException(
                     "Expected AST type 'IntValue' or 'StringValue' but was '" + typeName(input) + "'."
             );
+        }
+
+        @Override
+        public Value<?> internalInputValueToAst(Object internalInputValue, GraphQLType graphQLType) {
+            String value = (String) internalInputValue;
+            if (value.matches("^[0-9]+$")) {
+                return IntValue.newIntValue().value(new BigInteger(value)).build();
+            }
+            return StringValue.newStringValue().value(value).build();
         }
     });
 

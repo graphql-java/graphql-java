@@ -3,7 +3,6 @@ package graphql.language;
 import graphql.Assert;
 import graphql.AssertException;
 import graphql.Internal;
-import graphql.Scalars;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectField;
@@ -46,6 +45,7 @@ public class AstValueHelper {
      *
      * @param value - the java value to be converted into graphql ast
      * @param type  the graphql type of the object
+     *
      * @return a grapql language ast {@link Value}
      */
     public static Value<?> astFromValue(Object value, GraphQLType type) {
@@ -72,10 +72,15 @@ public class AstValueHelper {
         if (!(type instanceof GraphQLScalarType || type instanceof GraphQLEnumType)) {
             throw new AssertException("Must provide Input Type, cannot use: " + type.getClass());
         }
+        if (type instanceof GraphQLScalarType) {
+            return ((GraphQLScalarType) type).getCoercing().internalInputValueToAst(value, type);
+        } else {
+            return ((GraphQLEnumType) type).getCoercing().internalInputValueToAst(value, type);
+        }
+    }
 
-        // Since value is an internally represented value, it must be serialized
-        // to an externally represented value before converting into an AST.
-        final Object serialized = serialize(type, value);
+    public static Value<?> internalInputValueFromScalarToAst(Object internalValue, GraphQLScalarType scalarType) {
+        final Object serialized = serialize(scalarType, internalValue);
         if (isNullish(serialized)) {
             return null;
         }
@@ -92,16 +97,6 @@ public class AstValueHelper {
         }
 
         if (serialized instanceof String) {
-            // Enum types use Enum literals.
-            if (type instanceof GraphQLEnumType) {
-                return EnumValue.newEnumValue().name(stringValue).build();
-            }
-
-            // ID types can use Int literals.
-            if (type == Scalars.GraphQLID && stringValue.matches("^[0-9]+$")) {
-                return IntValue.newIntValue().value(new BigInteger(stringValue)).build();
-            }
-
             // String types are just strings but JSON'ised
             return StringValue.newStringValue().value(jsonStringify(stringValue)).build();
         }
@@ -160,6 +155,7 @@ public class AstValueHelper {
      * Encodes the value as a JSON string according to http://json.org/ rules
      *
      * @param stringValue the value to encode as a JSON string
+     *
      * @return the encoded string
      */
     static String jsonStringify(String stringValue) {
@@ -216,7 +212,9 @@ public class AstValueHelper {
      * or '[ "array", "form" ]' otherwise an exception is thrown
      *
      * @param astLiteral the string to parse an AST literal
+     *
      * @return a valid Value
+     *
      * @throws graphql.AssertException if the input can be parsed
      */
     public static Value<?> valueFromAst(String astLiteral) {

@@ -7,6 +7,7 @@ import graphql.PublicApi;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.EnumValue;
+import graphql.language.Value;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -78,6 +79,13 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
             }
             return enumValueDefinition.getValue();
         }
+
+        @Override
+        public Value<?> internalInputValueToAst(Object internalInputValue, GraphQLType graphQLType) {
+            // fundamental flaw: can't easily convert a value back, wer are trying a String value here
+            String name = getNameByValue(internalInputValue);
+            return EnumValue.newEnumValue(name).build();
+        }
     };
 
 
@@ -147,7 +155,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         throw new CoercingParseValueException("Invalid input for Enum '" + name + "'. No value found for name '" + value.toString() + "'");
     }
 
-    private Object getNameByValue(Object value) {
+    private String getNameByValue(Object value) {
         for (GraphQLEnumValueDefinition valueDefinition : valueDefinitionMap.values()) {
             Object definitionValue = valueDefinition.getValue();
             if (value.equals(definitionValue)) {

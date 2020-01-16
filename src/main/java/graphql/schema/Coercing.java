@@ -2,6 +2,8 @@ package graphql.schema;
 
 
 import graphql.PublicSpi;
+import graphql.language.AstValueHelper;
+import graphql.language.Value;
 
 import java.util.Map;
 
@@ -92,5 +94,8 @@ public interface Coercing<I, O> {
         return parseLiteral(input);
     }
 
-    ;
+    default Value<?> internalInputValueToAst(Object internalInputValue, GraphQLType graphQLType) {
+        // we know that Enum overrides it, so GraphQLType must be scalar
+        return AstValueHelper.internalInputValueFromScalarToAst(internalInputValue, (GraphQLScalarType) graphQLType);
+    }
 }
