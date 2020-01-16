@@ -299,6 +299,7 @@ public class SchemaGeneratorHelper {
         builder.type(inputType);
         builder.value(buildValue(arg.getDefaultValue(), inputType));
         builder.defaultValue(buildValue(arg.getDefaultValue(), inputType));
+        builder.description(buildDescription(arg, arg.getDescription()));
         return builder.build();
     }
 

@@ -1702,15 +1702,33 @@ class SchemaGeneratorTest extends Specification {
               hello: String
           }
       """
-      
-      def types = new SchemaParser().parse(spec)
-      def wiring = RuntimeWiring.newRuntimeWiring()
-        .type("Query", { typeWiring -> typeWiring.dataFetcher("hello", { env -> "Hello, world" }) })
-        .type("MyInterface", { typeWiring -> typeWiring.typeResolver({ env -> null}) })
-        .build();
-      GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring);
-      expect:
-       assert schema != null
+
+        def types = new SchemaParser().parse(spec)
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type("Query", { typeWiring -> typeWiring.dataFetcher("hello", { env -> "Hello, world" }) })
+                .type("MyInterface", { typeWiring -> typeWiring.typeResolver({ env -> null }) })
+                .build();
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring);
+        expect:
+        assert schema != null
+    }
+
+    def "directive arg descriptions are captured correctly"() {
+        given:
+        def spec = '''
+        type Query {
+            foo: String
+        }
+        directive @MyDirective(
+        """
+            DOC
+        """
+        arg: String) on FIELD
+        '''
+        when:
+        def schema = schema(spec)
+        then:
+        schema.getDirective("MyDirective").getArgument("arg").description == "DOC"
     }
 
 }
