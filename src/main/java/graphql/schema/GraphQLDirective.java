@@ -3,6 +3,7 @@ package graphql.schema;
 
 import graphql.Assert;
 import graphql.PublicApi;
+import graphql.language.DirectiveDefinition;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,9 +36,31 @@ public class GraphQLDirective {
     private final boolean onOperation;
     private final boolean onFragment;
     private final boolean onField;
+    private final DirectiveDefinition definition;
 
-    public GraphQLDirective(String name, String description, EnumSet<DirectiveLocation> locations,
-                            List<GraphQLArgument> arguments, boolean onOperation, boolean onFragment, boolean onField) {
+
+    /**
+     * @deprecated Use the Builder
+     */
+    @Deprecated
+    public GraphQLDirective(String name,
+                            String description,
+                            EnumSet<DirectiveLocation> locations,
+                            List<GraphQLArgument> arguments,
+                            boolean onOperation,
+                            boolean onFragment,
+                            boolean onField) {
+        this(name, description, locations, arguments, onOperation, onFragment, onField, null);
+    }
+
+    private GraphQLDirective(String name,
+                             String description,
+                             EnumSet<DirectiveLocation> locations,
+                             List<GraphQLArgument> arguments,
+                             boolean onOperation,
+                             boolean onFragment,
+                             boolean onField,
+                             DirectiveDefinition definition) {
         assertValidName(name);
         assertNotNull(arguments, "arguments can't be null");
         this.name = name;
@@ -47,6 +70,8 @@ public class GraphQLDirective {
         this.onOperation = onOperation;
         this.onFragment = onFragment;
         this.onField = onField;
+        this.definition = definition;
+
     }
 
     public String getName() {
@@ -59,13 +84,19 @@ public class GraphQLDirective {
 
     public GraphQLArgument getArgument(String name) {
         for (GraphQLArgument argument : arguments) {
-            if (argument.getName().equals(name)) return argument;
+            if (argument.getName().equals(name)) {
+                return argument;
+            }
         }
         return null;
     }
 
     public EnumSet<DirectiveLocation> validLocations() {
         return locations;
+    }
+
+    public DirectiveDefinition getDefinition() {
+        return definition;
     }
 
     /**
@@ -143,6 +174,8 @@ public class GraphQLDirective {
         private boolean onField;
         private EnumSet<DirectiveLocation> locations = EnumSet.noneOf(DirectiveLocation.class);
         private final Map<String, GraphQLArgument> arguments = new LinkedHashMap<>();
+        private DirectiveDefinition definition;
+
 
         public Builder() {
         }
@@ -165,6 +198,11 @@ public class GraphQLDirective {
 
         public Builder description(String description) {
             this.description = description;
+            return this;
+        }
+
+        public Builder definition(DirectiveDefinition definition) {
+            this.definition = definition;
             return this;
         }
 
@@ -271,7 +309,7 @@ public class GraphQLDirective {
         }
 
         public GraphQLDirective build() {
-            return new GraphQLDirective(name, description, locations, valuesToList(arguments), onOperation, onFragment, onField);
+            return new GraphQLDirective(name, description, locations, valuesToList(arguments), onOperation, onFragment, onField, definition);
         }
 
 
