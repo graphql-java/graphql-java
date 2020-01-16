@@ -6,7 +6,14 @@ import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
 import graphql.introspection.IntrospectionQuery
 import graphql.introspection.IntrospectionResultToSchema
+import graphql.language.ObjectField
+import graphql.language.ObjectValue
+import graphql.language.StringValue
+import graphql.language.Value
 import graphql.schema.Coercing
+import graphql.schema.CoercingParseLiteralException
+import graphql.schema.CoercingParseValueException
+import graphql.schema.CoercingSerializeException
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
@@ -1044,7 +1051,7 @@ enum Enum {
 '''
 
         when:
-        def resultWithSomeDirectives = new SchemaPrinter(defaultOptions().includeDirectives({it.name == "example" })).print(schema)
+        def resultWithSomeDirectives = new SchemaPrinter(defaultOptions().includeDirectives({ it.name == "example" })).print(schema)
 
         then:
         resultWithSomeDirectives == '''directive @example on FIELD_DEFINITION
@@ -1390,5 +1397,145 @@ type Query {
 '''
     }
 
+    def "enum default values printing"() {
+        given:
+        def idl = """
+            type Query {
+               foo(arg: Enum = A ): String
+            }
+            enum Enum {
+            A
+            B
+            }
+        """
+        def registry = new SchemaParser().parse(idl)
+        def runtimeWiring = newRuntimeWiring().build()
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeScalarTypes(false).includeDirectives(false)).print(schema)
+
+        then:
+        result == """type Query {
+  foo(arg: Enum = A): String
+}
+
+enum Enum {
+  A
+  B
+}
+"""
+    }
+
+    // currently failing
+    @spock.lang.Ignore
+    def "enum default values printing with custom enum values"() {
+        given:
+        def idl = """
+            type Query {
+               foo(arg: Enum = A ): String
+            }
+            enum Enum {
+            A
+            B
+            }
+        """
+        def enumValuesProvider = { value ->
+            switch (value) {
+                case "A":
+                    return 0;
+                case "B":
+                    return 1;
+            }
+        } as EnumValuesProvider
+        def registry = new SchemaParser().parse(idl)
+        def runtimeWiring = newRuntimeWiring()
+                .type("Enum", { builder -> builder.enumValues(enumValuesProvider) })
+                .build()
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeScalarTypes(false).includeDirectives(false)).print(schema)
+
+        then:
+        result == """type Query {
+  foo(arg: Enum = A): String
+}
+
+enum Enum {
+  A
+  B
+}
+"""
+    }
+
+    def jsonCoercing = new Coercing<Object, Object>() {
+        @Override
+        public Object serialize(Object input) throws CoercingSerializeException {
+            return input;
+        }
+
+        @Override
+        public Object parseValue(Object input) throws CoercingParseValueException {
+            return input;
+        }
+
+        @Override
+        public Object parseLiteral(Object input) throws CoercingParseLiteralException {
+            return parseLiteral(input, Collections.emptyMap());
+        }
+
+        @Override
+        public Object parseLiteral(Object input, Map<String, Object> variables) throws CoercingParseLiteralException {
+            if (!(input instanceof Value)) {
+                throw new CoercingParseLiteralException(
+                        "Expected AST type 'StringValue' but was '" + typeName(input) + "'."
+                );
+            }
+            if (input instanceof StringValue) {
+                return ((StringValue) input).getValue();
+            }
+            if (input instanceof ObjectValue) {
+                List<ObjectField> values = ((ObjectValue) input).getObjectFields();
+                Map<String, Object> parsedValues = new LinkedHashMap<>();
+                values.forEach({ fld ->
+                    Object parsedValue = parseLiteral(fld.getValue(), variables);
+                    parsedValues.put(fld.getName(), parsedValue);
+                });
+                return parsedValues;
+            }
+            return Assert.assertShouldNeverHappen("We have covered all Value types");
+        }
+    }
+
+    // currently failing
+    @spock.lang.Ignore
+    def "default values printing with json scalar "() {
+        given:
+        def idl = """
+            type Query {
+               foo(arg: JSON = {myValue: "hello"} ): String
+            }
+            scalar JSON
+        """
+        def jsonScalar = GraphQLScalarType.newScalar().name("JSON").coercing(jsonCoercing).build()
+        def registry = new SchemaParser().parse(idl)
+        def runtimeWiring = newRuntimeWiring()
+                .scalar(jsonScalar)
+                .build()
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true).includeDirectives(false)).print(schema)
+
+        then:
+        result == """type Query {
+  foo(arg: Enum = A): String
+}
+
+"""
+    }
 }
