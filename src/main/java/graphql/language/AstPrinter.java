@@ -472,7 +472,7 @@ public class AstPrinter {
         } else if (value instanceof FloatValue) {
             return valueOf(((FloatValue) value).getValue());
         } else if (value instanceof StringValue) {
-            return wrap("\"", valueOf(((StringValue) value).getValue()), "\"");
+            return wrap("\"", valueOf(graphQLStringify(((StringValue) value).getValue())), "\"");
         } else if (value instanceof EnumValue) {
             return valueOf(((EnumValue) value).getName());
         } else if (value instanceof BooleanValue) {
@@ -525,6 +525,46 @@ public class AstPrinter {
         String s = Arrays.stream(args).filter(arg -> !isEmpty(arg)).collect(joining(delim));
         return s;
     }
+
+    /**
+     * Encodes the value as a JSON string according to http://json.org/ rules
+     *
+     * @param stringValue the value to encode as a JSON string
+     *
+     * @return the encoded string
+     */
+    static String graphQLStringify(String stringValue) {
+        StringBuilder sb = new StringBuilder();
+        for (char ch : stringValue.toCharArray()) {
+            switch (ch) {
+                case '"':
+                    sb.append("\\\"");
+                    break;
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+                case '\b':
+                    sb.append("\\b");
+                    break;
+                case '\f':
+                    sb.append("\\f");
+                    break;
+                case '\n':
+                    sb.append("\\n");
+                    break;
+                case '\r':
+                    sb.append("\\r");
+                    break;
+                case '\t':
+                    sb.append("\\t");
+                    break;
+                default:
+                    sb.append(ch);
+            }
+        }
+        return sb.toString();
+    }
+
 
     String wrap(String start, String maybeString, String end) {
         if (isEmpty(maybeString)) {

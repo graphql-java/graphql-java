@@ -61,9 +61,9 @@ class AstValueHelperTest extends Specification {
 
         astFromValue('VALUE', GraphQLString).isEqualTo(new StringValue('VALUE'))
 
-        astFromValue('VA\n\t\f\r\b\\LUE', GraphQLString).isEqualTo(new StringValue('VA\\n\\t\\f\\r\\b\\\\LUE'))
+        astFromValue('VA\n\t\f\r\b\\LUE', GraphQLString).isEqualTo(new StringValue('VA\n\t\f\r\b\\LUE'))
 
-        astFromValue('VA\\L\"UE', GraphQLString).isEqualTo(new StringValue('VA\\\\L\\"UE'))
+        astFromValue('VA\\L\"UE', GraphQLString).isEqualTo(new StringValue('VA\\L\"UE'))
 
         astFromValue(123, GraphQLString).isEqualTo(new StringValue('123'))
 
@@ -79,7 +79,7 @@ class AstValueHelperTest extends Specification {
         astFromValue('VALUE', GraphQLID).isEqualTo(new StringValue('VALUE'))
 
         // Note: EnumValues cannot contain non-identifier characters
-        astFromValue('VA\nLUE', GraphQLID).isEqualTo(new StringValue('VA\\nLUE'))
+        astFromValue('VA\nLUE', GraphQLID).isEqualTo(new StringValue('VA\nLUE'))
 
         // Note: IntValues are used when possible.
         astFromValue(123, GraphQLID).isEqualTo(new IntValue(bigInt(123)))
@@ -177,27 +177,4 @@ class AstValueHelperTest extends Specification {
         '{string : "s", integer : 1, boolean : true}' | ObjectValue.class
     }
 
-    def "1105 - encoding of json strings"() {
-
-        when:
-        def json = AstValueHelper.jsonStringify(strValue)
-
-        then:
-        json == expected
-
-        where:
-        strValue                                  | expected
-        ''                                        | ''
-        'json'                                    | 'json'
-        'quotation-"'                             | 'quotation-\\"'
-        'reverse-solidus-\\'                      | 'reverse-solidus-\\\\'
-        'backspace-\b'                            | 'backspace-\\b'
-        'formfeed-\f'                             | 'formfeed-\\f'
-        'newline-\n'                              | 'newline-\\n'
-        'carriage-return-\r'                      | 'carriage-return-\\r'
-        'horizontal-tab-\t'                       | 'horizontal-tab-\\t'
-
-        // this is some AST from issue 1105
-        '''"{"operator":"eq", "operands": []}"''' | '''\\"{\\"operator\\":\\"eq\\", \\"operands\\": []}\\"'''
-    }
 }
