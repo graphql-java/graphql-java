@@ -11,8 +11,15 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 // See https://github.com/facebook/graphql/pull/418
 class IssueNonNullDefaultAttribute extends Specification {
     def spec = '''
+            input Locale {
+            country: String! = "CA"
+                language: String! = "en"
+            }
             type Query {
-                name(characterNumber: Int! = 2): String
+                name(
+                    characterNumber: Int! = 2
+                    locale: Locale! = {country: "US" language: "en"}
+                ): String
             }
             '''
 
@@ -20,7 +27,11 @@ class IssueNonNullDefaultAttribute extends Specification {
         @Override
         Object get(DataFetchingEnvironment env) {
             def number = env.getArgument("characterNumber")
-            return "Character No. " + number
+            def locale = env.getArgument("locale")
+
+            def country = locale["country"]
+            def language = locale["language"]
+            return sprintf("Character No. $number $country-$language", number, country, language)
         }
     }
 
@@ -39,7 +50,7 @@ class IssueNonNullDefaultAttribute extends Specification {
 
         then:
         result.errors.isEmpty()
-        result.data == [name: "Character No. 2"]
+        result.data == [name: "Character No. 2 US-en"]
     }
 
     // Already works, should continue to work
@@ -71,7 +82,33 @@ class IssueNonNullDefaultAttribute extends Specification {
 
         then:
         result.errors.isEmpty()
-        result.data == [name: "Character No. 3"]
+        result.data == [name: "Character No. 3 US-en"]
+    }
+
+    def "Can omit non-null attributes in input objects that have default values"() {
+        when:
+        def result = graphql.execute('''
+                {
+                    name(locale: {})
+                }
+            ''')
+
+        then:
+        result.errors.isEmpty()
+        result.data == [name: "Character No. 2 CA-en"]
+    }
+
+    def "Provided non-null attribute in input objects will override default value"() {
+        when:
+        def result = graphql.execute('''
+                {
+                    name(locale: {language: "fr"})
+                }
+            ''')
+
+        then:
+        result.errors.isEmpty()
+        result.data == [name: "Character No. 2 CA-fr"]
     }
 
 }
