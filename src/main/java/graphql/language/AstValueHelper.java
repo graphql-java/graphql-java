@@ -115,7 +115,7 @@ public class AstValueHelper {
         fields.forEach(field -> {
             String fieldName = field.getName();
             GraphQLInputType fieldType = field.getType();
-            Object fieldValueObj = PropertyDataFetcherHelper.getPropertyViaReflection(fieldName, javaValue, fieldType);
+            Object fieldValueObj = PropertyDataFetcherHelper.getPropertyValue(fieldName, javaValue, fieldType);
             Value<?> nodeValue = astFromValue(fieldValueObj, fieldType);
             if (nodeValue != null) {
 

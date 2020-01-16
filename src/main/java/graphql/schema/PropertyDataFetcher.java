@@ -5,7 +5,6 @@ import graphql.Assert;
 import graphql.PublicApi;
 import graphql.TrivialDataFetcher;
 
-import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -118,10 +117,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
             return (T) function.apply(source);
         }
 
-        if (source instanceof Map) {
-            return (T) ((Map<?, ?>) source).get(propertyName);
-        }
-        return (T) PropertyDataFetcherHelper.getPropertyViaReflection(propertyName, source, environment.getFieldType(), environment);
+        return (T) PropertyDataFetcherHelper.getPropertyValue(propertyName, source, environment.getFieldType(), environment);
     }
 
     /**

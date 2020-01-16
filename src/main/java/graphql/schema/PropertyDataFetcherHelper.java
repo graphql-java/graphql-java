@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -31,11 +32,18 @@ public class PropertyDataFetcherHelper {
     private static final ConcurrentMap<String, Field> FIELD_CACHE = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, String> NEGATIVE_CACHE = new ConcurrentHashMap<>();
 
-    public static Object getPropertyViaReflection(String propertyName, Object object, GraphQLType graphQLType) {
-        return getPropertyViaReflection(propertyName, object, graphQLType, null);
+    public static Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType) {
+        return getPropertyValue(propertyName, object, graphQLType, null);
     }
 
-    public static Object getPropertyViaReflection(String propertyName, Object object, GraphQLType graphQLType, DataFetchingEnvironment environment) {
+    public static Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType, DataFetchingEnvironment environment) {
+        if (object == null) {
+            return null;
+        }
+        if (object instanceof Map) {
+            return ((Map<?, ?>) object).get(propertyName);
+        }
+
         String key = mkKey(object, propertyName);
         if (isNegativelyCached(key)) {
             return null;
