@@ -8,7 +8,6 @@ import graphql.introspection.IntrospectionQuery
 import graphql.introspection.IntrospectionResultToSchema
 import graphql.schema.Coercing
 import graphql.schema.GraphQLArgument
-import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputObjectType
@@ -23,11 +22,10 @@ import graphql.schema.GraphQLUnionType
 import graphql.schema.TypeResolver
 import spock.lang.Specification
 
-import java.util.Collections
 import java.util.function.UnaryOperator
 
 import static graphql.Scalars.GraphQLString
-import static graphql.TestUtil.mockDirective
+import static graphql.TestUtil.mockDirectivesWithNoValueArguments
 import static graphql.TestUtil.mockScalar
 import static graphql.TestUtil.mockTypeRuntimeWiring
 import static graphql.schema.GraphQLArgument.newArgument
@@ -880,5 +878,21 @@ enum Enum {
 '''
     }
 
+    def "directive string when argument has no value"() {
+        given:
+        GraphQLScalarType scalarType = GraphQLScalarType.newScalar(mockScalar("TestScalar"))
+                .withDirectives(mockDirectivesWithNoValueArguments("a", "bb"))
+                .build()
+
+        when:
+        def options = defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(true)
+        def result = new SchemaPrinter(options).print(scalarType)
+
+        then:
+        result == '''#TestScalar
+scalar TestScalar @a() @bb()
+
+'''
+    }
 }
 
