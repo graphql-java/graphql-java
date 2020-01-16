@@ -17,6 +17,7 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLType
+import graphql.schema.GraphQLTypeUtil
 import graphql.schema.GraphQLUnionType
 import graphql.schema.GraphqlTypeComparatorRegistry
 import graphql.schema.PropertyDataFetcher
@@ -2023,5 +2024,28 @@ class SchemaGeneratorTest extends Specification {
         directiveDefinition.getName() == "MyDirective"
 
 
+    }
+
+    def "directive with enum args"() {
+        given:
+
+        def spec = """
+        directive @myDirective (
+            enumArguments: [SomeEnum!] = []
+        ) on FIELD_DEFINITION
+
+        enum SomeEnum {
+            VALUE_1
+            VALUE_2
+        }
+        type Query{ foo: String }
+        """
+        when:
+        def schema = schema(spec)
+        def directive = schema.getDirective("myDirective")
+        then:
+        directive != null
+        GraphQLTypeUtil.simplePrint(directive.getArgument("enumArguments").getType()) == "[SomeEnum!]"
+        directive.getArgument("enumArguments").getDefaultValue() == []
     }
 }
