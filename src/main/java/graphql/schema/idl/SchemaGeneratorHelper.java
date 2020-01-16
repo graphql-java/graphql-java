@@ -119,7 +119,9 @@ public class SchemaGeneratorHelper {
                 lines.add(commentLine);
             }
         }
-        if (lines.size() == 0) return null;
+        if (lines.size() == 0) {
+            return null;
+        }
         return lines.stream().collect(joining("\n"));
     }
 
@@ -277,6 +279,7 @@ public class SchemaGeneratorHelper {
 
         GraphQLDirective.Builder builder = GraphQLDirective.newDirective()
                 .name(directiveDefinition.getName())
+                .definition(directiveDefinition)
                 .description(buildDescription(directiveDefinition, directiveDefinition.getDescription()));
 
 
