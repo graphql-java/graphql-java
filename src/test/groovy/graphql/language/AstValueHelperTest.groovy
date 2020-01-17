@@ -108,12 +108,6 @@ class AstValueHelperTest extends Specification {
         astFromValue('HELLO', myEnum).isEqualTo(new EnumValue('HELLO'))
 
         astFromValue(complexValue, myEnum).isEqualTo(new EnumValue('COMPLEX'))
-
-//        // Note: case sensitive
-//        astFromValue('hello', myEnum) == null
-//
-//        // Note: Not a valid enum value
-//        astFromValue('VALUE', myEnum) == null
     }
 
     def 'converts array values to List ASTs'() {
@@ -135,19 +129,43 @@ class AstValueHelperTest extends Specification {
         )
     }
 
+    class SomePojo {
+        def foo = 3
+        def bar = "HELLO"
+    }
+    class SomePojoWithFields {
+        public float foo = 3
+        public String bar = "HELLO"
+    }
+
     def 'converts input objects'() {
-        expect:
+        given:
         def inputObj = GraphQLInputObjectType.newInputObject()
                 .name('MyInputObj')
                 .field({ f -> f.name("foo").type(GraphQLFloat) })
                 .field({ f -> f.name("bar").type(myEnum) })
                 .build()
+        expect:
 
         astFromValue([foo: 3, bar: 'HELLO'], inputObj).isEqualTo(
                 new ObjectValue([new ObjectField("foo", new IntValue(bigInt(3))),
                                  new ObjectField("bar", new EnumValue('HELLO')),
                 ])
         )
+
+        astFromValue(new SomePojo(), inputObj).isEqualTo(
+                new ObjectValue([new ObjectField("foo", new IntValue(bigInt(3))),
+                                 new ObjectField("bar", new EnumValue('HELLO')),
+                ])
+        )
+
+        astFromValue(new SomePojoWithFields(), inputObj).isEqualTo(
+                new ObjectValue([new ObjectField("foo", new IntValue(bigInt(3))),
+                                 new ObjectField("bar", new EnumValue('HELLO')),
+                ])
+        )
+
+
     }
 
     def 'converts input objects with explicit nulls'() {

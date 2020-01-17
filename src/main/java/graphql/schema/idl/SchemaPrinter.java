@@ -817,18 +817,19 @@ public class SchemaPrinter {
 
     @SuppressWarnings("unchecked")
     private <T> TypePrinter<T> printer(Class<?> clazz) {
-        TypePrinter typePrinter = printers.computeIfAbsent(clazz, k -> {
+        TypePrinter typePrinter = printers.get(clazz);
+        if (typePrinter == null) {
             Class<?> superClazz = clazz.getSuperclass();
-            TypePrinter result;
             if (superClazz != Object.class) {
-                result = printer(superClazz);
+                typePrinter = printer(superClazz);
             } else {
-                result = (out, type, visibility) -> out.println("Type not implemented : " + type);
+                typePrinter = (out, type, visibility) -> out.println("Type not implemented : " + type);
             }
-            return result;
-        });
+            printers.put(clazz, typePrinter);
+        }
         return (TypePrinter<T>) typePrinter;
     }
+
 
     public String print(GraphQLType type) {
         StringWriter sw = new StringWriter();
