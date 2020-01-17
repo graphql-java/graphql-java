@@ -562,6 +562,23 @@ extend input Input @directive {
 '''
     }
 
+    def 'StringValue is converted to valid Strings'() {
+
+        AstPrinter astPrinter = new AstPrinter(true)
+
+        when:
+        def result = astPrinter.value(new StringValue(strValue))
+
+        then:
+        result == expected
+
+        where:
+        strValue                                  | expected
+        'VALUE'                                   | '"VALUE"'
+        'VA\n\t\f\n\b\\LUE'                       | '"VA\\n\\t\\f\\n\\b\\\\LUE"'
+        'VA\\L"UE'                                | '"VA\\\\L\\"UE"'
+    }
+
     def "1105 - encoding of json strings"() {
 
         when:
