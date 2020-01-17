@@ -565,7 +565,6 @@ public class AstPrinter {
         return sb.toString();
     }
 
-
     String wrap(String start, String maybeString, String end) {
         if (isEmpty(maybeString)) {
             if (start.equals("\"") && end.equals("\"")) {
