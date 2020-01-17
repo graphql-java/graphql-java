@@ -16,12 +16,12 @@ import java.util.Map;
 @PublicApi
 public class GraphqlErrorException extends GraphQLException implements GraphQLError {
 
-    protected final List<SourceLocation> locations;
-    protected final Map<String, Object> extensions;
-    protected final List<Object> path;
-    protected final ErrorClassification errorClassification;
+    private final List<SourceLocation> locations;
+    private final Map<String, Object> extensions;
+    private final List<Object> path;
+    private final ErrorClassification errorClassification;
 
-    protected GraphqlErrorException(BuilderBase<?> builder) {
+    protected GraphqlErrorException(BuilderBase<?, ?> builder) {
         super(builder.message, builder.cause);
         this.locations = builder.sourceLocations;
         this.extensions = builder.extensions;
@@ -53,13 +53,20 @@ public class GraphqlErrorException extends GraphQLException implements GraphQLEr
         return new Builder();
     }
 
-    public static class Builder extends BuilderBase<Builder> {
+    public static class Builder extends BuilderBase<Builder, GraphqlErrorException> {
         public GraphqlErrorException build() {
             return new GraphqlErrorException(this);
         }
     }
 
-    protected static class BuilderBase<T extends BuilderBase<T>> {
+    /**
+     * A trait like base class that contains the properties that GraphqlErrorException handles and can
+     * be used by other classes to derive their own builders.
+     *
+     * @param <T> the derived class
+     * @param <B> the class to be built
+     */
+    protected abstract static class BuilderBase<T extends BuilderBase<T, B>, B extends GraphqlErrorException> {
         protected String message;
         protected Throwable cause;
         protected ErrorClassification errorClassification = ErrorType.DataFetchingException;
@@ -106,5 +113,6 @@ public class GraphqlErrorException extends GraphQLException implements GraphQLEr
             return asDerivedType();
         }
 
+        public abstract B build();
     }
 }

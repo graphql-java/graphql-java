@@ -41,7 +41,7 @@ public class CoercingParseLiteralException extends GraphqlErrorException {
         return new Builder();
     }
 
-    public static class Builder extends BuilderBase<Builder> {
+    public static class Builder extends BuilderBase<Builder, CoercingParseLiteralException> {
         public CoercingParseLiteralException build() {
             return new CoercingParseLiteralException(this);
         }

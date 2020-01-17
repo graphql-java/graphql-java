@@ -37,7 +37,7 @@ public class CoercingSerializeException extends GraphqlErrorException {
         return new Builder();
     }
 
-    public static class Builder extends BuilderBase<Builder> {
+    public static class Builder extends BuilderBase<Builder, CoercingSerializeException> {
         public CoercingSerializeException build() {
             return new CoercingSerializeException(this);
         }
