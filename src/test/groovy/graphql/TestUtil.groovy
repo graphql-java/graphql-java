@@ -24,8 +24,10 @@ import graphql.schema.idl.errors.SchemaProblem
 
 import java.util.stream.Collectors
 
+import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLArgument.newArgument
+import static graphql.schema.GraphQLDirective.newDirective
 
 class TestUtil {
 
@@ -171,6 +173,28 @@ class TestUtil {
 
     static Document parseQuery(String query) {
         new Parser().parseDocument(query)
+    }
+
+    static GraphQLDirective[] mockDirectivesWithArguments(String... names) {
+        return names.collect { directiveName ->
+            def builder = newDirective().name(directiveName)
+
+            names.each { argName ->
+                builder.argument(newArgument().name(argName).type(GraphQLInt).value(BigInteger.valueOf(0)).build())
+            }
+            return builder.build()
+        }.toArray() as GraphQLDirective[]
+    }
+
+    static GraphQLDirective[] mockDirectivesWithNoValueArguments(String... names) {
+        return names.collect { directiveName ->
+            def builder = newDirective().name(directiveName)
+
+            names.each { argName ->
+                builder.argument(newArgument().name(argName).type(GraphQLInt).build())
+            }
+            return builder.build()
+        }.toArray() as GraphQLDirective[]
     }
 
 }
