@@ -8,7 +8,6 @@ import graphql.introspection.IntrospectionQuery
 import graphql.introspection.IntrospectionResultToSchema
 import graphql.schema.Coercing
 import graphql.schema.GraphQLArgument
-import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputObjectType
@@ -23,11 +22,9 @@ import graphql.schema.GraphQLUnionType
 import graphql.schema.TypeResolver
 import spock.lang.Specification
 
-import java.util.Collections
 import java.util.function.UnaryOperator
 
 import static graphql.Scalars.GraphQLString
-import static graphql.TestUtil.mockDirective
 import static graphql.TestUtil.mockScalar
 import static graphql.TestUtil.mockTypeRuntimeWiring
 import static graphql.schema.GraphQLArgument.newArgument
@@ -83,6 +80,30 @@ class SchemaPrinterTest extends Specification {
             super(name, description, fieldDefinitions, new ArrayList<GraphQLOutputType>())
         }
     }
+
+    static class MyTestGraphQLObjectType extends MyGraphQLObjectType {
+
+        MyTestGraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions) {
+            super(name, description, fieldDefinitions)
+        }
+    }
+
+    def "concurrentModificationException should not occur when multiple extended graphQL types are used"() {
+        given:
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition().name("field").type(GraphQLString).build()
+        def queryType = new MyTestGraphQLObjectType("Query", null, Arrays.asList(fieldDefinition))
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+
+        when:
+        def result = new SchemaPrinter().print(schema)
+
+        then:
+        result == '''type Query {
+  field: String
+}
+'''
+    }
+
 
     def "typeString"() {
 
