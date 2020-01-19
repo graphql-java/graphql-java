@@ -19,7 +19,7 @@ class GraphQLEnumTypeTest extends Specification {
 
     def "parse throws exception for unknown value"() {
         when:
-        enumType.getCoercing().parseValue("UNKNOWN")
+        enumType.parseValue("UNKNOWN")
 
         then:
         thrown(CoercingParseValueException)
@@ -28,17 +28,17 @@ class GraphQLEnumTypeTest extends Specification {
 
     def "parse value return value for the name"() {
         expect:
-        enumType.getCoercing().parseValue("NAME") == 42
+        enumType.parseValue("NAME") == 42
     }
 
     def "serialize returns name for value"() {
         expect:
-        enumType.getCoercing().serialize(42) == "NAME"
+        enumType.serialize(42) == "NAME"
     }
 
     def "serialize throws exception for unknown value"() {
         when:
-        enumType.getCoercing().serialize(12)
+        enumType.serialize(12)
         then:
         thrown(CoercingSerializeException)
     }
@@ -46,21 +46,21 @@ class GraphQLEnumTypeTest extends Specification {
 
     def "parseLiteral return null for invalid input"() {
         when:
-        enumType.getCoercing().parseLiteral(StringValue.newStringValue("foo").build())
+        enumType.parseLiteral(StringValue.newStringValue("foo").build())
         then:
         thrown(CoercingParseLiteralException)
     }
 
     def "parseLiteral return null for invalid enum name"() {
         when:
-        enumType.getCoercing().parseLiteral(EnumValue.newEnumValue("NOT_NAME").build())
+        enumType.parseLiteral(EnumValue.newEnumValue("NOT_NAME").build())
         then:
         thrown(CoercingParseLiteralException)
     }
 
     def "parseLiteral returns value for 'NAME'"() {
         expect:
-        enumType.getCoercing().parseLiteral(EnumValue.newEnumValue("NAME").build()) == 42
+        enumType.parseLiteral(EnumValue.newEnumValue("NAME").build()) == 42
     }
 
 
@@ -96,7 +96,7 @@ class GraphQLEnumTypeTest extends Specification {
                 .build()
 
         when:
-        def serialized = enumType.coercing.serialize(Episode.EMPIRE)
+        def serialized = enumType.serialize(Episode.EMPIRE)
 
         then:
         serialized == "EMPIRE"
@@ -111,7 +111,7 @@ class GraphQLEnumTypeTest extends Specification {
                 .build()
 
         when:
-        def serialized = enumType.coercing.serialize(Episode.NEWHOPE)
+        def serialized = enumType.serialize(Episode.NEWHOPE)
 
         then:
         serialized == "NEWHOPE"
@@ -128,7 +128,7 @@ class GraphQLEnumTypeTest extends Specification {
         String stringInput = Episode.NEWHOPE.toString()
 
         when:
-        def serialized = enumType.coercing.serialize(stringInput)
+        def serialized = enumType.serialize(stringInput)
 
         then:
         serialized == "NEWHOPE"
