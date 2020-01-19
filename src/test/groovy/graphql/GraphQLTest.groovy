@@ -1015,4 +1015,53 @@ many lines''']
 
     }
 
+    class Complex {
+        String a;
+        String b;
+    }
+
+
+    def "illegal default value should be rejected"() {
+        given:
+        def dataFetcher = { env ->
+            println env.getArgument("arg")
+            return "world"
+        } as DataFetcher
+        def complexInput = newInputObject()
+                .name("Complex")
+                .field(newInputObjectField().name("a").type(GraphQLString).build())
+                .field(newInputObjectField().name("b").type(GraphQLString).build())
+                .build()
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
+                .name("hello")
+                .type(GraphQLString)
+                .argument(newArgument()
+                        .name("arg")
+                        .type(complexInput)
+                        .defaultValue(new Complex(a: "A Value", b: "BValue"))
+                        .build())
+                .dataFetcher(dataFetcher)
+                .build()
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("Query")
+                        .field(fieldDefinition)
+                        .build()
+        ).build()
+
+//        println new SchemaPrinter().print(schema)
+
+        when:
+        def variables = [var: "FOO"]
+        def input = newExecutionInput()
+                .variables(variables)
+                .query('query x($var: Complex){ hello(arg: $var) }')
+                .build()
+        def result = GraphQL.newGraphQL(schema).build().execute(input)
+
+        then:
+        thrown(RuntimeException)
+
+    }
+
 }
