@@ -130,11 +130,12 @@ public class IntrospectionResultToSchema {
         }
     }
 
-    private TypeDefinition createScalar(Map<String, Object> input) {
-        String name = (String) input.get("name");
+    private TypeDefinition createScalar(Map<String, Object> type) {
+        String name = (String) type.get("name");
         if (ScalarInfo.isStandardScalar(name)) {
             return null;
         }
+        String specifiedBy = (String) type.get("specifiedBy");
         return ScalarTypeDefinition.newScalarTypeDefinition().name(name).build();
     }
 

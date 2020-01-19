@@ -1,7 +1,12 @@
 package graphql.introspection;
 
+@Deprecated
 public interface IntrospectionQuery {
 
+    /**
+     * Use {@link IntrospectionQueryFactory}
+     */
+    @Deprecated
     String INTROSPECTION_QUERY = "\n" +
             "  query IntrospectionQuery {\n" +
             "    __schema {\n" +
