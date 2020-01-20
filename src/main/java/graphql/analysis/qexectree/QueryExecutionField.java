@@ -1,6 +1,7 @@
 package graphql.analysis.qexectree;
 
 import graphql.PublicApi;
+import graphql.execution.MergedField;
 import graphql.language.Argument;
 import graphql.language.Field;
 import graphql.schema.GraphQLFieldDefinition;
@@ -12,14 +13,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 
 @PublicApi
 public class QueryExecutionField {
 
-    private final List<Field> fields;
+    private final MergedField mergedField;
     private final GraphQLObjectType objectType;
     private final GraphQLFieldDefinition fieldDefinition;
     private final GraphQLOutputType parentType;
@@ -29,8 +29,7 @@ public class QueryExecutionField {
     private final boolean isConditional;
 
     private QueryExecutionField(Builder builder) {
-        assertNotEmpty(builder.fields);
-        this.fields = new ArrayList<>(builder.fields);
+        this.mergedField = builder.mergedField;
         this.objectType = builder.objectType;
         this.fieldDefinition = assertNotNull(builder.fieldDefinition);
         this.fieldsContainer = assertNotNull(builder.fieldsContainer);
@@ -47,7 +46,7 @@ public class QueryExecutionField {
      * @return the name of of the merged fields.
      */
     public String getName() {
-        return fields.get(0).getName();
+        return mergedField.getName();
     }
 
     /**
@@ -73,7 +72,7 @@ public class QueryExecutionField {
      * @return the fist of the merged Fields
      */
     public Field getSingleField() {
-        return fields.get(0);
+        return mergedField.getSingleField();
     }
 
     /**
@@ -86,8 +85,8 @@ public class QueryExecutionField {
     }
 
 
-    public List<Field> getFields() {
-        return new ArrayList<>(fields);
+    public MergedField getMergedField() {
+        return mergedField;
     }
 
     public static Builder newQueryExecutionField() {
@@ -95,16 +94,13 @@ public class QueryExecutionField {
     }
 
     public static Builder newQueryExecutionField(Field field) {
-        return new Builder().addField(field);
+        return new Builder().mergedField(MergedField.newMergedField().addField(field).build());
     }
 
     public GraphQLFieldDefinition getFieldDefinition() {
         return fieldDefinition;
     }
 
-    public static Builder newQueryExecutionField(List<Field> fields) {
-        return new Builder().fields(fields);
-    }
 
     public QueryExecutionField transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
@@ -141,7 +137,7 @@ public class QueryExecutionField {
     @Override
     public String toString() {
         return "QueryExecutionField{" +
-                "fields=" + fields +
+                "mergedField" + mergedField +
                 ", objectType=" + objectType +
                 ", fieldDefinition=" + fieldDefinition +
                 ", parentType=" + parentType +
@@ -152,7 +148,7 @@ public class QueryExecutionField {
     }
 
     public static class Builder {
-        private List<Field> fields = new ArrayList<>();
+        private MergedField mergedField;
         private GraphQLObjectType objectType;
         private GraphQLFieldDefinition fieldDefinition;
         private GraphQLFieldsContainer fieldsContainer;
@@ -164,7 +160,7 @@ public class QueryExecutionField {
         }
 
         private Builder(QueryExecutionField existing) {
-            this.fields = existing.getFields();
+            this.mergedField = existing.getMergedField();
             this.objectType = existing.getObjectType();
             this.fieldDefinition = existing.getFieldDefinition();
             this.fieldsContainer = existing.getFieldsContainer();
@@ -172,18 +168,13 @@ public class QueryExecutionField {
         }
 
 
-        public Builder fields(List<Field> fields) {
-            this.fields = fields;
-            return this;
-        }
-
         public Builder objectType(GraphQLObjectType objectType) {
             this.objectType = objectType;
             return this;
         }
 
-        public Builder addField(Field field) {
-            this.fields.add(field);
+        public Builder mergedField(MergedField mergedField) {
+            this.mergedField = mergedField;
             return this;
         }
 

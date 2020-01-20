@@ -4,6 +4,7 @@ package graphql.analysis.qexectree;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.ConditionalNodes;
+import graphql.execution.MergedField;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
@@ -40,8 +41,8 @@ public class FieldCollectorQueryExecution {
 
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
-    public List<QueryExecutionField> collectFields(FieldCollectorQueryExecutionParams parameters, QueryExecutionField mergedField) {
-        GraphQLUnmodifiedType fieldType = GraphQLTypeUtil.unwrapAll(mergedField.getFieldDefinition().getType());
+    public List<QueryExecutionField> collectFields(FieldCollectorQueryExecutionParams parameters, QueryExecutionField queryExecutionField) {
+        GraphQLUnmodifiedType fieldType = GraphQLTypeUtil.unwrapAll(queryExecutionField.getFieldDefinition().getType());
         // if not composite we don't have any selectionSet because it is a Scalar or enum
         if (!(fieldType instanceof GraphQLCompositeType)) {
             return Collections.emptyList();
@@ -51,7 +52,7 @@ public class FieldCollectorQueryExecution {
         List<String> visitedFragments = new ArrayList<>();
         Set<GraphQLObjectType> possibleObjects
                 = new LinkedHashSet<>(resolvePossibleObjects((GraphQLCompositeType) fieldType, parameters.getGraphQLSchema()));
-        for (Field field : mergedField.getFields()) {
+        for (Field field : queryExecutionField.getMergedField().getFields()) {
             if (field.getSelectionSet() == null) {
                 continue;
             }
@@ -60,7 +61,7 @@ public class FieldCollectorQueryExecution {
                     visitedFragments,
                     subFields,
                     possibleObjects,
-                    mergedField.getFieldDefinition().getType());
+                    queryExecutionField.getFieldDefinition().getType());
         }
         List<QueryExecutionField> result = new ArrayList<>();
         subFields.values().forEach(setMergedFieldWTCMap -> {
@@ -164,7 +165,10 @@ public class FieldCollectorQueryExecution {
         for (GraphQLObjectType objectType : objectTypes) {
             if (existingFieldWTC.containsKey(objectType)) {
                 QueryExecutionField queryExecutionField = existingFieldWTC.get(objectType);
-                existingFieldWTC.put(objectType, queryExecutionField.transform(builder -> builder.addField(field)));
+                existingFieldWTC.put(objectType, queryExecutionField.transform(builder -> {
+                    MergedField mergedField = queryExecutionField.getMergedField().transform(mergedFieldBuilder -> mergedFieldBuilder.addField(field));
+                    builder.mergedField(mergedField);
+                }));
             } else {
                 GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) GraphQLTypeUtil.unwrapAll(parentType);
                 QueryExecutionField newFieldWTC = QueryExecutionField.newQueryExecutionField(field)
