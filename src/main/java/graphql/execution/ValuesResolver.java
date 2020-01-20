@@ -36,6 +36,7 @@ import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 
+@SuppressWarnings("rawtypes")
 @Internal
 public class ValuesResolver {
 
@@ -47,11 +48,10 @@ public class ValuesResolver {
      * @param schema              the schema
      * @param variableDefinitions the variable definitions
      * @param variableValues      the supplied variables
-     *
      * @return coerced variable values as a map
      */
     public Map<String, Object> coerceVariableValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> variableValues) {
-        GraphqlFieldVisibility fieldVisibility = schema.getFieldVisibility();
+        GraphqlFieldVisibility fieldVisibility = schema.getCodeRegistry().getFieldVisibility();
         Map<String, Object> coercedValues = new LinkedHashMap<>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
             String variableName = variableDefinition.getName();
@@ -154,10 +154,10 @@ public class ValuesResolver {
                 if (value instanceof Map) {
                     return coerceValueForInputObjectType(fieldVisibility, variableDefinition, (GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
                 } else {
-                    throw new CoercingParseValueException(
-                            "Expected type 'Map' but was '" + value.getClass().getSimpleName() +
-                                    "'. Variables for input objects must be an instance of type 'Map'."
-                    );
+                    throw CoercingParseValueException.newCoercingParseValueException()
+                            .message("Expected type 'Map' but was '" + value.getClass().getSimpleName() +
+                                    "'. Variables for input objects must be an instance of type 'Map'.")
+                            .build();
                 }
             } else {
                 return assertShouldNeverHappen("unhandled type %s", graphQLType);
@@ -166,13 +166,14 @@ public class ValuesResolver {
             if (e.getLocations() != null) {
                 throw e;
             }
-
-            throw new CoercingParseValueException(
-                    "Variable '" + inputName + "' has an invalid value. " + e.getMessage(),
-                    e.getCause(),
-                    variableDefinition.getSourceLocation()
-            );
+            throw CoercingParseValueException.newCoercingParseValueException()
+                    .message("Variable '" + inputName + "' has an invalid value : " + e.getMessage())
+                    .extensions(e.getExtensions())
+                    .cause(e.getCause())
+                    .sourceLocation(variableDefinition.getSourceLocation())
+                    .build();
         }
+
     }
 
     private Object coerceValueForInputObjectType(GraphqlFieldVisibility fieldVisibility, VariableDefinition variableDefinition, GraphQLInputObjectType inputObjectType, Map<String, Object> input) {

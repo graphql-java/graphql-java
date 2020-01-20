@@ -17,6 +17,7 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLType
+import graphql.schema.GraphQLTypeUtil
 import graphql.schema.GraphQLUnionType
 import graphql.schema.GraphqlTypeComparatorRegistry
 import graphql.schema.PropertyDataFetcher
@@ -1741,9 +1742,9 @@ class SchemaGeneratorTest extends Specification {
 
         def extraDirective = (GraphQLDirective.newDirective()).name("extra")
                 .argument(GraphQLArgument.newArgument().name("value").type(GraphQLString)).build()
-        def transformer = new SchemaTransformer() {
+        def transformer = new SchemaGeneratorPostProcessing() {
             @Override
-            GraphQLSchema transform(GraphQLSchema originalSchema) {
+            GraphQLSchema process(GraphQLSchema originalSchema) {
                 originalSchema.transform({ builder -> builder.additionalDirective(extraDirective) })
             }
         }
@@ -1908,7 +1909,84 @@ class SchemaGeneratorTest extends Specification {
 
         // scalars are special - they are created via a WiringFactory - but this tests they are given the extensions
         (schema.getType("Scalar") as GraphQLScalarType).getExtensionDefinitions().size() == 1
+    }
 
+    def "schema extensions and directives can be generated"() {
+        def sdl = '''
+
+            directive @sd1 on SCHEMA
+            directive @sd2 on SCHEMA
+            directive @sd3 on SCHEMA
+
+            schema @sd1 {
+                query : Query
+            }
+            
+            extend schema @sd2 {
+                mutation : Mutation
+            }
+            
+            extend schema @sd3 
+            
+            type Query {
+                f : String
+            }
+
+            type Mutation {
+                f : String
+            }
+        '''
+
+        when:
+        def typeDefinitionRegistry = new SchemaParser().parse(sdl)
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(typeDefinitionRegistry, TestUtil.mockRuntimeWiring)
+
+        then:
+
+        schema.getQueryType().name == 'Query'
+        schema.getMutationType().name == 'Mutation'
+
+        when:
+        def directives = schema.getSchemaDirectives()
+
+        then:
+        directives.size() == 3
+        schema.getSchemaDirective("sd1") != null
+        schema.getSchemaDirective("sd2") != null
+        schema.getSchemaDirective("sd3") != null
+
+        when:
+        def directivesMap = schema.getSchemaDirectiveByName()
+        then:
+        directives.size() == 3
+        directivesMap["sd1"] != null
+        directivesMap["sd2"] != null
+        directivesMap["sd3"] != null
+
+        when:
+        directives = schema.getDirectives()
+
+        then:
+        directives.size() == 6 // built in ones :  include / skip and deprecated
+        def directiveNames = directives.collect { it.name }
+        directiveNames.contains("include")
+        directiveNames.contains("skip")
+        directiveNames.contains("deprecated")
+        directiveNames.contains("sd1")
+        directiveNames.contains("sd2")
+        directiveNames.contains("sd3")
+
+        when:
+        directivesMap = schema.getDirectiveByName()
+
+        then:
+        directivesMap.size() == 6 // built in ones
+        directivesMap.containsKey("include")
+        directivesMap.containsKey("skip")
+        directivesMap.containsKey("deprecated")
+        directivesMap.containsKey("sd1")
+        directivesMap.containsKey("sd2")
+        directivesMap.containsKey("sd3")
     }
 
     def "directive arg descriptions are captured correctly"() {
@@ -1946,5 +2024,28 @@ class SchemaGeneratorTest extends Specification {
         directiveDefinition.getName() == "MyDirective"
 
 
+    }
+
+    def "directive with enum args"() {
+        given:
+
+        def spec = """
+        directive @myDirective (
+            enumArguments: [SomeEnum!] = []
+        ) on FIELD_DEFINITION
+
+        enum SomeEnum {
+            VALUE_1
+            VALUE_2
+        }
+        type Query{ foo: String }
+        """
+        when:
+        def schema = schema(spec)
+        def directive = schema.getDirective("myDirective")
+        then:
+        directive != null
+        GraphQLTypeUtil.simplePrint(directive.getArgument("enumArguments").getType()) == "[SomeEnum!]"
+        directive.getArgument("enumArguments").getDefaultValue() == []
     }
 }

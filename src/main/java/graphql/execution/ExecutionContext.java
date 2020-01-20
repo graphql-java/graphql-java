@@ -2,7 +2,6 @@ package graphql.execution;
 
 
 import graphql.GraphQLError;
-import graphql.Internal;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
 import graphql.execution.defer.DeferSupport;
@@ -46,9 +45,9 @@ public class ExecutionContext {
     private final CacheControl cacheControl;
     private final Locale locale;
     private final DeferSupport deferSupport = new DeferSupport();
+    private final ValueUnboxer valueUnboxer;
 
-    @Internal
-    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, Locale locale, List<GraphQLError> startingErrors) {
+    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, Locale locale, List<GraphQLError> startingErrors, ValueUnboxer valueUnboxer) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.instrumentationState = instrumentationState;
@@ -65,6 +64,7 @@ public class ExecutionContext {
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.cacheControl = cacheControl;
         this.locale = locale;
+        this.valueUnboxer = valueUnboxer;
         this.errors.addAll(startingErrors);
     }
 
@@ -125,6 +125,10 @@ public class ExecutionContext {
 
     public Locale getLocale() {
         return locale;
+    }
+
+    public ValueUnboxer getValueUnboxer() {
+        return valueUnboxer;
     }
 
     /**

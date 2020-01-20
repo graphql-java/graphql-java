@@ -95,8 +95,14 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
+        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+        //
+        // during #instrumentExecutionInput they could have enhanced the data loader registry
+        // so we grab it now just before the query operation gets started
+        //
+        DataLoaderRegistry finalRegistry = parameters.getExecutionContext().getDataLoaderRegistry();
+        state.setDataLoaderRegistry(finalRegistry);
         if (!isDataLoaderCompatibleExecution(parameters.getExecutionContext())) {
-            DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
             state.setAggressivelyBatching(false);
         }
         return new SimpleInstrumentationContext<>();

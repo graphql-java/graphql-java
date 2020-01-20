@@ -10,16 +10,19 @@ import graphql.language.InterfaceTypeDefinition;
 import graphql.language.InterfaceTypeExtensionDefinition;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
+import graphql.language.OperationTypeDefinition;
 import graphql.language.SDLDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.ScalarTypeExtensionDefinition;
 import graphql.language.SchemaDefinition;
+import graphql.language.SchemaExtensionDefinition;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.UnionTypeExtensionDefinition;
 import graphql.schema.idl.errors.DirectiveRedefinitionError;
+import graphql.schema.idl.errors.OperationRedefinitionError;
 import graphql.schema.idl.errors.SchemaProblem;
 import graphql.schema.idl.errors.SchemaRedefinitionError;
 import graphql.schema.idl.errors.TypeRedefinitionError;
@@ -35,6 +38,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.schema.idl.SchemaExtensionsChecker.defineOperationDefs;
+import static graphql.schema.idl.SchemaExtensionsChecker.gatherOperationDefs;
 import static java.util.Optional.ofNullable;
 
 /**
@@ -55,14 +60,13 @@ public class TypeDefinitionRegistry {
     private final Map<String, ScalarTypeDefinition> scalarTypes = new LinkedHashMap<>();
     private final Map<String, DirectiveDefinition> directiveDefinitions = new LinkedHashMap<>();
     private SchemaDefinition schema;
+    private final List<SchemaExtensionDefinition> schemaExtensionDefinitions = new ArrayList<>();
 
     /**
      * This will merge these type registries together and return this one
      *
      * @param typeRegistry the registry to be merged into this one
-     *
      * @return this registry
-     *
      * @throws SchemaProblem if there are problems merging the types such as redefinitions
      */
     public TypeDefinitionRegistry merge(TypeDefinitionRegistry typeRegistry) throws SchemaProblem {
@@ -83,9 +87,7 @@ public class TypeDefinitionRegistry {
         Map<String, ScalarTypeDefinition> tempScalarTypes = new LinkedHashMap<>();
         typeRegistry.scalarTypes.values().forEach(newEntry -> define(this.scalarTypes, tempScalarTypes, newEntry).ifPresent(errors::add));
 
-        if (typeRegistry.schema != null && this.schema != null) {
-            errors.add(new SchemaRedefinitionError(this.schema, typeRegistry.schema));
-        }
+        checkMergeSchemaDefs(typeRegistry, errors);
 
         if (!errors.isEmpty()) {
             throw new SchemaProblem(errors);
@@ -95,6 +97,7 @@ public class TypeDefinitionRegistry {
             // ensure schema is not overwritten by merge
             this.schema = typeRegistry.schema;
         }
+        this.schemaExtensionDefinitions.addAll(typeRegistry.schemaExtensionDefinitions);
 
         // ok commit to the merge
         this.types.putAll(tempTypes);
@@ -136,11 +139,33 @@ public class TypeDefinitionRegistry {
         return this;
     }
 
+    private Map<String, OperationTypeDefinition> checkMergeSchemaDefs(TypeDefinitionRegistry toBeMergedTypeRegistry, List<GraphQLError> errors) {
+        if (toBeMergedTypeRegistry.schema != null && this.schema != null) {
+            errors.add(new SchemaRedefinitionError(this.schema, toBeMergedTypeRegistry.schema));
+        }
+
+        Map<String, OperationTypeDefinition> tempOperationDefs = gatherOperationDefs(errors, this.schema, this.schemaExtensionDefinitions);
+        Map<String, OperationTypeDefinition> mergedOperationDefs = gatherOperationDefs(errors, toBeMergedTypeRegistry.schema, toBeMergedTypeRegistry.schemaExtensionDefinitions);
+
+        defineOperationDefs(errors, mergedOperationDefs.values(), tempOperationDefs);
+        return tempOperationDefs;
+    }
+
+
+    private Optional<GraphQLError> checkAddOperationDefs() {
+        List<GraphQLError> errors = new ArrayList<>();
+        gatherOperationDefs(errors, this.schema, this.schemaExtensionDefinitions);
+        if (!errors.isEmpty()) {
+            return Optional.of(errors.get(0));
+        }
+        return Optional.empty();
+    }
+
+
     /**
      * Adds a a collections of definitions to the registry
      *
      * @param definitions the definitions to add
-     *
      * @return an optional error for the first problem, typically type redefinition
      */
     public Optional<GraphQLError> addAll(Collection<SDLDefinition> definitions) {
@@ -157,7 +182,6 @@ public class TypeDefinitionRegistry {
      * Adds a definition to the registry
      *
      * @param definition the definition to add
-     *
      * @return an optional error
      */
     public Optional<GraphQLError> add(SDLDefinition definition) {
@@ -180,8 +204,12 @@ public class TypeDefinitionRegistry {
         } else if (definition instanceof InputObjectTypeExtensionDefinition) {
             InputObjectTypeExtensionDefinition newEntry = (InputObjectTypeExtensionDefinition) definition;
             return defineExt(inputObjectTypeExtensions, newEntry, InputObjectTypeExtensionDefinition::getName);
-            //
-            // normal
+        } else if (definition instanceof SchemaExtensionDefinition) {
+            schemaExtensionDefinitions.add((SchemaExtensionDefinition) definition);
+            Optional<GraphQLError> error = checkAddOperationDefs();
+            if (error.isPresent()) {
+                return error;
+            }
         } else if (definition instanceof ScalarTypeDefinition) {
             ScalarTypeDefinition newEntry = (ScalarTypeDefinition) definition;
             return define(scalarTypes, scalarTypes, newEntry);
@@ -197,6 +225,10 @@ public class TypeDefinitionRegistry {
                 return Optional.of(new SchemaRedefinitionError(this.schema, newSchema));
             } else {
                 schema = newSchema;
+            }
+            Optional<GraphQLError> error = checkAddOperationDefs();
+            if (error.isPresent()) {
+                return error;
             }
         } else {
             return Assert.assertShouldNeverHappen();
@@ -224,6 +256,8 @@ public class TypeDefinitionRegistry {
             types.remove(((TypeDefinition) definition).getName());
         } else if (definition instanceof DirectiveDefinition) {
             directiveDefinitions.remove(((DirectiveDefinition) definition).getName());
+        } else if (definition instanceof SchemaExtensionDefinition) {
+            schemaExtensionDefinitions.remove(definition);
         } else if (definition instanceof SchemaDefinition) {
             schema = null;
         } else {
@@ -308,6 +342,10 @@ public class TypeDefinitionRegistry {
         return ofNullable(schema);
     }
 
+    public List<SchemaExtensionDefinition> getSchemaExtensionDefinitions() {
+        return new ArrayList<>(schemaExtensionDefinitions);
+    }
+
     private GraphQLError handleReDefinition(TypeDefinition oldEntry, TypeDefinition newEntry) {
         return new TypeRedefinitionError(newEntry, oldEntry);
     }
@@ -367,7 +405,6 @@ public class TypeDefinitionRegistry {
      * Returns true if the specified type exists in the registry and is an abstract (Interface or Union) type
      *
      * @param type the type to check
-     *
      * @return true if its abstract
      */
     public boolean isInterfaceOrUnion(Type type) {
@@ -383,7 +420,6 @@ public class TypeDefinitionRegistry {
      * Returns true if the specified type exists in the registry and is an object type
      *
      * @param type the type to check
-     *
      * @return true if its an object type
      */
     public boolean isObjectType(Type type) {
@@ -395,7 +431,6 @@ public class TypeDefinitionRegistry {
      *
      * @param targetClass the class to search for
      * @param <T>         must extend TypeDefinition
-     *
      * @return a list of types of the target class
      */
     public <T extends TypeDefinition> List<T> getTypes(Class<T> targetClass) {
@@ -410,7 +445,6 @@ public class TypeDefinitionRegistry {
      *
      * @param targetClass the class to search for
      * @param <T>         must extend TypeDefinition
-     *
      * @return a map of types
      */
     public <T extends TypeDefinition> Map<String, T> getTypesMap(Class<T> targetClass) {
@@ -422,7 +456,6 @@ public class TypeDefinitionRegistry {
      * Returns the list of object types that implement the given interface type
      *
      * @param targetInterface the target to search for
-     *
      * @return the list of object types that implement the given interface type
      */
     public List<ObjectTypeDefinition> getImplementationsOf(InterfaceTypeDefinition targetInterface) {
@@ -447,7 +480,6 @@ public class TypeDefinitionRegistry {
      *
      * @param abstractType       the abstract type to check (interface or union)
      * @param possibleObjectType the object type to check
-     *
      * @return true if the object type implements the abstract type
      */
     @SuppressWarnings("ConstantConditions")
@@ -484,7 +516,6 @@ public class TypeDefinitionRegistry {
      *
      * @param maybeSubType the type to check
      * @param superType    the equality checked type
-     *
      * @return true if maybeSubType is covariant or equal to superType
      */
     @SuppressWarnings("SimplifiableIfStatement")

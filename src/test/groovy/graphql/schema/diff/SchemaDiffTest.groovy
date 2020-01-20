@@ -451,7 +451,7 @@ class SchemaDiffTest extends Specification {
 
     }
 
-    def "dangerous changes "() {
+    def "dangerous changes"() {
         DiffSet diffSet = diffSet("schema_dangerous_changes.graphqls")
 
         def diff = new SchemaDiff()
@@ -477,6 +477,38 @@ class SchemaDiffTest extends Specification {
         reporter.dangers[2].typeKind == TypeKind.Enum
         reporter.dangers[2].components.contains("Nonplussed")
 
+    }
+
+    def "field was deprecated"() {
+        DiffSet diffSet = diffSet("schema_deprecated_fields_new.graphqls")
+
+        def diff = new SchemaDiff()
+        diff.diffSchema(diffSet, chainedReporter)
+
+        expect:
+        reporter.dangerCount == 13
+        reporter.breakageCount == 0
+        reporter.dangers.every {
+            it.getCategory() == DiffCategory.DEPRECATION_ADDED
+        }
+
+    }
+
+    def "deprecated field was removed"() {
+        def schemaOld = TestUtil.schemaFile("diff/" + "schema_deprecated_fields_new.graphqls", wireWithNoFetching())
+        def schemaNew = TestUtil.schemaFile("diff/" + "schema_deprecated_fields_removed.graphqls", wireWithNoFetching())
+
+        DiffSet diffSet = DiffSet.diffSet(schemaOld, schemaNew)
+
+        def diff = new SchemaDiff()
+        diff.diffSchema(diffSet, chainedReporter)
+
+        expect:
+        reporter.dangerCount == 0
+        reporter.breakageCount == 11
+        reporter.breakages.every {
+            it.getCategory() == DiffCategory.DEPRECATION_REMOVED
+        }
     }
 
 }

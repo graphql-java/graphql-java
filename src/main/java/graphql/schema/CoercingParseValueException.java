@@ -1,45 +1,49 @@
 package graphql.schema;
 
-import java.util.Collections;
-import java.util.List;
-
 import graphql.ErrorType;
-import graphql.GraphQLError;
-import graphql.GraphQLException;
+import graphql.GraphqlErrorException;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
 
 @PublicApi
-public class CoercingParseValueException extends GraphQLException implements GraphQLError {
-    private List<SourceLocation> sourceLocations;
+public class CoercingParseValueException extends GraphqlErrorException {
 
     public CoercingParseValueException() {
+        this(newCoercingParseValueException());
     }
 
     public CoercingParseValueException(String message) {
-        super(message);
+        this(newCoercingParseValueException().message(message));
     }
 
     public CoercingParseValueException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public CoercingParseValueException(String message, Throwable cause, SourceLocation sourceLocation) {
-        super(message, cause);
-        this.sourceLocations = Collections.singletonList(sourceLocation);
+        this(newCoercingParseValueException().message(message).cause(cause));
     }
 
     public CoercingParseValueException(Throwable cause) {
-        super(cause);
+        this(newCoercingParseValueException().cause(cause));
     }
 
-    @Override
-    public List<SourceLocation> getLocations() {
-        return sourceLocations;
+    public CoercingParseValueException(String message, Throwable cause, SourceLocation sourceLocation) {
+        this(newCoercingParseValueException().message(message).cause(cause).sourceLocation(sourceLocation));
+    }
+
+    private CoercingParseValueException(Builder builder) {
+        super(builder);
     }
 
     @Override
     public ErrorType getErrorType() {
         return ErrorType.ValidationError;
+    }
+
+    public static Builder newCoercingParseValueException() {
+        return new Builder();
+    }
+
+    public static class Builder extends BuilderBase<Builder,CoercingParseValueException> {
+        public CoercingParseValueException build() {
+            return new CoercingParseValueException(this);
+        }
     }
 }

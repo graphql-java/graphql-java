@@ -44,6 +44,7 @@ import graphql.language.SDLDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.ScalarTypeExtensionDefinition;
 import graphql.language.SchemaDefinition;
+import graphql.language.SchemaExtensionDefinition;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
 import graphql.language.SourceLocation;
@@ -106,6 +107,8 @@ public class GraphqlAntlrToLanguage {
             return createFragmentDefinition(definitionContext.fragmentDefinition());
         } else if (definitionContext.typeSystemDefinition() != null) {
             return createTypeSystemDefinition(definitionContext.typeSystemDefinition());
+        } else if (definitionContext.typeSystemExtension() != null) {
+            return createTypeSystemExtension(definitionContext.typeSystemExtension());
         } else {
             return assertShouldNeverHappen();
         }
@@ -239,8 +242,16 @@ public class GraphqlAntlrToLanguage {
             return createDirectiveDefinition(ctx.directiveDefinition());
         } else if (ctx.typeDefinition() != null) {
             return createTypeDefinition(ctx.typeDefinition());
-        } else if (ctx.typeExtension() != null) {
+        } else {
+            return assertShouldNeverHappen();
+        }
+    }
+
+    protected SDLDefinition createTypeSystemExtension(GraphqlParser.TypeSystemExtensionContext ctx) {
+        if (ctx.typeExtension() != null) {
             return createTypeExtension(ctx.typeExtension());
+        } else if (ctx.schemaExtension() != null) {
+            return creationSchemaExtension(ctx.schemaExtension());
         } else {
             return assertShouldNeverHappen();
         }
@@ -372,6 +383,24 @@ public class GraphqlAntlrToLanguage {
                 .map(this::createOperationTypeDefinition).collect(toList()));
         return def.build();
     }
+
+    private SDLDefinition creationSchemaExtension(GraphqlParser.SchemaExtensionContext ctx) {
+        SchemaExtensionDefinition.Builder def = SchemaExtensionDefinition.newSchemaExtensionDefinition();
+        addCommonData(def, ctx);
+
+        List<Directive> directives = new ArrayList<>();
+        List<GraphqlParser.DirectivesContext> directivesCtx = ctx.directives();
+        for (GraphqlParser.DirectivesContext directiveCtx : directivesCtx) {
+            directives.addAll(createDirectives(directiveCtx));
+        }
+        def.directives(directives);
+
+        List<OperationTypeDefinition> operationTypeDefs = ctx.operationTypeDefinition().stream()
+                .map(this::createOperationTypeDefinition).collect(toList());
+        def.operationTypeDefinitions(operationTypeDefs);
+        return def.build();
+    }
+
 
     protected OperationTypeDefinition createOperationTypeDefinition(GraphqlParser.OperationTypeDefinitionContext ctx) {
         OperationTypeDefinition.Builder def = OperationTypeDefinition.newOperationTypeDefinition();

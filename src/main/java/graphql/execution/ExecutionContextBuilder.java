@@ -40,6 +40,7 @@ public class ExecutionContextBuilder {
     private CacheControl cacheControl;
     private Locale locale;
     private List<GraphQLError> errors = new ArrayList<>();
+    private ValueUnboxer valueUnboxer;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -82,6 +83,8 @@ public class ExecutionContextBuilder {
         cacheControl = other.getCacheControl();
         locale = other.getLocale();
         errors = new ArrayList<>(other.getErrors());
+        valueUnboxer = other.getValueUnboxer();
+
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -164,6 +167,11 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    public ExecutionContextBuilder valueUnboxer(ValueUnboxer valueUnboxer) {
+        this.valueUnboxer = valueUnboxer;
+        return this;
+    }
+
     public ExecutionContext build() {
         // preconditions
         assertNotNull(executionId, "You must provide a query identifier");
@@ -185,8 +193,8 @@ public class ExecutionContextBuilder {
                 dataLoaderRegistry,
                 cacheControl,
                 locale,
-                errors
-        );
+                errors,
+                valueUnboxer);
     }
 
 }

@@ -14,6 +14,7 @@ import graphql.language.InputObjectTypeDefinition;
 import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.Node;
+import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.OperationTypeDefinition;
@@ -24,6 +25,7 @@ import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.idl.errors.DirectiveIllegalLocationError;
+import graphql.schema.idl.errors.InterfaceFieldArgumentNotOptionalError;
 import graphql.schema.idl.errors.InterfaceFieldArgumentRedefinitionError;
 import graphql.schema.idl.errors.InterfaceFieldRedefinitionError;
 import graphql.schema.idl.errors.InvalidDeprecationDirectiveError;
@@ -38,7 +40,6 @@ import graphql.schema.idl.errors.NonUniqueDirectiveError;
 import graphql.schema.idl.errors.NonUniqueNameError;
 import graphql.schema.idl.errors.OperationTypesMustBeObjects;
 import graphql.schema.idl.errors.QueryOperationMissingError;
-import graphql.schema.idl.errors.SchemaMissingError;
 import graphql.schema.idl.errors.SchemaProblem;
 
 import java.util.ArrayList;
@@ -75,7 +76,7 @@ public class SchemaTypeChecker {
 
         checkInterfacesAreImplemented(errors, typeRegistry);
 
-        checkSchemaInvariants(errors, typeRegistry);
+        SchemaExtensionsChecker.checkSchemaInvariants(errors, typeRegistry);
 
         checkScalarImplementationsArePresent(errors, typeRegistry, wiring);
         checkTypeResolversArePresent(errors, typeRegistry, wiring);
@@ -92,38 +93,6 @@ public class SchemaTypeChecker {
 
         return errors;
     }
-
-    private void checkSchemaInvariants(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
-        /*
-            https://github.com/facebook/graphql/pull/90/files#diff-fe406b08746616e2f5f00909488cce66R1000
-
-            GraphQL type system definitions can omit the schema definition when the query
-            and mutation root types are named `Query` and `Mutation`, respectively.
-         */
-        // schema
-        if (!typeRegistry.schemaDefinition().isPresent()) {
-            if (!typeRegistry.getType("Query").isPresent()) {
-                errors.add(new SchemaMissingError());
-            }
-        } else {
-            SchemaDefinition schemaDefinition = typeRegistry.schemaDefinition().get();
-            List<OperationTypeDefinition> operationTypeDefinitions = schemaDefinition.getOperationTypeDefinitions();
-
-            operationTypeDefinitions
-                    .forEach(checkOperationTypesExist(typeRegistry, errors));
-
-            operationTypeDefinitions
-                    .forEach(checkOperationTypesAreObjects(typeRegistry, errors));
-
-            // ensure we have a "query" one
-            Optional<OperationTypeDefinition> query = operationTypeDefinitions.stream().filter(op -> "query".equals(op.getName())).findFirst();
-            if (!query.isPresent()) {
-                errors.add(new QueryOperationMissingError());
-            }
-
-        }
-    }
-
 
     private void checkForMissingTypes(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
         // type extensions
@@ -500,7 +469,7 @@ public class SchemaTypeChecker {
                         // look at arguments
                         List<InputValueDefinition> objectArgs = objectFieldDef.getInputValueDefinitions();
                         List<InputValueDefinition> interfaceArgs = interfaceFieldDef.getInputValueDefinitions();
-                        if (objectArgs.size() != interfaceArgs.size()) {
+                        if (objectArgs.size() < interfaceArgs.size()) {
                             errors.add(new MissingInterfaceFieldArgumentsError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef));
                         } else {
                             checkArgumentConsistency(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, interfaceFieldDef, errors);
@@ -511,41 +480,28 @@ public class SchemaTypeChecker {
         };
     }
 
-
     private void checkArgumentConsistency(String typeOfType, ObjectTypeDefinition objectTypeDef, InterfaceTypeDefinition interfaceTypeDef, FieldDefinition objectFieldDef, FieldDefinition interfaceFieldDef, List<GraphQLError> errors) {
         List<InputValueDefinition> objectArgs = objectFieldDef.getInputValueDefinitions();
         List<InputValueDefinition> interfaceArgs = interfaceFieldDef.getInputValueDefinitions();
         for (int i = 0; i < interfaceArgs.size(); i++) {
             InputValueDefinition interfaceArg = interfaceArgs.get(i);
             InputValueDefinition objectArg = objectArgs.get(i);
-            String interfaceArgStr = AstPrinter.printAst(interfaceArg);
-            String objectArgStr = AstPrinter.printAst(objectArg);
+            String interfaceArgStr = AstPrinter.printAstCompact(interfaceArg);
+            String objectArgStr = AstPrinter.printAstCompact(objectArg);
             if (!interfaceArgStr.equals(objectArgStr)) {
                 errors.add(new InterfaceFieldArgumentRedefinitionError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectArgStr, interfaceArgStr));
             }
         }
-    }
 
-    private Consumer<OperationTypeDefinition> checkOperationTypesExist(TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors) {
-        return op -> {
-            TypeName unwrapped = TypeInfo.typeInfo(op.getTypeName()).getTypeName();
-            if (!typeRegistry.hasType(unwrapped)) {
-                errors.add(new MissingTypeError("operation", op, op.getName(), unwrapped));
-            }
-        };
-    }
-
-    private Consumer<OperationTypeDefinition> checkOperationTypesAreObjects(TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors) {
-        return op -> {
-            // make sure it is defined as a ObjectTypeDef
-            Type queryType = op.getTypeName();
-            Optional<TypeDefinition> type = typeRegistry.getType(queryType);
-            type.ifPresent(typeDef -> {
-                if (!(typeDef instanceof ObjectTypeDefinition)) {
-                    errors.add(new OperationTypesMustBeObjects(op));
+        if (objectArgs.size() > interfaceArgs.size()) {
+            for (int i = interfaceArgs.size(); i < objectArgs.size(); i++) {
+                InputValueDefinition objectArg = objectArgs.get(i);
+                if (objectArg.getType() instanceof NonNullType) {
+                    String objectArgStr = AstPrinter.printAst(objectArg);
+                    errors.add(new InterfaceFieldArgumentNotOptionalError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectArgStr));
                 }
-            });
-        };
+            }
+        }
     }
 
     private <T extends TypeDefinition> List<T> filterTo(Map<String, TypeDefinition> types, Class<? extends T> clazz) {
