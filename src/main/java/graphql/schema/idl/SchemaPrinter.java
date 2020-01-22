@@ -146,7 +146,7 @@ public class SchemaPrinter {
         }
 
         public static Options defaultOptions() {
-            return new Options(false, false, false,
+            return new Options(false, true, true,
                     false, false, false,
                     directive -> true, DefaultGraphqlTypeComparatorRegistry.defaultComparators());
         }
