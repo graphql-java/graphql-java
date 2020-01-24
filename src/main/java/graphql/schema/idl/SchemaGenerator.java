@@ -95,35 +95,12 @@ public class SchemaGenerator {
      * These options control how the schema generation works
      */
     public static class Options {
-        private final boolean enforceSchemaDirectives;
 
-        Options(boolean enforceSchemaDirectives) {
-            this.enforceSchemaDirectives = enforceSchemaDirectives;
-        }
-
-        /**
-         * This controls whether schema directives MUST be declared using
-         * directive definition syntax before use.
-         *
-         * @return true if directives must be fully declared; the default is true
-         */
-        public boolean isEnforceSchemaDirectives() {
-            return enforceSchemaDirectives;
+        Options() {
         }
 
         public static Options defaultOptions() {
-            return new Options(true);
-        }
-
-        /**
-         * This controls whether schema directives MUST be declared using
-         * directive definition syntax before use.
-         *
-         * @param flag the value to use
-         * @return the new options
-         */
-        public Options enforceSchemaDirectives(boolean flag) {
-            return new Options(flag);
+            return new Options();
         }
 
     }
@@ -260,7 +237,7 @@ public class SchemaGenerator {
 
         schemaGeneratorHelper.addDeprecatedDirectiveDefinition(typeRegistryCopy);
 
-        List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistryCopy, wiring, options.enforceSchemaDirectives);
+        List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistryCopy, wiring);
         if (!errors.isEmpty()) {
             throw new SchemaProblem(errors);
         }

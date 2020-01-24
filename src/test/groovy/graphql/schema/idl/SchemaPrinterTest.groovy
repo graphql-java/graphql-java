@@ -846,7 +846,7 @@ type Query {
                 .type(mockTypeRuntimeWiring("SomeInterface", true))
                 .type(mockTypeRuntimeWiring("SomeUnion", true))
                 .build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
@@ -971,7 +971,7 @@ input SomeInput {
         """
         def registry = new SchemaParser().parse(idl)
         def runtimeWiring = newRuntimeWiring().build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
@@ -1031,7 +1031,7 @@ enum Enum {
         given:
         def registry = new SchemaParser().parse(simpleIdlWithDirective)
         def runtimeWiring = newRuntimeWiring().build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
@@ -1177,7 +1177,7 @@ type Query {
                 .wiringFactory(wiringFactory)
                 .build()
 
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
         def types = new SchemaParser().parse(sdl)
         GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(options, types, runtimeWiring)
 
@@ -1309,7 +1309,7 @@ extend type Query {
         """
         def registry = new SchemaParser().parse(idl)
         def runtimeWiring = newRuntimeWiring().build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
@@ -1349,7 +1349,7 @@ enum Enum {
         '''
         def registry = new SchemaParser().parse(idl)
         def runtimeWiring = newRuntimeWiring().build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
@@ -1377,7 +1377,7 @@ type Query {
         '''
         def registry = new SchemaParser().parse(idl)
         def runtimeWiring = newRuntimeWiring().build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:

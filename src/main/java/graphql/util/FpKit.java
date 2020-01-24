@@ -58,7 +58,6 @@ public class FpKit {
     }
 
 
-
     //
     // From a list of named things, get a map of them by name, merging them first one added
     public static <T> Map<String, T> getByName(List<T> namedObjects, Function<T, String> nameFn) {
@@ -170,7 +169,7 @@ public class FpKit {
                 .collect(Collectors.toList());
     }
 
-    public static <T> Optional<T> findOne(List<T> list, Predicate<T> filter) {
+    public static <T> Optional<T> findOne(Collection<T> list, Predicate<T> filter) {
         return list
                 .stream()
                 .filter(filter)

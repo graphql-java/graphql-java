@@ -16,7 +16,6 @@ import graphql.schema.idl.errors.DirectiveUndeclaredError
 import graphql.schema.idl.errors.MissingTypeError
 import graphql.schema.idl.errors.NonUniqueNameError
 import graphql.schema.idl.errors.QueryOperationMissingError
-import graphql.schema.idl.errors.SchemaMissingError
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -34,7 +33,6 @@ import static java.lang.String.format
 
 class SchemaTypeCheckerTest extends Specification {
 
-    def enforceSchemaDirectives = false
 
 
     TypeDefinitionRegistry parse(String spec) {
@@ -142,7 +140,7 @@ class SchemaTypeCheckerTest extends Specification {
         for (String name : resolvingNames) {
             runtimeBuilder.type(TypeRuntimeWiring.newTypeWiring(name).typeResolver(resolver))
         }
-        return new SchemaTypeChecker().checkTypeRegistry(types, runtimeBuilder.build(), enforceSchemaDirectives)
+        return new SchemaTypeChecker().checkTypeRegistry(types, runtimeBuilder.build())
     }
 
     def "test missing type in object"() {
@@ -1378,7 +1376,6 @@ class SchemaTypeCheckerTest extends Specification {
             }
         """
 
-        enforceSchemaDirectives = true
         def result = check(spec)
 
         expect:
@@ -1395,7 +1392,6 @@ class SchemaTypeCheckerTest extends Specification {
             }
         """
 
-        enforceSchemaDirectives = true
         def result = check(spec)
 
         expect:
@@ -1412,7 +1408,6 @@ class SchemaTypeCheckerTest extends Specification {
             }
         """
 
-        enforceSchemaDirectives = true
         def result = check(spec)
 
         expect:
@@ -1433,7 +1428,6 @@ class SchemaTypeCheckerTest extends Specification {
             }
         """
 
-        enforceSchemaDirectives = true
         def result = check(spec)
 
         expect:
@@ -1454,7 +1448,6 @@ class SchemaTypeCheckerTest extends Specification {
             }
         """
 
-        enforceSchemaDirectives = true
         def result = check(spec)
 
         expect:
@@ -1495,7 +1488,6 @@ class SchemaTypeCheckerTest extends Specification {
 
         """
 
-        enforceSchemaDirectives = true
         def result = check(spec)
 
         expect:
@@ -1555,7 +1547,6 @@ class SchemaTypeCheckerTest extends Specification {
             }
         """
 
-        enforceSchemaDirectives = true
         def result = check(spec)
 
         expect:

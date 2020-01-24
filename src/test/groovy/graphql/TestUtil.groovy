@@ -69,7 +69,7 @@ class TestUtil {
         def stream = TestUtil.class.getClassLoader().getResourceAsStream(fileName)
 
         def typeRegistry = new SchemaParser().parse(new InputStreamReader(stream))
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, typeRegistry, wiring)
         schema
     }
@@ -106,7 +106,7 @@ class TestUtil {
     static GraphQLSchema schema(Reader specReader, RuntimeWiring runtimeWiring) {
         try {
             def registry = new SchemaParser().parse(specReader)
-            def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+            def options = SchemaGenerator.Options.defaultOptions()
             return new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
         } catch (SchemaProblem e) {
             assert false: "The schema could not be compiled : ${e}"
