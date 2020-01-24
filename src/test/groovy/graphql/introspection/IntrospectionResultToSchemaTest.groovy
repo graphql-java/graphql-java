@@ -92,11 +92,12 @@ class IntrospectionResultToSchemaTest extends Specification {
         then:
         result == """type QueryType implements Query {
   hero(
-  #comment about episode
-  #on two lines
+  \"\"\"
+  comment about episode
+  on two lines
+  \"\"\"
   episode: Episode
-  foo: String = \"bar\"
-  ): Character @deprecated(reason: "killed off character")
+  foo: String = \"bar\"): Character @deprecated(reason: "killed off character")
 }"""
 
     }
@@ -196,15 +197,11 @@ class IntrospectionResultToSchemaTest extends Specification {
         def result = printAst(interfaceTypeDefinition)
 
         then:
-        result == """#A character in the Star Wars Trilogy
+        result == """"A character in the Star Wars Trilogy"
 interface Character {
-  #The id of the character.
   id: String!
-  #The name of the character.
   name: String
-  #The friends of the character, or an empty list if they have none.
   friends: [Character]
-  #Which movies they appear in.
   appearsIn: [Episode]
 }"""
 
@@ -248,13 +245,10 @@ interface Character {
         def result = printAst(enumTypeDef)
 
         then:
-        result == """#One of the films in the Star Wars Trilogy
+        result == """"One of the films in the Star Wars Trilogy"
 enum Episode {
-  #Released in 1977.
   NEWHOPE
-  #Released in 1980.
   EMPIRE
-  #Released in 1983.
   JEDI @deprecated(reason: "killed by clones")
 }"""
 
@@ -290,7 +284,7 @@ enum Episode {
         def result = printAst(unionTypeDefinition)
 
         then:
-        result == """#all the stuff
+        result == """"all the stuff"
 union Everything = Character | Episode"""
 
     }
@@ -345,9 +339,9 @@ union Everything = Character | Episode"""
         def result = printAst(inputObjectTypeDefinition)
 
         then:
-        result == """#input for characters
+        result == """"input for characters"
 input CharacterInput {
-  #first name
+  "first name"
   firstName: String
   lastName: String
   family: Boolean
@@ -379,7 +373,6 @@ input CharacterInput {
   subscription: SubscriptionType
 }
 """
-
     }
 
     def "test starwars introspection result"() {
@@ -399,141 +392,47 @@ input CharacterInput {
 
 type QueryType {
   hero(
-  #If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode.
-  episode: Episode
-  ): Character
+  "If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode."
+  episode: Episode): Character
   human(
-  #id of the human
-  id: String!
-  ): Human
+  "id of the human"
+  id: String!): Human
   droid(
-  #id of the droid
-  id: String!
-  ): Droid
+  "id of the droid"
+  id: String!): Droid
 }
 
-#A character in the Star Wars Trilogy
+"A character in the Star Wars Trilogy"
 interface Character {
-  #The id of the character.
   id: String!
-  #The name of the character.
   name: String
-  #The friends of the character, or an empty list if they have none.
   friends: [Character]
-  #Which movies they appear in.
   appearsIn: [Episode]
 }
 
-#One of the films in the Star Wars Trilogy
+"One of the films in the Star Wars Trilogy"
 enum Episode {
-  #Released in 1977.
   NEWHOPE
-  #Released in 1980.
   EMPIRE
-  #Released in 1983.
   JEDI
 }
 
-#A humanoid creature in the Star Wars universe.
+"A humanoid creature in the Star Wars universe."
 type Human implements Character {
-  #The id of the human.
   id: String!
-  #The name of the human.
   name: String
-  #The friends of the human, or an empty list if they have none.
   friends: [Character]
-  #Which movies they appear in.
   appearsIn: [Episode]
-  #The home planet of the human, or null if unknown.
   homePlanet: String
 }
 
-#A mechanical creature in the Star Wars universe.
+"A mechanical creature in the Star Wars universe."
 type Droid implements Character {
-  #The id of the droid.
   id: String!
-  #The name of the droid.
   name: String
-  #The friends of the droid, or an empty list if they have none.
   friends: [Character]
-  #Which movies they appear in.
   appearsIn: [Episode]
-  #The primary function of the droid.
   primaryFunction: String
-}
-"""
-    }
-
-    def "test simpsons introspection result"() {
-        given:
-        String simpsons = this.getClass().getResource('/simpsons-introspection.json').text
-
-        def parsed = slurp(simpsons)
-
-        when:
-        Document document = introspectionResultToSchema.createSchemaDefinition(parsed)
-        def result = printAst(document)
-
-        then:
-        result == """schema {
-  query: QueryType
-  mutation: MutationType
-}
-
-type QueryType {
-  character(firstName: String): Character
-  characters: [Character]
-  episodes: [Episode]
-  search(searchFor: String): [Everything]
-}
-
-type Character {
-  id: ID!
-  firstName: String
-  lastName: String
-  family: Boolean
-  episodes: [Episode]
-}
-
-type Episode {
-  id: ID!
-  name: String
-  season: Season
-  number: Int
-  numberOverall: Int
-  characters: [Character]
-}
-
-# Simpson seasons
-enum Season {
-  # the beginning
-  Season1
-  Season2
-  Season3
-  Season4
-  # Another one
-  Season5
-  Season6
-  Season7
-  Season8
-  # Not really the last one :-)
-  Season9
-}
-
-union Everything = Character | Episode
-
-type MutationType {
-  addCharacter(character: CharacterInput): MutationResult
-}
-
-type MutationResult {
-  success: Boolean
-}
-
-input CharacterInput {
-  firstName: String
-  lastName: String
-  family: Boolean
 }
 """
     }
@@ -695,4 +594,3 @@ input InputType {
     }
 
 }
-
