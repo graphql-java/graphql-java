@@ -948,11 +948,7 @@ class SchemaTypeCheckerTest extends Specification {
                 enumA @deprecated(badName : "must be called reason"),
                 enumB @deprecated(reason : "it must have", one : "argument value")
             }
-
-            input InputType {
-                inputFieldA : String @deprecated(badName : "must be called reason")
-                inputFieldB : String @deprecated(reason : "it must have", one : "argument value")
-            }
+            # deprecation is no allowed on input field definitions and args atm, see: https://github.com/graphql-java/graphql-java/issues/1770
         """
 
         def result = check(spec)
@@ -960,13 +956,14 @@ class SchemaTypeCheckerTest extends Specification {
         expect:
 
         !result.isEmpty()
-        result.size() == 8
+        result.size() == 6
     }
 
     def "test that directives are valid"() {
 
         def spec = """                        
-            
+            directive @directiveA on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+            directive @directiveOK on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
             interface InterfaceType1 {
                 fieldA : String @directiveA @directiveA 
             }
@@ -1005,7 +1002,7 @@ class SchemaTypeCheckerTest extends Specification {
     def "test that directives args are valid"() {
 
         def spec = """                        
-            
+            directive @directive(arg1: Int,argOK: Int) on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION 
             interface InterfaceType1 {
                 fieldA : String @directive(arg1 : 1, arg1 : 2) 
             }
@@ -1097,7 +1094,7 @@ class SchemaTypeCheckerTest extends Specification {
     def "interface type extensions invariants are enforced"() {
 
         def spec = """                        
-
+            directive @directive on INTERFACE
             type Query implements InterfaceType1 {
                 fieldA : String
                 fieldC : String
@@ -1145,7 +1142,7 @@ class SchemaTypeCheckerTest extends Specification {
             type Baz {
                 baz : String
             }
-
+            directive @directive on UNION
             union FooBar @directive = Foo | Bar
 
             extend union FooBar @directive
