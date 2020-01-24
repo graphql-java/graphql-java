@@ -93,7 +93,7 @@ public class ValidationUtil {
             return !invalid.isPresent();
         }
         if (type instanceof GraphQLEnumType) {
-            Optional<GraphQLError> invalid = parseLiteral(value, ((GraphQLEnumType) type).getCoercing());
+            Optional<GraphQLError> invalid = parseLiteralEnum(value,(GraphQLEnumType) type);
             invalid.ifPresent(graphQLError -> handleEnumError(value, (GraphQLEnumType) type, graphQLError));
             return !invalid.isPresent();
         }
@@ -103,6 +103,14 @@ public class ValidationUtil {
         }
         return type instanceof GraphQLInputObjectType && isValidLiteralValue(value, (GraphQLInputObjectType) type, schema);
 
+    }
+    private Optional<GraphQLError> parseLiteralEnum(Value<?> value, GraphQLEnumType graphQLEnumType) {
+        try {
+            graphQLEnumType.parseLiteral(value);
+            return Optional.empty();
+        } catch (CoercingParseLiteralException e) {
+            return Optional.of(e);
+        }
     }
 
     private Optional<GraphQLError> parseLiteral(Value<?> value, Coercing<?,?> coercing) {
