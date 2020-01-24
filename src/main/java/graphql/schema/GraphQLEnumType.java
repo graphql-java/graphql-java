@@ -44,41 +44,6 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     public static final String CHILD_VALUES = "values";
     public static final String CHILD_DIRECTIVES = "directives";
 
-    private final Coercing coercing = new Coercing() {
-        @Override
-        public Object serialize(Object input) {
-            return getNameByValue(input);
-        }
-
-        @Override
-        public Object parseValue(Object input) {
-            return getValueByName(input);
-        }
-
-        private String typeName(Object input) {
-            if (input == null) {
-                return "null";
-            }
-            return input.getClass().getSimpleName();
-        }
-
-        @Override
-        public Object parseLiteral(Object input) {
-            if (!(input instanceof EnumValue)) {
-                throw new CoercingParseLiteralException(
-                        "Expected AST type 'EnumValue' but was '" + typeName(input) + "'."
-                );
-            }
-            EnumValue enumValue = (EnumValue) input;
-            GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(enumValue.getName());
-            if (enumValueDefinition == null) {
-                throw new CoercingParseLiteralException(
-                        "Expected enum literal value not in allowable values -  '" + String.valueOf(input) + "'."
-                );
-            }
-            return enumValueDefinition.getValue();
-        }
-    };
 
 
     /**
@@ -119,6 +84,40 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
         this.directives = directives;
         buildMap(values);
+    }
+
+    @Internal
+    public Object serialize(Object input) {
+        return getNameByValue(input);
+    }
+
+    @Internal
+    public Object parseValue(Object input) {
+        return getValueByName(input);
+    }
+
+    private String typeName(Object input) {
+        if (input == null) {
+            return "null";
+        }
+        return input.getClass().getSimpleName();
+    }
+
+    @Internal
+    public Object parseLiteral(Object input) {
+        if (!(input instanceof EnumValue)) {
+            throw new CoercingParseLiteralException(
+                    "Expected AST type 'EnumValue' but was '" + typeName(input) + "'."
+            );
+        }
+        EnumValue enumValue = (EnumValue) input;
+        GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(enumValue.getName());
+        if (enumValueDefinition == null) {
+            throw new CoercingParseLiteralException(
+                    "Expected enum literal value not in allowable values -  '" + String.valueOf(input) + "'."
+            );
+        }
+        return enumValueDefinition.getValue();
     }
 
     public List<GraphQLEnumValueDefinition> getValues() {
@@ -180,10 +179,6 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
 
     public String getDescription() {
         return description;
-    }
-
-    public Coercing getCoercing() {
-        return coercing;
     }
 
     public EnumTypeDefinition getDefinition() {

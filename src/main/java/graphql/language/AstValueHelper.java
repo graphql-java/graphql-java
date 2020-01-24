@@ -198,7 +198,7 @@ public class AstValueHelper {
         if (type instanceof GraphQLScalarType) {
             return ((GraphQLScalarType) type).getCoercing().serialize(value);
         } else {
-            return ((GraphQLEnumType) type).getCoercing().serialize(value);
+            return ((GraphQLEnumType) type).serialize(value);
         }
     }
 

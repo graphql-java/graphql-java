@@ -189,7 +189,7 @@ public class FetchedValueAnalyzer {
         }
         Object serialized;
         try {
-            serialized = enumType.getCoercing().serialize(toAnalyze);
+            serialized = enumType.serialize(toAnalyze);
         } catch (CoercingSerializeException e) {
             SerializationError error = new SerializationError(executionInfo.getPath(), e);
             return newFetchedValueAnalysis(SCALAR)
