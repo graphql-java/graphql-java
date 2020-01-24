@@ -13,6 +13,7 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLDirectiveContainer;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLFieldDefinition;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static graphql.Assert.assertTrue;
 import static graphql.Scalars.GraphQLBoolean;
@@ -129,6 +131,16 @@ public class Introspection {
         return null;
     };
 
+    private static final DataFetcher directivesDataFetcherForType = environment -> {
+        Object type = environment.getSource();
+        if (type instanceof GraphQLDirectiveContainer) {
+            return ((GraphQLDirectiveContainer) type).getDirectives()
+                    .stream()
+                    .filter(GraphQLDirective::isExposeViaIntrospection)
+                    .collect(Collectors.toList());
+        }
+        return null;
+    };
     public static final GraphQLObjectType __InputValue = newObject()
             .name("__InputValue")
             .field(newFieldDefinition()
@@ -143,6 +155,9 @@ public class Introspection {
             .field(newFieldDefinition()
                     .name("defaultValue")
                     .type(GraphQLString))
+            .field(newFieldDefinition()
+                    .name("value_GJ_API")
+                    .type(GraphQLString))
             .build();
 
     static {
@@ -153,6 +168,13 @@ public class Introspection {
             } else if (environment.getSource() instanceof GraphQLInputObjectField) {
                 GraphQLInputObjectField inputField = environment.getSource();
                 return inputField.getDefaultValue() != null ? print(inputField.getDefaultValue(), inputField.getType()) : null;
+            }
+            return null;
+        });
+        register(__InputValue, "value_GJ_API", environment -> {
+            if (environment.getSource() instanceof GraphQLArgument) {
+                GraphQLArgument inputField = environment.getSource();
+                return inputField.getValue() != null ? print(inputField.getValue(), inputField.getType()) : null;
             }
             return null;
         });
@@ -185,6 +207,9 @@ public class Introspection {
             .field(newFieldDefinition()
                     .name("deprecationReason")
                     .type(GraphQLString))
+            .field(newFieldDefinition()
+                    .name("directives_GJ_API")
+                    .type(list(typeRef("__Directive"))))
             .build();
 
     static {
@@ -198,6 +223,7 @@ public class Introspection {
         });
         register(__Field, "name", nameDataFetcher);
         register(__Field, "description", descriptionDataFetcher);
+        register(__Field, "directives_GJ_API", directivesDataFetcherForType);
     }
 
 
@@ -215,6 +241,9 @@ public class Introspection {
             .field(newFieldDefinition()
                     .name("deprecationReason")
                     .type(GraphQLString))
+            .field(newFieldDefinition()
+                    .name("directives_GJ_API")
+                    .type(list(typeRef("__Directive"))))
             .build();
 
     static {
@@ -224,6 +253,7 @@ public class Introspection {
         });
         register(__EnumValue, "name", nameDataFetcher);
         register(__EnumValue, "description", descriptionDataFetcher);
+        register(__EnumValue, "directives_GJ_API", directivesDataFetcherForType);
     }
 
 
@@ -309,6 +339,7 @@ public class Introspection {
     };
 
 
+
     public static final GraphQLObjectType __Type = newObject()
             .name("__Type")
             .field(newFieldDefinition()
@@ -346,6 +377,9 @@ public class Introspection {
             .field(newFieldDefinition()
                     .name("ofType")
                     .type(typeRef("__Type")))
+            .field(newFieldDefinition()
+                    .name("directives_GJ_API")
+                    .type(list(typeRef("__Directive"))))
             .build();
 
     static {
@@ -358,6 +392,7 @@ public class Introspection {
         register(__Type, "ofType", OfTypeFetcher);
         register(__Type, "name", nameDataFetcher);
         register(__Type, "description", descriptionDataFetcher);
+        register(__Type, "directives_GJ_API", directivesDataFetcherForType);
     }
 
 
@@ -411,7 +446,6 @@ public class Introspection {
             .build();
 
 
-    @SuppressWarnings("deprecation") // because graphql spec still has the deprecated fields
     public static final GraphQLObjectType __Directive = newObject()
             .name("__Directive")
             .field(newFieldDefinition()

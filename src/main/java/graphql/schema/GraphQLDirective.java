@@ -37,6 +37,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
     private final boolean onFragment;
     private final boolean onField;
     private final DirectiveDefinition definition;
+    private final boolean exposeViaIntrospection;
 
 
     public static final String CHILD_ARGUMENTS = "arguments";
@@ -52,7 +53,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
                             boolean onOperation,
                             boolean onFragment,
                             boolean onField) {
-        this(name, description, locations, arguments, onOperation, onFragment, onField, null);
+        this(name, description, locations, arguments, onOperation, onFragment, onField, null, false);
     }
 
     private GraphQLDirective(String name,
@@ -62,7 +63,8 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
                              boolean onOperation,
                              boolean onFragment,
                              boolean onField,
-                             DirectiveDefinition definition) {
+                             DirectiveDefinition definition,
+                             boolean exposeViaIntrospection) {
         assertValidName(name);
         assertNotNull(arguments, "arguments can't be null");
         this.name = name;
@@ -73,6 +75,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         this.onFragment = onFragment;
         this.onField = onField;
         this.definition = definition;
+        this.exposeViaIntrospection = exposeViaIntrospection;
     }
 
     @Override
@@ -91,6 +94,10 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
             }
         }
         return null;
+    }
+
+    public boolean isExposeViaIntrospection() {
+        return exposeViaIntrospection;
     }
 
     public EnumSet<DirectiveLocation> validLocations() {
@@ -198,6 +205,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         private EnumSet<DirectiveLocation> locations = EnumSet.noneOf(DirectiveLocation.class);
         private final Map<String, GraphQLArgument> arguments = new LinkedHashMap<>();
         private DirectiveDefinition definition;
+        private boolean exposeViaIntrospection;
 
         public Builder() {
         }
@@ -211,6 +219,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
             this.onField = existing.isOnField();
             this.locations = existing.validLocations();
             this.arguments.putAll(getByName(existing.getArguments(), GraphQLArgument::getName));
+            this.exposeViaIntrospection = existing.isExposeViaIntrospection();
         }
 
         @Override
@@ -222,6 +231,11 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         @Override
         public Builder description(String description) {
             super.description(description);
+            return this;
+        }
+
+        public Builder exposeViaIntrospection(boolean exposeViaIntrospection) {
+            this.exposeViaIntrospection = exposeViaIntrospection;
             return this;
         }
 
@@ -356,7 +370,8 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
                     onOperation,
                     onFragment,
                     onField,
-                    definition);
+                    definition,
+                    exposeViaIntrospection);
         }
 
 
