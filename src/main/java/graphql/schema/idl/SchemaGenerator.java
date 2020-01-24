@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.Directives;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.introspection.Introspection.DirectiveLocation;
@@ -18,6 +19,7 @@ import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.OperationTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.ScalarTypeExtensionDefinition;
+import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
@@ -54,6 +56,7 @@ import graphql.schema.TypeResolverProxy;
 import graphql.schema.idl.errors.NotAnInputTypeError;
 import graphql.schema.idl.errors.NotAnOutputTypeError;
 import graphql.schema.idl.errors.SchemaProblem;
+import graphql.util.FpKit;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -120,6 +123,7 @@ public class SchemaGenerator {
          * directive definition syntax before use.
          *
          * @param flag the value to use
+         *
          * @return the new options
          */
         public Options enforceSchemaDirectives(boolean flag) {
@@ -236,7 +240,9 @@ public class SchemaGenerator {
      *
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
+     *
      * @return an executable schema
+     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -250,7 +256,9 @@ public class SchemaGenerator {
      * @param options      the controlling options
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
+     *
      * @return an executable schema
+     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(Options options, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -258,7 +266,7 @@ public class SchemaGenerator {
         TypeDefinitionRegistry typeRegistryCopy = new TypeDefinitionRegistry();
         typeRegistryCopy.merge(typeRegistry);
 
-        schemaGeneratorHelper.addDeprecatedDirectiveDefinition(typeRegistryCopy);
+        schemaGeneratorHelper.addDirectivesIncludedByDefault(typeRegistryCopy);
 
         List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistryCopy, wiring, options.enforceSchemaDirectives);
         if (!errors.isEmpty()) {
@@ -374,6 +382,7 @@ public class SchemaGenerator {
      * but then we build the rest of the types specified and put them in as additional types
      *
      * @param buildCtx the context we need to work out what we are doing
+     *
      * @return the additional types not referenced from the top level operations
      */
     private Set<GraphQLType> buildAdditionalTypes(BuildContext buildCtx) {
@@ -410,6 +419,7 @@ public class SchemaGenerator {
      *
      * @param buildCtx the context we need to work out what we are doing
      * @param rawType  the type to be built
+     *
      * @return an output type
      */
     @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
@@ -703,15 +713,28 @@ public class SchemaGenerator {
             scalar = scalar.transform(builder -> builder
                     .definition(typeDefinition)
                     .comparatorRegistry(buildCtx.getComparatorRegistry())
-                    .withDirectives(
-                            buildDirectives(typeDefinition.getDirectives(),
-                                    directivesOf(extensions), SCALAR, buildCtx.getDirectiveDefinitions(), buildCtx.getComparatorRegistry())
+                    .specifiedBy(getSpecifiedByUrl(typeDefinition))
+                    .withDirectives(buildDirectives(
+                            typeDefinition.getDirectives(),
+                            directivesOf(extensions),
+                            SCALAR,
+                            buildCtx.getDirectiveDefinitions(),
+                            buildCtx.getComparatorRegistry())
                     ));
             //
             // only allow modification of custom scalars
             scalar = directiveBehaviour.onScalar(scalar, buildCtx.mkBehaviourParams());
         }
         return scalar;
+    }
+
+    private String getSpecifiedByUrl(ScalarTypeDefinition scalarTypeDefinition) {
+        Optional<Directive> specifiedByDirective = FpKit.findOne(scalarTypeDefinition.getDirectives(),
+                directiveDefinition -> directiveDefinition.getName().equals(Directives.SpecifiedByDirective.getName()));
+        return specifiedByDirective.map(directive -> {
+            StringValue url = (StringValue) directive.getArgument("url").getValue();
+            return url.getValue();
+        }).orElse(null);
     }
 
     private GraphQLFieldDefinition buildField(BuildContext buildCtx, TypeDefinition parentType, FieldDefinition

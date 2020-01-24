@@ -10,6 +10,7 @@ import static graphql.introspection.Introspection.DirectiveLocation.FIELD;
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_SPREAD;
 import static graphql.introspection.Introspection.DirectiveLocation.INLINE_FRAGMENT;
+import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLNonNull.nonNull;
 
@@ -64,11 +65,23 @@ public class Directives {
             .description("Marks the field or enum value as deprecated")
             .argument(newArgument()
                     .name("reason")
-                    .type(nonNull(GraphQLString))
+                    .type(GraphQLString)
                     .defaultValue("No longer supported")
                     .description("The reason for the deprecation"))
             .validLocations(FIELD_DEFINITION, ENUM_VALUE)
             .build();
 
+    /**
+     * The "specifiedBy" directive allows to provide a specification URL for a Scala
+     */
+    public static final GraphQLDirective SpecifiedByDirective = GraphQLDirective.newDirective()
+            .name("specifiedBy")
+            .description("Specification details for a custom Scalar")
+            .argument(newArgument()
+                    .name("url")
+                    .type(nonNull(GraphQLString))
+                    .description("An URL which specifies the custom Scalar"))
+            .validLocations(SCALAR)
+            .build();
 
 }

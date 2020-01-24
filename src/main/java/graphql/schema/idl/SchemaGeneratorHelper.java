@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.Directives;
 import graphql.Internal;
 import graphql.Scalars;
 import graphql.introspection.Introspection.DirectiveLocation;
@@ -45,6 +46,7 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
+import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
 import static graphql.introspection.Introspection.DirectiveLocation.valueOf;
 import static graphql.language.DirectiveLocation.newDirectiveLocation;
 import static graphql.schema.GraphQLList.list;
@@ -64,11 +66,14 @@ public class SchemaGeneratorHelper {
 
     static final String NO_LONGER_SUPPORTED = "No longer supported";
     static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
+    static final DirectiveDefinition SPECIFIED_BY_DIRECTIVE_DEFINITION;
 
     static {
-        DEPRECATED_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition().name("deprecated")
+        DEPRECATED_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
+                .name(Directives.DeprecatedDirective.getName())
                 .directiveLocation(newDirectiveLocation().name(FIELD_DEFINITION.name()).build())
                 .directiveLocation(newDirectiveLocation().name(ENUM_VALUE.name()).build())
+                .description(createDescription("Marks the field or enum value as deprecated"))
                 .inputValueDefinition(
                         InputValueDefinition.newInputValueDefinition()
                                 .name("reason")
@@ -76,7 +81,19 @@ public class SchemaGeneratorHelper {
                                 .type(TypeName.newTypeName().name("String").build())
                                 .defaultValue(StringValue.newStringValue().value(NO_LONGER_SUPPORTED).build())
                                 .build())
-                .description(createDescription("Marks the field or enum value as deprecated")).build();
+                .build();
+
+        SPECIFIED_BY_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
+                .name(Directives.SpecifiedByDirective.getName())
+                .directiveLocation(newDirectiveLocation().name(SCALAR.name()).build())
+                .description(createDescription("Specification details for a custom Scalar"))
+                .inputValueDefinition(
+                        InputValueDefinition.newInputValueDefinition()
+                                .name("url")
+                                .description(createDescription("An URL which specifies the custom Scalar"))
+                                .type(TypeName.newTypeName().name("String").build())
+                                .build())
+                .build();
     }
 
     private static Description createDescription(String s) {
@@ -168,9 +185,10 @@ public class SchemaGeneratorHelper {
         return null;
     }
 
-    public void addDeprecatedDirectiveDefinition(TypeDefinitionRegistry typeRegistry) {
+    public void addDirectivesIncludedByDefault(TypeDefinitionRegistry typeRegistry) {
         // we synthesize this into the type registry - no need for them to add it
         typeRegistry.add(DEPRECATED_DIRECTIVE_DEFINITION);
+        typeRegistry.add(SPECIFIED_BY_DIRECTIVE_DEFINITION);
     }
 
     /**

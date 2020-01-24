@@ -525,6 +525,10 @@ public class GraphQLSchema {
                 additionalDirectives.add(Directives.DeprecatedDirective);
             }
 
+            if (additionalDirectives.stream().noneMatch(d -> d.getName().equals(Directives.SpecifiedByDirective.getName()))) {
+                additionalDirectives.add(Directives.SpecifiedByDirective);
+            }
+
             // grab the legacy code things from types
             final GraphQLSchema tempSchema = new GraphQLSchema(this, afterTransform);
             codeRegistry = codeRegistry.transform(codeRegistryBuilder -> schemaUtil.extractCodeFromTypes(codeRegistryBuilder, tempSchema));
