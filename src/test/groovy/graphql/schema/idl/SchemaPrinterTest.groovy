@@ -801,6 +801,23 @@ type Query {
 
     def idlWithDirectives() {
         return """
+            directive @interfaceFieldDirective on FIELD_DEFINITION
+            directive @unionTypeDirective on UNION
+            directive @query1 on OBJECT
+            directive @query2(arg1: String) on OBJECT
+            directive @fieldDirective1 on FIELD_DEFINITION
+            directive @fieldDirective2(argStr: String, argInt: Int, argFloat: Float, argBool: Boolean) on FIELD_DEFINITION
+            directive @argDirective on ARGUMENT_DEFINITION
+            directive @interfaceImplementingTypeDirective on OBJECT
+            directive @enumTypeDirective on ENUM
+            directive @single on OBJECT
+            directive @singleField on FIELD_DEFINITION
+            directive @interfaceImplementingFieldDirective on FIELD_DEFINITION
+            directive @enumValueDirective on ENUM_VALUE
+            directive @inputTypeDirective on INPUT_OBJECT
+            directive @inputFieldDirective on INPUT_FIELD_DEFINITION
+            directive @interfaceTypeDirective on INTERFACE
+            directive @scalarDirective on SCALAR
             
             interface SomeInterface @interfaceTypeDirective {
                 fieldA : String @interfaceFieldDirective
@@ -865,6 +882,40 @@ directive @skip(
     "Skipped when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @interfaceFieldDirective on FIELD_DEFINITION
+
+directive @unionTypeDirective on UNION
+
+directive @query1 on OBJECT
+
+directive @query2(arg1: String) on OBJECT
+
+directive @fieldDirective1 on FIELD_DEFINITION
+
+directive @fieldDirective2(argBool: Boolean, argFloat: Float, argInt: Int, argStr: String) on FIELD_DEFINITION
+
+directive @argDirective on ARGUMENT_DEFINITION
+
+directive @interfaceImplementingTypeDirective on OBJECT
+
+directive @enumTypeDirective on ENUM
+
+directive @single on OBJECT
+
+directive @singleField on FIELD_DEFINITION
+
+directive @interfaceImplementingFieldDirective on FIELD_DEFINITION
+
+directive @enumValueDirective on ENUM_VALUE
+
+directive @inputTypeDirective on INPUT_OBJECT
+
+directive @inputFieldDirective on INPUT_FIELD_DEFINITION
+
+directive @interfaceTypeDirective on INTERFACE
+
+directive @scalarDirective on SCALAR
 
 "Marks the field or enum value as deprecated"
 directive @deprecated(
@@ -1088,6 +1139,7 @@ type Query {
 
     def "can print a schema as AST elements"() {
         def sdl = '''
+            directive @directive1 on SCALAR
             type Query {
                 foo : String
             }
@@ -1196,6 +1248,8 @@ directive @skip(
     "Skipped when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @directive1 on SCALAR
 
 "Marks the field or enum value as deprecated"
 directive @deprecated(
