@@ -939,10 +939,12 @@ public class SchemaGenerator {
     }
 
 
-    private GraphQLDirective[] buildDirectives
-            (List<Directive> directives, List<Directive> extensionDirectives, DirectiveLocation
-                    directiveLocation, Set<GraphQLDirective> directiveDefinitions, GraphqlTypeComparatorRegistry
-                     comparatorRegistry) {
+    private GraphQLDirective[] buildDirectives(
+            List<Directive> directives,
+            List<Directive> extensionDirectives,
+            DirectiveLocation directiveLocation,
+            Set<GraphQLDirective> directiveDefinitions,
+            GraphqlTypeComparatorRegistry comparatorRegistry) {
         directives = directives == null ? emptyList() : directives;
         extensionDirectives = extensionDirectives == null ? emptyList() : extensionDirectives;
         Set<String> names = new LinkedHashSet<>();
