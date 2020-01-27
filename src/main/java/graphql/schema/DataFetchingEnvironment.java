@@ -183,8 +183,16 @@ public interface DataFetchingEnvironment {
 
     /**
      * @return the {@link DataFetchingFieldSelectionSet} for the current data fetch operation
+     * @deprecated use {@link #getSelectionSet(String typeName)}
      */
     DataFetchingFieldSelectionSet getSelectionSet();
+
+    /**
+     *
+     * @param typeName the name of possible OutputType
+     * @return the {@link DataFetchingFieldSelectionSet} for the current data fetch operation , return null if typeName not present for this request
+     */
+    DataFetchingFieldSelectionSet getSelectionSet(String typeName);
 
     /**
      * This gives you access to the directives related to this field
