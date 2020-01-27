@@ -185,6 +185,7 @@ public interface DataFetchingEnvironment {
      * @return the {@link DataFetchingFieldSelectionSet} for the current data fetch operation
      * @deprecated use {@link #getSelectionSet(String typeName)}
      */
+    @Deprecated
     DataFetchingFieldSelectionSet getSelectionSet();
 
     /**
