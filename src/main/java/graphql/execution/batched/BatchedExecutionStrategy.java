@@ -251,7 +251,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         QueryDirectivesImpl queryDirectives = new QueryDirectivesImpl(fields, executionContext.getGraphQLSchema(), executionContext.getVariables());
 
         GraphQLOutputType fieldType = fieldDef.getType();
-        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, fields);
+        Map<String , DataFetchingFieldSelectionSet> allSelectionSets =
+                DataFetchingFieldSelectionSetImpl.collectAllSets(executionContext, fieldType, parameters.getField());
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(node.getSources())
@@ -261,7 +262,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .fieldType(fieldDef.getType())
                 .executionStepInfo(parameters.getExecutionStepInfo())
                 .parentType(parentType)
-                .selectionSet(fieldCollector)
+                .possibleSelectionSets(allSelectionSets)
                 .queryDirectives(queryDirectives)
                 .build();
 

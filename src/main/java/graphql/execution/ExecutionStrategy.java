@@ -240,7 +240,8 @@ public abstract class ExecutionStrategy {
         QueryDirectivesImpl queryDirectives = new QueryDirectivesImpl(field, executionContext.getGraphQLSchema(), executionContext.getVariables());
 
         GraphQLOutputType fieldType = fieldDef.getType();
-        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, parameters.getField());
+        Map<String , DataFetchingFieldSelectionSet> allSelectionSets =
+                DataFetchingFieldSelectionSetImpl.collectAllSets(executionContext, fieldType, parameters.getField());
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
 
 
@@ -253,7 +254,7 @@ public abstract class ExecutionStrategy {
                 .fieldType(fieldType)
                 .executionStepInfo(executionStepInfo)
                 .parentType(parentType)
-                .selectionSet(fieldCollector)
+                .possibleSelectionSets(allSelectionSets)
                 .queryDirectives(queryDirectives)
                 .build();
 

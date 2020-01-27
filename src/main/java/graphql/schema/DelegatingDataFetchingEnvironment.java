@@ -111,8 +111,14 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
         return delegateEnvironment.getExecutionId();
     }
 
+    @Deprecated
     public DataFetchingFieldSelectionSet getSelectionSet() {
         return delegateEnvironment.getSelectionSet();
+    }
+
+    @Override
+    public DataFetchingFieldSelectionSet getSelectionSet(String typeName) {
+        return delegateEnvironment.getSelectionSet(typeName);
     }
 
     public QueryDirectives getQueryDirectives() {

@@ -120,7 +120,8 @@ public class ValueFetcher {
         QueryDirectivesImpl queryDirectives = new QueryDirectivesImpl(sameFields, executionContext.getGraphQLSchema(), executionContext.getVariables());
 
         GraphQLOutputType fieldType = fieldDef.getType();
-        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, sameFields);
+        Map<String , DataFetchingFieldSelectionSet> allSelectionSets =
+                DataFetchingFieldSelectionSetImpl.collectAllSets(executionContext, fieldType, sameFields);
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(source)
@@ -131,7 +132,7 @@ public class ValueFetcher {
                 .fieldType(fieldType)
                 .executionStepInfo(executionInfo)
                 .parentType(parentType)
-                .selectionSet(fieldCollector)
+                .possibleSelectionSets(allSelectionSets)
                 .queryDirectives(queryDirectives)
                 .build();
 
