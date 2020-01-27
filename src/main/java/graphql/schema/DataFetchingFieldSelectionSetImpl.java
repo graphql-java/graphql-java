@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.GraphQL;
 import graphql.Internal;
 import graphql.execution.ExecutionContext;
 import graphql.execution.FieldCollector;
@@ -11,17 +12,12 @@ import graphql.introspection.Introspection;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 
+import javax.sql.rowset.spi.SyncResolver;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
@@ -78,6 +74,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         }
     };
 
+    @Deprecated
     public static DataFetchingFieldSelectionSet newCollector(ExecutionContext executionContext, GraphQLType fieldType, MergedField mergedField) {
         GraphQLType unwrappedType = GraphQLTypeUtil.unwrapAll(fieldType);
         if (unwrappedType instanceof GraphQLFieldsContainer) {
@@ -85,6 +82,45 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         } else {
             // we can only collect fields on object types and interfaces.  Scalars, Unions etc... cant be done.
             return NOOP;
+        }
+    }
+
+    private final static DataFetchingFieldSelectionSet getSet(ExecutionContext executionContext, GraphQLFieldsContainer fieldType, MergedField mergedField)
+    {
+        return new DataFetchingFieldSelectionSetImpl(executionContext , fieldType , mergedField);
+    }
+    public static Map<String , DataFetchingFieldSelectionSet> collectAllSets(ExecutionContext executionContext, GraphQLType fieldType, MergedField mergedField)
+    {
+        GraphQLType unwrappedType = GraphQLTypeUtil.unwrapAll(fieldType);
+        if(unwrappedType instanceof GraphQLFieldsContainer)
+        {
+            GraphQLFieldsContainer container = (GraphQLFieldsContainer) unwrappedType;
+            Map<String , DataFetchingFieldSelectionSet> sets = new HashMap<>();
+            sets.put(container.getName()  , getSet(executionContext , container , mergedField));
+            return sets;
+        }else if(unwrappedType instanceof GraphQLUnionType)
+        {
+            Map<String , DataFetchingFieldSelectionSet> sets = new HashMap<>();
+            GraphQLUnionType unionType = (GraphQLUnionType) unwrappedType;
+            for(GraphQLNamedOutputType type : unionType.getTypes())
+            {
+                if(type instanceof GraphQLFieldsContainer)
+                {
+                    sets.put(type.getName() , getSet(executionContext , (GraphQLFieldsContainer) type, mergedField));
+                }else
+                {
+                    sets.put(type.getName() , NOOP);
+                }
+            }
+
+            return sets;
+        }else if(unwrappedType instanceof GraphQLNamedType){
+            Map sets = new HashMap();
+            sets.put(((GraphQLNamedType) unwrappedType).getName() , NOOP);
+            return sets;
+        }else
+        {
+            return Collections.EMPTY_MAP;
         }
     }
 
