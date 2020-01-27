@@ -35,7 +35,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final GraphQLSchema graphQLSchema;
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final ExecutionId executionId;
-    private final DataFetchingFieldSelectionSet selectionSet;
+    private final Map<String , DataFetchingFieldSelectionSet> possibleSelectionSets;
     private final ExecutionStepInfo executionStepInfo;
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
@@ -58,7 +58,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.graphQLSchema = builder.graphQLSchema;
         this.fragmentsByName = builder.fragmentsByName == null ? Collections.emptyMap() : builder.fragmentsByName;
         this.executionId = builder.executionId;
-        this.selectionSet = builder.selectionSet;
+        this.possibleSelectionSets = builder.possibleSelectionSets;
         this.executionStepInfo = builder.executionStepInfo;
         this.dataLoaderRegistry = builder.dataLoaderRegistry;
         this.cacheControl = builder.cacheControl;
@@ -182,8 +182,14 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
+    @Deprecated
     public DataFetchingFieldSelectionSet getSelectionSet() {
-        return selectionSet;
+        return null;
+    }
+
+    @Override
+    public DataFetchingFieldSelectionSet getSelectionSet(String typeName) {
+        return possibleSelectionSets.get(typeName);
     }
 
     @Override
@@ -250,7 +256,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private GraphQLType parentType;
         private GraphQLSchema graphQLSchema;
         private ExecutionId executionId;
-        private DataFetchingFieldSelectionSet selectionSet;
+        private Map<String , DataFetchingFieldSelectionSet> possibleSelectionSets;
         private ExecutionStepInfo executionStepInfo;
         private DataLoaderRegistry dataLoaderRegistry;
         private CacheControl cacheControl;
@@ -275,7 +281,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.graphQLSchema = env.graphQLSchema;
             this.fragmentsByName = env.fragmentsByName;
             this.executionId = env.executionId;
-            this.selectionSet = env.selectionSet;
+            this.possibleSelectionSets = env.possibleSelectionSets;
             this.executionStepInfo = env.executionStepInfo;
             this.dataLoaderRegistry = env.dataLoaderRegistry;
             this.cacheControl = env.cacheControl;
@@ -349,8 +355,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             return this;
         }
 
-        public Builder selectionSet(DataFetchingFieldSelectionSet selectionSet) {
-            this.selectionSet = selectionSet;
+        public Builder possibleSelectionSets(Map<String , DataFetchingFieldSelectionSet> possibleSelectionSets) {
+            this.possibleSelectionSets = possibleSelectionSets==null?Collections.EMPTY_MAP:possibleSelectionSets;
             return this;
         }
 
