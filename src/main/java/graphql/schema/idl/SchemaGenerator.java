@@ -714,7 +714,7 @@ public class SchemaGenerator {
             scalar = buildCtx.getWiring().getScalars().get(typeDefinition.getName());
         }
 
-        if (!ScalarInfo.isStandardScalar(scalar) && !ScalarInfo.isGraphqlSpecifiedScalar(scalar)) {
+        if (!ScalarInfo.isGraphqlSpecifiedScalar(scalar)) {
             scalar = scalar.transform(builder -> builder
                     .definition(typeDefinition)
                     .comparatorRegistry(buildCtx.getComparatorRegistry())

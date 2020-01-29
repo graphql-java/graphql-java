@@ -26,7 +26,7 @@ public class ScalarInfo {
     /**
      * A map of scalar type definitions provided by graphql-java
      */
-    public static final Map<String, ScalarTypeDefinition> STANDARD_SCALAR_DEFINITIONS = new LinkedHashMap<>();
+    public static final Map<String, ScalarTypeDefinition> GRAPHQL_SPECIFICATION_SCALARS_DEFINITIONS = new LinkedHashMap<>();
 
     static {
         GRAPHQL_SPECIFICATION_SCALARS.add(Scalars.GraphQLInt);
@@ -34,59 +34,16 @@ public class ScalarInfo {
         GRAPHQL_SPECIFICATION_SCALARS.add(Scalars.GraphQLString);
         GRAPHQL_SPECIFICATION_SCALARS.add(Scalars.GraphQLBoolean);
         GRAPHQL_SPECIFICATION_SCALARS.add(Scalars.GraphQLID);
-
-        STANDARD_SCALARS.add(Scalars.GraphQLInt);
-        STANDARD_SCALARS.add(Scalars.GraphQLFloat);
-        STANDARD_SCALARS.add(Scalars.GraphQLString);
-        STANDARD_SCALARS.add(Scalars.GraphQLBoolean);
-        STANDARD_SCALARS.add(Scalars.GraphQLID);
-
-        STANDARD_SCALARS.add(Scalars.GraphQLBigDecimal);
-        STANDARD_SCALARS.add(Scalars.GraphQLBigInteger);
-        STANDARD_SCALARS.add(Scalars.GraphQLByte);
-        STANDARD_SCALARS.add(Scalars.GraphQLChar);
-        STANDARD_SCALARS.add(Scalars.GraphQLShort);
-        STANDARD_SCALARS.add(Scalars.GraphQLLong);
     }
 
     static {
         // graphql standard scalars
-        STANDARD_SCALAR_DEFINITIONS.put("Int", ScalarTypeDefinition.newScalarTypeDefinition().name("Int").build());
-        STANDARD_SCALAR_DEFINITIONS.put("Float", ScalarTypeDefinition.newScalarTypeDefinition().name("Float").build());
-        STANDARD_SCALAR_DEFINITIONS.put("String", ScalarTypeDefinition.newScalarTypeDefinition().name("String").build());
-        STANDARD_SCALAR_DEFINITIONS.put("Boolean", ScalarTypeDefinition.newScalarTypeDefinition().name("Boolean").build());
-        STANDARD_SCALAR_DEFINITIONS.put("ID", ScalarTypeDefinition.newScalarTypeDefinition().name("ID").build());
+        GRAPHQL_SPECIFICATION_SCALARS_DEFINITIONS.put("Int", ScalarTypeDefinition.newScalarTypeDefinition().name("Int").build());
+        GRAPHQL_SPECIFICATION_SCALARS_DEFINITIONS.put("Float", ScalarTypeDefinition.newScalarTypeDefinition().name("Float").build());
+        GRAPHQL_SPECIFICATION_SCALARS_DEFINITIONS.put("String", ScalarTypeDefinition.newScalarTypeDefinition().name("String").build());
+        GRAPHQL_SPECIFICATION_SCALARS_DEFINITIONS.put("Boolean", ScalarTypeDefinition.newScalarTypeDefinition().name("Boolean").build());
+        GRAPHQL_SPECIFICATION_SCALARS_DEFINITIONS.put("ID", ScalarTypeDefinition.newScalarTypeDefinition().name("ID").build());
 
-        // graphql-java library extensions
-        STANDARD_SCALAR_DEFINITIONS.put("Long", ScalarTypeDefinition.newScalarTypeDefinition().name("Long").build());
-        STANDARD_SCALAR_DEFINITIONS.put("BigInteger", ScalarTypeDefinition.newScalarTypeDefinition().name("BigInteger").build());
-        STANDARD_SCALAR_DEFINITIONS.put("BigDecimal", ScalarTypeDefinition.newScalarTypeDefinition().name("BigDecimal").build());
-        STANDARD_SCALAR_DEFINITIONS.put("Byte", ScalarTypeDefinition.newScalarTypeDefinition().name("Byte").build());
-        STANDARD_SCALAR_DEFINITIONS.put("Short", ScalarTypeDefinition.newScalarTypeDefinition().name("Short").build());
-        STANDARD_SCALAR_DEFINITIONS.put("Char", ScalarTypeDefinition.newScalarTypeDefinition().name("Char").build());
-
-    }
-
-    /**
-     * Returns true if the scalar type is a standard one provided by graphql-java
-     *
-     * @param scalarType the type in question
-     *
-     * @return true if the scalar type is a graphql-java provided scalar
-     */
-    public static boolean isStandardScalar(GraphQLScalarType scalarType) {
-        return inList(STANDARD_SCALARS, scalarType.getName());
-    }
-
-    /**
-     * Returns true if the scalar type is a standard one provided by graphql-java
-     *
-     * @param scalarTypeName the name of the scalar type in question
-     *
-     * @return true if the scalar type is a graphql-java provided scalar
-     */
-    public static boolean isStandardScalar(String scalarTypeName) {
-        return inList(STANDARD_SCALARS, scalarTypeName);
     }
 
     /**

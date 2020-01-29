@@ -129,7 +129,7 @@ public class RuntimeWiring {
         private GraphqlTypeComparatorRegistry comparatorRegistry = GraphqlTypeComparatorRegistry.AS_IS_REGISTRY;
 
         private Builder() {
-            ScalarInfo.STANDARD_SCALARS.forEach(this::scalar);
+            ScalarInfo.GRAPHQL_SPECIFICATION_SCALARS.forEach(this::scalar);
             // we give this out by default
             registeredDirectiveWiring.put(FetchSchemaDirectiveWiring.FETCH, new FetchSchemaDirectiveWiring());
         }

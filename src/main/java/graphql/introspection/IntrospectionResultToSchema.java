@@ -132,7 +132,7 @@ public class IntrospectionResultToSchema {
 
     private TypeDefinition createScalar(Map<String, Object> input) {
         String name = (String) input.get("name");
-        if (ScalarInfo.isStandardScalar(name)) {
+        if (ScalarInfo.isGraphqlSpecifiedScalar(name)) {
             return null;
         }
         return ScalarTypeDefinition.newScalarTypeDefinition().name(name).build();

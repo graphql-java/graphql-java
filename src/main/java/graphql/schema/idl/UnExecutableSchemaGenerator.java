@@ -19,7 +19,7 @@ public class UnExecutableSchemaGenerator {
         RuntimeWiring runtimeWiring = EchoingWiringFactory.newEchoingWiring(wiring -> {
             Map<String, ScalarTypeDefinition> scalars = registry.scalars();
             scalars.forEach((name, v) -> {
-                if (!ScalarInfo.isStandardScalar(name)) {
+                if (!ScalarInfo.isGraphqlSpecifiedScalar(name)) {
                     wiring.scalar(fakeScalar(name));
                 }
             });
