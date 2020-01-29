@@ -1998,4 +1998,49 @@ class SchemaGeneratorTest extends Specification {
         GraphQLTypeUtil.simplePrint(directive.getArgument("enumArguments").getType()) == "[SomeEnum!]"
         directive.getArgument("enumArguments").getDefaultValue() == []
     }
+
+    def "scalar used as output is not in additional types"() {
+        given:
+
+        def spec = """
+        scalar UsedScalar
+        type Query{ foo: UsedScalar }
+        """
+        when:
+        def schema = schema(spec)
+        then:
+        schema.getType("UsedScalar") != null
+        schema.getAdditionalTypes().find { it.name == "UsedScalar" } == null
+    }
+
+    def "scalar used as input is not in additional types"() {
+        given:
+
+        def spec = """
+        scalar UsedScalar
+        input Input {
+            foo: UsedScalar
+        }
+        type Query{ foo(arg: Input): String }
+        """
+        when:
+        def schema = schema(spec)
+        then:
+        schema.getType("UsedScalar") != null
+        schema.getAdditionalTypes().find { it.name == "UsedScalar" } == null
+    }
+
+    def "unused scalar is not ignored and provided as additional type"() {
+        given:
+
+        def spec = """
+        scalar UnusedScalar
+        type Query{ foo: String }
+        """
+        when:
+        def schema = schema(spec)
+        then:
+        schema.getType("UnusedScalar") != null
+        schema.getAdditionalTypes().find { it.name == "UnusedScalar" } != null
+    }
 }
