@@ -398,7 +398,7 @@ public class SchemaGenerator {
             }
         });
         typeRegistry.scalars().values().forEach(scalarTypeDefinition -> {
-            if (ScalarInfo.isStandardScalar(scalarTypeDefinition.getName())) {
+            if (ScalarInfo.isGraphqlSpecifiedScalar(scalarTypeDefinition.getName())) {
                 return;
             }
             if (buildCtx.hasInputType(scalarTypeDefinition) == null && buildCtx.hasOutputType(scalarTypeDefinition) == null) {
