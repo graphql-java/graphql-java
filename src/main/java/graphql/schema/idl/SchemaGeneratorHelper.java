@@ -1,19 +1,15 @@
 package graphql.schema.idl;
 
 import graphql.Internal;
-import graphql.Scalars;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
-import graphql.language.BooleanValue;
 import graphql.language.Comment;
 import graphql.language.Description;
 import graphql.language.Directive;
 import graphql.language.DirectiveDefinition;
 import graphql.language.EnumValue;
-import graphql.language.FloatValue;
 import graphql.language.InputValueDefinition;
-import graphql.language.IntValue;
 import graphql.language.Node;
 import graphql.language.NullValue;
 import graphql.language.ObjectValue;
@@ -39,15 +35,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertShouldNeverHappen;
-import static graphql.Assert.assertTrue;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.valueOf;
 import static graphql.language.DirectiveLocation.newDirectiveLocation;
-import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
@@ -173,74 +166,10 @@ public class SchemaGeneratorHelper {
         typeRegistry.add(DEPRECATED_DIRECTIVE_DEFINITION);
     }
 
-    /**
-     * We support the basic types as directive types
-     *
-     * @param value the value to use
-     *
-     * @return a graphql input type
-     */
-    public GraphQLInputType buildDirectiveInputType(Value value) {
-        if (value instanceof NullValue) {
-            return Scalars.GraphQLString;
-        }
-        if (value instanceof FloatValue) {
-            return Scalars.GraphQLFloat;
-        }
-        if (value instanceof StringValue) {
-            return Scalars.GraphQLString;
-        }
-        if (value instanceof IntValue) {
-            return Scalars.GraphQLInt;
-        }
-        if (value instanceof BooleanValue) {
-            return Scalars.GraphQLBoolean;
-        }
-        if (value instanceof ArrayValue) {
-            ArrayValue arrayValue = (ArrayValue) value;
-            return list(buildDirectiveInputType(getArrayValueWrappedType(arrayValue)));
-        }
-        return assertShouldNeverHappen("Directive values of type '%s' are not supported yet", value.getClass().getSimpleName());
-    }
-
-    private Value getArrayValueWrappedType(ArrayValue value) {
-        // empty array [] is equivalent to [null]
-        if (value.getValues().isEmpty()) {
-            return NullValue.Null;
-        }
-
-        // get rid of null values
-        List<Value> nonNullValueList = value.getValues().stream()
-                .filter(v -> !(v instanceof NullValue))
-                .collect(toList());
-
-        // [null, null, ...] unwrapped is null
-        if (nonNullValueList.isEmpty()) {
-            return NullValue.Null;
-        }
-
-        // make sure the array isn't polymorphic
-        Set<Class<? extends Value>> distinctTypes = nonNullValueList.stream()
-                .map(Value::getClass)
-                .distinct()
-                .collect(Collectors.toSet());
-
-        assertTrue(distinctTypes.size() == 1,
-                "Arrays containing multiple types of values are not supported yet. Detected the following types [%s]",
-                nonNullValueList.stream()
-                        .map(Value::getClass)
-                        .map(Class::getSimpleName)
-                        .distinct()
-                        .sorted()
-                        .collect(Collectors.joining(",")));
-
-        // peek at first value, value exists and is assured to be non-null
-        return nonNullValueList.get(0);
-    }
 
     // builds directives from a type and its extensions
     public GraphQLDirective buildDirective(Directive directive, Set<GraphQLDirective> directiveDefinitions, DirectiveLocation directiveLocation, GraphqlTypeComparatorRegistry comparatorRegistry) {
-        Optional<GraphQLDirective> directiveDefinition = directiveDefinitions.stream().filter(dd -> dd.getName().equals(directive.getName())).findFirst();
+        GraphQLDirective directiveDefinition = FpKit.findOne(directiveDefinitions, dd -> dd.getName().equals(directive.getName())).get();
         GraphQLDirective.Builder builder = GraphQLDirective.newDirective()
                 .name(directive.getName())
                 .description(buildDescription(directive, null))
@@ -251,26 +180,20 @@ public class SchemaGeneratorHelper {
                 .map(arg -> buildDirectiveArgument(arg, directiveDefinition))
                 .collect(toList());
 
-        if (directiveDefinition.isPresent()) {
-            arguments = transferMissingArguments(arguments, directiveDefinition.get());
-        }
+        arguments = transferMissingArguments(arguments, directiveDefinition);
         arguments.forEach(builder::argument);
 
         return builder.build();
     }
 
-    private GraphQLArgument buildDirectiveArgument(Argument arg, Optional<GraphQLDirective> directiveDefinition) {
-        Optional<GraphQLArgument> directiveDefArgument = directiveDefinition.map(dd -> dd.getArgument(arg.getName()));
+    private GraphQLArgument buildDirectiveArgument(Argument arg, GraphQLDirective directiveDefinition) {
+        GraphQLArgument directiveDefArgument = directiveDefinition.getArgument(arg.getName());
         GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
         builder.name(arg.getName());
         GraphQLInputType inputType;
         Object defaultValue = null;
-        if (directiveDefArgument.isPresent()) {
-            inputType = directiveDefArgument.get().getType();
-            defaultValue = directiveDefArgument.get().getDefaultValue();
-        } else {
-            inputType = buildDirectiveInputType(arg.getValue());
-        }
+        inputType = directiveDefArgument.getType();
+        defaultValue = directiveDefArgument.getDefaultValue();
         builder.type(inputType);
         builder.defaultValue(defaultValue);
 

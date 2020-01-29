@@ -60,6 +60,16 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
     def "will trace down into each directive callback"() {
 
         def sdl = '''
+            directive @fieldDirective(target: String) on FIELD_DEFINITION
+            directive @argumentDirective(target: String) on ARGUMENT_DEFINITION
+            directive @objectDirective(target: String) on OBJECT
+            directive @interfaceDirective(target: String) on INTERFACE 
+            directive @unionDirective(target: String) on UNION
+            directive @enumDirective(target: String) on ENUM
+            directive @enumValueDirective(target: String) on ENUM_VALUE
+            directive @inputDirective(target: String) on INPUT_OBJECT
+            directive @inputFieldDirective(target: String) on INPUT_FIELD_DEFINITION
+            directive @scalarDirective(target: String) on SCALAR
             type Query {
                 f : ObjectType
                 s : ScalarType
@@ -275,6 +285,11 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
 
     def "can modify the existing behaviour"() {
         def sdl = '''
+            directive @uppercase on FIELD_DEFINITION
+            directive @lowercase on FIELD_DEFINITION
+            directive @mixedcase on FIELD_DEFINITION
+            directive @echoFieldName on FIELD_DEFINITION
+            directive @reverse on FIELD_DEFINITION
             type Query {
                 lowerCaseValue : String @uppercase
                 upperCaseValue : String @lowercase
@@ -384,6 +399,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
     def "ensure the readme examples work"() {
 
         def sdl = '''
+            directive @dateFormat on FIELD_DEFINITION
             type Query {
                 dateField : String @dateFormat
             }
@@ -421,6 +437,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
 
     def "can state-fully track wrapped elements"() {
         def sdl = '''
+            directive @secret on FIELD_DEFINITION | OBJECT
             type Query {
                 secret : Secret
                 nonSecret : NonSecret
@@ -541,6 +558,10 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
 
     def "ordering of directive wiring is locked in place"() {
         def sdl = '''
+            directive @generalDirective on FIELD_DEFINITION
+            directive @factoryDirective on FIELD_DEFINITION
+            directive @namedDirective1 on FIELD_DEFINITION
+            directive @namedDirective2 on FIELD_DEFINITION
             type Query {
                 field : String @generalDirective @factoryDirective @namedDirective1 @namedDirective2 
             }
@@ -634,6 +655,10 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
 
     def "all directives are available to all callbacks"() {
         def sdl = '''
+            directive @generalDirective on FIELD_DEFINITION
+            directive @factoryDirective on FIELD_DEFINITION
+            directive @namedDirective1 on FIELD_DEFINITION
+            directive @namedDirective2 on FIELD_DEFINITION
             type Query {
                 field : String @generalDirective @factoryDirective @namedDirective1 @namedDirective2 
             }
@@ -721,6 +746,10 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
 
     def "parent and child element directives can be accessed"() {
         def sdl = '''
+            directive @argDirective1 on ARGUMENT_DEFINITION
+            directive @argDirective2 on ARGUMENT_DEFINITION
+            directive @argDirective3 on ARGUMENT_DEFINITION
+            directive @fieldDirective on FIELD_DEFINITION
             type Query {
                 field(arg1 : String @argDirective1 @argDirective2, arg2 : String @argDirective3) : String @fieldDirective 
             }
@@ -784,6 +813,10 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
 
     def "data fetchers can be changed in argument and object callbacks"() {
         def sdl = '''
+            directive @argDirective1 on ARGUMENT_DEFINITION
+            directive @argDirective2 on ARGUMENT_DEFINITION
+            directive @argDirective3 on ARGUMENT_DEFINITION
+            directive @fieldDirective on FIELD_DEFINITION
             type Query {
                 field1(arg1 : String @argDirective1 @argDirective2, arg2 : String @argDirective3) : String @fieldDirective
                 field2 : String 

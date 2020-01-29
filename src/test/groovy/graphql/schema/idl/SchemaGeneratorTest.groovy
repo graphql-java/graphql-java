@@ -1,6 +1,6 @@
 package graphql.schema.idl
 
-import graphql.AssertException
+
 import graphql.TestUtil
 import graphql.introspection.Introspection
 import graphql.schema.GraphQLArgument
@@ -25,7 +25,6 @@ import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
 import graphql.schema.visibility.GraphqlFieldVisibility
 import spock.lang.Specification
-import spock.lang.Unroll
 
 import java.util.function.UnaryOperator
 
@@ -33,7 +32,6 @@ import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
-import static graphql.schema.GraphQLList.list
 
 class SchemaGeneratorTest extends Specification {
 
@@ -923,61 +921,6 @@ class SchemaGeneratorTest extends Specification {
 
     }
 
-    @Unroll
-    def "when using implicit directive (w/o definition), #argumentName is supported"() {
-        setup:
-        def spec = """
-            type Query @myDirective($argumentName: $argumentValue) {
-                foo: String 
-            }
-        """
-        when:
-        def wiring = RuntimeWiring.newRuntimeWiring()
-                .build()
-
-        def schema = schema(spec, wiring)
-        def queryType = schema.queryType
-
-        then:
-        def directive = queryType.getDirective("myDirective")
-        directive.getArgument(argumentName).type == expectedArgumentType
-
-        where:
-        argumentName        | argumentValue     || expectedArgumentType
-        "stringArg"         | '"a string"'      || GraphQLString
-        "boolArg"           | "true"            || GraphQLBoolean
-        "floatArg"          | "4.5"             || GraphQLFloat
-        "intArg"            | "5"               || GraphQLInt
-        "nullArg"           | "null"            || GraphQLString
-        "emptyArrayArg"     | "[]"              || list(GraphQLString)
-        "arrayNullsArg"     | "[null, null]"    || list(GraphQLString)
-        "arrayArg"          | "[3,4,6]"         || list(GraphQLInt)
-        "arrayWithNullsArg" | "[null,3,null,6]" || list(GraphQLInt)
-    }
-
-    @Unroll
-    def "when using implicit directive (w/o definition), #argumentName is NOT supported"() {
-        setup:
-        def spec = """
-            type Query @myDirective($argumentName: $argumentValue) {
-                foo: String 
-            }
-        """
-        when:
-        def wiring = RuntimeWiring.newRuntimeWiring()
-                .build()
-        schema(spec, wiring)
-
-        then:
-        def ex = thrown(AssertException)
-        ex.message == expectedErrorMessage
-
-        where:
-        argumentName          | argumentValue               || expectedErrorMessage
-        "objArg"              | '{ hi: "John"}'             || "Internal error: should never happen: Directive values of type 'ObjectValue' are not supported yet"
-        "enumArg"             | "MONDAY"                    || "Internal error: should never happen: Directive values of type 'EnumValue' are not supported yet"
-        "polymorphicArrayArg" | '["one", { hi: "John"}, 5]' || "Arrays containing multiple types of values are not supported yet. Detected the following types [IntValue,ObjectValue,StringValue]"
-    }
 
     def "deprecated directive is supported"() {
         given:
@@ -1153,6 +1096,13 @@ class SchemaGeneratorTest extends Specification {
 
     def "object type directives are gathered and turned into runtime objects with arguments"() {
         def spec = """
+            directive @directive1 on OBJECT
+            directive @fieldDirective1 on FIELD_DEFINITION
+            directive @directive2 on OBJECT
+            directive @directive3 on OBJECT
+            directive @directiveWithArgs(strArg: String, intArg: Int, boolArg: Boolean, floatArg: Float,nullArg: String) on OBJECT
+            directive @fieldDirective2 on FIELD_DEFINITION
+            
             type Query @directive1 {
               field1 : String @fieldDirective1
             }
@@ -1222,18 +1172,21 @@ class SchemaGeneratorTest extends Specification {
             type B  {
                 fieldB : String
             }
-            
+            directive @IFaceDirective on INTERFACE
             interface IFace @IFaceDirective {
                 field1 : String
             }
-            
+            directive @OnionDirective on UNION 
             union Onion @OnionDirective = A | B
             
+            directive @EnumValueDirective on ENUM_VALUE
+            directive @NumbDirective on ENUM 
             enum Numb @NumbDirective {
                 X @EnumValueDirective,
                 Y
             }
-            
+            directive @PuterDirective on INPUT_OBJECT
+            directive @InputFieldDirective on INPUT_FIELD_DEFINITION
             input Puter @PuterDirective {
                 inputField : String @InputFieldDirective
             }
@@ -1351,10 +1304,12 @@ class SchemaGeneratorTest extends Specification {
             }
             
             
+            directive @directive on INTERFACE 
             interface IAgeAndHeight @directive {
                 age : Int
             }
 
+            directive @directiveField on FIELD_DEFINITION 
             extend interface IAgeAndHeight {
                 height : Int @directiveField
             }
@@ -1395,7 +1350,7 @@ class SchemaGeneratorTest extends Specification {
             union FooBar = Foo
             
             extend union FooBar = Bar | Baz
-            
+            directive @directive on UNION 
             extend union FooBar @directive
             
         """
@@ -1425,7 +1380,7 @@ class SchemaGeneratorTest extends Specification {
             extend enum Numb {
                 C
             }
-
+            directive @directive on ENUM
             extend enum Numb @directive{
                 D
             }
@@ -1462,6 +1417,7 @@ class SchemaGeneratorTest extends Specification {
                 fieldC : String
             }
 
+            directive @directive on INPUT_OBJECT
             extend input Puter @directive {
                 fieldD : String
             }
@@ -1485,7 +1441,10 @@ class SchemaGeneratorTest extends Specification {
             type Query {
                 obj : Object
             }
-            
+            directive @strDirective on ARGUMENT_DEFINITION    
+            directive @secondDirective on ARGUMENT_DEFINITION    
+            directive @intDirective(inception: Boolean) on ARGUMENT_DEFINITION    
+            directive @thirdDirective on ARGUMENT_DEFINITION    
             type Object {
                 field(argStr : String @strDirective @secondDirective, argInt : Int @intDirective(inception : true) @thirdDirective ) : String
             }
@@ -1530,12 +1489,7 @@ class SchemaGeneratorTest extends Specification {
         """
 
         when:
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
-
-        then:
-        options.isEnforceSchemaDirectives()
-
-        when:
+        def options = SchemaGenerator.Options.defaultOptions()
         def registry = new SchemaParser().parse(spec)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
 
@@ -1572,7 +1526,7 @@ class SchemaGeneratorTest extends Specification {
         """
 
         when:
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+        def options = SchemaGenerator.Options.defaultOptions()
 
         def registry = new SchemaParser().parse(spec)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
@@ -1604,12 +1558,7 @@ class SchemaGeneratorTest extends Specification {
         """
 
         when:
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
-
-        then:
-        options.isEnforceSchemaDirectives()
-
-        when:
+        def options = SchemaGenerator.Options.defaultOptions()
         def registry = new SchemaParser().parse(spec)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
 
@@ -1637,7 +1586,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+        def options = SchemaGenerator.Options.defaultOptions()
 
         when:
         def registry = new SchemaParser().parse(spec)
@@ -1788,6 +1737,7 @@ class SchemaGeneratorTest extends Specification {
 
     def "extensions are captured into runtime objects"() {
         def sdl = '''
+            directive @directive1 on SCALAR
             ######## Objects
              
             type Query {
@@ -1889,7 +1839,7 @@ class SchemaGeneratorTest extends Specification {
                 .wiringFactory(wiringFactory)
                 .build()
 
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
 
         def types = new SchemaParser().parse(sdl)
         GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(options, types, runtimeWiring)
