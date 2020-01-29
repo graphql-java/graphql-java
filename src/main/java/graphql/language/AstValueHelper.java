@@ -103,7 +103,6 @@ public class AstValueHelper {
                 return IntValue.newIntValue().value(new BigInteger(stringValue)).build();
             }
 
-            // String types are just strings but JSON'ised
             return StringValue.newStringValue().value(stringValue).build();
         }
 
