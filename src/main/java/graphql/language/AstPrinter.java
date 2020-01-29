@@ -184,14 +184,6 @@ public class AstPrinter {
         };
     }
 
-//    private boolean hasDescription(Node<?> node) {
-//        Description description = ((AbstractDescribedNode) node).getDescription();
-//        if (description == null || description.getContent() == null || description.getContent().length() == 0 ) {
-//                return false;
-//        }
-//        return true;
-//    }
-
     private boolean hasDescription(List<? extends Node> nodes) {
         return nodes.stream().anyMatch(it -> ((AbstractDescribedNode) it).getDescription() != null);
     }
