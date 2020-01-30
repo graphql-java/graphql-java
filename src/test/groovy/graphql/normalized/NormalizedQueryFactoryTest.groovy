@@ -11,7 +11,7 @@ import graphql.util.TraverserContext
 import graphql.util.TraverserVisitorStub
 import spock.lang.Specification
 
-class NormalizedQueryAnalyzerTest extends Specification {
+class NormalizedQueryFactoryTest extends Specification {
 
 
     def "test"() {
@@ -503,6 +503,91 @@ type Dog implements Animal{
                         'Foo.subFoo: String (conditional: false)',
                         'Foo.moreFoos: Foo (conditional: false)',
                         'Foo.subFoo: String (conditional: false)']
+    }
+
+    def "print the original query"() {
+        given:
+        String schema = """
+        type Query {
+            issues: [Issue]
+        }
+
+        type Issue {
+            id: ID
+            author: User
+        }
+        type User {
+            name: String
+            createdIssues: [Issue] 
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        def query = """{ 
+                issues {
+                    author {
+                        name
+                        ... on User {
+                            createdIssues {
+                                ... on Issue {
+                                    id
+                                }
+                            }
+                        }
+                        ... on User {
+                            name
+                        }
+                    }
+                }
+                myIssues : issues {
+                    myAuthor: author {
+                        ... on User {
+                            name
+                        }
+                        name
+                    }
+                }
+            }
+                """
+
+        GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build();
+        assert graphQL.execute(query).errors.size() == 0
+
+        Document document = new Parser().parseDocument(query)
+
+        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        def normalizedQuery = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
+
+        when:
+        String originalQuery = normalizedQuery.printOriginalQuery();
+
+        then:
+        originalQuery == """{
+  issues {
+    author {
+      name
+      ... on User {
+        createdIssues {
+          ... on Issue {
+            id
+          }
+        }
+      }
+      ... on User {
+        name
+      }
+    }
+  }
+  myIssues: issues {
+    myAuthor: author {
+      ... on User {
+        name
+      }
+      name
+    }
+  }
+}"""
+
     }
 
     List<String> printTree(NormalizedQuery queryExecutionTree) {
