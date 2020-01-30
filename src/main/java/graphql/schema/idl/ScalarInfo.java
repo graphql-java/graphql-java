@@ -13,10 +13,6 @@ import java.util.Map;
  * Info on all the standard scalar objects provided by graphql-java
  */
 public class ScalarInfo {
-    /**
-     * A list of the scalar types provided by graphql-java
-     */
-    public static final List<GraphQLScalarType> STANDARD_SCALARS = new ArrayList<>();
 
     /**
      * A list of the built-in scalar types as defined by the graphql specification
