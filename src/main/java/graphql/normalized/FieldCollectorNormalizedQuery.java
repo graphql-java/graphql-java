@@ -1,4 +1,4 @@
-package graphql.analysis.qexectree;
+package graphql.normalized;
 
 
 import graphql.Assert;
@@ -37,22 +37,22 @@ import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 
 // special version of FieldCollector to track all possible types per field
 @Internal
-public class FieldCollectorQueryExecution {
+public class FieldCollectorNormalizedQuery {
 
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
-    public List<QueryExecutionField> collectFields(FieldCollectorQueryExecutionParams parameters, QueryExecutionField queryExecutionField) {
-        GraphQLUnmodifiedType fieldType = GraphQLTypeUtil.unwrapAll(queryExecutionField.getFieldDefinition().getType());
+    public List<NormalizedQueryField> collectFields(FieldCollectorNormalizedQueryParams parameters, NormalizedQueryField normalizedQueryField) {
+        GraphQLUnmodifiedType fieldType = GraphQLTypeUtil.unwrapAll(normalizedQueryField.getFieldDefinition().getType());
         // if not composite we don't have any selectionSet because it is a Scalar or enum
         if (!(fieldType instanceof GraphQLCompositeType)) {
             return Collections.emptyList();
         }
 
-        Map<String, Map<GraphQLObjectType, QueryExecutionField>> subFields = new LinkedHashMap<>();
+        Map<String, Map<GraphQLObjectType, NormalizedQueryField>> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
         Set<GraphQLObjectType> possibleObjects
                 = new LinkedHashSet<>(resolvePossibleObjects((GraphQLCompositeType) fieldType, parameters.getGraphQLSchema()));
-        for (Field field : queryExecutionField.getMergedField().getFields()) {
+        for (Field field : normalizedQueryField.getMergedField().getFields()) {
             if (field.getSelectionSet() == null) {
                 continue;
             }
@@ -61,24 +61,24 @@ public class FieldCollectorQueryExecution {
                     visitedFragments,
                     subFields,
                     possibleObjects,
-                    queryExecutionField.getFieldDefinition().getType());
+                    normalizedQueryField.getFieldDefinition().getType());
         }
-        List<QueryExecutionField> result = new ArrayList<>();
+        List<NormalizedQueryField> result = new ArrayList<>();
         subFields.values().forEach(setMergedFieldWTCMap -> {
             result.addAll(setMergedFieldWTCMap.values());
         });
         return result;
     }
 
-    public List<QueryExecutionField> collectFromOperation(FieldCollectorQueryExecutionParams parameters,
-                                                          OperationDefinition operationDefinition,
-                                                          GraphQLObjectType rootType) {
-        Map<String, Map<GraphQLObjectType, QueryExecutionField>> subFields = new LinkedHashMap<>();
+    public List<NormalizedQueryField> collectFromOperation(FieldCollectorNormalizedQueryParams parameters,
+                                                           OperationDefinition operationDefinition,
+                                                           GraphQLObjectType rootType) {
+        Map<String, Map<GraphQLObjectType, NormalizedQueryField>> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
         Set<GraphQLObjectType> possibleObjects = new LinkedHashSet<>();
         possibleObjects.add(rootType);
         this.collectFields(parameters, operationDefinition.getSelectionSet(), visitedFragments, subFields, possibleObjects, rootType);
-        List<QueryExecutionField> result = new ArrayList<>();
+        List<NormalizedQueryField> result = new ArrayList<>();
         subFields.values().forEach(setMergedFieldWTCMap -> {
             result.addAll(setMergedFieldWTCMap.values());
         });
@@ -86,10 +86,10 @@ public class FieldCollectorQueryExecution {
     }
 
 
-    private void collectFields(FieldCollectorQueryExecutionParams parameters,
+    private void collectFields(FieldCollectorNormalizedQueryParams parameters,
                                SelectionSet selectionSet,
                                List<String> visitedFragments,
-                               Map<String, Map<GraphQLObjectType, QueryExecutionField>> result,
+                               Map<String, Map<GraphQLObjectType, NormalizedQueryField>> result,
                                Set<GraphQLObjectType> possibleObjects,
                                GraphQLOutputType parentType) {
 
@@ -104,9 +104,9 @@ public class FieldCollectorQueryExecution {
         }
     }
 
-    private void collectFragmentSpread(FieldCollectorQueryExecutionParams parameters,
+    private void collectFragmentSpread(FieldCollectorNormalizedQueryParams parameters,
                                        List<String> visitedFragments,
-                                       Map<String, Map<GraphQLObjectType, QueryExecutionField>> result,
+                                       Map<String, Map<GraphQLObjectType, NormalizedQueryField>> result,
                                        FragmentSpread fragmentSpread,
                                        Set<GraphQLObjectType> possibleObjects,
                                        GraphQLOutputType parentType) {
@@ -129,9 +129,9 @@ public class FieldCollectorQueryExecution {
         collectFields(parameters, fragmentDefinition.getSelectionSet(), visitedFragments, result, newConditions, newParentType);
     }
 
-    private void collectInlineFragment(FieldCollectorQueryExecutionParams parameters,
+    private void collectInlineFragment(FieldCollectorNormalizedQueryParams parameters,
                                        List<String> visitedFragments,
-                                       Map<String, Map<GraphQLObjectType, QueryExecutionField>> result,
+                                       Map<String, Map<GraphQLObjectType, NormalizedQueryField>> result,
                                        InlineFragment inlineFragment,
                                        Set<GraphQLObjectType> possibleObjects,
                                        GraphQLOutputType parentType) {
@@ -151,8 +151,8 @@ public class FieldCollectorQueryExecution {
         collectFields(parameters, inlineFragment.getSelectionSet(), visitedFragments, result, newPossibleOjects, newParentType);
     }
 
-    private void collectField(FieldCollectorQueryExecutionParams parameters,
-                              Map<String, Map<GraphQLObjectType, QueryExecutionField>> result,
+    private void collectField(FieldCollectorNormalizedQueryParams parameters,
+                              Map<String, Map<GraphQLObjectType, NormalizedQueryField>> result,
                               Field field,
                               Set<GraphQLObjectType> objectTypes,
                               GraphQLOutputType parentType) {
@@ -161,17 +161,17 @@ public class FieldCollectorQueryExecution {
         }
         String name = getFieldEntryKey(field);
         result.computeIfAbsent(name, ignored -> new LinkedHashMap<>());
-        Map<GraphQLObjectType, QueryExecutionField> existingFieldWTC = result.get(name);
+        Map<GraphQLObjectType, NormalizedQueryField> existingFieldWTC = result.get(name);
         for (GraphQLObjectType objectType : objectTypes) {
             if (existingFieldWTC.containsKey(objectType)) {
-                QueryExecutionField queryExecutionField = existingFieldWTC.get(objectType);
-                existingFieldWTC.put(objectType, queryExecutionField.transform(builder -> {
-                    MergedField mergedField = queryExecutionField.getMergedField().transform(mergedFieldBuilder -> mergedFieldBuilder.addField(field));
+                NormalizedQueryField normalizedQueryField = existingFieldWTC.get(objectType);
+                existingFieldWTC.put(objectType, normalizedQueryField.transform(builder -> {
+                    MergedField mergedField = normalizedQueryField.getMergedField().transform(mergedFieldBuilder -> mergedFieldBuilder.addField(field));
                     builder.mergedField(mergedField);
                 }));
             } else {
                 GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) GraphQLTypeUtil.unwrapAll(parentType);
-                QueryExecutionField newFieldWTC = QueryExecutionField.newQueryExecutionField(field)
+                NormalizedQueryField newFieldWTC = NormalizedQueryField.newQueryExecutionField(field)
                         .objectType(objectType)
                         .fieldDefinition(getFieldDefinition(fieldsContainer, field.getName()))
                         .fieldsContainer(fieldsContainer)

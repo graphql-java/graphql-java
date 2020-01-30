@@ -1,6 +1,6 @@
-package graphql.analysis.qexectree;
+package graphql.normalized;
 
-import graphql.PublicApi;
+import graphql.Internal;
 import graphql.execution.MergedField;
 import graphql.language.Argument;
 import graphql.language.Field;
@@ -16,8 +16,8 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 
-@PublicApi
-public class QueryExecutionField {
+@Internal
+public class NormalizedQueryField {
 
     private final MergedField mergedField;
     private final GraphQLObjectType objectType;
@@ -25,10 +25,10 @@ public class QueryExecutionField {
     private final GraphQLOutputType parentType;
     // this is the unwrapped parent type: can be object or interface
     private final GraphQLFieldsContainer fieldsContainer;
-    private final List<QueryExecutionField> children;
+    private final List<NormalizedQueryField> children;
     private final boolean isConditional;
 
-    private QueryExecutionField(Builder builder) {
+    private NormalizedQueryField(Builder builder) {
         this.mergedField = builder.mergedField;
         this.objectType = builder.objectType;
         this.fieldDefinition = assertNotNull(builder.fieldDefinition);
@@ -102,7 +102,7 @@ public class QueryExecutionField {
     }
 
 
-    public QueryExecutionField transform(Consumer<Builder> builderConsumer) {
+    public NormalizedQueryField transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
         return builder.build();
@@ -130,7 +130,7 @@ public class QueryExecutionField {
                 " (conditional: " + this.isConditional + ")";
     }
 
-    public List<QueryExecutionField> getChildren() {
+    public List<NormalizedQueryField> getChildren() {
         return children;
     }
 
@@ -153,13 +153,13 @@ public class QueryExecutionField {
         private GraphQLFieldDefinition fieldDefinition;
         private GraphQLFieldsContainer fieldsContainer;
         private GraphQLOutputType parentType;
-        private List<QueryExecutionField> children = new ArrayList<>();
+        private List<NormalizedQueryField> children = new ArrayList<>();
 
         private Builder() {
 
         }
 
-        private Builder(QueryExecutionField existing) {
+        private Builder(NormalizedQueryField existing) {
             this.mergedField = existing.getMergedField();
             this.objectType = existing.getObjectType();
             this.fieldDefinition = existing.getFieldDefinition();
@@ -193,14 +193,14 @@ public class QueryExecutionField {
             return this;
         }
 
-        public Builder children(List<QueryExecutionField> children) {
+        public Builder children(List<NormalizedQueryField> children) {
             this.children.clear();
             this.children.addAll(children);
             return this;
         }
 
-        public QueryExecutionField build() {
-            return new QueryExecutionField(this);
+        public NormalizedQueryField build() {
+            return new NormalizedQueryField(this);
         }
 
 

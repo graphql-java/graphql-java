@@ -1,4 +1,4 @@
-package graphql.analysis.qexectree;
+package graphql.normalized;
 
 import graphql.Assert;
 import graphql.Internal;
@@ -9,7 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Internal
-public class FieldCollectorQueryExecutionParams {
+public class FieldCollectorNormalizedQueryParams {
     private final GraphQLSchema graphQLSchema;
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final Map<String, Object> variables;
@@ -27,9 +27,9 @@ public class FieldCollectorQueryExecutionParams {
     }
 
 
-    private FieldCollectorQueryExecutionParams(GraphQLSchema graphQLSchema,
-                                               Map<String, Object> variables,
-                                               Map<String, FragmentDefinition> fragmentsByName) {
+    private FieldCollectorNormalizedQueryParams(GraphQLSchema graphQLSchema,
+                                                Map<String, Object> variables,
+                                                Map<String, FragmentDefinition> fragmentsByName) {
         this.fragmentsByName = fragmentsByName;
         this.graphQLSchema = graphQLSchema;
         this.variables = variables;
@@ -45,7 +45,7 @@ public class FieldCollectorQueryExecutionParams {
         private final Map<String, Object> variables = new LinkedHashMap<>();
 
         /**
-         * @see FieldCollectorQueryExecutionParams#newParameters()
+         * @see FieldCollectorNormalizedQueryParams#newParameters()
          */
         private Builder() {
 
@@ -66,9 +66,9 @@ public class FieldCollectorQueryExecutionParams {
             return this;
         }
 
-        public FieldCollectorQueryExecutionParams build() {
+        public FieldCollectorNormalizedQueryParams build() {
             Assert.assertNotNull(graphQLSchema, "You must provide a schema");
-            return new FieldCollectorQueryExecutionParams(graphQLSchema, variables, fragmentsByName);
+            return new FieldCollectorNormalizedQueryParams(graphQLSchema, variables, fragmentsByName);
         }
 
     }

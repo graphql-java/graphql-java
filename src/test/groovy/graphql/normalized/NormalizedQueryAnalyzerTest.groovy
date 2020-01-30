@@ -1,4 +1,4 @@
-package graphql.analysis.qexectree
+package graphql.normalized
 
 import graphql.GraphQL
 import graphql.TestUtil
@@ -11,7 +11,7 @@ import graphql.util.TraverserContext
 import graphql.util.TraverserVisitorStub
 import spock.lang.Specification
 
-class QueryExecutionTreeAnalyzerTest extends Specification {
+class NormalizedQueryAnalyzerTest extends Specification {
 
 
     def "test"() {
@@ -86,8 +86,8 @@ type Dog implements Animal{
 
         Document document = new Parser().parseDocument(query)
 
-        QueryExecutionTreeAnalyzer dependencyGraph = new QueryExecutionTreeAnalyzer();
-        def tree = dependencyGraph.createExecutionTree(graphQLSchema, document, null, [:])
+        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
         expect:
@@ -173,8 +173,8 @@ type Dog implements Animal{
 
         Document document = new Parser().parseDocument(query)
 
-        QueryExecutionTreeAnalyzer dependencyGraph = new QueryExecutionTreeAnalyzer();
-        def tree = dependencyGraph.createExecutionTree(graphQLSchema, document, null, [:])
+        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
         expect:
@@ -256,8 +256,8 @@ type Dog implements Animal{
 
         Document document = new Parser().parseDocument(query)
 
-        QueryExecutionTreeAnalyzer dependencyGraph = new QueryExecutionTreeAnalyzer();
-        def tree = dependencyGraph.createExecutionTree(graphQLSchema, document, null, [:])
+        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
         expect:
@@ -308,8 +308,8 @@ type Dog implements Animal{
 
         Document document = new Parser().parseDocument(query)
 
-        QueryExecutionTreeAnalyzer dependencyGraph = new QueryExecutionTreeAnalyzer();
-        def tree = dependencyGraph.createExecutionTree(graphQLSchema, document, null, [:])
+        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
         expect:
@@ -369,8 +369,8 @@ type Dog implements Animal{
 
         Document document = new Parser().parseDocument(query)
 
-        QueryExecutionTreeAnalyzer dependencyGraph = new QueryExecutionTreeAnalyzer();
-        def tree = dependencyGraph.createExecutionTree(graphQLSchema, document, null, [:])
+        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
         expect:
@@ -418,8 +418,8 @@ type Dog implements Animal{
 
         Document document = new Parser().parseDocument(query)
 
-        QueryExecutionTreeAnalyzer dependencyGraph = new QueryExecutionTreeAnalyzer();
-        def tree = dependencyGraph.createExecutionTree(graphQLSchema, document, null, [:])
+        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
         expect:
@@ -463,8 +463,8 @@ type Dog implements Animal{
 
         Document document = new Parser().parseDocument(query)
 
-        QueryExecutionTreeAnalyzer dependencyGraph = new QueryExecutionTreeAnalyzer();
-        def tree = dependencyGraph.createExecutionTree(graphQLSchema, document, null, [:])
+        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
         expect:
@@ -494,8 +494,8 @@ type Dog implements Animal{
 
         Document document = new Parser().parseDocument(query)
 
-        QueryExecutionTreeAnalyzer dependencyGraph = new QueryExecutionTreeAnalyzer();
-        def tree = dependencyGraph.createExecutionTree(graphQLSchema, document, null, [:])
+        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
         expect:
@@ -505,13 +505,13 @@ type Dog implements Animal{
                         'Foo.subFoo: String (conditional: false)']
     }
 
-    List<String> printTree(QueryExecutionTree queryExecutionTree) {
+    List<String> printTree(NormalizedQuery queryExecutionTree) {
         def result = []
-        Traverser<QueryExecutionField> traverser = Traverser.depthFirst({ it.getChildren() });
-        traverser.traverse(queryExecutionTree.getRootFields(), new TraverserVisitorStub<QueryExecutionField>() {
+        Traverser<NormalizedQueryField> traverser = Traverser.depthFirst({ it.getChildren() });
+        traverser.traverse(queryExecutionTree.getRootFields(), new TraverserVisitorStub<NormalizedQueryField>() {
             @Override
-            TraversalControl enter(TraverserContext<QueryExecutionField> context) {
-                QueryExecutionField queryExecutionField = context.thisNode();
+            TraversalControl enter(TraverserContext<NormalizedQueryField> context) {
+                NormalizedQueryField queryExecutionField = context.thisNode();
                 result << queryExecutionField.print()
                 return TraversalControl.CONTINUE;
             }
