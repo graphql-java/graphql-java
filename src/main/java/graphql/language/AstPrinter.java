@@ -472,7 +472,7 @@ public class AstPrinter {
         } else if (value instanceof FloatValue) {
             return valueOf(((FloatValue) value).getValue());
         } else if (value instanceof StringValue) {
-            return wrap("\"", valueOf(graphQLStringify(((StringValue) value).getValue())), "\"");
+            return wrap("\"", valueOf(escapeString(((StringValue) value).getValue())), "\"");
         } else if (value instanceof EnumValue) {
             return valueOf(((EnumValue) value).getName());
         } else if (value instanceof BooleanValue) {
@@ -533,7 +533,7 @@ public class AstPrinter {
      *
      * @return the encoded string
      */
-    static String graphQLStringify(String stringValue) {
+    static String escapeString(String stringValue) {
         StringBuilder sb = new StringBuilder();
         for (char ch : stringValue.toCharArray()) {
             switch (ch) {

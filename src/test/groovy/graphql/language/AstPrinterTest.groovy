@@ -582,7 +582,7 @@ extend input Input @directive {
     def "1105 - encoding of json strings"() {
 
         when:
-        def json = AstPrinter.graphQLStringify(strValue)
+        def json = AstPrinter.escapeString(strValue)
 
         then:
         json == expected
