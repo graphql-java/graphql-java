@@ -1,45 +1,49 @@
 package graphql.schema;
 
-import java.util.Collections;
-import java.util.List;
-
 import graphql.ErrorType;
-import graphql.GraphQLError;
-import graphql.GraphQLException;
+import graphql.GraphqlErrorException;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
 
 @PublicApi
-public class    CoercingParseLiteralException extends GraphQLException implements GraphQLError {
-    private List<SourceLocation> sourceLocations;
+public class CoercingParseLiteralException extends GraphqlErrorException {
 
     public CoercingParseLiteralException() {
+        this(newCoercingParseLiteralException());
     }
 
     public CoercingParseLiteralException(String message) {
-        super(message);
+        this(newCoercingParseLiteralException().message(message));
     }
 
     public CoercingParseLiteralException(String message, Throwable cause) {
-        super(message, cause);
+        this(newCoercingParseLiteralException().message(message).cause(cause));
     }
 
     public CoercingParseLiteralException(String message, Throwable cause, SourceLocation sourceLocation) {
-        super(message, cause);
-        this.sourceLocations = Collections.singletonList(sourceLocation);
+        this(newCoercingParseLiteralException().message(message).cause(cause).sourceLocation(sourceLocation));
     }
 
     public CoercingParseLiteralException(Throwable cause) {
-        super(cause);
+        this(newCoercingParseLiteralException().cause(cause));
     }
 
-    @Override
-    public List<SourceLocation> getLocations() {
-        return sourceLocations;
+    private CoercingParseLiteralException(Builder builder) {
+        super(builder);
     }
 
     @Override
     public ErrorType getErrorType() {
         return ErrorType.ValidationError;
+    }
+
+    public static Builder newCoercingParseLiteralException() {
+        return new Builder();
+    }
+
+    public static class Builder extends BuilderBase<Builder, CoercingParseLiteralException> {
+        public CoercingParseLiteralException build() {
+            return new CoercingParseLiteralException(this);
+        }
     }
 }

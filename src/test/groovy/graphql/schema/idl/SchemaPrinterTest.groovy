@@ -38,6 +38,8 @@ import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
 
 class SchemaPrinterTest extends Specification {
 
+    def noDirectivesOption = defaultOptions().includeDirectives(false)
+
     GraphQLSchema starWarsSchema() {
         def wiring = newRuntimeWiring()
                 .type("Character", { type -> type.typeResolver(resolver) } as UnaryOperator<TypeRuntimeWiring.Builder>)
@@ -81,6 +83,14 @@ class SchemaPrinterTest extends Specification {
         }
     }
 
+    static class MyTestGraphQLObjectType extends MyGraphQLObjectType {
+
+        MyTestGraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions) {
+            super(name, description, fieldDefinitions)
+        }
+    }
+
+
     def "typeString"() {
 
         GraphQLType type1 = nonNull(list(nonNull(list(nonNull(Scalars.GraphQLInt)))))
@@ -111,6 +121,24 @@ class SchemaPrinterTest extends Specification {
         expect:
 
         argStr == "(arg1: [Int!] = 10, arg2: String, arg3: String = \"default\")"
+    }
+
+    def "argsString_comments"() {
+        def argument1 = new GraphQLArgument("arg1", "A multiline\ncomment", list(nonNull(Scalars.GraphQLInt)), 10)
+        def argument2 = new GraphQLArgument("arg2", "A single line comment", list(nonNull(Scalars.GraphQLInt)), 10)
+        def argStr = new SchemaPrinter().argsString([argument1, argument2])
+
+        expect:
+
+        argStr == '''(
+    """
+    A multiline
+    comment
+    """
+    arg1: [Int!] = 10, 
+    "A single line comment"
+    arg2: [Int!] = 10
+  )'''
     }
 
     def "print type direct"() {
@@ -172,7 +200,7 @@ class SchemaPrinterTest extends Specification {
         """)
 
 
-        def result = new SchemaPrinter().print(schema)
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
         expect:
         result == """type Mutation {
@@ -205,7 +233,8 @@ type Subscription {
         """)
 
         def options = defaultOptions()
-                .includeSchemaDefintion(true)
+                .includeDirectives(false)
+                .includeSchemaDefinition(true)
 
         def result = new SchemaPrinter(options).print(schema)
 
@@ -254,7 +283,7 @@ type Subscription {
         """)
 
 
-        def result = new SchemaPrinter().print(schema)
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
         expect:
         result == """schema {
@@ -284,15 +313,17 @@ type Subscription {
         def queryType = GraphQLObjectType.newObject().name("Query").description("About Query\nSecond Line").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter().print(schema)
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
         then:
-        result == """#About Query
-#Second Line
+        result == '''"""
+About Query
+Second Line
+"""
 type Query {
   field: String
 }
-"""
+'''
     }
 
     def "prints field description as comment"() {
@@ -302,15 +333,17 @@ type Query {
         def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter().print(schema)
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
         then:
-        result == """type Query {
-  #About field
-  #second
+        result == '''type Query {
+  """
+  About field
+  second
+  """
   field: String
 }
-"""
+'''
     }
 
     def "does not print empty field description as comment"() {
@@ -320,7 +353,7 @@ type Query {
         def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter().print(schema)
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
         then:
         result == """type Query {
@@ -341,19 +374,19 @@ type Query {
         def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter().print(schema)
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
         then:
-        result == """type Query {
+        result == '''type Query {
   field: Enum
 }
 
-#About enum
+"About enum"
 enum Enum {
-  #value desc
+  "value desc"
   value
 }
-"""
+'''
 
     }
 
@@ -373,10 +406,10 @@ enum Enum {
         def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter().print(schema)
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
         then:
-        result == """#About union
+        result == '''"About union"
 union Union = PossibleType
 
 type PossibleType {
@@ -386,7 +419,7 @@ type PossibleType {
 type Query {
   field: Union
 }
-"""
+'''
 
     }
 
@@ -408,7 +441,7 @@ type Query {
         def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter().print(schema)
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
         then:
         result == """union Union = PossibleType1 | PossibleType2
@@ -442,19 +475,19 @@ type Query {
         def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter().print(schema)
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
         then:
-        result == """type Query {
+        result == '''type Query {
   field(arg: Input): String
 }
 
-#About input
+"About input"
 input Input {
-  #about field
+  "about field"
   field: String
 }
-"""
+'''
 
     }
 
@@ -471,19 +504,19 @@ input Input {
         def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter().print(schema)
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
         then:
-        result == """#about interface
+        result == '''"about interface"
 interface Interface {
-  #about field
+  "about field"
   field: String
 }
 
 type Query {
   field: Interface
 }
-"""
+'''
     }
 
     def "prints scalar description as comment"() {
@@ -509,16 +542,16 @@ type Query {
         def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true)).print(schema)
+        def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true).includeDirectives(false)).print(schema)
 
         then:
-        result == """type Query {
+        result == '''type Query {
   field: Scalar
 }
 
-#about scalar
+"about scalar"
 scalar Scalar
-"""
+'''
     }
 
     def "special formatting for argument descriptions"() {
@@ -531,22 +564,22 @@ scalar Scalar
         def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter().print(schema)
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
         then:
-        result == """type Query {
+        result == '''type Query {
   field(
-    #about arg1
+    "about arg1"
     arg1: String, 
     arg2: String, 
-    \"\"\"
+    """
     about 3
     second line
-    \"\"\"
+    """
     arg3: String
   ): String
 }
-"""
+'''
 
     }
 
@@ -557,15 +590,34 @@ scalar Scalar
         def schema = GraphQLSchema.newSchema().query(queryType).build()
 
         when:
-        def result = new SchemaPrinter().print(schema)
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
         then:
-        result == """#About Query
-#Second Line
+        result == '''"""
+About Query
+Second Line
+"""
 type Query {
   field: String
 }
-"""
+'''
+    }
+
+    def "concurrentModificationException should not occur when multiple extended graphQL types are used"() {
+        given:
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition().name("field").type(GraphQLString).build()
+        def queryType = new MyTestGraphQLObjectType("Query", "test", Arrays.asList(fieldDefinition))
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+
+        when:
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+
+        then:
+        result == '''"test"
+type Query {
+  field: String
+}
+'''
     }
 
     def "prints extended types"() {
@@ -627,7 +679,7 @@ type Query {
         """)
 
 
-        def result = new SchemaPrinter().print(schema)
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
         expect:
         result == """type Query {
@@ -661,7 +713,7 @@ type TypeE {
 
         def schemaDefinition = new IntrospectionResultToSchema().createSchemaDefinition(executionResult)
 
-        def result = new SchemaPrinter().print(schemaDefinition)
+        def result = new SchemaPrinter(noDirectivesOption).print(schemaDefinition)
 
         expect:
         result ==
@@ -721,7 +773,9 @@ enum Episode {
     def "AST doc string entries are printed if present"() {
         def schema = TestUtil.schema('''
             # comments up here
-            """docstring"""
+            """
+                doc
+                 string"""
             # and comments as well down here
             type Query {
                 "field single desc"
@@ -730,10 +784,13 @@ enum Episode {
         ''')
 
 
-        def result = new SchemaPrinter().print(schema)
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
         expect:
-        result == '''"""docstring"""
+        result == '''"""
+doc
+ string
+"""
 type Query {
   "field single desc"
   field: String
@@ -744,6 +801,23 @@ type Query {
 
     def idlWithDirectives() {
         return """
+            directive @interfaceFieldDirective on FIELD_DEFINITION
+            directive @unionTypeDirective on UNION
+            directive @query1 on OBJECT
+            directive @query2(arg1: String) on OBJECT
+            directive @fieldDirective1 on FIELD_DEFINITION
+            directive @fieldDirective2(argStr: String, argInt: Int, argFloat: Float, argBool: Boolean) on FIELD_DEFINITION
+            directive @argDirective on ARGUMENT_DEFINITION
+            directive @interfaceImplementingTypeDirective on OBJECT
+            directive @enumTypeDirective on ENUM
+            directive @single on OBJECT
+            directive @singleField on FIELD_DEFINITION
+            directive @interfaceImplementingFieldDirective on FIELD_DEFINITION
+            directive @enumValueDirective on ENUM_VALUE
+            directive @inputTypeDirective on INPUT_OBJECT
+            directive @inputFieldDirective on INPUT_FIELD_DEFINITION
+            directive @interfaceTypeDirective on INTERFACE
+            directive @scalarDirective on SCALAR
             
             interface SomeInterface @interfaceTypeDirective {
                 fieldA : String @interfaceFieldDirective
@@ -789,7 +863,7 @@ type Query {
                 .type(mockTypeRuntimeWiring("SomeInterface", true))
                 .type(mockTypeRuntimeWiring("SomeUnion", true))
                 .build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
@@ -797,7 +871,59 @@ type Query {
 
         then:
         // args and directives are sorted like the rest of the schema printer
-        result == '''interface SomeInterface @interfaceTypeDirective {
+        result == '''"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to skip this field or fragment when the `if`'argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @interfaceFieldDirective on FIELD_DEFINITION
+
+directive @unionTypeDirective on UNION
+
+directive @query1 on OBJECT
+
+directive @query2(arg1: String) on OBJECT
+
+directive @fieldDirective1 on FIELD_DEFINITION
+
+directive @fieldDirective2(argBool: Boolean, argFloat: Float, argInt: Int, argStr: String) on FIELD_DEFINITION
+
+directive @argDirective on ARGUMENT_DEFINITION
+
+directive @interfaceImplementingTypeDirective on OBJECT
+
+directive @enumTypeDirective on ENUM
+
+directive @single on OBJECT
+
+directive @singleField on FIELD_DEFINITION
+
+directive @interfaceImplementingFieldDirective on FIELD_DEFINITION
+
+directive @enumValueDirective on ENUM_VALUE
+
+directive @inputTypeDirective on INPUT_OBJECT
+
+directive @inputFieldDirective on INPUT_FIELD_DEFINITION
+
+directive @interfaceTypeDirective on INTERFACE
+
+directive @scalarDirective on SCALAR
+
+"Marks the field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ENUM_VALUE
+
+interface SomeInterface @interfaceTypeDirective {
   fieldA: String @interfaceFieldDirective
 }
 
@@ -896,7 +1022,7 @@ input SomeInput {
         """
         def registry = new SchemaParser().parse(idl)
         def runtimeWiring = newRuntimeWiring().build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
@@ -904,7 +1030,25 @@ input SomeInput {
 
         then:
         // args and directives are sorted like the rest of the schema printer
-        result == '''type Field {
+        result == '''"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to skip this field or fragment when the `if`'argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Marks the field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ENUM_VALUE
+
+type Field {
   active: Enum
   deprecated: Enum @deprecated(reason : "No longer supported")
   deprecatedWithReason: Enum @deprecated(reason : "Custom reason 1")
@@ -938,16 +1082,26 @@ enum Enum {
         given:
         def registry = new SchemaParser().parse(simpleIdlWithDirective)
         def runtimeWiring = newRuntimeWiring().build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
         def resultWithNoDirectives = new SchemaPrinter(defaultOptions().includeDirectives(false)).print(schema)
 
         then:
-        resultWithNoDirectives == '''\
-type Query {
+        resultWithNoDirectives == '''type Query {
   fieldA: String
+}
+'''
+
+        when:
+        def resultWithSomeDirectives = new SchemaPrinter(defaultOptions().includeDirectives({it.name == "example" })).print(schema)
+
+        then:
+        resultWithSomeDirectives == '''directive @example on FIELD_DEFINITION
+
+type Query {
+  fieldA: String @example
 }
 '''
 
@@ -955,15 +1109,340 @@ type Query {
         def resultWithDirectives = new SchemaPrinter(defaultOptions().includeDirectives(true)).print(schema)
 
         then:
-        resultWithDirectives == '''\
+        resultWithDirectives == '''"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to skip this field or fragment when the `if`'argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
 directive @example on FIELD_DEFINITION
 
 directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+"Marks the field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ENUM_VALUE
 
 type Query {
   fieldA: String @example @moreComplex(arg1 : "default", arg2 : 666)
 }
 '''
     }
+
+    def "can print a schema as AST elements"() {
+        def sdl = '''
+            directive @directive1 on SCALAR
+            type Query {
+                foo : String
+            }
+            
+            extend type Query {
+                bar : String
+            }
+
+            extend type Query {
+                baz : String
+            }
+
+            enum Enum {
+                A
+            }
+            
+            extend enum Enum {
+                B
+            }
+
+            interface Interface {
+                foo : String
+            }
+
+            extend interface Interface {
+                bar : String
+            }
+
+            extend interface Interface {
+                baz : String
+            }
+            
+            type Foo {
+                foo : String
+            }
+            
+            type Bar {
+                bar : Scalar
+            }
+
+            union Union = Foo
+            
+            extend union Union = Bar
+            
+            input Input {
+                foo: String
+            }
+            
+            extend input Input {
+                bar: String
+            }
+
+            extend input Input {
+                baz: String
+            }
+
+            extend input Input {
+                faz: String
+            }
+            
+            scalar Scalar
+            
+            extend scalar Scalar @directive1
+        '''
+
+
+        when:
+        def wiringFactory = new MockedWiringFactory() {
+            @Override
+            boolean providesScalar(ScalarWiringEnvironment env) {
+                return env.getScalarTypeDefinition().getName() == "Scalar"
+            }
+
+            @Override
+            GraphQLScalarType getScalar(ScalarWiringEnvironment env) {
+                def definition = env.getScalarTypeDefinition()
+                return GraphQLScalarType.newScalar()
+                        .name(definition.getName())
+                        .definition(definition)
+                        .extensionDefinitions(env.getExtensions())
+                        .coercing(TestUtil.mockCoercing())
+                        .build()
+            }
+        }
+
+        def runtimeWiring = newRuntimeWiring()
+                .wiringFactory(wiringFactory)
+                .build()
+
+        def options = SchemaGenerator.Options.defaultOptions()
+        def types = new SchemaParser().parse(sdl)
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(options, types, runtimeWiring)
+
+        def printOptions = defaultOptions().includeScalarTypes(true).useAstDefinitions(true)
+        def result = new SchemaPrinter(printOptions).print(schema)
+
+        then:
+        result == '''"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to skip this field or fragment when the `if`'argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @directive1 on SCALAR
+
+"Marks the field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ENUM_VALUE
+
+interface Interface {
+  foo: String
+}
+
+extend interface Interface {
+  bar: String
+}
+
+extend interface Interface {
+  baz: String
+}
+
+union Union = Foo
+
+extend union Union = Bar
+
+type Bar {
+  bar: Scalar
+}
+
+type Foo {
+  foo: String
+}
+
+type Query {
+  foo: String
+}
+
+extend type Query {
+  bar: String
+}
+
+extend type Query {
+  baz: String
+}
+
+enum Enum {
+  A
+}
+
+extend enum Enum {
+  B
+}
+
+scalar Scalar
+
+extend scalar Scalar @directive1
+
+input Input {
+  foo: String
+}
+
+extend input Input {
+  bar: String
+}
+
+extend input Input {
+  baz: String
+}
+
+extend input Input {
+  faz: String
+}
+'''
+
+        when:
+        // we can print by direct type using AST
+        def queryType = schema.getType("Query")
+        result = new SchemaPrinter(printOptions).print(queryType)
+
+        then:
+        result == '''type Query {
+  foo: String
+}
+
+extend type Query {
+  bar: String
+}
+
+extend type Query {
+  baz: String
+}
+
+'''
+    }
+
+    def "@deprecated directives are always printed"() {
+        given:
+        def idl = """
+
+            directive @example on FIELD_DEFINITION
+
+            type Field {
+              deprecated : Enum @deprecated
+            }
+            
+            type Query {
+                field : Field
+            }
+            
+            enum Enum {
+              enumVal @deprecated
+            }
+        """
+        def registry = new SchemaParser().parse(idl)
+        def runtimeWiring = newRuntimeWiring().build()
+        def options = SchemaGenerator.Options.defaultOptions()
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeDirectives(false)).print(schema)
+
+        then:
+        result == '''type Field {
+  deprecated: Enum @deprecated(reason : "No longer supported")
+}
+
+type Query {
+  field: Field
+}
+
+enum Enum {
+  enumVal @deprecated(reason : "No longer supported")
+}
+'''
+    }
+
+    def "descriptions can be printed as # comments"() {
+        given:
+        def idl = '''
+
+            """
+            This is the docstring of 
+            the Query type
+            """
+            type Query {
+                """
+                This is the docstring of 
+                the fieldX field
+                """
+              fieldX : String
+            }
+            
+        '''
+        def registry = new SchemaParser().parse(idl)
+        def runtimeWiring = newRuntimeWiring().build()
+        def options = SchemaGenerator.Options.defaultOptions()
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+
+        when:
+        def result = new SchemaPrinter(defaultOptions().descriptionsAsHashComments(true).includeDirectives(false)).print(schema)
+
+        then:
+        result == '''#This is the docstring of 
+#the Query type
+type Query {
+  #This is the docstring of 
+  #the fieldX field
+  fieldX: String
+}
+'''
+    }
+
+    def "@deprecated directive are always printed regardless of options"() {
+        given:
+        def idl = '''
+
+            type Query {
+              fieldX : String @deprecated
+            }
+            
+        '''
+        def registry = new SchemaParser().parse(idl)
+        def runtimeWiring = newRuntimeWiring().build()
+        def options = SchemaGenerator.Options.defaultOptions()
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+
+        when:
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+
+        then:
+        result == '''type Query {
+  fieldX: String @deprecated(reason : "No longer supported")
+}
+'''
+    }
+
 
 }

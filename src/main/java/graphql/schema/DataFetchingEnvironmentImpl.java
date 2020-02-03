@@ -17,6 +17,7 @@ import org.dataloader.DataLoaderRegistry;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
@@ -38,6 +39,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final ExecutionStepInfo executionStepInfo;
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
+    private final Locale locale;
     private final OperationDefinition operationDefinition;
     private final Document document;
     private final Map<String, Object> variables;
@@ -60,10 +62,38 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.executionStepInfo = builder.executionStepInfo;
         this.dataLoaderRegistry = builder.dataLoaderRegistry;
         this.cacheControl = builder.cacheControl;
+        this.locale = builder.locale;
         this.operationDefinition = builder.operationDefinition;
         this.document = builder.document;
         this.variables = builder.variables == null ? Collections.emptyMap() : builder.variables;
         this.queryDirectives = builder.queryDirectives;
+    }
+
+    /**
+     * @return a new {@link graphql.schema.DataFetchingEnvironmentImpl.Builder}
+     */
+    public static Builder newDataFetchingEnvironment() {
+        return new Builder();
+    }
+
+    public static Builder newDataFetchingEnvironment(DataFetchingEnvironment environment) {
+        return new Builder((DataFetchingEnvironmentImpl) environment);
+    }
+
+    public static Builder newDataFetchingEnvironment(ExecutionContext executionContext) {
+        return new Builder()
+                .context(executionContext.getContext())
+                .root(executionContext.getRoot())
+                .graphQLSchema(executionContext.getGraphQLSchema())
+                .fragmentsByName(executionContext.getFragmentsByName())
+                .dataLoaderRegistry(executionContext.getDataLoaderRegistry())
+                .cacheControl(executionContext.getCacheControl())
+                .locale(executionContext.getLocale())
+                .locale(executionContext.getLocale())
+                .document(executionContext.getDocument())
+                .operationDefinition(executionContext.getOperationDefinition())
+                .variables(executionContext.getVariables())
+                .executionId(executionContext.getExecutionId());
     }
 
     @Override
@@ -84,6 +114,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public <T> T getArgument(String name) {
         return (T) arguments.get(name);
+    }
+
+    @Override
+    public <T> T getArgumentOrDefault(String name, T defaultValue) {
+        return (T) arguments.getOrDefault(name, defaultValue);
     }
 
     @Override
@@ -167,8 +202,18 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
+    public DataLoaderRegistry getDataLoaderRegistry() {
+        return dataLoaderRegistry;
+    }
+
+    @Override
     public CacheControl getCacheControl() {
         return cacheControl;
+    }
+
+    @Override
+    public Locale getLocale() {
+        return locale;
     }
 
     @Override
@@ -193,31 +238,6 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                 '}';
     }
 
-    /**
-     * @return a new {@link graphql.schema.DataFetchingEnvironmentImpl.Builder}
-     */
-    public static Builder newDataFetchingEnvironment() {
-        return new Builder();
-    }
-
-    public static Builder newDataFetchingEnvironment(DataFetchingEnvironment environment) {
-        return new Builder((DataFetchingEnvironmentImpl) environment);
-    }
-
-    public static Builder newDataFetchingEnvironment(ExecutionContext executionContext) {
-        return new Builder()
-                .context(executionContext.getContext())
-                .root(executionContext.getRoot())
-                .graphQLSchema(executionContext.getGraphQLSchema())
-                .fragmentsByName(executionContext.getFragmentsByName())
-                .dataLoaderRegistry(executionContext.getDataLoaderRegistry())
-                .cacheControl(executionContext.getCacheControl())
-                .document(executionContext.getDocument())
-                .operationDefinition(executionContext.getOperationDefinition())
-                .variables(executionContext.getVariables())
-                .executionId(executionContext.getExecutionId());
-    }
-
     public static class Builder {
 
         private Object source;
@@ -234,6 +254,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private ExecutionStepInfo executionStepInfo;
         private DataLoaderRegistry dataLoaderRegistry;
         private CacheControl cacheControl;
+        private Locale locale;
         private OperationDefinition operationDefinition;
         private Document document;
         private Map<String, Object> arguments;
@@ -258,6 +279,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.executionStepInfo = env.executionStepInfo;
             this.dataLoaderRegistry = env.dataLoaderRegistry;
             this.cacheControl = env.cacheControl;
+            this.localContext = env.locale;
             this.operationDefinition = env.operationDefinition;
             this.document = env.document;
             this.variables = env.variables;
@@ -344,6 +366,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
         public Builder cacheControl(CacheControl cacheControl) {
             this.cacheControl = cacheControl;
+            return this;
+        }
+
+        public Builder locale(Locale locale) {
+            this.locale = locale;
             return this;
         }
 

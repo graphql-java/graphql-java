@@ -69,7 +69,7 @@ class TestUtil {
         def stream = TestUtil.class.getClassLoader().getResourceAsStream(fileName)
 
         def typeRegistry = new SchemaParser().parse(new InputStreamReader(stream))
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, typeRegistry, wiring)
         schema
     }
@@ -106,7 +106,7 @@ class TestUtil {
     static GraphQLSchema schema(Reader specReader, RuntimeWiring runtimeWiring) {
         try {
             def registry = new SchemaParser().parse(specReader)
-            def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+            def options = SchemaGenerator.Options.defaultOptions()
             return new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
         } catch (SchemaProblem e) {
             assert false: "The schema could not be compiled : ${e}"
@@ -162,7 +162,7 @@ class TestUtil {
         new GraphQLScalarType(name, name, mockCoercing())
     }
 
-    private static Coercing mockCoercing() {
+    static Coercing mockCoercing() {
         new Coercing() {
             @Override
             Object serialize(Object dataFetcherResult) {
@@ -255,6 +255,17 @@ class TestUtil {
     }
 
     static GraphQLDirective[] mockDirectivesWithArguments(String... names) {
+        return names.collect { directiveName ->
+            def builder = newDirective().name(directiveName)
+
+            names.each { argName ->
+                builder.argument(newArgument().name(argName).type(GraphQLInt).value(BigInteger.valueOf(0)).build())
+            }
+            return builder.build()
+        }.toArray() as GraphQLDirective[]
+    }
+
+    static GraphQLDirective[] mockDirectivesWithNoValueArguments(String... names) {
         return names.collect { directiveName ->
             def builder = newDirective().name(directiveName)
 

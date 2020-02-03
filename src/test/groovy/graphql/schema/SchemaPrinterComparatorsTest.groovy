@@ -1,13 +1,14 @@
 package graphql.schema
 
 import graphql.TestUtil
-import graphql.schema.*
 import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.TestUtil.*
+import static graphql.schema.DefaultGraphqlTypeComparatorRegistry.DEFAULT_COMPARATOR
+import static graphql.schema.DefaultGraphqlTypeComparatorRegistry.newComparators
 import static graphql.schema.GraphQLEnumType.newEnum
 import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
@@ -17,10 +18,8 @@ import static graphql.schema.GraphQLInterfaceType.newInterface
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLScalarType.newScalar
 import static graphql.schema.GraphQLUnionType.newUnionType
-import static graphql.schema.DefaultGraphqlTypeComparatorRegistry.DEFAULT_COMPARATOR
-import static graphql.schema.DefaultGraphqlTypeComparatorRegistry.newComparators
-import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
 import static graphql.schema.GraphqlTypeComparatorEnvironment.newEnvironment
+import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
 
 class SchemaPrinterComparatorsTest extends Specification {
 
@@ -35,8 +34,8 @@ class SchemaPrinterComparatorsTest extends Specification {
         def result = new SchemaPrinter(options).print(scalarType)
 
         then:
-        result == '''#TestScalar
-scalar TestScalar @a(a, bb) @bb(a, bb)
+        result == '''"TestScalar"
+scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 
 '''
     }
@@ -54,9 +53,9 @@ scalar TestScalar @a(a, bb) @bb(a, bb)
         def result = new SchemaPrinter(options).print(enumType)
 
         then:
-        result == '''enum TestEnum @a(a, bb) @bb(a, bb) {
-  a @a(a, bb) @bb(a, bb)
-  bb @a(a, bb) @bb(a, bb)
+        result == '''enum TestEnum @a(a : 0, bb : 0) @bb(a : 0, bb : 0) {
+  a @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
+  bb @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 }
 
 '''
@@ -75,7 +74,7 @@ scalar TestScalar @a(a, bb) @bb(a, bb)
         def result = new SchemaPrinter(options).print(unionType)
 
         then:
-        result == '''union TestUnion @a(a, bb) @bb(a, bb) = a | bb
+        result == '''union TestUnion @a(a : 0, bb : 0) @bb(a : 0, bb : 0) = a | bb
 
 '''
     }
@@ -101,9 +100,9 @@ scalar TestScalar @a(a, bb) @bb(a, bb)
         def result = new SchemaPrinter(options).print(interfaceType)
 
         then:
-        result == '''interface TypeA @a(a, bb) @bb(a, bb) {
-  a(a: Int, bb: Int): String @a(a, bb) @bb(a, bb)
-  bb(a: Int, bb: Int): String @a(a, bb) @bb(a, bb)
+        result == '''interface TypeA @a(a : 0, bb : 0) @bb(a : 0, bb : 0) {
+  a(a: Int, bb: Int): String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
+  bb(a: Int, bb: Int): String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 }
 
 '''
@@ -131,9 +130,9 @@ scalar TestScalar @a(a, bb) @bb(a, bb)
         def result = new SchemaPrinter(options).print(objectType)
 
         then:
-        result == '''type TypeA implements a & bb @a(a, bb) @bb(a, bb) {
-  a(a: Int, bb: Int): String @a(a, bb) @bb(a, bb)
-  bb(a: Int, bb: Int): String @a(a, bb) @bb(a, bb)
+        result == '''type TypeA implements a & bb @a(a : 0, bb : 0) @bb(a : 0, bb : 0) {
+  a(a: Int, bb: Int): String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
+  bb(a: Int, bb: Int): String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 }
 
 '''
@@ -158,9 +157,9 @@ scalar TestScalar @a(a, bb) @bb(a, bb)
         def result = new SchemaPrinter(options).print(inputObjectType)
 
         then:
-        result == '''input TypeA @a(a, bb) @bb(a, bb) {
-  a: String @a(a, bb) @bb(a, bb)
-  bb: String @a(a, bb) @bb(a, bb)
+        result == '''input TypeA @a(a : 0, bb : 0) @bb(a : 0, bb : 0) {
+  a: String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
+  bb: String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 }
 
 '''
@@ -188,7 +187,7 @@ scalar TestScalar @a(a, bb) @bb(a, bb)
         def result = new SchemaPrinter(options).directivesString(null, directives)
 
         then:
-        result == ''' @a(a, bb) @bb(a, bb)'''
+        result == ''' @a(a : 0, bb : 0) @bb(a : 0, bb : 0)'''
     }
 
     def "scalarPrinter uses most specific registered comparators"() {
@@ -207,8 +206,8 @@ scalar TestScalar @a(a, bb) @bb(a, bb)
         def result = new SchemaPrinter(options).print(scalarType)
 
         then:
-        result == '''#TestScalar
-scalar TestScalar @bb(bb, a) @a(bb, a)
+        result == '''"TestScalar"
+scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
 '''
     }
@@ -229,8 +228,8 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
         def result = new SchemaPrinter(options).print(scalarType)
 
         then:
-        result == '''#TestScalar
-scalar TestScalar @bb(bb, a) @a(bb, a)
+        result == '''"TestScalar"
+scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
 '''
     }
@@ -255,9 +254,9 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
         def result = new SchemaPrinter(options).print(enumType)
 
         then:
-        result == '''enum TestEnum @bb(bb, a) @a(bb, a) {
-  bb @bb(bb, a) @a(bb, a)
-  a @bb(bb, a) @a(bb, a)
+        result == '''enum TestEnum @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
+  bb @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
+  a @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
 
 '''
@@ -282,9 +281,9 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
         def result = new SchemaPrinter(options).print(enumType)
 
         then:
-        result == '''enum TestEnum @bb(bb, a) @a(bb, a) {
-  bb @bb(bb, a) @a(bb, a)
-  a @bb(bb, a) @a(bb, a)
+        result == '''enum TestEnum @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
+  bb @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
+  a @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
 
 '''
@@ -309,7 +308,7 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
         def result = new SchemaPrinter(options).print(unionType)
 
         then:
-        result == '''union TestUnion @bb(bb, a) @a(bb, a) = bb | a
+        result == '''union TestUnion @bb(bb : 0, a : 0) @a(bb : 0, a : 0) = bb | a
 
 '''
     }
@@ -333,7 +332,7 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
         def result = new SchemaPrinter(options).print(unionType)
 
         then:
-        result == '''union TestUnion @bb(bb, a) @a(bb, a) = bb | a
+        result == '''union TestUnion @bb(bb : 0, a : 0) @a(bb : 0, a : 0) = bb | a
 
 '''
     }
@@ -367,9 +366,9 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
         def result = new SchemaPrinter(options).print(interfaceType)
 
         then:
-        result == '''interface TypeA @bb(bb, a) @a(bb, a) {
-  bb(bb: Int, a: Int): String @bb(bb, a) @a(bb, a)
-  a(bb: Int, a: Int): String @bb(bb, a) @a(bb, a)
+        result == '''interface TypeA @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
+  bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
+  a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
 
 '''
@@ -402,9 +401,9 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
         def result = new SchemaPrinter(options).print(interfaceType)
 
         then:
-        result == '''interface TypeA @bb(bb, a) @a(bb, a) {
-  bb(bb: Int, a: Int): String @bb(bb, a) @a(bb, a)
-  a(bb: Int, a: Int): String @bb(bb, a) @a(bb, a)
+        result == '''interface TypeA @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
+  bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
+  a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
 
 '''
@@ -439,9 +438,9 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
         def result = new SchemaPrinter(options).print(objectType)
 
         then:
-        result == '''type TypeA implements bb & a @bb(bb, a) @a(bb, a) {
-  bb(bb: Int, a: Int): String @bb(bb, a) @a(bb, a)
-  a(bb: Int, a: Int): String @bb(bb, a) @a(bb, a)
+        result == '''type TypeA implements bb & a @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
+  bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
+  a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
 
 '''
@@ -474,9 +473,9 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
         def result = new SchemaPrinter(options).print(objectType)
 
         then:
-        result == '''type TypeA implements bb & a @bb(bb, a) @a(bb, a) {
-  bb(bb: Int, a: Int): String @bb(bb, a) @a(bb, a)
-  a(bb: Int, a: Int): String @bb(bb, a) @a(bb, a)
+        result == '''type TypeA implements bb & a @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
+  bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
+  a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
 
 '''
@@ -507,9 +506,9 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
         def result = new SchemaPrinter(options).print(inputObjectType)
 
         then:
-        result == '''input TypeA @bb(bb, a) @a(bb, a) {
-  bb: String @bb(bb, a) @a(bb, a)
-  a: String @bb(bb, a) @a(bb, a)
+        result == '''input TypeA @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
+  bb: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
+  a: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
 
 '''
@@ -539,9 +538,9 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
         def result = new SchemaPrinter(options).print(inputObjectType)
 
         then:
-        result == '''input TypeA @bb(bb, a) @a(bb, a) {
-  bb: String @bb(bb, a) @a(bb, a)
-  a: String @bb(bb, a) @a(bb, a)
+        result == '''input TypeA @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
+  bb: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
+  a: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
 
 '''
@@ -595,7 +594,7 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
         def result = new SchemaPrinter(options).directivesString(GraphQLFieldDefinition.class, field.directives)
 
         then:
-        result == ''' @bb(bb, a) @a(bb, a)'''
+        result == ''' @bb(bb : 0, a : 0) @a(bb : 0, a : 0)'''
     }
 
     def "directivesString uses least specific registered comparators"() {
@@ -614,7 +613,7 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
         def result = new SchemaPrinter(options).directivesString(GraphQLFieldDefinition.class, field.directives)
 
         then:
-        result == ''' @bb(bb, a) @a(bb, a)'''
+        result == ''' @bb(bb : 0, a : 0) @a(bb : 0, a : 0)'''
     }
 
 
@@ -693,39 +692,39 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         then:
 
-        scalarResult == '''#TestScalar
-scalar TestScalar @bb(bb, a) @a(bb, a)
+        scalarResult == '''"TestScalar"
+scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
 '''
 
-        enumResult == '''enum TestEnum @bb(bb, a) @a(bb, a) {
-  bb @bb(bb, a) @a(bb, a)
-  a @bb(bb, a) @a(bb, a)
+        enumResult == '''enum TestEnum @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
+  bb @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
+  a @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
 
 '''
 
-        unionResult == '''union TestUnion @bb(bb, a) @a(bb, a) = bb | a
+        unionResult == '''union TestUnion @bb(bb : 0, a : 0) @a(bb : 0, a : 0) = bb | a
 
 '''
 
-        interfaceTypeResult == '''interface TestInterfaceType @bb(bb, a) @a(bb, a) {
-  bb(bb: Int, a: Int): String @bb(bb, a) @a(bb, a)
-  a(bb: Int, a: Int): String @bb(bb, a) @a(bb, a)
+        interfaceTypeResult == '''interface TestInterfaceType @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
+  bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
+  a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
 
 '''
 
-        objectTypeResult == '''type TestObjectType implements bb & a @bb(bb, a) @a(bb, a) {
-  bb(bb: Int, a: Int): String @bb(bb, a) @a(bb, a)
-  a(bb: Int, a: Int): String @bb(bb, a) @a(bb, a)
+        objectTypeResult == '''type TestObjectType implements bb & a @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
+  bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
+  a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
 
 '''
 
-        inputObjectTypeResult == '''input TestInputObjectType @bb(bb, a) @a(bb, a) {
-  bb: String @bb(bb, a) @a(bb, a)
-  a: String @bb(bb, a) @a(bb, a)
+        inputObjectTypeResult == '''input TestInputObjectType @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
+  bb: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
+  a: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
 
 '''
@@ -753,5 +752,22 @@ scalar TestScalar @bb(bb, a) @a(bb, a)
 
         then:
         result == DEFAULT_COMPARATOR
+    }
+
+    def "directive string when argument has no value"() {
+        given:
+        GraphQLScalarType scalarType = newScalar(mockScalar("TestScalar"))
+                .withDirectives(mockDirectivesWithNoValueArguments("a", "bb"))
+                .build()
+
+        when:
+        def options = defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(true)
+        def result = new SchemaPrinter(options).print(scalarType)
+
+        then:
+        result == '''"TestScalar"
+scalar TestScalar @a() @bb()
+
+'''
     }
 }

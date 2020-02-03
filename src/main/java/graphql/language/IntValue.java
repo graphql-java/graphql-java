@@ -118,7 +118,7 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.value = existing.getValue();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {

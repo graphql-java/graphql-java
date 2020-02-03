@@ -4,6 +4,7 @@ package graphql.schema;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.UnionTypeDefinition;
+import graphql.language.UnionTypeExtensionDefinition;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -24,22 +25,24 @@ import static java.util.Collections.unmodifiableList;
 
 /**
  * A union type is a polymorphic type that dynamically represents one of more concrete object types.
- *
+ * <p>
  * At runtime a {@link graphql.schema.TypeResolver} is used to take an union object value and decide what {@link graphql.schema.GraphQLObjectType}
  * represents this union of types.
- *
+ * <p>
  * Note that members of a union type need to be concrete object types; you can't create a union type out of interfaces or other unions.
- *
+ * <p>
  * See http://graphql.org/learn/schema/#union-types for more details on the concept.
  */
 @PublicApi
-public class GraphQLUnionType implements GraphQLNamedType, GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
     private final List<GraphQLNamedOutputType> originalTypes;
     private final TypeResolver typeResolver;
     private final UnionTypeDefinition definition;
+    private final List<UnionTypeExtensionDefinition> extensionDefinitions;
+
     private final List<GraphQLDirective> directives;
 
     private List<GraphQLNamedOutputType> replacedTypes;
@@ -75,6 +78,10 @@ public class GraphQLUnionType implements GraphQLNamedType, GraphQLOutputType, Gr
     @Internal
     @Deprecated
     public GraphQLUnionType(String name, String description, List<GraphQLNamedOutputType> types, TypeResolver typeResolver, List<GraphQLDirective> directives, UnionTypeDefinition definition) {
+        this(name, description, types, typeResolver, directives, definition, emptyList());
+    }
+
+    private GraphQLUnionType(String name, String description, List<GraphQLNamedOutputType> types, TypeResolver typeResolver, List<GraphQLDirective> directives, UnionTypeDefinition definition, List<UnionTypeExtensionDefinition> extensionDefinitions) {
         assertValidName(name);
         assertNotNull(types, "types can't be null");
         assertNotEmpty(types, "A Union type must define one or more member types.");
@@ -85,6 +92,7 @@ public class GraphQLUnionType implements GraphQLNamedType, GraphQLOutputType, Gr
         this.originalTypes = types;
         this.typeResolver = typeResolver;
         this.definition = definition;
+        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
         this.directives = directives;
     }
 
@@ -120,6 +128,10 @@ public class GraphQLUnionType implements GraphQLNamedType, GraphQLOutputType, Gr
 
     public UnionTypeDefinition getDefinition() {
         return definition;
+    }
+
+    public List<UnionTypeExtensionDefinition> getExtensionDefinitions() {
+        return extensionDefinitions;
     }
 
     @Override
@@ -181,6 +193,8 @@ public class GraphQLUnionType implements GraphQLNamedType, GraphQLOutputType, Gr
     public static class Builder extends GraphqlTypeBuilder {
         private TypeResolver typeResolver;
         private UnionTypeDefinition definition;
+        private List<UnionTypeExtensionDefinition> extensionDefinitions = emptyList();
+
         private final Map<String, GraphQLNamedOutputType> types = new LinkedHashMap<>();
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
 
@@ -192,6 +206,7 @@ public class GraphQLUnionType implements GraphQLNamedType, GraphQLOutputType, Gr
             this.description = existing.getDescription();
             this.typeResolver = existing.getTypeResolver();
             this.definition = existing.getDefinition();
+            this.extensionDefinitions = existing.getExtensionDefinitions();
             this.types.putAll(getByName(existing.originalTypes, GraphQLNamedType::getName));
             this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
@@ -219,6 +234,10 @@ public class GraphQLUnionType implements GraphQLNamedType, GraphQLOutputType, Gr
             return this;
         }
 
+        public Builder extensionDefinitions(List<UnionTypeExtensionDefinition> extensionDefinitions) {
+            this.extensionDefinitions = extensionDefinitions;
+            return this;
+        }
 
         @Deprecated
         public Builder typeResolver(TypeResolver typeResolver) {
@@ -318,7 +337,8 @@ public class GraphQLUnionType implements GraphQLNamedType, GraphQLOutputType, Gr
                     sort(types, GraphQLUnionType.class, GraphQLOutputType.class),
                     typeResolver,
                     sort(directives, GraphQLUnionType.class, GraphQLDirective.class),
-                    definition);
+                    definition,
+                    extensionDefinitions);
         }
     }
 }

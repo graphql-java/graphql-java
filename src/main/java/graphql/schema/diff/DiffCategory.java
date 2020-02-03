@@ -26,5 +26,13 @@ public enum DiffCategory {
     /**
      * The new API has changed something compared to the old API
      */
-    DIFFERENT
+    DIFFERENT,
+    /**
+     * The new API has newly deprecated something
+     */
+    DEPRECATION_ADDED,
+    /**
+     * The new API has removed something previously deprecated in the old API
+     */
+    DEPRECATION_REMOVED,
 }

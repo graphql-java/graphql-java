@@ -199,7 +199,7 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
             this.defaultValue = existing.getDefaultValue();
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 

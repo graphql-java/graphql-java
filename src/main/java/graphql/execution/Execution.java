@@ -21,9 +21,9 @@ import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import graphql.util.LogKit;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -41,7 +41,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @Internal
 public class Execution {
-    private static final Logger log = LoggerFactory.getLogger(Execution.class);
+    private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(Execution.class);
 
     private final FieldCollector fieldCollector = new FieldCollector();
     private final ValuesResolver valuesResolver = new ValuesResolver();
@@ -49,12 +49,14 @@ public class Execution {
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
     private final Instrumentation instrumentation;
+    private ValueUnboxer valueUnboxer;
 
-    public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Instrumentation instrumentation) {
+    public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Instrumentation instrumentation, ValueUnboxer valueUnboxer) {
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new AsyncExecutionStrategy();
         this.instrumentation = instrumentation;
+        this.valueUnboxer = valueUnboxer;
     }
 
     public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState) {
@@ -92,6 +94,8 @@ public class Execution {
                 .operationDefinition(operationDefinition)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
                 .cacheControl(executionInput.getCacheControl())
+                .locale(executionInput.getLocale())
+                .valueUnboxer(valueUnboxer)
                 .build();
 
 
@@ -141,7 +145,7 @@ public class Execution {
         ExecutionStrategyParameters parameters = newParameters()
                 .executionStepInfo(executionStepInfo)
                 .source(root)
-                .localContext(executionContext.getContext())
+                .localContext(null) // this is important to default as this
                 .fields(fields)
                 .nonNullFieldValidator(nonNullableFieldValidator)
                 .path(path)
@@ -151,13 +155,13 @@ public class Execution {
         try {
             ExecutionStrategy executionStrategy;
             if (operation == OperationDefinition.Operation.MUTATION) {
-                executionStrategy = mutationStrategy;
+                executionStrategy = executionContext.getMutationStrategy();
             } else if (operation == SUBSCRIPTION) {
-                executionStrategy = subscriptionStrategy;
+                executionStrategy = executionContext.getSubscriptionStrategy();
             } else {
-                executionStrategy = queryStrategy;
+                executionStrategy = executionContext.getQueryStrategy();
             }
-            log.debug("Executing '{}' query operation: '{}' using '{}' execution strategy", executionContext.getExecutionId(), operation, executionStrategy.getClass().getName());
+            logNotSafe.debug("Executing '{}' query operation: '{}' using '{}' execution strategy", executionContext.getExecutionId(), operation, executionStrategy.getClass().getName());
             result = executionStrategy.execute(executionContext, parameters);
         } catch (NonNullableFieldWasNullException e) {
             // this means it was non null types all the way from an offending non null type

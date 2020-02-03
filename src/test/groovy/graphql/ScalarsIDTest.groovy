@@ -3,9 +3,9 @@ package graphql
 import graphql.language.BooleanValue
 import graphql.language.IntValue
 import graphql.language.StringValue
+import graphql.relay.DefaultConnectionCursor
 import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
-import graphql.schema.CoercingSerializeException
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -42,19 +42,21 @@ class ScalarsIDTest extends Specification {
         Scalars.GraphQLID.getCoercing().parseValue(value) == result
 
         where:
-        value               | result
-        "123ab"             | "123ab"
-        123                 | "123"
-        123123123123123123L | "123123123123123123"
+        value                                                   | result
+        "123ab"                                                 | "123ab"
+        123                                                     | "123"
+        123123123123123123L                                     | "123123123123123123"
+        new BigInteger("123123123123123123")                    | "123123123123123123"
         UUID.fromString("037ebc7a-f9b8-4d76-89f6-31b34a40e10b") | "037ebc7a-f9b8-4d76-89f6-31b34a40e10b"
+        new DefaultConnectionCursor("cursor123")                | "cursor123"
     }
 
     @Unroll
-    def "serialize throws exception for invalid input #value"() {
+    def "serialize allows any object via String.valueOf #value"() {
         when:
         Scalars.GraphQLID.getCoercing().serialize(value)
         then:
-        thrown(CoercingSerializeException)
+        noExceptionThrown()
 
         where:
         value        | _
@@ -63,11 +65,11 @@ class ScalarsIDTest extends Specification {
     }
 
     @Unroll
-    def "parseValue throws exception for invalid input #value"() {
+    def "parseValue allows any object via String.valueOf #value"() {
         when:
         Scalars.GraphQLID.getCoercing().parseValue(value)
         then:
-        thrown(CoercingParseValueException)
+        noExceptionThrown()
 
         where:
         value        | _

@@ -50,7 +50,11 @@ public class GraphqlErrorBuilder {
     }
 
     public GraphqlErrorBuilder message(String message, Object... formatArgs) {
-        this.message = String.format(assertNotNull(message), formatArgs);
+        if (formatArgs == null || formatArgs.length == 0) {
+            this.message = assertNotNull(message);
+        } else {
+            this.message = String.format(assertNotNull(message), formatArgs);
+        }
         return this;
     }
 

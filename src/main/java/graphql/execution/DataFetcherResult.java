@@ -7,6 +7,7 @@ import graphql.schema.DataFetcher;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static java.util.Collections.unmodifiableList;
@@ -97,6 +98,20 @@ public class DataFetcherResult<T> {
     }
 
     /**
+     * This helps you transform the current DataFetcherResult into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
+     *
+     * @param builderConsumer the consumer code that will be given a builder to transform
+     *
+     * @return a new instance produced by calling {@code build} on that builder
+     */
+    public DataFetcherResult<T> transform(Consumer<Builder<T>> builderConsumer) {
+        Builder<T> builder = new Builder<>(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
+    /**
      * Creates a new data fetcher result builder
      *
      * @param <T> the type of the result
@@ -112,6 +127,13 @@ public class DataFetcherResult<T> {
         private Object localContext;
         private final List<GraphQLError> errors = new ArrayList<>();
         private boolean mapRelativeErrors = false;
+
+        public Builder(DataFetcherResult<T> existing) {
+            data = existing.getData();
+            localContext = existing.getLocalContext();
+            errors.addAll(existing.getErrors());
+            mapRelativeErrors = existing.isMapRelativeErrors();
+        }
 
         public Builder(T data) {
             this.data = data;

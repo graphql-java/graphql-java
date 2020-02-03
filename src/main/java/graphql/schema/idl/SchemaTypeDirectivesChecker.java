@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.Directives;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.introspection.Introspection.DirectiveLocation;
@@ -15,6 +16,7 @@ import graphql.language.InterfaceTypeDefinition;
 import graphql.language.Node;
 import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
+import graphql.language.SchemaDefinition;
 import graphql.language.TypeDefinition;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.idl.errors.DirectiveIllegalLocationError;
@@ -85,6 +87,10 @@ class SchemaTypeDirectivesChecker {
         typeRegistry.scalars().values()
                 .forEach(typeDef -> checkDirectives(SCALAR, errors, typeDef));
 
+        List<Directive> schemaDirectives = SchemaExtensionsChecker.gatherSchemaDirectives(typeRegistry, errors);
+        // we need to have a Node for error reporting so we make one in case there is not one
+        SchemaDefinition schemaDefinition = typeRegistry.schemaDefinition().orElse(SchemaDefinition.newSchemaDefinition().build());
+        checkDirectives(DirectiveLocation.SCHEMA, errors, typeRegistry, schemaDefinition, "schema", schemaDirectives);
     }
 
 
@@ -120,6 +126,10 @@ class SchemaTypeDirectivesChecker {
 
     private void checkDirectives(DirectiveLocation expectedLocation, List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, Node<?> element, String elementName, List<Directive> directives) {
         directives.forEach(directive -> {
+            // we have special code for the deprecation directive in SchemaTypeChecker.checkDeprecatedDirective
+            if (Directives.DeprecatedDirective.getName().equals(directive.getName())) {
+                return;
+            }
             Optional<DirectiveDefinition> directiveDefinition = typeRegistry.getDirectiveDefinition(directive.getName());
             if (!directiveDefinition.isPresent()) {
                 errors.add(new DirectiveUndeclaredError(element, elementName, directive.getName()));

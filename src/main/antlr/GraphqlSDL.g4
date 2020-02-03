@@ -4,11 +4,20 @@ import GraphqlCommon;
 typeSystemDefinition: description?
 schemaDefinition |
 typeDefinition |
-typeExtension |
 directiveDefinition
 ;
 
+typeSystemExtension :
+schemaExtension |
+typeExtension
+;
+
 schemaDefinition : description? SCHEMA directives? '{' operationTypeDefinition+ '}';
+
+schemaExtension :
+    EXTEND SCHEMA directives? '{' operationTypeDefinition+ '}' |
+    EXTEND SCHEMA directives+
+;
 
 operationTypeDefinition : description? operationType ':' typeName;
 

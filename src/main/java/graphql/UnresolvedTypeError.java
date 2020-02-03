@@ -63,7 +63,7 @@ public class UnresolvedTypeError implements GraphQLError {
     public String toString() {
         return "UnresolvedTypeError{" +
                 "path=" + path +
-                "exception=" + exception +
+                ", exception=" + exception +
                 '}';
     }
 

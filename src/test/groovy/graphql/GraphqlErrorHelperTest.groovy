@@ -34,6 +34,35 @@ class GraphqlErrorHelperTest extends Specification {
         }
     }
 
+    class ExtensionAddingError implements GraphQLError {
+
+        Map<String, Object> extensions;
+
+        ExtensionAddingError(Map<String, Object> extensions) {
+            this.extensions = extensions
+        }
+
+        @Override
+        String getMessage() {
+            return "has extensions"
+        }
+
+        @Override
+        List<SourceLocation> getLocations() {
+            return null
+        }
+
+        @Override
+        ErrorClassification getErrorType() {
+            return null
+        }
+
+        @Override
+        Map<String, Object> getExtensions() {
+            return extensions;
+        }
+    }
+
     def "can turn error classifications into extensions"() {
 
         def validationErr = new ValidationError(ValidationErrorType.InvalidFragmentType, new SourceLocation(6, 9), "Things are not valid")
@@ -61,6 +90,16 @@ class GraphqlErrorHelperTest extends Specification {
                 ]],
                     locations : [[line: 6, column: 9]],
                     message   : "test"
+        ]
+    }
+
+    def "can handle custom extensions with classification"() {
+        when:
+        def specMap = GraphqlErrorHelper.toSpecification(new ExtensionAddingError([classification: "help"]))
+        then:
+        specMap == [extensions: [
+                classification: "help"],
+                    message   : "has extensions"
         ]
     }
 }

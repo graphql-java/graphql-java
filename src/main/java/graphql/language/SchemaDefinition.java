@@ -126,16 +126,16 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
-        private Builder() {
+        protected Builder() {
         }
 
-        private Builder(SchemaDefinition existing) {
+        protected Builder(SchemaDefinition existing) {
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.directives = existing.getDirectives();
             this.operationTypeDefinitions = existing.getOperationTypeDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 

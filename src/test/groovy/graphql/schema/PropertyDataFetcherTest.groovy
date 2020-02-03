@@ -18,6 +18,7 @@ class PropertyDataFetcherTest extends Specification {
 
     void setup() {
         PropertyDataFetcher.setUseSetAccessible(true)
+        PropertyDataFetcher.setUseNegativeCache(true)
         PropertyDataFetcher.clearReflectionCache()
     }
 
@@ -357,6 +358,35 @@ class PropertyDataFetcherTest extends Specification {
         result == "value2"
     }
 
+    def "negative caching works as expected"() {
+        def environment = env(new ClassWithDFEMethods())
+        def fetcher = new PropertyDataFetcher("doesNotExist")
+        when:
+        def result = fetcher.get(environment)
+        then:
+        result == null
+
+        when:
+        result = fetcher.get(environment)
+        then:
+        result == null
+
+        when:
+        PropertyDataFetcher.setUseNegativeCache(false)
+        PropertyDataFetcher.clearReflectionCache()
+        result = fetcher.get(environment)
+        then:
+        result == null
+
+        when:
+        PropertyDataFetcher.setUseNegativeCache(true)
+        PropertyDataFetcher.clearReflectionCache()
+        result = fetcher.get(environment)
+        then:
+        result == null
+
+    }
+
     class ProductDTO {
         String name
         String model
@@ -402,5 +432,31 @@ class PropertyDataFetcherTest extends Specification {
         then:
         er.errors.isEmpty()
         er.data == [products: [[name: "odarP", model: "GLX"], [name: "yrmaC", model: "Momento"]]]
+    }
+
+    interface Foo {
+        String getSomething();
+    }
+
+    private static class Bar implements Foo {
+        @Override
+        public String getSomething() {
+            return "bar";
+        }
+    }
+
+    private static class Baz extends Bar implements Foo {}
+
+    def "search for private getter in class hierarchy"() {
+        given:
+        Bar bar = new Baz()
+        PropertyDataFetcher propertyDataFetcher = new PropertyDataFetcher("something")
+        def dfe = Mock(DataFetchingEnvironment)
+        dfe.getSource() >> bar
+        when:
+        def result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == "bar"
     }
 }

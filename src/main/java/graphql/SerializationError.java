@@ -6,6 +6,7 @@ import graphql.language.SourceLocation;
 import graphql.schema.CoercingSerializeException;
 
 import java.util.List;
+import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static java.lang.String.format;
@@ -31,7 +32,6 @@ public class SerializationError implements GraphQLError {
         return exception;
     }
 
-
     @Override
     public String getMessage() {
         return message;
@@ -39,7 +39,7 @@ public class SerializationError implements GraphQLError {
 
     @Override
     public List<SourceLocation> getLocations() {
-        return null;
+        return exception.getLocations();
     }
 
     @Override
@@ -53,10 +53,15 @@ public class SerializationError implements GraphQLError {
     }
 
     @Override
+    public Map<String, Object> getExtensions() {
+        return exception.getExtensions();
+    }
+
+    @Override
     public String toString() {
         return "SerializationError{" +
                 "path=" + path +
-                "exception=" + exception +
+                ", exception=" + exception +
                 '}';
     }
 

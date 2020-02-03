@@ -121,7 +121,7 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
             this.comments = existing.getComments();
             this.type = existing.getType();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = existing.getAdditionalData();
+            this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
 

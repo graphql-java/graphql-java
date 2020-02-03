@@ -87,8 +87,8 @@ public class ExceptionWhileDataFetching implements GraphQLError {
     public String toString() {
         return "ExceptionWhileDataFetching{" +
                 "path=" + path +
-                "exception=" + exception +
-                "locations=" + locations +
+                ", exception=" + exception +
+                ", locations=" + locations +
                 '}';
     }
 

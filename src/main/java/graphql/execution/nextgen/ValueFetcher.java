@@ -8,13 +8,13 @@ import graphql.Internal;
 import graphql.execution.AbsoluteGraphQLError;
 import graphql.execution.Async;
 import graphql.execution.DataFetcherResult;
+import graphql.execution.DefaultValueUnboxer;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.FetchedValue;
 import graphql.execution.MergedField;
-import graphql.execution.UnboxPossibleOptional;
 import graphql.execution.ValuesResolver;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.language.Field;
@@ -27,6 +27,7 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLTypeUtil;
+import graphql.util.LogKit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +49,7 @@ public class ValueFetcher {
     ValuesResolver valuesResolver = new ValuesResolver();
 
     private static final Logger log = LoggerFactory.getLogger(ValueFetcher.class);
+    private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(ExecutionStrategy.class);
 
     public static final Object NULL_VALUE = new Object();
 
@@ -152,7 +154,7 @@ public class ValueFetcher {
 
     private FetchedValue unboxPossibleOptional(FetchedValue result) {
         return result.transform(
-                builder -> builder.fetchedValue(UnboxPossibleOptional.unboxPossibleOptional(result.getFetchedValue()))
+                builder -> builder.fetchedValue(DefaultValueUnboxer.unboxValue(result.getFetchedValue()))
         );
     }
 
@@ -162,10 +164,10 @@ public class ValueFetcher {
             DataFetcher dataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);
             log.debug("'{}' fetching field '{}' using data fetcher '{}'...", executionId, path, dataFetcher.getClass().getName());
             Object fetchedValueRaw = dataFetcher.get(environment);
-            log.debug("'{}' field '{}' fetch returned '{}'", executionId, path, fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
+            logNotSafe.debug("'{}' field '{}' fetch returned '{}'", executionId, path, fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
             handleFetchedValue(fetchedValueRaw, result);
         } catch (Exception e) {
-            log.debug(String.format("'%s', field '%s' fetch threw exception", executionId, path), e);
+            logNotSafe.debug(String.format("'%s', field '%s' fetch threw exception", executionId, path), e);
             result.completeExceptionally(e);
         }
         return result;

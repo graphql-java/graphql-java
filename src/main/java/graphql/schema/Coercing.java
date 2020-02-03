@@ -41,7 +41,7 @@ public interface Coercing<I, O> {
     O serialize(Object dataFetcherResult) throws CoercingSerializeException;
 
     /**
-     * Called to resolve a input from a query variable into a Java object acceptable for the scalar type.
+     * Called to resolve an input from a query variable into a Java object acceptable for the scalar type.
      * <p>
      * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseValue method, but rather
      * catch them and fire them as {@link graphql.schema.CoercingParseValueException} instead as per the method contract.
@@ -55,7 +55,7 @@ public interface Coercing<I, O> {
     I parseValue(Object input) throws CoercingParseValueException;
 
     /**
-     * Called during query validation to convert an query input AST node into a Java object acceptable for the scalar type.  The input
+     * Called during query validation to convert a query input AST node into a Java object acceptable for the scalar type.  The input
      * object will be an instance of {@link graphql.language.Value}.
      * <p>
      * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseLiteral method, but rather
@@ -70,7 +70,7 @@ public interface Coercing<I, O> {
     I parseLiteral(Object input) throws CoercingParseLiteralException;
 
     /**
-     * Called during query execution to convert an query input AST node into a Java object acceptable for the scalar type.  The input
+     * Called during query execution to convert a query input AST node into a Java object acceptable for the scalar type.  The input
      * object will be an instance of {@link graphql.language.Value}.
      * <p>
      * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseLiteral method, but rather

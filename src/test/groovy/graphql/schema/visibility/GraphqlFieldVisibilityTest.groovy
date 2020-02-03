@@ -6,6 +6,7 @@ import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
 import graphql.introspection.IntrospectionQuery
 import graphql.language.Field
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
@@ -114,152 +115,154 @@ class GraphqlFieldVisibilityTest extends Specification {
     def "schema printing filters on visibility"() {
 
         when:
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().fieldVisibility(DEFAULT_FIELD_VISIBILITY).build()
         def schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
-                .fieldVisibility(DEFAULT_FIELD_VISIBILITY)
+                .codeRegistry(codeRegistry)
                 .build()
-        def result = new SchemaPrinter().print(schema)
+        def options = SchemaPrinter.Options.defaultOptions().includeDirectives(false)
+        def result = new SchemaPrinter(options).print(schema)
 
         then:
         result == """schema {
   query: QueryType
 }
 
-#A character in the Star Wars Trilogy
+"A character in the Star Wars Trilogy"
 interface Character {
-  #Which movies they appear in.
+  "Which movies they appear in."
   appearsIn: [Episode]
-  #The friends of the character, or an empty list if they have none.
+  "The friends of the character, or an empty list if they have none."
   friends: [Character]
-  #The id of the character.
+  "The id of the character."
   id: String!
-  #The name of the character.
+  "The name of the character."
   name: String
 }
 
-#A mechanical creature in the Star Wars universe.
+"A mechanical creature in the Star Wars universe."
 type Droid implements Character {
-  #Which movies they appear in.
+  "Which movies they appear in."
   appearsIn: [Episode]
-  #The friends of the droid, or an empty list if they have none.
+  "The friends of the droid, or an empty list if they have none."
   friends: [Character]
-  #The id of the droid.
+  "The id of the droid."
   id: String!
-  #The name of the droid.
+  "The name of the droid."
   name: String
-  #The primary function of the droid.
+  "The primary function of the droid."
   primaryFunction: String
 }
 
-#A humanoid creature in the Star Wars universe.
+"A humanoid creature in the Star Wars universe."
 type Human implements Character {
-  #Which movies they appear in.
+  "Which movies they appear in."
   appearsIn: [Episode]
-  #The friends of the human, or an empty list if they have none.
+  "The friends of the human, or an empty list if they have none."
   friends: [Character]
-  #The home planet of the human, or null if unknown.
+  "The home planet of the human, or null if unknown."
   homePlanet: String
-  #The id of the human.
+  "The id of the human."
   id: String!
-  #The name of the human.
+  "The name of the human."
   name: String
 }
 
 type QueryType {
   droid(
-    #id of the droid
+    "id of the droid"
     id: String!
   ): Droid
   hero(
-    #If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode.
+    "If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode."
     episode: Episode
   ): Character
   human(
-    #id of the human
+    "id of the human"
     id: String!
   ): Human
 }
 
-#One of the films in the Star Wars Trilogy
+"One of the films in the Star Wars Trilogy"
 enum Episode {
-  #Released in 1980.
+  "Released in 1980."
   EMPIRE
-  #Released in 1983.
+  "Released in 1983."
   JEDI
-  #Released in 1977.
+  "Released in 1977."
   NEWHOPE
 }
 """
 
         // and with specific bans
 
-
         when:
+        codeRegistry = GraphQLCodeRegistry.newCodeRegistry().fieldVisibility(ban(['Droid.id', 'Character.name', "QueryType.hero"])).build()
         schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
-                .fieldVisibility(ban(['Droid.id', 'Character.name', "QueryType.hero"]))
+                .codeRegistry(codeRegistry)
                 .build()
-        result = new SchemaPrinter().print(schema)
+        result = new SchemaPrinter(options).print(schema)
 
         then:
         result == """schema {
   query: QueryType
 }
 
-#A character in the Star Wars Trilogy
+"A character in the Star Wars Trilogy"
 interface Character {
-  #Which movies they appear in.
+  "Which movies they appear in."
   appearsIn: [Episode]
-  #The friends of the character, or an empty list if they have none.
+  "The friends of the character, or an empty list if they have none."
   friends: [Character]
-  #The id of the character.
+  "The id of the character."
   id: String!
 }
 
-#A mechanical creature in the Star Wars universe.
+"A mechanical creature in the Star Wars universe."
 type Droid implements Character {
-  #Which movies they appear in.
+  "Which movies they appear in."
   appearsIn: [Episode]
-  #The friends of the droid, or an empty list if they have none.
+  "The friends of the droid, or an empty list if they have none."
   friends: [Character]
-  #The name of the droid.
+  "The name of the droid."
   name: String
-  #The primary function of the droid.
+  "The primary function of the droid."
   primaryFunction: String
 }
 
-#A humanoid creature in the Star Wars universe.
+"A humanoid creature in the Star Wars universe."
 type Human implements Character {
-  #Which movies they appear in.
+  "Which movies they appear in."
   appearsIn: [Episode]
-  #The friends of the human, or an empty list if they have none.
+  "The friends of the human, or an empty list if they have none."
   friends: [Character]
-  #The home planet of the human, or null if unknown.
+  "The home planet of the human, or null if unknown."
   homePlanet: String
-  #The id of the human.
+  "The id of the human."
   id: String!
-  #The name of the human.
+  "The name of the human."
   name: String
 }
 
 type QueryType {
   droid(
-    #id of the droid
+    "id of the droid"
     id: String!
   ): Droid
   human(
-    #id of the human
+    "id of the human"
     id: String!
   ): Human
 }
 
-#One of the films in the Star Wars Trilogy
+"One of the films in the Star Wars Trilogy"
 enum Episode {
-  #Released in 1980.
+  "Released in 1980."
   EMPIRE
-  #Released in 1983.
+  "Released in 1983."
   JEDI
-  #Released in 1977.
+  "Released in 1977."
   NEWHOPE
 }
 """
@@ -389,12 +392,16 @@ enum Episode {
     }
 
     def "input schema print is blocked"() {
+
+        def options = SchemaPrinter.Options.defaultOptions().includeDirectives(false)
+
         when:
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().fieldVisibility(DEFAULT_FIELD_VISIBILITY).build()
         def schema = GraphQLSchema.newSchema()
                 .query(inputQueryType)
-                .fieldVisibility(DEFAULT_FIELD_VISIBILITY)
+                .codeRegistry(codeRegistry)
                 .build()
-        def result = new SchemaPrinter().print(schema)
+        def result = new SchemaPrinter(options).print(schema)
 
         then:
         result == '''schema {
@@ -412,11 +419,13 @@ input InputType {
 '''
 
         when:
+
+        codeRegistry = GraphQLCodeRegistry.newCodeRegistry().fieldVisibility(ban(["InputType.closedField"])).build()
         schema = GraphQLSchema.newSchema()
                 .query(inputQueryType)
-                .fieldVisibility(ban(["InputType.closedField"]))
+                .codeRegistry(codeRegistry)
                 .build()
-        result = new SchemaPrinter().print(schema)
+        result = new SchemaPrinter(options).print(schema)
 
         then:
         result == '''schema {

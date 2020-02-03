@@ -6,7 +6,7 @@ import graphql.schema.GraphQLSchema;
  * These are called by the {@link SchemaGenerator} after a valid schema has been built
  * and they can then adjust it accordingly with some sort of post processing.
  */
-public interface SchemaTransformer {
+public interface SchemaGeneratorPostProcessing {
 
     /**
      * Called to transform the schema from its built state into something else
@@ -15,5 +15,5 @@ public interface SchemaTransformer {
      *
      * @return a non null schema
      */
-    GraphQLSchema transform(GraphQLSchema originalSchema);
+    GraphQLSchema process(GraphQLSchema originalSchema);
 }
