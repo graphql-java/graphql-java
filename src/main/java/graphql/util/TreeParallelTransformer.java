@@ -108,7 +108,8 @@ public class TreeParallelTransformer<T> {
                 assertNotNull(traversalControl, "result of enter must not be null");
                 assertTrue(QUIT != traversalControl, "can't return QUIT for parallel traversing");
                 if (traversalControl == ABORT) {
-                    return;
+                    this.children.add(Collections.emptyList());
+                    continue;
                 }
                 assertTrue(traversalControl == CONTINUE);
                 List<DefaultTraverserContext> currentChildren = pushAll(currentContext);
