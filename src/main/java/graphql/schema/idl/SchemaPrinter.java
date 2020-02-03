@@ -84,9 +84,7 @@ public class SchemaPrinter {
         private final boolean includeScalars;
 
         private final boolean useAstDefinitions;
-
-        private final boolean includeExtendedScalars;
-
+        
         private final boolean includeSchemaDefinition;
 
         private final boolean descriptionsAsHashComments;
@@ -97,7 +95,6 @@ public class SchemaPrinter {
 
         private Options(boolean includeIntrospectionTypes,
                         boolean includeScalars,
-                        boolean includeExtendedScalars,
                         boolean includeSchemaDefinition,
                         boolean useAstDefinitions,
                         boolean descriptionsAsHashComments,
@@ -105,7 +102,6 @@ public class SchemaPrinter {
                         GraphqlTypeComparatorRegistry comparatorRegistry) {
             this.includeIntrospectionTypes = includeIntrospectionTypes;
             this.includeScalars = includeScalars;
-            this.includeExtendedScalars = includeExtendedScalars;
             this.includeSchemaDefinition = includeSchemaDefinition;
             this.includeDirective = includeDirective;
             this.useAstDefinitions = useAstDefinitions;
@@ -120,11 +116,7 @@ public class SchemaPrinter {
         public boolean isIncludeScalars() {
             return includeScalars;
         }
-
-        public boolean isIncludeExtendedScalars() {
-            return includeExtendedScalars;
-        }
-
+        
         public boolean isIncludeSchemaDefinition() {
             return includeSchemaDefinition;
         }
@@ -146,7 +138,7 @@ public class SchemaPrinter {
         }
 
         public static Options defaultOptions() {
-            return new Options(false, false, false,
+            return new Options(false, true,
                     false, false, false,
                     directive -> true, DefaultGraphqlTypeComparatorRegistry.defaultComparators());
         }
@@ -158,7 +150,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeIntrospectionTypes(boolean flag) {
-            return new Options(flag, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, this.includeDirective, this.comparatorRegistry);
+            return new Options(flag, this.includeScalars, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, this.includeDirective, this.comparatorRegistry);
         }
 
         /**
@@ -168,20 +160,10 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, flag, this.includeExtendedScalars, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, this.includeDirective, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, flag, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, this.includeDirective, this.comparatorRegistry);
         }
 
-        /**
-         * This will allow you to include the graphql 'extended' scalar types that come with graphql-java such as
-         * GraphQLBigDecimal or GraphQLBigInteger
-         *
-         * @param flag whether to include them
-         * @return options
-         */
-        public Options includeExtendedScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, this.includeDirective, this.comparatorRegistry);
-        }
-
+        
         /**
          * This will force the printing of the graphql schema definition even if the query, mutation, and/or subscription
          * types use the default names.  Some graphql parsers require this information even if the schema uses the
@@ -192,7 +174,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeSchemaDefinition(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, flag, this.useAstDefinitions, this.descriptionsAsHashComments, this.includeDirective, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag, this.useAstDefinitions, this.descriptionsAsHashComments, this.includeDirective, this.comparatorRegistry);
         }
 
         /**
@@ -203,11 +185,11 @@ public class SchemaPrinter {
          * @return new instance of options
          */
         public Options includeDirectives(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, directive -> flag, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, directive -> flag, this.comparatorRegistry);
         }
 
         public Options includeDirectives(Predicate<GraphQLDirective> includeDirective) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, includeDirective, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, includeDirective, this.comparatorRegistry);
         }
 
         /**
@@ -218,7 +200,7 @@ public class SchemaPrinter {
          * @return new instance of options
          */
         public Options useAstDefinitions(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, flag, this.descriptionsAsHashComments, this.includeDirective, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeSchemaDefinition, flag, this.descriptionsAsHashComments, this.includeDirective, this.comparatorRegistry);
         }
 
         /**
@@ -231,7 +213,7 @@ public class SchemaPrinter {
          * @return new instance of options
          */
         public Options descriptionsAsHashComments(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.useAstDefinitions, flag, this.includeDirective, this.comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeSchemaDefinition, this.useAstDefinitions, flag, this.includeDirective, this.comparatorRegistry);
         }
 
         /**
@@ -243,7 +225,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options setComparators(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, this.includeDirective, comparatorRegistry);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, this.includeDirective, comparatorRegistry);
         }
     }
 
@@ -329,10 +311,10 @@ public class SchemaPrinter {
                 return;
             }
             boolean printScalar;
-            if (ScalarInfo.isStandardScalar(type)) {
+            if (ScalarInfo.isGraphqlSpecifiedScalar(type)) {
                 printScalar = false;
                 //noinspection RedundantIfStatement
-                if (options.isIncludeExtendedScalars() && !ScalarInfo.isGraphqlSpecifiedScalar(type)) {
+                if (!ScalarInfo.isGraphqlSpecifiedScalar(type)) {
                     printScalar = true;
                 }
             } else {
@@ -817,18 +799,19 @@ public class SchemaPrinter {
 
     @SuppressWarnings("unchecked")
     private <T> TypePrinter<T> printer(Class<?> clazz) {
-        TypePrinter typePrinter = printers.computeIfAbsent(clazz, k -> {
+        TypePrinter typePrinter = printers.get(clazz);
+        if (typePrinter == null) {
             Class<?> superClazz = clazz.getSuperclass();
-            TypePrinter result;
             if (superClazz != Object.class) {
-                result = printer(superClazz);
+                typePrinter = printer(superClazz);
             } else {
-                result = (out, type, visibility) -> out.println("Type not implemented : " + type);
+                typePrinter = (out, type, visibility) -> out.println("Type not implemented : " + type);
             }
-            return result;
-        });
+            printers.put(clazz, typePrinter);
+        }
         return (TypePrinter<T>) typePrinter;
     }
+
 
     public String print(GraphQLType type) {
         StringWriter sw = new StringWriter();

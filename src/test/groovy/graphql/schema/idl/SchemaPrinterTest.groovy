@@ -83,6 +83,14 @@ class SchemaPrinterTest extends Specification {
         }
     }
 
+    static class MyTestGraphQLObjectType extends MyGraphQLObjectType {
+
+        MyTestGraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions) {
+            super(name, description, fieldDefinitions)
+        }
+    }
+
+
     def "typeString"() {
 
         GraphQLType type1 = nonNull(list(nonNull(list(nonNull(Scalars.GraphQLInt)))))
@@ -157,7 +165,6 @@ class SchemaPrinterTest extends Specification {
 
         expect:
         result != null
-        !result.contains("scalar")
         !result.contains("__TypeKind")
     }
 
@@ -595,40 +602,22 @@ type Query {
 '''
     }
 
-    def "prints extended types"() {
+    def "concurrentModificationException should not occur when multiple extended graphQL types are used"() {
         given:
-        def idl = '''
-            type Query {
-                field : CustomScalar
-                bigDecimal : BigDecimal
-            }
-            
-            scalar CustomScalar
-        '''
-
-        def schema = TestUtil.schema(idl, newRuntimeWiring().scalar(mockScalar("CustomScalar")))
-
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition().name("field").type(GraphQLString).build()
+        def queryType = new MyTestGraphQLObjectType("Query", "test", Arrays.asList(fieldDefinition))
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
 
         when:
-        def result = new SchemaPrinter(options).print(schema)
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
         then:
-
-        if (expectedStrs.isEmpty()) {
-            assert !result.contains("scalar")
-        } else {
-            expectedStrs.forEach({ s -> assert result.contains(s) })
-        }
-
-
-        where:
-        expectedStrs                                 | options
-        []                                           | defaultOptions()
-        ["scalar CustomScalar"]                      | defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(false)
-        ["scalar BigDecimal", "scalar CustomScalar"] | defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(true)
-        ["scalar CustomScalar"]                      | defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(false)
+        result == '''"test"
+type Query {
+  field: String
+}
+'''
     }
-
 
     def "schema will be sorted"() {
         def schema = TestUtil.schema("""
@@ -741,6 +730,9 @@ enum Episode {
   JEDI
   NEWHOPE
 }
+
+"Asteroid"
+scalar Asteroid
 """
     }
 
@@ -776,6 +768,23 @@ type Query {
 
     def idlWithDirectives() {
         return """
+            directive @interfaceFieldDirective on FIELD_DEFINITION
+            directive @unionTypeDirective on UNION
+            directive @query1 on OBJECT
+            directive @query2(arg1: String) on OBJECT
+            directive @fieldDirective1 on FIELD_DEFINITION
+            directive @fieldDirective2(argStr: String, argInt: Int, argFloat: Float, argBool: Boolean) on FIELD_DEFINITION
+            directive @argDirective on ARGUMENT_DEFINITION
+            directive @interfaceImplementingTypeDirective on OBJECT
+            directive @enumTypeDirective on ENUM
+            directive @single on OBJECT
+            directive @singleField on FIELD_DEFINITION
+            directive @interfaceImplementingFieldDirective on FIELD_DEFINITION
+            directive @enumValueDirective on ENUM_VALUE
+            directive @inputTypeDirective on INPUT_OBJECT
+            directive @inputFieldDirective on INPUT_FIELD_DEFINITION
+            directive @interfaceTypeDirective on INTERFACE
+            directive @scalarDirective on SCALAR
             
             interface SomeInterface @interfaceTypeDirective {
                 fieldA : String @interfaceFieldDirective
@@ -821,7 +830,7 @@ type Query {
                 .type(mockTypeRuntimeWiring("SomeInterface", true))
                 .type(mockTypeRuntimeWiring("SomeUnion", true))
                 .build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
@@ -840,6 +849,40 @@ directive @skip(
     "Skipped when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @interfaceFieldDirective on FIELD_DEFINITION
+
+directive @unionTypeDirective on UNION
+
+directive @query1 on OBJECT
+
+directive @query2(arg1: String) on OBJECT
+
+directive @fieldDirective1 on FIELD_DEFINITION
+
+directive @fieldDirective2(argBool: Boolean, argFloat: Float, argInt: Int, argStr: String) on FIELD_DEFINITION
+
+directive @argDirective on ARGUMENT_DEFINITION
+
+directive @interfaceImplementingTypeDirective on OBJECT
+
+directive @enumTypeDirective on ENUM
+
+directive @single on OBJECT
+
+directive @singleField on FIELD_DEFINITION
+
+directive @interfaceImplementingFieldDirective on FIELD_DEFINITION
+
+directive @enumValueDirective on ENUM_VALUE
+
+directive @inputTypeDirective on INPUT_OBJECT
+
+directive @inputFieldDirective on INPUT_FIELD_DEFINITION
+
+directive @interfaceTypeDirective on INTERFACE
+
+directive @scalarDirective on SCALAR
 
 "Marks the field or enum value as deprecated"
 directive @deprecated(
@@ -946,7 +989,7 @@ input SomeInput {
         """
         def registry = new SchemaParser().parse(idl)
         def runtimeWiring = newRuntimeWiring().build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
@@ -1006,7 +1049,7 @@ enum Enum {
         given:
         def registry = new SchemaParser().parse(simpleIdlWithDirective)
         def runtimeWiring = newRuntimeWiring().build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
@@ -1063,6 +1106,7 @@ type Query {
 
     def "can print a schema as AST elements"() {
         def sdl = '''
+            directive @directive1 on SCALAR
             type Query {
                 foo : String
             }
@@ -1152,7 +1196,7 @@ type Query {
                 .wiringFactory(wiringFactory)
                 .build()
 
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
         def types = new SchemaParser().parse(sdl)
         GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(options, types, runtimeWiring)
 
@@ -1171,6 +1215,8 @@ directive @skip(
     "Skipped when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @directive1 on SCALAR
 
 "Marks the field or enum value as deprecated"
 directive @deprecated(
@@ -1284,7 +1330,7 @@ extend type Query {
         """
         def registry = new SchemaParser().parse(idl)
         def runtimeWiring = newRuntimeWiring().build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
@@ -1324,7 +1370,7 @@ enum Enum {
         '''
         def registry = new SchemaParser().parse(idl)
         def runtimeWiring = newRuntimeWiring().build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
@@ -1352,7 +1398,7 @@ type Query {
         '''
         def registry = new SchemaParser().parse(idl)
         def runtimeWiring = newRuntimeWiring().build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:

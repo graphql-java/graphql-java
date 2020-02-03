@@ -1,8 +1,13 @@
 package graphql.schema.idl
 
 import graphql.TypeResolutionEnvironment
+import graphql.schema.Coercing
+import graphql.schema.CoercingParseLiteralException
+import graphql.schema.CoercingParseValueException
+import graphql.schema.CoercingSerializeException
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLScalarType
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.TypeResolver
 
@@ -46,5 +51,32 @@ class MockedWiringFactory implements WiringFactory {
     @Override
     DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
         return new PropertyDataFetcher(environment.getFieldDefinition().getName())
+    }
+
+    @Override
+    boolean providesScalar(ScalarWiringEnvironment environment) {
+        if (ScalarInfo.isGraphqlSpecifiedScalar(environment.getScalarTypeDefinition().getName())) {
+            return false
+        }
+        return true
+    }
+
+    GraphQLScalarType getScalar(ScalarWiringEnvironment environment) {
+        return GraphQLScalarType.newScalar().name(environment.getScalarTypeDefinition().getName()).coercing(new Coercing() {
+            @Override
+            Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
+                throw new UnsupportedOperationException("Not implemented");
+            }
+
+            @Override
+            Object parseValue(Object input) throws CoercingParseValueException {
+                throw new UnsupportedOperationException("Not implemented");
+            }
+
+            @Override
+            Object parseLiteral(Object input) throws CoercingParseLiteralException {
+                throw new UnsupportedOperationException("Not implemented");
+            }
+        }).build()
     }
 }

@@ -44,13 +44,6 @@ class TypeDefinitionRegistryTest extends Specification {
         scalars.containsKey("Boolean")
         scalars.containsKey("ID")
 
-        // graphql-java library extensions
-        scalars.containsKey("Long")
-        scalars.containsKey("BigInteger")
-        scalars.containsKey("BigDecimal")
-        scalars.containsKey("Short")
-        scalars.containsKey("Char")
-
     }
 
     def "adding 2 schemas is not allowed"() {

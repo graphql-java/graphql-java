@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.Directives;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.introspection.Introspection.DirectiveLocation;
@@ -125,6 +126,10 @@ class SchemaTypeDirectivesChecker {
 
     private void checkDirectives(DirectiveLocation expectedLocation, List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, Node<?> element, String elementName, List<Directive> directives) {
         directives.forEach(directive -> {
+            // we have special code for the deprecation directive in SchemaTypeChecker.checkDeprecatedDirective
+            if (Directives.DeprecatedDirective.getName().equals(directive.getName())) {
+                return;
+            }
             Optional<DirectiveDefinition> directiveDefinition = typeRegistry.getDirectiveDefinition(directive.getName());
             if (!directiveDefinition.isPresent()) {
                 errors.add(new DirectiveUndeclaredError(element, elementName, directive.getName()));
