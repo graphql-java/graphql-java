@@ -55,7 +55,7 @@ class MockedWiringFactory implements WiringFactory {
 
     @Override
     boolean providesScalar(ScalarWiringEnvironment environment) {
-        if (ScalarInfo.isStandardScalar(environment.getScalarTypeDefinition().getName())) {
+        if (ScalarInfo.isGraphqlSpecifiedScalar(environment.getScalarTypeDefinition().getName())) {
             return false
         }
         return true

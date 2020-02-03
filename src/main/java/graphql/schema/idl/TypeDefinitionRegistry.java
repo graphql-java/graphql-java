@@ -309,7 +309,7 @@ public class TypeDefinitionRegistry {
     }
 
     public Map<String, ScalarTypeDefinition> scalars() {
-        LinkedHashMap<String, ScalarTypeDefinition> scalars = new LinkedHashMap<>(ScalarInfo.STANDARD_SCALAR_DEFINITIONS);
+        LinkedHashMap<String, ScalarTypeDefinition> scalars = new LinkedHashMap<>(ScalarInfo.GRAPHQL_SPECIFICATION_SCALARS_DEFINITIONS);
         scalars.putAll(scalarTypes);
         return scalars;
     }
@@ -364,7 +364,7 @@ public class TypeDefinitionRegistry {
 
     public boolean hasType(TypeName typeName) {
         String name = typeName.getName();
-        return types.containsKey(name) || ScalarInfo.STANDARD_SCALAR_DEFINITIONS.containsKey(name) || scalarTypes.containsKey(name) || objectTypeExtensions.containsKey(name);
+        return types.containsKey(name) || ScalarInfo.GRAPHQL_SPECIFICATION_SCALARS_DEFINITIONS.containsKey(name) || scalarTypes.containsKey(name) || objectTypeExtensions.containsKey(name);
     }
 
     public Optional<TypeDefinition> getType(Type type) {

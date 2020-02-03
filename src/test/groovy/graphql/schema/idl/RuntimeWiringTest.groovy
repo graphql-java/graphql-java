@@ -113,11 +113,5 @@ class RuntimeWiringTest extends Specification {
         wiring.getScalars().get("String").name == "String"
         wiring.getScalars().get("Boolean").name == "Boolean"
         wiring.getScalars().get("ID").name == "ID"
-        wiring.getScalars().get("BigDecimal").name == "BigDecimal"
-        wiring.getScalars().get("BigInteger").name == "BigInteger"
-        wiring.getScalars().get("Byte").name == "Byte"
-        wiring.getScalars().get("Char").name == "Char"
-        wiring.getScalars().get("Short").name == "Short"
-        wiring.getScalars().get("Long").name == "Long"
     }
 }

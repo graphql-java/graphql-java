@@ -165,7 +165,6 @@ class SchemaPrinterTest extends Specification {
 
         expect:
         result != null
-        !result.contains("scalar")
         !result.contains("__TypeKind")
     }
 
@@ -620,41 +619,6 @@ type Query {
 '''
     }
 
-    def "prints extended types"() {
-        given:
-        def idl = '''
-            type Query {
-                field : CustomScalar
-                bigDecimal : BigDecimal
-            }
-            
-            scalar CustomScalar
-        '''
-
-        def schema = TestUtil.schema(idl, newRuntimeWiring().scalar(mockScalar("CustomScalar")))
-
-
-        when:
-        def result = new SchemaPrinter(options).print(schema)
-
-        then:
-
-        if (expectedStrs.isEmpty()) {
-            assert !result.contains("scalar")
-        } else {
-            expectedStrs.forEach({ s -> assert result.contains(s) })
-        }
-
-
-        where:
-        expectedStrs                                 | options
-        []                                           | defaultOptions()
-        ["scalar CustomScalar"]                      | defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(false)
-        ["scalar BigDecimal", "scalar CustomScalar"] | defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(true)
-        ["scalar CustomScalar"]                      | defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(false)
-    }
-
-
     def "schema will be sorted"() {
         def schema = TestUtil.schema("""
             type Query {
@@ -766,6 +730,9 @@ enum Episode {
   JEDI
   NEWHOPE
 }
+
+"Asteroid"
+scalar Asteroid
 """
     }
 
