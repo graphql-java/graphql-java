@@ -208,7 +208,7 @@ public class ValuesResolver {
     }
 
     private Object coerceValueForEnum(GraphQLEnumType graphQLEnumType, Object value) {
-        return graphQLEnumType.getCoercing().parseValue(value);
+        return graphQLEnumType.parseValue(value);
     }
 
     private List coerceValueForList(GraphqlFieldVisibility fieldVisibility, VariableDefinition variableDefinition, String inputName, GraphQLList graphQLList, Object value) {
@@ -240,7 +240,7 @@ public class ValuesResolver {
             return coerceValueAstForInputObject(fieldVisibility, (GraphQLInputObjectType) type, (ObjectValue) inputValue, variables);
         }
         if (type instanceof GraphQLEnumType) {
-            return parseLiteral(inputValue, ((GraphQLEnumType) type).getCoercing(), variables);
+            return ((GraphQLEnumType) type).parseLiteral(inputValue);
         }
         if (isList(type)) {
             return coerceValueAstForList(fieldVisibility, (GraphQLList) type, inputValue, variables);

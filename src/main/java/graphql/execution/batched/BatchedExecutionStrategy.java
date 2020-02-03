@@ -468,7 +468,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             return null;
         }
         if (type instanceof GraphQLEnumType) {
-            return ((GraphQLEnumType) type).getCoercing().serialize(value);
+            return ((GraphQLEnumType) type).serialize(value);
         } else {
             return ((GraphQLScalarType) type).getCoercing().serialize(value);
         }

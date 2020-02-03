@@ -95,35 +95,12 @@ public class SchemaGenerator {
      * These options control how the schema generation works
      */
     public static class Options {
-        private final boolean enforceSchemaDirectives;
 
-        Options(boolean enforceSchemaDirectives) {
-            this.enforceSchemaDirectives = enforceSchemaDirectives;
-        }
-
-        /**
-         * This controls whether schema directives MUST be declared using
-         * directive definition syntax before use.
-         *
-         * @return true if directives must be fully declared; the default is true
-         */
-        public boolean isEnforceSchemaDirectives() {
-            return enforceSchemaDirectives;
+        Options() {
         }
 
         public static Options defaultOptions() {
-            return new Options(true);
-        }
-
-        /**
-         * This controls whether schema directives MUST be declared using
-         * directive definition syntax before use.
-         *
-         * @param flag the value to use
-         * @return the new options
-         */
-        public Options enforceSchemaDirectives(boolean flag) {
-            return new Options(flag);
+            return new Options();
         }
 
     }
@@ -236,7 +213,9 @@ public class SchemaGenerator {
      *
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
+     *
      * @return an executable schema
+     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -250,7 +229,9 @@ public class SchemaGenerator {
      * @param options      the controlling options
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
+     *
      * @return an executable schema
+     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(Options options, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -260,7 +241,7 @@ public class SchemaGenerator {
 
         schemaGeneratorHelper.addDeprecatedDirectiveDefinition(typeRegistryCopy);
 
-        List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistryCopy, wiring, options.enforceSchemaDirectives);
+        List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistryCopy, wiring);
         if (!errors.isEmpty()) {
             throw new SchemaProblem(errors);
         }
@@ -374,6 +355,7 @@ public class SchemaGenerator {
      * but then we build the rest of the types specified and put them in as additional types
      *
      * @param buildCtx the context we need to work out what we are doing
+     *
      * @return the additional types not referenced from the top level operations
      */
     private Set<GraphQLType> buildAdditionalTypes(BuildContext buildCtx) {
@@ -389,6 +371,14 @@ public class SchemaGenerator {
                 if (buildCtx.hasOutputType(typeDefinition) == null) {
                     additionalTypes.add(buildOutputType(buildCtx, typeName));
                 }
+            }
+        });
+        typeRegistry.scalars().values().forEach(scalarTypeDefinition -> {
+            if (ScalarInfo.isStandardScalar(scalarTypeDefinition.getName())) {
+                return;
+            }
+            if (buildCtx.hasInputType(scalarTypeDefinition) == null && buildCtx.hasOutputType(scalarTypeDefinition) == null) {
+                additionalTypes.add(buildScalar(buildCtx, scalarTypeDefinition));
             }
         });
         return additionalTypes;
@@ -410,6 +400,7 @@ public class SchemaGenerator {
      *
      * @param buildCtx the context we need to work out what we are doing
      * @param rawType  the type to be built
+     *
      * @return an output type
      */
     @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
