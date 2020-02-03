@@ -5,6 +5,7 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 /**
@@ -33,9 +34,12 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
     public void subscribe(Subscriber<? super D> downstreamSubscriber) {
         upstreamPublisher.subscribe(new Subscriber<U>() {
             Subscription delegatingSubscription;
+            private AtomicInteger inFlight;
+            private volatile Runnable finish;
 
             @Override
             public void onSubscribe(Subscription subscription) {
+                inFlight = new AtomicInteger();
                 delegatingSubscription = new DelegatingSubscription(subscription);
                 downstreamSubscriber.onSubscribe(delegatingSubscription);
             }
@@ -45,11 +49,20 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
                 CompletionStage<D> completionStage;
                 try {
                     completionStage = mapper.apply(u);
+                    inFlight.getAndIncrement();
                     completionStage.whenComplete((d, throwable) -> {
-                        if (throwable != null) {
-                            handleThrowable(throwable);
-                        } else {
-                            downstreamSubscriber.onNext(d);
+                        try {
+                            if (throwable != null) {
+                                handleThrowable(throwable);
+                            } else {
+                                downstreamSubscriber.onNext(d);
+                            }
+                        }finally {
+                            if(inFlight.intValue() == 1 && finish != null) {
+                                finish.run();
+                                finish = null;
+                            }
+                            inFlight.decrementAndGet();
                         }
                     });
                 } catch (RuntimeException throwable) {
@@ -71,12 +84,28 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
 
             @Override
             public void onError(Throwable t) {
-                downstreamSubscriber.onError(t);
+                if(inFlight.intValue() > 0) {
+                    finish = () -> downstreamSubscriber.onError(t);
+                    if(inFlight.intValue() == 0 && finish != null) {
+                        //happened together
+                        downstreamSubscriber.onError(t);
+                    }
+                }else {
+                    downstreamSubscriber.onError(t);
+                }
             }
 
             @Override
             public void onComplete() {
-                downstreamSubscriber.onComplete();
+                if(inFlight.intValue() > 0) {
+                    finish = () -> downstreamSubscriber.onComplete();
+                    if(inFlight.intValue() == 0 && finish != null) {
+                        //happened together
+                        downstreamSubscriber.onComplete();
+                    }
+                }else {
+                    downstreamSubscriber.onComplete();
+                }
             }
         });
     }

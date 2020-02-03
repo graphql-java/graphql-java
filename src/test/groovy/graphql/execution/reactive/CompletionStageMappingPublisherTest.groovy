@@ -7,7 +7,10 @@ import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.Executor
+import java.util.concurrent.TimeUnit
 import java.util.function.Function
+import java.util.function.Supplier
 
 class CompletionStageMappingPublisherTest extends Specification {
 
@@ -15,18 +18,24 @@ class CompletionStageMappingPublisherTest extends Specification {
 
         when:
         Publisher<Integer> rxIntegers = Flowable.range(0, 10)
+        Executor executor = CompletableFuture.delayedExecutor(50, TimeUnit.MILLISECONDS)
 
         def mapper = new Function<Integer, CompletionStage<String>>() {
             @Override
             CompletionStage<String> apply(Integer integer) {
-                return CompletableFuture.completedFuture(String.valueOf(integer))
+                return CompletableFuture.supplyAsync(new Supplier<String>() {
+                    @Override
+                    String get() {
+                        return String.valueOf(integer)
+                    }
+                }, executor)
             }
         }
         Publisher<String> rxStrings = new CompletionStageMappingPublisher<String, Integer>(rxIntegers, mapper)
 
         def capturingSubscriber = new CapturingSubscriber<>()
         rxStrings.subscribe(capturingSubscriber)
-
+        capturingSubscriber.done()
         then:
 
         capturingSubscriber.events.size() == 10
@@ -38,11 +47,17 @@ class CompletionStageMappingPublisherTest extends Specification {
 
         when:
         Publisher<Integer> rxIntegers = Flowable.range(0, 10)
+        Executor executor = CompletableFuture.delayedExecutor(50, TimeUnit.MILLISECONDS)
 
         def mapper = new Function<Integer, CompletionStage<String>>() {
             @Override
             CompletionStage<String> apply(Integer integer) {
-                return CompletableFuture.completedFuture(String.valueOf(integer))
+                return CompletableFuture.supplyAsync(new Supplier<String>() {
+                    @Override
+                    String get() {
+                        return String.valueOf(integer)
+                    }
+                }, executor)
             }
         }
         Publisher<String> rxStrings = new CompletionStageMappingPublisher<String, Integer>(rxIntegers, mapper)
@@ -51,7 +66,8 @@ class CompletionStageMappingPublisherTest extends Specification {
         def capturingSubscriber2 = new CapturingSubscriber<>()
         rxStrings.subscribe(capturingSubscriber1)
         rxStrings.subscribe(capturingSubscriber2)
-
+        capturingSubscriber1.done()
+        capturingSubscriber2.done()
         then:
 
         capturingSubscriber1.events.size() == 10

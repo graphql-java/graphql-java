@@ -5,6 +5,8 @@ import org.reactivestreams.Subscription;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -15,6 +17,7 @@ public class CapturingSubscriber<T> implements Subscriber<T> {
     private final AtomicBoolean done = new AtomicBoolean();
     private Subscription subscription;
     private Throwable throwable;
+    private CompletableFuture<Void> doneFuture = new CompletableFuture<>();
 
 
     @Override
@@ -33,11 +36,13 @@ public class CapturingSubscriber<T> implements Subscriber<T> {
     public void onError(Throwable t) {
         this.throwable = t;
         done.set(true);
+        doneFuture.complete(null);
     }
 
     @Override
     public void onComplete() {
         done.set(true);
+        doneFuture.complete(null);
     }
 
     public List<T> getEvents() {
@@ -48,6 +53,14 @@ public class CapturingSubscriber<T> implements Subscriber<T> {
         return throwable;
     }
 
+    public void done() {
+        try {
+            doneFuture.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
     public AtomicBoolean isDone() {
         return done;
     }
