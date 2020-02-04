@@ -2,6 +2,7 @@ package graphql.language;
 
 import graphql.Assert;
 import graphql.AssertException;
+import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.Scalars;
 import graphql.parser.Parser;
@@ -102,8 +103,7 @@ public class AstValueHelper {
                 return IntValue.newIntValue().value(new BigInteger(stringValue)).build();
             }
 
-            // String types are just strings but JSON'ised
-            return StringValue.newStringValue().value(jsonStringify(stringValue)).build();
+            return StringValue.newStringValue().value(stringValue).build();
         }
 
         throw new AssertException("'Cannot convert value to AST: " + serialized);
@@ -154,44 +154,6 @@ public class AstValueHelper {
     private static Value<?> handleNonNull(Object _value, GraphQLNonNull type) {
         GraphQLType wrappedType = type.getWrappedType();
         return astFromValue(_value, wrappedType);
-    }
-
-    /**
-     * Encodes the value as a JSON string according to http://json.org/ rules
-     *
-     * @param stringValue the value to encode as a JSON string
-     * @return the encoded string
-     */
-    static String jsonStringify(String stringValue) {
-        StringBuilder sb = new StringBuilder();
-        for (char ch : stringValue.toCharArray()) {
-            switch (ch) {
-                case '"':
-                    sb.append("\\\"");
-                    break;
-                case '\\':
-                    sb.append("\\\\");
-                    break;
-                case '\b':
-                    sb.append("\\b");
-                    break;
-                case '\f':
-                    sb.append("\\f");
-                    break;
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                case '\r':
-                    sb.append("\\r");
-                    break;
-                case '\t':
-                    sb.append("\\t");
-                    break;
-                default:
-                    sb.append(ch);
-            }
-        }
-        return sb.toString();
     }
 
     private static Object serialize(GraphQLType type, Object value) {

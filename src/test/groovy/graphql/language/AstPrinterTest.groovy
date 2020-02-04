@@ -562,4 +562,45 @@ extend input Input @directive {
 '''
     }
 
+    def 'StringValue is converted to valid Strings'() {
+
+        AstPrinter astPrinter = new AstPrinter(true)
+
+        when:
+        def result = astPrinter.value(new StringValue(strValue))
+
+        then:
+        result == expected
+
+        where:
+        strValue                                  | expected
+        'VALUE'                                   | '"VALUE"'
+        'VA\n\t\f\n\b\\LUE'                       | '"VA\\n\\t\\f\\n\\b\\\\LUE"'
+        'VA\\L"UE'                                | '"VA\\\\L\\"UE"'
+    }
+
+    def "1105 - encoding of json strings"() {
+
+        when:
+        def json = AstPrinter.escapeString(strValue)
+
+        then:
+        json == expected
+
+        where:
+        strValue                                  | expected
+        ''                                        | ''
+        'json'                                    | 'json'
+        'quotation-"'                             | 'quotation-\\"'
+        'reverse-solidus-\\'                      | 'reverse-solidus-\\\\'
+        'backspace-\b'                            | 'backspace-\\b'
+        'formfeed-\f'                             | 'formfeed-\\f'
+        'newline-\n'                              | 'newline-\\n'
+        'carriage-return-\r'                      | 'carriage-return-\\r'
+        'horizontal-tab-\t'                       | 'horizontal-tab-\\t'
+
+        // this is some AST from issue 1105
+        '''"{"operator":"eq", "operands": []}"''' | '''\\"{\\"operator\\":\\"eq\\", \\"operands\\": []}\\"'''
+    }
+
 }
