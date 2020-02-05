@@ -1440,7 +1440,7 @@ scalar RandomScalar
 '''
         }
 
-    def "omit unused custom scalars when unused - created by sdl string"(){
+    def "show unused custom scalars when unused - created by sdl string"(){
         given:
         def sdl = '''type Query {astring : String aInt : Int} "Some Scalar" scalar CustomScalar'''
 
@@ -1459,6 +1459,9 @@ scalar RandomScalar
   aInt: Int
   astring: String
 }
+
+"CustomScalar"
+scalar CustomScalar
 '''
     }
 
@@ -1502,7 +1505,7 @@ scalar RandomScalar
 '''
     }
 
-    def "omit unused custom scalars when unused - created programmatically"(){
+    def "show unused custom scalars when unused - created programmatically"(){
         given:
         GraphQLScalarType myScalar = new GraphQLScalarType("Scalar", "about scalar", new Coercing() {
             @Override
@@ -1534,6 +1537,8 @@ scalar RandomScalar
   someType: Int
 }
 
+"about scalar"
+scalar Scalar
 '''
     }
 
