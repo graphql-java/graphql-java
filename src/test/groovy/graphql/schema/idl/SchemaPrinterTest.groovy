@@ -1418,7 +1418,7 @@ type Query {
 
         def registry = new SchemaParser().parse(sdl)
         def runtimeWiring = newRuntimeWiring().scalar(mockScalar("RandomScalar")).build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
 
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
@@ -1426,7 +1426,7 @@ type Query {
 
         expect:
 
-        ScalarInfo.STANDARD_SCALARS.forEach({
+        ScalarInfo.GRAPHQL_SPECIFICATION_SCALARS.forEach({
             scalarType -> assert !result.contains(scalarType.name)
         })
 
@@ -1446,7 +1446,7 @@ scalar RandomScalar
 
         def registry = new SchemaParser().parse(sdl)
         def runtimeWiring = newRuntimeWiring().scalar(mockScalar("CustomScalar")).build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def options = SchemaGenerator.Options.defaultOptions()
 
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
@@ -1459,29 +1459,6 @@ scalar RandomScalar
   aInt: Int
   astring: String
 }
-'''
-    }
-
-    def "show graphql-java extended scalar types by default when used - created by sdl string"(){
-        given:
-        def sdl = '''type Query {aInt : BigInteger}'''
-
-        def registry = new SchemaParser().parse(sdl)
-        def runtimeWiring = newRuntimeWiring().build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
-
-        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
-
-        def result = new SchemaPrinter(defaultOptions().includeDirectives(false)).print(schema)
-
-        expect:
-        result ==
-                '''type Query {
-  aInt: BigInteger
-}
-
-"Built-in java.math.BigInteger"
-scalar BigInteger
 '''
     }
 
@@ -1512,7 +1489,7 @@ scalar BigInteger
         def result = new SchemaPrinter(defaultOptions().includeDirectives(false)).print(schema)
 
         expect:
-        ScalarInfo.STANDARD_SCALARS.forEach({
+        ScalarInfo.GRAPHQL_SPECIFICATION_SCALARS.forEach({
             scalarType -> assert !result.contains(scalarType.name)
         })
         result ==
@@ -1557,8 +1534,6 @@ scalar RandomScalar
   someType: Int
 }
 
-"about scalar"
-scalar Scalar
 '''
     }
 
