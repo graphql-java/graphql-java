@@ -185,7 +185,7 @@ public class AstPrinter {
     }
 
     private boolean hasDescription(List<? extends Node> nodes) {
-        return nodes.stream().anyMatch(it -> ((AbstractDescribedNode) it).getDescription() != null);
+        return nodes.stream().filter(it -> it instanceof AbstractDescribedNode).anyMatch(it -> ((AbstractDescribedNode) it).getDescription() != null);
     }
 
     private NodePrinter<FragmentDefinition> fragmentDefinition() {
