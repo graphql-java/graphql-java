@@ -34,6 +34,7 @@ import graphql.language.InterfaceTypeExtensionDefinition;
 import graphql.language.ListType;
 import graphql.language.NodeBuilder;
 import graphql.language.NonNullType;
+import graphql.language.NullValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
@@ -70,7 +71,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertShouldNeverHappen;
-import static graphql.language.NullValue.Null;
 import static graphql.parser.StringValueParsing.parseSingleQuotedString;
 import static graphql.parser.StringValueParsing.parseTripleQuotedString;
 import static java.util.stream.Collectors.toList;
@@ -663,7 +663,7 @@ public class GraphqlAntlrToLanguage {
             addCommonData(booleanValue, ctx);
             return booleanValue.build();
         } else if (ctx.NullValue() != null) {
-            return Null;
+            return NullValue.newNullValue().build();
         } else if (ctx.stringValue() != null) {
             StringValue.Builder stringValue = StringValue.newStringValue().value(quotedString(ctx.stringValue()));
             addCommonData(stringValue, ctx);
@@ -716,7 +716,7 @@ public class GraphqlAntlrToLanguage {
             addCommonData(booleanValue, ctx);
             return booleanValue.build();
         } else if (ctx.NullValue() != null) {
-            return Null;
+            return NullValue.newNullValue().build();
         } else if (ctx.stringValue() != null) {
             StringValue.Builder stringValue = StringValue.newStringValue().value(quotedString(ctx.stringValue()));
             addCommonData(stringValue, ctx);
