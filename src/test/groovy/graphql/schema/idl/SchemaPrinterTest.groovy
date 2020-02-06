@@ -24,6 +24,7 @@ import spock.lang.Specification
 
 import java.util.function.UnaryOperator
 
+import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.TestUtil.mockScalar
 import static graphql.TestUtil.mockTypeRuntimeWiring
@@ -1411,5 +1412,134 @@ type Query {
 '''
     }
 
+    def "omit unused built-in scalars by default - created by sdl string"(){
+        given:
+        def sdl = '''type Query {scalarcustom : RandomScalar} scalar RandomScalar'''
+
+        def registry = new SchemaParser().parse(sdl)
+        def runtimeWiring = newRuntimeWiring().scalar(mockScalar("RandomScalar")).build()
+        def options = SchemaGenerator.Options.defaultOptions()
+
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+
+        expect:
+
+        ScalarInfo.GRAPHQL_SPECIFICATION_SCALARS.forEach({
+            scalarType -> assert !result.contains(scalarType.name)
+        })
+
+        result ==
+'''type Query {
+  scalarcustom: RandomScalar
+}
+
+"RandomScalar"
+scalar RandomScalar
+'''
+        }
+
+    def "show unused custom scalars when unused - created by sdl string"(){
+        given:
+        def sdl = '''type Query {astring : String aInt : Int} "Some Scalar" scalar CustomScalar'''
+
+        def registry = new SchemaParser().parse(sdl)
+        def runtimeWiring = newRuntimeWiring().scalar(mockScalar("CustomScalar")).build()
+        def options = SchemaGenerator.Options.defaultOptions()
+
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+
+        expect:
+        assert !result.contains("ID") && !result.contains("Float") && !result.contains("Boolean")
+        result ==
+                '''type Query {
+  aInt: Int
+  astring: String
+}
+
+"CustomScalar"
+scalar CustomScalar
+'''
+    }
+
+    def "omit unused built-in by default - created programmatically"(){
+        given:
+        GraphQLScalarType myScalar = new GraphQLScalarType("RandomScalar", "about scalar", new Coercing() {
+            @Override
+            Object serialize(Object input) {
+                return null
+            }
+
+            @Override
+            Object parseValue(Object input) {
+                return null
+            }
+
+            @Override
+            Object parseLiteral(Object input) {
+                return null
+            }
+        })
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
+                .name("scalarType").type(myScalar).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+
+        def schema = GraphQLSchema.newSchema().query(queryType).additionalType(myScalar).build()
+
+        def result = new SchemaPrinter(defaultOptions().includeDirectives(false)).print(schema)
+
+        expect:
+        ScalarInfo.GRAPHQL_SPECIFICATION_SCALARS.forEach({
+            scalarType -> assert !result.contains(scalarType.name)
+        })
+        result ==
+                '''type Query {
+  scalarType: RandomScalar
+}
+
+"about scalar"
+scalar RandomScalar
+'''
+    }
+
+    def "show unused custom scalars when unused - created programmatically"(){
+        given:
+        GraphQLScalarType myScalar = new GraphQLScalarType("Scalar", "about scalar", new Coercing() {
+            @Override
+            Object serialize(Object input) {
+                return null
+            }
+
+            @Override
+            Object parseValue(Object input) {
+                return null
+            }
+
+            @Override
+            Object parseLiteral(Object input) {
+                return null
+            }
+        })
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
+                .name("someType").type(GraphQLInt).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+
+        def schema = GraphQLSchema.newSchema().query(queryType).additionalType(myScalar).build()
+        
+        def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true).includeDirectives(false)).print(schema)
+
+        expect:
+        result ==
+                '''type Query {
+  someType: Int
+}
+
+"about scalar"
+scalar Scalar
+'''
+    }
 
 }
