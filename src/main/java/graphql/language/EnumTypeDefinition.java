@@ -18,7 +18,6 @@ import static java.util.Collections.emptyMap;
 @PublicApi
 public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition> implements TypeDefinition<EnumTypeDefinition>, DirectivesContainer<EnumTypeDefinition>, NamedNode<EnumTypeDefinition> {
     private final String name;
-    private final Description description;
     private final List<EnumValueDefinition> enumValueDefinitions;
     private final List<Directive> directives;
 
@@ -35,7 +34,6 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
                                  IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
-        this.description = description;
         this.directives = (null == directives) ? new ArrayList<>() : directives;
         this.enumValueDefinitions = enumValueDefinitions;
     }
@@ -61,10 +59,6 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
     @Override
     public String getName() {
         return name;
-    }
-
-    public Description getDescription() {
-        return description;
     }
 
     @Override

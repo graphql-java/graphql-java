@@ -20,7 +20,6 @@ import static java.util.Collections.emptyMap;
 public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> implements DirectivesContainer<FieldDefinition>, NamedNode<FieldDefinition> {
     private final String name;
     private final Type type;
-    private final Description description;
     private final List<InputValueDefinition> inputValueDefinitions;
     private final List<Directive> directives;
 
@@ -39,7 +38,6 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
                               IgnoredChars ignoredChars,
                               Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
-        this.description = description;
         this.name = name;
         this.type = type;
         this.inputValueDefinitions = inputValueDefinitions;
@@ -58,10 +56,6 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     @Override
     public String getName() {
         return name;
-    }
-
-    public Description getDescription() {
-        return description;
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {

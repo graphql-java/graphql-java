@@ -19,7 +19,6 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObjectTypeDefinition> implements TypeDefinition<InputObjectTypeDefinition>, DirectivesContainer<InputObjectTypeDefinition>, NamedNode<InputObjectTypeDefinition> {
 
     private final String name;
-    private final Description description;
     private final List<Directive> directives;
     private final List<InputValueDefinition> inputValueDefinitions;
 
@@ -37,7 +36,6 @@ public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObject
                                         Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
-        this.description = description;
         this.directives = directives;
         this.inputValueDefinitions = inputValueDefinitions;
     }
@@ -54,10 +52,6 @@ public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObject
     @Override
     public String getName() {
         return name;
-    }
-
-    public Description getDescription() {
-        return description;
     }
 
     @Override

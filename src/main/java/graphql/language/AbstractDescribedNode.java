@@ -8,7 +8,7 @@ import java.util.Map;
 @PublicApi
 public abstract class AbstractDescribedNode<T extends Node> extends AbstractNode<T> implements DescribedNode<T>  {
 
-    private Description description;
+    protected Description description;
 
     public AbstractDescribedNode(SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData, Description description) {
         super(sourceLocation, comments, ignoredChars, additionalData);

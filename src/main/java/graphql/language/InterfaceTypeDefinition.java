@@ -20,7 +20,6 @@ import static java.util.Collections.emptyMap;
 public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceTypeDefinition> implements TypeDefinition<InterfaceTypeDefinition>, DirectivesContainer<InterfaceTypeDefinition>, NamedNode<InterfaceTypeDefinition> {
 
     private final String name;
-    private final Description description;
     private final List<FieldDefinition> definitions;
     private final List<Directive> directives;
 
@@ -40,7 +39,6 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
         this.name = name;
         this.definitions = definitions;
         this.directives = directives;
-        this.description = description;
     }
 
     /**
@@ -64,10 +62,6 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
     @Override
     public String getName() {
         return name;
-    }
-
-    public Description getDescription() {
-        return description;
     }
 
     @Override

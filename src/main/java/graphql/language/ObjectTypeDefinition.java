@@ -19,7 +19,6 @@ import static java.util.Collections.emptyMap;
 @PublicApi
 public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefinition> implements TypeDefinition<ObjectTypeDefinition>, DirectivesContainer<ObjectTypeDefinition>, NamedNode<ObjectTypeDefinition> {
     private final String name;
-    private final Description description;
     private final List<Type> implementz;
     private final List<Directive> directives;
     private final List<FieldDefinition> fieldDefinitions;
@@ -43,7 +42,6 @@ public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefini
         this.implementz = implementz;
         this.directives = directives;
         this.fieldDefinitions = fieldDefinitions;
-        this.description = description;
     }
 
     /**
@@ -71,10 +69,6 @@ public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefini
     @Override
     public String getName() {
         return name;
-    }
-
-    public Description getDescription() {
-        return description;
     }
 
     @Override

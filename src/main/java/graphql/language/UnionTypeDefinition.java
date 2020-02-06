@@ -20,7 +20,6 @@ import static java.util.Collections.emptyMap;
 public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefinition> implements TypeDefinition<UnionTypeDefinition>, DirectivesContainer<UnionTypeDefinition>, NamedNode<UnionTypeDefinition> {
 
     private final String name;
-    private final Description description;
     private final List<Directive> directives;
     private final List<Type> memberTypes;
 
@@ -39,7 +38,6 @@ public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefiniti
         this.name = name;
         this.directives = directives;
         this.memberTypes = memberTypes;
-        this.description = description;
     }
 
     /**
@@ -74,10 +72,6 @@ public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefiniti
     @Override
     public String getName() {
         return name;
-    }
-
-    public Description getDescription() {
-        return description;
     }
 
     @Override

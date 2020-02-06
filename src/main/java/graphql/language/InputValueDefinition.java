@@ -21,7 +21,6 @@ public class InputValueDefinition extends AbstractDescribedNode<InputValueDefini
     private final String name;
     private final Type type;
     private final Value defaultValue;
-    private final Description description;
     private final List<Directive> directives;
 
     public static final String CHILD_TYPE = "type";
@@ -43,8 +42,6 @@ public class InputValueDefinition extends AbstractDescribedNode<InputValueDefini
         this.type = type;
         this.defaultValue = defaultValue;
         this.directives = directives;
-        this.description = description;
-
     }
 
     /**
@@ -81,10 +78,6 @@ public class InputValueDefinition extends AbstractDescribedNode<InputValueDefini
     @Override
     public String getName() {
         return name;
-    }
-
-    public Description getDescription() {
-        return description;
     }
 
     public Value getDefaultValue() {
