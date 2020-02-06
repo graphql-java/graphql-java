@@ -529,6 +529,9 @@ class ParserTest extends Specification {
         assert selection.arguments[0].value instanceof NullValue
         assert selection.arguments[1].value instanceof NullValue
 
+        assert selection.arguments[0].sourceLocation.toString() == "SourceLocation{line=1, column=7}"
+        assert selection.arguments[1].sourceLocation.toString() == "SourceLocation{line=1, column=18}"
+
     }
 
 
