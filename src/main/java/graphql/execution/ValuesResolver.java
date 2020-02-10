@@ -292,7 +292,7 @@ public class ValuesResolver {
                 }
 
                 if (fieldObject == null) {
-                    if (!field.getValue().isEqualTo(NullValue.Null)) {
+                    if (! (field.getValue() instanceof NullValue)) {
                         fieldObject = inputTypeField.getDefaultValue();
                     }
                 }

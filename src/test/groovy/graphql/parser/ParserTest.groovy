@@ -516,9 +516,9 @@ class ParserTest extends Specification {
     }
 
 
-    def "parses null value"() {
+    def "parses null values"() {
         given:
-        def input = "{ foo(bar: null) }"
+        def input = "{ foo(bar: null, bell : null) }"
 
         when:
         def document = new Parser().parseDocument(input)
@@ -526,7 +526,11 @@ class ParserTest extends Specification {
         def selection = operation.selectionSet.selections[0] as Field
 
         then:
-        selection.arguments[0].value == NullValue.Null
+        selection.arguments[0].value instanceof NullValue
+        selection.arguments[1].value instanceof NullValue
+
+        selection.arguments[0].value.sourceLocation.toString() == "SourceLocation{line=1, column=12}"
+        selection.arguments[1].value.sourceLocation.toString() == "SourceLocation{line=1, column=25}"
 
     }
 

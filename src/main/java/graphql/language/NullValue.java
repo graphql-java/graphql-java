@@ -21,8 +21,6 @@ import static java.util.Collections.emptyMap;
 @PublicApi
 public class NullValue extends AbstractNode<NullValue> implements Value<NullValue> {
 
-    public static final NullValue Null = new NullValue(null, Collections.emptyList(), IgnoredChars.EMPTY, emptyMap());
-
     @Internal
     protected NullValue(SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);

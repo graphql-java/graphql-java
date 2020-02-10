@@ -184,7 +184,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
 
     def "type null fields results in error"() {
         given:
-        def objectValue = new ObjectValue([new ObjectField("foo", new StringValue("string")), new ObjectField("bar", NullValue.Null)])
+        def objectValue = new ObjectValue([new ObjectField("foo", new StringValue("string")), new ObjectField("bar", NullValue.newNullValue().build())])
         def argumentLiteral = new Argument("arg", objectValue)
         def graphQLArgument = new GraphQLArgument("arg", GraphQLInputObjectType.newInputObject().name("ArgumentObjectType")
                 .field(GraphQLInputObjectField.newInputObjectField()
