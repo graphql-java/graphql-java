@@ -437,6 +437,76 @@ type Droid implements Character {
 """
     }
 
+    def "test simpsons introspection result"() {
+        given:
+        String simpsons = this.getClass().getResource('/simpsons-introspection.json').text
+
+        def parsed = slurp(simpsons)
+
+        when:
+        Document document = introspectionResultToSchema.createSchemaDefinition(parsed)
+        def result = printAst(document)
+
+        then:
+        result == """schema {
+  query: QueryType
+  mutation: MutationType
+}
+
+type QueryType {
+  character(firstName: String): Character
+  characters: [Character]
+  episodes: [Episode]
+  search(searchFor: String): [Everything]
+}
+
+type Character {
+  id: ID!
+  firstName: String
+  lastName: String
+  family: Boolean
+  episodes: [Episode]
+}
+
+type Episode {
+  id: ID!
+  name: String
+  season: Season
+  number: Int
+  numberOverall: Int
+  characters: [Character]
+}
+
+" Simpson seasons"
+enum Season {
+  Season1
+  Season2
+  Season3
+  Season4
+  Season5
+  Season6
+  Season7
+  Season8
+  Season9
+}
+
+union Everything = Character | Episode
+
+type MutationType {
+  addCharacter(character: CharacterInput): MutationResult
+}
+
+type MutationResult {
+  success: Boolean
+}
+
+input CharacterInput {
+  firstName: String
+  lastName: String
+  family: Boolean
+}
+"""
+    }
 
     def "test complete round trip"() {
         given:
