@@ -526,11 +526,11 @@ class ParserTest extends Specification {
         def selection = operation.selectionSet.selections[0] as Field
 
         then:
-        assert selection.arguments[0].value instanceof NullValue
-        assert selection.arguments[1].value instanceof NullValue
+        selection.arguments[0].value instanceof NullValue
+        selection.arguments[1].value instanceof NullValue
 
-        assert selection.arguments[0].sourceLocation.toString() == "SourceLocation{line=1, column=7}"
-        assert selection.arguments[1].sourceLocation.toString() == "SourceLocation{line=1, column=18}"
+        selection.arguments[0].value.sourceLocation.toString() == "SourceLocation{line=1, column=12}"
+        selection.arguments[1].value.sourceLocation.toString() == "SourceLocation{line=1, column=25}"
 
     }
 

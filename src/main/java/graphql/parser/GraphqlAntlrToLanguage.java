@@ -112,7 +112,6 @@ public class GraphqlAntlrToLanguage {
         } else {
             return assertShouldNeverHappen();
         }
-
     }
 
     protected OperationDefinition createOperationDefinition(GraphqlParser.OperationDefinitionContext ctx) {
@@ -663,7 +662,9 @@ public class GraphqlAntlrToLanguage {
             addCommonData(booleanValue, ctx);
             return booleanValue.build();
         } else if (ctx.NullValue() != null) {
-            return NullValue.newNullValue().build();
+            NullValue.Builder nullValue = NullValue.newNullValue();
+            addCommonData(nullValue, ctx);
+            return nullValue.build();
         } else if (ctx.stringValue() != null) {
             StringValue.Builder stringValue = StringValue.newStringValue().value(quotedString(ctx.stringValue()));
             addCommonData(stringValue, ctx);
@@ -716,7 +717,9 @@ public class GraphqlAntlrToLanguage {
             addCommonData(booleanValue, ctx);
             return booleanValue.build();
         } else if (ctx.NullValue() != null) {
-            return NullValue.newNullValue().build();
+            NullValue.Builder nullValue = NullValue.newNullValue();
+            addCommonData(nullValue, ctx);
+            return nullValue.build();
         } else if (ctx.stringValue() != null) {
             StringValue.Builder stringValue = StringValue.newStringValue().value(quotedString(ctx.stringValue()));
             addCommonData(stringValue, ctx);
