@@ -17,10 +17,9 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static java.util.Collections.emptyMap;
 
 @PublicApi
-public class FieldDefinition extends AbstractNode<FieldDefinition> implements DirectivesContainer<FieldDefinition>, NamedNode<FieldDefinition> {
+public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> implements DirectivesContainer<FieldDefinition>, NamedNode<FieldDefinition> {
     private final String name;
     private final Type type;
-    private final Description description;
     private final List<InputValueDefinition> inputValueDefinitions;
     private final List<Directive> directives;
 
@@ -38,8 +37,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
                               List<Comment> comments,
                               IgnoredChars ignoredChars,
                               Map<String, String> additionalData) {
-        super(sourceLocation, comments, ignoredChars, additionalData);
-        this.description = description;
+        super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
         this.type = type;
         this.inputValueDefinitions = inputValueDefinitions;
@@ -58,10 +56,6 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
     @Override
     public String getName() {
         return name;
-    }
-
-    public Description getDescription() {
-        return description;
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {

@@ -4,7 +4,7 @@ import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.language.Argument;
 import graphql.language.AstValueHelper;
-import graphql.language.Comment;
+import graphql.language.Description;
 import graphql.language.Directive;
 import graphql.language.Document;
 import graphql.language.EnumTypeDefinition;
@@ -145,7 +145,7 @@ public class IntrospectionResultToSchema {
 
         UnionTypeDefinition.Builder unionTypeDefinition = UnionTypeDefinition.newUnionTypeDefinition();
         unionTypeDefinition.name((String) input.get("name"));
-        unionTypeDefinition.comments(toComment((String) input.get("description")));
+        unionTypeDefinition.description(toDescription(input));
 
         List<Map<String, Object>> possibleTypes = (List<Map<String, Object>>) input.get("possibleTypes");
 
@@ -162,14 +162,14 @@ public class IntrospectionResultToSchema {
         assertTrue(input.get("kind").equals("ENUM"), "wrong input");
 
         EnumTypeDefinition.Builder enumTypeDefinition = EnumTypeDefinition.newEnumTypeDefinition().name((String) input.get("name"));
-        enumTypeDefinition.comments(toComment((String) input.get("description")));
+        enumTypeDefinition.description(toDescription(input));
 
         List<Map<String, Object>> enumValues = (List<Map<String, Object>>) input.get("enumValues");
 
         for (Map<String, Object> enumValue : enumValues) {
 
             EnumValueDefinition.Builder enumValueDefinition = EnumValueDefinition.newEnumValueDefinition().name((String) enumValue.get("name"));
-            enumValueDefinition.comments(toComment((String) enumValue.get("description")));
+            enumTypeDefinition.description(toDescription(input));
 
             createDeprecatedDirective(enumValue, enumValueDefinition);
 
@@ -184,7 +184,7 @@ public class IntrospectionResultToSchema {
         assertTrue(input.get("kind").equals("INTERFACE"), "wrong input");
 
         InterfaceTypeDefinition.Builder interfaceTypeDefinition = InterfaceTypeDefinition.newInterfaceTypeDefinition().name((String) input.get("name"));
-        interfaceTypeDefinition.comments(toComment((String) input.get("description")));
+        interfaceTypeDefinition.description(toDescription(input));
         List<Map<String, Object>> fields = (List<Map<String, Object>>) input.get("fields");
         interfaceTypeDefinition.definitions(createFields(fields));
 
@@ -198,7 +198,7 @@ public class IntrospectionResultToSchema {
 
         InputObjectTypeDefinition.Builder inputObjectTypeDefinition = InputObjectTypeDefinition.newInputObjectDefinition()
                 .name((String) input.get("name"))
-                .comments(toComment((String) input.get("description")));
+                .description(toDescription(input));
 
         List<Map<String, Object>> fields = (List<Map<String, Object>>) input.get("inputFields");
         List<InputValueDefinition> inputValueDefinitions = createInputValueDefinitions(fields);
@@ -212,7 +212,7 @@ public class IntrospectionResultToSchema {
         assertTrue(input.get("kind").equals("OBJECT"), "wrong input");
 
         ObjectTypeDefinition.Builder objectTypeDefinition = ObjectTypeDefinition.newObjectTypeDefinition().name((String) input.get("name"));
-        objectTypeDefinition.comments(toComment((String) input.get("description")));
+        objectTypeDefinition.description(toDescription(input));
         if (input.containsKey("interfaces")) {
             objectTypeDefinition.implementz(
                     ((List<Map<String, Object>>) input.get("interfaces")).stream()
@@ -231,7 +231,7 @@ public class IntrospectionResultToSchema {
         List<FieldDefinition> result = new ArrayList<>();
         for (Map<String, Object> field : fields) {
             FieldDefinition.Builder fieldDefinition = FieldDefinition.newFieldDefinition().name((String) field.get("name"));
-            fieldDefinition.comments(toComment((String) field.get("description")));
+            fieldDefinition.description(toDescription(field));
             fieldDefinition.type(createTypeIndirection((Map<String, Object>) field.get("type")));
 
             createDeprecatedDirective(field, fieldDefinition);
@@ -264,7 +264,7 @@ public class IntrospectionResultToSchema {
         for (Map<String, Object> arg : args) {
             Type argType = createTypeIndirection((Map<String, Object>) arg.get("type"));
             InputValueDefinition.Builder inputValueDefinition = InputValueDefinition.newInputValueDefinition().name((String) arg.get("name")).type(argType);
-            inputValueDefinition.comments(toComment((String) arg.get("description")));
+            inputValueDefinition.description(toDescription(arg));
 
             String valueLiteral = (String) arg.get("defaultValue");
             if (valueLiteral != null) {
@@ -296,18 +296,18 @@ public class IntrospectionResultToSchema {
         }
     }
 
-    private List<Comment> toComment(String description) {
+    private Description toDescription(Map<String, Object> input) {
+        String description = (String) input.get("description");
         if (description == null) {
-            return Collections.emptyList();
+            return null;
         }
-        List<Comment> comments = new ArrayList<>();
+
         String[] lines = description.split("\n");
-        int lineNumber = 0;
-        for (String line : lines) {
-            Comment comment = new Comment(line, new SourceLocation(++lineNumber, 1));
-            comments.add(comment);
+        if (lines.length > 1) {
+            return new Description(description, null, true);
+        } else {
+            return new Description(description, null, false);
         }
-        return comments;
     }
 
 }

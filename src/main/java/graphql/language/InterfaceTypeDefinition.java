@@ -17,10 +17,9 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static java.util.Collections.emptyMap;
 
 @PublicApi
-public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinition> implements TypeDefinition<InterfaceTypeDefinition>, DirectivesContainer<InterfaceTypeDefinition>, NamedNode<InterfaceTypeDefinition> {
+public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceTypeDefinition> implements TypeDefinition<InterfaceTypeDefinition>, DirectivesContainer<InterfaceTypeDefinition>, NamedNode<InterfaceTypeDefinition> {
 
     private final String name;
-    private final Description description;
     private final List<FieldDefinition> definitions;
     private final List<Directive> directives;
 
@@ -36,11 +35,10 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
                                       List<Comment> comments,
                                       IgnoredChars ignoredChars,
                                       Map<String, String> additionalData) {
-        super(sourceLocation, comments, ignoredChars, additionalData);
+        super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
         this.definitions = definitions;
         this.directives = directives;
-        this.description = description;
     }
 
     /**
@@ -64,10 +62,6 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
     @Override
     public String getName() {
         return name;
-    }
-
-    public Description getDescription() {
-        return description;
     }
 
     @Override
