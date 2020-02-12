@@ -21,6 +21,7 @@ import graphql.language.IntValue
 import graphql.language.InterfaceTypeDefinition
 import graphql.language.ListType
 import graphql.language.Node
+import graphql.language.NodeBuilder
 import graphql.language.NonNullType
 import graphql.language.NullValue
 import graphql.language.ObjectField
@@ -36,6 +37,8 @@ import graphql.language.TypeName
 import graphql.language.UnionTypeDefinition
 import graphql.language.VariableDefinition
 import graphql.language.VariableReference
+import org.antlr.v4.runtime.CommonTokenStream
+import org.antlr.v4.runtime.ParserRuleContext
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -772,5 +775,33 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         operationDefinition.getComments()[0].content == " Represents the 😕 emoji."
     }
 
+    def "can override antlr to ast"() {
 
+        def query = '''
+            query {
+                field
+            }
+        '''
+        when:
+        Parser parser = new Parser() {
+            @Override
+            protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
+                // this pattern is used in Nadel - its backdoor but needed
+                return new GraphqlAntlrToLanguage(tokens,multiSourceReader) {
+                    @Override
+                    protected void addCommonData(NodeBuilder nodeBuilder, ParserRuleContext parserRuleContext) {
+                        super.addCommonData(nodeBuilder, parserRuleContext)
+                        nodeBuilder.additionalData("key", "value")
+                    }
+                }
+            }
+        }
+
+        def document = parser.parseDocument(query)
+
+        then:
+        document.getAdditionalData().get("key") == "value"
+        document.children[0].getAdditionalData().get("key") == "value"
+
+    }
 }
