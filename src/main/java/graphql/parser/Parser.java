@@ -74,7 +74,7 @@ public class Parser {
         ExtendedBailStrategy bailStrategy = new ExtendedBailStrategy(multiSourceReader);
         parser.setErrorHandler(bailStrategy);
 
-        GraphqlAntlrToLanguage toLanguage = new GraphqlAntlrToLanguage(tokens, multiSourceReader);
+        GraphqlAntlrToLanguage toLanguage = getAntlrToLanguage(tokens, multiSourceReader);
         GraphqlParser.DocumentContext documentContext = parser.document();
 
         Document doc = toLanguage.createDocument(documentContext);
@@ -96,4 +96,7 @@ public class Parser {
         return doc;
     }
 
+    protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
+        return new GraphqlAntlrToLanguage(tokens, multiSourceReader);
+    }
 }
