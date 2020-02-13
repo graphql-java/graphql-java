@@ -91,7 +91,7 @@ class AsyncExecutionStrategyTest extends Specification {
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
         when:
-        def result = asyncExecutionStrategy.execute(executionContext, executionStrategyParameters)
+        def result = asyncExecutionStrategy.execute(executionContext, executionStrategyParameters, null)
 
 
         then:
@@ -130,7 +130,7 @@ class AsyncExecutionStrategyTest extends Specification {
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
         when:
-        def result = asyncExecutionStrategy.execute(executionContext, executionStrategyParameters)
+        def result = asyncExecutionStrategy.execute(executionContext, executionStrategyParameters, null)
 
 
         then:
@@ -171,7 +171,7 @@ class AsyncExecutionStrategyTest extends Specification {
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
         when:
-        def result = asyncExecutionStrategy.execute(executionContext, executionStrategyParameters)
+        def result = asyncExecutionStrategy.execute(executionContext, executionStrategyParameters, null)
 
 
         then:
@@ -211,7 +211,7 @@ class AsyncExecutionStrategyTest extends Specification {
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
         when:
-        def result = asyncExecutionStrategy.execute(executionContext, executionStrategyParameters)
+        def result = asyncExecutionStrategy.execute(executionContext, executionStrategyParameters, null)
 
 
         then:
@@ -271,7 +271,7 @@ class AsyncExecutionStrategyTest extends Specification {
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
         when:
-        def result = asyncExecutionStrategy.execute(executionContext, executionStrategyParameters)
+        def result = asyncExecutionStrategy.execute(executionContext, executionStrategyParameters, null)
 
         then: "result should be completed"
         result.isCompletedExceptionally()

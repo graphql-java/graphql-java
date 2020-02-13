@@ -12,6 +12,7 @@ import graphql.UnresolvedTypeError;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
@@ -151,7 +152,7 @@ public abstract class ExecutionStrategy {
      *
      * @throws NonNullableFieldWasNullException in the future if a non null field resolves to a null value
      */
-    public abstract CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException;
+    public abstract CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters, InstrumentationExecutionParameters instrumentationExecutionParameters) throws NonNullableFieldWasNullException;
 
     /**
      * Called to fetch a value for a field and resolve it further in terms of the graphql query.  This will call
@@ -653,7 +654,7 @@ public abstract class ExecutionStrategy {
 
         // Calling this from the executionContext to ensure we shift back from mutation strategy to the query strategy.
 
-        return executionContext.getQueryStrategy().execute(executionContext, newParameters);
+        return executionContext.getQueryStrategy().execute(executionContext, newParameters, null);
     }
 
     @SuppressWarnings("SameReturnValue")

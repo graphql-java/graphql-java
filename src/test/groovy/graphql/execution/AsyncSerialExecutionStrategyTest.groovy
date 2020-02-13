@@ -95,7 +95,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
 
         AsyncSerialExecutionStrategy strategy = new AsyncSerialExecutionStrategy()
         when:
-        def result = strategy.execute(executionContext, executionStrategyParameters)
+        def result = strategy.execute(executionContext, executionStrategyParameters, null)
 
 
         then:
@@ -139,7 +139,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
 
         AsyncSerialExecutionStrategy strategy = new AsyncSerialExecutionStrategy()
         when:
-        def result = strategy.execute(executionContext, executionStrategyParameters)
+        def result = strategy.execute(executionContext, executionStrategyParameters, null)
 
 
         then:

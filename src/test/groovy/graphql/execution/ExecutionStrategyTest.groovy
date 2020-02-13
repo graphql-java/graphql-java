@@ -9,6 +9,7 @@ import graphql.SerializationError
 import graphql.StarWarsSchema
 import graphql.TypeMismatchError
 import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.language.Argument
 import graphql.language.Field
 import graphql.language.OperationDefinition
@@ -50,7 +51,7 @@ class ExecutionStrategyTest extends Specification {
         executionStrategy = new ExecutionStrategy(dataFetcherExceptionHandler) {
 
             @Override
-            CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+            CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters, InstrumentationExecutionParameters instrumentationExecutionParameters) {
                 return Assert.assertShouldNeverHappen("should not be called")
             }
         }
@@ -108,9 +109,9 @@ class ExecutionStrategyTest extends Specification {
         executionStrategy.completeValue(executionContext, parameters)
 
         then:
-        1 * executionContext.queryStrategy.execute(_, _)
-        0 * executionContext.mutationStrategy.execute(_, _)
-        0 * executionContext.subscriptionStrategy.execute(_, _)
+        1 * executionContext.queryStrategy.execute(_, _, _)
+        0 * executionContext.mutationStrategy.execute(_, _, _)
+        0 * executionContext.subscriptionStrategy.execute(_, _, _)
     }
 
 
@@ -571,7 +572,7 @@ class ExecutionStrategyTest extends Specification {
             }
         }) {
             @Override
-            CompletableFuture<ExecutionResult> execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
+            CompletableFuture<ExecutionResult> execute(ExecutionContext ec, ExecutionStrategyParameters p, InstrumentationExecutionParameters instrumentationExecutionParameters) throws NonNullableFieldWasNullException {
                 null
             }
         }
@@ -597,7 +598,7 @@ class ExecutionStrategyTest extends Specification {
 
         ExecutionStrategy overridingStrategy = new ExecutionStrategy() {
             @Override
-            CompletableFuture<ExecutionResult> execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
+            CompletableFuture<ExecutionResult> execute(ExecutionContext ec, ExecutionStrategyParameters p, InstrumentationExecutionParameters instrumentationExecutionParameters) throws NonNullableFieldWasNullException {
                 null
             }
         }

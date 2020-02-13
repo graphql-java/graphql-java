@@ -3,6 +3,7 @@ package graphql.execution;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.Internal;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -25,7 +26,7 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
     }
 
     @Override
-    public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+    public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters, InstrumentationExecutionParameters instrumentationExecutionParameters) throws NonNullableFieldWasNullException {
 
         Map<String, FetchedValue> fetchedValues = fetchFields(executionContext, parameters);
 

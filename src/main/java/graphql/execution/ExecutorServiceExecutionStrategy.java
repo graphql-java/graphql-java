@@ -6,6 +6,7 @@ import graphql.GraphQLException;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 
 import java.util.LinkedHashMap;
@@ -59,9 +60,9 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
 
 
     @Override
-    public CompletableFuture<ExecutionResult> execute(final ExecutionContext executionContext, final ExecutionStrategyParameters parameters) {
+    public CompletableFuture<ExecutionResult> execute(final ExecutionContext executionContext, final ExecutionStrategyParameters parameters, InstrumentationExecutionParameters instrumentationExecutionParameters) {
         if (executorService == null) {
-            return new AsyncExecutionStrategy().execute(executionContext, parameters);
+            return new AsyncExecutionStrategy().execute(executionContext, parameters, instrumentationExecutionParameters);
         }
 
         Instrumentation instrumentation = executionContext.getInstrumentation();

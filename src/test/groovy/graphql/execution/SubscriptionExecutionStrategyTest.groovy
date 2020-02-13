@@ -3,8 +3,11 @@ package graphql.execution
 import graphql.ErrorType
 import graphql.ExecutionInput
 import graphql.ExecutionResult
+import graphql.ExecutionResultImpl
 import graphql.GraphQL
 import graphql.TestUtil
+import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.pubsub.CapturingSubscriber
 import graphql.execution.pubsub.Message
 import graphql.execution.pubsub.ReactiveStreamsMessagePublisher
@@ -17,7 +20,21 @@ import org.reactivestreams.Publisher
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import java.util.concurrent.CompletableFuture
+
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
+
+class ResultExtensionInstrumentation extends SimpleInstrumentation {
+    @Override
+    CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+        return super.instrumentExecutionResult(
+                ExecutionResultImpl.newExecutionResult()
+                        .from(executionResult)
+                        .addExtension("simple", "value")
+                        .build(),
+                parameters)
+    }
+}
 
 class SubscriptionExecutionStrategyTest extends Specification {
 
@@ -42,7 +59,10 @@ class SubscriptionExecutionStrategyTest extends Specification {
                 .type(newTypeWiring("Subscription").dataFetcher("newMessage", newMessageDF).build())
                 .build()
 
-        return TestUtil.graphQL(idl, runtimeWiring).subscriptionExecutionStrategy(new SubscriptionExecutionStrategy()).build()
+        return TestUtil.graphQL(idl, runtimeWiring)
+                .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy())
+                .instrumentation(new ResultExtensionInstrumentation())
+                .build()
     }
 
 
@@ -334,5 +354,52 @@ class SubscriptionExecutionStrategyTest extends Specification {
                 assert message.data == ["newMessage": [sender: "sender" + i, text: "text" + i]]
             }
         }
+    }
+
+    def "subscription query results will include instrumentation results"() {
+
+        given:
+        Publisher<Object> publisher = eventStreamPublisher
+
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                assert environment.getArgument("roomId") == 123
+                return publisher
+            }
+        }
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query("""
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        """).build()
+
+        when:
+
+        def executionResult = graphQL.execute(executionInput)
+
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        for (int i = 0; i < messages.size(); i++) {
+            def message = messages[i]
+            assert message.extensions["simple"] == "value"
+        }
+
+        where:
+        why                       | eventStreamPublisher
+        'reactive streams stream' | new ReactiveStreamsMessagePublisher(10)
+        'rxjava stream'           | new RxJavaMessagePublisher(10)
     }
 }

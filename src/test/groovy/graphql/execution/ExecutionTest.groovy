@@ -21,7 +21,7 @@ class ExecutionTest extends Specification {
 
 
         @Override
-        CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+        CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters, InstrumentationExecutionParameters instrumentationExecutionParameters) throws NonNullableFieldWasNullException {
             execute++
             return CompletableFuture.completedFuture(result())
         }

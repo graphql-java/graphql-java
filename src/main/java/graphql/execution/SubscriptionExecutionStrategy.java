@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.reactive.CompletionStageMappingPublisher;
 import graphql.language.Field;
 import org.reactivestreams.Publisher;
@@ -32,7 +33,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
     }
 
     @Override
-    public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+    public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters, InstrumentationExecutionParameters instrumentationExecutionParameters) throws NonNullableFieldWasNullException {
 
         CompletableFuture<Publisher<Object>> sourceEventStream = createSourceEventStream(executionContext, parameters);
 
@@ -44,7 +45,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
             }
             CompletionStageMappingPublisher<ExecutionResult, Object> mapSourceToResponse = new CompletionStageMappingPublisher<>(
                     publisher,
-                    eventPayload -> executeSubscriptionEvent(executionContext, parameters, eventPayload)
+                    eventPayload -> executeSubscriptionEvent(executionContext, parameters, instrumentationExecutionParameters, eventPayload)
             );
             return new ExecutionResultImpl(mapSourceToResponse, executionContext.getErrors());
         });
@@ -91,7 +92,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         Note: The {ExecuteSubscriptionEvent()} algorithm is intentionally similar to {ExecuteQuery()} since this is how each event result is produced.
      */
 
-    private CompletableFuture<ExecutionResult> executeSubscriptionEvent(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object eventPayload) {
+    private CompletableFuture<ExecutionResult> executeSubscriptionEvent(ExecutionContext executionContext, ExecutionStrategyParameters parameters, InstrumentationExecutionParameters instrumentationExecutionParameters, Object eventPayload) {
         ExecutionContext newExecutionContext = executionContext.transform(builder -> builder.root(eventPayload));
 
         ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
@@ -101,7 +102,8 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
                 .build();
 
         return completeField(newExecutionContext, newParameters, fetchedValue).getFieldValue()
-                .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult));
+                .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult))
+                .thenCompose(executionResult -> executionContext.getInstrumentation().instrumentExecutionResult(executionResult, instrumentationExecutionParameters));
     }
 
     private ExecutionResult wrapWithRootFieldName(ExecutionStrategyParameters parameters, ExecutionResult executionResult) {

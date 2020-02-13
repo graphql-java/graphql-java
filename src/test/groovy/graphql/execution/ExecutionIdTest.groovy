@@ -3,6 +3,7 @@ package graphql.execution
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -13,9 +14,9 @@ class ExecutionIdTest extends Specification {
         ExecutionId executionId = null
 
         @Override
-        CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters, InstrumentationExecutionParameters instrumentationExecutionParameters) {
             executionId = executionContext.executionId
-            return super.execute(executionContext, parameters)
+            return super.execute(executionContext, parameters, instrumentationExecutionParameters)
         }
     }
 

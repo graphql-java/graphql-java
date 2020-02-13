@@ -23,6 +23,7 @@ import graphql.execution.SimpleDataFetcherExceptionHandler;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
@@ -105,7 +106,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     @Override
     @SuppressWarnings("FutureReturnValueIgnored")
-    public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters, InstrumentationExecutionParameters instrumentationExecutionParameters) {
         InstrumentationContext<ExecutionResult> executionStrategyCtx = executionContext.getInstrumentation()
                 .beginExecutionStrategy(new InstrumentationExecutionStrategyParameters(executionContext, parameters));
 

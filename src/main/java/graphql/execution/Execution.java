@@ -162,7 +162,7 @@ public class Execution {
                 executionStrategy = executionContext.getQueryStrategy();
             }
             logNotSafe.debug("Executing '{}' query operation: '{}' using '{}' execution strategy", executionContext.getExecutionId(), operation, executionStrategy.getClass().getName());
-            result = executionStrategy.execute(executionContext, parameters);
+            result = executionStrategy.execute(executionContext, parameters, instrumentationExecutionParameters);
         } catch (NonNullableFieldWasNullException e) {
             // this means it was non null types all the way from an offending non null type
             // up to the root object type and there was a a null value some where.

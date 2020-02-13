@@ -13,6 +13,7 @@ import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -838,10 +839,10 @@ class GraphQLTest extends Specification {
         Instrumentation instrumentation = null
 
         @Override
-        CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters, InstrumentationExecutionParameters instrumentationExecutionParameters) {
             executionId = executionContext.executionId
             instrumentation = executionContext.instrumentation
-            return super.execute(executionContext, parameters)
+            return super.execute(executionContext, parameters, instrumentationExecutionParameters)
         }
     }
 
