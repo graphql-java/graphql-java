@@ -18,9 +18,4 @@ public class GraphQLException extends RuntimeException {
         super(cause);
     }
 
-    @Override
-    public String toString() {
-        return getMessage();
-    }
-
 }
