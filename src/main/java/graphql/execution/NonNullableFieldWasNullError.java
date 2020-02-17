@@ -42,14 +42,6 @@ public class NonNullableFieldWasNullError implements GraphQLError {
         return ErrorType.DataFetchingException;
     }
 
-    @Override
-    public String toString() {
-        return "NonNullableFieldWasNullError{" +
-                "message='" + message + '\'' +
-                ", path=" + path +
-                '}';
-    }
-
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     @Override
     public boolean equals(Object o) {

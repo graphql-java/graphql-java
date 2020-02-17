@@ -183,16 +183,6 @@ public class ExecutionStepInfo {
         return GraphQLTypeUtil.simplePrint(type);
     }
 
-    @Override
-    public String toString() {
-        return "ExecutionStepInfo{" +
-                " path=" + path +
-                ", type=" + type +
-                ", parent=" + parent +
-                ", fieldDefinition=" + fieldDefinition +
-                '}';
-    }
-
     public ExecutionStepInfo transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
