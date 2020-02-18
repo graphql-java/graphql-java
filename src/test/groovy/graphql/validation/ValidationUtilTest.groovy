@@ -88,13 +88,13 @@ class ValidationUtilTest extends Specification {
         !validationUtil.isValidLiteralValue(arrayValue, type,schema)
     }
 
-    def "One value is a single element List"() {
-        given:
-        def singleValue = new BooleanValue(true)
-        def type = list(GraphQLBoolean)
-        expect:
-        validationUtil.isValidLiteralValue(singleValue, type,schema)
-    }
+//    def "One value is a single element List"() {
+//        given:
+//        def singleValue = new BooleanValue(true)
+//        def type = list(GraphQLBoolean)
+//        expect:
+//        validationUtil.isValidLiteralValue(singleValue, type,schema)
+//    }
 
     def "a valid array"() {
         given:

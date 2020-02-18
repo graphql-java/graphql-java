@@ -80,6 +80,11 @@ public class ArgumentValidationUtil extends ValidationUtil {
         argumentNames.add(0, String.format("[%s]", index));
     }
 
+    @Override
+    protected void handleListNotValidError(Value<?> value){
+        argumentNames.add("");
+    }
+
     public String getMessage() {
         StringBuilder argument = new StringBuilder(argumentName);
         for (String name : argumentNames) {
