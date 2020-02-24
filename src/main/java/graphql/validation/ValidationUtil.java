@@ -71,9 +71,7 @@ public class ValidationUtil {
 
     protected void handleFieldNotValidError(Value<?> value, GraphQLType type, int index) {
     }
-    protected void handleListNotValidError(Value<?> value){
 
-    }
     public boolean isValidLiteralValue(Value<?> value, GraphQLType type, GraphQLSchema schema) {
         if (value == null || value instanceof NullValue) {
             boolean valid = !(isNonNull(type));
@@ -183,7 +181,6 @@ public class ValidationUtil {
             }
             return true;
         } else {
-            handleListNotValidError(value);
             return false;
         }
     }
