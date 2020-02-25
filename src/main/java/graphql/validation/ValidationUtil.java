@@ -181,7 +181,12 @@ public class ValidationUtil {
             }
             return true;
         } else {
-            return false;
+            if(value.getChildren().size()<=1){
+                return isValidLiteralValue(value, wrappedType, schema);
+            }else{
+                return false;
+            }
+
         }
     }
 

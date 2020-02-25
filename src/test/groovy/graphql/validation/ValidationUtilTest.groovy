@@ -93,7 +93,7 @@ class ValidationUtilTest extends Specification {
         def singleValue = new BooleanValue(true)
         def type = list(GraphQLBoolean)
         expect:
-        !validationUtil.isValidLiteralValue(singleValue, type,schema)
+        validationUtil.isValidLiteralValue(singleValue, type,schema)
     }
 
     def "a valid array"() {
@@ -103,6 +103,21 @@ class ValidationUtilTest extends Specification {
 
         expect:
         validationUtil.isValidLiteralValue(arrayValue, type,schema)
+    }
+    def "Array values in a objectValue and listType is invalid"() {
+        given:
+        def inputObjectType = GraphQLInputObjectType.newInputObject()
+                .name("inputObjectType")
+                .field(GraphQLInputObjectField.newInputObjectField()
+                        .name("hello")
+                        .type(GraphQLString))
+                .build()
+        def type = list(inputObjectType)
+        def objectValue = ObjectValue.newObjectValue()
+        objectValue.objectField(new ObjectField("hello", new StringValue("world1")))
+        objectValue.objectField(new ObjectField("hello", new StringValue("world2")))
+        expect:
+        !validationUtil.isValidLiteralValue(objectValue.build(), type, schema)
     }
 
     def "a valid scalar"() {
