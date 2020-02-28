@@ -14,10 +14,10 @@ import static java.util.Collections.singletonMap;
 /**
  * An execution strategy that implements graphql subscriptions by using reactive-streams
  * as the output result of the subscription query.
- *
+ * <p>
  * Afterwards each object delivered on that stream will be mapped via running the original selection set over that object and hence producing an ExecutionResult
  * just like a normal graphql query.
- *
+ * <p>
  * See https://github.com/facebook/graphql/blob/master/spec/Section%206%20--%20Execution.md
  * See http://www.reactive-streams.org/
  */
@@ -92,15 +92,16 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
      */
 
     private CompletableFuture<ExecutionResult> executeSubscriptionEvent(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object eventPayload) {
-        ExecutionContext newExecutionContext = executionContext.transform(builder -> builder.root(eventPayload));
+        ExecutionContext newExecutionContext = executionContext.transform(builder -> builder
+                .root(eventPayload)
+                .resetErrors()
+        );
 
         ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
-        FetchedValue fetchedValue = FetchedValue.newFetchedValue().fetchedValue(eventPayload)
-                .rawFetchedValue(eventPayload)
-                .localContext(parameters.getLocalContext())
-                .build();
-
-        return completeField(newExecutionContext, newParameters, fetchedValue).getFieldValue()
+        FetchedValue fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, parameters, eventPayload);
+        FieldValueInfo fieldValueInfo = completeField(newExecutionContext, newParameters, fetchedValue);
+        return fieldValueInfo
+                .getFieldValue()
                 .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult));
     }
 

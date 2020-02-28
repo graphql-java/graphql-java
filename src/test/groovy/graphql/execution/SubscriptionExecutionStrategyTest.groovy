@@ -4,13 +4,17 @@ import graphql.ErrorType
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
+import graphql.GraphQLError
+import graphql.GraphqlErrorBuilder
 import graphql.TestUtil
 import graphql.execution.pubsub.CapturingSubscriber
 import graphql.execution.pubsub.Message
 import graphql.execution.pubsub.ReactiveStreamsMessagePublisher
+import graphql.execution.pubsub.ReactiveStreamsObjectPublisher
 import graphql.execution.pubsub.RxJavaMessagePublisher
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.PropertyDataFetcher
 import graphql.schema.idl.RuntimeWiring
 import org.awaitility.Awaitility
 import org.reactivestreams.Publisher
@@ -38,11 +42,23 @@ class SubscriptionExecutionStrategyTest extends Specification {
         """
 
     GraphQL buildSubscriptionQL(DataFetcher newMessageDF) {
+        buildSubscriptionQL(newMessageDF, PropertyDataFetcher.fetching("sender"), PropertyDataFetcher.fetching("text"))
+    }
+
+    GraphQL buildSubscriptionQL(DataFetcher newMessageDF, DataFetcher senderDF, DataFetcher textDF) {
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
                 .type(newTypeWiring("Subscription").dataFetcher("newMessage", newMessageDF).build())
+                .type(newTypeWiring("Message")
+                        .dataFetcher("sender", senderDF)
+                        .dataFetcher("text", textDF)
+                        .build())
                 .build()
 
         return TestUtil.graphQL(idl, runtimeWiring).subscriptionExecutionStrategy(new SubscriptionExecutionStrategy()).build()
+    }
+
+    GraphQLError mkError(String message) {
+        GraphqlErrorBuilder.newError().message(message).build()
     }
 
 
@@ -333,6 +349,87 @@ class SubscriptionExecutionStrategyTest extends Specification {
             } else {
                 assert message.data == ["newMessage": [sender: "sender" + i, text: "text" + i]]
             }
+        }
+    }
+
+    def "subscriptions can return DataFetcher results with errors"() {
+
+        //
+        // this tests that we can wrap the Publisher in a DataFetcherResult AND that the return types of the Publisher
+        // can themselves be DataFetcherResult objects - hence DataFetcherResult<Publisher<DataFetcherResult<Message>>>
+        // in this case
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                def objectMaker = { int index ->
+                    def message = new Message("sender" + index, "text" + index)
+                    GraphQLError error = null
+                    if (index == 1) {
+                        error = mkError("1 is the loneliest number that you'll ever know")
+                    }
+                    // wrap inner result in DataFetcherResult
+                    def resultBuilder = DataFetcherResult.newResult().data(message).localContext(index)
+                    if (error != null) {
+                        resultBuilder.error(error)
+                    }
+                    return resultBuilder.build()
+                }
+                def publisher = new ReactiveStreamsObjectPublisher(10, objectMaker)
+                // we also use DFR here to wrap the publisher to show it can work
+                return DataFetcherResult.newResult().data(publisher).error(mkError("The top level field publisher can have errors")).build()
+            }
+
+        }
+
+        DataFetcher senderDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) throws Exception {
+                Message msg = environment.getSource()
+                if (msg.sender == "sender1") {
+                    return DataFetcherResult.newResult().data(msg.sender).error(mkError("Sub level fields can have errors")).build()
+                }
+                return msg.sender
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF, senderDF, PropertyDataFetcher.fetching("text"))
+
+        def executionInput = ExecutionInput.newExecutionInput().query("""
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        """).build()
+
+        when:
+
+        def executionResult = graphQL.execute(executionInput)
+
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        executionResult.errors.size() == 1
+        executionResult.errors[0].message == "The top level field publisher can have errors"
+
+        def messages = capturingSubscriber.events
+        messages.size() == 10
+        for (int i = 0; i < messages.size(); i++) {
+            def message = messages[i]
+            // error handling on publisher events
+            if (i == 1) {
+                assert message.errors[0].message == "1 is the loneliest number that you'll ever know"
+                assert message.errors[1].message == "Sub level fields can have errors"
+            } else {
+                assert message.errors.isEmpty(), "There should be no errors present"
+            }
+            assert message.data == ["newMessage": [sender: "sender" + i, text: "text" + i]]
         }
     }
 }
