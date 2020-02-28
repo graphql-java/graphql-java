@@ -2,6 +2,7 @@ package graphql.schema.idl;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactory;
+import graphql.schema.GraphQLScalarType;
 import graphql.schema.TypeResolver;
 
 import java.util.ArrayList;
@@ -101,4 +102,57 @@ public class CombinedWiringFactory implements WiringFactory {
         }
         return assertShouldNeverHappen();
     }
+
+
+    @Override
+    public boolean providesScalar(ScalarWiringEnvironment environment) {
+        for (WiringFactory factory : factories) {
+            if (factory.providesScalar(environment)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public GraphQLScalarType getScalar(ScalarWiringEnvironment environment) {
+        for (WiringFactory factory : factories) {
+            if (factory.providesScalar(environment)) {
+                return factory.getScalar(environment);
+            }
+        }
+        return assertShouldNeverHappen();
+    }
+
+    @Override
+    public boolean providesSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
+        for (WiringFactory factory : factories) {
+            if (factory.providesSchemaDirectiveWiring(environment)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public SchemaDirectiveWiring getSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
+        for (WiringFactory factory : factories) {
+            if (factory.providesSchemaDirectiveWiring(environment)) {
+                return factory.getSchemaDirectiveWiring(environment);
+            }
+        }
+        return assertShouldNeverHappen();
+    }
+
+    @Override
+    public DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
+        for (WiringFactory factory : factories) {
+            if (factory.getDefaultDataFetcher(environment) != null) {
+                return factory.getDefaultDataFetcher(environment);
+            }
+        }
+        return null;
+    }
+
+
 }
