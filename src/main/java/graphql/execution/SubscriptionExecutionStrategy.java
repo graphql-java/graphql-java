@@ -60,7 +60,11 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
             CompletionStageMappingPublisher<ExecutionResult, Object> mapSourceToResponse = new CompletionStageMappingPublisher<>(publisher, mapperFunction);
             return new ExecutionResultImpl(mapSourceToResponse, executionContext.getErrors());
         });
+
+        // dispatched the subscription query
+        executionStrategyCtx.onDispatched(overallResult);
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
+
         return overallResult;
     }
 
