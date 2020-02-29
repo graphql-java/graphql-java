@@ -115,6 +115,17 @@ public interface Instrumentation {
     DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters);
 
     /**
+     * This is called each time a subscription field produces a new reactive stream event value and its needs to be mapped over via the graphql field subselection.
+     *
+     * @param parameters the parameters to this step
+     *
+     * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
+     */
+    default InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters) {
+        return noOp();
+    }
+
+    /**
      * This is called just before a field is resolved into a value.
      *
      * @param parameters the parameters to this step

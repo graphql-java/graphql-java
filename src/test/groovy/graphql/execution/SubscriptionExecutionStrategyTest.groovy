@@ -7,6 +7,8 @@ import graphql.GraphQL
 import graphql.GraphQLError
 import graphql.GraphqlErrorBuilder
 import graphql.TestUtil
+import graphql.execution.instrumentation.TestingInstrumentation
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.pubsub.CapturingSubscriber
 import graphql.execution.pubsub.Message
 import graphql.execution.pubsub.ReactiveStreamsMessagePublisher
@@ -20,6 +22,8 @@ import org.awaitility.Awaitility
 import org.reactivestreams.Publisher
 import spock.lang.Specification
 import spock.lang.Unroll
+
+import java.util.concurrent.CompletableFuture
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
@@ -489,5 +493,69 @@ class SubscriptionExecutionStrategyTest extends Specification {
             def senderVal = "sender" + i + "-lc:" + i
             assert message.data == ["newMessage": [sender: senderVal, text: "text" + i]]
         }
+    }
+
+    def "instrumentation gets called on subscriptions"() {
+
+        //
+        // make sure local context is preserved down the subscription
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                new ReactiveStreamsObjectPublisher(10, { int index ->
+                    new Message("sender" + index, "text" + index)
+                })
+            }
+        }
+
+        def instrumentResultCalls = []
+        TestingInstrumentation instrumentation = new TestingInstrumentation() {
+            @Override
+            CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+                instrumentResultCalls.add("instrumentExecutionResult")
+                return CompletableFuture.completedFuture(executionResult)
+            }
+        }
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+        graphQL = graphQL.transform({ builder -> builder.instrumentation(instrumentation) })
+
+        def executionInput = ExecutionInput.newExecutionInput().query("""
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        """).build()
+
+        when:
+
+        def executionResult = graphQL.execute(executionInput)
+
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 10
+
+        def subscribedFieldCalls = instrumentation.executionList.findAll { s -> s.contains(":subscribed-field-event") }
+        subscribedFieldCalls.size() == 20 // start and end calls
+        subscribedFieldCalls.findAll { s -> s.contains("newMessage")}.size() == 20 // all for our subscribed field
+
+        // this works because our calls are serial - if we truly had async values then the order would not work
+        subscribedFieldCalls.withIndex().collect({s,index ->
+            if (index % 2 == 0) {
+                assert s.startsWith("start:"), "expected start: on even indexes"
+            } else {
+                assert s.startsWith("end:"), "expected end: on odd indexes"
+            }
+        })
+
+        instrumentResultCalls.size() == 11 // one for the initial execution and then one for each stream event
     }
 }
