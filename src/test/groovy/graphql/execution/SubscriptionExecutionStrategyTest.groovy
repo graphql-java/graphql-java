@@ -432,4 +432,62 @@ class SubscriptionExecutionStrategyTest extends Specification {
             assert message.data == ["newMessage": [sender: "sender" + i, text: "text" + i]]
         }
     }
+
+    def "subscriptions local context works as expected"() {
+
+        //
+        // make sure local context is preserved down the subscription
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                def objectMaker = { int index ->
+                    def message = new Message("sender" + index, "text" + index)
+                    return DataFetcherResult.newResult().data(message).localContext(index).build()
+                }
+                def publisher = new ReactiveStreamsObjectPublisher(10, objectMaker)
+                // we also use DFR here to wrap the publisher to show it can work
+                return DataFetcherResult.newResult().data(publisher).build()
+            }
+
+        }
+
+        DataFetcher senderDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) throws Exception {
+                Message msg = environment.getSource()
+                return msg.sender + "-lc:" + environment.getLocalContext()
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF, senderDF, PropertyDataFetcher.fetching("text"))
+
+        def executionInput = ExecutionInput.newExecutionInput().query("""
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        """).build()
+
+        when:
+
+        def executionResult = graphQL.execute(executionInput)
+
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 10
+        for (int i = 0; i < messages.size(); i++) {
+            def message = messages[i]
+            def senderVal = "sender" + i + "-lc:" + i
+            assert message.data == ["newMessage": [sender: senderVal, text: "text" + i]]
+        }
+    }
 }
