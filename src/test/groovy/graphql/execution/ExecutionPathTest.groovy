@@ -322,4 +322,22 @@ class ExecutionPathTest extends Specification {
         then:
         newPath.toList() == ["a", "b", "x"]
     }
+
+    @SuppressWarnings("ChangeToOperator")
+    @Unroll
+    def ".equals works for #executionPath equals #comparedTo"() {
+
+        expect:
+        executionPath.equals(comparedTo) == expectedResult
+
+        where:
+        executionPath                  | comparedTo                     | expectedResult
+        ExecutionPath.rootPath()       | ExecutionPath.rootPath()       | true
+        ExecutionPath.parse("/a/b[1]") | ExecutionPath.parse("/a/b[1]") | true
+        ExecutionPath.parse("/a/b[1]") | ExecutionPath.parse("/a/b")    | false
+        ExecutionPath.parse("/a/b[1]") | ExecutionPath.rootPath()       | false
+        ExecutionPath.parse("/a/b[1]") | ExecutionPath.rootPath()       | false
+        ExecutionPath.rootPath()       | ExecutionPath.parse("/a/b[1]") | false
+    }
+
 }

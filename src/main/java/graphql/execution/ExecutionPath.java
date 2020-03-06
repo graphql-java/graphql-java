@@ -3,6 +3,7 @@ package graphql.execution;
 import graphql.Assert;
 import graphql.AssertException;
 import graphql.PublicApi;
+import graphql.util.LazyReference;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,19 +33,19 @@ public class ExecutionPath {
     }
 
     private final ExecutionPath parent;
-    private final PathSegment segment;
-    private final List<Object> pathList;
+    private final PathSegment<?> segment;
+    private final LazyReference<List<Object>> pathList;
 
     private ExecutionPath() {
         parent = null;
         segment = null;
-        pathList = toListImpl();
+        pathList = new LazyReference<>(this::toListImpl);
     }
 
-    private ExecutionPath(ExecutionPath parent, PathSegment segment) {
+    private ExecutionPath(ExecutionPath parent, PathSegment<?> segment) {
         this.parent = assertNotNull(parent, "Must provide a parent path");
         this.segment = assertNotNull(segment, "Must provide a sub path");
-        pathList = toListImpl();
+        pathList = new LazyReference<>(this::toListImpl);
     }
 
     public int getLevel() {
@@ -237,7 +238,7 @@ public class ExecutionPath {
      * @return converts the path into a list of segments
      */
     public List<Object> toList() {
-        return new ArrayList<>(pathList);
+        return new ArrayList<>(pathList.get());
     }
 
     private List<Object> toListImpl() {
@@ -254,6 +255,35 @@ public class ExecutionPath {
         return list;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ExecutionPath that = (ExecutionPath) o;
+
+        if (this.parent == null) {
+            return that.parent == null;
+        }
+        if (that.parent != null) {
+            boolean parentEquals = this.parent.equals(that.parent);
+            if (parentEquals) {
+                return this.segment.equals(that.segment);
+            }
+        }
+        return false;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int hashCode = 0;
+        if (parent != null) {
+            hashCode = parent.hashCode();
+            hashCode = 31 * hashCode + segment.hashCode();
+        }
+        return hashCode;
+    }
 
     /**
      * @return the path as a string which represents the call hierarchy
@@ -263,27 +293,10 @@ public class ExecutionPath {
         if (parent == null) {
             return "";
         }
-
         if (ROOT_PATH.equals(parent)) {
             return segment.toString();
         }
-
         return parent.toString() + segment.toString();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        ExecutionPath that = (ExecutionPath) o;
-
-        return pathList.equals(that.pathList);
-    }
-
-    @Override
-    public int hashCode() {
-        return pathList.hashCode();
     }
 
 
@@ -308,6 +321,18 @@ public class ExecutionPath {
         public String toString() {
             return '/' + value;
         }
+
+        @Override
+        public int hashCode() {
+            return value.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            return this.value.equals(((StringPathSegment) o).value);
+        }
     }
 
     private static class IntPathSegment implements PathSegment<Integer> {
@@ -325,6 +350,18 @@ public class ExecutionPath {
         @Override
         public String toString() {
             return "[" + value + ']';
+        }
+
+        @Override
+        public int hashCode() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            return this.value == ((IntPathSegment) o).value;
         }
     }
 }
