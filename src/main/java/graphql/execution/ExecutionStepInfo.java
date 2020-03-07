@@ -9,7 +9,6 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLTypeUtil;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -27,11 +26,41 @@ import static graphql.schema.GraphQLTypeUtil.isList;
 @PublicApi
 public class ExecutionStepInfo {
 
+    /**
+     * An ExecutionStepInfo represent either a field or a list element inside a list of objects/interfaces/unions.
+     *
+     * A StepInfo never represent a Scalar/Enum inside a list (e.g. [String]) because GraphQL execution doesn't descend down
+     * scalar/enums lists.
+     *
+     */
+
+    /**
+     * If this StepInfo represent a field the type is equal to fieldDefinition.getType()
+     *
+     * if this StepInfo is a list element this type is the actual current list element. For example:
+     * Query.pets: [[Pet]] with Pet either a Dog or Cat and the actual result is [[Dog1],[[Cat1]]
+     * Then the type is (for a query "{pets{name}}"):
+     * [[Pet]] for /pets (representing the field Query.pets, not a list element)
+     * [Pet] fot /pets[0]
+     * [Pet] for /pets[1]
+     * Dog for /pets[0][0]
+     * Cat for /pets[1][0]
+     * String for /pets[0][0]/name (representing the field Dog.name, not a list element)
+     * String for /pets[1][0]/name (representing the field Cat.name, not a list element)
+     */
     private final GraphQLOutputType type;
+
+    /**
+     * A list element is characterized by having a path ending with an index segment. (ExecutionPath.isListSegment())
+     */
     private final ExecutionPath path;
     private final ExecutionStepInfo parent;
 
-    // field, fieldDefinition, fieldContainer and arguments stay the same for steps inside a list field
+    /**
+     * field, fieldDefinition, fieldContainer and arguments differ per field StepInfo.
+     *
+     * But for list StepInfos these properties are the same as the field returning the list.
+     */
     private final MergedField field;
     private final GraphQLFieldDefinition fieldDefinition;
     private final GraphQLObjectType fieldContainer;
