@@ -6,6 +6,7 @@ import graphql.schema.visibility.GraphqlFieldVisibility;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -20,23 +21,26 @@ import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FI
  * The {@link graphql.schema.GraphQLCodeRegistry} holds that execution code that is associated with graphql types, namely
  * the {@link graphql.schema.DataFetcher}s associated with fields, the {@link graphql.schema.TypeResolver}s associated with
  * abstract types and the {@link graphql.schema.visibility.GraphqlFieldVisibility}
- *
+ * <p>
  * For legacy reasons these code functions can still exist on the original type objects but this will be removed in a future version.  Once
  * removed the type system objects will be able have proper hashCode/equals methods and be checked for proper equality.
  */
 @PublicApi
 public class GraphQLCodeRegistry {
 
-    private final Map<FieldCoordinates, DataFetcherFactory> dataFetcherMap;
-    private final Map<String, DataFetcherFactory> systemDataFetcherMap;
+    private final Map<FieldCoordinates, DataFetcherFactory<?>> dataFetcherMap;
+    private final Map<String, DataFetcherFactory<?>> systemDataFetcherMap;
+    private final Map<FieldCoordinates, DataFetcher<?>> dataFetcherCache;
     private final Map<String, TypeResolver> typeResolverMap;
     private final GraphqlFieldVisibility fieldVisibility;
 
-    private GraphQLCodeRegistry(Map<FieldCoordinates, DataFetcherFactory> dataFetcherMap, Map<String, DataFetcherFactory> systemDataFetcherMap, Map<String, TypeResolver> typeResolverMap, GraphqlFieldVisibility fieldVisibility) {
-        this.dataFetcherMap = dataFetcherMap;
-        this.systemDataFetcherMap = systemDataFetcherMap;
-        this.typeResolverMap = typeResolverMap;
-        this.fieldVisibility = fieldVisibility;
+    private GraphQLCodeRegistry(Builder builder) {
+        this.dataFetcherMap = builder.dataFetcherMap;
+        this.systemDataFetcherMap = builder.systemDataFetcherMap;
+        this.typeResolverMap = builder.typeResolverMap;
+        this.fieldVisibility = builder.fieldVisibility;
+        this.dataFetcherCache = new ConcurrentHashMap<>();
+
     }
 
     /**
@@ -51,11 +55,10 @@ public class GraphQLCodeRegistry {
      *
      * @param parentType      the container type
      * @param fieldDefinition the field definition
-     *
      * @return the DataFetcher associated with this field.  All fields have data fetchers
      */
-    public DataFetcher getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
-        return getDataFetcherImpl(FieldCoordinates.coordinates(parentType, fieldDefinition), fieldDefinition, dataFetcherMap, systemDataFetcherMap);
+    public DataFetcher<?> getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
+        return getDataFetcherImpl(FieldCoordinates.coordinates(parentType, fieldDefinition), fieldDefinition, dataFetcherMap, systemDataFetcherMap, dataFetcherCache);
     }
 
     /**
@@ -63,33 +66,44 @@ public class GraphQLCodeRegistry {
      *
      * @param coordinates     the field coordinates
      * @param fieldDefinition the field definition
-     *
      * @return the DataFetcher associated with this field.  All fields have data fetchers
      */
-    public DataFetcher getDataFetcher(FieldCoordinates coordinates, GraphQLFieldDefinition fieldDefinition) {
-        return getDataFetcherImpl(coordinates, fieldDefinition, dataFetcherMap, systemDataFetcherMap);
+    public DataFetcher<?> getDataFetcher(FieldCoordinates coordinates, GraphQLFieldDefinition fieldDefinition) {
+        return getDataFetcherImpl(coordinates, fieldDefinition, dataFetcherMap, systemDataFetcherMap, dataFetcherCache);
     }
 
-    private static DataFetcher getDataFetcherImpl(FieldCoordinates coordinates, GraphQLFieldDefinition fieldDefinition, Map<FieldCoordinates, DataFetcherFactory> dataFetcherMap, Map<String, DataFetcherFactory> systemDataFetcherMap) {
+    private static DataFetcher<?> getDataFetcherImpl(FieldCoordinates coordinates, GraphQLFieldDefinition fieldDefinition, Map<FieldCoordinates,
+            DataFetcherFactory<?>> dataFetcherMap, Map<String, DataFetcherFactory<?>> systemDataFetcherMap, Map<FieldCoordinates, DataFetcher<?>> dataFetcherCache) {
         assertNotNull(coordinates);
         assertNotNull(fieldDefinition);
 
-        DataFetcherFactory dataFetcherFactory = systemDataFetcherMap.get(fieldDefinition.getName());
+        DataFetcher<?> dataFetcher;
+        dataFetcher = dataFetcherCache.get(coordinates);
+        if (dataFetcher != null) {
+            return dataFetcher;
+        }
+        DataFetcherFactory<?> dataFetcherFactory = systemDataFetcherMap.get(fieldDefinition.getName());
         if (dataFetcherFactory == null) {
             dataFetcherFactory = dataFetcherMap.get(coordinates);
             if (dataFetcherFactory == null) {
                 dataFetcherFactory = DataFetcherFactories.useDataFetcher(new PropertyDataFetcher<>(fieldDefinition.getName()));
             }
         }
-        return dataFetcherFactory.get(newDataFetchingFactoryEnvironment()
+        dataFetcher = dataFetcherFactory.get(newDataFetchingFactoryEnvironment()
                 .fieldDefinition(fieldDefinition)
                 .build());
+
+        assertNotNull(dataFetcher, "The DataFetcherFactory MUST make non null DataFetchers - %s", dataFetcherFactory.getClass());
+
+        dataFetcherCache.putIfAbsent(coordinates,dataFetcher);
+
+        return dataFetcher;
     }
 
-    private static boolean hasDataFetcherImpl(FieldCoordinates coords, Map<FieldCoordinates, DataFetcherFactory> dataFetcherMap, Map<String, DataFetcherFactory> systemDataFetcherMap) {
+    private static boolean hasDataFetcherImpl(FieldCoordinates coords, Map<FieldCoordinates, DataFetcherFactory<?>> dataFetcherMap, Map<String, DataFetcherFactory<?>> systemDataFetcherMap) {
         assertNotNull(coords);
 
-        DataFetcherFactory dataFetcherFactory = systemDataFetcherMap.get(coords.getFieldName());
+        DataFetcherFactory<?> dataFetcherFactory = systemDataFetcherMap.get(coords.getFieldName());
         if (dataFetcherFactory == null) {
             dataFetcherFactory = dataFetcherMap.get(coords);
         }
@@ -101,7 +115,6 @@ public class GraphQLCodeRegistry {
      * Returns the type resolver associated with this interface type
      *
      * @param interfaceType the interface type
-     *
      * @return a non null {@link graphql.schema.TypeResolver}
      */
     public TypeResolver getTypeResolver(GraphQLInterfaceType interfaceType) {
@@ -112,7 +125,6 @@ public class GraphQLCodeRegistry {
      * Returns the type resolver associated with this union type
      *
      * @param unionType the union type
-     *
      * @return a non null {@link graphql.schema.TypeResolver}
      */
 
@@ -143,7 +155,6 @@ public class GraphQLCodeRegistry {
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
-     *
      * @return a new GraphQLCodeRegistry object based on calling build on that builder
      */
     public GraphQLCodeRegistry transform(Consumer<Builder> builderConsumer) {
@@ -163,7 +174,6 @@ public class GraphQLCodeRegistry {
      * Returns a new builder of {@link graphql.schema.GraphQLCodeRegistry} objects based on the existing one
      *
      * @param existingCodeRegistry the existing code registry to use
-     *
      * @return a new builder of {@link graphql.schema.GraphQLCodeRegistry} objects
      */
     public static Builder newCodeRegistry(GraphQLCodeRegistry existingCodeRegistry) {
@@ -171,8 +181,8 @@ public class GraphQLCodeRegistry {
     }
 
     public static class Builder {
-        private final Map<FieldCoordinates, DataFetcherFactory> dataFetcherMap = new LinkedHashMap<>();
-        private final Map<String, DataFetcherFactory> systemDataFetcherMap = new LinkedHashMap<>();
+        private final Map<FieldCoordinates, DataFetcherFactory<?>> dataFetcherMap = new LinkedHashMap<>();
+        private final Map<String, DataFetcherFactory<?>> systemDataFetcherMap = new LinkedHashMap<>();
         private final Map<String, TypeResolver> typeResolverMap = new HashMap<>();
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
 
@@ -191,11 +201,10 @@ public class GraphQLCodeRegistry {
          *
          * @param parentType      the container type
          * @param fieldDefinition the field definition
-         *
          * @return the DataFetcher associated with this field.  All fields have data fetchers
          */
-        public DataFetcher getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
-            return getDataFetcherImpl(FieldCoordinates.coordinates(parentType, fieldDefinition), fieldDefinition, dataFetcherMap, systemDataFetcherMap);
+        public DataFetcher<?> getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
+            return getDataFetcherImpl(FieldCoordinates.coordinates(parentType, fieldDefinition), fieldDefinition, dataFetcherMap, systemDataFetcherMap, new HashMap<>());
         }
 
         /**
@@ -203,18 +212,16 @@ public class GraphQLCodeRegistry {
          *
          * @param coordinates     the field coordinates
          * @param fieldDefinition the field definition
-         *
          * @return the DataFetcher associated with this field.  All fields have data fetchers
          */
-        public DataFetcher getDataFetcher(FieldCoordinates coordinates, GraphQLFieldDefinition fieldDefinition) {
-            return getDataFetcherImpl(coordinates, fieldDefinition, dataFetcherMap, systemDataFetcherMap);
+        public DataFetcher<?> getDataFetcher(FieldCoordinates coordinates, GraphQLFieldDefinition fieldDefinition) {
+            return getDataFetcherImpl(coordinates, fieldDefinition, dataFetcherMap, systemDataFetcherMap, new HashMap<>());
         }
 
         /**
          * Returns a data fetcher associated with a field within a container type
          *
          * @param coordinates the field coordinates
-         *
          * @return the true if there is a data fetcher already for this field
          */
         public boolean hasDataFetcher(FieldCoordinates coordinates) {
@@ -225,7 +232,6 @@ public class GraphQLCodeRegistry {
          * Returns the type resolver associated with this interface type
          *
          * @param interfaceType the interface type
-         *
          * @return a non null {@link graphql.schema.TypeResolver}
          */
         public TypeResolver getTypeResolver(GraphQLInterfaceType interfaceType) {
@@ -236,7 +242,6 @@ public class GraphQLCodeRegistry {
          * Returns true of a type resolver has been registered for this type name
          *
          * @param typeName the name to check
-         *
          * @return true if there is already a type resolver
          */
         public boolean hasTypeResolver(String typeName) {
@@ -247,7 +252,6 @@ public class GraphQLCodeRegistry {
          * Returns the type resolver associated with this union type
          *
          * @param unionType the union type
-         *
          * @return a non null {@link graphql.schema.TypeResolver}
          */
         public TypeResolver getTypeResolver(GraphQLUnionType unionType) {
@@ -259,7 +263,6 @@ public class GraphQLCodeRegistry {
          *
          * @param coordinates the field coordinates
          * @param dataFetcher the data fetcher code for that field
-         *
          * @return this builder
          */
         public Builder dataFetcher(FieldCoordinates coordinates, DataFetcher<?> dataFetcher) {
@@ -273,7 +276,6 @@ public class GraphQLCodeRegistry {
          * @param parentType      the container type
          * @param fieldDefinition the field definition
          * @param dataFetcher     the data fetcher code for that field
-         *
          * @return this builder
          */
         public Builder dataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition, DataFetcher<?> dataFetcher) {
@@ -285,7 +287,6 @@ public class GraphQLCodeRegistry {
          *
          * @param coordinates the field coordinates
          * @param dataFetcher the data fetcher code for that field
-         *
          * @return this builder
          */
         public Builder systemDataFetcher(FieldCoordinates coordinates, DataFetcher<?> dataFetcher) {
@@ -301,7 +302,6 @@ public class GraphQLCodeRegistry {
          *
          * @param coordinates        the field coordinates
          * @param dataFetcherFactory the data fetcher factory code for that field
-         *
          * @return this builder
          */
         public Builder dataFetcher(FieldCoordinates coordinates, DataFetcherFactory<?> dataFetcherFactory) {
@@ -315,7 +315,6 @@ public class GraphQLCodeRegistry {
          *
          * @param coordinates the field coordinates
          * @param dataFetcher the data fetcher code for that field
-         *
          * @return this builder
          */
         public Builder dataFetcherIfAbsent(FieldCoordinates coordinates, DataFetcher<?> dataFetcher) {
@@ -328,14 +327,11 @@ public class GraphQLCodeRegistry {
          *
          * @param parentTypeName    the parent container type
          * @param fieldDataFetchers the map of field names to data fetchers
-         *
          * @return this builder
          */
-        public Builder dataFetchers(String parentTypeName, Map<String, DataFetcher> fieldDataFetchers) {
+        public Builder dataFetchers(String parentTypeName, Map<String, DataFetcher<?>> fieldDataFetchers) {
             assertNotNull(fieldDataFetchers);
-            fieldDataFetchers.forEach((fieldName, dataFetcher) -> {
-                dataFetcher(coordinates(parentTypeName, fieldName), dataFetcher);
-            });
+            fieldDataFetchers.forEach((fieldName, dataFetcher) -> dataFetcher(coordinates(parentTypeName, fieldName), dataFetcher));
             return this;
         }
 
@@ -390,7 +386,7 @@ public class GraphQLCodeRegistry {
         }
 
         public GraphQLCodeRegistry build() {
-            return new GraphQLCodeRegistry(dataFetcherMap, systemDataFetcherMap, typeResolverMap, fieldVisibility);
+            return new GraphQLCodeRegistry(this);
         }
     }
 }

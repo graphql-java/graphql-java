@@ -535,6 +535,10 @@ public class GraphQLSchema {
             if (errors.size() > 0) {
                 throw new InvalidSchemaException(errors);
             }
+            // one last defensive copy just to make sure the DF cache inside the code registry is clean.  The code above should do this
+            // but should we ever remove that code then this line will make sure we start clean per schema
+            codeRegistry = codeRegistry.transform(codeRegistryBuilder -> {
+            });
             return graphQLSchema;
         }
     }
