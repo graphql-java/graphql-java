@@ -28,9 +28,11 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 public class PropertyDataFetcherHelper {
     private static final AtomicBoolean USE_SET_ACCESSIBLE = new AtomicBoolean(true);
     private static final AtomicBoolean USE_NEGATIVE_CACHE = new AtomicBoolean(true);
+
     private static final ConcurrentMap<String, Method> METHOD_CACHE = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, Field> FIELD_CACHE = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, String> NEGATIVE_CACHE = new ConcurrentHashMap<>();
+
 
     public static Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType) {
         return getPropertyValue(propertyName, object, graphQLType, null);
@@ -40,6 +42,7 @@ public class PropertyDataFetcherHelper {
         if (object == null) {
             return null;
         }
+
         if (object instanceof Map) {
             return ((Map<?, ?>) object).get(propertyName);
         }
@@ -48,117 +51,130 @@ public class PropertyDataFetcherHelper {
         if (isNegativelyCached(key)) {
             return null;
         }
+
         boolean dfeInUse = environment != null;
-        try {
-            return getPropertyViaGetterMethod(object, propertyName, graphQLType, (root, methodName) -> findPubliclyAccessibleMethod(propertyName, root, methodName, dfeInUse), environment);
-        } catch (NoSuchMethodException ignored) {
+
+        Method getterMethod = getPropertyGetterMethod(object, propertyName, graphQLType, dfeInUse);
+        if (getterMethod != null) {
             try {
-                return getPropertyViaGetterMethod(object, propertyName, graphQLType, (aClass, methodName) -> findViaSetAccessible(propertyName, aClass, methodName, dfeInUse), environment);
-            } catch (NoSuchMethodException ignored2) {
-                try {
-                    return getPropertyViaFieldAccess(object, propertyName);
-                } catch (FastNoSuchMethodException e) {
-                    // we have nothing to ask for and we have exhausted our lookup strategies
-                    putInNegativeCache(key);
-                    return null;
+                if (takesDataFetcherEnvironmentAsOnlyArgument(getterMethod)) {
+                    return getterMethod.invoke(object, environment);
+                } else {
+                    return getterMethod.invoke(object);
                 }
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                throw new GraphQLException(e);
             }
+
         }
+
+        return getPropertyViaFieldAccess(object, propertyName);
     }
 
-    private static boolean isNegativelyCached(String key) {
-        if (USE_NEGATIVE_CACHE.get()) {
-            return NEGATIVE_CACHE.containsKey(key);
+
+    private static Method getPropertyGetterMethod(Object object, String propertyName, GraphQLType graphQLType, boolean dfeInUse) {
+        boolean isBoolProperty = isBooleanProperty(graphQLType);
+
+        Method publiclyAccessibleMethod = findPubliclyAccessibleMethod(propertyName, object.getClass(), isBoolProperty, dfeInUse);
+        if (publiclyAccessibleMethod != null) {
+            return publiclyAccessibleMethod;
         }
-        return false;
+
+        return findDeclaredAccessibleMethod(propertyName, object.getClass(), isBoolProperty, dfeInUse);
     }
 
-    private static void putInNegativeCache(String key) {
-        if (USE_NEGATIVE_CACHE.get()) {
-            NEGATIVE_CACHE.put(key, key);
-        }
-    }
-
-    private interface MethodFinder {
-        Method apply(Class<?> aClass, String s) throws NoSuchMethodException;
-    }
-
-    private static Object getPropertyViaGetterMethod(Object object, String propertyName, GraphQLType graphQLType, MethodFinder methodFinder, DataFetchingEnvironment environment) throws NoSuchMethodException {
-        if (isBooleanProperty(graphQLType)) {
-            try {
-                return getPropertyViaGetterUsingPrefix(object, propertyName, "is", methodFinder, environment);
-            } catch (NoSuchMethodException e) {
-                return getPropertyViaGetterUsingPrefix(object, propertyName, "get", methodFinder, environment);
-            }
-        } else {
-            return getPropertyViaGetterUsingPrefix(object, propertyName, "get", methodFinder, environment);
-        }
-    }
-
-    private static Object getPropertyViaGetterUsingPrefix(Object object, String propertyName, String prefix, MethodFinder methodFinder, DataFetchingEnvironment environment) throws NoSuchMethodException {
-        String getterName = prefix + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
-        try {
-            Method method = methodFinder.apply(object.getClass(), getterName);
-            if (takesDataFetcherEnvironmentAsOnlyArgument(method)) {
-                if (environment == null) {
-                    throw new FastNoSuchMethodException(getterName);
-                }
-                return method.invoke(object, environment);
-            } else {
-                return method.invoke(object);
-            }
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new GraphQLException(e);
-        }
-    }
-
-
-    /**
-     * Invoking public methods on package-protected classes via reflection
-     * causes exceptions. This method searches a class's hierarchy for
-     * public visibility parent classes with the desired getter. This
-     * particular case is required to support AutoValue style data classes,
-     * which have abstract public interfaces implemented by package-protected
-     * (generated) subclasses.
-     */
-    private static Method findPubliclyAccessibleMethod(String propertyName, Class<?> root, String methodName, boolean dfeInUse) throws NoSuchMethodException {
+    private static Method findPubliclyAccessibleMethod(String propertyName, Class<?> root, boolean isBoolProperty, boolean dfeInUse) {
         Class<?> currentClass = root;
+        Method method = null;
+        if (isBoolProperty) {
+            String methodName = "is" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+            method = getPubliclAccessibleMethod(currentClass, methodName, propertyName, dfeInUse);
+        }
+
+        if (method != null) {
+            return method;
+        }
+
+        String methodName = "get" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+        return getPubliclAccessibleMethod(currentClass, methodName, propertyName, dfeInUse);
+    }
+
+    private static Method getPubliclAccessibleMethod(Class<?> root, String methodName, String propertyName, boolean dfeInUse) {
+        Class<?> currentClass = root;
+
+        Predicate<Method> whichMethods = mth -> {
+            if (dfeInUse) {
+                return hasZeroArgs(mth) || takesDataFetcherEnvironmentAsOnlyArgument(mth);
+            }
+            return hasZeroArgs(mth);
+        };
+
         while (currentClass != null) {
             String key = mkKey(currentClass, propertyName);
             Method method = METHOD_CACHE.get(key);
             if (method != null) {
                 return method;
             }
+
             if (Modifier.isPublic(currentClass.getModifiers())) {
+                Method[] methods = currentClass.getMethods();
                 if (dfeInUse) {
-                    //
-                    // try a getter that takes DataFetchingEnvironment first (if we have one)
-                    try {
-                        method = currentClass.getMethod(methodName, DataFetchingEnvironment.class);
-                        if (Modifier.isPublic(method.getModifiers())) {
+                    Optional<Method> methodOptional = Arrays.stream(methods).filter(mt -> mt.getName().equals(methodName) && takesDataFetcherEnvironmentAsOnlyArgument(mt)).findFirst();
+                    if (methodOptional.isPresent()) {
+                        if (Modifier.isPublic(methodOptional.get().getModifiers())) {
+                            method = methodOptional.get();
                             METHOD_CACHE.putIfAbsent(key, method);
                             return method;
                         }
-                    } catch (NoSuchMethodException e) {
-                        // ok try the next approach
                     }
                 }
-                method = currentClass.getMethod(methodName);
-                if (Modifier.isPublic(method.getModifiers())) {
-                    METHOD_CACHE.putIfAbsent(key, method);
-                    return method;
+
+                if (method == null) {
+                    Optional<Method> methodOptional = Arrays.stream(methods).filter(mt -> mt.getName().equals(methodName)&&hasZeroArgs(mt)).findFirst();
+                    if (methodOptional.isPresent()) {
+                        if (Modifier.isPublic(methodOptional.get().getModifiers())) {
+                            method = methodOptional.get();
+                            METHOD_CACHE.putIfAbsent(key, method);
+                            return method;
+                        }
+                    }
                 }
             }
             currentClass = currentClass.getSuperclass();
         }
-        return root.getMethod(methodName);
+        return null;
     }
 
-    private static Method findViaSetAccessible(String propertyName, Class<?> aClass, String methodName, boolean dfeInUse) throws NoSuchMethodException {
+    private static Method findDeclaredAccessibleMethod(String propertyName, Class<?> root, boolean isBoolProperty, boolean dfeInUse) {
         if (!USE_SET_ACCESSIBLE.get()) {
-            throw new FastNoSuchMethodException(methodName);
+            return null;
         }
-        Class<?> currentClass = aClass;
+
+        Class<?> currentClass = root;
+        Method method = null;
+        if (isBoolProperty) {
+            String methodName = "is" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+            method = getDeclaredlAccessibleMethod(currentClass, methodName, propertyName, dfeInUse);
+        }
+
+        if (method != null) {
+            return method;
+        }
+
+        String methodName = "get" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+        return getDeclaredlAccessibleMethod(currentClass, methodName, propertyName, dfeInUse);
+    }
+
+    private static Method getDeclaredlAccessibleMethod(Class<?> root, String methodName, String propertyName, boolean dfeInUse) {
+        Class<?> currentClass = root;
+
+        Predicate<Method> whichMethods = mth -> {
+            if (dfeInUse) {
+                return hasZeroArgs(mth) || takesDataFetcherEnvironmentAsOnlyArgument(mth);
+            }
+            return hasZeroArgs(mth);
+        };
+
         while (currentClass != null) {
             String key = mkKey(currentClass, propertyName);
             Method method = METHOD_CACHE.get(key);
@@ -166,57 +182,67 @@ public class PropertyDataFetcherHelper {
                 return method;
             }
 
-            Predicate<Method> whichMethods = mth -> {
-                if (dfeInUse) {
-                    return hasZeroArgs(mth) || takesDataFetcherEnvironmentAsOnlyArgument(mth);
-                }
-                return hasZeroArgs(mth);
-            };
             Method[] declaredMethods = currentClass.getDeclaredMethods();
+
             Optional<Method> m = Arrays.stream(declaredMethods)
                     .filter(mth -> methodName.equals(mth.getName()))
                     .filter(whichMethods)
                     .min(mostMethodArgsFirst());
             if (m.isPresent()) {
-                try {
-                    // few JVMs actually enforce this but it might happen
-                    method = m.get();
-                    method.setAccessible(true);
-                    METHOD_CACHE.putIfAbsent(key, method);
-                    return method;
-                } catch (SecurityException ignored) {
-                }
+                // few JVMs actually enforce this but it might happen
+                method = m.get();
+                method.setAccessible(true);
+                METHOD_CACHE.putIfAbsent(key, method);
+                return method;
             }
             currentClass = currentClass.getSuperclass();
         }
-        throw new FastNoSuchMethodException(methodName);
+        return null;
     }
 
-    private static Object getPropertyViaFieldAccess(Object object, String propertyName) throws FastNoSuchMethodException {
+
+    private static Object getPropertyViaFieldAccess(Object object, String propertyName) {
         Class<?> aClass = object.getClass();
+
         String key = mkKey(aClass, propertyName);
-        try {
-            Field field = FIELD_CACHE.get(key);
-            if (field == null) {
-                field = aClass.getField(propertyName);
+        Field field = FIELD_CACHE.get(key);
+        if (field == null) {
+            Field[] fields = aClass.getFields();
+            Optional<Field> fieldOptional = Arrays.stream(fields).filter(x -> x.getName().equals(propertyName)).findFirst();
+            if (fieldOptional.isPresent()) {
+                field = fieldOptional.get();
                 FIELD_CACHE.putIfAbsent(key, field);
+                field = fieldOptional.get();
             }
-            return field.get(object);
-        } catch (NoSuchFieldException e) {
-            if (!USE_SET_ACCESSIBLE.get()) {
-                throw new FastNoSuchMethodException(key);
-            }
-            // if not public fields then try via setAccessible
+        }
+
+        if (field != null) {
             try {
-                Field field = aClass.getDeclaredField(propertyName);
                 field.setAccessible(true);
-                FIELD_CACHE.putIfAbsent(key, field);
                 return field.get(object);
-            } catch (SecurityException | NoSuchFieldException ignored2) {
-                throw new FastNoSuchMethodException(key);
-            } catch (IllegalAccessException e1) {
+            } catch (IllegalAccessException e) {
                 throw new GraphQLException(e);
             }
+        }
+
+        if (field == null && !USE_SET_ACCESSIBLE.get()) {
+            return null;
+        }
+
+        Field[] declaredFields = aClass.getDeclaredFields();
+        Optional<Field> fieldOptional = Arrays.stream(declaredFields).filter(x -> x.getName().equals(propertyName)).findFirst();
+        if (fieldOptional.isPresent()) {
+            field = fieldOptional.get();
+            field.setAccessible(true);
+            FIELD_CACHE.putIfAbsent(key, field);
+        }
+
+        if (field == null) {
+            putInNegativeCache(key);
+            return null;
+        }
+        try {
+            return field.get(object);
         } catch (IllegalAccessException e) {
             throw new GraphQLException(e);
         }
@@ -247,6 +273,19 @@ public class PropertyDataFetcherHelper {
         return USE_NEGATIVE_CACHE.getAndSet(flag);
     }
 
+    private static boolean isNegativelyCached(String key) {
+        if (USE_NEGATIVE_CACHE.get()) {
+            return NEGATIVE_CACHE.containsKey(key);
+        }
+        return false;
+    }
+
+    private static void putInNegativeCache(String key) {
+        if (USE_NEGATIVE_CACHE.get()) {
+            NEGATIVE_CACHE.put(key, key);
+        }
+    }
+
     private static String mkKey(Object object, String propertyName) {
         return mkKey(object.getClass(), propertyName);
     }
@@ -269,15 +308,4 @@ public class PropertyDataFetcherHelper {
         return Comparator.comparingInt(Method::getParameterCount).reversed();
     }
 
-    @SuppressWarnings("serial")
-    private static class FastNoSuchMethodException extends NoSuchMethodException {
-        public FastNoSuchMethodException(String methodName) {
-            super(methodName);
-        }
-
-        @Override
-        public synchronized Throwable fillInStackTrace() {
-            return this;
-        }
-    }
 }
