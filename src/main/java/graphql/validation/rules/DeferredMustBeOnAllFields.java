@@ -17,7 +17,6 @@ import graphql.validation.ValidationErrorType;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +73,11 @@ public class DeferredMustBeOnAllFields extends AbstractRule {
         if (path == null) {
             path = Collections.emptyList();
         }
+
+        if (getValidationErrorCollector().containsValidationError(ValidationErrorType.FragmentCycle)) {
+            return;
+        }
+
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
                 List<Field> fields = fieldsByPath.getOrDefault(path, new ArrayList<>());
