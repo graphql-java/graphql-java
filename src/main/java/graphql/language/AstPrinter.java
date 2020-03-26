@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertTrue;
+import static graphql.util.EscapeUtil.escapeJsonString;
 import static java.lang.String.valueOf;
 import static java.util.stream.Collectors.joining;
 
@@ -472,7 +473,7 @@ public class AstPrinter {
         } else if (value instanceof FloatValue) {
             return valueOf(((FloatValue) value).getValue());
         } else if (value instanceof StringValue) {
-            return wrap("\"", valueOf(((StringValue) value).getValue()), "\"");
+            return wrap("\"", escapeJsonString(((StringValue) value).getValue()), "\"");
         } else if (value instanceof EnumValue) {
             return valueOf(((EnumValue) value).getName());
         } else if (value instanceof BooleanValue) {

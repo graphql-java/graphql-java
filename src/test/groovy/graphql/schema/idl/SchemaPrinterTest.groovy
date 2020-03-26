@@ -1430,5 +1430,36 @@ type Query {
 '''
     }
 
+    def "single line comments are properly escaped"() {
+        given:
+        def idl = """
+            type Query {
+              "$comment"
+              fieldX : String
+            }
+        """
+        def registry = new SchemaParser().parse(idl)
+        def runtimeWiring = newRuntimeWiring().build()
+        def options = SchemaGenerator.Options.defaultOptions()
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeDirectives(false)).print(schema)
+
+        then:
+        result == """type Query {
+  "$comment"
+  fieldX: String
+}
+"""
+
+        where:
+        _ | comment
+        _ | 'quotation-\\"'
+        _ | 'reverse-solidus-\\\\'
+        _ | 'backspace-\\b'
+        _ | 'formfeed-\\f'
+        _ | 'carriage-return-\\r'
+        _ | 'horizontal-tab-\\t'
+    }
 }
