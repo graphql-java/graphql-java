@@ -14,7 +14,6 @@ import graphql.schema.Coercing
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLDirective
-import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
@@ -36,13 +35,15 @@ import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLDirective.newDirective
+import static graphql.schema.GraphQLFieldDefinition.Builder
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 
 class TestUtil {
 
 
     static GraphQLSchema schemaWithInputType(GraphQLInputType inputType) {
         GraphQLArgument.Builder fieldArgument = newArgument().name("arg").type(inputType)
-        GraphQLFieldDefinition.Builder name = GraphQLFieldDefinition.newFieldDefinition()
+        Builder name = newFieldDefinition()
                 .name("name").type(GraphQLString).argument(fieldArgument)
         GraphQLObjectType queryType = GraphQLObjectType.newObject().name("query").field(name).build()
         new GraphQLSchema(queryType)
@@ -50,8 +51,9 @@ class TestUtil {
 
     static dummySchema = GraphQLSchema.newSchema()
             .query(GraphQLObjectType.newObject()
-            .name("QueryType")
-            .build())
+                    .name("QueryType")
+                    .field(newFieldDefinition().name("field").type(GraphQLString))
+                    .build())
             .build()
 
     static GraphQLSchema schemaFile(String fileName) {
