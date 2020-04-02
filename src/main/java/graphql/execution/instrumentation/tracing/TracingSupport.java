@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 
@@ -26,21 +27,23 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
 public class TracingSupport implements InstrumentationState {
 
     private final Instant startRequestTime;
-    private final long startRequestNanos;
+    private final long startRequestTimeStamp;
     private final ConcurrentLinkedQueue<Map<String, Object>> fieldData;
     private final Map<String, Object> parseMap = new LinkedHashMap<>();
     private final Map<String, Object> validationMap = new LinkedHashMap<>();
     private final boolean includeTrivialDataFetchers;
+    private final TimeUnit timeUnit;
 
     /**
      * The timer starts as soon as you create this object
      *
      * @param includeTrivialDataFetchers whether the trace trivial data fetchers
      */
-    public TracingSupport(boolean includeTrivialDataFetchers) {
+    public TracingSupport(boolean includeTrivialDataFetchers, TimeUnit timeUnit) {
         this.includeTrivialDataFetchers = includeTrivialDataFetchers;
-        startRequestNanos = System.nanoTime();
         startRequestTime = Instant.now();
+        startRequestTimeStamp = timeUnit.convert(System.nanoTime(),TimeUnit.NANOSECONDS);
+        this.timeUnit=timeUnit;
         fieldData = new ConcurrentLinkedQueue<>();
     }
 
@@ -69,11 +72,11 @@ public class TracingSupport implements InstrumentationState {
                 // nothing to do
             };
         }
-        long startFieldFetch = System.nanoTime();
+        long startFieldFetch = timeUnit.convert(System.nanoTime(),TimeUnit.NANOSECONDS);
         return () -> {
-            long now = System.nanoTime();
+            long now = timeUnit.convert(System.nanoTime(),TimeUnit.NANOSECONDS);;
             long duration = now - startFieldFetch;
-            long startOffset = startFieldFetch - startRequestNanos;
+            long startOffset = startFieldFetch - startRequestTimeStamp;
             ExecutionStepInfo executionStepInfo = dataFetchingEnvironment.getExecutionStepInfo();
 
             Map<String, Object> fetchMap = new LinkedHashMap<>();
@@ -109,11 +112,11 @@ public class TracingSupport implements InstrumentationState {
     }
 
     private TracingContext traceToMap(Map<String, Object> map) {
-        long start = System.nanoTime();
+        long start = timeUnit.convert(System.nanoTime(),TimeUnit.NANOSECONDS);;
         return () -> {
-            long now = System.nanoTime();
+            long now = timeUnit.convert(System.nanoTime(),TimeUnit.NANOSECONDS);;
             long duration = now - start;
-            long startOffset = now - startRequestNanos;
+            long startOffset = now - startRequestTimeStamp;
 
             map.put("startOffset", startOffset);
             map.put("duration", duration);
@@ -131,7 +134,7 @@ public class TracingSupport implements InstrumentationState {
         traceMap.put("version", 1L);
         traceMap.put("startTime", rfc3339(startRequestTime));
         traceMap.put("endTime", rfc3339(Instant.now()));
-        traceMap.put("duration", System.nanoTime() - startRequestNanos);
+        traceMap.put("duration", timeUnit.convert(System.nanoTime(),TimeUnit.NANOSECONDS) - startRequestTimeStamp);
         traceMap.put("parsing", copyMap(parseMap));
         traceMap.put("validation", copyMap(validationMap));
         traceMap.put("execution", executionData());

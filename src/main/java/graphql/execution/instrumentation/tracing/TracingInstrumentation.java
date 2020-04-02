@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenCompleted;
 
@@ -31,28 +32,35 @@ public class TracingInstrumentation extends SimpleInstrumentation {
     public static class Options {
         private final boolean includeTrivialDataFetchers;
 
-        private Options(boolean includeTrivialDataFetchers) {
+        private final TimeUnit timeUnit;
+
+        private Options(boolean includeTrivialDataFetchers, TimeUnit timeUnit) {
             this.includeTrivialDataFetchers = includeTrivialDataFetchers;
+            this.timeUnit=timeUnit;
         }
 
         public boolean isIncludeTrivialDataFetchers() {
             return includeTrivialDataFetchers;
         }
 
+        public TimeUnit getTimeUnit() {
+            return timeUnit;
+        }
+
         /**
-         * By default trivial data fetchers (those that simple pull data from an object into field) are included
-         * in tracing but you can control this behavior.
+         * In tracing, by default trivial data fetchers (those that simple pull data from an object into field) are included
+         * and time unit of result is TimeUnit.NANOSECONDS but you can control this behavior.
          *
          * @param flag the flag on whether to trace trivial data fetchers
-         *
-         * @return a new options object
+         * @param timeUnit the timeUnit of
+         * @return  a new options object
          */
-        public Options includeTrivialDataFetchers(boolean flag) {
-            return new Options(flag);
+        public Options newOptions(boolean flag, TimeUnit timeUnit) {
+            return new Options(flag,timeUnit);
         }
 
         public static Options newOptions() {
-            return new Options(true);
+            return new Options(true, TimeUnit.NANOSECONDS);
         }
 
     }
@@ -69,7 +77,7 @@ public class TracingInstrumentation extends SimpleInstrumentation {
 
     @Override
     public InstrumentationState createState() {
-        return new TracingSupport(options.includeTrivialDataFetchers);
+        return new TracingSupport(options.includeTrivialDataFetchers, options.timeUnit);
     }
 
     @Override

@@ -11,6 +11,8 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import spock.lang.Specification
 
+import java.util.concurrent.TimeUnit
+
 import static graphql.execution.instrumentation.tracing.TracingInstrumentation.Options.newOptions
 
 class TracingInstrumentationTest extends Specification {
@@ -126,7 +128,7 @@ class TracingInstrumentationTest extends Specification {
         }
 
         def instrumentation = new TracingInstrumentation(
-                newOptions().includeTrivialDataFetchers(false)) // defaults to true
+                newOptions().newOptions(false, TimeUnit.MICROSECONDS)) // defaults to true
 
         def graphQL = TestUtil.graphQL(spec, [Query: [hero: df]])
                 .queryExecutionStrategy(testExecutionStrategy)
