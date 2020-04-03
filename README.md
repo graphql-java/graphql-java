@@ -31,6 +31,10 @@ take the time to read it.
 This implementation is based on the [js reference implementation](https://github.com/graphql/graphql-js).
 For example the StarWarSchema and the tests (among a lot of other things) are simply adapted to the Java world.
 
+### GraphQL testing clients
+ - [Firecamp](https://firecamp.io/graphql)
+ - [GraphiQL](https://github.com/graphql/graphiql)
+
 ### License
 
 graphql-java is licensed under the MIT License. See [LICENSE](LICENSE.md) for details.
