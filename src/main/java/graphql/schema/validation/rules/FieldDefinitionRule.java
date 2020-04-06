@@ -1,0 +1,67 @@
+package graphql.schema.validation.rules;
+
+import graphql.schema.*;
+import graphql.schema.validation.SchemaValidationError;
+import graphql.schema.validation.SchemaValidationErrorCollector;
+import graphql.schema.validation.SchemaValidationErrorType;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class FieldDefinitionRule implements SchemaValidationRule{
+
+    //后期不使用白名单，而是直接判断是否是内省查询
+    private static final Set<String> instrospectionQuery=new HashSet<>();
+    static {
+        instrospectionQuery.add("IntrospectionQuery");
+    }
+
+    @Override
+    public void check(GraphQLFieldDefinition fieldDef, SchemaValidationErrorCollector validationErrorCollector) {
+
+    }
+
+    @Override
+    public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
+
+    }
+
+    @Override
+    public void check(List<GraphQLDirective> directives, SchemaValidationErrorCollector validationErrorCollector) {
+
+    }
+
+    @Override
+    public void check(GraphQLObjectType rootType, SchemaValidationErrorCollector validationErrorCollector) {
+        if(instrospectionQuery.contains(rootType.getName())){
+            return;
+        }
+
+        List<GraphQLFieldDefinition> fieldDefinitions = rootType.getFieldDefinitions();
+        travalGraphQLFieldDefinition(fieldDefinitions,validationErrorCollector);
+    }
+
+    private void travalGraphQLFieldDefinition(List<GraphQLFieldDefinition> fieldDefinitions, SchemaValidationErrorCollector validationErrorCollector) {
+        if(fieldDefinitions==null||fieldDefinitions.isEmpty()){
+            return;
+        }
+
+        for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
+            String fieldDefinitionName = fieldDefinition.getName();
+            if(fieldDefinitionName.length()>=2&&fieldDefinitionName.startsWith("__")){
+                SchemaValidationError schemaValidationError= new SchemaValidationError(SchemaValidationErrorType.FieldDefinitionError,
+                        String.format("Field \"%s\" must not begin with \"__\", which is reserved by GraphQL introspection.",fieldDefinitionName));
+                validationErrorCollector.addError(schemaValidationError);
+            }
+
+            GraphQLOutputType type = fieldDefinition.getType();
+            GraphQLUnmodifiedType graphQLUnmodifiedType = GraphQLTypeUtil.unwrapAll(type);
+            if(graphQLUnmodifiedType instanceof GraphQLObjectType){
+                List<GraphQLFieldDefinition> subFieldDefinitions = ((GraphQLObjectType) graphQLUnmodifiedType).getFieldDefinitions();
+                travalGraphQLFieldDefinition(subFieldDefinitions,validationErrorCollector);
+            }
+        }
+
+    }
+}

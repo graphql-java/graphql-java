@@ -4,6 +4,9 @@ import graphql.Scalars
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
+import graphql.schema.validation.rules.NoUnbrokenInputCycles
+import graphql.schema.validation.rules.ObjectsImplementInterfaces
+import graphql.schema.validation.rules.SchemaValidationRule
 import spock.lang.Specification
 
 class SchemaValidatorTest extends Specification {

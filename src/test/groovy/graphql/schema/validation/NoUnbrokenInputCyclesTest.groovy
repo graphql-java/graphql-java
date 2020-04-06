@@ -4,6 +4,7 @@ import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
+import graphql.schema.validation.rules.NoUnbrokenInputCycles
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean

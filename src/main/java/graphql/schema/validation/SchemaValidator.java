@@ -1,11 +1,8 @@
 package graphql.schema.validation;
 
 import graphql.Internal;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLFieldsContainer;
-import graphql.schema.GraphQLNamedType;
-import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLSchema;
+import graphql.schema.*;
+import graphql.schema.validation.rules.*;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -22,6 +19,8 @@ public class SchemaValidator {
     public SchemaValidator() {
         rules.add(new NoUnbrokenInputCycles());
         rules.add(new ObjectsImplementInterfaces());
+        rules.add(new SchemaDirectiveRule());
+        rules.add(new FieldDefinitionRule());
     }
 
     SchemaValidator(List<SchemaValidationRule> rules) {
@@ -37,14 +36,31 @@ public class SchemaValidator {
 
         checkTypes(schema, validationErrorCollector);
 
-        traverse(schema.getQueryType(), rules, validationErrorCollector);
+        checkDirectives(schema.getDirectives(),validationErrorCollector);
+        checkFieldDefinitions(schema.getQueryType(),validationErrorCollector);
+
+        traverse(schema.getQueryType(), validationErrorCollector);
         if (schema.isSupportingMutations()) {
-            traverse(schema.getMutationType(), rules, validationErrorCollector);
+            traverse(schema.getMutationType(),  validationErrorCollector);
         }
         if (schema.isSupportingSubscriptions()) {
-            traverse(schema.getSubscriptionType(), rules, validationErrorCollector);
+            traverse(schema.getSubscriptionType(),validationErrorCollector);
         }
         return validationErrorCollector.getErrors();
+    }
+
+    private void checkFieldDefinitions(GraphQLObjectType queryType, SchemaValidationErrorCollector validationErrorCollector) {
+        GraphQLObjectType thisQueryType=queryType;
+        for (SchemaValidationRule rule : rules) {
+            rule.check(thisQueryType,validationErrorCollector);
+        }
+    }
+
+    private void checkDirectives(List<GraphQLDirective> schemaDirectives, SchemaValidationErrorCollector validationErrorCollector) {
+        List<GraphQLDirective> thisDirectives=schemaDirectives;
+        for (SchemaValidationRule rule : rules) {
+            rule.check(thisDirectives,validationErrorCollector);
+        }
     }
 
     private void checkTypes(GraphQLSchema schema, SchemaValidationErrorCollector validationErrorCollector) {
@@ -56,7 +72,7 @@ public class SchemaValidator {
         });
     }
 
-    private void traverse(GraphQLOutputType root, List<SchemaValidationRule> rules, SchemaValidationErrorCollector validationErrorCollector) {
+    private void traverse(GraphQLOutputType root, SchemaValidationErrorCollector validationErrorCollector) {
         if (processed.contains(root)) {
             return;
         }
@@ -68,7 +84,7 @@ public class SchemaValidator {
                 for (SchemaValidationRule rule : rules) {
                     rule.check(fieldDefinition, validationErrorCollector);
                 }
-                traverse(fieldDefinition.getType(), rules, validationErrorCollector);
+                traverse(fieldDefinition.getType(), validationErrorCollector);
             }
         }
     }

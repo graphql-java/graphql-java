@@ -1,13 +1,10 @@
-package graphql.schema.validation;
+package graphql.schema.validation.rules;
 
-import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInputObjectField;
-import graphql.schema.GraphQLInputObjectType;
-import graphql.schema.GraphQLInputType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
-import graphql.schema.GraphQLType;
+import graphql.schema.*;
+import graphql.schema.validation.SchemaValidationError;
+import graphql.schema.validation.SchemaValidationErrorCollector;
+import graphql.schema.validation.SchemaValidationErrorType;
+import graphql.schema.validation.rules.SchemaValidationRule;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -26,6 +23,16 @@ public class NoUnbrokenInputCycles implements SchemaValidationRule {
 
     @Override
     public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
+    }
+
+    @Override
+    public void check(List<GraphQLDirective> directives, SchemaValidationErrorCollector validationErrorCollector) {
+
+    }
+
+    @Override
+    public void check(GraphQLObjectType rootType, SchemaValidationErrorCollector validationErrorCollector) {
+
     }
 
     @Override

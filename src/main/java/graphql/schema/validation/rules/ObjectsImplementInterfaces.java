@@ -1,13 +1,9 @@
-package graphql.schema.validation;
+package graphql.schema.validation.rules;
 
-import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLNamedOutputType;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLUnionType;
+import graphql.schema.*;
+import graphql.schema.validation.SchemaValidationError;
+import graphql.schema.validation.SchemaValidationErrorCollector;
+import graphql.schema.validation.rules.SchemaValidationRule;
 
 import java.util.List;
 import java.util.Objects;
@@ -32,11 +28,21 @@ public class ObjectsImplementInterfaces implements SchemaValidationRule {
     @Override
     public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
         if (type instanceof GraphQLObjectType) {
-            check((GraphQLObjectType) type, validationErrorCollector);
+            checkGraphQLObjectType((GraphQLObjectType) type, validationErrorCollector);
         }
     }
 
-    private void check(GraphQLObjectType objectType, SchemaValidationErrorCollector validationErrorCollector) {
+    @Override
+    public void check(List<GraphQLDirective> directives, SchemaValidationErrorCollector validationErrorCollector) {
+
+    }
+
+    @Override
+    public void check(GraphQLObjectType rootType, SchemaValidationErrorCollector validationErrorCollector) {
+
+    }
+
+    private void checkGraphQLObjectType(GraphQLObjectType objectType, SchemaValidationErrorCollector validationErrorCollector) {
         List<GraphQLNamedOutputType> interfaces = objectType.getInterfaces();
         interfaces.forEach(interfaceType -> {
             // we have resolved the interfaces at this point and hence the cast is ok

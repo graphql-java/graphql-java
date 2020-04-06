@@ -4,6 +4,7 @@ import graphql.TypeResolutionEnvironment
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.TypeResolver
+import graphql.schema.validation.rules.ObjectsImplementInterfaces
 import spock.lang.Specification
 
 import static SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces
