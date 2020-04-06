@@ -30,6 +30,7 @@ import graphql.validation.rules.UniqueOperationNames;
 import graphql.validation.rules.VariableDefaultValuesOfCorrectType;
 import graphql.validation.rules.VariableTypesMatchRule;
 import graphql.validation.rules.VariablesAreInputTypes;
+import graphql.validation.rules.UniqueArgumentNamesRule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -120,6 +121,9 @@ public class Validator {
 
         DeferredMustBeOnAllFields deferredMustBeOnAllFields = new DeferredMustBeOnAllFields(validationContext, validationErrorCollector);
         rules.add(deferredMustBeOnAllFields);
+
+        UniqueArgumentNamesRule uniqueArgumentNamesRule =new UniqueArgumentNamesRule(validationContext, validationErrorCollector);
+        rules.add(uniqueArgumentNamesRule);
 
         return rules;
     }
