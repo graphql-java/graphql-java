@@ -19,11 +19,13 @@ import graphql.validation.SpecValidationSchemaPojos.Human;
 import java.util.HashSet;
 import java.util.Set;
 
+import static graphql.Scalars.GraphQLString;
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD;
 import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_SPREAD;
 import static graphql.introspection.Introspection.DirectiveLocation.INLINE_FRAGMENT;
 import static graphql.introspection.Introspection.DirectiveLocation.QUERY;
+import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLNonNull.nonNull;
 import static java.util.Collections.singletonList;
@@ -157,7 +159,7 @@ public class SpecValidationSchema {
 
     public static final GraphQLObjectType queryRoot = GraphQLObjectType.newObject()
             .name("QueryRoot")
-            .field(newFieldDefinition().name("dog").type(dog))
+            .field(newFieldDefinition().name("dog").type(dog).argument(newArgument().name("arg1").type(GraphQLString).build()))
             .field(newFieldDefinition().name("pet").type(pet))
             .build();
 
