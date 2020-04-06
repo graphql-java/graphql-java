@@ -1,6 +1,5 @@
 package graphql.validation;
 
-
 import graphql.Internal;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
@@ -30,6 +29,7 @@ import graphql.validation.rules.UniqueOperationNames;
 import graphql.validation.rules.VariableDefaultValuesOfCorrectType;
 import graphql.validation.rules.VariableTypesMatchRule;
 import graphql.validation.rules.VariablesAreInputTypes;
+import graphql.validation.rules.experimental.overlappingfieldsmerge.OverlappingFieldsCanBeMergedEx;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +39,6 @@ public class Validator {
 
     public List<ValidationError> validateDocument(GraphQLSchema schema, Document document) {
         ValidationContext validationContext = new ValidationContext(schema, document);
-
 
         ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector();
         List<AbstractRule> rules = createRules(validationContext, validationErrorCollector);
@@ -81,8 +80,15 @@ public class Validator {
         NoUnusedVariables noUnusedVariables = new NoUnusedVariables(validationContext, validationErrorCollector);
         rules.add(noUnusedVariables);
 
-        OverlappingFieldsCanBeMerged overlappingFieldsCanBeMerged = new OverlappingFieldsCanBeMerged(validationContext, validationErrorCollector);
-        rules.add(overlappingFieldsCanBeMerged);
+        if (System.getProperty("graphql.experimental.validation.overlappingFieldsCanBeMerged", Boolean.FALSE.toString()).equals(Boolean.TRUE.toString())) {
+            OverlappingFieldsCanBeMergedEx overlappingFieldsCanBeMerged =
+                    new OverlappingFieldsCanBeMergedEx(validationContext, validationErrorCollector);
+            rules.add(overlappingFieldsCanBeMerged);
+        } else {
+            OverlappingFieldsCanBeMerged overlappingFieldsCanBeMerged =
+                    new OverlappingFieldsCanBeMerged(validationContext, validationErrorCollector);
+            rules.add(overlappingFieldsCanBeMerged);
+        }
 
         PossibleFragmentSpreads possibleFragmentSpreads = new PossibleFragmentSpreads(validationContext, validationErrorCollector);
         rules.add(possibleFragmentSpreads);

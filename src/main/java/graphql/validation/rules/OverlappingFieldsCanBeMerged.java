@@ -27,6 +27,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 import static graphql.schema.GraphQLTypeUtil.isEnum;
 import static graphql.schema.GraphQLTypeUtil.isList;
@@ -45,8 +46,15 @@ import static java.lang.String.format;
  */
 public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
-
     private final List<FieldPair> alreadyChecked = new ArrayList<>();
+
+    private final BiFunction<Field, Field, Boolean> alreadyCheckedOtherwiseAdd = (fieldA, fieldB) -> {
+        boolean checked = isAlreadyChecked(fieldA, fieldB);
+        if (!checked) {
+            alreadyChecked.add(new FieldPair(fieldA, fieldB));
+        }
+        return checked;
+    };
 
     public OverlappingFieldsCanBeMerged(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
@@ -69,7 +77,10 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             List<FieldAndType> fieldAndTypes = fieldMap.get(name);
             for (int i = 0; i < fieldAndTypes.size(); i++) {
                 for (int j = i + 1; j < fieldAndTypes.size(); j++) {
-                    Conflict conflict = findConflict(name, fieldAndTypes.get(i), fieldAndTypes.get(j));
+                    Conflict conflict = findConflict(alreadyCheckedOtherwiseAdd, name, fieldAndTypes.get(i), fieldAndTypes.get(j));
+                    if (conflict == null) {
+                        conflict = findConflictInChildSelections(name, fieldAndTypes.get(i), fieldAndTypes.get(j));
+                    }
                     if (conflict != null) {
                         result.add(conflict);
                     }
@@ -92,15 +103,14 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
     @SuppressWarnings("ConstantConditions")
-    private Conflict findConflict(String responseName, FieldAndType fieldAndTypeA, FieldAndType fieldAndTypeB) {
+    public static Conflict findConflict(BiFunction<Field, Field, Boolean> alreadyCheckedFunction, String responseName, FieldAndType fieldAndTypeA, FieldAndType fieldAndTypeB) {
 
         Field fieldA = fieldAndTypeA.field;
         Field fieldB = fieldAndTypeB.field;
 
-        if (isAlreadyChecked(fieldA, fieldB)) {
+        if (alreadyCheckedFunction.apply(fieldA, fieldB)) {
             return null;
         }
-        alreadyChecked.add(new FieldPair(fieldA, fieldB));
 
         String fieldNameA = fieldA.getName();
         String fieldNameB = fieldB.getName();
@@ -108,7 +118,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         GraphQLType typeA = fieldAndTypeA.graphQLType;
         GraphQLType typeB = fieldAndTypeB.graphQLType;
 
-        Conflict conflict = checkListAndNonNullConflict(responseName,fieldAndTypeA,fieldAndTypeB);
+        Conflict conflict = checkListAndNonNullConflict(responseName, fieldAndTypeA, fieldAndTypeB);
         if (conflict != null) {
             return conflict;
         }
@@ -147,6 +157,18 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             String reason = format("%s: they have differing arguments", responseName);
             return new Conflict(responseName, reason, fieldA, fieldB);
         }
+        return null;
+    }
+
+    private Conflict findConflictInChildSelections(
+            String responseName, FieldAndType fieldAndTypeA, FieldAndType fieldAndTypeB
+    ) {
+        Field fieldA = fieldAndTypeA.field;
+        Field fieldB = fieldAndTypeB.field;
+
+        GraphQLType typeA = unwrapAll(fieldAndTypeA.graphQLType);
+        GraphQLType typeB = unwrapAll(fieldAndTypeB.graphQLType);
+
         SelectionSet selectionSet1 = fieldA.getSelectionSet();
         SelectionSet selectionSet2 = fieldB.getSelectionSet();
         if (selectionSet1 != null && selectionSet2 != null) {
@@ -167,7 +189,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         return null;
     }
 
-    private Conflict checkListAndNonNullConflict(String responseName, FieldAndType fieldAndTypeA, FieldAndType fieldAndTypeB) {
+    private static Conflict checkListAndNonNullConflict(String responseName, FieldAndType fieldAndTypeA, FieldAndType fieldAndTypeB) {
 
         GraphQLType typeA = fieldAndTypeA.graphQLType;
         GraphQLType typeB = fieldAndTypeB.graphQLType;
@@ -194,7 +216,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         return null;
     }
 
-    private boolean checkScalarAndEnumConflict(GraphQLType typeA, GraphQLType typeB) {
+    private static boolean checkScalarAndEnumConflict(GraphQLType typeA, GraphQLType typeB) {
         if (isScalar(typeA) || isScalar(typeB)) {
             if (!sameType(typeA, typeB)) {
                 return true;
@@ -208,14 +230,14 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         return false;
     }
 
-    private Conflict mkNotSameTypeError(String responseName, Field fieldA, Field fieldB, GraphQLType typeA, GraphQLType typeB) {
+    private static Conflict mkNotSameTypeError(String responseName, Field fieldA, Field fieldB, GraphQLType typeA, GraphQLType typeB) {
         String name1 = typeA != null ? simplePrint(typeA) : "null";
         String name2 = typeB != null ? simplePrint(typeB) : "null";
         String reason = format("%s: they return differing types %s and %s", responseName, name1, name2);
         return new Conflict(responseName, reason, fieldA, fieldB);
     }
 
-    private List<Field> collectFields(List<Conflict> conflicts) {
+    private static List<Field> collectFields(List<Conflict> conflicts) {
         List<Field> result = new ArrayList<>();
         for (Conflict conflict : conflicts) {
             result.addAll(conflict.fields);
@@ -223,7 +245,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         return result;
     }
 
-    private String joinReasons(List<Conflict> conflicts) {
+    private static String joinReasons(List<Conflict> conflicts) {
         StringBuilder result = new StringBuilder();
         result.append("(");
         for (Conflict conflict : conflicts) {
@@ -236,7 +258,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
     @SuppressWarnings("SimplifiableIfStatement")
-    private boolean sameType(GraphQLType type1, GraphQLType type2) {
+    private static boolean sameType(GraphQLType type1, GraphQLType type2) {
         if (type1 == null || type2 == null) {
             return true;
         }
@@ -244,7 +266,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
     @SuppressWarnings("SimplifiableIfStatement")
-    private boolean sameValue(Value value1, Value value2) {
+    private static boolean sameValue(Value value1, Value value2) {
         if (value1 == null && value2 == null) {
             return true;
         }
@@ -257,7 +279,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         return new AstComparator().isEqual(value1, value2);
     }
 
-    private boolean sameArguments(List<Argument> arguments1, List<Argument> arguments2) {
+    private static boolean sameArguments(List<Argument> arguments1, List<Argument> arguments2) {
         if (arguments1.size() != arguments2.size()) {
             return false;
         }
@@ -273,7 +295,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         return true;
     }
 
-    private Argument findArgumentByName(String name, List<Argument> arguments) {
+    private static Argument findArgumentByName(String name, List<Argument> arguments) {
         for (Argument argument : arguments) {
             if (argument.getName().equals(name)) {
                 return argument;
@@ -347,10 +369,10 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         }
     }
 
-    private static class Conflict {
-        final String responseName;
-        final String reason;
-        final List<Field> fields = new ArrayList<>();
+    public static class Conflict {
+        public final String responseName;
+        public final String reason;
+        public final List<Field> fields = new ArrayList<>();
 
         public Conflict(String responseName, String reason, Field field1, Field field2) {
             this.responseName = responseName;
@@ -368,10 +390,10 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
 
-    private static class FieldAndType {
-        final Field field;
-        final GraphQLType graphQLType;
-        final GraphQLType parentType;
+    public static class FieldAndType {
+        public final Field field;
+        public final GraphQLType graphQLType;
+        public final GraphQLType parentType;
 
         public FieldAndType(Field field, GraphQLType graphQLType, GraphQLType parentType) {
             this.field = field;
