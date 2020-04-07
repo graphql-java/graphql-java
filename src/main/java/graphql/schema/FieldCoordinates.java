@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.AssertException;
 import graphql.PublicApi;
 
 import java.util.Objects;
@@ -14,12 +15,14 @@ import static graphql.Assert.assertValidName;
 @PublicApi
 public class FieldCoordinates {
 
+    private final boolean systemCoordinates;
     private final String typeName;
     private final String fieldName;
 
-    private FieldCoordinates(String typeName, String fieldName) {
+    private FieldCoordinates(String typeName, String fieldName, boolean systemCoordinates) {
         this.typeName = typeName;
         this.fieldName = fieldName;
+        this.systemCoordinates = systemCoordinates;
     }
 
     public String getTypeName() {
@@ -28,6 +31,25 @@ public class FieldCoordinates {
 
     public String getFieldName() {
         return fieldName;
+    }
+
+
+    /**
+     * Checks the validity of the field coordinate names.  The validity checks vary by coordinate type.  Standard
+     * coordinates validate both the {@code typeName} and {@code fieldName}, while system coordinates do not have
+     * a parent so they only validate the {@code fieldName}.
+     *
+     * @throws AssertException if the coordinates are NOT valid; otherwise, returns normally.
+     */
+    public void assertValidNames() throws AssertException {
+        if (systemCoordinates) {
+            assertTrue((null != fieldName) &&
+                    fieldName.startsWith("__"), "Only __ system fields can be addressed without a parent type");
+            assertValidName(fieldName);
+        } else {
+            assertValidName(typeName);
+            assertValidName(fieldName);
+        }
     }
 
     @Override
@@ -62,7 +84,9 @@ public class FieldCoordinates {
      * @return new field coordinates represented by the two parameters
      */
     public static FieldCoordinates coordinates(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
-        return new FieldCoordinates(parentType.getName(), fieldDefinition.getName());
+        final String parentTypeName = parentType.getName();
+        return new FieldCoordinates(parentTypeName, fieldDefinition.getName(),
+                (null == parentTypeName) || parentTypeName.isEmpty());
     }
 
     /**
@@ -74,29 +98,7 @@ public class FieldCoordinates {
      * @return new field coordinates represented by the two parameters
      */
     public static FieldCoordinates coordinates(String parentType, String fieldName) {
-        return coordinates(parentType, fieldName, true);
-    }
-
-    /**
-     * Creates new field coordinates.
-     *
-     * Note:  Whether or not validation is run depends on the {@code validate} boolean flag.  This method should only
-     *   be used in non-validation mode in cases where it's known that the values passed have been previously
-     *   validated.  That is, when those values are from objects such as {@code GraphQLFieldDefinition},
-     *   {@code GraphQLNamedOutputType}, etc.  The reason for this is to optimize the creation of the FieldCoordinates
-     *   object as validation can have a large impact on performance.
-     *
-     * @param parentType the container of the field
-     * @param fieldName  the field name
-     *
-     * @return new field coordinates represented by the two parameters
-     */
-    public static FieldCoordinates coordinates(String parentType, String fieldName, boolean validate) {
-        if (validate) {
-            assertValidName(parentType);
-            assertValidName(fieldName);
-        }
-        return new FieldCoordinates(parentType, fieldName);
+        return new FieldCoordinates(parentType, fieldName, false);
     }
 
     /**
@@ -108,28 +110,6 @@ public class FieldCoordinates {
      * @return the coordinates
      */
     public static FieldCoordinates systemCoordinates(String fieldName) {
-        return systemCoordinates(fieldName, true);
-    }
-
-    /**
-     * The exception to the general rule is the system __xxxx Introspection fields which have no parent type and
-     * are able to be specified on any type.
-     *
-     * Note:  Whether or not validation is run depends on the {@code validate} boolean flag.  This method should only
-     *   be used in non-validation mode in cases where it's known that the values passed have been previously
-     *   validated.  That is, when those values are from objects such as {@code GraphQLFieldDefinition},
-     *   {@code GraphQLNamedOutputType}, etc.  The reason for this is to optimize the creation of the FieldCoordinates
-     *   object as validation can have a large impact on performance.
-     *
-     * @param fieldName the name of the system field which MUST start with __
-     *
-     * @return the coordinates
-     */
-    public static FieldCoordinates systemCoordinates(String fieldName, boolean validate) {
-        if (validate) {
-            assertTrue(fieldName.startsWith("__"), "Only __ system fields can be addressed without a parent type");
-            assertValidName(fieldName);
-        }
-        return new FieldCoordinates(null, fieldName);
+        return new FieldCoordinates(null, fieldName, true);
     }
 }
