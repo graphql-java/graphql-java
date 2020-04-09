@@ -84,9 +84,7 @@ public class FieldCoordinates {
      * @return new field coordinates represented by the two parameters
      */
     public static FieldCoordinates coordinates(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
-        final String parentTypeName = parentType.getName();
-        return new FieldCoordinates(parentTypeName, fieldDefinition.getName(),
-                (null == parentTypeName) || parentTypeName.isEmpty());
+        return new FieldCoordinates(parentType.getName(), fieldDefinition.getName(), false);
     }
 
     /**
