@@ -3,26 +3,7 @@ package graphql.introspection;
 public interface IntrospectionQuery {
     String INTROSPECTION_QUERY_NAME = "IntrospectionQuery";
 
-    String INTROSPECTION_QUERY = "\n" +
-            "  query " + INTROSPECTION_QUERY_NAME + "{\n" +
-            "    __schema {\n" +
-            "      queryType { name }\n" +
-            "      mutationType { name }\n" +
-            "      subscriptionType { name }\n" +
-            "      types {\n" +
-            "        ...FullType\n" +
-            "      }\n" +
-            "      directives {\n" +
-            "        name\n" +
-            "        description\n" +
-            "        locations\n" +
-            "        args {\n" +
-            "          ...InputValue\n" +
-            "        }\n" +
-            "      }\n" +
-            "    }\n" +
-            "  }\n" +
-            "\n" +
+    String INTROSPECTION_QUERY_FRAGMENTS =
             "  fragment FullType on __Type {\n" +
             "    kind\n" +
             "    name\n" +
@@ -101,4 +82,29 @@ public interface IntrospectionQuery {
             "    }\n" +
             "  }\n" +
             "\n";
+
+    String INTROSPECTION_QUERY_SCHEMA_SNIPPET =
+                    "      queryType { name }\n" +
+                    "      mutationType { name }\n" +
+                    "      subscriptionType { name }\n" +
+                    "      types {\n" +
+                    "        ...FullType\n" +
+                    "      }\n" +
+                    "      directives {\n" +
+                    "        name\n" +
+                    "        description\n" +
+                    "        locations\n" +
+                    "        args {\n" +
+                    "          ...InputValue\n" +
+                    "        }\n" +
+                    "      }\n";
+
+    String INTROSPECTION_QUERY = "\n" +
+            "  query " + INTROSPECTION_QUERY_NAME + "{\n" +
+            "    __schema {\n" +
+                   INTROSPECTION_QUERY_SCHEMA_SNIPPET +
+            "    }\n" +
+            "  }\n" +
+            "\n" +
+               INTROSPECTION_QUERY_FRAGMENTS;
 }
