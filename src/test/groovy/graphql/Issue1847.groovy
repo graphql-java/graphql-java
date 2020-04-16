@@ -9,7 +9,7 @@ class Issue1847 extends Specification {
                     list(filter : Type) : String 
                 }
                 input TypeWithCircularReference {
-                    circularField : Type
+                    circularField : TypeWithCircularReference
                 }
                 input Type {
                     field: String
