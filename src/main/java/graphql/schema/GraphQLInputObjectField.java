@@ -170,12 +170,18 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         return "GraphQLInputObjectField{" +
                 "name='" + name + '\'' +
                 ", description='" + description + '\'' +
-                ", originalType=" + originalType +
+                ", originalType=" + inputTypeToStringAvoidingCircularReference(originalType) +
                 ", defaultValue=" + defaultValue +
                 ", definition=" + definition +
                 ", directives=" + directives +
-                ", replacedType=" + replacedType +
+                ", replacedType=" + inputTypeToStringAvoidingCircularReference(replacedType) +
                 '}';
+    }
+
+    private static Object inputTypeToStringAvoidingCircularReference(GraphQLInputType graphQLInputType) {
+        return (graphQLInputType instanceof GraphQLInputObjectType)
+                ? String.format("[%s]", GraphQLInputObjectType.class.getSimpleName())
+                : graphQLInputType;
     }
 
     public static Builder newInputObjectField(GraphQLInputObjectField existing) {
