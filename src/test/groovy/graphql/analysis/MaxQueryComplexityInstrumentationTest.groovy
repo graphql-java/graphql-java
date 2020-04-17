@@ -189,6 +189,30 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
         test == true
         notThrown(Exception)
     }
+
+    def "complexity with default query variables"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                hello(name: String): String
+            }            
+        """)
+        def query = createQuery("""
+            query Hello(\$name:String = "Someone") {
+                hello(name: \$name)
+            } 
+            """)
+
+        MaxQueryComplexityInstrumentation queryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(0)
+        ExecutionInput executionInput = Mock(ExecutionInput)
+        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
+        InstrumentationContext instrumentationContext = queryComplexityInstrumentation.beginValidation(validationParameters)
+        when:
+        instrumentationContext.onCompleted(null, null)
+        then:
+        def e = thrown(AbortExecutionException)
+        e.message == "maximum query complexity exceeded 1 > 0"
+    }
 }
 
 
