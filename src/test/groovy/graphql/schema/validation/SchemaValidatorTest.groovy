@@ -6,6 +6,7 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.validation.exception.SchemaValidationErrorCollector
 import graphql.schema.validation.rules.DirectiveRule
+import graphql.schema.validation.rules.FieldDefinitionRule
 import graphql.schema.validation.rules.NoUnbrokenInputCycles
 import graphql.schema.validation.rules.ObjectsImplementInterfaces
 import graphql.schema.validation.rules.SchemaValidationRule
@@ -19,10 +20,11 @@ class SchemaValidatorTest extends Specification {
         def validator = new SchemaValidator()
         def rules = validator.rules
         then:
-        rules.size() == 3
+        rules.size() == 4
         rules[0] instanceof NoUnbrokenInputCycles
         rules[1] instanceof ObjectsImplementInterfaces
         rules[2] instanceof DirectiveRule
+        rules[3] instanceof FieldDefinitionRule
     }
 
     def "rules are used"() {

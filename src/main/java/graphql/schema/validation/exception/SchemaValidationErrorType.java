@@ -4,5 +4,6 @@ public enum SchemaValidationErrorType {
 
     UnbrokenInputCycle,
     ObjectDoesNotImplementItsInterfaces,
-    DirectiveInvalidError
+    DirectiveInvalidError,
+    FieldDefinitionError
 }

@@ -12,6 +12,8 @@ import graphql.schema.validation.rules.DirectiveRule;
 import graphql.schema.validation.rules.NoUnbrokenInputCycles;
 import graphql.schema.validation.rules.ObjectsImplementInterfaces;
 import graphql.schema.validation.rules.SchemaValidationRule;
+import graphql.schema.validation.rules.FieldDefinitionRule;
+
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -29,6 +31,7 @@ public class SchemaValidator {
         rules.add(new NoUnbrokenInputCycles());
         rules.add(new ObjectsImplementInterfaces());
         rules.add(new DirectiveRule());
+        rules.add(new FieldDefinitionRule());
     }
 
     SchemaValidator(List<SchemaValidationRule> rules) {
