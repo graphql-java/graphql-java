@@ -70,7 +70,7 @@ import static graphql.execution.instrumentation.DocumentAndVariables.newDocument
  * object type given a interface or union type.
  * </li>
  *
- * <li>{@link graphql.schema.validation.InvalidSchemaException} - is thrown if the schema is not valid when built via
+ * <li>{@link graphql.schema.validation.exception.InvalidSchemaException} - is thrown if the schema is not valid when built via
  * {@link graphql.schema.GraphQLSchema.Builder#build()}
  * </li>
  *
