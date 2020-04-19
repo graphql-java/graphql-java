@@ -25,7 +25,7 @@ public class FieldDefinitionRule implements SchemaValidationRule {
         }
 
         List<GraphQLFieldDefinition> fieldDefinitions = rootType.getFieldDefinitions();
-        travalGraphQLFieldDefinition(fieldDefinitions,validationErrorCollector);
+//        travalGraphQLFieldDefinition(fieldDefinitions,validationErrorCollector);
     }
 
     @Override
