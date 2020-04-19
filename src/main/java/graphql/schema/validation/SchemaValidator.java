@@ -61,7 +61,7 @@ public class SchemaValidator {
         List<GraphQLNamedType> types = schema.getAllTypesAsList();
         types.forEach(type -> {
             for (SchemaValidationRule rule : rules) {
-                rule.check(type, validationErrorCollector);
+                rule.check(schema, validationErrorCollector);
             }
         });
     }
