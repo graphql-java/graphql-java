@@ -16,27 +16,27 @@ public class DirectiveRule implements SchemaValidationRule {
 
     @Override
     public void check(GraphQLSchema schema, SchemaValidationErrorCollector validationErrorCollector) {
-        List<GraphQLDirective> directives = schema.getDirectives();
-        if (directives == null || directives.isEmpty()) {
-            return;
-        }
-
-        Set<String> directivesName = new HashSet<>();
-        for (GraphQLDirective directive : directives) {
-            String directiveName = directive.getName();
-            if (directiveName.length() >= 2 && directiveName.startsWith("__")) {
-                SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.DirectiveInvalidError,
-                        String.format("Directive \"%s\" must not begin with \"__\", which is reserved by GraphQL introspection.", directiveName));
-                validationErrorCollector.addError(schemaValidationError);
-            }
-
-
-            if (directivesName.contains(directiveName)) {
-                SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.DirectiveInvalidError,
-                        String.format("All directives within a GraphQL schema must have unique names. directive named  \"%s\" is already define.", directiveName));
-                validationErrorCollector.addError(schemaValidationError);
-            }
-            directivesName.add(directiveName);
-        }
+//        List<GraphQLDirective> directives = schema.getDirectives();
+//        if (directives == null || directives.isEmpty()) {
+//            return;
+//        }
+//
+//        Set<String> directivesName = new HashSet<>();
+//        for (GraphQLDirective directive : directives) {
+//            String directiveName = directive.getName();
+//            if (directiveName.length() >= 2 && directiveName.startsWith("__")) {
+//                SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.DirectiveInvalidError,
+//                        String.format("Directive \"%s\" must not begin with \"__\", which is reserved by GraphQL introspection.", directiveName));
+//                validationErrorCollector.addError(schemaValidationError);
+//            }
+//
+//
+//            if (directivesName.contains(directiveName)) {
+//                SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.DirectiveInvalidError,
+//                        String.format("All directives within a GraphQL schema must have unique names. directive named  \"%s\" is already define.", directiveName));
+//                validationErrorCollector.addError(schemaValidationError);
+//            }
+//            directivesName.add(directiveName);
+//        }
     }
 }
