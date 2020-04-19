@@ -1,12 +1,16 @@
-package graphql.schema.validation
+package graphql.schema.validation.rules
 
 import graphql.TypeResolutionEnvironment
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.TypeResolver
+import graphql.schema.validation.exception.SchemaValidationError
+import graphql.schema.validation.exception.SchemaValidationErrorCollector
+import graphql.schema.validation.exception.SchemaValidationErrorType
+
 import spock.lang.Specification
 
-import static SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces
+
 import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
@@ -80,20 +84,20 @@ class ObjectsImplementInterfacesTest extends Specification {
 
         then:
 
-        errorCollector.containsValidationError(ObjectDoesNotImplementItsInterfaces)
+        errorCollector.containsValidationError(SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces)
         def errors = errorCollector.getErrors()
         errors.size() == 6
-        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
+        errors.contains(new SchemaValidationError(SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'friends' is missing"))
-        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
+        errors.contains(new SchemaValidationError(SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'age' is defined as 'String' type and not as 'Int' type"))
-        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
+        errors.contains(new SchemaValidationError(SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'argField1' argument 'arg1' is defined differently"))
-        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
+        errors.contains(new SchemaValidationError(SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'argField1' argument 'arg3' is defined differently"))
-        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
+        errors.contains(new SchemaValidationError(SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'argField1' argument 'arg4' is defined differently"))
-        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
+        errors.contains(new SchemaValidationError(SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'argField2' has a different number of arguments"))
     }
 

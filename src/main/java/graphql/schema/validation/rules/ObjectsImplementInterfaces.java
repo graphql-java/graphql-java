@@ -1,13 +1,8 @@
-package graphql.schema.validation;
+package graphql.schema.validation.rules;
 
-import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLNamedOutputType;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLUnionType;
+import graphql.schema.*;
+import graphql.schema.validation.exception.SchemaValidationError;
+import graphql.schema.validation.exception.SchemaValidationErrorCollector;
 
 import java.util.List;
 import java.util.Objects;
@@ -16,7 +11,7 @@ import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
-import static graphql.schema.validation.SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces;
+import static graphql.schema.validation.exception.SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces;
 import static java.lang.String.format;
 
 /**
@@ -25,18 +20,22 @@ import static java.lang.String.format;
  */
 public class ObjectsImplementInterfaces implements SchemaValidationRule {
 
-    @Override
-    public void check(GraphQLFieldDefinition fieldDef, SchemaValidationErrorCollector validationErrorCollector) {
-    }
 
     @Override
-    public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
-        if (type instanceof GraphQLObjectType) {
-            check((GraphQLObjectType) type, validationErrorCollector);
+    public void check(GraphQLSchema schema, SchemaValidationErrorCollector validationErrorCollector) {
+        List<GraphQLNamedType> types = schema.getAllTypesAsList();
+        for (GraphQLNamedType type : types) {
+            check(type, validationErrorCollector);
         }
     }
 
-    private void check(GraphQLObjectType objectType, SchemaValidationErrorCollector validationErrorCollector) {
+    public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
+        if (type instanceof GraphQLObjectType) {
+            checkGraphQLObjectType((GraphQLObjectType) type, validationErrorCollector);
+        }
+    }
+
+    private void checkGraphQLObjectType(GraphQLObjectType objectType, SchemaValidationErrorCollector validationErrorCollector) {
         List<GraphQLNamedOutputType> interfaces = objectType.getInterfaces();
         interfaces.forEach(interfaceType -> {
             // we have resolved the interfaces at this point and hence the cast is ok

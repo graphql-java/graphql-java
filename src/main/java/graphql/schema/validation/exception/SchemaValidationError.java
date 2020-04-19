@@ -1,4 +1,4 @@
-package graphql.schema.validation;
+package graphql.schema.validation.exception;
 
 import static graphql.Assert.assertNotNull;
 

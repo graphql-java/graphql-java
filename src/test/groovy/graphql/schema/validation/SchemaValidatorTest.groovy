@@ -4,6 +4,11 @@ import graphql.Scalars
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
+import graphql.schema.validation.exception.SchemaValidationErrorCollector
+import graphql.schema.validation.rules.NoUnbrokenInputCyclesRule
+import graphql.schema.validation.rules.ObjectsImplementInterfaces
+import graphql.schema.validation.rules.SchemaValidationRule
+
 import spock.lang.Specification
 
 class SchemaValidatorTest extends Specification {
@@ -15,7 +20,7 @@ class SchemaValidatorTest extends Specification {
         def rules = validator.rules
         then:
         rules.size() == 2
-        rules[0] instanceof NoUnbrokenInputCycles
+        rules[0] instanceof NoUnbrokenInputCyclesRule
         rules[1] instanceof ObjectsImplementInterfaces
     }
 
@@ -32,7 +37,7 @@ class SchemaValidatorTest extends Specification {
         validator.validateSchema(schema)
 
         then:
-        1 * dummyRule.check(queryType, _ as SchemaValidationErrorCollector)
+        1 * dummyRule.check(schema, _ as SchemaValidationErrorCollector)
     }
 
     def "query fields are checked"() {
@@ -53,7 +58,7 @@ class SchemaValidatorTest extends Specification {
         validator.validateSchema(schema)
 
         then:
-        1 * dummyRule.check(field, _ as SchemaValidationErrorCollector)
+        1 * dummyRule.check(schema, _ as SchemaValidationErrorCollector)
     }
 
     def "mutation fields are checked"() {
@@ -78,7 +83,7 @@ class SchemaValidatorTest extends Specification {
         validator.validateSchema(schema)
 
         then:
-        1 * dummyRule.check(field, _ as SchemaValidationErrorCollector)
+        1 * dummyRule.check(schema, _ as SchemaValidationErrorCollector)
     }
 
     def "subscription fields are checked"() {
@@ -103,7 +108,7 @@ class SchemaValidatorTest extends Specification {
         validator.validateSchema(schema)
 
         then:
-        1 * dummyRule.check(field, _ as SchemaValidationErrorCollector)
+        1 * dummyRule.check(schema, _ as SchemaValidationErrorCollector)
     }
 
 }
