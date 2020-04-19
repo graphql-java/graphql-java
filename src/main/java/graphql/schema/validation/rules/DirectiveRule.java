@@ -45,8 +45,4 @@ public class DirectiveRule implements SchemaValidationRule {
 
     }
 
-    @Override
-    public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
-
-    }
 }

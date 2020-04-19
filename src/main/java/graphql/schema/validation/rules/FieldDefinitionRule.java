@@ -33,10 +33,6 @@ public class FieldDefinitionRule implements SchemaValidationRule {
 
     }
 
-    @Override
-    public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
-
-    }
 
     private void travalGraphQLFieldDefinition(List<GraphQLFieldDefinition> fieldDefinitions, SchemaValidationErrorCollector validationErrorCollector) {
         if(fieldDefinitions==null||fieldDefinitions.isEmpty()){

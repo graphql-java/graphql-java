@@ -21,10 +21,6 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 public class NoUnbrokenInputCycles implements SchemaValidationRule {
 
     @Override
-    public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
-    }
-
-    @Override
     public void check(GraphQLSchema schema, SchemaValidationErrorCollector validationErrorCollector) {
 
     }

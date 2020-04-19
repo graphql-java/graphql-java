@@ -22,18 +22,16 @@ public class ObjectsImplementInterfaces implements SchemaValidationRule {
 
     @Override
     public void check(GraphQLSchema schema, SchemaValidationErrorCollector validationErrorCollector) {
-
+        List<GraphQLNamedType> types = schema.getAllTypesAsList();
+        for (GraphQLNamedType type : types) {
+            if (type instanceof GraphQLObjectType) {
+                check((GraphQLObjectType) type, validationErrorCollector);
+            }
+        }
     }
 
     @Override
     public void check(GraphQLFieldDefinition fieldDef, SchemaValidationErrorCollector validationErrorCollector) {
-    }
-
-    @Override
-    public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
-        if (type instanceof GraphQLObjectType) {
-            check((GraphQLObjectType) type, validationErrorCollector);
-        }
     }
 
     private void check(GraphQLObjectType objectType, SchemaValidationErrorCollector validationErrorCollector) {

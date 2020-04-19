@@ -11,5 +11,4 @@ public interface SchemaValidationRule {
 
     void check(GraphQLFieldDefinition fieldDef, SchemaValidationErrorCollector validationErrorCollector);
 
-    void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector);
 }
