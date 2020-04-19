@@ -1,9 +1,14 @@
 package graphql.schema.validation.rules;
 
-import graphql.schema.*;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLSchema;
 import graphql.schema.validation.exception.SchemaValidationError;
 import graphql.schema.validation.exception.SchemaValidationErrorCollector;
 import graphql.schema.validation.exception.SchemaValidationErrorType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLUnmodifiedType;
+import graphql.schema.GraphQLTypeUtil;
 
 import java.util.HashSet;
 import java.util.List;

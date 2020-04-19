@@ -1,6 +1,6 @@
 package graphql.schema.validation.rules;
 
-import graphql.schema.*;
+import graphql.schema.GraphQLSchema;
 import graphql.schema.validation.exception.SchemaValidationErrorCollector;
 
 public interface SchemaValidationRule {

@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Set;
 
 
-// todo 添加规则
 @Internal
 public class SchemaValidator {
 

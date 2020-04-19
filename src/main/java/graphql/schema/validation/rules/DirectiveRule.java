@@ -1,6 +1,7 @@
 package graphql.schema.validation.rules;
 
-import graphql.schema.*;
+import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLSchema;
 import graphql.schema.validation.exception.SchemaValidationError;
 import graphql.schema.validation.exception.SchemaValidationErrorCollector;
 import graphql.schema.validation.exception.SchemaValidationErrorType;
@@ -22,14 +23,14 @@ public class DirectiveRule implements SchemaValidationRule {
         for (GraphQLDirective directive : directives) {
             String directiveName = directive.getName();
             if (directiveName.length() >= 2 && directiveName.startsWith("__")) {
-                SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.DirectiveInvalideError,
+                SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.DirectiveInvalidError,
                         String.format("Directive \"%s\" must not begin with \"__\", which is reserved by GraphQL introspection.", directiveName));
                 validationErrorCollector.addError(schemaValidationError);
             }
 
 
             if (directivesName.contains(directiveName)) {
-                SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.DirectiveInvalideError,
+                SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.DirectiveInvalidError,
                         String.format("All directives within a GraphQL schema must have unique names. directive named  \"%s\" is already define.", directiveName));
                 validationErrorCollector.addError(schemaValidationError);
             }

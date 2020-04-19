@@ -24,8 +24,8 @@ class SchemaValidatorTest extends Specification {
         rules.size() == 4
         rules[0] instanceof NoUnbrokenInputCyclesRule
         rules[1] instanceof ObjectsImplementInterfaces
-        rules[0] instanceof DirectiveRule
-        rules[1] instanceof FieldDefinitionRule
+        rules[2] instanceof DirectiveRule
+        rules[3] instanceof FieldDefinitionRule
     }
 
     def "rules are used"() {

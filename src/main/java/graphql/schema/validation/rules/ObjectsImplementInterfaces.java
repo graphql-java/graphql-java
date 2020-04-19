@@ -1,6 +1,16 @@
 package graphql.schema.validation.rules;
 
-import graphql.schema.*;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLNamedType;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLNamedOutputType;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLUnionType;
+
 import graphql.schema.validation.exception.SchemaValidationError;
 import graphql.schema.validation.exception.SchemaValidationErrorCollector;
 
