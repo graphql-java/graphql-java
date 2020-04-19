@@ -1,4 +1,4 @@
-package graphql.schema.validation;
+package graphql.schema.validation.rule;
 
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
@@ -8,6 +8,13 @@ import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLFieldsContainer;
+
+import graphql.schema.validation.exception.SchemaValidationError;
+import graphql.schema.validation.exception.SchemaValidationErrorCollector;
+import graphql.schema.validation.exception.SchemaValidationErrorType;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -24,17 +31,41 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
  */
 public class NoUnbrokenInputCycles implements SchemaValidationRule {
 
-    @Override
-    public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
-    }
+    private final Set<GraphQLOutputType> processed = new LinkedHashSet<>();
 
     @Override
-    public void check(GraphQLFieldDefinition fieldDef, SchemaValidationErrorCollector validationErrorCollector) {
+    public void apply(GraphQLSchema graphQLSchema, SchemaValidationErrorCollector validationErrorCollector) {
+
+        traverse(graphQLSchema.getQueryType(), validationErrorCollector);
+
+        if (graphQLSchema.isSupportingMutations()) {
+            traverse(graphQLSchema.getMutationType(), validationErrorCollector);
+        }
+        if (graphQLSchema.isSupportingSubscriptions()) {
+            traverse(graphQLSchema.getSubscriptionType(), validationErrorCollector);
+        }
+    }
+
+    private void traverse(GraphQLOutputType root, SchemaValidationErrorCollector validationErrorCollector) {
+        if (processed.contains(root)) {
+            return;
+        }
+        processed.add(root);
+        if (root instanceof GraphQLFieldsContainer) {
+            // this deliberately has open field visibility here since its validating the schema
+            // when completely open
+            for (GraphQLFieldDefinition fieldDefinition : ((GraphQLFieldsContainer) root).getFieldDefinitions()) {
+                checkFieldDefinition(fieldDefinition, validationErrorCollector);
+                traverse(fieldDefinition.getType(), validationErrorCollector);
+            }
+        }
+    }
+
+    public void checkFieldDefinition(GraphQLFieldDefinition fieldDef, SchemaValidationErrorCollector validationErrorCollector) {
         for (GraphQLArgument argument : fieldDef.getArguments()) {
             GraphQLInputType argumentType = argument.getType();
             if (argumentType instanceof GraphQLInputObjectType) {
                 List<String> path = new ArrayList<>();
-//                path.add(argumentType.getName());
                 check((GraphQLInputObjectType) argumentType, new LinkedHashSet<>(), path, validationErrorCollector);
             }
         }

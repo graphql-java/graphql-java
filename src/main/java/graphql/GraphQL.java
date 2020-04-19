@@ -26,6 +26,7 @@ import graphql.language.Document;
 import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.validation.exception.InvalidSchemaException;
 import graphql.util.LogKit;
 import graphql.validation.ValidationError;
 import graphql.validation.Validator;
@@ -70,7 +71,7 @@ import static graphql.execution.instrumentation.DocumentAndVariables.newDocument
  * object type given a interface or union type.
  * </li>
  *
- * <li>{@link graphql.schema.validation.InvalidSchemaException} - is thrown if the schema is not valid when built via
+ * <li>{@link InvalidSchemaException} - is thrown if the schema is not valid when built via
  * {@link graphql.schema.GraphQLSchema.Builder#build()}
  * </li>
  *

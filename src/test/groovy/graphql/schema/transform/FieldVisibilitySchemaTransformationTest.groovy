@@ -214,8 +214,9 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         directive @private on FIELD_DEFINITION
 
         type Query {
-            public: FooOrBar @private
-            private: Bar @private
+            public_1: String
+            private_1: FooOrBar @private
+            private_2: Bar @private
         }
         
         union FooOrBar = Foo | Bar
@@ -235,11 +236,13 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
 
         then:
-        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("private") == null
-        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("public") == null
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("private_1") == null
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("private_2") == null
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("public_1") != null
         restrictedSchema.getType("Bar") == null
         restrictedSchema.getType("Foo") == null
         restrictedSchema.getType("FooOrBar") == null
+
     }
 
     def "union type with reference by private interface removed"() {
@@ -527,6 +530,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         type Query {
             bar: String @private
             baz: Boolean @private
+            bax: Boolean
         }
         """)
 
@@ -587,10 +591,12 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
 
         type Mutation {
             setFoo(foo: String): Foo @private
+            publicField: String
         }
         
         type Subscription {
             barAdded: Bar @private
+            publicField: String
         }
         
         type Foo {
@@ -623,6 +629,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         
         type Foo {
             baz: Baz @private
+            publicField: String
         }
         
         type Bar {
@@ -655,10 +662,12 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         
         type Foo {
             baz: Baz @private
+            publicField: String
         }
         
         type Bar {
             baz: Baz @private
+            publicField: String
         }
         
         type Baz {
@@ -684,6 +693,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         type Query {
             foo: Foo @private
             bar: Bar @private
+            publicField: String
         }
         
         type Foo {

@@ -6,8 +6,8 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.SchemaDefinition;
 import graphql.language.SchemaExtensionDefinition;
-import graphql.schema.validation.InvalidSchemaException;
-import graphql.schema.validation.SchemaValidationError;
+import graphql.schema.validation.exception.InvalidSchemaException;
+import graphql.schema.validation.exception.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 

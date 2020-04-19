@@ -4,9 +4,12 @@ import graphql.TypeResolutionEnvironment
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.TypeResolver
+import graphql.schema.validation.exception.SchemaValidationError
+import graphql.schema.validation.exception.SchemaValidationErrorCollector
+import graphql.schema.validation.rule.ObjectsImplementInterfaces
 import spock.lang.Specification
 
-import static SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces
+import static graphql.schema.validation.exception.SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces
 import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString

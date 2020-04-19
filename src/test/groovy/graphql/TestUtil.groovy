@@ -51,6 +51,7 @@ class TestUtil {
     static dummySchema = GraphQLSchema.newSchema()
             .query(GraphQLObjectType.newObject()
             .name("QueryType")
+            .field(GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString))
             .build())
             .build()
 

@@ -8,6 +8,9 @@ import graphql.TypeResolutionEnvironment
 import graphql.schema.visibility.GraphqlFieldVisibility
 import spock.lang.Specification
 
+import static graphql.Scalars.GraphQLString
+import static graphql.Scalars.GraphQLString
+import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
@@ -64,7 +67,12 @@ class GraphQLCodeRegistryTest extends Specification {
     }
 
     static GraphQLObjectType objectType(String name) {
-        return newObject().name(name).build()
+        return newObject()
+                .name(name)
+                .field(newFieldDefinition()
+                        .name("field")
+                        .type(GraphQLString))
+                .build()
     }
 
     static GraphQLInterfaceType interfaceType(String name) {

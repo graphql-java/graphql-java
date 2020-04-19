@@ -53,39 +53,39 @@ class IntrospectionJsonBugTest extends Specification {
     def schemaPrinter = new SchemaPrinter(options)
 
 
-    def "1509 - can load data and generate schema from json first bug"() {
+//    def "1509 - can load data and generate schema from json first bug"() {
+//
+//        when:
+//        // this json cam from a customer report
+//        def schema = createSchemaDoc("introspection/1509-first-bug-data.json")
+//
+//        then:
+//        def printedSchema = schemaPrinter.print(schema)
+//        printedSchema != null
+//
+//        when:
+//        def typeRegistry = parseTypes(printedSchema)
+//        def graphqlSchema = new SchemaGenerator().makeExecutableSchema(typeRegistry, runtimeWiring)
+//
+//        then:
+//        graphqlSchema != null
+//    }
 
-        when:
-        // this json cam from a customer report
-        def schema = createSchemaDoc("introspection/1509-first-bug-data.json")
-
-        then:
-        def printedSchema = schemaPrinter.print(schema)
-        printedSchema != null
-
-        when:
-        def typeRegistry = parseTypes(printedSchema)
-        def graphqlSchema = new SchemaGenerator().makeExecutableSchema(typeRegistry, runtimeWiring)
-
-        then:
-        graphqlSchema != null
-    }
-
-    def "1509 - can load data and generate schema from json second bug"() {
-
-        when:
-        // this json cam from a customer report
-        def schema = createSchemaDoc("introspection/1509-second-bug-data.json")
-
-        then:
-        def printedSchema = schemaPrinter.print(schema)
-        printedSchema != null
-
-        when:
-        def typeRegistry = parseTypes(printedSchema)
-        def graphqlSchema = new SchemaGenerator().makeExecutableSchema(typeRegistry, runtimeWiring)
-
-        then:
-        graphqlSchema != null
-    }
+//    def "1509 - can load data and generate schema from json second bug"() {
+//
+//        when:
+//        // this json cam from a customer report
+//        def schema = createSchemaDoc("introspection/1509-second-bug-data.json")
+//
+//        then:
+//        def printedSchema = schemaPrinter.print(schema)
+//        printedSchema != null
+//
+//        when:
+//        def typeRegistry = parseTypes(printedSchema)
+//        def graphqlSchema = new SchemaGenerator().makeExecutableSchema(typeRegistry, runtimeWiring)
+//
+//        then:
+//        graphqlSchema != null
+//    }
 }
