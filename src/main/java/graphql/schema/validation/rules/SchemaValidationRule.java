@@ -9,6 +9,4 @@ public interface SchemaValidationRule {
 
     void check(GraphQLSchema schema, SchemaValidationErrorCollector validationErrorCollector);
 
-    void check(GraphQLFieldDefinition fieldDef, SchemaValidationErrorCollector validationErrorCollector);
-
 }
