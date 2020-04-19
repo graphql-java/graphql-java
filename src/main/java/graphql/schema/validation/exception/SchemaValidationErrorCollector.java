@@ -1,4 +1,7 @@
-package graphql.schema.validation;
+package graphql.schema.validation.exception;
+
+import graphql.schema.validation.exception.SchemaValidationError;
+import graphql.schema.validation.exception.SchemaValidationErrorType;
 
 import java.util.LinkedHashSet;
 import java.util.Set;

@@ -4,6 +4,11 @@ import graphql.Scalars
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
+import graphql.schema.validation.exception.SchemaValidationErrorCollector
+import graphql.schema.validation.rules.DirectiveRule
+import graphql.schema.validation.rules.NoUnbrokenInputCycles
+import graphql.schema.validation.rules.ObjectsImplementInterfaces
+import graphql.schema.validation.rules.SchemaValidationRule
 import spock.lang.Specification
 
 class SchemaValidatorTest extends Specification {
@@ -14,9 +19,10 @@ class SchemaValidatorTest extends Specification {
         def validator = new SchemaValidator()
         def rules = validator.rules
         then:
-        rules.size() == 2
+        rules.size() == 3
         rules[0] instanceof NoUnbrokenInputCycles
         rules[1] instanceof ObjectsImplementInterfaces
+        rules[2] instanceof DirectiveRule
     }
 
     def "rules are used"() {

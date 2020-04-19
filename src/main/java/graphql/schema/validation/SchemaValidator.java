@@ -6,6 +6,12 @@ import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.validation.exception.SchemaValidationError;
+import graphql.schema.validation.exception.SchemaValidationErrorCollector;
+import graphql.schema.validation.rules.DirectiveRule;
+import graphql.schema.validation.rules.NoUnbrokenInputCycles;
+import graphql.schema.validation.rules.ObjectsImplementInterfaces;
+import graphql.schema.validation.rules.SchemaValidationRule;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -22,6 +28,7 @@ public class SchemaValidator {
     public SchemaValidator() {
         rules.add(new NoUnbrokenInputCycles());
         rules.add(new ObjectsImplementInterfaces());
+        rules.add(new DirectiveRule());
     }
 
     SchemaValidator(List<SchemaValidationRule> rules) {
