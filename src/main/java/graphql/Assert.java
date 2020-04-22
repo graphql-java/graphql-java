@@ -1,6 +1,8 @@
 package graphql;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.function.Supplier;
 
 import static java.lang.String.format;
 
@@ -74,6 +76,13 @@ public class Assert {
             return;
         }
         throw new AssertException(format(format, args));
+    }
+
+    public static void assertTrueLazily(boolean condition, String format, Supplier<?>... args) {
+        if (condition) {
+            return;
+        }
+        throw new AssertException(format(format, Arrays.stream(args).map(Supplier::get).toArray()));
     }
 
     public static void assertTrue(boolean condition) {

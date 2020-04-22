@@ -7,9 +7,10 @@ import graphql.util.TraverserContext;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.Assert.assertTrue;
+import static graphql.Assert.assertTrueLazily;
 
 /**
  * A modified type that indicates there the underlying wrapped type will not be null.
@@ -46,8 +47,8 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
     }
 
     private void assertNonNullWrapping(GraphQLType wrappedType) {
-        assertTrue(!GraphQLTypeUtil.isNonNull(wrappedType), String.format("A non null type cannot wrap an existing non null type '%s'",
-                GraphQLTypeUtil.simplePrint(wrappedType)));
+        assertTrueLazily(!GraphQLTypeUtil.isNonNull(wrappedType), "A non null type cannot wrap an existing non null type '%s'",
+             () -> GraphQLTypeUtil.simplePrint(wrappedType));
     }
 
     @Override
