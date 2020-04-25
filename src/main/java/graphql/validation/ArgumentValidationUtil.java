@@ -8,6 +8,7 @@ import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +40,15 @@ public class ArgumentValidationUtil extends ValidationUtil {
     protected void handleScalarError(Value<?> value, GraphQLScalarType type, GraphQLError invalid) {
         errorMessage = "is not a valid '%s' - %s";
         arguments.add(type.getName());
+        arguments.add(invalid.getMessage());
+        argumentValue = value;
+        errorExtensions = invalid.getExtensions();
+    }
+
+    @Override
+    protected void handleGraphQLListError(Value<?> value, GraphQLList type, GraphQLError invalid) {
+        errorMessage = "is not a valid '%s' - %s";
+        arguments.add(type);
         arguments.add(invalid.getMessage());
         argumentValue = value;
         errorExtensions = invalid.getExtensions();

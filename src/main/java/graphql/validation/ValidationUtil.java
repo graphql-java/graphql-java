@@ -22,6 +22,7 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
+import graphql.schema.CoercingParseValueException;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.LinkedHashMap;
@@ -52,6 +53,9 @@ public class ValidationUtil {
     }
 
     protected void handleScalarError(Value<?> value, GraphQLScalarType type, GraphQLError invalid) {
+    }
+
+    protected void handleGraphQLListError(Value<?> value, GraphQLList type, GraphQLError invalid) {
     }
 
     protected void handleEnumError(Value<?> value, GraphQLEnumType type, GraphQLError invalid) {
@@ -99,7 +103,9 @@ public class ValidationUtil {
         }
 
         if (isList(type)) {
-            return isValidLiteralValue(value, (GraphQLList) type, schema);
+            Optional<GraphQLError> invalid = isValidArrayValue(value, (GraphQLList) type, schema);
+            invalid.ifPresent(graphQLError -> handleGraphQLListError(value, (GraphQLList) type, graphQLError));
+            return !invalid.isPresent();
         }
         return type instanceof GraphQLInputObjectType && isValidLiteralValue(value, (GraphQLInputObjectType) type, schema);
 
@@ -111,6 +117,31 @@ public class ValidationUtil {
         } catch (CoercingParseLiteralException e) {
             return Optional.of(e);
         }
+    }
+
+    private Optional<GraphQLError> isValidArrayValue(Value<?> value, GraphQLList type, GraphQLSchema schema) {
+
+        if (!(value instanceof ArrayValue)) {
+            CoercingParseValueException coercingParseValueException =
+                    new CoercingParseValueException("Expected AST type '" + type.getClass().getSimpleName()+"-"+type.toString() + "' but was '" + value.getClass().getSimpleName() + "'.");
+
+            return Optional.of(coercingParseValueException);
+        }
+
+        //类型
+        GraphQLType wrappedType = type.getWrappedType();
+
+        List<Value> values = ((ArrayValue) value).getValues();
+        for (int i = 0; i < values.size(); i++) {
+            if (!isValidLiteralValue(values.get(i), wrappedType, schema)) {
+                handleFieldNotValidError(values.get(i), wrappedType, i);
+                CoercingParseValueException coercingParseValueException =
+                        new CoercingParseValueException("Expected AST type '" + type.getClass().getSimpleName()+"-"+type.toString() + "' but was '" + values.get(i).getClass().getSimpleName() + "'.");
+                return Optional.of(coercingParseValueException);
+            }
+        }
+
+        return Optional.empty();
     }
 
     private Optional<GraphQLError> parseLiteral(Value<?> value, Coercing<?,?> coercing) {
@@ -167,22 +198,6 @@ public class ValidationUtil {
             result.put(objectField.getName(), objectField);
         }
         return result;
-    }
-
-    private boolean isValidLiteralValue(Value<?> value, GraphQLList type, GraphQLSchema schema) {
-        GraphQLType wrappedType = type.getWrappedType();
-        if (value instanceof ArrayValue) {
-            List<Value> values = ((ArrayValue) value).getValues();
-            for (int i = 0; i < values.size(); i++) {
-                if (!isValidLiteralValue(values.get(i), wrappedType, schema)) {
-                    handleFieldNotValidError(values.get(i), wrappedType, i);
-                    return false;
-                }
-            }
-            return true;
-        } else {
-            return isValidLiteralValue(value, wrappedType, schema);
-        }
     }
 
 }

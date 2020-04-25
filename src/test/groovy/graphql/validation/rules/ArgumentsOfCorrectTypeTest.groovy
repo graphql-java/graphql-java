@@ -95,7 +95,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
         errorCollector.errors[0].message ==
-                "Validation error of type WrongType: argument 'arg[1].foo' with value 'StringValue{value='string'}' is not a valid 'Boolean' - Expected AST type 'BooleanValue' but was 'StringValue'."
+                "Validation error of type WrongType: argument 'arg[1].foo' with value 'ArrayValue{values=[ObjectValue{objectFields=[ObjectField{name='foo', value=BooleanValue{value=true}}]}, ObjectValue{objectFields=[ObjectField{name='foo', value=StringValue{value='string'}}]}]}' is not a valid 'Boolean' - Expected AST type 'BooleanValue' but was 'StringValue'."
     }
 
     def "invalid list inside object type results in error"() {
@@ -116,7 +116,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
         errorCollector.errors[0].message ==
-                "Validation error of type WrongType: argument 'arg[0].foo[1]' with value 'StringValue{value='string'}' is not a valid 'Boolean' - Expected AST type 'BooleanValue' but was 'StringValue'."
+                "Validation error of type WrongType: argument 'arg[0].foo[1]' with value 'ArrayValue{values=[ObjectValue{objectFields=[ObjectField{name='foo', value=ArrayValue{values=[BooleanValue{value=true}, StringValue{value='string'}]}}]}, ObjectValue{objectFields=[ObjectField{name='foo', value=ArrayValue{values=[BooleanValue{value=true}, BooleanValue{value=false}]}}]}]}' is not a valid 'Boolean' - Expected AST type 'BooleanValue' but was 'StringValue'."
     }
 
     def "invalid list simple type results in error"() {
@@ -135,7 +135,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
         errorCollector.errors[0].message ==
-                "Validation error of type WrongType: argument 'arg[1]' with value 'StringValue{value='string'}' is not a valid 'Boolean' - Expected AST type 'BooleanValue' but was 'StringValue'."
+                "Validation error of type WrongType: argument 'arg[1]' with value 'ArrayValue{values=[BooleanValue{value=true}, StringValue{value='string'}]}' is not a valid 'Boolean' - Expected AST type 'BooleanValue' but was 'StringValue'."
     }
 
     def "type missing fields results in error"() {
