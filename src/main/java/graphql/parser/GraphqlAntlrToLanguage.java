@@ -433,6 +433,7 @@ public class GraphqlAntlrToLanguage {
         def.description(newDescription(ctx.description()));
         def.directives(createDirectives(ctx.directives()));
         GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext = ctx.implementsInterfaces();
+        // TODO maybe extract to private method to avoid duplication
         List<Type> implementz = new ArrayList<>();
         while (implementsInterfacesContext != null) {
             List<TypeName> typeNames = implementsInterfacesContext.typeName().stream().map(this::createTypeName).collect(toList());
@@ -517,6 +518,14 @@ public class GraphqlAntlrToLanguage {
         addCommonData(def, ctx);
         def.description(newDescription(ctx.description()));
         def.directives(createDirectives(ctx.directives()));
+        GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext = ctx.implementsInterfaces();
+        List<Type> implementz = new ArrayList<>();
+        while (implementsInterfacesContext != null) {
+            List<TypeName> typeNames = implementsInterfacesContext.typeName().stream().map(this::createTypeName).collect(toList());
+            implementz.addAll(0, typeNames);
+            implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
+        }
+        def.implementz(implementz);
         def.definitions(createFieldDefinitions(ctx.fieldsDefinition()));
         return def.build();
     }
@@ -526,6 +535,14 @@ public class GraphqlAntlrToLanguage {
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
         def.directives(createDirectives(ctx.directives()));
+        GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext = ctx.implementsInterfaces();
+        List<Type> implementz = new ArrayList<>();
+        while (implementsInterfacesContext != null) {
+            List<TypeName> typeNames = implementsInterfacesContext.typeName().stream().map(this::createTypeName).collect(toList());
+            implementz.addAll(0, typeNames);
+            implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
+        }
+        def.implementz(implementz);
         def.definitions(createFieldDefinitions(ctx.extensionFieldsDefinition()));
         return def.build();
     }

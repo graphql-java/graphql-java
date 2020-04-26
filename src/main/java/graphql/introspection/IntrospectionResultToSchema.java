@@ -20,7 +20,6 @@ import graphql.language.ObjectTypeDefinition;
 import graphql.language.OperationTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.SchemaDefinition;
-import graphql.language.SourceLocation;
 import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
@@ -185,6 +184,13 @@ public class IntrospectionResultToSchema {
 
         InterfaceTypeDefinition.Builder interfaceTypeDefinition = InterfaceTypeDefinition.newInterfaceTypeDefinition().name((String) input.get("name"));
         interfaceTypeDefinition.description(toDescription(input));
+        if (input.containsKey("interfaces") && input.get("interfaces") != null) {
+            interfaceTypeDefinition.implementz(
+                    ((List<Map<String, Object>>) input.get("interfaces")).stream()
+                            .map(this::createTypeIndirection)
+                            .collect(Collectors.toList())
+            );
+        }
         List<Map<String, Object>> fields = (List<Map<String, Object>>) input.get("fields");
         interfaceTypeDefinition.definitions(createFields(fields));
 

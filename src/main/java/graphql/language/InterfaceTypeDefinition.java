@@ -17,17 +17,20 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static java.util.Collections.emptyMap;
 
 @PublicApi
-public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceTypeDefinition> implements TypeDefinition<InterfaceTypeDefinition>, DirectivesContainer<InterfaceTypeDefinition>, NamedNode<InterfaceTypeDefinition> {
+public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceTypeDefinition> implements ImplementingTypeDefinition<InterfaceTypeDefinition>, DirectivesContainer<InterfaceTypeDefinition>, NamedNode<InterfaceTypeDefinition> {
 
     private final String name;
+    private final List<Type> implementz;
     private final List<FieldDefinition> definitions;
     private final List<Directive> directives;
 
+    public static final String CHILD_IMPLEMENTZ = "implementz";
     public static final String CHILD_DEFINITIONS = "definitions";
     public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
     protected InterfaceTypeDefinition(String name,
+                                      List<Type> implementz,
                                       List<FieldDefinition> definitions,
                                       List<Directive> directives,
                                       Description description,
@@ -37,6 +40,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
                                       Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
+        this.implementz = implementz;
         this.definitions = definitions;
         this.directives = directives;
     }
@@ -47,9 +51,15 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
      * @param name of the interface
      */
     public InterfaceTypeDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
+    @Override
+    public List<Type> getImplements() {
+        return new ArrayList<>(implementz);
+    }
+
+    @Override
     public List<FieldDefinition> getFieldDefinitions() {
         return new ArrayList<>(definitions);
     }
@@ -67,6 +77,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
+        result.addAll(implementz);
         result.addAll(definitions);
         result.addAll(directives);
         return result;
@@ -75,6 +86,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
     @Override
     public NodeChildrenContainer getNamedChildren() {
         return newNodeChildrenContainer()
+                .children(CHILD_IMPLEMENTZ, implementz)
                 .children(CHILD_DEFINITIONS, definitions)
                 .children(CHILD_DIRECTIVES, directives)
                 .build();
@@ -83,6 +95,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
     @Override
     public InterfaceTypeDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
+                .implementz(newChildren.getChildren(CHILD_IMPLEMENTZ))
                 .definitions(newChildren.getChildren(CHILD_DEFINITIONS))
                 .directives(newChildren.getChildren(CHILD_DIRECTIVES))
         );
@@ -105,6 +118,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
     @Override
     public InterfaceTypeDefinition deepCopy() {
         return new InterfaceTypeDefinition(name,
+                deepCopy(implementz),
                 deepCopy(definitions),
                 deepCopy(directives),
                 description,
@@ -118,6 +132,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
     public String toString() {
         return "InterfaceTypeDefinition{" +
                 "name='" + name + '\'' +
+                ", implements=" + implementz +
                 ", fieldDefinitions=" + definitions +
                 ", directives=" + directives +
                 '}';
@@ -144,6 +159,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
         private List<Comment> comments = new ArrayList<>();
         private String name;
         private Description description;
+        private List<Type> implementz = new ArrayList<>();
         private List<FieldDefinition> definitions = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
@@ -185,6 +201,17 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
             return this;
         }
 
+        public Builder implementz(List<Type> implementz) {
+            this.implementz = implementz;
+            return this;
+        }
+
+        public Builder implementz(Type implement) {
+            this.implementz.add(implement);
+            return this;
+        }
+
+
         public Builder definitions(List<FieldDefinition> definitions) {
             this.definitions = definitions;
             return this;
@@ -223,6 +250,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
 
         public InterfaceTypeDefinition build() {
             return new InterfaceTypeDefinition(name,
+                    implementz,
                     definitions,
                     directives,
                     description,
