@@ -47,7 +47,8 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
 
         then:
-        thrown(AssertionError)
+        def error = thrown(AssertionError)
+        error.getMessage() ==~ ".*The interface type 'Resource'.*does not have a field 'id' required via interface 'Node'.*"
     }
 
     def 'Transitively implemented interfaces defined in implementing interface'() {
@@ -139,8 +140,8 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
 
         then:
-        // TODO: Assert error message
         def error = thrown(AssertionError)
+        error.getMessage() ==~ ".*The interface type 'LargeImage'.*does not implement the following transitive interfaces: \\[Node\\].*"
     }
 
     def 'When not all transitively implemented interfaces are defined in implementing type, then parsing fails'() {
@@ -168,8 +169,8 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
 
         then:
-        // TODO: Assert error message
-        thrown(AssertionError)
+        def error = thrown(AssertionError)
+        error.getMessage() ==~ ".*The object type 'Image'.*does not implement the following transitive interfaces: \\[Node\\].*"
     }
 
     def 'When interface implements itself, then parsing fails'() {
@@ -185,30 +186,6 @@ class InterfacesImplementingInterfacesTest extends Specification {
             }
             
             interface Named implements Node & Named {
-              id: ID!
-              name: String
-            }
-            """)
-
-
-        then:
-        // TODO: Assert error message
-        thrown(AssertionError)
-    }
-
-    def 'When interface implements same interface twice, then parsing fails'() {
-        when:
-        TestUtil.schema("""
-            type Query {
-               find(id: String!): Node
-            }
-            
-            interface Node {
-              id: ID!
-              name: String
-            }
-            
-            interface Named implements Node & Node {
               id: ID!
               name: String
             }
@@ -266,8 +243,8 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
 
         then:
-        // TODO: Assert error message
-        thrown(AssertionError)
+        def error = thrown(AssertionError)
+        error.getMessage() ==~ ".*The interface extension type 'Resource'.*does not have a field 'extraField' required via interface 'Node'.*"
     }
 
     def 'When object extension implements all transitive interfaces, then parsing is successful'() {
@@ -327,8 +304,8 @@ class InterfacesImplementingInterfacesTest extends Specification {
             }
             """)
         then:
-        // TODO: assert error message
-        thrown(AssertionError)
+        def error = thrown(AssertionError)
+        error.getMessage() ==~ ".*The object extension type 'Image'.*does not implement the following transitive interfaces: \\[Node\\].*"
     }
 
     def 'When interface extension implements all transitive interfaces, then parsing is successful'() {
@@ -388,7 +365,7 @@ class InterfacesImplementingInterfacesTest extends Specification {
             }
             """)
         then:
-        // TODO: assert error message
-        thrown(AssertionError)
+        def error = thrown(AssertionError)
+        error.getMessage() ==~ ".*The interface extension type 'Image'.*does not implement the following transitive interfaces: \\[Node\\].*"
     }
 }
