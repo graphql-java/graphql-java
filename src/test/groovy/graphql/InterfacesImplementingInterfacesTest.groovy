@@ -4,8 +4,6 @@ package graphql
 import spock.lang.Specification
 
 class InterfacesImplementingInterfacesTest extends Specification {
-
-    // TODO: maybe parameterized this test
     def 'Simple interface implementing interface'() {
         when:
         TestUtil.schema("""
@@ -193,8 +191,8 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
 
         then:
-        // TODO: Assert error message
-        thrown(AssertionError)
+        def error = thrown(AssertionError)
+        error.getMessage() ==~ ".*The interface type 'Node' .* cannot implement itself, The interface type 'Named' .* cannot implement itself.*";
     }
 
     def 'When interface extension implements interface and declares required field, then parsing is successful'() {

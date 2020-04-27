@@ -17,6 +17,7 @@ import graphql.language.TypeName;
 import graphql.schema.idl.errors.InterfaceFieldArgumentNotOptionalError;
 import graphql.schema.idl.errors.InterfaceFieldArgumentRedefinitionError;
 import graphql.schema.idl.errors.InterfaceFieldRedefinitionError;
+import graphql.schema.idl.errors.InterfaceImplementingItselfError;
 import graphql.schema.idl.errors.MissingInterfaceFieldArgumentsError;
 import graphql.schema.idl.errors.MissingInterfaceFieldError;
 import graphql.schema.idl.errors.MissingTransitiveInterfaceError;
@@ -79,13 +80,51 @@ class ImplementingTypesChecker {
             String typeName) {
 
         List<Type> implementsTypes = type.getImplements();
+
         implementsTypes.forEach(checkInterfaceIsImplemented(typeName, typeRegistry, errors, type));
 
-        checkTransitiveInterfacesAreDeclared(typeName, typeRegistry, errors, type, implementsTypes);
+        if (type instanceof InterfaceTypeDefinition) {
+            final boolean implementItself = checkInterfaceDoesntImplementItself(typeName, typeRegistry, errors, (InterfaceTypeDefinition) type, implementsTypes);
+            // Don't try to navigate the hierarchy if the interface implements itself, as this would result in an infinite loop
+            if (!implementItself) {
+                checkTransitiveInterfacesAreDeclared(typeName, typeRegistry, errors, type, implementsTypes);
+            }
+        } else {
+            checkTransitiveInterfacesAreDeclared(typeName, typeRegistry, errors, type, implementsTypes);
+        }
     }
 
+    private boolean checkInterfaceDoesntImplementItself(
+            String typeOfType,
+            TypeDefinitionRegistry typeRegistry,
+            List<GraphQLError> errors,
+            InterfaceTypeDefinition typeDefinition,
+            List<Type> implementsInterfaces
+    ) {
+        Set<String> implementsInterfacesNames = implementsInterfaces.stream()
+                .map(t -> toInterfaceTypeDefinition(t, typeRegistry))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(TypeDefinition::getName)
+                .collect(Collectors.toSet());
 
-    private Consumer<? super Type> checkInterfaceIsImplemented(String typeOfType, TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors, ImplementingTypeDefinition typeDefinition) {
+        String thisInterfaceName = typeDefinition.getName();
+
+        if (implementsInterfacesNames.contains(thisInterfaceName)) {
+            errors.add(new InterfaceImplementingItselfError(typeOfType, typeDefinition));
+            return true;
+        }
+
+        return false;
+
+    }
+
+    private Consumer<? super Type> checkInterfaceIsImplemented(
+            String typeOfType,
+            TypeDefinitionRegistry typeRegistry,
+            List<GraphQLError> errors,
+            ImplementingTypeDefinition typeDefinition
+    ) {
         return t -> {
             List<FieldDefinition> fieldDefinitions = typeDefinition.getFieldDefinitions();
 
@@ -149,7 +188,14 @@ class ImplementingTypesChecker {
         }
     }
 
-    private void checkArgumentConsistency(String typeOfType, TypeDefinition objectTypeDef, InterfaceTypeDefinition interfaceTypeDef, FieldDefinition objectFieldDef, FieldDefinition interfaceFieldDef, List<GraphQLError> errors) {
+    private void checkArgumentConsistency(
+            String typeOfType,
+            ImplementingTypeDefinition objectTypeDef,
+            InterfaceTypeDefinition interfaceTypeDef,
+            FieldDefinition objectFieldDef,
+            FieldDefinition interfaceFieldDef,
+            List<GraphQLError> errors
+    ) {
         List<InputValueDefinition> objectArgs = objectFieldDef.getInputValueDefinitions();
         List<InputValueDefinition> interfaceArgs = interfaceFieldDef.getInputValueDefinitions();
         for (int i = 0; i < interfaceArgs.size(); i++) {
