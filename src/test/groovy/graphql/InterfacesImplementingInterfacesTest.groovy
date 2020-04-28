@@ -366,4 +366,36 @@ class InterfacesImplementingInterfacesTest extends Specification {
         def error = thrown(AssertionError)
         error.getMessage() ==~ ".*The interface extension type 'Image'.*does not implement the following transitive interfaces: \\[Node\\].*"
     }
+
+    def 'When hierarchy results in circular reference, then parsing fails'() {
+        when:
+        TestUtil.schema("""
+            type Query {
+               find(id: String!): Interface1
+            }
+            
+            interface Interface1 implements Interface3 & Interface2 {
+              field1: String
+              field2: String
+              field3: String
+            }
+            
+            interface Interface2 implements Interface1 & Interface3 {
+              field1: String
+              field2: String
+              field3: String
+            }
+            
+            interface Interface3 implements Interface2 & Interface1 {
+              field1: String
+              field2: String
+              field3: String
+            }
+
+            """)
+        then:
+        def error = thrown(AssertionError)
+        println(error.getMessage())
+        error.getMessage() ==~ ".*The interface hierarchy in interface type 'Interface1' .* results in a circular dependency.*"
+    }
 }
