@@ -24,7 +24,6 @@ import graphql.schema.idl.errors.MissingInterfaceFieldError;
 import graphql.schema.idl.errors.MissingTransitiveInterfaceError;
 
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -84,48 +83,35 @@ class ImplementingTypesChecker {
 
         implementsTypes.forEach(checkInterfaceIsImplemented(typeOfType, typeRegistry, errors, type));
 
-        Set<String> interfacesToImplement = findInterfacesToImplement(type, typeRegistry);
-        Set<String> implementedInterfaces = findImplementedInterfaces(type, typeRegistry);
-
-        if (type instanceof InterfaceTypeDefinition) {
-            if (!checkInterfaceImplementItself(typeOfType, errors, type, implementedInterfaces)) {
-                if (!checkInterfaceHasCircularHierarchy(typeOfType, errors, interfacesToImplement, type)) {
-                    checkTransitiveInterfacesAreDeclared(typeOfType, errors, type, interfacesToImplement, implementedInterfaces);
-                }
-            }
-        } else {
-            checkTransitiveInterfacesAreDeclared(typeOfType, errors, type, interfacesToImplement, implementedInterfaces);
-        }
+        checkAncestorImplementation(typeOfType, errors, typeRegistry, type);
     }
 
-    private boolean checkInterfaceHasCircularHierarchy(
+    private void checkAncestorImplementation(
             String typeOfType,
             List<GraphQLError> errors,
-            Set<String> interfacesToImplement,
+            TypeDefinitionRegistry typeRegistry,
             ImplementingTypeDefinition type) {
 
-        if (interfacesToImplement.contains(type.getName())) {
-            errors.add(new InterfaceWithCircularImplementationHierarchyError(typeOfType, type, interfacesToImplement));
-            return true;
+        Set<InterfaceTypeDefinition> implementedInterfaces = toInterfaceTypeDefinitions(typeRegistry, type.getImplements());
+
+        if (implementedInterfaces.contains(type)) {
+            errors.add(new InterfaceImplementingItselfError(typeOfType, type));
+            return;
         }
 
-        return false;
-    }
+        implementedInterfaces.forEach(implementedInterface -> {
+            Set<InterfaceTypeDefinition> transitiveInterfaces = toInterfaceTypeDefinitions(typeRegistry, implementedInterface.getImplements());
 
-    private boolean checkInterfaceImplementItself(
-            String typeOfType,
-            List<GraphQLError> errors,
-            ImplementingTypeDefinition typeDefinition,
-            Set<String> implementedInterfacesNames
-    ) {
-        String thisInterfaceName = typeDefinition.getName();
+            if (transitiveInterfaces.contains(type)) {
+                errors.add(new InterfaceWithCircularImplementationHierarchyError(typeOfType, type, implementedInterface));
+            } else if (!implementedInterfaces.containsAll(transitiveInterfaces)) {
+                Set<InterfaceTypeDefinition> missingInterfaces = transitiveInterfaces.stream()
+                        .filter(i -> !implementedInterfaces.contains(i))
+                        .collect(toSet());
 
-        if (implementedInterfacesNames.contains(thisInterfaceName)) {
-            errors.add(new InterfaceImplementingItselfError(typeOfType, typeDefinition));
-            return true;
-        }
-
-        return false;
+                errors.add(new MissingTransitiveInterfaceError(typeOfType, type, implementedInterface, missingInterfaces));
+            }
+        });
     }
 
     private Consumer<? super Type> checkInterfaceIsImplemented(
@@ -170,33 +156,6 @@ class ImplementingTypesChecker {
         };
     }
 
-    private Set<String> findImplementedInterfaces(ImplementingTypeDefinition typeDefinition, TypeDefinitionRegistry typeRegistry) {
-        List<Type> implementz = typeDefinition.getImplements();
-
-        return implementz.stream()
-                .map(t -> toInterfaceTypeDefinition(t, typeRegistry))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .map(TypeDefinition::getName)
-                .collect(toSet());
-    }
-
-    private void checkTransitiveInterfacesAreDeclared(
-            String typeOfType,
-            List<GraphQLError> errors,
-            ImplementingTypeDefinition typeDefinition,
-            Set<String> interfaceHierarchy,
-            Set<String> implementedInterfaces
-    ) {
-        Set<String> missingInterfaces = interfaceHierarchy.stream()
-                .filter(i -> !implementedInterfaces.contains(i))
-                .collect(toSet());
-
-        if (!missingInterfaces.isEmpty()) {
-            errors.add(new MissingTransitiveInterfaceError(typeOfType, typeDefinition, missingInterfaces));
-        }
-    }
-
     private void checkArgumentConsistency(
             String typeOfType,
             ImplementingTypeDefinition objectTypeDef,
@@ -239,33 +198,6 @@ class ImplementingTypesChecker {
         return (v1, v2) -> v1;
     }
 
-    private Set<String> findInterfacesToImplement(ImplementingTypeDefinition type, TypeDefinitionRegistry typeRegistry) {
-        Set<String> interfaceHierarchy = new LinkedHashSet<>();
-
-        List<Type> implementsTypes = type.getImplements();
-
-        Set<InterfaceTypeDefinition> interfaces = toInterfaceTypeDefinitions(typeRegistry, implementsTypes);
-
-        findInterfacesToImplement(type, interfaces, typeRegistry, interfaceHierarchy);
-
-        return interfaceHierarchy;
-    }
-
-
-    private void findInterfacesToImplement(ImplementingTypeDefinition rootType, Set<InterfaceTypeDefinition> interfaces, TypeDefinitionRegistry typeRegistry, Set<String> allInterfaces) {
-        allInterfaces.addAll(interfaces.stream().map(InterfaceTypeDefinition::getName).collect(toSet()));
-
-        if (allInterfaces.contains(rootType.getName())) {
-            return;
-        }
-
-        interfaces.stream().map(InterfaceTypeDefinition::getImplements).forEach(i -> {
-            Set<InterfaceTypeDefinition> innerInterface = toInterfaceTypeDefinitions(typeRegistry, i);
-
-            findInterfacesToImplement(rootType, innerInterface, typeRegistry, allInterfaces);
-        });
-    }
-
     private Optional<InterfaceTypeDefinition> toInterfaceTypeDefinition(Type type, TypeDefinitionRegistry typeRegistry) {
         TypeInfo typeInfo = TypeInfo.typeInfo(type);
         TypeName unwrapped = typeInfo.getTypeName();
@@ -280,6 +212,4 @@ class ImplementingTypesChecker {
                 .map(Optional::get)
                 .collect(toSet());
     }
-
-
 }

@@ -6,8 +6,6 @@ import graphql.schema.idl.errors.SchemaProblem
 import spock.lang.Specification
 
 class InterfacesImplementingInterfacesTest extends Specification {
-    def positionPattern = "\\[@\\d*:\\d*\\]"
-
     def 'Simple interface implementing interface'() {
         when:
         def schema = """
@@ -53,7 +51,7 @@ class InterfacesImplementingInterfacesTest extends Specification {
         then:
         def error = thrown(SchemaProblem)
         error.errors.size() == 1
-        error.errors[0].message ==~ "The interface type 'Resource' ${positionPattern} does not have a field 'id' required via interface 'Node' ${positionPattern}"
+        assertErrorMessage(error, "The interface type 'Resource' [@n:n] does not have a field 'id' required via interface 'Node' [@n:n]")
     }
 
     def 'Transitively implemented interfaces defined in implementing interface'() {
@@ -149,8 +147,9 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
         then:
         def error = thrown(SchemaProblem)
-        error.errors.size() == 1
-        error.errors[0].message ==~ "The interface type 'LargeImage' ${positionPattern} does not implement the following transitive interfaces: \\[Node\\]"
+        error.errors.size() == 2
+        assertErrorMessage(error, "The interface type 'LargeImage' [@n:n] must implement [Node] because it is implemented by 'Image' [@n:n]")
+        assertErrorMessage(error, "The interface type 'LargeImage' [@n:n] must implement [Node] because it is implemented by 'Resource' [@n:n]")
     }
 
     def 'When not all transitively implemented interfaces are defined in implementing type, then parsing fails'() {
@@ -181,7 +180,7 @@ class InterfacesImplementingInterfacesTest extends Specification {
         then:
         def error = thrown(SchemaProblem)
         error.errors.size() == 1
-        error.errors[0].message ==~ "The object type 'Image' ${positionPattern} does not implement the following transitive interfaces: \\[Node\\]"
+        assertErrorMessage(error, "The object type 'Image' [@n:n] must implement [Node] because it is implemented by 'Resource' [@n:n]")
     }
 
     def 'When interface implements itself, then parsing fails'() {
@@ -207,9 +206,8 @@ class InterfacesImplementingInterfacesTest extends Specification {
         then:
         def error = thrown(SchemaProblem)
         error.errors.size() == 2
-        def errorMessages = error.errors.collect { it.message }
-        errorMessages.findAll() { it ==~ "The interface type 'Node' ${positionPattern} cannot implement itself" }.size() == 1
-        errorMessages.findAll() { it ==~ "The interface type 'Named' ${positionPattern} cannot implement itself" }.size() == 1
+        assertErrorMessage(error, "The interface type 'Node' [@n:n] cannot implement itself")
+        assertErrorMessage(error, "The interface type 'Named' [@n:n] cannot implement itself")
     }
 
     def 'When interface extension implements interface and declares required field, then parsing is successful'() {
@@ -264,7 +262,7 @@ class InterfacesImplementingInterfacesTest extends Specification {
         then:
         def error = thrown(SchemaProblem)
         error.errors.size() == 1
-        error.errors[0].message ==~ "The interface extension type 'Resource' ${positionPattern} does not have a field 'extraField' required via interface 'Node' ${positionPattern}"
+        assertErrorMessage(error, "The interface extension type 'Resource' [@n:n] does not have a field 'extraField' required via interface 'Node' [@n:n]")
     }
 
     def 'When object extension implements all transitive interfaces, then parsing is successful'() {
@@ -331,7 +329,7 @@ class InterfacesImplementingInterfacesTest extends Specification {
         then:
         def error = thrown(SchemaProblem)
         error.errors.size() == 1
-        error.errors[0].message ==~ "The object extension type 'Image' ${positionPattern} does not implement the following transitive interfaces: \\[Node\\]"
+        assertErrorMessage(error, "The object extension type 'Image' [@n:n] must implement [Node] because it is implemented by 'Resource' [@n:n]")
     }
 
     def 'When interface extension implements all transitive interfaces, then parsing is successful'() {
@@ -399,7 +397,7 @@ class InterfacesImplementingInterfacesTest extends Specification {
         then:
         def error = thrown(SchemaProblem)
         error.errors.size() == 1
-        error.errors[0].message ==~ "The interface extension type 'Image' ${positionPattern} does not implement the following transitive interfaces: \\[Node\\]"
+        assertErrorMessage(error, "The interface extension type 'Image' [@n:n] must implement [Node] because it is implemented by 'Resource' [@n:n]")
     }
 
     def 'When hierarchy results in circular reference, then parsing fails'() {
@@ -433,12 +431,15 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
         then:
         def error = thrown(SchemaProblem)
-        error.errors.size() == 3
-        def errorMessages = error.errors.collect { it.message }
 
-        errorMessages.findAll() { it ==~ "The interface hierarchy in interface type 'Interface1' ${positionPattern} results in a circular dependency \\[Interface1 -> Interface3 -> Interface2 -> Interface1\\]" }.size() == 1
-        errorMessages.findAll() { it ==~ "The interface hierarchy in interface type 'Interface2' ${positionPattern} results in a circular dependency \\[Interface2 -> Interface3 -> Interface1 -> Interface2\\]" }.size() == 1
-        errorMessages.findAll() { it ==~ "The interface hierarchy in interface type 'Interface3' ${positionPattern} results in a circular dependency \\[Interface3 -> Interface1 -> Interface2 -> Interface3\\]" }.size() == 1
+        error.errors.size() == 6
+
+        assertErrorMessage(error, "The interface type 'Interface1' [@n:n] cannot implement 'Interface2' [@n:n] as this would result in a circular reference")
+        assertErrorMessage(error, "The interface type 'Interface1' [@n:n] cannot implement 'Interface3' [@n:n] as this would result in a circular reference")
+        assertErrorMessage(error, "The interface type 'Interface2' [@n:n] cannot implement 'Interface3' [@n:n] as this would result in a circular reference")
+        assertErrorMessage(error, "The interface type 'Interface2' [@n:n] cannot implement 'Interface1' [@n:n] as this would result in a circular reference")
+        assertErrorMessage(error, "The interface type 'Interface3' [@n:n] cannot implement 'Interface1' [@n:n] as this would result in a circular reference")
+        assertErrorMessage(error, "The interface type 'Interface3' [@n:n] cannot implement 'Interface2' [@n:n] as this would result in a circular reference")
     }
 
     def 'When interface doesn\'t implement transitive interface declared in extension, then parsing fails'() {
@@ -471,8 +472,10 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
         then:
         def error = thrown(SchemaProblem)
-        error.errors.size() == 1
-        error.errors[0].message ==~ "The interface type 'Interface1' ${positionPattern} does not implement the following transitive interfaces: \\[Interface3\\]"
+        assertErrorMessages(
+                error,
+                "The interface type 'Interface1' [@n:n] does not implement the following transitive interfaces: [Interface3]"
+        )
     }
 
     def 'When interface implements transitive interface declared in extension, then parsing succeeds'() {
@@ -509,6 +512,16 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
         then:
         noExceptionThrown()
+    }
+
+    def assertErrorMessage(SchemaProblem error, expectedMessage) {
+        def normalizedMessages = error.errors.collect { it.message.replaceAll($/\[@[0-9]+:[0-9]+]/$, '[@n:n]') }
+
+        if (!normalizedMessages.contains(expectedMessage)) {
+            return false
+        }
+
+        return true
     }
 
     def parseSchema(schema) {

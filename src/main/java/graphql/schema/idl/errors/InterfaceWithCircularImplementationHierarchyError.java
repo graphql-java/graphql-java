@@ -1,16 +1,15 @@
 package graphql.schema.idl.errors;
 
 import graphql.language.ImplementingTypeDefinition;
-
-import java.util.Set;
+import graphql.language.InterfaceTypeDefinition;
 
 import static java.lang.String.format;
 
 public class InterfaceWithCircularImplementationHierarchyError extends BaseError {
-    public InterfaceWithCircularImplementationHierarchyError(String typeOfType, ImplementingTypeDefinition typeDefinition, Set<String> interfacesToImplement) {
-        super(typeDefinition, format("The interface hierarchy in %s type '%s' %s results in a circular dependency [%s]",
+    public InterfaceWithCircularImplementationHierarchyError(String typeOfType, ImplementingTypeDefinition typeDefinition, InterfaceTypeDefinition implementedInterface) {
+        super(typeDefinition, format("The %s type '%s' %s cannot implement '%s' %s as this would result in a circular reference",
                 typeOfType, typeDefinition.getName(), lineCol(typeDefinition),
-                typeDefinition.getName() + " -> " + String.join(" -> ", interfacesToImplement)
+                implementedInterface.getName(), lineCol(implementedInterface)
         ));
     }
 }
