@@ -441,6 +441,76 @@ class InterfacesImplementingInterfacesTest extends Specification {
         errorMessages.findAll() { it ==~ "The interface hierarchy in interface type 'Interface3' ${positionPattern} results in a circular dependency \\[Interface3 -> Interface1 -> Interface2 -> Interface3\\]" }.size() == 1
     }
 
+    def 'When interface doesn\'t implement transitive interface declared in extension, then parsing fails'() {
+        when:
+        def schema = """
+            type Query {
+               find(id: String!): Interface1
+            }
+            
+            interface Interface1 implements Interface2 {
+              field1: String
+              field2: String
+            }
+            
+            interface Interface2  {
+              field2: String
+            }
+            
+            interface Interface3 {
+              field3: String
+            }
+            
+            extend interface Interface2 implements Interface3 {
+              field3: String
+            }
+
+            """
+
+        parseSchema(schema)
+
+        then:
+        def error = thrown(SchemaProblem)
+        error.errors.size() == 1
+        error.errors[0].message ==~ "The interface type 'Interface1' ${positionPattern} does not implement the following transitive interfaces: \\[Interface3\\]"
+    }
+
+    def 'When interface implements transitive interface declared in extension, then parsing succeeds'() {
+        when:
+        def schema = """
+            type Query {
+               find(id: String!): Interface1
+            }
+            
+            interface Interface1 implements Interface2 {
+              field1: String
+              field2: String
+            }
+            
+            interface Interface2  {
+              field2: String
+            }
+            
+            interface Interface3 {
+              field3: String
+            }
+            
+            extend interface Interface2 implements Interface3 {
+              field3: String
+            }
+            
+            extend interface Interface1 implements Interface3 {
+              field3: String
+            }
+            
+            """
+
+        parseSchema(schema)
+
+        then:
+        noExceptionThrown()
+    }
+
     def parseSchema(schema) {
         def reader = new StringReader(schema)
         def registry = new SchemaParser().parse(reader)
