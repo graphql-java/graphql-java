@@ -1,12 +1,16 @@
 package graphql
 
-
+import graphql.schema.idl.SchemaGenerator
+import graphql.schema.idl.SchemaParser
+import graphql.schema.idl.errors.SchemaProblem
 import spock.lang.Specification
 
 class InterfacesImplementingInterfacesTest extends Specification {
+    def positionPattern = "\\[@\\d*:\\d*\\]"
+
     def 'Simple interface implementing interface'() {
         when:
-        TestUtil.schema("""
+        def schema = """
             type Query {
                find(id: String!): Node
             }
@@ -20,8 +24,9 @@ class InterfacesImplementingInterfacesTest extends Specification {
               url: String
             }
 
-            """)
+            """
 
+        parseSchema(schema)
 
         then:
         noExceptionThrown()
@@ -29,7 +34,7 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
     def 'When implementing interface does not declare required field, then parsing fails'() {
         when:
-        TestUtil.schema("""
+        def schema = """
             type Query {
                find(id: String!): Node
             }
@@ -41,17 +46,19 @@ class InterfacesImplementingInterfacesTest extends Specification {
             interface Resource implements Node {
               url: String
             }
-            """)
+            """
 
+        parseSchema(schema)
 
         then:
-        def error = thrown(AssertionError)
-        error.getMessage() ==~ ".*The interface type 'Resource'.*does not have a field 'id' required via interface 'Node'.*"
+        def error = thrown(SchemaProblem)
+        error.errors.size() == 1
+        error.errors[0].message ==~ "The interface type 'Resource' ${positionPattern} does not have a field 'id' required via interface 'Node' ${positionPattern}"
     }
 
     def 'Transitively implemented interfaces defined in implementing interface'() {
         when:
-        TestUtil.schema("""
+        def schema = """
             type Query {
                find(id: String!): Node
             }
@@ -70,8 +77,9 @@ class InterfacesImplementingInterfacesTest extends Specification {
               url: String
               thumbnail: String
             }
-            """)
+            """
 
+        parseSchema(schema)
 
         then:
         noExceptionThrown()
@@ -80,7 +88,7 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
     def 'Transitively implemented interfaces defined in implementing type'() {
         when:
-        TestUtil.schema("""
+        def schema = """
             type Query {
                find(id: String!): Node
             }
@@ -99,8 +107,9 @@ class InterfacesImplementingInterfacesTest extends Specification {
               url: String
               thumbnail: String
             }
-            """)
+            """
 
+        parseSchema(schema)
 
         then:
         noExceptionThrown()
@@ -108,7 +117,7 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
     def 'When not all transitively implemented interfaces are defined in implementing interface, then parsing fails'() {
         when:
-        TestUtil.schema("""
+        def schema = """
             type Query {
                find(id: String!): Node
             }
@@ -134,17 +143,19 @@ class InterfacesImplementingInterfacesTest extends Specification {
               thumbnail: String
               large: String
             }
-            """)
+            """
 
+        parseSchema(schema)
 
         then:
-        def error = thrown(AssertionError)
-        error.getMessage() ==~ ".*The interface type 'LargeImage'.*does not implement the following transitive interfaces: \\[Node\\].*"
+        def error = thrown(SchemaProblem)
+        error.errors.size() == 1
+        error.errors[0].message ==~ "The interface type 'LargeImage' ${positionPattern} does not implement the following transitive interfaces: \\[Node\\]"
     }
 
     def 'When not all transitively implemented interfaces are defined in implementing type, then parsing fails'() {
         when:
-        TestUtil.schema("""
+        def schema = """
             type Query {
                find(id: String!): Node
             }
@@ -163,17 +174,19 @@ class InterfacesImplementingInterfacesTest extends Specification {
               url: String
               thumbnail: String
             }
-            """)
+            """
 
+        parseSchema(schema)
 
         then:
-        def error = thrown(AssertionError)
-        error.getMessage() ==~ ".*The object type 'Image'.*does not implement the following transitive interfaces: \\[Node\\].*"
+        def error = thrown(SchemaProblem)
+        error.errors.size() == 1
+        error.errors[0].message ==~ "The object type 'Image' ${positionPattern} does not implement the following transitive interfaces: \\[Node\\]"
     }
 
     def 'When interface implements itself, then parsing fails'() {
         when:
-        TestUtil.schema("""
+        def schema = """
             type Query {
                find(id: String!): Node
             }
@@ -187,17 +200,21 @@ class InterfacesImplementingInterfacesTest extends Specification {
               id: ID!
               name: String
             }
-            """)
+            """
 
+        parseSchema(schema)
 
         then:
-        def error = thrown(AssertionError)
-        error.getMessage() ==~ ".*The interface type 'Node' .* cannot implement itself, The interface type 'Named' .* cannot implement itself.*";
+        def error = thrown(SchemaProblem)
+        error.errors.size() == 2
+        def errorMessages = error.errors.collect { it.message }
+        errorMessages.findAll() { it ==~ "The interface type 'Node' ${positionPattern} cannot implement itself" }.size() == 1
+        errorMessages.findAll() { it ==~ "The interface type 'Named' ${positionPattern} cannot implement itself" }.size() == 1
     }
 
     def 'When interface extension implements interface and declares required field, then parsing is successful'() {
         when:
-        TestUtil.schema("""
+        def schema = """
             type Query {
                find(id: String!): Node
             }
@@ -213,14 +230,17 @@ class InterfacesImplementingInterfacesTest extends Specification {
             extend interface Resource implements Node {
                 id: ID!
             }
-            """)
+            """
+
+        parseSchema(schema)
+
         then:
         noExceptionThrown()
     }
 
     def 'When interface extension implements interface but doesn\'t declare required field, then parsing fails'() {
         when:
-        TestUtil.schema("""
+        def schema = """
             type Query {
                find(id: String!): Node
             }
@@ -237,17 +257,19 @@ class InterfacesImplementingInterfacesTest extends Specification {
             extend interface Resource implements Node {
                 id: ID!
             }
-            """)
+            """
 
+        parseSchema(schema)
 
         then:
-        def error = thrown(AssertionError)
-        error.getMessage() ==~ ".*The interface extension type 'Resource'.*does not have a field 'extraField' required via interface 'Node'.*"
+        def error = thrown(SchemaProblem)
+        error.errors.size() == 1
+        error.errors[0].message ==~ "The interface extension type 'Resource' ${positionPattern} does not have a field 'extraField' required via interface 'Node' ${positionPattern}"
     }
 
     def 'When object extension implements all transitive interfaces, then parsing is successful'() {
         when:
-        TestUtil.schema("""
+        def schema = """
             type Query {
                find(id: String!): Node
             }
@@ -270,14 +292,16 @@ class InterfacesImplementingInterfacesTest extends Specification {
                 url: String
                 thumbnail: String!
             }
-            """)
+            """
+        parseSchema(schema)
+
         then:
         noExceptionThrown()
     }
 
     def 'When object extension does not implement all transitive interfaces, then parsing fails'() {
         when:
-        TestUtil.schema("""
+        def schema = """
             type Query {
                find(id: String!): Node
             }
@@ -300,15 +324,19 @@ class InterfacesImplementingInterfacesTest extends Specification {
                 url: String
                 thumbnail: String!
             }
-            """)
+            """
+
+        parseSchema(schema)
+
         then:
-        def error = thrown(AssertionError)
-        error.getMessage() ==~ ".*The object extension type 'Image'.*does not implement the following transitive interfaces: \\[Node\\].*"
+        def error = thrown(SchemaProblem)
+        error.errors.size() == 1
+        error.errors[0].message ==~ "The object extension type 'Image' ${positionPattern} does not implement the following transitive interfaces: \\[Node\\]"
     }
 
     def 'When interface extension implements all transitive interfaces, then parsing is successful'() {
         when:
-        TestUtil.schema("""
+        def schema = """
             type Query {
                find(id: String!): Node
             }
@@ -331,14 +359,17 @@ class InterfacesImplementingInterfacesTest extends Specification {
                 url: String
                 thumbnail: String!
             }
-            """)
+            """
+
+        parseSchema(schema)
+
         then:
         noExceptionThrown()
     }
 
     def 'When interface extension does not implement all transitive interfaces, then parsing fails'() {
         when:
-        TestUtil.schema("""
+        def schema = """
             type Query {
                find(id: String!): Node
             }
@@ -361,15 +392,19 @@ class InterfacesImplementingInterfacesTest extends Specification {
                 url: String
                 thumbnail: String!
             }
-            """)
+            """
+
+        parseSchema(schema)
+
         then:
-        def error = thrown(AssertionError)
-        error.getMessage() ==~ ".*The interface extension type 'Image'.*does not implement the following transitive interfaces: \\[Node\\].*"
+        def error = thrown(SchemaProblem)
+        error.errors.size() == 1
+        error.errors[0].message ==~ "The interface extension type 'Image' ${positionPattern} does not implement the following transitive interfaces: \\[Node\\]"
     }
 
     def 'When hierarchy results in circular reference, then parsing fails'() {
         when:
-        TestUtil.schema("""
+        def schema = """
             type Query {
                find(id: String!): Interface1
             }
@@ -392,10 +427,26 @@ class InterfacesImplementingInterfacesTest extends Specification {
               field3: String
             }
 
-            """)
+            """
+
+        parseSchema(schema)
+
         then:
-        def error = thrown(AssertionError)
-        println(error.getMessage())
-        error.getMessage() ==~ ".*The interface hierarchy in interface type 'Interface1' .* results in a circular dependency.*"
+        def error = thrown(SchemaProblem)
+        error.errors.size() == 3
+        def errorMessages = error.errors.collect { it.message }
+
+        errorMessages.findAll() { it ==~ "The interface hierarchy in interface type 'Interface1' ${positionPattern} results in a circular dependency \\[Interface1 -> Interface3 -> Interface2 -> Interface1\\]" }.size() == 1
+        errorMessages.findAll() { it ==~ "The interface hierarchy in interface type 'Interface2' ${positionPattern} results in a circular dependency \\[Interface2 -> Interface3 -> Interface1 -> Interface2\\]" }.size() == 1
+        errorMessages.findAll() { it ==~ "The interface hierarchy in interface type 'Interface3' ${positionPattern} results in a circular dependency \\[Interface3 -> Interface1 -> Interface2 -> Interface3\\]" }.size() == 1
+    }
+
+    def parseSchema(schema) {
+        def reader = new StringReader(schema)
+        def registry = new SchemaParser().parse(reader)
+
+        def options = SchemaGenerator.Options.defaultOptions()
+
+        return new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
     }
 }
