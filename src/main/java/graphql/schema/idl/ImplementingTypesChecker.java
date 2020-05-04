@@ -12,28 +12,30 @@ import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.Type;
-import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.schema.idl.errors.InterfaceFieldArgumentNotOptionalError;
 import graphql.schema.idl.errors.InterfaceFieldArgumentRedefinitionError;
 import graphql.schema.idl.errors.InterfaceFieldRedefinitionError;
+import graphql.schema.idl.errors.InterfaceImplementedMoreThanOnceError;
 import graphql.schema.idl.errors.InterfaceImplementingItselfError;
 import graphql.schema.idl.errors.InterfaceWithCircularImplementationHierarchyError;
 import graphql.schema.idl.errors.MissingInterfaceFieldArgumentsError;
 import graphql.schema.idl.errors.MissingInterfaceFieldError;
 import graphql.schema.idl.errors.MissingTransitiveInterfaceError;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -42,35 +44,26 @@ import static java.util.stream.Collectors.toSet;
  */
 @Internal
 class ImplementingTypesChecker {
+    private static final Map<Class<? extends ImplementingTypeDefinition>, String> TYPE_OF_MAP = new HashMap<>();
+
+    static {
+        TYPE_OF_MAP.put(ObjectTypeDefinition.class, "object");
+        TYPE_OF_MAP.put(ObjectTypeExtensionDefinition.class, "object extension");
+        TYPE_OF_MAP.put(InterfaceTypeDefinition.class, "interface");
+        TYPE_OF_MAP.put(InterfaceTypeExtensionDefinition.class, "interface extension");
+    }
 
     void checkImplementingTypes(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
-        Map<String, TypeDefinition> typesMap = typeRegistry.types();
+        final List<InterfaceTypeDefinition> interfaces = typeRegistry.getTypes(InterfaceTypeDefinition.class);
+        final List<ObjectTypeDefinition> objects = typeRegistry.getTypes(ObjectTypeDefinition.class);
 
-        // objects
-        List<ObjectTypeDefinition> objectTypes = filterTo(typesMap, ObjectTypeDefinition.class);
-        objectTypes.forEach(type -> {
-            checkImplementingType("object", errors, typeRegistry, type);
-        });
+        Stream.of(
+                interfaces.stream(),
+                objects.stream()
+        )
+                .flatMap(Function.identity())
+                .forEach(type -> checkImplementingType(TYPE_OF_MAP.get(type.getClass()), errors, typeRegistry, type));
 
-        List<ObjectTypeExtensionDefinition> objectExtensions = typeRegistry.objectTypeExtensions().values()
-                .stream().flatMap(Collection::stream).collect(toList());
-
-        objectExtensions.forEach(type -> {
-            checkImplementingType("object extension", errors, typeRegistry, type);
-        });
-
-        // interfaces
-        List<InterfaceTypeDefinition> interfacesTypes = filterTo(typesMap, InterfaceTypeDefinition.class);
-        interfacesTypes.forEach(type -> {
-            checkImplementingType("interface", errors, typeRegistry, type);
-        });
-
-        List<InterfaceTypeExtensionDefinition> interfaceExtensions = typeRegistry.interfaceTypeExtensions().values()
-                .stream().flatMap(Collection::stream).collect(toList());
-
-        interfaceExtensions.forEach(type -> {
-            checkImplementingType("interface extension", errors, typeRegistry, type);
-        });
     }
 
     private void checkImplementingType(
@@ -79,81 +72,104 @@ class ImplementingTypesChecker {
             TypeDefinitionRegistry typeRegistry,
             ImplementingTypeDefinition type) {
 
-        List<Type> implementsTypes = type.getImplements();
+        Map<InterfaceTypeDefinition, ImplementingTypeDefinition> implementedInterfaces =
+                checkInterfacesNotImplementedMoreThanOnce(errors, type, typeRegistry);
 
-        implementsTypes.forEach(checkInterfaceIsImplemented(typeOfType, typeRegistry, errors, type));
+        checkInterfaceIsImplemented(typeOfType, typeRegistry, errors, type, implementedInterfaces);
 
-        checkAncestorImplementation(typeOfType, errors, typeRegistry, type);
+        checkAncestorImplementation(typeOfType, errors, typeRegistry, type, implementedInterfaces);
+    }
+
+    private Map<InterfaceTypeDefinition, ImplementingTypeDefinition> checkInterfacesNotImplementedMoreThanOnce(List<GraphQLError> errors, ImplementingTypeDefinition type, TypeDefinitionRegistry typeRegistry) {
+        Map<InterfaceTypeDefinition, List<ImplementingTypeDefinition>> implementedInterfaces = getLogicallyImplementedInterfaces(type, typeRegistry);
+
+        Map<InterfaceTypeDefinition, ImplementingTypeDefinition> interfacesImplementedOnce = implementedInterfaces.entrySet()
+                .stream()
+                .filter(entry -> entry.getValue().size() == 1)
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().get(0)
+                ));
+
+        implementedInterfaces.entrySet().stream()
+                .filter(entry -> !interfacesImplementedOnce.containsKey(entry.getKey()))
+                .forEach(entry -> {
+                    entry.getValue().forEach(offendingType -> {
+                        errors.add(new InterfaceImplementedMoreThanOnceError(TYPE_OF_MAP.get(offendingType.getClass()), offendingType, entry.getKey()));
+                    });
+                });
+
+        return interfacesImplementedOnce;
     }
 
     private void checkAncestorImplementation(
             String typeOfType,
             List<GraphQLError> errors,
             TypeDefinitionRegistry typeRegistry,
-            ImplementingTypeDefinition type) {
+            ImplementingTypeDefinition type,
+            Map<InterfaceTypeDefinition, ImplementingTypeDefinition> implementedInterfaces) {
 
-        Set<InterfaceTypeDefinition> implementedInterfaces = toInterfaceTypeDefinitions(typeRegistry, type.getImplements());
-
-        if (implementedInterfaces.contains(type)) {
+        if (implementedInterfaces.containsKey(type)) {
             errors.add(new InterfaceImplementingItselfError(typeOfType, type));
             return;
         }
 
-        implementedInterfaces.forEach(implementedInterface -> {
-            Set<InterfaceTypeDefinition> transitiveInterfaces = toInterfaceTypeDefinitions(typeRegistry, implementedInterface.getImplements());
+        implementedInterfaces.keySet().forEach(implementedInterface -> {
+            Set<InterfaceTypeDefinition> transitiveInterfaces = getLogicallyImplementedInterfaces(implementedInterface, typeRegistry).keySet();
 
-            if (transitiveInterfaces.contains(type)) {
-                errors.add(new InterfaceWithCircularImplementationHierarchyError(typeOfType, type, implementedInterface));
-            } else if (!implementedInterfaces.containsAll(transitiveInterfaces)) {
-                Set<InterfaceTypeDefinition> missingInterfaces = transitiveInterfaces.stream()
-                        .filter(i -> !implementedInterfaces.contains(i))
-                        .collect(toSet());
+            transitiveInterfaces.forEach(transitiveInterface -> {
+                if (transitiveInterface.equals(type)) {
+                    errors.add(new InterfaceWithCircularImplementationHierarchyError(typeOfType, type, implementedInterface));
+                } else if (!implementedInterfaces.containsKey(transitiveInterface)) {
+                    ImplementingTypeDefinition offendingType = implementedInterfaces.get(implementedInterface);
 
-                errors.add(new MissingTransitiveInterfaceError(typeOfType, type, implementedInterface, missingInterfaces));
-            }
+                    errors.add(new MissingTransitiveInterfaceError(TYPE_OF_MAP.get(offendingType.getClass()), offendingType, implementedInterface, transitiveInterface));
+                }
+            });
         });
     }
 
-    private Consumer<? super Type> checkInterfaceIsImplemented(
+    private void checkInterfaceIsImplemented(
             String typeOfType,
             TypeDefinitionRegistry typeRegistry,
             List<GraphQLError> errors,
-            ImplementingTypeDefinition typeDefinition
+            ImplementingTypeDefinition type,
+            Map<InterfaceTypeDefinition, ImplementingTypeDefinition> implementedInterfaces
     ) {
-        return t -> {
-            List<FieldDefinition> fieldDefinitions = typeDefinition.getFieldDefinitions();
+        implementedInterfaces.entrySet().forEach(entry -> {
+            InterfaceTypeDefinition implementedInterface = entry.getKey();
 
-            // previous checks handle the missing case and wrong type case
-            toInterfaceTypeDefinition(t, typeRegistry)
-                    .ifPresent(interfaceTypeDef -> {
-                        Map<String, FieldDefinition> objectFields = fieldDefinitions.stream()
-                                .collect(Collectors.toMap(
-                                        FieldDefinition::getName, Function.identity(), mergeFirstValue()
-                                ));
+            Set<FieldDefinition> fieldDefinitions = getLogicallyDeclaredFields(type, typeRegistry);
 
-                        interfaceTypeDef.getFieldDefinitions().forEach(interfaceFieldDef -> {
-                            FieldDefinition objectFieldDef = objectFields.get(interfaceFieldDef.getName());
-                            if (objectFieldDef == null) {
-                                errors.add(new MissingInterfaceFieldError(typeOfType, typeDefinition, interfaceTypeDef, interfaceFieldDef));
-                            } else {
-                                if (!typeRegistry.isSubTypeOf(objectFieldDef.getType(), interfaceFieldDef.getType())) {
-                                    String interfaceFieldType = AstPrinter.printAst(interfaceFieldDef.getType());
-                                    String objectFieldType = AstPrinter.printAst(objectFieldDef.getType());
-                                    errors.add(new InterfaceFieldRedefinitionError(typeOfType, typeDefinition, interfaceTypeDef, objectFieldDef, objectFieldType, interfaceFieldType));
-                                }
+            Map<String, FieldDefinition> objectFields = fieldDefinitions.stream()
+                    .collect(Collectors.toMap(
+                            FieldDefinition::getName, Function.identity(), mergeFirstValue()
+                    ));
 
-                                // look at arguments
-                                List<InputValueDefinition> objectArgs = objectFieldDef.getInputValueDefinitions();
-                                List<InputValueDefinition> interfaceArgs = interfaceFieldDef.getInputValueDefinitions();
-                                if (objectArgs.size() < interfaceArgs.size()) {
-                                    errors.add(new MissingInterfaceFieldArgumentsError(typeOfType, typeDefinition, interfaceTypeDef, objectFieldDef));
-                                } else {
-                                    checkArgumentConsistency(typeOfType, typeDefinition, interfaceTypeDef, objectFieldDef, interfaceFieldDef, errors);
-                                }
-                            }
-                        });
-                    });
-        };
+            implementedInterface.getFieldDefinitions().forEach(interfaceFieldDef -> {
+                FieldDefinition objectFieldDef = objectFields.get(interfaceFieldDef.getName());
+                if (objectFieldDef == null) {
+                    ImplementingTypeDefinition offendingType = entry.getValue();
+                    errors.add(new MissingInterfaceFieldError(TYPE_OF_MAP.get(offendingType.getClass()), offendingType, implementedInterface, interfaceFieldDef));
+                } else {
+                    if (!typeRegistry.isSubTypeOf(objectFieldDef.getType(), interfaceFieldDef.getType())) {
+                        String interfaceFieldType = AstPrinter.printAst(interfaceFieldDef.getType());
+                        String objectFieldType = AstPrinter.printAst(objectFieldDef.getType());
+                        ImplementingTypeDefinition offendingType = entry.getValue();
+//                        errors.add(new InterfaceFieldRedefinitionError(TYPE_OF_MAP.get(offendingType.getClass()), offendingType, implementedInterface, objectFieldDef, objectFieldType, interfaceFieldType));
+                    }
+
+                    // look at arguments
+                    List<InputValueDefinition> objectArgs = objectFieldDef.getInputValueDefinitions();
+                    List<InputValueDefinition> interfaceArgs = interfaceFieldDef.getInputValueDefinitions();
+                    if (objectArgs.size() < interfaceArgs.size()) {
+//                        errors.add(new MissingInterfaceFieldArgumentsError(typeOfType, type, implementedInterface, objectFieldDef));
+                    } else {
+                        checkArgumentConsistency(typeOfType, type, implementedInterface, objectFieldDef, interfaceFieldDef, errors);
+                    }
+                }
+            });
+        });
     }
 
     private void checkArgumentConsistency(
@@ -172,7 +188,7 @@ class ImplementingTypesChecker {
             String interfaceArgStr = AstPrinter.printAstCompact(interfaceArg);
             String objectArgStr = AstPrinter.printAstCompact(objectArg);
             if (!interfaceArgStr.equals(objectArgStr)) {
-                errors.add(new InterfaceFieldArgumentRedefinitionError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectArgStr, interfaceArgStr));
+//                errors.add(new InterfaceFieldArgumentRedefinitionError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectArgStr, interfaceArgStr));
             }
         }
 
@@ -181,17 +197,49 @@ class ImplementingTypesChecker {
                 InputValueDefinition objectArg = objectArgs.get(i);
                 if (objectArg.getType() instanceof NonNullType) {
                     String objectArgStr = AstPrinter.printAst(objectArg);
-                    errors.add(new InterfaceFieldArgumentNotOptionalError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectArgStr));
+//                    errors.add(new InterfaceFieldArgumentNotOptionalError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectArgStr));
                 }
             }
         }
     }
 
-    private <T extends TypeDefinition> List<T> filterTo(Map<String, TypeDefinition> types, Class<? extends T> clazz) {
-        return types.values().stream()
-                .filter(t -> clazz.equals(t.getClass()))
-                .map(clazz::cast)
-                .collect(toList());
+    private Map<InterfaceTypeDefinition, List<ImplementingTypeDefinition>> getLogicallyImplementedInterfaces(
+            ImplementingTypeDefinition type,
+            TypeDefinitionRegistry typeRegistry
+    ) {
+
+        Stream<ImplementingTypeDefinition> extensions = Stream.concat(
+                typeRegistry.interfaceTypeExtensions().getOrDefault(type.getName(), emptyList()).stream(),
+                typeRegistry.objectTypeExtensions().getOrDefault(type.getName(), emptyList()).stream()
+        );
+
+        return Stream.concat(Stream.of(type), extensions)
+                .collect(HashMap::new, (map, implementingType) -> {
+                    List<Type> implementedInterfaces = implementingType.getImplements();
+
+                    toInterfaceTypeDefinitions(typeRegistry, implementedInterfaces).forEach(implemented -> {
+                        List<ImplementingTypeDefinition> implementingTypes = map.getOrDefault(implemented, new ArrayList<>());
+                        implementingTypes.add(implementingType);
+                        map.put(implemented, implementingTypes);
+                    });
+                }, HashMap::putAll);
+
+    }
+
+    private Set<FieldDefinition> getLogicallyDeclaredFields(
+            ImplementingTypeDefinition type,
+            TypeDefinitionRegistry typeRegistry
+    ) {
+        final Stream<FieldDefinition> directFields = type.getFieldDefinitions().stream();
+
+        final Stream<FieldDefinition> extensionFields = Stream.<ImplementingTypeDefinition>concat(
+                typeRegistry.interfaceTypeExtensions().getOrDefault(type.getName(), emptyList()).stream(),
+                typeRegistry.objectTypeExtensions().getOrDefault(type.getName(), emptyList()).stream()
+        )
+                .map(ImplementingTypeDefinition::getFieldDefinitions)
+                .flatMap(Collection::stream);
+
+        return Stream.concat(directFields, extensionFields).collect(toSet());
     }
 
     private <T> BinaryOperator<T> mergeFirstValue() {
@@ -205,7 +253,7 @@ class ImplementingTypesChecker {
         return typeRegistry.getType(unwrapped, InterfaceTypeDefinition.class);
     }
 
-    private Set<InterfaceTypeDefinition> toInterfaceTypeDefinitions(TypeDefinitionRegistry typeRegistry, List<Type> implementsTypes) {
+    private Set<InterfaceTypeDefinition> toInterfaceTypeDefinitions(TypeDefinitionRegistry typeRegistry, Collection<Type> implementsTypes) {
         return implementsTypes.stream()
                 .map(t -> toInterfaceTypeDefinition(t, typeRegistry))
                 .filter(Optional::isPresent)

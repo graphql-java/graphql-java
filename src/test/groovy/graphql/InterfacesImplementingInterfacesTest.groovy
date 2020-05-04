@@ -148,8 +148,8 @@ class InterfacesImplementingInterfacesTest extends Specification {
         then:
         def error = thrown(SchemaProblem)
         error.errors.size() == 2
-        assertErrorMessage(error, "The interface type 'LargeImage' [@n:n] must implement [Node] because it is implemented by 'Image' [@n:n]")
-        assertErrorMessage(error, "The interface type 'LargeImage' [@n:n] must implement [Node] because it is implemented by 'Resource' [@n:n]")
+        assertErrorMessage(error, "The interface type 'LargeImage' [@n:n] must implement 'Node' [@n:n] because it is implemented by 'Image' [@n:n]")
+        assertErrorMessage(error, "The interface type 'LargeImage' [@n:n] must implement 'Node' [@n:n] because it is implemented by 'Resource' [@n:n]")
     }
 
     def 'When not all transitively implemented interfaces are defined in implementing type, then parsing fails'() {
@@ -180,7 +180,7 @@ class InterfacesImplementingInterfacesTest extends Specification {
         then:
         def error = thrown(SchemaProblem)
         error.errors.size() == 1
-        assertErrorMessage(error, "The object type 'Image' [@n:n] must implement [Node] because it is implemented by 'Resource' [@n:n]")
+        assertErrorMessage(error, "The object type 'Image' [@n:n] must implement 'Node' [@n:n] because it is implemented by 'Resource' [@n:n]")
     }
 
     def 'When interface implements itself, then parsing fails'() {
@@ -329,7 +329,7 @@ class InterfacesImplementingInterfacesTest extends Specification {
         then:
         def error = thrown(SchemaProblem)
         error.errors.size() == 1
-        assertErrorMessage(error, "The object extension type 'Image' [@n:n] must implement [Node] because it is implemented by 'Resource' [@n:n]")
+        assertErrorMessage(error, "The object extension type 'Image' [@n:n] must implement 'Node' [@n:n] because it is implemented by 'Resource' [@n:n]")
     }
 
     def 'When interface extension implements all transitive interfaces, then parsing is successful'() {
@@ -397,7 +397,7 @@ class InterfacesImplementingInterfacesTest extends Specification {
         then:
         def error = thrown(SchemaProblem)
         error.errors.size() == 1
-        assertErrorMessage(error, "The interface extension type 'Image' [@n:n] must implement [Node] because it is implemented by 'Resource' [@n:n]")
+        assertErrorMessage(error, "The interface extension type 'Image' [@n:n] must implement 'Node' [@n:n] because it is implemented by 'Resource' [@n:n]")
     }
 
     def 'When hierarchy results in circular reference, then parsing fails'() {
@@ -472,9 +472,11 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
         then:
         def error = thrown(SchemaProblem)
-        assertErrorMessages(
+        error.errors.size() == 1
+
+        assertErrorMessage(
                 error,
-                "The interface type 'Interface1' [@n:n] does not implement the following transitive interfaces: [Interface3]"
+                "The interface type 'Interface1' [@n:n] must implement 'Interface3' [@n:n] because it is implemented by 'Interface2' [@n:n]"
         )
     }
 
@@ -512,6 +514,125 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
         then:
         noExceptionThrown()
+    }
+
+    def 'When field required by new extension implementation is declared in original interface type, then parsing succeeds'() {
+        when:
+        def schema = """
+            type Query {
+               find(id: String!): Interface1
+            }
+            
+            interface Interface1 {
+              field1: String
+              field2: String
+            }
+            
+            interface Interface2  {
+              field2: String
+            }
+            
+            extend interface Interface1 implements Interface2
+            
+            """
+
+        parseSchema(schema)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def 'When type declares interface and extension declares required field, then parsing succeeds'() {
+        when:
+        def schema = """
+            type Query {
+               find(id: String!): Interface1
+            }
+            
+            interface Interface1 implements Interface2 {
+              field1: String
+            }
+            
+            interface Interface2  {
+              field2: String
+            }
+            
+            extend interface Interface1 {
+              field2: String
+            }
+            
+            """
+
+        parseSchema(schema)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def 'When interface implements same interface more than once via extensions, then parsing fails'() {
+        when:
+        def schema = """
+           type Query {
+              find(id: String!): Type1
+           }
+           
+           type Type1 {
+             field1: String
+           }
+           
+           interface Interface2  {
+             field20: String
+             field21: String
+           }
+           
+           extend type Type1 implements Interface2 {
+             field20: String
+           }
+           
+           extend type Type1 implements Interface2 {
+             field21: String
+           }
+            """
+
+        parseSchema(schema)
+
+        then:
+        def error = thrown(SchemaProblem)
+        error.errors.size() == 2
+
+        assertErrorMessage(error, "The object extension type 'Type1' [@n:n] can only implement 'Interface2' [@n:n] once.")
+    }
+
+    def 'When interface implements same interface more than once, then parsing fails'() {
+        when:
+        def schema = """
+           type Query {
+              find(id: String!): Type1
+           }
+           
+           type Type1 implements Interface2 {
+             field1: String
+             field20: String
+           }
+           
+           interface Interface2  {
+             field20: String
+             field21: String
+           }
+           
+           extend type Type1 implements Interface2 {
+             field21: String
+           }
+            """
+
+        parseSchema(schema)
+
+        then:
+        def error = thrown(SchemaProblem)
+        error.errors.size() == 2
+
+        assertErrorMessage(error, "The object extension type 'Type1' [@n:n] can only implement 'Interface2' [@n:n] once.")
+        assertErrorMessage(error, "The object type 'Type1' [@n:n] can only implement 'Interface2' [@n:n] once.")
     }
 
     def assertErrorMessage(SchemaProblem error, expectedMessage) {

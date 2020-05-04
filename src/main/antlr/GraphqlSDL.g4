@@ -76,7 +76,8 @@ interfaceTypeDefinition : description? INTERFACE name implementsInterfaces? dire
 
 interfaceTypeExtensionDefinition :
     EXTEND INTERFACE name implementsInterfaces? directives? extensionFieldsDefinition |
-    EXTEND INTERFACE name implementsInterfaces? directives emptyParentheses?
+    EXTEND INTERFACE name implementsInterfaces? directives emptyParentheses? |
+    EXTEND INTERFACE name implementsInterfaces
 ;
 
 
