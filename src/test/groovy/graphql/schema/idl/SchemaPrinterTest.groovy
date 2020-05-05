@@ -1105,7 +1105,7 @@ type Query {
 '''
     }
 
-    def "directive definitions are not printed when the includeDirectiveDefinitions flag is set"() {
+    def "directive definitions are not printed when the includeDirectiveDefinitions flag is set to false"() {
         def simpleIdlWithDirective = '''
                 directive @example on FIELD_DEFINITION
                 
@@ -1120,7 +1120,7 @@ type Query {
         given:
         def registry = new SchemaParser().parse(simpleIdlWithDirective)
         def runtimeWiring = newRuntimeWiring().build()
-        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+        def options = SchemaGenerator.Options.defaultOptions()
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
