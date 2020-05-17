@@ -288,7 +288,6 @@ class InterfacesImplementingInterfacesTest extends Specification {
             extend type Image implements Node & Resource {
                 id: ID!
                 url: String
-                thumbnail: String!
             }
             """
         parseSchema(schema)
@@ -320,7 +319,6 @@ class InterfacesImplementingInterfacesTest extends Specification {
             extend type Image implements Resource {
                 id: ID!
                 url: String
-                thumbnail: String!
             }
             """
 
@@ -355,7 +353,6 @@ class InterfacesImplementingInterfacesTest extends Specification {
             extend interface Image implements Node & Resource {
                 id: ID!
                 url: String
-                thumbnail: String!
             }
             """
 
@@ -388,7 +385,6 @@ class InterfacesImplementingInterfacesTest extends Specification {
             extend interface Image implements Resource {
                 id: ID!
                 url: String
-                thumbnail: String!
             }
             """
 
@@ -633,6 +629,215 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
         assertErrorMessage(error, "The object extension type 'Type1' [@n:n] can only implement 'Interface2' [@n:n] once.")
         assertErrorMessage(error, "The object type 'Type1' [@n:n] can only implement 'Interface2' [@n:n] once.")
+    }
+
+    def 'When interface implements interface and redefines non-null field as nullable, then parsing fails'() {
+        when:
+        def schema = """
+            type Query {
+               find(id: String!): Node
+            }
+            
+            interface Node {
+              id: ID!
+            }
+
+            interface Resource implements Node {
+              url: String
+              id: ID
+            }
+            
+            """
+
+        parseSchema(schema)
+
+        then:
+        def error = thrown(SchemaProblem)
+        error.errors.size() == 1
+
+        assertErrorMessage(error, "The interface type 'Resource' [@n:n] has tried to redefine field 'id' defined via interface 'Node' [@n:n] from 'ID!' to 'ID'")
+    }
+
+    def 'When interface extension implements interface and redefines non-null field as nullable, then parsing fails'() {
+        when:
+        def schema = """
+            type Query {
+               find(id: String!): Node
+            }
+            
+            interface Node {
+              id: ID!
+            }
+
+            interface Resource {
+              url: String
+            }
+            
+            extend interface Resource implements Node {
+                id: ID
+            }
+            """
+
+        parseSchema(schema)
+
+        then:
+        def error = thrown(SchemaProblem)
+        error.errors.size() == 1
+
+        assertErrorMessage(error, "The interface extension type 'Resource' [@n:n] has tried to redefine field 'id' defined via interface 'Node' [@n:n] from 'ID!' to 'ID'")
+    }
+
+    def 'When interface implements interface and redefines nullable field as non-null, then parsing succeeds'() {
+        when:
+        def schema = """
+            type Query {
+               find(id: String!): Node
+            }
+            
+            interface Node {
+              id: ID
+            }
+
+            interface Resource implements Node {
+              url: String
+              id: ID!
+            }
+            
+            """
+
+        parseSchema(schema)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def 'When interface extension implements interface and redefines nullable field as non-null, then parsing succeeds'() {
+        when:
+        def schema = """
+            type Query {
+               find(id: String!): Node
+            }
+            
+            interface Node {
+              id: ID
+            }
+
+            interface Resource {
+              url: String
+            }
+            
+            extend interface Resource implements Node {
+                id: ID!
+            }
+            """
+
+        parseSchema(schema)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def 'When interface extension implements interface and misses field arguments, then parsing fails'() {
+        when:
+        def schema = """
+            interface InterfaceType {
+                fieldA(arg1 : Int) : Int 
+                fieldB(arg1 : String = "defaultVal", arg2 : String, arg3 : Int) : String 
+            }
+
+            interface BaseInterface {
+                fieldX : Int
+            }
+
+            extend interface BaseInterface implements InterfaceType {
+                fieldA : Int
+                fieldB(arg1 : String = "defaultValX", arg2 : String!, arg3 : String) : String 
+            }
+            
+            type Query {
+               mock: String
+            }
+
+            """
+
+        parseSchema(schema)
+
+        then:
+        def error = thrown(SchemaProblem)
+        error.errors.size() == 4
+
+        assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] field 'fieldA' does not have the same number of arguments as specified via interface 'InterfaceType' [@n:n]")
+        assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg1:String =\"defaultVal\"' to 'arg1:String =\"defaultValX\"")
+        assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg2:String' to 'arg2:String!")
+        assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg3:Int' to 'arg3:String")
+    }
+
+    def 'When interface implements interface and misses field arguments, then parsing fails'() {
+        when:
+        def schema = """
+            interface InterfaceType {
+                fieldA(arg1 : Int) : Int 
+                fieldB(arg1 : String = "defaultVal", arg2 : String, arg3 : Int) : String 
+            }
+
+            interface BaseInterface implements InterfaceType {
+                fieldX : Int
+                fieldA : Int
+                fieldB(arg1 : String = "defaultValX", arg2 : String!, arg3 : String) : String 
+            }
+            
+            type Query {
+               mock: String
+            }
+            """
+
+        parseSchema(schema)
+
+        then:
+        def error = thrown(SchemaProblem)
+        error.errors.size() == 4
+
+        assertErrorMessage(error, "The interface type 'BaseInterface' [@n:n] field 'fieldA' does not have the same number of arguments as specified via interface 'InterfaceType' [@n:n]")
+        assertErrorMessage(error, "The interface type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg1:String =\"defaultVal\"' to 'arg1:String =\"defaultValX\"")
+        assertErrorMessage(error, "The interface type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg2:String' to 'arg2:String!")
+        assertErrorMessage(error, "The interface type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg3:Int' to 'arg3:String")
+    }
+
+    def 'When interface implements interface via extension and misses field arguments, then parsing fails'() {
+        when:
+        def schema = """
+            interface InterfaceType {
+                fieldA(arg1 : Int) : Int 
+                fieldB(arg1 : String = "defaultVal", arg2 : String, arg3 : Int) : String 
+            }
+
+            interface BaseInterface {
+                fieldX : Int
+                fieldA : Int
+                fieldB(arg1 : String = "defaultValX", arg2 : String!, arg3 : String) : String 
+            }
+            
+            extend interface BaseInterface implements InterfaceType
+            
+            type BaseType {
+                id: ID!
+            }
+
+            type Query {
+               mock: String
+            }
+            """
+
+        parseSchema(schema)
+
+        then:
+        def error = thrown(SchemaProblem)
+        error.errors.size() == 4
+
+        assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] field 'fieldA' does not have the same number of arguments as specified via interface 'InterfaceType' [@n:n]")
+        assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg1:String =\"defaultVal\"' to 'arg1:String =\"defaultValX\"")
+        assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg2:String' to 'arg2:String!")
+        assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg3:Int' to 'arg3:String")
     }
 
     def assertErrorMessage(SchemaProblem error, expectedMessage) {
