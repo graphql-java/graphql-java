@@ -529,11 +529,9 @@ class SchemaGeneratorTest extends Specification {
                extraField1 : String
             }
             extend type BaseType implements Interface2 {
-               extraField1 : String
                extraField2 : Int
             }
             extend type BaseType implements Interface3 {
-               extraField1 : String
                extraField3 : ID
             }
             extend type BaseType {
@@ -602,7 +600,6 @@ class SchemaGeneratorTest extends Specification {
                 name: String!
             }
             extend type Human implements Character {
-                name: String!
                 friends: [Character]
             }
             extend type Human {
