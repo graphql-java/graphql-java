@@ -16,6 +16,7 @@ import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -189,5 +190,18 @@ public class FpKit {
         return -1;
     }
 
+    /**
+     * This will memoize the Supplier within the current thread's visibility, that is it does not
+     * use volatile reads but rather use a sentinel check and re-reads the delegate supplier
+     * value if the read has not stuck to this thread.  This means that its possible that your delegate
+     * supplier MAY be called more than once across threads, but only once on the same thread.
+     *
+     * @param delegate the supplier to delegate to
+     * @param <T>      for two
+     * @return a supplier that will memoize values in the context of the current thread
+     */
+    public static <T> Supplier<T> memoize(Supplier<T> delegate) {
+        return new MemoizedSupplier<>(delegate);
+    }
 
 }
