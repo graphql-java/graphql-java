@@ -59,21 +59,6 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     /**
      * alternative to using a Builder for convenience
      *
-     * @param name         of the variable
-     * @param type         of the variable
-     * @param defaultValue of the variable
-     * @param directives   of the variable
-     */
-    public VariableDefinition(String name,
-                              Type type,
-                              Value defaultValue,
-                              List<Directive> directives) {
-        this(name, type, defaultValue, directives, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
-    }
-
-    /**
-     * alternative to using a Builder for convenience
-     *
      * @param name of the variable
      * @param type of the variable
      */
@@ -81,7 +66,6 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
                               Type type) {
         this(name, type, null, null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
-
 
     public Value getDefaultValue() {
         return defaultValue;
@@ -236,6 +220,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
             this.defaultValue = defaultValue;
             return this;
         }
+
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;

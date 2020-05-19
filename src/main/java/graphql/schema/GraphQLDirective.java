@@ -224,7 +224,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
             this.onOperation = existing.isOnOperation();
             this.onFragment = existing.isOnFragment();
             this.onField = existing.isOnField();
-            this.onVariableDefinition=existing.isOnVariableDefinition();
+            this.onVariableDefinition = existing.isOnVariableDefinition();
             this.locations = existing.validLocations();
             this.arguments.putAll(getByName(existing.getArguments(), GraphQLArgument::getName));
         }
@@ -355,19 +355,6 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         @Deprecated
         public Builder onField(boolean onField) {
             this.onField = onField;
-            return this;
-        }
-
-        /**
-         * @param onVariableDefinition onVariableDefinition
-         *
-         * @return this builder
-         *
-         * @deprecated Use {@code graphql.schema.GraphQLDirective.Builder#validLocations(DirectiveLocation...)}
-         */
-        @Deprecated
-        public Builder onVariableDefinition(boolean onVariableDefinition) {
-            this.onVariableDefinition = onVariableDefinition;
             return this;
         }
 
