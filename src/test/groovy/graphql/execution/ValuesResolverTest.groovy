@@ -40,7 +40,7 @@ class ValuesResolverTest extends Specification {
     def "getVariableValues: simple variable input #inputValue"() {
         given:
         def schema = TestUtil.schemaWithInputType(inputType)
-        VariableDefinition variableDefinition = new VariableDefinition("variable", variableType)
+        VariableDefinition variableDefinition = new VariableDefinition("variable", variableType,null)
         when:
         def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], [variable: inputValue])
         then:

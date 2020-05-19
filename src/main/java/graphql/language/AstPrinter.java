@@ -398,11 +398,12 @@ public class AstPrinter {
     private NodePrinter<VariableDefinition> variableDefinition() {
         String nameTypeSep = compactMode ? ":" : ": ";
         String defaultValueEquals = compactMode ? "=" : " = ";
-        return (out, node) -> out.printf("$%s%s%s%s",
+        return (out, node) -> out.printf("$%s%s%s%s%s",
                 node.getName(),
                 nameTypeSep,
                 type(node.getType()),
-                wrap(defaultValueEquals, node.getDefaultValue(), "")
+                wrap(defaultValueEquals, node.getDefaultValue(), ""),
+                directives(node.getDirectives())
         );
     }
 
