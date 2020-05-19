@@ -191,7 +191,7 @@ class TestUtil {
     }
 
     static GraphQLDirective mockDirective(String name) {
-        new GraphQLDirective(name, name, EnumSet.noneOf(DirectiveLocation.class), Collections.emptyList(), false, false, false,false)
+        new GraphQLDirective(name, name, EnumSet.noneOf(DirectiveLocation.class), Collections.emptyList(), false, false, false)
     }
 
     static TypeRuntimeWiring mockTypeRuntimeWiring(String typeName, boolean withResolver) {

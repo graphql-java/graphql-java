@@ -466,11 +466,6 @@ public class Introspection {
             return directive.isOnField() ||
                     directive.validLocations().contains(DirectiveLocation.FIELD);
         });
-        register(__Directive, "onVariableDefinition", environment -> {
-            GraphQLDirective directive = environment.getSource();
-            return directive.isOnVariableDefinition() ||
-                    directive.validLocations().contains(DirectiveLocation.VARIABLE_DEFINITION);
-        });
 
         register(__Directive, "name", nameDataFetcher);
         register(__Directive, "description", descriptionDataFetcher);

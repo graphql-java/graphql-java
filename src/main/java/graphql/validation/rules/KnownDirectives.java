@@ -8,9 +8,9 @@ import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.Node;
-import graphql.language.VariableDefinition;
 import graphql.language.OperationDefinition;
 import graphql.language.OperationDefinition.Operation;
+import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLDirective;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
@@ -58,7 +58,7 @@ public class KnownDirectives extends AbstractRule {
         } else if (ancestor instanceof InlineFragment) {
             return !(directive.validLocations().contains(DirectiveLocation.INLINE_FRAGMENT) || directive.isOnFragment());
         }else if (ancestor instanceof VariableDefinition){
-            return !(directive.validLocations().contains(DirectiveLocation.VARIABLE_DEFINITION) || directive.isOnVariableDefinition());
+            return !(directive.validLocations().contains(DirectiveLocation.VARIABLE_DEFINITION));
         }
         return true;
     }

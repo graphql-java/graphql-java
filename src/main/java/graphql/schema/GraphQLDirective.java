@@ -36,7 +36,6 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
     private final boolean onOperation;
     private final boolean onFragment;
     private final boolean onField;
-    private final boolean onVariableDefinition;
     private final DirectiveDefinition definition;
 
 
@@ -52,9 +51,8 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
                             List<GraphQLArgument> arguments,
                             boolean onOperation,
                             boolean onFragment,
-                            boolean onField,
-                            boolean onVariableDefinition) {
-        this(name, description, locations, arguments, onOperation, onFragment, onField,onVariableDefinition,null);
+                            boolean onField) {
+        this(name, description, locations, arguments, onOperation, onFragment, onField, null);
     }
 
     private GraphQLDirective(String name,
@@ -64,7 +62,6 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
                              boolean onOperation,
                              boolean onFragment,
                              boolean onField,
-                             boolean onVariableDefinition,
                              DirectiveDefinition definition) {
         assertValidName(name);
         assertNotNull(arguments, "arguments can't be null");
@@ -75,7 +72,6 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         this.onOperation = onOperation;
         this.onFragment = onFragment;
         this.onField = onField;
-        this.onVariableDefinition=onVariableDefinition;
         this.definition = definition;
     }
 
@@ -129,16 +125,6 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
     @Deprecated
     public boolean isOnField() {
         return onField;
-    }
-
-    /**
-     * @return onVariableDefinition
-     *
-     * @deprecated Use {@link #validLocations()}
-     */
-    @Deprecated
-    public boolean isOnVariableDefinition() {
-        return onVariableDefinition;
     }
 
     public String getDescription() {
@@ -209,7 +195,6 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         private boolean onOperation;
         private boolean onFragment;
         private boolean onField;
-        private boolean onVariableDefinition;
         private EnumSet<DirectiveLocation> locations = EnumSet.noneOf(DirectiveLocation.class);
         private final Map<String, GraphQLArgument> arguments = new LinkedHashMap<>();
         private DirectiveDefinition definition;
@@ -224,7 +209,6 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
             this.onOperation = existing.isOnOperation();
             this.onFragment = existing.isOnFragment();
             this.onField = existing.isOnField();
-            this.onVariableDefinition = existing.isOnVariableDefinition();
             this.locations = existing.validLocations();
             this.arguments.putAll(getByName(existing.getArguments(), GraphQLArgument::getName));
         }
@@ -372,7 +356,6 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
                     onOperation,
                     onFragment,
                     onField,
-                    onVariableDefinition,
                     definition);
         }
 
