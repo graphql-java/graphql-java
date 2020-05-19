@@ -11,7 +11,7 @@ import java.util.List;
  * @param <T>
  */
 @PublicApi
-public interface ImplementingTypeDefinition<T extends ImplementingTypeDefinition> extends TypeDefinition<T> {
+public interface ImplementingTypeDefinition<T extends TypeDefinition> extends TypeDefinition<T> {
 
     List<Type> getImplements();
 

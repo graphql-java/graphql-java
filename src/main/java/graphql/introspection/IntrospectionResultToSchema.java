@@ -27,6 +27,7 @@ import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
 import graphql.schema.idl.ScalarInfo;
+import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -186,9 +187,10 @@ public class IntrospectionResultToSchema {
         interfaceTypeDefinition.description(toDescription(input));
         if (input.containsKey("interfaces") && input.get("interfaces") != null) {
             interfaceTypeDefinition.implementz(
-                    ((List<Map<String, Object>>) input.get("interfaces")).stream()
-                            .map(this::createTypeIndirection)
-                            .collect(Collectors.toList())
+                    FpKit.map(
+                            (List<Map<String, Object>>) input.get("interfaces"),
+                            this::createTypeIndirection
+                    )
             );
         }
         List<Map<String, Object>> fields = (List<Map<String, Object>>) input.get("fields");

@@ -60,6 +60,7 @@ import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
+import graphql.util.FpKit;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
@@ -882,7 +883,8 @@ public class GraphqlAntlrToLanguage {
     private List<Type> getImplementz(GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext) {
         List<Type> implementz = new ArrayList<>();
         while (implementsInterfacesContext != null) {
-            List<TypeName> typeNames = implementsInterfacesContext.typeName().stream().map(this::createTypeName).collect(toList());
+            List<TypeName> typeNames = FpKit.map(implementsInterfacesContext.typeName(), this::createTypeName);
+
             implementz.addAll(0, typeNames);
             implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
         }
