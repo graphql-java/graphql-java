@@ -1,12 +1,13 @@
 package graphql.validation.rules;
 
-import graphql.language.*;
+import graphql.language.OperationDefinition;
+import graphql.language.VariableDefinition;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -28,7 +29,7 @@ public class UniqueVariableNamesRule extends AbstractRule {
             return;
         }
 
-        Set<String> variableNameList = new HashSet<>(variableDefinitions.size());
+        Set<String> variableNameList = new LinkedHashSet<>(variableDefinitions.size());
 
 
         for (VariableDefinition variableDefinition : variableDefinitions) {
