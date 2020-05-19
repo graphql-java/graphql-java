@@ -23,7 +23,6 @@ import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.UnionTypeExtensionDefinition;
 import graphql.schema.idl.errors.DirectiveRedefinitionError;
-import graphql.schema.idl.errors.OperationRedefinitionError;
 import graphql.schema.idl.errors.SchemaProblem;
 import graphql.schema.idl.errors.SchemaRedefinitionError;
 import graphql.schema.idl.errors.TypeRedefinitionError;
@@ -458,11 +457,12 @@ public class TypeDefinitionRegistry {
      *
      * @param targetInterface the target to search for
      * @return the list of object types that implement the given interface type
+     * @see TypeDefinitionRegistry#getImplementationsOf(InterfaceTypeDefinition)
      */
-    public List<ImplementingTypeDefinition> getImplementationsOf(InterfaceTypeDefinition targetInterface) {
-        List<ImplementingTypeDefinition> objectTypeDefinitions = getTypes(ImplementingTypeDefinition.class);
-        return objectTypeDefinitions.stream().filter(objectTypeDefinition -> {
-            List<Type> implementsList = objectTypeDefinition.getImplements();
+    public List<ImplementingTypeDefinition> getAllImplementationsOf(InterfaceTypeDefinition targetInterface) {
+        List<ImplementingTypeDefinition> typeDefinitions = getTypes(ImplementingTypeDefinition.class);
+        return typeDefinitions.stream().filter(typeDefinition -> {
+            List<Type> implementsList = typeDefinition.getImplements();
             for (Type iFace : implementsList) {
                 Optional<InterfaceTypeDefinition> interfaceTypeDef = getType(iFace, InterfaceTypeDefinition.class);
                 if (interfaceTypeDef.isPresent()) {
@@ -474,6 +474,21 @@ public class TypeDefinitionRegistry {
             }
             return false;
         }).collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the list of object interface types that implement the given interface type
+     *
+     * @param targetInterface the target to search for
+     * @return the list of object types that implement the given interface type
+     * @see TypeDefinitionRegistry#getAllImplementationsOf(InterfaceTypeDefinition)
+     */
+    public List<ObjectTypeDefinition> getImplementationsOf(InterfaceTypeDefinition targetInterface) {
+        return this.getAllImplementationsOf(targetInterface)
+                .stream()
+                .filter(typeDefinition -> typeDefinition instanceof ObjectTypeDefinition)
+                .map(typeDefinition -> (ObjectTypeDefinition) typeDefinition)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -506,7 +521,7 @@ public class TypeDefinitionRegistry {
             return false;
         } else {
             InterfaceTypeDefinition iFace = (InterfaceTypeDefinition) abstractTypeDef;
-            List<ImplementingTypeDefinition> objectTypeDefinitions = getImplementationsOf(iFace);
+            List<ImplementingTypeDefinition> objectTypeDefinitions = getAllImplementationsOf(iFace);
             return objectTypeDefinitions.stream()
                     .anyMatch(od -> od.getName().equals(targetObjectTypeDef.getName()));
         }
