@@ -217,7 +217,6 @@ public class ExecutionStepInfo {
         return "ExecutionStepInfo{" +
                 " path=" + path +
                 ", type=" + type +
-                ", parent=" + parent +
                 ", fieldDefinition=" + fieldDefinition +
                 '}';
     }
