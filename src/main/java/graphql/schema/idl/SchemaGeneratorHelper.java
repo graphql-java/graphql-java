@@ -79,11 +79,11 @@ public class SchemaGeneratorHelper {
         SPECIFIED_BY_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
                 .name(Directives.SpecifiedByDirective.getName())
                 .directiveLocation(newDirectiveLocation().name(SCALAR.name()).build())
-                .description(createDescription("Specification details for a custom Scalar"))
+                .description(createDescription("Exposes a URL that specifies the behaviour of this scalar."))
                 .inputValueDefinition(
                         InputValueDefinition.newInputValueDefinition()
                                 .name("url")
-                                .description(createDescription("An URL which specifies the custom Scalar"))
+                                .description(createDescription("The URL that specifies the behaviour of this scalar."))
                                 .type(TypeName.newTypeName().name("String").build())
                                 .build())
                 .build();
