@@ -17,7 +17,6 @@ import graphql.validation.ValidationErrorType;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,27 +66,33 @@ public class DeferredMustBeOnAllFields extends AbstractRule {
     @Override
     public void checkSelectionSet(SelectionSet selectionSet) {
         List<String> queryPath = getValidationContext().getQueryPath();
-        addFields(queryPath, selectionSet);
+        ArrayList<Selection<?>> seenSelections = new ArrayList<>();
+        addFields(queryPath, selectionSet, seenSelections);
     }
 
-    private void addFields(List<String> path, SelectionSet selectionSet) {
+    private void addFields(List<String> path, SelectionSet selectionSet, List<Selection<?>> seenSelections) {
         if (path == null) {
             path = Collections.emptyList();
         }
-        for (Selection selection : selectionSet.getSelections()) {
+        for (Selection<?> selection : selectionSet.getSelections()) {
+            // sett issue 1817 - an illegal circular query could cause a stack overflow - protected against it
+            if (seenSelections.contains(selection)) {
+                break;
+            }
+            seenSelections.add(selection);
             if (selection instanceof Field) {
                 List<Field> fields = fieldsByPath.getOrDefault(path, new ArrayList<>());
                 fields.add((Field) selection);
                 fieldsByPath.put(path, fields);
             }
             if (selection instanceof InlineFragment) {
-                addFields(path, ((InlineFragment) selection).getSelectionSet());
+                addFields(path, ((InlineFragment) selection).getSelectionSet(), seenSelections);
             }
             if (selection instanceof FragmentSpread) {
                 FragmentSpread fragmentSpread = (FragmentSpread) selection;
                 FragmentDefinition fragmentDefinition = getValidationContext().getFragment(fragmentSpread.getName());
                 if (fragmentDefinition != null) {
-                    addFields(path, fragmentDefinition.getSelectionSet());
+                    addFields(path, fragmentDefinition.getSelectionSet(), seenSelections);
                 }
             }
         }
