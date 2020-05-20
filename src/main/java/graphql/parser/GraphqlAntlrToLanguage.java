@@ -34,6 +34,7 @@ import graphql.language.InterfaceTypeExtensionDefinition;
 import graphql.language.ListType;
 import graphql.language.NodeBuilder;
 import graphql.language.NonNullType;
+import graphql.language.NullValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
@@ -70,7 +71,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertShouldNeverHappen;
-import static graphql.language.NullValue.Null;
 import static graphql.parser.StringValueParsing.parseSingleQuotedString;
 import static graphql.parser.StringValueParsing.parseTripleQuotedString;
 import static java.util.stream.Collectors.toList;
@@ -112,7 +112,6 @@ public class GraphqlAntlrToLanguage {
         } else {
             return assertShouldNeverHappen();
         }
-
     }
 
     protected OperationDefinition createOperationDefinition(GraphqlParser.OperationDefinitionContext ctx) {
@@ -151,14 +150,12 @@ public class GraphqlAntlrToLanguage {
         fragmentSpread.directives(createDirectives(ctx.directives()));
         return fragmentSpread.build();
     }
-
     protected List<VariableDefinition> createVariableDefinitions(GraphqlParser.VariableDefinitionsContext ctx) {
         if (ctx == null) {
             return new ArrayList<>();
         }
         return ctx.variableDefinition().stream().map(this::createVariableDefinition).collect(toList());
     }
-
     protected VariableDefinition createVariableDefinition(GraphqlParser.VariableDefinitionContext ctx) {
         VariableDefinition.Builder variableDefinition = VariableDefinition.newVariableDefinition();
         addCommonData(variableDefinition, ctx);
@@ -168,6 +165,7 @@ public class GraphqlAntlrToLanguage {
             variableDefinition.defaultValue(value);
         }
         variableDefinition.type(createType(ctx.type()));
+        variableDefinition.directives(createDirectives(ctx.directives()));
         return variableDefinition.build();
 
     }
@@ -663,7 +661,9 @@ public class GraphqlAntlrToLanguage {
             addCommonData(booleanValue, ctx);
             return booleanValue.build();
         } else if (ctx.NullValue() != null) {
-            return Null;
+            NullValue.Builder nullValue = NullValue.newNullValue();
+            addCommonData(nullValue, ctx);
+            return nullValue.build();
         } else if (ctx.stringValue() != null) {
             StringValue.Builder stringValue = StringValue.newStringValue().value(quotedString(ctx.stringValue()));
             addCommonData(stringValue, ctx);
@@ -716,7 +716,9 @@ public class GraphqlAntlrToLanguage {
             addCommonData(booleanValue, ctx);
             return booleanValue.build();
         } else if (ctx.NullValue() != null) {
-            return Null;
+            NullValue.Builder nullValue = NullValue.newNullValue();
+            addCommonData(nullValue, ctx);
+            return nullValue.build();
         } else if (ctx.stringValue() != null) {
             StringValue.Builder stringValue = StringValue.newStringValue().value(quotedString(ctx.stringValue()));
             addCommonData(stringValue, ctx);

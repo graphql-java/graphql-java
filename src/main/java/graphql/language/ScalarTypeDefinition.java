@@ -17,10 +17,9 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static java.util.Collections.emptyMap;
 
 @PublicApi
-public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> implements TypeDefinition<ScalarTypeDefinition>, DirectivesContainer<ScalarTypeDefinition>, NamedNode<ScalarTypeDefinition> {
+public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefinition> implements TypeDefinition<ScalarTypeDefinition>, DirectivesContainer<ScalarTypeDefinition>, NamedNode<ScalarTypeDefinition> {
 
     private final String name;
-    private final Description description;
     private final List<Directive> directives;
 
     public static final String CHILD_DIRECTIVES = "directives";
@@ -33,10 +32,9 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
                                    List<Comment> comments,
                                    IgnoredChars ignoredChars,
                                    Map<String, String> additionalData) {
-        super(sourceLocation, comments, ignoredChars, additionalData);
+        super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
         this.directives = directives;
-        this.description = description;
     }
 
     /**
@@ -56,11 +54,6 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
     @Override
     public String getName() {
         return name;
-    }
-
-
-    public Description getDescription() {
-        return description;
     }
 
     @Override

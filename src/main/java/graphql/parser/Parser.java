@@ -1,6 +1,6 @@
 package graphql.parser;
 
-import graphql.Internal;
+import graphql.PublicApi;
 import graphql.language.Document;
 import graphql.language.SourceLocation;
 import graphql.parser.antlr.GraphqlLexer;
@@ -19,7 +19,7 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.List;
 
-@Internal
+@PublicApi
 public class Parser {
 
 
@@ -74,7 +74,7 @@ public class Parser {
         ExtendedBailStrategy bailStrategy = new ExtendedBailStrategy(multiSourceReader);
         parser.setErrorHandler(bailStrategy);
 
-        GraphqlAntlrToLanguage toLanguage = new GraphqlAntlrToLanguage(tokens, multiSourceReader);
+        GraphqlAntlrToLanguage toLanguage = getAntlrToLanguage(tokens, multiSourceReader);
         GraphqlParser.DocumentContext documentContext = parser.document();
 
         Document doc = toLanguage.createDocument(documentContext);
@@ -96,4 +96,14 @@ public class Parser {
         return doc;
     }
 
+    /**
+     * Allows you to override the ANTLR to AST code.
+     *
+     * @param tokens            the toke stream
+     * @param multiSourceReader the source of the query document
+     * @return a new GraphqlAntlrToLanguage instance
+     */
+    protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
+        return new GraphqlAntlrToLanguage(tokens, multiSourceReader);
+    }
 }

@@ -114,7 +114,7 @@ class SchemaParserTest extends Specification {
         typeExtensions.size() == 1
         typeExtensions.get("Query") != null
 
-        scalarTypes.size() == 12 // includes standard scalars
+        scalarTypes.size() == 6 // only contains the 5 graphql standard types and URL
         scalarTypes.get("Url") instanceof ScalarTypeDefinition
 
 

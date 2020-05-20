@@ -380,6 +380,7 @@ public class Introspection {
         FRAGMENT_DEFINITION,
         FRAGMENT_SPREAD,
         INLINE_FRAGMENT,
+        VARIABLE_DEFINITION,
         //
         // schema SDL places
         //
@@ -405,6 +406,7 @@ public class Introspection {
             .value("FRAGMENT_DEFINITION", DirectiveLocation.FRAGMENT_DEFINITION, "Indicates the directive is valid on fragment definitions.")
             .value("FRAGMENT_SPREAD", DirectiveLocation.FRAGMENT_SPREAD, "Indicates the directive is valid on fragment spreads.")
             .value("INLINE_FRAGMENT", DirectiveLocation.INLINE_FRAGMENT, "Indicates the directive is valid on inline fragments.")
+            .value("VARIABLE_DEFINITION", DirectiveLocation.INPUT_FIELD_DEFINITION, "Indicates the directive is valid on variable definitions.")
             //
             // from schema SDL PR  https://github.com/facebook/graphql/pull/90
             //

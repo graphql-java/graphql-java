@@ -252,7 +252,7 @@ public class PropertyDataFetcherHelper {
     }
 
     private static String mkKey(Class<?> clazz, String propertyName) {
-        return clazz.getCanonicalName() + "__" + propertyName;
+        return clazz.getName() + "__" + propertyName;
     }
 
     // by not filling out the stack trace, we gain speed when using the exception as flow control

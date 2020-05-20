@@ -48,7 +48,7 @@ class NodeVisitorStubTest extends Specification {
         ArrayValue.newArrayValue().build()               | 'visitArrayValue'
         IntValue.newIntValue().build()                   | 'visitIntValue'
         new BooleanValue(true)                           | 'visitBooleanValue'
-        NullValue.Null                                   | 'visitNullValue'
+        NullValue.newNullValue().build()                 | 'visitNullValue'
         ObjectValue.newObjectValue().build()             | 'visitObjectValue'
         VariableReference.newVariableReference().build() | 'visitVariableReference'
         EnumValue.newEnumValue().build()                 | 'visitEnumValue'

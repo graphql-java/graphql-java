@@ -30,7 +30,7 @@ class SchemaPrinterComparatorsTest extends Specification {
                 .build()
 
         when:
-        def options = defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(true)
+        def options = defaultOptions().includeScalarTypes(true)
         def result = new SchemaPrinter(options).print(scalarType)
 
         then:
@@ -202,7 +202,7 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
                 .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
 
-        def options = defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(true).setComparators(registry)
+        def options = defaultOptions().includeScalarTypes(true).setComparators(registry)
         def result = new SchemaPrinter(options).print(scalarType)
 
         then:
@@ -224,7 +224,7 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
 
-        def options = defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(true).setComparators(registry)
+        def options = defaultOptions().includeScalarTypes(true).setComparators(registry)
         def result = new SchemaPrinter(options).print(scalarType)
 
         then:
@@ -680,7 +680,7 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
-        def options = defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(true).setComparators(registry)
+        def options = defaultOptions().includeScalarTypes(true).setComparators(registry)
         def printer = new SchemaPrinter(options)
 
         def scalarResult = printer.print(scalarType)
@@ -761,7 +761,7 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .build()
 
         when:
-        def options = defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(true)
+        def options = defaultOptions().includeScalarTypes(true)
         def result = new SchemaPrinter(options).print(scalarType)
 
         then:

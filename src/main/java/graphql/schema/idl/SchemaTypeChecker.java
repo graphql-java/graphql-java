@@ -17,8 +17,6 @@ import graphql.language.Node;
 import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
-import graphql.language.OperationTypeDefinition;
-import graphql.language.SchemaDefinition;
 import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
@@ -38,8 +36,6 @@ import graphql.schema.idl.errors.MissingTypeResolverError;
 import graphql.schema.idl.errors.NonUniqueArgumentError;
 import graphql.schema.idl.errors.NonUniqueDirectiveError;
 import graphql.schema.idl.errors.NonUniqueNameError;
-import graphql.schema.idl.errors.OperationTypesMustBeObjects;
-import graphql.schema.idl.errors.QueryOperationMissingError;
 import graphql.schema.idl.errors.SchemaProblem;
 
 import java.util.ArrayList;
@@ -66,7 +62,7 @@ import java.util.stream.Collectors;
 @Internal
 public class SchemaTypeChecker {
 
-    public List<GraphQLError> checkTypeRegistry(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring, boolean enforceSchemaDirectives) throws SchemaProblem {
+    public List<GraphQLError> checkTypeRegistry(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
         List<GraphQLError> errors = new ArrayList<>();
         checkForMissingTypes(errors, typeRegistry);
 
@@ -86,10 +82,8 @@ public class SchemaTypeChecker {
         //check directive definitions before checking directive usages
         checkDirectiveDefinitions(typeRegistry, errors);
 
-        if (enforceSchemaDirectives) {
-            SchemaTypeDirectivesChecker directivesChecker = new SchemaTypeDirectivesChecker(typeRegistry, wiring);
-            directivesChecker.checkTypeDirectives(errors);
-        }
+        SchemaTypeDirectivesChecker directivesChecker = new SchemaTypeDirectivesChecker(typeRegistry, wiring);
+        directivesChecker.checkTypeDirectives(errors);
 
         return errors;
     }

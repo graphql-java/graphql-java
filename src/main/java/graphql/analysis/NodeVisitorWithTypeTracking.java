@@ -15,6 +15,7 @@ import graphql.language.NodeVisitorStub;
 import graphql.language.ObjectField;
 import graphql.language.TypeName;
 import graphql.language.Value;
+import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLCompositeType;
@@ -232,6 +233,10 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
 
     @Override
     protected TraversalControl visitValue(Value<?> value, TraverserContext<Node> context) {
+        if (context.getParentNode() instanceof VariableDefinition) {
+            return TraversalControl.CONTINUE;
+        }
+
         QueryVisitorFieldArgumentEnvironment fieldArgEnv = context.getVarFromParents(QueryVisitorFieldArgumentEnvironment.class);
         QueryVisitorFieldArgumentInputValueImpl inputValue = context.getVarFromParents(QueryVisitorFieldArgumentInputValue.class);
         // previous visits have set up the previous information

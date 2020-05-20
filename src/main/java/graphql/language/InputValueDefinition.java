@@ -17,11 +17,10 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static java.util.Collections.emptyMap;
 
 @PublicApi
-public class InputValueDefinition extends AbstractNode<InputValueDefinition> implements DirectivesContainer<InputValueDefinition>, NamedNode<InputValueDefinition> {
+public class InputValueDefinition extends AbstractDescribedNode<InputValueDefinition> implements DirectivesContainer<InputValueDefinition>, NamedNode<InputValueDefinition>{
     private final String name;
     private final Type type;
     private final Value defaultValue;
-    private final Description description;
     private final List<Directive> directives;
 
     public static final String CHILD_TYPE = "type";
@@ -38,13 +37,11 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
                                    List<Comment> comments,
                                    IgnoredChars ignoredChars,
                                    Map<String, String> additionalData) {
-        super(sourceLocation, comments, ignoredChars, additionalData);
+        super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;
         this.directives = directives;
-        this.description = description;
-
     }
 
     /**
@@ -81,10 +78,6 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
     @Override
     public String getName() {
         return name;
-    }
-
-    public Description getDescription() {
-        return description;
     }
 
     public Value getDefaultValue() {

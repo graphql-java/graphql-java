@@ -736,7 +736,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         given:
         GraphQLSchema schema = TestUtil.schema("""
 
-        directive @private on FIELD_DEFINITION
+        directive @private on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
         
         type Query {
             foo: Foo 
@@ -774,7 +774,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         given:
         GraphQLSchema schema = TestUtil.schema("""
 
-        directive @private on FIELD_DEFINITION
+        directive @private on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
         
         type Query {
             foo: Foo 

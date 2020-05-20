@@ -17,9 +17,8 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static java.util.Collections.emptyMap;
 
 @PublicApi
-public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> implements SDLDefinition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
+public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefinition> implements SDLDefinition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
     private final String name;
-    private final Description description;
     private final List<InputValueDefinition> inputValueDefinitions;
     private final List<DirectiveLocation> directiveLocations;
 
@@ -35,9 +34,8 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
                                   List<Comment> comments,
                                   IgnoredChars ignoredChars,
                                   Map<String, String> additionalData) {
-        super(sourceLocation, comments, ignoredChars, additionalData);
+        super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
-        this.description = description;
         this.inputValueDefinitions = inputValueDefinitions;
         this.directiveLocations = directiveLocations;
     }
@@ -54,10 +52,6 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
     @Override
     public String getName() {
         return name;
-    }
-
-    public Description getDescription() {
-        return description;
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {

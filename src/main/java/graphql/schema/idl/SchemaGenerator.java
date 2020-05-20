@@ -98,38 +98,13 @@ public class SchemaGenerator {
      * These options control how the schema generation works
      */
     public static class Options {
-        private final boolean enforceSchemaDirectives;
 
-        Options(boolean enforceSchemaDirectives) {
-            this.enforceSchemaDirectives = enforceSchemaDirectives;
-        }
-
-        /**
-         * This controls whether schema directives MUST be declared using
-         * directive definition syntax before use.
-         *
-         * @return true if directives must be fully declared; the default is true
-         */
-        public boolean isEnforceSchemaDirectives() {
-            return enforceSchemaDirectives;
+        Options() {
         }
 
         public static Options defaultOptions() {
-            return new Options(true);
+            return new Options();
         }
-
-        /**
-         * This controls whether schema directives MUST be declared using
-         * directive definition syntax before use.
-         *
-         * @param flag the value to use
-         *
-         * @return the new options
-         */
-        public Options enforceSchemaDirectives(boolean flag) {
-            return new Options(flag);
-        }
-
     }
 
 
@@ -268,7 +243,7 @@ public class SchemaGenerator {
 
         schemaGeneratorHelper.addDirectivesIncludedByDefault(typeRegistryCopy);
 
-        List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistryCopy, wiring, options.enforceSchemaDirectives);
+        List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistryCopy, wiring);
         if (!errors.isEmpty()) {
             throw new SchemaProblem(errors);
         }
@@ -398,6 +373,14 @@ public class SchemaGenerator {
                 if (buildCtx.hasOutputType(typeDefinition) == null) {
                     additionalTypes.add(buildOutputType(buildCtx, typeName));
                 }
+            }
+        });
+        typeRegistry.scalars().values().forEach(scalarTypeDefinition -> {
+            if (ScalarInfo.isGraphqlSpecifiedScalar(scalarTypeDefinition.getName())) {
+                return;
+            }
+            if (buildCtx.hasInputType(scalarTypeDefinition) == null && buildCtx.hasOutputType(scalarTypeDefinition) == null) {
+                additionalTypes.add(buildScalar(buildCtx, scalarTypeDefinition));
             }
         });
         return additionalTypes;
@@ -709,7 +692,7 @@ public class SchemaGenerator {
             scalar = buildCtx.getWiring().getScalars().get(typeDefinition.getName());
         }
 
-        if (!ScalarInfo.isStandardScalar(scalar) && !ScalarInfo.isGraphqlSpecifiedScalar(scalar)) {
+        if (!ScalarInfo.isGraphqlSpecifiedScalar(scalar)) {
             scalar = scalar.transform(builder -> builder
                     .definition(typeDefinition)
                     .comparatorRegistry(buildCtx.getComparatorRegistry())

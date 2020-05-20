@@ -95,15 +95,12 @@ scalar DateTime
         //
         // notice how it tightens everything up
         //
-        output == """# objects can have comments
-# over a number of lines
-schema {
+        output == """schema {
   query: QueryType
   mutation: Mutation
 }
 
 type QueryType {
-  # the hero of the film
   hero(episode: Episode): Character
   human(id: String): Human
   droid(id: ID!): Droid
@@ -169,9 +166,7 @@ scalar DateTime
         String output = printAst(document.getDefinitions().get(0))
 
         expect:
-        output == """# objects can have comments
-# over a number of lines
-schema {
+        output == """schema {
   query: QueryType
   mutation: Mutation
 }"""
@@ -183,7 +178,6 @@ schema {
 
         expect:
         output == """type QueryType {
-  # the hero of the film
   hero(episode: Episode): Character
   human(id: String): Human
   droid(id: ID!): Droid
@@ -452,13 +446,7 @@ type Query {
 
         expect:
         output == '''type Query {
-  field(
-  #description1
-  arg1: String
-  arg2: String
-  #description3
-  arg3: String
-  ): String
+  field(arg1: String, arg2: String, arg3: String): String
 }
 '''
 
@@ -560,6 +548,23 @@ extend input Input @directive {
   }
 }
 '''
+    }
+
+    def 'StringValue is converted to valid Strings'() {
+
+        AstPrinter astPrinter = new AstPrinter(true)
+
+        when:
+        def result = astPrinter.value(new StringValue(strValue))
+
+        then:
+        result == expected
+
+        where:
+        strValue                                  | expected
+        'VALUE'                                   | '"VALUE"'
+        'VA\n\t\f\n\b\\LUE'                       | '"VA\\n\\t\\f\\n\\b\\\\LUE"'
+        'VA\\L"UE'                                | '"VA\\\\L\\"UE"'
     }
 
 }
