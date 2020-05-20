@@ -44,7 +44,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
     private final ScalarTypeDefinition definition;
     private final List<ScalarTypeExtensionDefinition> extensionDefinitions;
     private final List<GraphQLDirective> directives;
-    private final String specifiedBy;
+    private final String specifiedByUrl;
 
     public static final String CHILD_DIRECTIVES = "directives";
 
@@ -83,7 +83,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
                               List<GraphQLDirective> directives,
                               ScalarTypeDefinition definition,
                               List<ScalarTypeExtensionDefinition> extensionDefinitions,
-                              String specifiedBy) {
+                              String specifiedByUrl) {
         assertValidName(name);
         assertNotNull(coercing, "coercing can't be null");
         assertNotNull(directives, "directives can't be null");
@@ -94,7 +94,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         this.definition = definition;
         this.directives = directives;
         this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
-        this.specifiedBy = specifiedBy;
+        this.specifiedByUrl = specifiedByUrl;
     }
 
     @Override
@@ -107,8 +107,8 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         return description;
     }
 
-    public String getSpecifiedBy() {
-        return specifiedBy;
+    public String getSpecifiedByUrl() {
+        return specifiedByUrl;
     }
 
     public Coercing getCoercing() {

@@ -76,11 +76,11 @@ public class Directives {
      */
     public static final GraphQLDirective SpecifiedByDirective = GraphQLDirective.newDirective()
             .name("specifiedBy")
-            .description("Specification details for a custom Scalar")
+            .description("Exposes a URL that specifies the behaviour of this scalar.")
             .argument(newArgument()
                     .name("url")
                     .type(nonNull(GraphQLString))
-                    .description("An URL which specifies the custom Scalar"))
+                    .description("The URL that specifies the behaviour of this scalar."))
             .validLocations(SCALAR)
             .build();
 
