@@ -102,7 +102,7 @@ public class TypeRule implements SchemaValidationRule {
 
         if (fieldDefinitions != null && fieldDefinitions.size() != 0) {
             for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
-                validateFieldDefinition(type.getName(),fieldDefinition, errorCollector);
+                validateFieldDefinition(type.getName(), fieldDefinition, errorCollector);
             }
         }
     }
@@ -150,12 +150,12 @@ public class TypeRule implements SchemaValidationRule {
         assertTypeName(type.getName(), errorCollector);
 
         List<GraphQLEnumValueDefinition> enumValueDefinitions = type.getValues();
-        if(enumValueDefinitions==null||enumValueDefinitions.size()==0){
-            SchemaValidationError validationError = new SchemaValidationError(SchemaValidationErrorType.GraphQLEnumError, String.format("Enum type \"%s\"  must define one or more unique enum values.",type.getName()));
+        if (enumValueDefinitions == null || enumValueDefinitions.size() == 0) {
+            SchemaValidationError validationError = new SchemaValidationError(SchemaValidationErrorType.GraphQLEnumError, String.format("Enum type \"%s\"  must define one or more unique enum values.", type.getName()));
             errorCollector.addError(validationError);
-        }else{
+        } else {
             for (GraphQLEnumValueDefinition enumValueDefinition : enumValueDefinitions) {
-                assertEnumValueDefinitionName(type.getName(),enumValueDefinition.getName(),errorCollector);
+                assertEnumValueDefinitionName(type.getName(), enumValueDefinition.getName(), errorCollector);
             }
         }
 
@@ -163,19 +163,19 @@ public class TypeRule implements SchemaValidationRule {
 
     private void validateFieldDefinition(String typeName, GraphQLFieldDefinition fieldDefinition, SchemaValidationErrorCollector errorCollector) {
         assertFieldName(typeName, fieldDefinition.getName(), errorCollector);
-        assertNonNullType(fieldDefinition.getType(),errorCollector);
+        assertNonNullType(fieldDefinition.getType(), errorCollector);
 
         List<GraphQLArgument> fieldDefinitionArguments = fieldDefinition.getArguments();
-        if(fieldDefinitionArguments!=null||fieldDefinitionArguments.size()!=0){
+        if (fieldDefinitionArguments != null || fieldDefinitionArguments.size() != 0) {
             for (GraphQLArgument fieldDefinitionArgument : fieldDefinitionArguments) {
-                validateFieldDefinitionArgument(typeName,fieldDefinition.getName(),fieldDefinitionArgument,errorCollector);
+                validateFieldDefinitionArgument(typeName, fieldDefinition.getName(), fieldDefinitionArgument, errorCollector);
             }
         }
     }
 
-    private void validateFieldDefinitionArgument(String typeName, String fieldName,GraphQLArgument argument, SchemaValidationErrorCollector errorCollector) {
-        assertArgumentName(typeName,fieldName,argument.getName(),errorCollector);
-        assertNonNullType(argument.getType(),errorCollector);
+    private void validateFieldDefinitionArgument(String typeName, String fieldName, GraphQLArgument argument, SchemaValidationErrorCollector errorCollector) {
+        assertArgumentName(typeName, fieldName, argument.getName(), errorCollector);
+        assertNonNullType(argument.getType(), errorCollector);
     }
 
     private void assertTypeName(String typeName, SchemaValidationErrorCollector validationErrorCollector) {
@@ -197,7 +197,7 @@ public class TypeRule implements SchemaValidationRule {
     private void assertArgumentName(String typeName, String fieldName, String argumentName, SchemaValidationErrorCollector errorCollector) {
         if (argumentName.length() >= 2 && argumentName.startsWith("__")) {
             SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.InValidName,
-                    String.format("Argument name \"%s\" in \"%s-%s\" must not begin with \"__\", which is reserved by GraphQL introspection.",argumentName, typeName,fieldName));
+                    String.format("Argument name \"%s\" in \"%s-%s\" must not begin with \"__\", which is reserved by GraphQL introspection.", argumentName, typeName, fieldName));
             errorCollector.addError(schemaValidationError);
         }
     }
@@ -210,10 +210,10 @@ public class TypeRule implements SchemaValidationRule {
         }
     }
 
-    private void assertNonNullType(GraphQLType type, SchemaValidationErrorCollector errorCollector){
-        if(type instanceof GraphQLNonNull&& ((GraphQLNonNull) type).getWrappedType() instanceof GraphQLNonNull){
-            SchemaValidationError schemaValidationError=new SchemaValidationError(SchemaValidationErrorType.GraphQLTypeError,
-                    String.format("Non‐Null type \"%s\" must not wrap another Non‐Null type.",GraphQLTypeUtil.simplePrint(type)));
+    private void assertNonNullType(GraphQLType type, SchemaValidationErrorCollector errorCollector) {
+        if (type instanceof GraphQLNonNull && ((GraphQLNonNull) type).getWrappedType() instanceof GraphQLNonNull) {
+            SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.GraphQLTypeError,
+                    String.format("Non‐Null type \"%s\" must not wrap another Non‐Null type.", GraphQLTypeUtil.simplePrint(type)));
             errorCollector.addError(schemaValidationError);
         }
     }

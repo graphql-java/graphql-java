@@ -45,7 +45,7 @@ public class DirectiveRule implements SchemaValidationRule {
             }
             directivesName.add(directiveName);
 
-            if(isRefereneIeself(directive)){
+            if (isRefereneIeself(directive)) {
                 SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.DirectiveInvalidError,
                         String.format("Directive \"%s\" must not reference itself directly or indirectly.", directiveName));
                 validationErrorCollector.addError(schemaValidationError);
@@ -67,17 +67,17 @@ public class DirectiveRule implements SchemaValidationRule {
 
         for (GraphQLArgument argument : arguments) {
             InputValueDefinition argumentDefine = argument.getDefinition();
-            if(argumentDefine==null){
+            if (argumentDefine == null) {
                 return false;
             }
 
             List<Directive> argumentDefineDirectives = argumentDefine.getDirectives();
-            if(argumentDefineDirectives==null){
+            if (argumentDefineDirectives == null) {
                 return false;
             }
 
             for (Directive argumentDefineDirective : argumentDefineDirectives) {
-                if(directive.getName().equals(argumentDefineDirective.getName())){
+                if (directive.getName().equals(argumentDefineDirective.getName())) {
                     return true;
                 }
             }

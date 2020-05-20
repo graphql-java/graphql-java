@@ -40,7 +40,7 @@ public class SchemaValidator {
         SchemaValidationErrorCollector validationErrorCollector = new SchemaValidationErrorCollector();
 
         for (SchemaValidationRule rule : rules) {
-            rule.apply(schema,validationErrorCollector);
+            rule.apply(schema, validationErrorCollector);
         }
 
         return validationErrorCollector.getErrors();

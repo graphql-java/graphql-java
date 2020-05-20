@@ -21,10 +21,10 @@ class DirectiveRuleTest extends Specification {
 
         when:
         Exception exception;
-        try{
+        try {
             TestUtil.schema(spec)
-        }catch(Exception e){
-            exception=e;
+        } catch (Exception e) {
+            exception = e;
         }
 
         then:
@@ -47,10 +47,10 @@ class DirectiveRuleTest extends Specification {
 
         when:
         Exception exception;
-        try{
+        try {
             TestUtil.schema(spec)
-        }catch(Exception e){
-            exception=e;
+        } catch (Exception e) {
+            exception = e;
         }
 
         then:
@@ -73,10 +73,10 @@ class DirectiveRuleTest extends Specification {
 
         when:
         Exception exception;
-        try{
+        try {
             TestUtil.schema(spec)
-        }catch(Exception e){
-            exception=e;
+        } catch (Exception e) {
+            exception = e;
         }
 
         then:

@@ -50,9 +50,9 @@ class TestUtil {
 
     static dummySchema = GraphQLSchema.newSchema()
             .query(GraphQLObjectType.newObject()
-            .name("QueryType")
-            .field(GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString))
-            .build())
+                    .name("QueryType")
+                    .field(GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString))
+                    .build())
             .build()
 
     static GraphQLSchema schemaFile(String fileName) {
