@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.Assert.assertTrue;
 import static graphql.Assert.assertValidName;
 import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactoryEnvironment;
 import static graphql.schema.FieldCoordinates.coordinates;
@@ -291,7 +290,7 @@ public class GraphQLCodeRegistry {
         public Builder systemDataFetcher(FieldCoordinates coordinates, DataFetcher<?> dataFetcher) {
             assertNotNull(dataFetcher);
             assertNotNull(coordinates);
-            assertTrue(coordinates.getFieldName().startsWith("__"), "Only __ system fields can be used here");
+            coordinates.assertValidNames();
             systemDataFetcherMap.put(coordinates.getFieldName(), DataFetcherFactories.useDataFetcher(dataFetcher));
             return this;
         }
@@ -306,7 +305,9 @@ public class GraphQLCodeRegistry {
          */
         public Builder dataFetcher(FieldCoordinates coordinates, DataFetcherFactory<?> dataFetcherFactory) {
             assertNotNull(dataFetcherFactory);
-            dataFetcherMap.put(assertNotNull(coordinates), dataFetcherFactory);
+            assertNotNull(coordinates);
+            coordinates.assertValidNames();
+            dataFetcherMap.put(coordinates, dataFetcherFactory);
             return this;
         }
 
