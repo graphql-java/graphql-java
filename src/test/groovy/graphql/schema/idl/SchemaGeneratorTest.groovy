@@ -33,6 +33,7 @@ import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.schema.idl.SchemaGenerator.Options.defaultOptions
 
 class SchemaGeneratorTest extends Specification {
 
@@ -981,8 +982,7 @@ class SchemaGeneratorTest extends Specification {
         """
         when:
         def registry = new SchemaParser().parse(spec)
-        def options = SchemaGenerator.Options.defaultOptions()
-        new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+        new SchemaGenerator().makeExecutableSchema(defaultOptions(), registry, TestUtil.mockRuntimeWiring)
 
         then:
         def schemaProblem = thrown(SchemaProblem)
@@ -1004,6 +1004,25 @@ class SchemaGeneratorTest extends Specification {
 
         then:
         scalar.getSpecifiedByUrl() == "myUrl.example"
+    }
+
+    def "specifiedBy is only allowed once per scalar"() {
+        given:
+        def spec = """
+        type Query {
+            foo: MyScalar
+        }
+        scalar MyScalar @specifiedBy(url: "myUrl.example")
+        extend scalar MyScalar @specifiedBy(url: "myUrl.example")
+        """
+        when:
+        def registry = new SchemaParser().parse(spec)
+        new SchemaGenerator().makeExecutableSchema(defaultOptions(), registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        def schemaProblem = thrown(SchemaProblem)
+        schemaProblem.message.contains("has redefined the directive called 'specifiedBy")
+
     }
 
 
@@ -1541,7 +1560,7 @@ class SchemaGeneratorTest extends Specification {
         """
 
         when:
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
         def registry = new SchemaParser().parse(spec)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
 
@@ -1578,7 +1597,7 @@ class SchemaGeneratorTest extends Specification {
         """
 
         when:
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
 
         def registry = new SchemaParser().parse(spec)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
@@ -1610,7 +1629,7 @@ class SchemaGeneratorTest extends Specification {
         """
 
         when:
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
         def registry = new SchemaParser().parse(spec)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
 
@@ -1638,7 +1657,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
 
         when:
         def registry = new SchemaParser().parse(spec)
@@ -1891,7 +1910,7 @@ class SchemaGeneratorTest extends Specification {
                 .wiringFactory(wiringFactory)
                 .build()
 
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
 
         def types = new SchemaParser().parse(sdl)
         GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(options, types, runtimeWiring)
