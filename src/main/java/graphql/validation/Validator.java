@@ -31,6 +31,7 @@ import graphql.validation.rules.VariableDefaultValuesOfCorrectType;
 import graphql.validation.rules.VariableTypesMatchRule;
 import graphql.validation.rules.VariablesAreInputTypes;
 import graphql.validation.rules.UniqueArgumentNamesRule;
+import graphql.validation.rules.UniqueVariableNamesRule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -124,6 +125,9 @@ public class Validator {
 
         UniqueArgumentNamesRule uniqueArgumentNamesRule = new UniqueArgumentNamesRule(validationContext, validationErrorCollector);
         rules.add(uniqueArgumentNamesRule);
+
+        UniqueVariableNamesRule uniqueVariableNamesRule = new UniqueVariableNamesRule(validationContext, validationErrorCollector);
+        rules.add(uniqueVariableNamesRule);
 
         return rules;
     }

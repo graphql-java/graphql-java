@@ -1412,7 +1412,7 @@ type Query {
 '''
     }
 
-    def "omit unused built-in scalars by default - created by sdl string"(){
+    def "omit unused built-in scalars by default - created by sdl string"() {
         given:
         def sdl = '''type Query {scalarcustom : RandomScalar} scalar RandomScalar'''
 
@@ -1430,17 +1430,16 @@ type Query {
             scalarType -> assert !result.contains(scalarType.name)
         })
 
-        result ==
-'''type Query {
+        result == '''type Query {
   scalarcustom: RandomScalar
 }
 
 "RandomScalar"
 scalar RandomScalar
 '''
-        }
+    }
 
-    def "show unused custom scalars when unused - created by sdl string"(){
+    def "show unused custom scalars when unused - created by sdl string"() {
         given:
         def sdl = '''type Query {astring : String aInt : Int} "Some Scalar" scalar CustomScalar'''
 
@@ -1465,7 +1464,7 @@ scalar CustomScalar
 '''
     }
 
-    def "omit unused built-in by default - created programmatically"(){
+    def "omit unused built-in by default - created programmatically"() {
         given:
         GraphQLScalarType myScalar = new GraphQLScalarType("RandomScalar", "about scalar", new Coercing() {
             @Override
@@ -1505,7 +1504,7 @@ scalar RandomScalar
 '''
     }
 
-    def "show unused custom scalars when unused - created programmatically"(){
+    def "show unused custom scalars when unused - created programmatically"() {
         given:
         GraphQLScalarType myScalar = new GraphQLScalarType("Scalar", "about scalar", new Coercing() {
             @Override
@@ -1528,7 +1527,7 @@ scalar RandomScalar
         def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
 
         def schema = GraphQLSchema.newSchema().query(queryType).additionalType(myScalar).build()
-        
+
         def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true).includeDirectives(false)).print(schema)
 
         expect:
@@ -1540,6 +1539,39 @@ scalar RandomScalar
 "about scalar"
 scalar Scalar
 '''
+    }
+
+    def "single line comments are properly escaped"() {
+        given:
+        def idl = """
+            type Query {
+              "$comment"
+              fieldX : String
+            }
+        """
+        def registry = new SchemaParser().parse(idl)
+        def runtimeWiring = newRuntimeWiring().build()
+        def options = SchemaGenerator.Options.defaultOptions()
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeDirectives(false)).print(schema)
+
+        then:
+        result == """type Query {
+  "$comment"
+  fieldX: String
+}
+"""
+
+        where:
+        _ | comment
+        _ | 'quotation-\\"'
+        _ | 'reverse-solidus-\\\\'
+        _ | 'backspace-\\b'
+        _ | 'formfeed-\\f'
+        _ | 'carriage-return-\\r'
+        _ | 'horizontal-tab-\\t'
     }
 
 }

@@ -39,6 +39,7 @@ import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphqlTypeComparatorEnvironment;
 import graphql.schema.GraphqlTypeComparatorRegistry;
 import graphql.schema.visibility.GraphqlFieldVisibility;
+import graphql.util.EscapeUtil;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -56,6 +57,7 @@ import static graphql.Directives.DeprecatedDirective;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
+import static graphql.util.EscapeUtil.escapeJsonString;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -84,7 +86,7 @@ public class SchemaPrinter {
         private final boolean includeScalars;
 
         private final boolean useAstDefinitions;
-        
+
         private final boolean includeSchemaDefinition;
 
         private final boolean descriptionsAsHashComments;
@@ -116,7 +118,7 @@ public class SchemaPrinter {
         public boolean isIncludeScalars() {
             return includeScalars;
         }
-        
+
         public boolean isIncludeSchemaDefinition() {
             return includeSchemaDefinition;
         }
@@ -163,7 +165,6 @@ public class SchemaPrinter {
             return new Options(this.includeIntrospectionTypes, flag, this.includeSchemaDefinition, this.useAstDefinitions, this.descriptionsAsHashComments, this.includeDirective, this.comparatorRegistry);
         }
 
-        
         /**
          * This will force the printing of the graphql schema definition even if the query, mutation, and/or subscription
          * types use the default names.  Some graphql parsers require this information even if the schema uses the
@@ -874,7 +875,9 @@ public class SchemaPrinter {
     }
 
     private void printSingleLineDescription(PrintWriter out, String prefix, String s) {
-        out.printf("%s\"%s\"\n", prefix, s);
+        // See: https://github.com/graphql/graphql-spec/issues/148
+        String desc = escapeJsonString(s);
+        out.printf("%s\"%s\"\n", prefix, desc);
     }
 
     private boolean hasDescription(Object descriptionHolder) {

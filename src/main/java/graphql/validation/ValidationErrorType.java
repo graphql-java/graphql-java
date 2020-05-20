@@ -35,5 +35,6 @@ public enum ValidationErrorType {
     DeferDirectiveOnNonNullField,
     DeferDirectiveNotOnQueryOperation,
     DeferMustBeOnAllFields,
-    DuplicateArgumentNames
+    DuplicateArgumentNames,
+    DuplicateVariableName
 }
