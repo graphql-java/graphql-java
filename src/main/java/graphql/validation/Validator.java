@@ -50,7 +50,7 @@ public class Validator {
         return validationErrorCollector.getErrors();
     }
 
-    private List<AbstractRule> createRules(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+    public List<AbstractRule> createRules(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         List<AbstractRule> rules = new ArrayList<>();
 
         ExecutableDefinitions executableDefinitions = new ExecutableDefinitions(validationContext, validationErrorCollector);
