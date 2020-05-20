@@ -1,5 +1,9 @@
 package graphql
 
+import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLSchema
+import graphql.schema.TypeResolver
+import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.errors.SchemaProblem
@@ -838,6 +842,95 @@ class InterfacesImplementingInterfacesTest extends Specification {
         assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg1:String =\"defaultVal\"' to 'arg1:String =\"defaultValX\"")
         assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg2:String' to 'arg2:String!")
         assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg3:Int' to 'arg3:String")
+    }
+
+    def 'Integration test'() {
+        given:
+        def sdl = """
+            type Query {
+               find: [Resource]
+            }
+            
+            interface Node {
+              id: ID!
+            }
+            
+            interface Resource implements Node {
+              id: ID!
+              url: String
+            }
+
+            type Image implements Resource & Node {
+              id: ID!
+              url: String
+              thumbnail: String
+            }
+            
+            type File implements Resource & Node {
+              id: ID!
+              url: String
+              path: String
+            }
+            """
+
+        def typeDefinitionRegistry = new SchemaParser().parse(sdl)
+
+        TypeResolver imageTypeResolver = { env ->
+            Map<String, Object> obj = env.getObject();
+            String id = (String) obj.get("id");
+            GraphQLSchema schema = env.getSchema()
+
+            if (id == "1") {
+                return (GraphQLObjectType) schema.getType("Image");
+            } else {
+                return (GraphQLObjectType) schema.getType("File");
+            }
+        }
+
+        def graphQLSchema = new SchemaGenerator().makeExecutableSchema(typeDefinitionRegistry, RuntimeWiring.newRuntimeWiring()
+                .type("Query", { typeWiring ->
+                    typeWiring.dataFetcher(
+                            "find",
+                            { e ->
+                                [
+                                        [id: '1', url: 'https://image.com/1', thumbnail: 'TN'],
+                                        [id: '2', url: 'https://file.com/1', path: '/file/1'],
+                                ]
+                            }
+                    )
+                })
+                .type("Node", { typeWiring ->
+                    typeWiring.typeResolver(imageTypeResolver)
+                })
+                .type("Resource", { typeWiring ->
+                    typeWiring.typeResolver(imageTypeResolver)
+                })
+                .build()
+        )
+
+        when:
+
+        def result = GraphQL.newGraphQL(graphQLSchema).build().execute("""
+            { 
+                find { 
+                    id
+                    url 
+                    ... on Image { 
+                        thumbnail 
+                    } 
+                    ... on File { 
+                        path 
+                    } 
+                }
+            }
+        """)
+
+        then:
+        !result.errors
+        result.data == [find: [
+                [id: '1', url: 'https://image.com/1', thumbnail: 'TN'],
+                [id: '2', url: 'https://file.com/1', path: '/file/1']
+        ]]
     }
 
     def assertErrorMessage(SchemaProblem error, expectedMessage) {
