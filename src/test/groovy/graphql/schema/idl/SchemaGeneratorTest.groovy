@@ -23,6 +23,7 @@ import graphql.schema.GraphqlTypeComparatorRegistry
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
+import graphql.schema.idl.errors.SchemaProblem
 import graphql.schema.visibility.GraphqlFieldVisibility
 import spock.lang.Specification
 
@@ -952,6 +953,57 @@ class SchemaGeneratorTest extends Specification {
         queryType.getFieldDefinition("foo").getDeprecationReason() == "foo reason"
         queryType.getFieldDefinition("bar").getDeprecationReason() == "No longer supported" // default according to spec
         !queryType.getFieldDefinition("baz").isDeprecated()
+    }
+
+    def "specifiedBy directive is supported"() {
+        given:
+        def spec = """
+        type Query {
+            foo: MyScalar
+        }
+        scalar MyScalar @specifiedBy(url: "myUrl.example")
+        """
+        when:
+        def schema = schema(spec)
+        GraphQLScalarType scalar = schema.getType("MyScalar") as GraphQLScalarType
+
+        then:
+        scalar.getSpecifiedByUrl() == "myUrl.example"
+    }
+
+    def "specifiedBy requires an url "() {
+        given:
+        def spec = """
+        type Query {
+            foo: MyScalar
+        }
+        scalar MyScalar @specifiedBy
+        """
+        when:
+        def registry = new SchemaParser().parse(spec)
+        def options = SchemaGenerator.Options.defaultOptions()
+        new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        def schemaProblem = thrown(SchemaProblem)
+        schemaProblem.message.contains("failed to provide a value for the non null argument 'url' on directive 'specifiedBy'")
+    }
+
+    def "specifiedBy can be added via extension"() {
+        given:
+        def spec = """
+        type Query {
+            foo: MyScalar
+        }
+        scalar MyScalar
+        extend scalar MyScalar @specifiedBy(url: "myUrl.example")
+        """
+        when:
+        def schema = schema(spec)
+        GraphQLScalarType scalar = schema.getType("MyScalar") as GraphQLScalarType
+
+        then:
+        scalar.getSpecifiedByUrl() == "myUrl.example"
     }
 
 

@@ -190,7 +190,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         private ScalarTypeDefinition definition;
         private List<ScalarTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
-        private String specifiedBy;
+        private String specifiedByUrl;
 
         public Builder() {
         }
@@ -202,6 +202,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
             definition = existing.getDefinition();
             extensionDefinitions = existing.getExtensionDefinitions();
             directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+            specifiedByUrl = existing.getSpecifiedByUrl();
         }
 
         @Override
@@ -216,8 +217,8 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
             return this;
         }
 
-        public Builder specifiedBy(String specifiedBy) {
-            this.specifiedBy = specifiedBy;
+        public Builder specifiedByUrl(String specifiedByUrl) {
+            this.specifiedByUrl = specifiedByUrl;
             return this;
         }
 
@@ -285,7 +286,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
                     sort(directives, GraphQLScalarType.class, GraphQLDirective.class),
                     definition,
                     extensionDefinitions,
-                    specifiedBy);
+                    specifiedByUrl);
         }
     }
 }

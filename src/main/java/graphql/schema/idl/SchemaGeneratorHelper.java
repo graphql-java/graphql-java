@@ -16,7 +16,6 @@ import graphql.language.NullValue;
 import graphql.language.ObjectValue;
 import graphql.language.StringValue;
 import graphql.language.Type;
-import graphql.language.TypeName;
 import graphql.language.Value;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
@@ -43,6 +42,8 @@ import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINI
 import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
 import static graphql.introspection.Introspection.DirectiveLocation.valueOf;
 import static graphql.language.DirectiveLocation.newDirectiveLocation;
+import static graphql.language.NonNullType.newNonNullType;
+import static graphql.language.TypeName.newTypeName;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
@@ -71,7 +72,7 @@ public class SchemaGeneratorHelper {
                         InputValueDefinition.newInputValueDefinition()
                                 .name("reason")
                                 .description(createDescription("The reason for the deprecation"))
-                                .type(TypeName.newTypeName().name("String").build())
+                                .type(newTypeName().name("String").build())
                                 .defaultValue(StringValue.newStringValue().value(NO_LONGER_SUPPORTED).build())
                                 .build())
                 .build();
@@ -84,7 +85,7 @@ public class SchemaGeneratorHelper {
                         InputValueDefinition.newInputValueDefinition()
                                 .name("url")
                                 .description(createDescription("The URL that specifies the behaviour of this scalar."))
-                                .type(TypeName.newTypeName().name("String").build())
+                                .type(newNonNullType(newTypeName().name("String").build()).build())
                                 .build())
                 .build();
     }

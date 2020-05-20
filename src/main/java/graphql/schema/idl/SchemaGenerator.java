@@ -4,6 +4,7 @@ import graphql.Directives;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.introspection.Introspection.DirectiveLocation;
+import graphql.language.Argument;
 import graphql.language.Directive;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
@@ -696,7 +697,7 @@ public class SchemaGenerator {
             scalar = scalar.transform(builder -> builder
                     .definition(typeDefinition)
                     .comparatorRegistry(buildCtx.getComparatorRegistry())
-                    .specifiedBy(getSpecifiedByUrl(typeDefinition))
+                    .specifiedByUrl(getSpecifiedByUrl(typeDefinition, extensions))
                     .withDirectives(buildDirectives(
                             typeDefinition.getDirectives(),
                             directivesOf(extensions),
@@ -704,20 +705,22 @@ public class SchemaGenerator {
                             buildCtx.getDirectiveDefinitions(),
                             buildCtx.getComparatorRegistry())
                     ));
-            //
-            // only allow modification of custom scalars
             scalar = directiveBehaviour.onScalar(scalar, buildCtx.mkBehaviourParams());
         }
         return scalar;
     }
 
-    private String getSpecifiedByUrl(ScalarTypeDefinition scalarTypeDefinition) {
-        Optional<Directive> specifiedByDirective = FpKit.findOne(scalarTypeDefinition.getDirectives(),
+    private String getSpecifiedByUrl(ScalarTypeDefinition scalarTypeDefinition, List<ScalarTypeExtensionDefinition> extensions) {
+        List<Directive> allDirectives = new ArrayList<>(scalarTypeDefinition.getDirectives());
+        extensions.forEach(extension -> allDirectives.addAll(extension.getDirectives()));
+        Optional<Directive> specifiedByDirective = FpKit.findOne(allDirectives,
                 directiveDefinition -> directiveDefinition.getName().equals(Directives.SpecifiedByDirective.getName()));
-        return specifiedByDirective.map(directive -> {
-            StringValue url = (StringValue) directive.getArgument("url").getValue();
-            return url.getValue();
-        }).orElse(null);
+        if (!specifiedByDirective.isPresent()) {
+            return null;
+        }
+        Argument urlArgument = specifiedByDirective.get().getArgument("url");
+        StringValue url = (StringValue) urlArgument.getValue();
+        return url.getValue();
     }
 
     private GraphQLFieldDefinition buildField(BuildContext buildCtx, TypeDefinition parentType, FieldDefinition
