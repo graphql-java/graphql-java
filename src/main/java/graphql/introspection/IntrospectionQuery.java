@@ -1,6 +1,5 @@
 package graphql.introspection;
 
-@Deprecated
 public interface IntrospectionQuery {
 
     String INTROSPECTION_QUERY = "\n" +
