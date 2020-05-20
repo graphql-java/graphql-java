@@ -25,16 +25,16 @@ public class UniqueArgumentNamesRule extends AbstractRule {
 
     @Override
     public void checkField(Field field) {
-        if(field.getArguments()==null||field.getArguments().size()<=1){
+        if (field.getArguments() == null || field.getArguments().size() <= 1) {
             return;
         }
 
-        Set<String> arguments=new HashSet<>();
+        Set<String> arguments = new HashSet<>();
 
         for (Argument argument : field.getArguments()) {
-            if(arguments.contains(argument.getName())){
+            if (arguments.contains(argument.getName())) {
                 addError(ValidationErrorType.DuplicateArgumentNames, field.getSourceLocation(), duplicateArgumentNameMessage(argument.getName()));
-            }else{
+            } else {
                 arguments.add(argument.getName());
             }
         }
@@ -42,16 +42,16 @@ public class UniqueArgumentNamesRule extends AbstractRule {
 
     @Override
     public void checkDirective(Directive directive, List<Node> ancestors) {
-        if(directive.getArguments()==null||directive.getArguments().size()<=1){
+        if (directive.getArguments() == null || directive.getArguments().size() <= 1) {
             return;
         }
 
-        Set<String> arguments=new HashSet<>(directive.getArguments().size());
+        Set<String> arguments = new HashSet<>(directive.getArguments().size());
 
         for (Argument argument : directive.getArguments()) {
-            if(arguments.contains(argument.getName())){
+            if (arguments.contains(argument.getName())) {
                 addError(ValidationErrorType.DuplicateArgumentNames, directive.getSourceLocation(), duplicateArgumentNameMessage(argument.getName()));
-            }else{
+            } else {
                 arguments.add(argument.getName());
             }
         }

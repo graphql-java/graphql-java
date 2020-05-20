@@ -6,7 +6,7 @@ import graphql.validation.ValidationErrorType
 import graphql.validation.Validator
 import spock.lang.Specification
 
-class UniqueArgumentNamesTest extends  Specification  {
+class UniqueArgumentNamesTest extends Specification {
 
     def "unique argument name"() {
         def query = """

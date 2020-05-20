@@ -122,7 +122,7 @@ public class Validator {
         DeferredMustBeOnAllFields deferredMustBeOnAllFields = new DeferredMustBeOnAllFields(validationContext, validationErrorCollector);
         rules.add(deferredMustBeOnAllFields);
 
-        UniqueArgumentNamesRule uniqueArgumentNamesRule =new UniqueArgumentNamesRule(validationContext, validationErrorCollector);
+        UniqueArgumentNamesRule uniqueArgumentNamesRule = new UniqueArgumentNamesRule(validationContext, validationErrorCollector);
         rules.add(uniqueArgumentNamesRule);
 
         return rules;
