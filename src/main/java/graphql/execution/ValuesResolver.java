@@ -103,12 +103,15 @@ public class ValuesResolver {
         for (GraphQLArgument fieldArgument : argumentTypes) {
             String argName = fieldArgument.getName();
             Argument argument = argumentMap.get(argName);
-            Object value;
+            Object value = null;
             if (argument != null) {
                 value = coerceValueAst(codeRegistry.getFieldVisibility(), fieldArgument.getType(), argument.getValue(), variables);
-            } else {
+            }
+
+            if (value == null) {
                 value = fieldArgument.getDefaultValue();
             }
+
             // only put an arg into the result IF they specified a variable at all or
             // the default value ended up being something non null
             if (argumentMap.containsKey(argName) || value != null) {

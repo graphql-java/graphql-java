@@ -143,6 +143,23 @@ class ValuesResolverTest extends Specification {
         values['arg'] == 'hello'
     }
 
+    def "getArgumentValues: uses default value with null variable reference value"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("inputObject")
+                .build()
+
+        def fieldArgument = new GraphQLArgument("arg", "", inputObjectType, "hello")
+        def argument = new Argument("arg", new VariableReference("var"))
+
+        when:
+        def variables = [:]
+        def values = resolver.getArgumentValues([fieldArgument], [argument], variables)
+
+        then:
+        values['arg'] == 'hello'
+    }
+
     def "getArgumentValues: resolves object literal"() {
         given: "schema defining input object"
         def subObjectType = newInputObject()
