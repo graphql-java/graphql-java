@@ -8,6 +8,7 @@ import graphql.introspection.IntrospectionQuery
 import graphql.introspection.IntrospectionResultToSchema
 import graphql.schema.Coercing
 import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputObjectType
@@ -600,6 +601,45 @@ Second Line
 type Query {
   field: String
 }
+'''
+    }
+
+    def "prints type with no fields"() {
+        given:
+        def emptyInputObject = GraphQLInputObjectType.newInputObject().name("EmptyInputObject").build()
+        def emptyObject = GraphQLObjectType.newObject().name("EmptyObject").build()
+        def argument = GraphQLArgument.newArgument().name("arg").type(emptyInputObject).build()
+        GraphQLFieldDefinition field1 = newFieldDefinition().name("field1").type(emptyObject).argument(argument).build()
+
+        def emptyInterface = GraphQLInterfaceType.newInterface().name("EmptyInterface").build()
+        def emptyObjectWithInterface = GraphQLObjectType.newObject().name("EmptyObjectWithInterface").withInterface(emptyInterface).build()
+        GraphQLFieldDefinition field2 = newFieldDefinition().name("field2").type(emptyObjectWithInterface).build()
+
+        def emptyEnum = GraphQLEnumType.newEnum().name("EmptyEnum").build()
+        GraphQLFieldDefinition field3 = newFieldDefinition().name("field3").type(emptyEnum).build()
+
+        def queryType = GraphQLObjectType.newObject().name("Query").field(field1).field(field2).field(field3).build()
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().typeResolver(emptyInterface, { env -> null }).build();
+        def schema = GraphQLSchema.newSchema().query(queryType).codeRegistry(codeRegistry).build()
+        when:
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+
+        then:
+        result == '''interface EmptyInterface
+
+type EmptyObject
+
+type EmptyObjectWithInterface implements EmptyInterface
+
+type Query {
+  field1(arg: EmptyInputObject): EmptyObject
+  field2: EmptyObjectWithInterface
+  field3: EmptyEnum
+}
+
+enum EmptyEnum
+
+input EmptyInputObject
 '''
     }
 

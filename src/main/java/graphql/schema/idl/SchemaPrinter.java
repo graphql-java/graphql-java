@@ -349,25 +349,34 @@ public class SchemaPrinter {
                 printAsAst(out, type.getDefinition(), type.getExtensionDefinitions());
             } else {
                 printComments(out, type, "");
-                out.format("enum %s%s {\n", type.getName(), directivesString(GraphQLEnumType.class, type.getDirectives()));
+                out.format("enum %s%s", type.getName(), directivesString(GraphQLEnumType.class, type.getDirectives()));
                 List<GraphQLEnumValueDefinition> values = type.getValues()
                         .stream()
                         .sorted(comparator)
                         .collect(toList());
-                for (GraphQLEnumValueDefinition enumValueDefinition : values) {
-                    printComments(out, enumValueDefinition, "  ");
-                    List<GraphQLDirective> enumValueDirectives = enumValueDefinition.getDirectives();
-                    if (enumValueDefinition.isDeprecated()) {
-                        enumValueDirectives = addDeprecatedDirectiveIfNeeded(enumValueDirectives);
+                if (values.size() > 0) {
+                    out.format(" {\n");
+                    for (GraphQLEnumValueDefinition enumValueDefinition : values) {
+                        printComments(out, enumValueDefinition, "  ");
+                        List<GraphQLDirective> enumValueDirectives = enumValueDefinition.getDirectives();
+                        if (enumValueDefinition.isDeprecated()) {
+                            enumValueDirectives = addDeprecatedDirectiveIfNeeded(enumValueDirectives);
+                        }
+                        out.format("  %s%s\n", enumValueDefinition.getName(), directivesString(GraphQLEnumValueDefinition.class, enumValueDirectives));
                     }
-                    out.format("  %s%s\n", enumValueDefinition.getName(), directivesString(GraphQLEnumValueDefinition.class, enumValueDirectives));
+                    out.format("}");
                 }
-                out.format("}\n\n");
+                out.format("\n\n");
             }
         };
     }
 
     private void printFieldDefinitions(PrintWriter out, Comparator<? super GraphQLSchemaElement> comparator, List<GraphQLFieldDefinition> fieldDefinitions) {
+        if (fieldDefinitions.size() == 0) {
+            return;
+        }
+
+        out.format(" {\n");
         fieldDefinitions
                 .stream()
                 .sorted(comparator)
@@ -382,6 +391,7 @@ public class SchemaPrinter {
                             fd.getName(), argsString(GraphQLFieldDefinition.class, fd.getArguments()), typeString(fd.getType()),
                             directivesString(GraphQLFieldDefinition.class, fieldDirectives));
                 });
+        out.format("}");
     }
 
     private TypePrinter<GraphQLInterfaceType> interfacePrinter() {
@@ -400,9 +410,9 @@ public class SchemaPrinter {
                 printAsAst(out, type.getDefinition(), type.getExtensionDefinitions());
             } else {
                 printComments(out, type, "");
-                out.format("interface %s%s {\n", type.getName(), directivesString(GraphQLInterfaceType.class, type.getDirectives()));
+                out.format("interface %s%s", type.getName(), directivesString(GraphQLInterfaceType.class, type.getDirectives()));
                 printFieldDefinitions(out, comparator, visibility.getFieldDefinitions(type));
-                out.format("}\n\n");
+                out.format("\n\n");
             }
         };
     }
@@ -450,7 +460,7 @@ public class SchemaPrinter {
             } else {
                 printComments(out, type, "");
                 if (type.getInterfaces().isEmpty()) {
-                    out.format("type %s%s {\n", type.getName(), directivesString(GraphQLObjectType.class, type.getDirectives()));
+                    out.format("type %s%s", type.getName(), directivesString(GraphQLObjectType.class, type.getDirectives()));
                 } else {
 
                     GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
@@ -463,7 +473,7 @@ public class SchemaPrinter {
                             .stream()
                             .sorted(implementsComparator)
                             .map(GraphQLNamedType::getName);
-                    out.format("type %s implements %s%s {\n",
+                    out.format("type %s implements %s%s",
                             type.getName(),
                             interfaceNames.collect(joining(" & ")),
                             directivesString(GraphQLObjectType.class, type.getDirectives()));
@@ -476,7 +486,7 @@ public class SchemaPrinter {
                 Comparator<? super GraphQLSchemaElement> comparator = options.comparatorRegistry.getComparator(environment);
 
                 printFieldDefinitions(out, comparator, visibility.getFieldDefinitions(type));
-                out.format("}\n\n");
+                out.format("\n\n");
             }
         };
     }
@@ -496,14 +506,17 @@ public class SchemaPrinter {
                         .build();
                 Comparator<? super GraphQLSchemaElement> comparator = options.comparatorRegistry.getComparator(environment);
 
-                out.format("input %s%s {\n", type.getName(), directivesString(GraphQLInputObjectType.class, type.getDirectives()));
-                visibility.getFieldDefinitions(type)
+                out.format("input %s%s", type.getName(), directivesString(GraphQLInputObjectType.class, type.getDirectives()));
+                List<GraphQLInputObjectField> inputObjectFields = visibility.getFieldDefinitions(type);
+                if (inputObjectFields.size() > 0) {
+                    out.format(" {\n");
+                    inputObjectFields
                         .stream()
                         .sorted(comparator)
                         .forEach(fd -> {
                             printComments(out, fd, "  ");
                             out.format("  %s: %s",
-                                    fd.getName(), typeString(fd.getType()));
+                                fd.getName(), typeString(fd.getType()));
                             Object defaultValue = fd.getDefaultValue();
                             if (defaultValue != null) {
                                 String astValue = printAst(defaultValue, fd.getType());
@@ -512,7 +525,9 @@ public class SchemaPrinter {
                             out.format(directivesString(GraphQLInputObjectField.class, fd.getDirectives()));
                             out.format("\n");
                         });
-                out.format("}\n\n");
+                    out.format("}");
+                }
+                out.format("\n\n");
             }
         };
     }
