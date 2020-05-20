@@ -89,7 +89,6 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                 .dataLoaderRegistry(executionContext.getDataLoaderRegistry())
                 .cacheControl(executionContext.getCacheControl())
                 .locale(executionContext.getLocale())
-                .locale(executionContext.getLocale())
                 .document(executionContext.getDocument())
                 .operationDefinition(executionContext.getOperationDefinition())
                 .variables(executionContext.getVariables())
@@ -279,7 +278,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.executionStepInfo = env.executionStepInfo;
             this.dataLoaderRegistry = env.dataLoaderRegistry;
             this.cacheControl = env.cacheControl;
-            this.localContext = env.locale;
+            this.locale = env.locale;
             this.operationDefinition = env.operationDefinition;
             this.document = env.document;
             this.variables = env.variables;
