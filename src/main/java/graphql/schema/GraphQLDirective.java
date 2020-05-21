@@ -55,7 +55,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
                              List<GraphQLArgument> arguments,
                              DirectiveDefinition definition) {
         assertValidName(name);
-        assertNotNull(arguments, "arguments can't be null");
+        assertNotNull(arguments, () -> "arguments can't be null");
         this.name = name;
         this.description = description;
         this.locations = locations;
@@ -199,13 +199,13 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         }
 
         public Builder argument(GraphQLArgument argument) {
-            assertNotNull(argument, "argument must not be null");
+            assertNotNull(argument, () -> "argument must not be null");
             arguments.put(argument.getName(), argument);
             return this;
         }
 
         public Builder replaceArguments(List<GraphQLArgument> arguments) {
-            assertNotNull(arguments, "arguments must not be null");
+            assertNotNull(arguments, () -> "arguments must not be null");
             this.arguments.clear();
             for (GraphQLArgument argument : arguments) {
                 this.arguments.put(argument.getName(), argument);

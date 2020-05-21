@@ -76,7 +76,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
 
     private GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values, List<GraphQLDirective> directives, EnumTypeDefinition definition, List<EnumTypeExtensionDefinition> extensionDefinitions) {
         assertValidName(name);
-        assertNotNull(directives, "directives cannot be null");
+        assertNotNull(directives, () -> "directives cannot be null");
 
         this.name = name;
         this.description = description;
@@ -304,7 +304,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         }
 
         public Builder value(String name, Object value) {
-            assertNotNull(value, "value can't be null");
+            assertNotNull(value, () -> "value can't be null");
             return value(newEnumValueDefinition().name(name)
                     .value(value).build());
         }
@@ -327,7 +327,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         }
 
         public Builder value(GraphQLEnumValueDefinition enumValueDefinition) {
-            assertNotNull(enumValueDefinition, "enumValueDefinition can't be null");
+            assertNotNull(enumValueDefinition, () -> "enumValueDefinition can't be null");
             values.put(enumValueDefinition.getName(), enumValueDefinition);
             return this;
         }
@@ -347,7 +347,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         }
 
         public Builder withDirectives(GraphQLDirective... directives) {
-            assertNotNull(directives, "directives can't be null");
+            assertNotNull(directives, () -> "directives can't be null");
             for (GraphQLDirective directive : directives) {
                 withDirective(directive);
             }
@@ -355,13 +355,13 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         }
 
         public Builder withDirective(GraphQLDirective directive) {
-            assertNotNull(directive, "directive can't be null");
+            assertNotNull(directive, () -> "directive can't be null");
             directives.put(directive.getName(), directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
-            assertNotNull(directives, "directive can't be null");
+            assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
             for (GraphQLDirective directive : directives) {
                 this.directives.put(directive.getName(), directive);

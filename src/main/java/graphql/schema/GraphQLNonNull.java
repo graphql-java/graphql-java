@@ -7,14 +7,13 @@ import graphql.util.TraverserContext;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Supplier;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.Assert.assertTrueLazily;
+import static graphql.Assert.assertTrue;
 
 /**
  * A modified type that indicates there the underlying wrapped type will not be null.
- *
+ * <p>
  * See http://graphql.org/learn/schema/#lists-and-non-null for more details on the concept
  */
 @PublicApi
@@ -27,7 +26,6 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
      * {@code .type(nonNull(GraphQLString)) }
      *
      * @param wrappedType the type to wrap as being non null
-     *
      * @return a GraphQLNonNull of that wrapped type
      */
     public static GraphQLNonNull nonNull(GraphQLType wrappedType) {
@@ -41,14 +39,14 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
 
 
     public GraphQLNonNull(GraphQLType wrappedType) {
-        assertNotNull(wrappedType, "wrappedType can't be null");
+        assertNotNull(wrappedType, () -> "wrappedType can't be null");
         assertNonNullWrapping(wrappedType);
         this.originalWrappedType = wrappedType;
     }
 
     private void assertNonNullWrapping(GraphQLType wrappedType) {
-        assertTrueLazily(!GraphQLTypeUtil.isNonNull(wrappedType), "A non null type cannot wrap an existing non null type '%s'",
-             () -> GraphQLTypeUtil.simplePrint(wrappedType));
+        assertTrue(!GraphQLTypeUtil.isNonNull(wrappedType), () ->
+                String.format("A non null type cannot wrap an existing non null type '%s'", GraphQLTypeUtil.simplePrint(wrappedType)));
     }
 
     @Override

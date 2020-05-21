@@ -72,7 +72,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
 
     @Override
     public T thisNode() {
-        assertFalse(this.nodeDeleted, "node is deleted");
+        assertFalse(this.nodeDeleted, () -> "node is deleted");
         if (newNode != null) {
             return newNode;
         }
@@ -87,15 +87,15 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     @Override
     public void changeNode(T newNode) {
         assertNotNull(newNode);
-        assertFalse(this.nodeDeleted, "node is deleted");
+        assertFalse(this.nodeDeleted, () -> "node is deleted");
         this.newNode = newNode;
     }
 
 
     @Override
     public void deleteNode() {
-        assertNull(this.newNode, "node is already changed");
-        assertFalse(this.nodeDeleted, "node is already deleted");
+        assertNull(this.newNode, () -> "node is already changed");
+        assertFalse(this.nodeDeleted, () -> "node is already deleted");
         this.nodeDeleted = true;
     }
 
@@ -221,14 +221,14 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
      * PRIVATE: Used by {@link Traverser}
      */
     void setChildrenContexts(Map<String, List<TraverserContext<T>>> children) {
-        assertTrue(this.children == null, "children already set");
+        assertTrue(this.children == null, () -> "children already set");
         this.children = children;
     }
 
 
     @Override
     public Map<String, List<TraverserContext<T>>> getChildrenContexts() {
-        assertNotNull(children, "children not available");
+        assertNotNull(children, () -> "children not available");
         return children;
     }
 

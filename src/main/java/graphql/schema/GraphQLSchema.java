@@ -91,10 +91,10 @@ public class GraphQLSchema {
 
     @Internal
     private GraphQLSchema(Builder builder, boolean afterTransform) {
-        assertNotNull(builder.additionalTypes, "additionalTypes can't be null");
-        assertNotNull(builder.queryType, "queryType can't be null");
-        assertNotNull(builder.additionalDirectives, "directives can't be null");
-        assertNotNull(builder.codeRegistry, "codeRegistry can't be null");
+        assertNotNull(builder.additionalTypes, () -> "additionalTypes can't be null");
+        assertNotNull(builder.queryType, () -> "queryType can't be null");
+        assertNotNull(builder.additionalDirectives, () -> "directives can't be null");
+        assertNotNull(builder.codeRegistry, () -> "codeRegistry can't be null");
 
 
         this.queryType = builder.queryType;
@@ -154,7 +154,7 @@ public class GraphQLSchema {
         GraphQLType graphQLType = typeMap.get(typeName);
         if (graphQLType != null) {
             assertTrue(graphQLType instanceof GraphQLObjectType,
-                    "You have asked for named object type '%s' but its not an object type but rather a '%s'", typeName, graphQLType.getClass().getName());
+                    () -> String.format("You have asked for named object type '%s' but its not an object type but rather a '%s'", typeName, graphQLType.getClass().getName()));
         }
         return (GraphQLObjectType) graphQLType;
     }
@@ -452,7 +452,7 @@ public class GraphQLSchema {
         }
 
         public Builder withSchemaDirective(GraphQLDirective directive) {
-            assertNotNull(directive, "directive can't be null");
+            assertNotNull(directive, () -> "directive can't be null");
             schemaDirectives.put(directive.getName(), directive);
             return this;
         }
@@ -516,8 +516,8 @@ public class GraphQLSchema {
         }
 
         GraphQLSchema buildImpl(boolean afterTransform) {
-            assertNotNull(additionalTypes, "additionalTypes can't be null");
-            assertNotNull(additionalDirectives, "additionalDirectives can't be null");
+            assertNotNull(additionalTypes, () -> "additionalTypes can't be null");
+            assertNotNull(additionalDirectives, () -> "additionalDirectives can't be null");
 
             // schemas built via the schema generator have the deprecated directive BUT we want it present for hand built
             // schemas - its inherently part of the spec!

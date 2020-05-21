@@ -56,7 +56,6 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
      * @param description  the description
      * @param types        the possible types
      * @param typeResolver the type resolver function
-     *
      * @deprecated use the {@link #newUnionType()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -72,7 +71,6 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
      * @param typeResolver the type resolver function
      * @param directives   the directives on this type element
      * @param definition   the AST definition
-     *
      * @deprecated use the {@link #newUnionType()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -83,9 +81,9 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
 
     private GraphQLUnionType(String name, String description, List<GraphQLNamedOutputType> types, TypeResolver typeResolver, List<GraphQLDirective> directives, UnionTypeDefinition definition, List<UnionTypeExtensionDefinition> extensionDefinitions) {
         assertValidName(name);
-        assertNotNull(types, "types can't be null");
-        assertNotEmpty(types, "A Union type must define one or more member types.");
-        assertNotNull(directives, "directives cannot be null");
+        assertNotNull(types, () -> "types can't be null");
+        assertNotEmpty(types, () -> "A Union type must define one or more member types.");
+        assertNotNull(directives, () -> "directives cannot be null");
 
         this.name = name;
         this.description = description;
@@ -144,7 +142,6 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
-     *
      * @return a new object based on calling build on that builder
      */
     public GraphQLUnionType transform(Consumer<Builder> builderConsumer) {
@@ -247,13 +244,13 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
 
 
         public Builder possibleType(GraphQLObjectType type) {
-            assertNotNull(type, "possible type can't be null");
+            assertNotNull(type, () -> "possible type can't be null");
             types.put(type.getName(), type);
             return this;
         }
 
         public Builder possibleType(GraphQLTypeReference reference) {
-            assertNotNull(reference, "reference can't be null");
+            assertNotNull(reference, () -> "reference can't be null");
             types.put(reference.getName(), reference);
             return this;
         }
@@ -302,7 +299,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
-            assertNotNull(directives, "directive can't be null");
+            assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
             for (GraphQLDirective directive : directives) {
                 this.directives.put(directive.getName(), directive);
@@ -311,7 +308,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         }
 
         public Builder withDirective(GraphQLDirective directive) {
-            assertNotNull(directive, "directive can't be null");
+            assertNotNull(directive, () -> "directive can't be null");
             directives.put(directive.getName(), directive);
             return this;
         }

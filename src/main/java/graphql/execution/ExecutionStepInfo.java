@@ -77,7 +77,7 @@ public class ExecutionStepInfo {
         this.field = field;
         this.path = path;
         this.parent = parent;
-        this.type = assertNotNull(type, "you must provide a graphql type");
+        this.type = assertNotNull(type, () -> "you must provide a graphql type");
         this.arguments = arguments;
         this.fieldContainer = fieldsContainer;
     }
@@ -196,7 +196,7 @@ public class ExecutionStepInfo {
      * @return a new type info with the same
      */
     public ExecutionStepInfo changeTypeWithPreservedNonNull(GraphQLOutputType newType) {
-        assertTrue(!GraphQLTypeUtil.isNonNull(newType), "newType can't be non null");
+        assertTrue(!GraphQLTypeUtil.isNonNull(newType), () -> "newType can't be non null");
         if (isNonNullType()) {
             return new ExecutionStepInfo(GraphQLNonNull.nonNull(newType), fieldDefinition, field, path, this.parent, arguments, this.fieldContainer);
         } else {
