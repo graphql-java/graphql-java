@@ -8,6 +8,7 @@ import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.Node;
 import graphql.language.OperationDefinition;
+import graphql.schema.GraphQLDirective;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
@@ -57,17 +58,23 @@ public class UniqueDirectiveNamesPerLocation extends AbstractRule {
     }
 
     private void checkDirectivesUniqueness(Node<?> directivesContainer, List<Directive> directives) {
-        Set<String> names = new LinkedHashSet<>();
-        directives.forEach(directive -> {
-            String name = directive.getName();
-            if (names.contains(name)) {
+        Set<String> directiveNames = new LinkedHashSet<>();
+
+        for (Directive directive : directives) {
+            String directiveName = directive.getName();
+            GraphQLDirective graphQLDirective = getValidationContext().getSchema().getDirective(directiveName);
+
+            if (graphQLDirective == null) continue;
+            if (graphQLDirective.getDefinition() != null && graphQLDirective.getDefinition().isRepeatable()) continue;
+
+            if (directiveNames.contains(directiveName)) {
                 addError(ValidationErrorType.DuplicateDirectiveName,
                         directive.getSourceLocation(),
-                        duplicateDirectiveNameMessage(name, directivesContainer.getClass().getSimpleName()));
+                        duplicateDirectiveNameMessage(directiveName, directivesContainer.getClass().getSimpleName()));
             } else {
-                names.add(name);
+                directiveNames.add(directiveName);
             }
-        });
+        }
     }
 
     private String duplicateDirectiveNameMessage(String directiveName, String location) {

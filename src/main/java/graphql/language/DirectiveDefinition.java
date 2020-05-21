@@ -21,6 +21,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
     private final String name;
     private final List<InputValueDefinition> inputValueDefinitions;
     private final List<DirectiveLocation> directiveLocations;
+    private final boolean isRepeatable;
 
     public static final String CHILD_INPUT_VALUE_DEFINITIONS = "inputValueDefinitions";
     public static final String CHILD_DIRECTIVE_LOCATION = "directiveLocation";
@@ -30,6 +31,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
                                   Description description,
                                   List<InputValueDefinition> inputValueDefinitions,
                                   List<DirectiveLocation> directiveLocations,
+                                  boolean isRepeatable,
                                   SourceLocation sourceLocation,
                                   List<Comment> comments,
                                   IgnoredChars ignoredChars,
@@ -38,6 +40,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
         this.name = name;
         this.inputValueDefinitions = inputValueDefinitions;
         this.directiveLocations = directiveLocations;
+        this.isRepeatable = isRepeatable;
     }
 
     /**
@@ -46,7 +49,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
      * @param name of the directive definition
      */
     public DirectiveDefinition(String name) {
-        this(name, null, new ArrayList<>(), new ArrayList<>(), null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, null, new ArrayList<>(), new ArrayList<>(), false, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -60,6 +63,10 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
 
     public List<DirectiveLocation> getDirectiveLocations() {
         return new ArrayList<>(directiveLocations);
+    }
+
+    public boolean isRepeatable() {
+        return isRepeatable;
     }
 
     @Override
@@ -106,6 +113,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
                 description,
                 deepCopy(inputValueDefinitions),
                 deepCopy(directiveLocations),
+                isRepeatable,
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),
@@ -118,6 +126,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
                 "name='" + name + "'" +
                 ", inputValueDefinitions=" + inputValueDefinitions +
                 ", directiveLocations=" + directiveLocations +
+                ", isRepeatable=" + isRepeatable +
                 "}";
     }
 
@@ -143,6 +152,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
         private Description description;
         private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
         private List<DirectiveLocation> directiveLocations = new ArrayList<>();
+        private boolean isRepeatable;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -156,6 +166,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
             this.description = existing.getDescription();
             this.inputValueDefinitions = existing.getInputValueDefinitions();
             this.directiveLocations = existing.getDirectiveLocations();
+            this.isRepeatable = existing.isRepeatable();
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
@@ -200,6 +211,11 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
             return this;
         }
 
+        public Builder isRepeatable(boolean isRepeatable) {
+            this.isRepeatable = isRepeatable;
+            return this;
+        }
+
         public Builder ignoredChars(IgnoredChars ignoredChars) {
             this.ignoredChars = ignoredChars;
             return this;
@@ -217,7 +233,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
 
 
         public DirectiveDefinition build() {
-            return new DirectiveDefinition(name, description, inputValueDefinitions, directiveLocations, sourceLocation, comments, ignoredChars, additionalData);
+            return new DirectiveDefinition(name, description, inputValueDefinitions, directiveLocations, isRepeatable, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

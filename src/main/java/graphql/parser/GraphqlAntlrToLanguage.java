@@ -637,6 +637,7 @@ public class GraphqlAntlrToLanguage {
         if (ctx.argumentsDefinition() != null) {
             def.inputValueDefinitions(createInputValueDefinitions(ctx.argumentsDefinition().inputValueDefinition()));
         }
+        def.isRepeatable(ctx.REPEATABLE() != null);
         return def.build();
     }
 

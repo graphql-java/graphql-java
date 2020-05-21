@@ -91,6 +91,7 @@ INPUT: 'input';
 EXTEND: 'extend';
 DIRECTIVE: 'directive';
 ON_KEYWORD: 'on';
+REPEATABLE: 'repeatable';
 NAME: [_A-Za-z][_0-9A-Za-z]*;
 
 
