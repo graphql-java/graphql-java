@@ -1145,6 +1145,65 @@ type Query {
 '''
     }
 
+    def "directive definitions are not printed when the includeDirectiveDefinitions flag is set to false"() {
+        def simpleIdlWithDirective = '''
+                directive @example on FIELD_DEFINITION
+                
+                directive @moreComplex(arg1 : String = "default", arg2 : Int) 
+                    on FIELD_DEFINITION | 
+                        INPUT_FIELD_DEFINITION
+               
+                type Query {
+                    fieldA : String @example @moreComplex(arg2 : 666)
+                }
+            '''
+        given:
+        def registry = new SchemaParser().parse(simpleIdlWithDirective)
+        def runtimeWiring = newRuntimeWiring().build()
+        def options = SchemaGenerator.Options.defaultOptions()
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+
+        when:
+        def resultWithNoDirectiveDefinitions = new SchemaPrinter(defaultOptions().includeDirectiveDefinitions(false)).print(schema)
+
+        then:
+        resultWithNoDirectiveDefinitions == '''type Query {
+  fieldA: String @example @moreComplex(arg1 : "default", arg2 : 666)
+}
+'''
+
+        when:
+        def resultWithDirectiveDefinitions = new SchemaPrinter(defaultOptions().includeDirectiveDefinitions(true)).print(schema)
+
+        then:
+        resultWithDirectiveDefinitions == '''"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to skip this field or fragment when the `if`'argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @example on FIELD_DEFINITION
+
+directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+"Marks the field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ENUM_VALUE
+
+type Query {
+  fieldA: String @example @moreComplex(arg1 : "default", arg2 : 666)
+}
+'''
+    }
+
     def "can print a schema as AST elements"() {
         def sdl = '''
             directive @directive1 on SCALAR
