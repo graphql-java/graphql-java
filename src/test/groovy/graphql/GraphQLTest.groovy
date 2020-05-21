@@ -1069,5 +1069,61 @@ many lines''']
 
     }
 
+    def "null as default variable value is used"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String): String
+        }"""
+        DataFetcher df = { dfe ->
+            boolean isNullValue = dfe.containsArgument("name") && dfe.getArgument("name") == null;
+            return isNullValue ? "is null" : "error";
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String = null){sayHello(name:$var)}').getData();
+
+        then:
+        data == [sayHello: "is null"]
+
+    }
+
+    def "null as default argument value is used with no provided variable"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String = null): String
+        }"""
+        DataFetcher df = { dfe ->
+            boolean isNullValue = dfe.containsArgument("name") && dfe.getArgument("name") == null;
+            return isNullValue ? "is null" : "error";
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String){sayHello(name:$var)}').getData();
+
+        then:
+        data == [sayHello: "is null"]
+
+    }
+
+    def "not provided variable results in not provided argument"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String): String
+        }"""
+        DataFetcher df = { dfe ->
+            return !dfe.containsArgument("name") ? "not provided" : "error"
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String){sayHello(name:$var)}').getData();
+
+        then:
+        data == [sayHello: "not provided"]
+
+    }
+
 
 }
