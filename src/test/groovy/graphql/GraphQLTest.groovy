@@ -1125,5 +1125,22 @@ many lines''']
 
     }
 
+    def "null variable default value produces error for non null argument"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String!): String
+        }"""
+        DataFetcher df = { dfe ->
+            return dfe.getArgument("name")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def errors = graphQL.execute('query($var:String=null){sayHello(name:$var)}').getErrors();
+
+        then:
+        errors.size() == 1
+
+    }
 
 }
