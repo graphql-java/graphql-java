@@ -1015,4 +1015,59 @@ many lines''']
 
     }
 
+    def "default argument values are respected when variable is not provided"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String = "amigo"): String
+        }"""
+        DataFetcher df = { dfe ->
+            return dfe.getArgument("name")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String){sayHello(name:$var)}').getData();
+
+        then:
+        data == [sayHello: "amigo"]
+
+    }
+
+    def "default variable values are respected"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String): String
+        }"""
+        DataFetcher df = { dfe ->
+            return dfe.getArgument("name")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String = "amigo"){sayHello(name:$var)}').getData();
+
+        then:
+        data == [sayHello: "amigo"]
+
+    }
+
+    def "default variable values are respected for non null arguments"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String!): String
+        }"""
+        DataFetcher df = { dfe ->
+            return dfe.getArgument("name")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String! = "amigo"){sayHello(name:$var)}').getData();
+
+        then:
+        data == [sayHello: "amigo"]
+
+    }
+
+
 }
