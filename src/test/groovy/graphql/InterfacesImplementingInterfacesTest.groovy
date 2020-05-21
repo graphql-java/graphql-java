@@ -844,11 +844,91 @@ class InterfacesImplementingInterfacesTest extends Specification {
         assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg3:Int' to 'arg3:String")
     }
 
-    def 'Integration test'() {
+    def 'Test query execution'() {
         given:
+        def graphQLSchema = createComplexSchema()
+
+        when:
+        def result = GraphQL.newGraphQL(graphQLSchema).build().execute("""
+            { 
+                find { 
+                    ... on Node {
+                        id
+                        ... on Resource {
+                            url 
+                            ... on Image { 
+                                thumbnail 
+                            } 
+                            ... on File { 
+                                path 
+                            } 
+                        }
+                    }
+                }
+            }
+        """)
+
+        then:
+        !result.errors
+        result.data == [find: [
+                [id: '1', url: 'https://image.com/1', thumbnail: 'TN'],
+                [id: '2', url: 'https://file.com/1', path: '/file/1']
+        ]]
+    }
+
+    def 'Test introspection query'() {
+        given:
+        def graphQLSchema = createComplexSchema()
+
+        when:
+        def result = GraphQL.newGraphQL(graphQLSchema).build().execute("""
+            { 
+                nodeType: __type(name: "Node") {
+                    possibleTypes {
+                        kind
+                        name
+                    }
+                }
+                imageType: __type(name: "Image") {
+                    interfaces {
+                        kind
+                        name
+                    }
+                }
+            }
+        """)
+
+        then:
+        !result.errors
+        result.data == [
+                nodeType : [possibleTypes: [[kind: 'OBJECT', name: 'File'], [kind: 'OBJECT', name: 'Image']]],
+                imageType: [interfaces: [[kind: 'INTERFACE', name: 'Resource'], [kind: 'INTERFACE', name: 'Node']]]
+        ]
+    }
+
+    def assertErrorMessage(SchemaProblem error, expectedMessage) {
+        def normalizedMessages = error.errors.collect { it.message.replaceAll($/\[@[0-9]+:[0-9]+]/$, '[@n:n]') }
+
+        if (!normalizedMessages.contains(expectedMessage)) {
+            return false
+        }
+
+        return true
+    }
+
+    def parseSchema(schema) {
+        def reader = new StringReader(schema)
+        def registry = new SchemaParser().parse(reader)
+
+        def options = SchemaGenerator.Options.defaultOptions()
+
+        return new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+    }
+
+    def createComplexSchema() {
         def sdl = """
             type Query {
-               find: [Resource]
+               find: [Node]
             }
             
             interface Node {
@@ -875,7 +955,7 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
         def typeDefinitionRegistry = new SchemaParser().parse(sdl)
 
-        TypeResolver imageTypeResolver = { env ->
+        TypeResolver typeResolver = { env ->
             Map<String, Object> obj = env.getObject();
             String id = (String) obj.get("id");
             GraphQLSchema schema = env.getSchema()
@@ -900,55 +980,14 @@ class InterfacesImplementingInterfacesTest extends Specification {
                     )
                 })
                 .type("Node", { typeWiring ->
-                    typeWiring.typeResolver(imageTypeResolver)
+                    typeWiring.typeResolver(typeResolver)
                 })
                 .type("Resource", { typeWiring ->
-                    typeWiring.typeResolver(imageTypeResolver)
+                    typeWiring.typeResolver(typeResolver)
                 })
                 .build()
         )
 
-        when:
-
-        def result = GraphQL.newGraphQL(graphQLSchema).build().execute("""
-            { 
-                find { 
-                    id
-                    url 
-                    ... on Image { 
-                        thumbnail 
-                    } 
-                    ... on File { 
-                        path 
-                    } 
-                }
-            }
-        """)
-
-        then:
-        !result.errors
-        result.data == [find: [
-                [id: '1', url: 'https://image.com/1', thumbnail: 'TN'],
-                [id: '2', url: 'https://file.com/1', path: '/file/1']
-        ]]
-    }
-
-    def assertErrorMessage(SchemaProblem error, expectedMessage) {
-        def normalizedMessages = error.errors.collect { it.message.replaceAll($/\[@[0-9]+:[0-9]+]/$, '[@n:n]') }
-
-        if (!normalizedMessages.contains(expectedMessage)) {
-            return false
-        }
-
-        return true
-    }
-
-    def parseSchema(schema) {
-        def reader = new StringReader(schema)
-        def registry = new SchemaParser().parse(reader)
-
-        def options = SchemaGenerator.Options.defaultOptions()
-
-        return new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+        return graphQLSchema
     }
 }
