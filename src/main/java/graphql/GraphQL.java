@@ -113,7 +113,6 @@ public class GraphQL {
     @Internal
     @Deprecated
     public GraphQL(GraphQLSchema graphQLSchema) {
-        //noinspection deprecation
         this(graphQLSchema, null, null);
     }
 
@@ -127,7 +126,6 @@ public class GraphQL {
     @Internal
     @Deprecated
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy) {
-        //noinspection deprecation
         this(graphQLSchema, queryStrategy, null);
     }
 
@@ -574,7 +572,8 @@ public class GraphQL {
 
             DocumentAndVariables documentAndVariables = parseResult.getDocumentAndVariables();
             documentAndVariables = instrumentation.instrumentDocumentAndVariables(documentAndVariables, parameters);
-            return ParseAndValidateResult.of(documentAndVariables.getDocument(), documentAndVariables.getVariables());
+            return ParseAndValidateResult.newResult()
+                    .document(documentAndVariables.getDocument()).variables(documentAndVariables.getVariables()).build();
         }
     }
 

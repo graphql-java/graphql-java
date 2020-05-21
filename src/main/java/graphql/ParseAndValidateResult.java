@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * A result object used in {@link graphql.ParseAndValidate} helper that indicates the outcomes of a parse
@@ -22,11 +23,11 @@ public class ParseAndValidateResult {
     private final InvalidSyntaxException syntaxException;
     private final List<ValidationError> validationErrors;
 
-    private ParseAndValidateResult(Document document, Map<String, Object> variables, InvalidSyntaxException syntaxException, List<ValidationError> validationErrors) {
-        this.document = document;
-        this.variables = variables == null ? Collections.emptyMap() : variables;
-        this.syntaxException = syntaxException;
-        this.validationErrors = validationErrors;
+    private ParseAndValidateResult(Builder builder) {
+        this.document = builder.document;
+        this.variables = builder.variables == null ? Collections.emptyMap() : builder.variables;
+        this.syntaxException = builder.syntaxException;
+        this.validationErrors = builder.validationErrors == null ? Collections.emptyList() : builder.validationErrors;
     }
 
     /**
@@ -88,15 +89,45 @@ public class ParseAndValidateResult {
         return errors;
     }
 
-    public static ParseAndValidateResult of(Document document, Map<String, Object> variables) {
-        return new ParseAndValidateResult(document, variables, null, Collections.emptyList());
+    public ParseAndValidateResult transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder()
+                .document(document).variables(variables).syntaxException(syntaxException).validationErrors(validationErrors);
+        builderConsumer.accept(builder);
+        return builder.build();
     }
 
-    public static ParseAndValidateResult ofError(InvalidSyntaxException e, Map<String, Object> variables) {
-        return new ParseAndValidateResult(null, variables, e, Collections.emptyList());
+    public static Builder newResult() {
+        return new Builder();
     }
 
-    public ParseAndValidateResult of(List<ValidationError> validationErrors) {
-        return new ParseAndValidateResult(this.document, this.variables, this.syntaxException, validationErrors);
+    public static class Builder {
+        private Document document;
+        private Map<String, Object> variables = Collections.emptyMap();
+        private InvalidSyntaxException syntaxException;
+        private List<ValidationError> validationErrors = Collections.emptyList();
+
+        public Builder document(Document document) {
+            this.document = document;
+            return this;
+        }
+
+        public Builder variables(Map<String, Object> variables) {
+            this.variables = variables;
+            return this;
+        }
+
+        public Builder validationErrors(List<ValidationError> validationErrors) {
+            this.validationErrors = validationErrors;
+            return this;
+        }
+
+        public Builder syntaxException(InvalidSyntaxException syntaxException) {
+            this.syntaxException = syntaxException;
+            return this;
+        }
+
+        public ParseAndValidateResult build() {
+            return new ParseAndValidateResult(this);
+        }
     }
 }

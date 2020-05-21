@@ -230,7 +230,8 @@ public class GraphQL {
 
             DocumentAndVariables documentAndVariables = parseResult.getDocumentAndVariables();
             documentAndVariables = instrumentation.instrumentDocumentAndVariables(documentAndVariables, parameters);
-            return ParseAndValidateResult.of(documentAndVariables.getDocument(), documentAndVariables.getVariables());
+            return ParseAndValidateResult.newResult()
+                    .document(documentAndVariables.getDocument()).variables(documentAndVariables.getVariables()).build();
         }
     }
 

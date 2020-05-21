@@ -29,13 +29,13 @@ public class ParseAndValidate {
         ParseAndValidateResult result = parse(executionInput);
         if (!result.isFailure()) {
             List<ValidationError> errors = validate(graphQLSchema, result.getDocument());
-            return result.of(errors);
+            return result.transform(builder -> builder.validationErrors(errors));
         }
         return result;
     }
 
     /**
-     * This can be called to parse a graphql query.
+     * This can be called to parse (but not validate) a graphql query.
      *
      * @param executionInput the input containing the query
      * @return a result object that indicates how this operation went
@@ -44,14 +44,14 @@ public class ParseAndValidate {
         try {
             Parser parser = new Parser();
             Document document = parser.parseDocument(executionInput.getQuery());
-            return ParseAndValidateResult.of(document, executionInput.getVariables());
+            return ParseAndValidateResult.newResult().document(document).variables(executionInput.getVariables()).build();
         } catch (InvalidSyntaxException e) {
-            return ParseAndValidateResult.ofError(e, executionInput.getVariables());
+            return ParseAndValidateResult.newResult().syntaxException(e).variables(executionInput.getVariables()).build();
         }
     }
 
     /**
-     * This can be called to parse a graphql query.
+     * This can be called to validate a parsed graphql query.
      *
      * @param graphQLSchema  the graphql schema to validate against
      * @param parsedDocument the previously parsed document
