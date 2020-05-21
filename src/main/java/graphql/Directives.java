@@ -72,7 +72,7 @@ public class Directives {
             .build();
 
     /**
-     * The "specifiedBy" directive allows to provide a specification URL for a Scala
+     * The "specifiedBy" directive allows to provide a specification URL for a Scalar
      */
     public static final GraphQLDirective SpecifiedByDirective = GraphQLDirective.newDirective()
             .name("specifiedBy")
