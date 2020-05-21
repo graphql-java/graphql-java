@@ -23,12 +23,9 @@ import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
 import graphql.language.Document;
-import graphql.parser.InvalidSyntaxException;
-import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.util.LogKit;
 import graphql.validation.ValidationError;
-import graphql.validation.Validator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,21 +41,20 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.execution.ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDER;
-import static graphql.execution.instrumentation.DocumentAndVariables.newDocumentAndVariables;
 
 /**
  * This class is where all graphql-java query execution begins.  It combines the objects that are needed
  * to make a successful graphql query, with the most important being the {@link graphql.schema.GraphQLSchema schema}
  * and the {@link graphql.execution.ExecutionStrategy execution strategy}
- *
+ * <p>
  * Building this object is very cheap and can be done on each execution if necessary.  Building the schema is often not
  * as cheap, especially if its parsed from graphql IDL schema format via {@link graphql.schema.idl.SchemaParser}.
- *
+ * <p>
  * The data for a query is returned via {@link ExecutionResult#getData()} and any errors encountered as placed in
  * {@link ExecutionResult#getErrors()}.
  *
  * <h2>Runtime Exceptions</h2>
- *
+ * <p>
  * Runtime exceptions can be thrown by the graphql engine if certain situations are encountered.  These are not errors
  * in execution but rather totally unacceptable conditions in which to execute a graphql query.
  * <ul>
@@ -112,13 +108,11 @@ public class GraphQL {
      * A GraphQL object ready to execute queries
      *
      * @param graphQLSchema the schema to use
-     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
     @Deprecated
     public GraphQL(GraphQLSchema graphQLSchema) {
-        //noinspection deprecation
         this(graphQLSchema, null, null);
     }
 
@@ -127,13 +121,11 @@ public class GraphQL {
      *
      * @param graphQLSchema the schema to use
      * @param queryStrategy the query execution strategy to use
-     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
     @Deprecated
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy) {
-        //noinspection deprecation
         this(graphQLSchema, queryStrategy, null);
     }
 
@@ -143,7 +135,6 @@ public class GraphQL {
      * @param graphQLSchema    the schema to use
      * @param queryStrategy    the query execution strategy to use
      * @param mutationStrategy the mutation execution strategy to use
-     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -159,7 +150,6 @@ public class GraphQL {
      * @param queryStrategy        the query execution strategy to use
      * @param mutationStrategy     the mutation execution strategy to use
      * @param subscriptionStrategy the subscription execution strategy to use
-     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -190,7 +180,6 @@ public class GraphQL {
      * Helps you build a GraphQL object ready to execute queries
      *
      * @param graphQLSchema the schema to use
-     *
      * @return a builder of GraphQL objects
      */
     public static Builder newGraphQL(GraphQLSchema graphQLSchema) {
@@ -202,7 +191,6 @@ public class GraphQL {
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
-     *
      * @return a new GraphQL object based on calling build on that builder
      */
     public GraphQL transform(Consumer<GraphQL.Builder> builderConsumer) {
@@ -311,7 +299,6 @@ public class GraphQL {
      * Executes the specified graphql query/mutation/subscription
      *
      * @param query the query/mutation/subscription
-     *
      * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(String query) {
@@ -326,9 +313,7 @@ public class GraphQL {
      *
      * @param query   the query/mutation/subscription
      * @param context custom object provided to each {@link graphql.schema.DataFetcher}
-     *
      * @return an {@link ExecutionResult} which can include errors
-     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -347,9 +332,7 @@ public class GraphQL {
      * @param query         the query/mutation/subscription
      * @param operationName the name of the operation to execute
      * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
-     *
      * @return an {@link ExecutionResult} which can include errors
-     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -369,9 +352,7 @@ public class GraphQL {
      * @param query     the query/mutation/subscription
      * @param context   custom object provided to each {@link graphql.schema.DataFetcher}
      * @param variables variable values uses as argument
-     *
      * @return an {@link ExecutionResult} which can include errors
-     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -392,9 +373,7 @@ public class GraphQL {
      * @param operationName name of the operation to execute
      * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
      * @param variables     variable values uses as argument
-     *
      * @return an {@link ExecutionResult} which can include errors
-     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -413,7 +392,6 @@ public class GraphQL {
      * Executes the graphql query using the provided input object builder
      *
      * @param executionInputBuilder {@link ExecutionInput.Builder}
-     *
      * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(ExecutionInput.Builder executionInputBuilder) {
@@ -431,7 +409,6 @@ public class GraphQL {
      * </pre>
      *
      * @param builderFunction a function that is given a {@link ExecutionInput.Builder}
-     *
      * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(UnaryOperator<ExecutionInput.Builder> builderFunction) {
@@ -442,7 +419,6 @@ public class GraphQL {
      * Executes the graphql query using the provided input object
      *
      * @param executionInput {@link ExecutionInput}
-     *
      * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(ExecutionInput executionInput) {
@@ -464,7 +440,6 @@ public class GraphQL {
      * which is the result of executing the provided query.
      *
      * @param executionInputBuilder {@link ExecutionInput.Builder}
-     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput.Builder executionInputBuilder) {
@@ -485,7 +460,6 @@ public class GraphQL {
      * </pre>
      *
      * @param builderFunction a function that is given a {@link ExecutionInput.Builder}
-     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(UnaryOperator<ExecutionInput.Builder> builderFunction) {
@@ -499,7 +473,6 @@ public class GraphQL {
      * which is the result of executing the provided query.
      *
      * @param executionInput {@link ExecutionInput}
-     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
@@ -562,10 +535,10 @@ public class GraphQL {
         String query = executionInput.getQuery();
 
         logNotSafe.debug("Parsing query: '{}'...", query);
-        ParseResult parseResult = parse(executionInput, graphQLSchema, instrumentationState);
+        ParseAndValidateResult parseResult = parse(executionInput, graphQLSchema, instrumentationState);
         if (parseResult.isFailure()) {
             logNotSafe.warn("Query failed to parse : '{}'", executionInput.getQuery());
-            return new PreparsedDocumentEntry(parseResult.getException().toInvalidSyntaxError());
+            return new PreparsedDocumentEntry(parseResult.getSyntaxException().toInvalidSyntaxError());
         } else {
             final Document document = parseResult.getDocument();
             // they may have changed the document and the variables via instrumentation so update the reference to it
@@ -583,34 +556,36 @@ public class GraphQL {
         }
     }
 
-    private ParseResult parse(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+    private ParseAndValidateResult parse(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(executionInput, graphQLSchema, instrumentationState);
         InstrumentationContext<Document> parseInstrumentation = instrumentation.beginParse(parameters);
+        CompletableFuture<Document> documentCF = new CompletableFuture<>();
+        parseInstrumentation.onDispatched(documentCF);
 
-        Parser parser = new Parser();
-        Document document;
-        DocumentAndVariables documentAndVariables;
-        try {
-            document = parser.parseDocument(executionInput.getQuery());
-            documentAndVariables = newDocumentAndVariables()
-                    .document(document).variables(executionInput.getVariables()).build();
+        ParseAndValidateResult parseResult = ParseAndValidate.parse(executionInput);
+        if (parseResult.isFailure()) {
+            parseInstrumentation.onCompleted(null, parseResult.getSyntaxException());
+            return parseResult;
+        } else {
+            documentCF.complete(parseResult.getDocument());
+            parseInstrumentation.onCompleted(parseResult.getDocument(), null);
+
+            DocumentAndVariables documentAndVariables = parseResult.getDocumentAndVariables();
             documentAndVariables = instrumentation.instrumentDocumentAndVariables(documentAndVariables, parameters);
-        } catch (InvalidSyntaxException e) {
-            parseInstrumentation.onCompleted(null, e);
-            return ParseResult.ofError(e);
+            return ParseAndValidateResult.newResult()
+                    .document(documentAndVariables.getDocument()).variables(documentAndVariables.getVariables()).build();
         }
-
-        parseInstrumentation.onCompleted(documentAndVariables.getDocument(), null);
-        return ParseResult.of(documentAndVariables);
     }
 
     private List<ValidationError> validate(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
         InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, graphQLSchema, instrumentationState));
+        CompletableFuture<List<ValidationError>> cf = new CompletableFuture<>();
+        validationCtx.onDispatched(cf);
 
-        Validator validator = new Validator();
-        List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
+        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document);
 
         validationCtx.onCompleted(validationErrors, null);
+        cf.complete(validationErrors);
         return validationErrors;
     }
 
