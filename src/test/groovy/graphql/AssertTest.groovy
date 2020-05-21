@@ -2,6 +2,8 @@ package graphql
 
 import spock.lang.Specification
 
+import java.util.function.Supplier
+
 class AssertTest extends Specification {
     def "assertNull should not throw on none null value"() {
         when:
@@ -108,6 +110,29 @@ class AssertTest extends Specification {
     def "assertTrue with error message should throw on false value with formatted message"() {
         when:
         Assert.assertTrue(false, format, arg)
+
+        then:
+        def error = thrown(AssertException)
+        error.message == expectedMessage
+
+        where:
+        format     | arg   || expectedMessage
+        "error %s" | "msg" || "error msg"
+        "code %d"  | 1     || "code 1"
+        "code"     | null  || "code"
+    }
+
+    def "assertTrueLazily should not throw on true value"() {
+        when:
+        Assert.assertTrueLazily(true, "error message")
+
+        then:
+        noExceptionThrown()
+    }
+
+    def "assertTrueLazily with error message should throw on false value with formatted message"() {
+        when:
+        Assert.assertTrueLazily(false, format, { _ -> arg} as Supplier)
 
         then:
         def error = thrown(AssertException)
