@@ -855,6 +855,7 @@ class InterfacesImplementingInterfacesTest extends Specification {
                     ... on Node {
                         id
                         ... on Resource {
+                            __typename
                             url 
                             ... on Image { 
                                 thumbnail 
@@ -871,8 +872,8 @@ class InterfacesImplementingInterfacesTest extends Specification {
         then:
         !result.errors
         result.data == [find: [
-                [id: '1', url: 'https://image.com/1', thumbnail: 'TN'],
-                [id: '2', url: 'https://file.com/1', path: '/file/1']
+                [id: '1', url: 'https://image.com/1', thumbnail: 'TN', __typename: 'Image'],
+                [id: '2', url: 'https://file.com/1', path: '/file/1', __typename: 'File']
         ]]
     }
 
@@ -889,6 +890,16 @@ class InterfacesImplementingInterfacesTest extends Specification {
                         name
                     }
                 }
+                resourceType: __type(name: "Resource") {
+                    possibleTypes {
+                        kind
+                        name
+                    }
+                    interfaces {
+                        kind
+                        name
+                    }
+                } 
                 imageType: __type(name: "Image") {
                     interfaces {
                         kind
@@ -901,8 +912,9 @@ class InterfacesImplementingInterfacesTest extends Specification {
         then:
         !result.errors
         result.data == [
-                nodeType : [possibleTypes: [[kind: 'OBJECT', name: 'File'], [kind: 'OBJECT', name: 'Image']]],
-                imageType: [interfaces: [[kind: 'INTERFACE', name: 'Resource'], [kind: 'INTERFACE', name: 'Node']]]
+                nodeType    : [possibleTypes: [[kind: 'OBJECT', name: 'File'], [kind: 'OBJECT', name: 'Image']]],
+                imageType   : [interfaces: [[kind: 'INTERFACE', name: 'Resource'], [kind: 'INTERFACE', name: 'Node']]],
+                resourceType: [possibleTypes: [[kind: 'OBJECT', name: 'File'], [kind: 'OBJECT', name: 'Image']], interfaces: [[kind: 'INTERFACE', name: 'Node']]]
         ]
     }
 
