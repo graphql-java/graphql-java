@@ -931,6 +931,12 @@ directive @deprecated(
     reason: String = "No longer supported"
   ) on FIELD_DEFINITION | ENUM_VALUE
 
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
 interface SomeInterface @interfaceTypeDirective {
   fieldA: String @interfaceFieldDirective
 }
@@ -1056,6 +1062,12 @@ directive @deprecated(
     reason: String = "No longer supported"
   ) on FIELD_DEFINITION | ENUM_VALUE
 
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
 type Field {
   active: Enum
   deprecated: Enum @deprecated(reason : "No longer supported")
@@ -1139,6 +1151,12 @@ directive @deprecated(
     reason: String = "No longer supported"
   ) on FIELD_DEFINITION | ENUM_VALUE
 
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
 type Query {
   fieldA: String @example @moreComplex(arg1 : "default", arg2 : 666)
 }
@@ -1197,6 +1215,12 @@ directive @deprecated(
     "The reason for the deprecation"
     reason: String = "No longer supported"
   ) on FIELD_DEFINITION | ENUM_VALUE
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
 
 type Query {
   fieldA: String @example @moreComplex(arg1 : "default", arg2 : 666)
@@ -1323,6 +1347,12 @@ directive @deprecated(
     "The reason for the deprecation"
     reason: String = "No longer supported"
   ) on FIELD_DEFINITION | ENUM_VALUE
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
 
 interface Interface {
   foo: String

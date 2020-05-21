@@ -135,6 +135,7 @@ public class IntrospectionResultToSchema {
         if (ScalarInfo.isGraphqlSpecifiedScalar(name)) {
             return null;
         }
+        String specifiedBy = (String) input.get("specifiedBy");
         return ScalarTypeDefinition.newScalarTypeDefinition().name(name).build();
     }
 

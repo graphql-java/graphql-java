@@ -1,8 +1,10 @@
 package graphql.schema.idl;
 
+import graphql.Directives;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.introspection.Introspection.DirectiveLocation;
+import graphql.language.Argument;
 import graphql.language.Directive;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
@@ -18,6 +20,7 @@ import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.OperationTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.ScalarTypeExtensionDefinition;
+import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
@@ -54,6 +57,7 @@ import graphql.schema.TypeResolverProxy;
 import graphql.schema.idl.errors.NotAnInputTypeError;
 import graphql.schema.idl.errors.NotAnOutputTypeError;
 import graphql.schema.idl.errors.SchemaProblem;
+import graphql.util.FpKit;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -103,7 +107,6 @@ public class SchemaGenerator {
         public static Options defaultOptions() {
             return new Options();
         }
-
     }
 
 
@@ -237,7 +240,7 @@ public class SchemaGenerator {
         TypeDefinitionRegistry typeRegistryCopy = new TypeDefinitionRegistry();
         typeRegistryCopy.merge(typeRegistry);
 
-        schemaGeneratorHelper.addDeprecatedDirectiveDefinition(typeRegistryCopy);
+        schemaGeneratorHelper.addDirectivesIncludedByDefault(typeRegistryCopy);
 
         List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistryCopy, wiring);
         if (!errors.isEmpty()) {
@@ -691,15 +694,30 @@ public class SchemaGenerator {
             scalar = scalar.transform(builder -> builder
                     .definition(typeDefinition)
                     .comparatorRegistry(buildCtx.getComparatorRegistry())
-                    .withDirectives(
-                            buildDirectives(typeDefinition.getDirectives(),
-                                    directivesOf(extensions), SCALAR, buildCtx.getDirectiveDefinitions(), buildCtx.getComparatorRegistry())
+                    .specifiedByUrl(getSpecifiedByUrl(typeDefinition, extensions))
+                    .withDirectives(buildDirectives(
+                            typeDefinition.getDirectives(),
+                            directivesOf(extensions),
+                            SCALAR,
+                            buildCtx.getDirectiveDefinitions(),
+                            buildCtx.getComparatorRegistry())
                     ));
-            //
-            // only allow modification of custom scalars
             scalar = directiveBehaviour.onScalar(scalar, buildCtx.mkBehaviourParams());
         }
         return scalar;
+    }
+
+    private String getSpecifiedByUrl(ScalarTypeDefinition scalarTypeDefinition, List<ScalarTypeExtensionDefinition> extensions) {
+        List<Directive> allDirectives = new ArrayList<>(scalarTypeDefinition.getDirectives());
+        extensions.forEach(extension -> allDirectives.addAll(extension.getDirectives()));
+        Optional<Directive> specifiedByDirective = FpKit.findOne(allDirectives,
+                directiveDefinition -> directiveDefinition.getName().equals(Directives.SpecifiedByDirective.getName()));
+        if (!specifiedByDirective.isPresent()) {
+            return null;
+        }
+        Argument urlArgument = specifiedByDirective.get().getArgument("url");
+        StringValue url = (StringValue) urlArgument.getValue();
+        return url.getValue();
     }
 
     private GraphQLFieldDefinition buildField(BuildContext buildCtx, TypeDefinition parentType, FieldDefinition
@@ -904,10 +922,12 @@ public class SchemaGenerator {
     }
 
 
-    private GraphQLDirective[] buildDirectives
-            (List<Directive> directives, List<Directive> extensionDirectives, DirectiveLocation
-                    directiveLocation, Set<GraphQLDirective> directiveDefinitions, GraphqlTypeComparatorRegistry
-                     comparatorRegistry) {
+    private GraphQLDirective[] buildDirectives(
+            List<Directive> directives,
+            List<Directive> extensionDirectives,
+            DirectiveLocation directiveLocation,
+            Set<GraphQLDirective> directiveDefinitions,
+            GraphqlTypeComparatorRegistry comparatorRegistry) {
         directives = directives == null ? emptyList() : directives;
         extensionDirectives = extensionDirectives == null ? emptyList() : extensionDirectives;
         Set<String> names = new LinkedHashSet<>();
