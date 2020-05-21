@@ -2,6 +2,7 @@ package graphql.execution.reactive
 
 import graphql.execution.pubsub.CapturingSubscriber
 import io.reactivex.Flowable
+import org.awaitility.Awaitility
 import org.reactivestreams.Publisher
 import spock.lang.Specification
 
@@ -117,6 +118,40 @@ class CompletionStageMappingPublisherTest extends Specification {
         // got this far and cancelled
         capturingSubscriber.events.size() == 5
 
+    }
+
+
+    def "asynchronous mapping works with completion"() {
+
+        when:
+        Publisher<Integer> rxIntegers = Flowable.range(0, 10)
+
+        Function<Integer, CompletionStage<String>> mapper = mapperThatDelaysFor(100)
+        Publisher<String> rxStrings = new CompletionStageMappingPublisher<String, Integer>(rxIntegers, mapper)
+
+        def capturingSubscriber = new CapturingSubscriber<>()
+        rxStrings.subscribe(capturingSubscriber)
+
+        then:
+
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        capturingSubscriber.events.size() == 10
+        capturingSubscriber.events[0] instanceof String
+        capturingSubscriber.events[0] == "0"
+    }
+
+    Function<Integer, CompletionStage<String>> mapperThatDelaysFor(int delay) {
+        def mapper = new Function<Integer, CompletionStage<String>>() {
+            @Override
+            CompletionStage<String> apply(Integer integer) {
+                return CompletableFuture.supplyAsync({
+                    Thread.sleep(delay)
+                    return String.valueOf(integer)
+                })
+            }
+        }
+        mapper
     }
 
 }

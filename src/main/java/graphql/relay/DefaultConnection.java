@@ -26,8 +26,8 @@ public class DefaultConnection<T> implements Connection<T> {
      * @throws IllegalArgumentException if edges or page info is null. use {@link Collections#emptyList()} for empty edges.
      */
     public DefaultConnection(List<Edge<T>> edges, PageInfo pageInfo) {
-        this.edges = unmodifiableList(assertNotNull(edges, "edges cannot be null"));
-        this.pageInfo = assertNotNull(pageInfo, "page info cannot be null");
+        this.edges = unmodifiableList(assertNotNull(edges, () -> "edges cannot be null"));
+        this.pageInfo = assertNotNull(pageInfo, () -> "page info cannot be null");
     }
 
     @Override

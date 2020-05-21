@@ -19,7 +19,7 @@ public class GraphqlTypeComparatorEnvironment {
     private Class<? extends GraphQLSchemaElement> elementType;
 
     private GraphqlTypeComparatorEnvironment(Class<? extends GraphQLSchemaElement> parentType, Class<? extends GraphQLSchemaElement> elementType) {
-        Assert.assertNotNull(elementType, "elementType can't be null");
+        Assert.assertNotNull(elementType, () -> "elementType can't be null");
         this.parentType = parentType;
         this.elementType = elementType;
     }

@@ -28,8 +28,8 @@ public class NodeParentTree<T extends Node> {
 
     @Internal
     public NodeParentTree(Deque<T> nodeStack) {
-        assertNotNull(nodeStack, "You MUST have a non null stack of nodes");
-        assertTrue(!nodeStack.isEmpty(), "You MUST have a non empty stack of nodes");
+        assertNotNull(nodeStack, () -> "You MUST have a non null stack of nodes");
+        assertTrue(!nodeStack.isEmpty(), () -> "You MUST have a non empty stack of nodes");
 
         Deque<T> copy = new ArrayDeque<>(nodeStack);
         path = mkPath(copy);

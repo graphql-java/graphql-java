@@ -337,4 +337,6 @@ class SchemaParserTest extends Specification {
         schemaProblem.getErrors()[1].getMessage().contains("FragmentDefinition")
         schemaProblem.getErrors()[2].getMessage().contains("OperationDefinition")
     }
+
+
 }

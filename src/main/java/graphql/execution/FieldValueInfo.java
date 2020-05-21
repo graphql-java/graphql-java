@@ -26,7 +26,7 @@ public class FieldValueInfo {
     private final List<FieldValueInfo> fieldValueInfos;
 
     private FieldValueInfo(CompleteValueType completeValueType, CompletableFuture<ExecutionResult> fieldValue, List<FieldValueInfo> fieldValueInfos) {
-        assertNotNull(fieldValueInfos, "fieldValueInfos can't be null");
+        assertNotNull(fieldValueInfos, () -> "fieldValueInfos can't be null");
         this.completeValueType = completeValueType;
         this.fieldValue = fieldValue;
         this.fieldValueInfos = fieldValueInfos;
@@ -78,7 +78,7 @@ public class FieldValueInfo {
         }
 
         public Builder fieldValueInfos(List<FieldValueInfo> listInfos) {
-            assertNotNull(listInfos, "fieldValueInfos can't be null");
+            assertNotNull(listInfos, () -> "fieldValueInfos can't be null");
             this.listInfos = listInfos;
             return this;
         }
