@@ -8,6 +8,7 @@ import graphql.validation.RulesVisitor
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
+import graphql.validation.Validator
 import spock.lang.Specification
 
 class NoFragmentCyclesTest extends Specification {
@@ -19,7 +20,6 @@ class NoFragmentCyclesTest extends Specification {
         ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document)
         NoFragmentCycles noFragmentCycles = new NoFragmentCycles(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
-
         languageTraversal.traverse(document, new RulesVisitor(validationContext, [noFragmentCycles]))
     }
 
@@ -159,4 +159,28 @@ class NoFragmentCyclesTest extends Specification {
         errorCollector.getErrors().isEmpty()
     }
 
+    def "#1817 no stack overflow on circular fragment"() {
+        given:
+        def query = """
+                query {
+                    ...MyFrag
+                }
+                fragment MyFrag on QueryType {
+                    field
+                    ...MyFrag
+                }
+        """
+
+        def document = Parser.parse(query)
+        def validationContext = new ValidationContext(TestUtil.dummySchema, document)
+        def rules = new Validator().createRules(validationContext, errorCollector)
+        when:
+        LanguageTraversal languageTraversal = new LanguageTraversal()
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, rules))
+
+        then:
+
+        !errorCollector.getErrors().isEmpty()
+        errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
+    }
 }

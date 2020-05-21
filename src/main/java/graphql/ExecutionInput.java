@@ -21,6 +21,7 @@ public class ExecutionInput {
     private final String query;
     private final String operationName;
     private final Object context;
+    private final Object localContext;
     private final Object root;
     private final Map<String, Object> variables;
     private final DataLoaderRegistry dataLoaderRegistry;
@@ -30,7 +31,7 @@ public class ExecutionInput {
 
 
     @Internal
-    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, ExecutionId executionId, Locale locale) {
+    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, ExecutionId executionId, Locale locale, Object localContext) {
         this.query = assertNotNull(query, "query can't be null");
         this.operationName = operationName;
         this.context = context;
@@ -40,6 +41,7 @@ public class ExecutionInput {
         this.cacheControl = cacheControl;
         this.executionId = executionId;
         this.locale = locale;
+        this.localContext = localContext;
     }
 
     /**
@@ -61,6 +63,12 @@ public class ExecutionInput {
      */
     public Object getContext() {
         return context;
+    }
+    /**
+     * @return the local context object to pass to all top level (i.e. query, mutation, subscription) data fetchers
+     */
+    public Object getLocalContext() {
+        return localContext;
     }
 
     /**
@@ -119,6 +127,7 @@ public class ExecutionInput {
                 .query(this.query)
                 .operationName(this.operationName)
                 .context(this.context)
+                .localContext(this.localContext)
                 .root(this.root)
                 .dataLoaderRegistry(this.dataLoaderRegistry)
                 .cacheControl(this.cacheControl)
@@ -167,6 +176,7 @@ public class ExecutionInput {
         private String query;
         private String operationName;
         private Object context = GraphQLContext.newContext().build();
+        private Object localContext;
         private Object root;
         private Map<String, Object> variables = Collections.emptyMap();
         //
@@ -209,6 +219,15 @@ public class ExecutionInput {
          */
         public Builder locale(Locale locale) {
             this.locale = locale;
+            return this;
+        }
+
+        /**
+         * Sets initial localContext in root data fetchers
+         * @return this builder
+         */
+        public Builder localContext(Object localContext) {
+            this.localContext = localContext;
             return this;
         }
 
@@ -263,7 +282,7 @@ public class ExecutionInput {
         }
 
         public ExecutionInput build() {
-            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry, cacheControl, executionId, locale);
+            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry, cacheControl, executionId, locale, localContext);
         }
     }
 }

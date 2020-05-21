@@ -38,6 +38,7 @@ public class ExecutionContext {
     private final Map<String, Object> variables;
     private final Object root;
     private final Object context;
+    private final Object localContext;
     private final Instrumentation instrumentation;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
     private final Set<ExecutionPath> errorPaths = new HashSet<>();
@@ -47,7 +48,7 @@ public class ExecutionContext {
     private final DeferSupport deferSupport = new DeferSupport();
     private final ValueUnboxer valueUnboxer;
 
-    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, Locale locale, List<GraphQLError> startingErrors, ValueUnboxer valueUnboxer) {
+    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, Locale locale, List<GraphQLError> startingErrors, ValueUnboxer valueUnboxer, Object localContext) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.instrumentationState = instrumentationState;
@@ -66,6 +67,7 @@ public class ExecutionContext {
         this.locale = locale;
         this.valueUnboxer = valueUnboxer;
         this.errors.addAll(startingErrors);
+        this.localContext = localContext;
     }
 
 
@@ -104,6 +106,10 @@ public class ExecutionContext {
     @SuppressWarnings("unchecked")
     public <T> T getContext() {
         return (T) context;
+    }
+    @SuppressWarnings("unchecked")
+    public <T> T getLocalContext() {
+        return (T) localContext;
     }
 
     @SuppressWarnings("unchecked")

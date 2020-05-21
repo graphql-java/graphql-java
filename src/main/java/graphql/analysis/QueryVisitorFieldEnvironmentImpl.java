@@ -129,7 +129,6 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
                 "field=" + field +
                 ", fieldDefinition=" + fieldDefinition +
                 ", parentType=" + parentType +
-                ", parentEnvironment=" + parentEnvironment +
                 ", arguments=" + arguments +
                 '}';
     }

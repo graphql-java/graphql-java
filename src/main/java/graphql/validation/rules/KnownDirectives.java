@@ -47,17 +47,17 @@ public class KnownDirectives extends AbstractRule {
         if (ancestor instanceof OperationDefinition) {
             Operation operation = ((OperationDefinition) ancestor).getOperation();
             return Operation.QUERY.equals(operation) ?
-                    !(directive.validLocations().contains(DirectiveLocation.QUERY) || directive.isOnOperation()) :
-                    !(directive.validLocations().contains(DirectiveLocation.MUTATION) || directive.isOnOperation());
+                    !(directive.validLocations().contains(DirectiveLocation.QUERY)) :
+                    !(directive.validLocations().contains(DirectiveLocation.MUTATION));
         } else if (ancestor instanceof Field) {
-            return !(directive.validLocations().contains(DirectiveLocation.FIELD) || directive.isOnField());
+            return !(directive.validLocations().contains(DirectiveLocation.FIELD));
         } else if (ancestor instanceof FragmentSpread) {
-            return !(directive.validLocations().contains(DirectiveLocation.FRAGMENT_SPREAD) || directive.isOnFragment());
+            return !(directive.validLocations().contains(DirectiveLocation.FRAGMENT_SPREAD));
         } else if (ancestor instanceof FragmentDefinition) {
-            return !(directive.validLocations().contains(DirectiveLocation.FRAGMENT_DEFINITION) || directive.isOnFragment());
+            return !(directive.validLocations().contains(DirectiveLocation.FRAGMENT_DEFINITION));
         } else if (ancestor instanceof InlineFragment) {
-            return !(directive.validLocations().contains(DirectiveLocation.INLINE_FRAGMENT) || directive.isOnFragment());
-        }else if (ancestor instanceof VariableDefinition){
+            return !(directive.validLocations().contains(DirectiveLocation.INLINE_FRAGMENT));
+        } else if (ancestor instanceof VariableDefinition) {
             return !(directive.validLocations().contains(DirectiveLocation.VARIABLE_DEFINITION));
         }
         return true;

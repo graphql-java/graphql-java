@@ -462,22 +462,6 @@ public class Introspection {
             GraphQLDirective directive = environment.getSource();
             return directive.getArguments();
         });
-        register(__Directive, "onOperation", environment -> {
-            GraphQLDirective directive = environment.getSource();
-            return directive.isOnOperation();
-        });
-        register(__Directive, "onFragment", environment -> {
-            GraphQLDirective directive = environment.getSource();
-            return directive.isOnFragment() ||
-                    (directive.validLocations().contains(DirectiveLocation.INLINE_FRAGMENT)
-                            && directive.validLocations().contains(DirectiveLocation.FRAGMENT_SPREAD));
-        });
-        register(__Directive, "onField", environment -> {
-            GraphQLDirective directive = environment.getSource();
-            return directive.isOnField() ||
-                    directive.validLocations().contains(DirectiveLocation.FIELD);
-        });
-
         register(__Directive, "name", nameDataFetcher);
         register(__Directive, "description", descriptionDataFetcher);
     }
