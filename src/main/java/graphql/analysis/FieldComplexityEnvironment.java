@@ -49,7 +49,6 @@ public class FieldComplexityEnvironment {
                 "field=" + field +
                 ", fieldDefinition=" + fieldDefinition +
                 ", parentType=" + parentType +
-                ", parentEnvironment=" + parentEnvironment +
                 ", arguments=" + arguments +
                 '}';
     }

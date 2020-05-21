@@ -23,6 +23,7 @@ import graphql.schema.GraphqlTypeComparatorRegistry
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
+import graphql.schema.idl.errors.SchemaProblem
 import graphql.schema.visibility.GraphqlFieldVisibility
 import spock.lang.Specification
 
@@ -32,6 +33,7 @@ import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.schema.idl.SchemaGenerator.Options.defaultOptions
 
 class SchemaGeneratorTest extends Specification {
 
@@ -954,6 +956,75 @@ class SchemaGeneratorTest extends Specification {
         !queryType.getFieldDefinition("baz").isDeprecated()
     }
 
+    def "specifiedBy directive is supported"() {
+        given:
+        def spec = """
+        type Query {
+            foo: MyScalar
+        }
+        scalar MyScalar @specifiedBy(url: "myUrl.example")
+        """
+        when:
+        def schema = schema(spec)
+        GraphQLScalarType scalar = schema.getType("MyScalar") as GraphQLScalarType
+
+        then:
+        scalar.getSpecifiedByUrl() == "myUrl.example"
+    }
+
+    def "specifiedBy requires an url "() {
+        given:
+        def spec = """
+        type Query {
+            foo: MyScalar
+        }
+        scalar MyScalar @specifiedBy
+        """
+        when:
+        def registry = new SchemaParser().parse(spec)
+        new SchemaGenerator().makeExecutableSchema(defaultOptions(), registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        def schemaProblem = thrown(SchemaProblem)
+        schemaProblem.message.contains("failed to provide a value for the non null argument 'url' on directive 'specifiedBy'")
+    }
+
+    def "specifiedBy can be added via extension"() {
+        given:
+        def spec = """
+        type Query {
+            foo: MyScalar
+        }
+        scalar MyScalar
+        extend scalar MyScalar @specifiedBy(url: "myUrl.example")
+        """
+        when:
+        def schema = schema(spec)
+        GraphQLScalarType scalar = schema.getType("MyScalar") as GraphQLScalarType
+
+        then:
+        scalar.getSpecifiedByUrl() == "myUrl.example"
+    }
+
+    def "specifiedBy is only allowed once per scalar"() {
+        given:
+        def spec = """
+        type Query {
+            foo: MyScalar
+        }
+        scalar MyScalar @specifiedBy(url: "myUrl.example")
+        extend scalar MyScalar @specifiedBy(url: "myUrl.example")
+        """
+        when:
+        def registry = new SchemaParser().parse(spec)
+        new SchemaGenerator().makeExecutableSchema(defaultOptions(), registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        def schemaProblem = thrown(SchemaProblem)
+        schemaProblem.message.contains("has redefined the directive called 'specifiedBy")
+
+    }
+
 
     def "schema is optional if there is a type called Query"() {
 
@@ -1489,7 +1560,7 @@ class SchemaGeneratorTest extends Specification {
         """
 
         when:
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
         def registry = new SchemaParser().parse(spec)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
 
@@ -1526,7 +1597,7 @@ class SchemaGeneratorTest extends Specification {
         """
 
         when:
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
 
         def registry = new SchemaParser().parse(spec)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
@@ -1558,7 +1629,7 @@ class SchemaGeneratorTest extends Specification {
         """
 
         when:
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
         def registry = new SchemaParser().parse(spec)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
 
@@ -1586,7 +1657,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
 
         when:
         def registry = new SchemaParser().parse(spec)
@@ -1839,7 +1910,7 @@ class SchemaGeneratorTest extends Specification {
                 .wiringFactory(wiringFactory)
                 .build()
 
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
 
         def types = new SchemaParser().parse(sdl)
         GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(options, types, runtimeWiring)
@@ -1917,7 +1988,7 @@ class SchemaGeneratorTest extends Specification {
         directives = schema.getDirectives()
 
         then:
-        directives.size() == 6 // built in ones :  include / skip and deprecated
+        directives.size() == 7 // built in ones :  include / skip and deprecated
         def directiveNames = directives.collect { it.name }
         directiveNames.contains("include")
         directiveNames.contains("skip")
@@ -1930,7 +2001,7 @@ class SchemaGeneratorTest extends Specification {
         directivesMap = schema.getDirectiveByName()
 
         then:
-        directivesMap.size() == 6 // built in ones
+        directivesMap.size() == 7 // built in ones
         directivesMap.containsKey("include")
         directivesMap.containsKey("skip")
         directivesMap.containsKey("deprecated")

@@ -4,7 +4,12 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+import java.util.ArrayDeque;
+import java.util.Queue;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
@@ -33,6 +38,10 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
     public void subscribe(Subscriber<? super D> downstreamSubscriber) {
         upstreamPublisher.subscribe(new Subscriber<U>() {
             Subscription delegatingSubscription;
+            final Queue<CompletionStage<?>> inFlightDataQ = new ArrayDeque<>();
+            final AtomicReference<Runnable> onCompleteOrErrorRun = new AtomicReference<>();
+            final AtomicBoolean onCompleteOrErrorRunCalled = new AtomicBoolean(false);
+
 
             @Override
             public void onSubscribe(Subscription subscription) {
@@ -42,19 +51,36 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
 
             @Override
             public void onNext(U u) {
-                CompletionStage<D> completionStage;
+                // for safety - no more data after we have called done/error - we should not get this BUT belts and braces
+                if (onCompleteOrErrorRunCalled.get()) {
+                    return;
+                }
                 try {
-                    completionStage = mapper.apply(u);
-                    completionStage.whenComplete((d, throwable) -> {
+                    CompletionStage<D> completionStage = mapper.apply(u);
+                    offerToInFlightQ(completionStage);
+                    completionStage.whenComplete(whenNextFinished(completionStage));
+                } catch (RuntimeException throwable) {
+                    handleThrowable(throwable);
+                }
+            }
+
+            private BiConsumer<D, Throwable> whenNextFinished(CompletionStage<D> completionStage) {
+                return (d, throwable) -> {
+                    try {
                         if (throwable != null) {
                             handleThrowable(throwable);
                         } else {
                             downstreamSubscriber.onNext(d);
                         }
-                    });
-                } catch (RuntimeException throwable) {
-                    handleThrowable(throwable);
-                }
+                    } finally {
+                        Runnable runOnCompleteOrErrorRun = onCompleteOrErrorRun.get();
+                        boolean empty = removeFromInFlightQAndCheckIfEmpty(completionStage);
+                        if (empty && runOnCompleteOrErrorRun != null) {
+                            onCompleteOrErrorRun.set(null);
+                            runOnCompleteOrErrorRun.run();
+                        }
+                    }
+                };
             }
 
             private void handleThrowable(Throwable throwable) {
@@ -71,12 +97,47 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
 
             @Override
             public void onError(Throwable t) {
-                downstreamSubscriber.onError(t);
+                onCompleteOrError(() -> {
+                    onCompleteOrErrorRunCalled.set(true);
+                    downstreamSubscriber.onError(t);
+                });
             }
 
             @Override
             public void onComplete() {
-                downstreamSubscriber.onComplete();
+                onCompleteOrError(() -> {
+                    onCompleteOrErrorRunCalled.set(true);
+                    downstreamSubscriber.onComplete();
+                });
+            }
+
+            private void onCompleteOrError(Runnable doneCodeToRun) {
+                if (inFlightQIsEmpty()) {
+                    // run right now
+                    doneCodeToRun.run();
+                } else {
+                    onCompleteOrErrorRun.set(doneCodeToRun);
+                }
+            }
+
+            private void offerToInFlightQ(CompletionStage<?> completionStage) {
+                synchronized (inFlightDataQ) {
+                    inFlightDataQ.offer(completionStage);
+                }
+            }
+
+            private boolean removeFromInFlightQAndCheckIfEmpty(CompletionStage<?> completionStage) {
+                // uncontested locks in java are cheap - we dont expect much contention here
+                synchronized (inFlightDataQ) {
+                    inFlightDataQ.remove(completionStage);
+                    return inFlightDataQ.isEmpty();
+                }
+            }
+
+            private boolean inFlightQIsEmpty() {
+                synchronized (inFlightDataQ) {
+                    return inFlightDataQ.isEmpty();
+                }
             }
         });
     }

@@ -40,6 +40,7 @@ public class ExecutionContext {
     private final Map<String, Object> variables;
     private final Object root;
     private final Object context;
+    private final Object localContext;
     private final Instrumentation instrumentation;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
     private final Set<ExecutionPath> errorPaths = new HashSet<>();
@@ -50,7 +51,6 @@ public class ExecutionContext {
     private final ValueUnboxer valueUnboxer;
     private final ExecutionInput executionInput;
 
-    @Internal
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
         this.executionId = builder.executionId;
@@ -70,6 +70,7 @@ public class ExecutionContext {
         this.locale = builder.locale;
         this.valueUnboxer = builder.valueUnboxer;
         this.errors.addAll(builder.errors);
+        this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
     }
 
@@ -113,6 +114,10 @@ public class ExecutionContext {
     @SuppressWarnings("unchecked")
     public <T> T getContext() {
         return (T) context;
+    }
+    @SuppressWarnings("unchecked")
+    public <T> T getLocalContext() {
+        return (T) localContext;
     }
 
     @SuppressWarnings("unchecked")

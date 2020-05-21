@@ -90,7 +90,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         return fieldFetched.thenApply(fetchedValue -> {
             Object publisher = fetchedValue.getFetchedValue();
             if (publisher != null) {
-                assertTrue(publisher instanceof Publisher, "You data fetcher must return a Publisher of events when using graphql subscriptions");
+                assertTrue(publisher instanceof Publisher, () -> "Your data fetcher must return a Publisher of events when using graphql subscriptions");
             }
             //noinspection unchecked
             return (Publisher<Object>) publisher;

@@ -430,6 +430,6 @@ class StarWarsIntrospectionTests extends Specification {
         schemaParts.get('mutationType').size() == 1
         schemaParts.get('subscriptionType') == null
         schemaParts.get('types').size() == 17
-        schemaParts.get('directives').size() == 3
+        schemaParts.get('directives').size() == 4
     }
 }

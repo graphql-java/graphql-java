@@ -3,6 +3,7 @@ package graphql
 import graphql.analysis.MaxQueryComplexityInstrumentation
 import graphql.analysis.MaxQueryDepthInstrumentation
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.DataFetcherResult
 import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionIdProvider
@@ -1015,4 +1016,30 @@ many lines''']
 
     }
 
+    def "specified url can be defined and queried via introspection"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema('type Query {foo: MyScalar} scalar MyScalar @specifiedBy(url:"myUrl")');
+
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute('{__type(name: "MyScalar") {name specifiedByUrl}}').getData();
+
+        then:
+        result == [__type: [name: "MyScalar", specifiedByUrl: "myUrl"]]
+    }
+
+    def "test DFR and CF"() {
+        def sdl = 'type Query { f : String } '
+
+        DataFetcher df = { env ->
+
+            def dfr = DataFetcherResult.newResult().data("hi").build()
+            return CompletableFuture.supplyAsync({ -> dfr })
+        }
+        def schema = TestUtil.schema(sdl, [Query: [f: df]])
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        when:
+        def er = graphQL.execute("{f}")
+        then:
+        er.data["f"] == "hi"
+    }
 }

@@ -8,8 +8,8 @@ public class SchemaValidationError {
     private final String description;
 
     public SchemaValidationError(SchemaValidationErrorType errorType, String description) {
-        assertNotNull(errorType, "error type can not be null");
-        assertNotNull(description, "error description can not be null");
+        assertNotNull(errorType, () -> "error type can not be null");
+        assertNotNull(description, () -> "error description can not be null");
         this.errorType = errorType;
         this.description = description;
     }

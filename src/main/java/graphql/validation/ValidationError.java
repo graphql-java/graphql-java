@@ -4,6 +4,7 @@ package graphql.validation;
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorHelper;
+import graphql.PublicApi;
 import graphql.language.SourceLocation;
 
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+@PublicApi
 public class ValidationError implements GraphQLError {
 
     private final String message;

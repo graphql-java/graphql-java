@@ -76,7 +76,7 @@ public class ValueFetcher {
     @SuppressWarnings("unchecked")
     private List<FetchedValue> extractBatchedValues(FetchedValue fetchedValueContainingList, int expectedSize) {
         List<Object> list = (List<Object>) fetchedValueContainingList.getFetchedValue();
-        Assert.assertTrue(list.size() == expectedSize, "Unexpected result size");
+        Assert.assertTrue(list.size() == expectedSize, () -> "Unexpected result size");
         List<FetchedValue> result = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {
             List<GraphQLError> errors;

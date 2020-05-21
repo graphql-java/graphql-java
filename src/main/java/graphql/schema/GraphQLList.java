@@ -40,7 +40,7 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
 
 
     public GraphQLList(GraphQLType wrappedType) {
-        assertNotNull(wrappedType, "wrappedType can't be null");
+        assertNotNull(wrappedType, () -> "wrappedType can't be null");
         this.originalWrappedType = wrappedType;
     }
 

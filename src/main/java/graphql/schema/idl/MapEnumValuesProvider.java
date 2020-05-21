@@ -12,7 +12,7 @@ public class MapEnumValuesProvider implements EnumValuesProvider {
     private final Map<String, Object> values;
 
     public MapEnumValuesProvider(Map<String, Object> values) {
-        Assert.assertNotNull(values, "values can't be null");
+        Assert.assertNotNull(values, () -> "values can't be null");
         this.values = values;
     }
 

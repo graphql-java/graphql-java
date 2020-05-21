@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import graphql.ExecutionInput;
+import graphql.ExecutionInput;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -42,6 +43,7 @@ public class ExecutionContextBuilder {
     Locale locale;
     List<GraphQLError> errors = new ArrayList<>();
     ValueUnboxer valueUnboxer;
+    Object localContext;
     ExecutionInput executionInput;
 
     /**
@@ -75,6 +77,7 @@ public class ExecutionContextBuilder {
         mutationStrategy = other.getMutationStrategy();
         subscriptionStrategy = other.getSubscriptionStrategy();
         context = other.getContext();
+        localContext = other.getLocalContext();
         root = other.getRoot();
         document = other.getDocument();
         operationDefinition = other.getOperationDefinition();
@@ -85,8 +88,7 @@ public class ExecutionContextBuilder {
         locale = other.getLocale();
         errors = new ArrayList<>(other.getErrors());
         valueUnboxer = other.getValueUnboxer();
-        this.executionInput = other.getExecutionInput();
-
+        executionInput = other.getExecutionInput();
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -126,6 +128,11 @@ public class ExecutionContextBuilder {
 
     public ExecutionContextBuilder context(Object context) {
         this.context = context;
+        return this;
+    }
+
+    public ExecutionContextBuilder localContext(Object localContext) {
+        this.localContext = localContext;
         return this;
     }
 
@@ -186,7 +193,7 @@ public class ExecutionContextBuilder {
 
     public ExecutionContext build() {
         // preconditions
-        assertNotNull(executionId, "You must provide a query identifier");
+        assertNotNull(executionId, () -> "You must provide a query identifier");
         return new ExecutionContext(this);
     }
 }

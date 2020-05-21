@@ -30,7 +30,7 @@ public class TypeInfo {
     private final Stack<Class<?>> decoration = new Stack<>();
 
     private TypeInfo(Type type) {
-        this.rawType = assertNotNull(type, "type must not be null");
+        this.rawType = assertNotNull(type, () -> "type must not be null");
         while (!(type instanceof TypeName)) {
             if (type instanceof NonNullType) {
                 decoration.push(NonNullType.class);

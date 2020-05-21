@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertTrue;
+import static graphql.util.EscapeUtil.escapeJsonString;
 import static java.lang.String.valueOf;
 import static java.util.stream.Collectors.joining;
 
@@ -173,7 +174,7 @@ public class AstPrinter {
             } else {
                 args = join(node.getInputValueDefinitions(), argSep);
                 out.printf("%s", node.getName() +
-                        wrap( "(", args, ")") +
+                        wrap("(", args, ")") +
                         ": " +
                         spaced(
                                 type(node.getType()),
@@ -397,11 +398,12 @@ public class AstPrinter {
     private NodePrinter<VariableDefinition> variableDefinition() {
         String nameTypeSep = compactMode ? ":" : ": ";
         String defaultValueEquals = compactMode ? "=" : " = ";
-        return (out, node) -> out.printf("$%s%s%s%s",
+        return (out, node) -> out.printf("$%s%s%s%s%s",
                 node.getName(),
                 nameTypeSep,
                 type(node.getType()),
-                wrap(defaultValueEquals, node.getDefaultValue(), "")
+                wrap(defaultValueEquals, node.getDefaultValue(), ""),
+                directives(node.getDirectives())
         );
     }
 
@@ -415,7 +417,7 @@ public class AstPrinter {
 
     private String node(Node node, Class startClass) {
         if (startClass != null) {
-            assertTrue(startClass.isInstance(node), "The starting class must be in the inherit tree");
+            assertTrue(startClass.isInstance(node), () -> "The starting class must be in the inherit tree");
         }
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
@@ -469,7 +471,7 @@ public class AstPrinter {
         } else if (value instanceof FloatValue) {
             return valueOf(((FloatValue) value).getValue());
         } else if (value instanceof StringValue) {
-            return wrap("\"", valueOf(escapeString(((StringValue) value).getValue())), "\"");
+            return wrap("\"", escapeJsonString(((StringValue) value).getValue()), "\"");
         } else if (value instanceof EnumValue) {
             return valueOf(((EnumValue) value).getName());
         } else if (value instanceof BooleanValue) {
@@ -494,7 +496,7 @@ public class AstPrinter {
         String s;
         boolean startNewLine = description.getContent().charAt(0) == '\n';
         if (description.isMultiLine()) {
-            s =  "\"\"\"" + (startNewLine ? "" : "\n") + description.getContent() + "\n\"\"\"\n";
+            s = "\"\"\"" + (startNewLine ? "" : "\n") + description.getContent() + "\n\"\"\"\n";
         } else {
             s = "\"" + description.getContent() + "\"\n";
         }
@@ -526,45 +528,6 @@ public class AstPrinter {
     private String join(String delim, String... args) {
         String s = Arrays.stream(args).filter(arg -> !isEmpty(arg)).collect(joining(delim));
         return s;
-    }
-
-    /**
-     * Encodes the value as a JSON string according to http://json.org/ rules
-     *
-     * @param stringValue the value to encode as a JSON string
-     *
-     * @return the encoded string
-     */
-    static String escapeString(String stringValue) {
-        StringBuilder sb = new StringBuilder();
-        for (char ch : stringValue.toCharArray()) {
-            switch (ch) {
-                case '"':
-                    sb.append("\\\"");
-                    break;
-                case '\\':
-                    sb.append("\\\\");
-                    break;
-                case '\b':
-                    sb.append("\\b");
-                    break;
-                case '\f':
-                    sb.append("\\f");
-                    break;
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                case '\r':
-                    sb.append("\\r");
-                    break;
-                case '\t':
-                    sb.append("\\t");
-                    break;
-                default:
-                    sb.append(ch);
-            }
-        }
-        return sb.toString();
     }
 
     String wrap(String start, String maybeString, String end) {

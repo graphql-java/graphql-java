@@ -62,7 +62,7 @@ dependencies {
     testCompile 'cglib:cglib-nodep:3.3.0'
     testCompile 'org.objenesis:objenesis:2.1'
     testCompile 'com.google.code.gson:gson:2.8.0'
-    testCompile 'org.eclipse.jetty:jetty-server:9.4.5.v20170502'
+    testCompile 'org.eclipse.jetty:jetty-server:9.4.26.v20200117'
     testCompile 'com.fasterxml.jackson.core:jackson-databind:2.10.0'
     testCompile 'org.slf4j:slf4j-simple:' + slf4jVersion
     testCompile 'org.awaitility:awaitility-groovy:3.0.0'

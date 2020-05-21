@@ -21,6 +21,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,6 +48,10 @@ public class ChainedInstrumentation implements Instrumentation {
 
     public ChainedInstrumentation(List<Instrumentation> instrumentations) {
         this.instrumentations = Collections.unmodifiableList(assertNotNull(instrumentations));
+    }
+
+    public ChainedInstrumentation(Instrumentation... instrumentations) {
+        this(Arrays.asList(instrumentations));
     }
 
     /**

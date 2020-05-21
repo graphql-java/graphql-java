@@ -115,7 +115,7 @@ public interface Instrumentation {
     DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters);
 
     /**
-     * This is called each time a subscription field produces a new reactive stream event value and its needs to be mapped over via the graphql field subselection.
+     * This is called each time a subscription field produces a new reactive stream event value and it needs to be mapped over via the graphql field subselection.
      *
      * @param parameters the parameters to this step
      *
