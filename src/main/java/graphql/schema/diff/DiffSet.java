@@ -69,7 +69,7 @@ public class DiffSet {
     private static Map<String, Object> introspect(GraphQLSchema schema) {
         GraphQL gql = GraphQL.newGraphQL(schema).build();
         ExecutionResult result = gql.execute(IntrospectionQuery.INTROSPECTION_QUERY);
-        Assert.assertTrue(result.getErrors().size() == 0, "The schema has errors during Introspection");
+        Assert.assertTrue(result.getErrors().size() == 0, () -> "The schema has errors during Introspection");
         return result.getData();
     }
 }

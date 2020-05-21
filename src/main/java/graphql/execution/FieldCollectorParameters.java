@@ -80,7 +80,7 @@ public class FieldCollectorParameters {
         }
 
         public FieldCollectorParameters build() {
-            Assert.assertNotNull(graphQLSchema, "You must provide a schema");
+            Assert.assertNotNull(graphQLSchema, () -> "You must provide a schema");
             return new FieldCollectorParameters(graphQLSchema, variables, fragmentsByName, objectType);
         }
 

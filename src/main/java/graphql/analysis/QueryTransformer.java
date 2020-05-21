@@ -44,11 +44,11 @@ public class QueryTransformer {
                              GraphQLCompositeType rootParentType,
                              Map<String, FragmentDefinition> fragmentsByName,
                              Map<String, Object> variables) {
-        this.schema = assertNotNull(schema, "schema can't be null");
-        this.variables = assertNotNull(variables, "variables can't be null");
-        this.root = assertNotNull(root, "root can't be null");
+        this.schema = assertNotNull(schema, () -> "schema can't be null");
+        this.variables = assertNotNull(variables, () -> "variables can't be null");
+        this.root = assertNotNull(root, () -> "root can't be null");
         this.rootParentType = assertNotNull(rootParentType);
-        this.fragmentsByName = assertNotNull(fragmentsByName, "fragmentsByName can't be null");
+        this.fragmentsByName = assertNotNull(fragmentsByName, () -> "fragmentsByName can't be null");
     }
 
     /**

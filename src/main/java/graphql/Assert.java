@@ -1,6 +1,7 @@
 package graphql;
 
 import java.util.Collection;
+import java.util.function.Supplier;
 
 import static java.lang.String.format;
 
@@ -8,18 +9,18 @@ import static java.lang.String.format;
 @Internal
 public class Assert {
 
-    public static <T> T assertNotNull(T object, String format, Object... args) {
+    public static <T> T assertNotNull(T object, Supplier<String> msg) {
         if (object != null) {
             return object;
         }
-        throw new AssertException(format(format, args));
+        throw new AssertException(msg.get());
     }
 
-    public static <T> T assertNotNullWithNPE(T object, String format, Object... args) {
+    public static <T> T assertNotNullWithNPE(T object, Supplier<String> msg) {
         if (object != null) {
             return object;
         }
-        throw new NullPointerException(format(format, args));
+        throw new NullPointerException(msg.get());
     }
 
     public static <T> T assertNotNull(T object) {
@@ -29,11 +30,11 @@ public class Assert {
         throw new AssertException("Object required to be not null");
     }
 
-    public static <T> void assertNull(T object, String format, Object... args) {
+    public static <T> void assertNull(T object, Supplier<String> msg) {
         if (object == null) {
             return;
         }
-        throw new AssertException(format(format, args));
+        throw new AssertException(msg.get());
     }
 
     public static <T> void assertNull(T object) {
@@ -62,18 +63,18 @@ public class Assert {
         return collection;
     }
 
-    public static <T> Collection<T> assertNotEmpty(Collection<T> collection, String format, Object... args) {
+    public static <T> Collection<T> assertNotEmpty(Collection<T> collection, Supplier<String> msg) {
         if (collection == null || collection.isEmpty()) {
-            throw new AssertException(format(format, args));
+            throw new AssertException(msg.get());
         }
         return collection;
     }
 
-    public static void assertTrue(boolean condition, String format, Object... args) {
+    public static void assertTrue(boolean condition, Supplier<String> msg) {
         if (condition) {
             return;
         }
-        throw new AssertException(format(format, args));
+        throw new AssertException(msg.get());
     }
 
     public static void assertTrue(boolean condition) {
@@ -83,11 +84,18 @@ public class Assert {
         throw new AssertException("condition expected to be true");
     }
 
-    public static void assertFalse(boolean condition, String format, Object... args) {
+    public static void assertFalse(boolean condition, Supplier<String> msg) {
         if (!condition) {
             return;
         }
-        throw new AssertException(format(format, args));
+        throw new AssertException(msg.get());
+    }
+
+    public static void assertFalse(boolean condition) {
+        if (!condition) {
+            return;
+        }
+        throw new AssertException("condition expected to be false");
     }
 
     private static final String invalidNameErrorMessage = "Name must be non-null, non-empty and match [_A-Za-z][_0-9A-Za-z]* - was '%s'";
@@ -97,7 +105,6 @@ public class Assert {
      * currently non null, non empty,
      *
      * @param name - the name to be validated.
-     *
      * @return the name if valid, or AssertException if invalid.
      */
     public static String assertValidName(String name) {

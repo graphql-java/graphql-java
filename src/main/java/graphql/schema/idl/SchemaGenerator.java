@@ -83,6 +83,7 @@ import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
 import static graphql.introspection.Introspection.DirectiveLocation.UNION;
 import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition;
 import static graphql.schema.GraphQLTypeReference.typeRef;
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 /**
@@ -136,7 +137,8 @@ public class SchemaGenerator {
         @SuppressWarnings({"OptionalGetWithoutIsPresent", "ConstantConditions"})
         TypeDefinition getTypeDefinition(Type type) {
             Optional<TypeDefinition> optionalTypeDefinition = typeRegistry.getType(type);
-            assertTrue(optionalTypeDefinition.isPresent(), " type definition for type '" + type + "' not found");
+            assertTrue(optionalTypeDefinition.isPresent(),
+                    () -> format(" type definition for type '%s' not found", type));
             return optionalTypeDefinition.get();
         }
 
@@ -213,9 +215,7 @@ public class SchemaGenerator {
      *
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
-     *
      * @return an executable schema
-     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -229,9 +229,7 @@ public class SchemaGenerator {
      * @param options      the controlling options
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
-     *
      * @return an executable schema
-     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(Options options, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -355,7 +353,6 @@ public class SchemaGenerator {
      * but then we build the rest of the types specified and put them in as additional types
      *
      * @param buildCtx the context we need to work out what we are doing
-     *
      * @return the additional types not referenced from the top level operations
      */
     private Set<GraphQLType> buildAdditionalTypes(BuildContext buildCtx) {
@@ -400,7 +397,6 @@ public class SchemaGenerator {
      *
      * @param buildCtx the context we need to work out what we are doing
      * @param rawType  the type to be built
-     *
      * @return an output type
      */
     @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
@@ -657,7 +653,8 @@ public class SchemaGenerator {
         Object value;
         if (enumValuesProvider != null) {
             value = enumValuesProvider.getValue(evd.getName());
-            assertNotNull(value, "EnumValuesProvider for %s returned null for %s", typeDefinition.getName(), evd.getName());
+            assertNotNull(value,
+                    () -> format("EnumValuesProvider for %s returned null for %s", typeDefinition.getName(), evd.getName()));
         } else {
             value = evd.getName();
         }
@@ -751,14 +748,14 @@ public class SchemaGenerator {
         DataFetcherFactory<?> dataFetcherFactory;
         if (wiringFactory.providesDataFetcherFactory(wiringEnvironment)) {
             dataFetcherFactory = wiringFactory.getDataFetcherFactory(wiringEnvironment);
-            assertNotNull(dataFetcherFactory, "The WiringFactory indicated it provides a data fetcher factory but then returned null");
+            assertNotNull(dataFetcherFactory, () -> "The WiringFactory indicated it provides a data fetcher factory but then returned null");
         } else {
             //
             // ok they provide a data fetcher directly
             DataFetcher<?> dataFetcher;
             if (wiringFactory.providesDataFetcher(wiringEnvironment)) {
                 dataFetcher = wiringFactory.getDataFetcher(wiringEnvironment);
-                assertNotNull(dataFetcher, "The WiringFactory indicated it provides a data fetcher but then returned null");
+                assertNotNull(dataFetcher, () -> "The WiringFactory indicated it provides a data fetcher but then returned null");
             } else {
                 dataFetcher = runtimeWiring.getDataFetcherForType(parentTypeName).get(fieldName);
                 if (dataFetcher == null) {
@@ -869,7 +866,7 @@ public class SchemaGenerator {
 
         if (wiringFactory.providesTypeResolver(environment)) {
             typeResolver = wiringFactory.getTypeResolver(environment);
-            assertNotNull(typeResolver, "The WiringFactory indicated it union provides a type resolver but then returned null");
+            assertNotNull(typeResolver, () -> "The WiringFactory indicated it union provides a type resolver but then returned null");
 
         } else {
             typeResolver = wiring.getTypeResolvers().get(unionType.getName());
@@ -894,7 +891,7 @@ public class SchemaGenerator {
 
         if (wiringFactory.providesTypeResolver(environment)) {
             typeResolver = wiringFactory.getTypeResolver(environment);
-            assertNotNull(typeResolver, "The WiringFactory indicated it provides a interface type resolver but then returned null");
+            assertNotNull(typeResolver, () -> "The WiringFactory indicated it provides a interface type resolver but then returned null");
 
         } else {
             typeResolver = wiring.getTypeResolvers().get(interfaceType.getName());

@@ -142,7 +142,7 @@ public class RuntimeWiring {
          * @return this outer builder
          */
         public Builder wiringFactory(WiringFactory wiringFactory) {
-            assertNotNull(wiringFactory, "You must provide a wiring factory");
+            assertNotNull(wiringFactory, () -> "You must provide a wiring factory");
             this.wiringFactory = wiringFactory;
             return this;
         }

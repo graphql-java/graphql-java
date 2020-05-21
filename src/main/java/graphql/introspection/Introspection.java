@@ -550,7 +550,6 @@ public class Introspection {
      * @param schema     the schema to use
      * @param parentType the type of the parent object
      * @param fieldName  the field to look up
-     *
      * @return a field definition otherwise throws an assertion exception if its null
      */
     public static GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {
@@ -567,10 +566,10 @@ public class Introspection {
             return TypeNameMetaFieldDef;
         }
 
-        assertTrue(parentType instanceof GraphQLFieldsContainer, "should not happen : parent type must be an object or interface %s", parentType);
+        assertTrue(parentType instanceof GraphQLFieldsContainer, () -> String.format("should not happen : parent type must be an object or interface %s", parentType));
         GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
         GraphQLFieldDefinition fieldDefinition = schema.getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, fieldName);
-        Assert.assertTrue(fieldDefinition != null, "Unknown field '%s'", fieldName);
+        Assert.assertTrue(fieldDefinition != null, () -> String.format("Unknown field '%s'", fieldName));
         return fieldDefinition;
     }
 }

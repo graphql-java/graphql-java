@@ -176,13 +176,13 @@ public class GraphQL {
                     Instrumentation instrumentation,
                     PreparsedDocumentProvider preparsedDocumentProvider,
                     ValueUnboxer valueUnboxer) {
-        this.graphQLSchema = assertNotNull(graphQLSchema, "graphQLSchema must be non null");
+        this.graphQLSchema = assertNotNull(graphQLSchema, () -> "graphQLSchema must be non null");
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new SubscriptionExecutionStrategy();
-        this.idProvider = assertNotNull(idProvider, "idProvider must be non null");
+        this.idProvider = assertNotNull(idProvider, () -> "idProvider must be non null");
         this.instrumentation = assertNotNull(instrumentation);
-        this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, "preparsedDocumentProvider must be non null");
+        this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, () -> "preparsedDocumentProvider must be non null");
         this.valueUnboxer = valueUnboxer;
     }
 
@@ -242,37 +242,37 @@ public class GraphQL {
         }
 
         public Builder schema(GraphQLSchema graphQLSchema) {
-            this.graphQLSchema = assertNotNull(graphQLSchema, "GraphQLSchema must be non null");
+            this.graphQLSchema = assertNotNull(graphQLSchema, () -> "GraphQLSchema must be non null");
             return this;
         }
 
         public Builder queryExecutionStrategy(ExecutionStrategy executionStrategy) {
-            this.queryExecutionStrategy = assertNotNull(executionStrategy, "Query ExecutionStrategy must be non null");
+            this.queryExecutionStrategy = assertNotNull(executionStrategy, () -> "Query ExecutionStrategy must be non null");
             return this;
         }
 
         public Builder mutationExecutionStrategy(ExecutionStrategy executionStrategy) {
-            this.mutationExecutionStrategy = assertNotNull(executionStrategy, "Mutation ExecutionStrategy must be non null");
+            this.mutationExecutionStrategy = assertNotNull(executionStrategy, () -> "Mutation ExecutionStrategy must be non null");
             return this;
         }
 
         public Builder subscriptionExecutionStrategy(ExecutionStrategy executionStrategy) {
-            this.subscriptionExecutionStrategy = assertNotNull(executionStrategy, "Subscription ExecutionStrategy must be non null");
+            this.subscriptionExecutionStrategy = assertNotNull(executionStrategy, () -> "Subscription ExecutionStrategy must be non null");
             return this;
         }
 
         public Builder instrumentation(Instrumentation instrumentation) {
-            this.instrumentation = assertNotNull(instrumentation, "Instrumentation must be non null");
+            this.instrumentation = assertNotNull(instrumentation, () -> "Instrumentation must be non null");
             return this;
         }
 
         public Builder preparsedDocumentProvider(PreparsedDocumentProvider preparsedDocumentProvider) {
-            this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, "PreparsedDocumentProvider must be non null");
+            this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, () -> "PreparsedDocumentProvider must be non null");
             return this;
         }
 
         public Builder executionIdProvider(ExecutionIdProvider executionIdProvider) {
-            this.idProvider = assertNotNull(executionIdProvider, "ExecutionIdProvider must be non null");
+            this.idProvider = assertNotNull(executionIdProvider, () -> "ExecutionIdProvider must be non null");
             return this;
         }
 
@@ -299,9 +299,9 @@ public class GraphQL {
         }
 
         public GraphQL build() {
-            assertNotNull(graphQLSchema, "graphQLSchema must be non null");
-            assertNotNull(queryExecutionStrategy, "queryStrategy must be non null");
-            assertNotNull(idProvider, "idProvider must be non null");
+            assertNotNull(graphQLSchema, () -> "graphQLSchema must be non null");
+            assertNotNull(queryExecutionStrategy, () -> "queryStrategy must be non null");
+            assertNotNull(idProvider, () -> "idProvider must be non null");
             final Instrumentation augmentedInstrumentation = checkInstrumentationDefaultState(instrumentation, doNotAddDefaultInstrumentations);
             return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, augmentedInstrumentation, preparsedDocumentProvider, valueUnboxer);
         }

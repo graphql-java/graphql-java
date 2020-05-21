@@ -27,9 +27,9 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
     }
 
     public AbstractNode(SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
-        Assert.assertNotNull(comments, "comments can't be null");
-        Assert.assertNotNull(ignoredChars, "ignoredChars can't be null");
-        Assert.assertNotNull(additionalData, "additionalData can't be null");
+        Assert.assertNotNull(comments, () -> "comments can't be null");
+        Assert.assertNotNull(ignoredChars, () -> "ignoredChars can't be null");
+        Assert.assertNotNull(additionalData, () -> "additionalData can't be null");
 
         this.sourceLocation = sourceLocation;
         this.additionalData = unmodifiableMap(new LinkedHashMap<>(additionalData));
