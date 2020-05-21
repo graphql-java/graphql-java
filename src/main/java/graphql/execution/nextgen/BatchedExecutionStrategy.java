@@ -66,7 +66,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
 
     // all multizipper have the same root
     private CompletableFuture<NodeMultiZipper<ExecutionResultNode>> resolveNodes(ExecutionContext executionContext, List<NodeMultiZipper<ExecutionResultNode>> unresolvedNodes) {
-        assertNotEmpty(unresolvedNodes, "unresolvedNodes can't be empty");
+        assertNotEmpty(unresolvedNodes, () -> "unresolvedNodes can't be empty");
         ExecutionResultNode commonRoot = unresolvedNodes.get(0).getCommonRoot();
         CompletableFuture<List<List<NodeZipper<ExecutionResultNode>>>> listListCF = Async.flatMap(unresolvedNodes,
                 executionResultMultiZipper -> fetchAndAnalyze(executionContext, executionResultMultiZipper.getZippers()));
@@ -81,7 +81,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
     }
 
     private CompletableFuture<List<NodeZipper<ExecutionResultNode>>> fetchAndAnalyze(ExecutionContext executionContext, List<NodeZipper<ExecutionResultNode>> unresolvedNodes) {
-        assertTrue(unresolvedNodes.size() > 0, "unresolvedNodes can't be empty");
+        assertTrue(unresolvedNodes.size() > 0, () -> "unresolvedNodes can't be empty");
 
         List<FieldSubSelection> fieldSubSelections = map(unresolvedNodes,
                 node -> util.createFieldSubSelection(executionContext, node.getCurNode().getExecutionStepInfo(), node.getCurNode().getResolvedValue()));

@@ -316,32 +316,32 @@ public class GraphQL {
         }
 
         public Builder schema(GraphQLSchema graphQLSchema) {
-            this.graphQLSchema = assertNotNull(graphQLSchema, "GraphQLSchema must be non null");
+            this.graphQLSchema = assertNotNull(graphQLSchema, () -> "GraphQLSchema must be non null");
             return this;
         }
 
         public Builder executionStrategy(ExecutionStrategy executionStrategy) {
-            this.executionStrategy = assertNotNull(executionStrategy, "ExecutionStrategy must be non null");
+            this.executionStrategy = assertNotNull(executionStrategy, () -> "ExecutionStrategy must be non null");
             return this;
         }
 
         public Builder instrumentation(Instrumentation instrumentation) {
-            this.instrumentation = assertNotNull(instrumentation, "Instrumentation must be non null");
+            this.instrumentation = assertNotNull(instrumentation, () -> "Instrumentation must be non null");
             return this;
         }
 
         public Builder preparsedDocumentProvider(PreparsedDocumentProvider preparsedDocumentProvider) {
-            this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, "PreparsedDocumentProvider must be non null");
+            this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, () -> "PreparsedDocumentProvider must be non null");
             return this;
         }
 
         public Builder executionIdProvider(ExecutionIdProvider executionIdProvider) {
-            this.idProvider = assertNotNull(executionIdProvider, "ExecutionIdProvider must be non null");
+            this.idProvider = assertNotNull(executionIdProvider, () -> "ExecutionIdProvider must be non null");
             return this;
         }
 
         public GraphQL build() {
-            assertNotNull(graphQLSchema, "graphQLSchema must be non null");
+            assertNotNull(graphQLSchema, () -> "graphQLSchema must be non null");
             return new GraphQL(this);
         }
     }

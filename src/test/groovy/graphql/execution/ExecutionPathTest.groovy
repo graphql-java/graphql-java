@@ -183,7 +183,8 @@ class ExecutionPathTest extends Specification {
         "/"           | _
     }
 
-    def "test from test fromList"() {
+    @Unroll
+    def "test from test fromList #inputList and #expectedString"() {
 
 
         expect:
@@ -211,49 +212,6 @@ class ExecutionPathTest extends Specification {
         path.toList() == ["a", "b"]
     }
 
-    def "path segment naming and types"() {
-        when:
-        def path = ExecutionPath.fromList(["a", 0, "b", 9])
-
-        then:
-        path.getSegmentName() == "b"
-        path.isListSegment()
-        !path.isNamedSegment()
-
-        when:
-        path = path.dropSegment()
-
-        then:
-        path.getSegmentName() == "b"
-        !path.isListSegment()
-        path.isNamedSegment()
-
-        when:
-        path = path.dropSegment()
-
-        then:
-        path.getSegmentName() == "a"
-        path.isListSegment()
-        !path.isNamedSegment()
-
-        when:
-        path = path.dropSegment()
-
-        then:
-        path.getSegmentName() == "a"
-
-        !path.isListSegment()
-        path.isNamedSegment()
-
-        when:
-        path = path.dropSegment()
-
-        then:
-        path.getSegmentName() == null
-        !path.isListSegment()
-        !path.isNamedSegment()
-        path.isRootPath()
-    }
 
     def "can append paths"() {
         when:

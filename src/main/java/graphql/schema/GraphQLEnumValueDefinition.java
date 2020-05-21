@@ -83,7 +83,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
 
     private GraphQLEnumValueDefinition(String name, String description, Object value, String deprecationReason, List<GraphQLDirective> directives, EnumValueDefinition definition) {
         assertValidName(name);
-        assertNotNull(directives, "directives cannot be null");
+        assertNotNull(directives, () -> "directives cannot be null");
 
         this.name = name;
         this.description = description;
@@ -231,7 +231,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
         }
 
         public Builder withDirectives(GraphQLDirective... directives) {
-            assertNotNull(directives, "directives can't be null");
+            assertNotNull(directives, () -> "directives can't be null");
             for (GraphQLDirective directive : directives) {
                 withDirective(directive);
             }
@@ -239,13 +239,13 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
         }
 
         public Builder withDirective(GraphQLDirective directive) {
-            assertNotNull(directive, "directive can't be null");
+            assertNotNull(directive, () -> "directive can't be null");
             directives.put(directive.getName(), directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
-            assertNotNull(directives, "directive can't be null");
+            assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
             for (GraphQLDirective directive : directives) {
                 this.directives.put(directive.getName(), directive);

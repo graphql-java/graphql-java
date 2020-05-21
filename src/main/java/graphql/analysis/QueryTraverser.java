@@ -48,10 +48,10 @@ public class    QueryTraverser {
                            Document document,
                            String operation,
                            Map<String, Object> variables) {
-        assertNotNull(document, "document  can't be null");
+        assertNotNull(document, () -> "document  can't be null");
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operation);
-        this.schema = assertNotNull(schema, "schema can't be null");
-        this.variables = assertNotNull(variables, "variables can't be null");
+        this.schema = assertNotNull(schema, () -> "schema can't be null");
+        this.variables = assertNotNull(variables, () -> "variables can't be null");
         this.fragmentsByName = getOperationResult.fragmentsByName;
         this.roots = singletonList(getOperationResult.operationDefinition);
         this.rootParentType = getRootTypeFromOperation(getOperationResult.operationDefinition);
@@ -62,12 +62,12 @@ public class    QueryTraverser {
                            GraphQLCompositeType rootParentType,
                            Map<String, FragmentDefinition> fragmentsByName,
                            Map<String, Object> variables) {
-        this.schema = assertNotNull(schema, "schema can't be null");
-        this.variables = assertNotNull(variables, "variables can't be null");
-        assertNotNull(root, "root can't be null");
+        this.schema = assertNotNull(schema, () -> "schema can't be null");
+        this.variables = assertNotNull(variables, () -> "variables can't be null");
+        assertNotNull(root, () -> "root can't be null");
         this.roots = Collections.singleton(root);
-        this.rootParentType = assertNotNull(rootParentType, "rootParentType can't be null");
-        this.fragmentsByName = assertNotNull(fragmentsByName, "fragmentsByName can't be null");
+        this.rootParentType = assertNotNull(rootParentType, () -> "rootParentType can't be null");
+        this.fragmentsByName = assertNotNull(fragmentsByName, () -> "fragmentsByName can't be null");
     }
 
     public Object visitDepthFirst(QueryVisitor queryVisitor) {

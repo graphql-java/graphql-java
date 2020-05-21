@@ -11,7 +11,7 @@ public class DefaultConnectionCursor implements ConnectionCursor {
     private final String value;
 
     public DefaultConnectionCursor(String value) {
-        Assert.assertTrue(value != null && !value.isEmpty(), "connection value cannot be null or empty");
+        Assert.assertTrue(value != null && !value.isEmpty(), () -> "connection value cannot be null or empty");
         this.value = value;
     }
 

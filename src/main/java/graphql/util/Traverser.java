@@ -112,8 +112,8 @@ public class Traverser<T> {
                 currentContext.setPhase(TraverserContext.Phase.LEAVE);
                 TraversalControl traversalControl = visitor.leave(currentContext);
                 currentAccValue = currentContext.getNewAccumulate();
-                assertNotNull(traversalControl, "result of leave must not be null");
-                assertTrue(CONTINUE_OR_QUIT.contains(traversalControl), "result can only return CONTINUE or QUIT");
+                assertNotNull(traversalControl, () -> "result of leave must not be null");
+                assertTrue(CONTINUE_OR_QUIT.contains(traversalControl), () -> "result can only return CONTINUE or QUIT");
 
                 switch (traversalControl) {
                     case QUIT:
@@ -132,8 +132,8 @@ public class Traverser<T> {
                 currentContext.setPhase(TraverserContext.Phase.BACKREF);
                 TraversalControl traversalControl = visitor.backRef(currentContext);
                 currentAccValue = currentContext.getNewAccumulate();
-                assertNotNull(traversalControl, "result of backRef must not be null");
-                assertTrue(CONTINUE_OR_QUIT.contains(traversalControl), "backRef can only return CONTINUE or QUIT");
+                assertNotNull(traversalControl, () -> "result of backRef must not be null");
+                assertTrue(CONTINUE_OR_QUIT.contains(traversalControl), () -> "backRef can only return CONTINUE or QUIT");
                 if (traversalControl == QUIT) {
                     break traverseLoop;
                 }
@@ -143,7 +143,7 @@ public class Traverser<T> {
                 currentContext.setPhase(TraverserContext.Phase.ENTER);
                 TraversalControl traversalControl = visitor.enter(currentContext);
                 currentAccValue = currentContext.getNewAccumulate();
-                assertNotNull(traversalControl, "result of enter must not be null");
+                assertNotNull(traversalControl, () -> "result of enter must not be null");
                 this.traverserState.addVisited((T) nodeBeforeEnter);
                 switch (traversalControl) {
                     case QUIT:

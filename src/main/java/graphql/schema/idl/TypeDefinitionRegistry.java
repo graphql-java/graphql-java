@@ -22,7 +22,6 @@ import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.UnionTypeExtensionDefinition;
 import graphql.schema.idl.errors.DirectiveRedefinitionError;
-import graphql.schema.idl.errors.OperationRedefinitionError;
 import graphql.schema.idl.errors.SchemaProblem;
 import graphql.schema.idl.errors.SchemaRedefinitionError;
 import graphql.schema.idl.errors.TypeRedefinitionError;
@@ -236,8 +235,13 @@ public class TypeDefinitionRegistry {
         return Optional.empty();
     }
 
+    /**
+     * Removes a {@code SDLDefinition} from the definition list.
+     *
+     * @param definition
+     */
     public void remove(SDLDefinition definition) {
-        assertNotNull(definition, "definition to remove can't be null");
+        assertNotNull(definition, () -> "definition to remove can't be null");
         if (definition instanceof ObjectTypeExtensionDefinition) {
             removeFromList(objectTypeExtensions, (TypeDefinition) definition);
         } else if (definition instanceof InterfaceTypeExtensionDefinition) {
@@ -271,6 +275,52 @@ public class TypeDefinitionRegistry {
             return;
         }
         list.remove(value);
+        if (list.isEmpty()) {
+            source.remove(value.getName());
+        }
+    }
+
+    /**
+     * Removes a {@code SDLDefinition} from a map.
+     *
+     * @param key
+     * @param definition
+     */
+    public void remove(String key, SDLDefinition definition) {
+        assertNotNull(definition, () -> "definition to remove can't be null");
+        assertNotNull(key, () -> "key to remove can't be null");
+        if (definition instanceof ObjectTypeExtensionDefinition) {
+            removeFromMap(objectTypeExtensions, key);
+        } else if (definition instanceof InterfaceTypeExtensionDefinition) {
+            removeFromMap(interfaceTypeExtensions, key);
+        } else if (definition instanceof UnionTypeExtensionDefinition) {
+            removeFromMap(unionTypeExtensions, key);
+        } else if (definition instanceof EnumTypeExtensionDefinition) {
+            removeFromMap(enumTypeExtensions, key);
+        } else if (definition instanceof ScalarTypeExtensionDefinition) {
+            removeFromMap(scalarTypeExtensions, key);
+        } else if (definition instanceof InputObjectTypeExtensionDefinition) {
+            removeFromMap(inputObjectTypeExtensions, key);
+        } else if (definition instanceof ScalarTypeDefinition) {
+            removeFromMap(scalarTypes, key);
+        } else if (definition instanceof TypeDefinition) {
+            removeFromMap(types, key);
+        } else if (definition instanceof DirectiveDefinition) {
+            removeFromMap(directiveDefinitions, key);
+        } else if (definition instanceof SchemaExtensionDefinition) {
+            schemaExtensionDefinitions.remove(definition);
+        } else if (definition instanceof SchemaDefinition) {
+            schema = null;
+        } else {
+            Assert.assertShouldNeverHappen();
+        }
+    }
+
+    private void removeFromMap(Map source, String key) {
+        if (source == null) {
+            return;
+        }
+        source.remove(key);
     }
 
 
