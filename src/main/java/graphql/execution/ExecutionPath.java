@@ -43,12 +43,12 @@ public class ExecutionPath {
     }
 
     private ExecutionPath(ExecutionPath parent, String segment) {
-        this.parent = assertNotNull(parent, "Must provide a parent path");
-        this.segment = assertNotNull(segment, "Must provide a sub path");
+        this.parent = assertNotNull(parent, () -> "Must provide a parent path");
+        this.segment = assertNotNull(segment, () -> "Must provide a sub path");
     }
 
     private ExecutionPath(ExecutionPath parent, int segment) {
-        this.parent = assertNotNull(parent, "Must provide a parent path");
+        this.parent = assertNotNull(parent, () -> "Must provide a parent path");
         this.segment = segment;
     }
 
@@ -114,19 +114,19 @@ public class ExecutionPath {
      */
     public static ExecutionPath parse(String pathString) {
         pathString = pathString == null ? "" : pathString;
-        pathString = pathString.trim();
-        StringTokenizer st = new StringTokenizer(pathString, "/[]", true);
+        String finalPathString = pathString.trim();
+        StringTokenizer st = new StringTokenizer(finalPathString, "/[]", true);
         ExecutionPath path = ExecutionPath.rootPath();
         while (st.hasMoreTokens()) {
             String token = st.nextToken();
             if ("/".equals(token)) {
-                assertTrue(st.hasMoreTokens(), mkErrMsg(), pathString);
+                assertTrue(st.hasMoreTokens(), () -> String.format(mkErrMsg(), finalPathString));
                 path = path.segment(st.nextToken());
             } else if ("[".equals(token)) {
-                assertTrue(st.countTokens() >= 2, mkErrMsg(), pathString);
+                assertTrue(st.countTokens() >= 2, () -> String.format(mkErrMsg(), finalPathString));
                 path = path.segment(Integer.parseInt(st.nextToken()));
                 String closingBrace = st.nextToken();
-                assertTrue(closingBrace.equals("]"), mkErrMsg(), pathString);
+                assertTrue(closingBrace.equals("]"), () -> String.format(mkErrMsg(), finalPathString));
             } else {
                 throw new AssertException(format(mkErrMsg(), pathString));
             }
@@ -201,7 +201,7 @@ public class ExecutionPath {
      * @return a new path with the last segment replaced
      */
     public ExecutionPath replaceSegment(int segment) {
-        Assert.assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
+        Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
         return new ExecutionPath(parent, segment);
     }
 
@@ -214,7 +214,7 @@ public class ExecutionPath {
      * @return a new path with the last segment replaced
      */
     public ExecutionPath replaceSegment(String segment) {
-        Assert.assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
+        Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
         return new ExecutionPath(parent, segment);
     }
 
@@ -241,12 +241,12 @@ public class ExecutionPath {
 
 
     public ExecutionPath sibling(String siblingField) {
-        Assert.assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
+        Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
         return new ExecutionPath(this.parent, siblingField);
     }
 
     public ExecutionPath sibling(int siblingField) {
-        Assert.assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
+        Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
         return new ExecutionPath(this.parent, siblingField);
     }
 

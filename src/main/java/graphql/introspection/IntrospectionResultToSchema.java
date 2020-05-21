@@ -65,12 +65,12 @@ public class IntrospectionResultToSchema {
      */
     @SuppressWarnings("unchecked")
     public Document createSchemaDefinition(Map<String, Object> introspectionResult) {
-        assertTrue(introspectionResult.get("__schema") != null, "__schema expected");
+        assertTrue(introspectionResult.get("__schema") != null, () -> "__schema expected");
         Map<String, Object> schema = (Map<String, Object>) introspectionResult.get("__schema");
 
 
         Map<String, Object> queryType = (Map<String, Object>) schema.get("queryType");
-        assertNotNull(queryType, "queryType expected");
+        assertNotNull(queryType, () -> "queryType expected");
         TypeName query = TypeName.newTypeName().name((String) queryType.get("name")).build();
         boolean nonDefaultQueryName = !"Query".equals(query.getName());
 
@@ -141,7 +141,7 @@ public class IntrospectionResultToSchema {
 
     @SuppressWarnings("unchecked")
     UnionTypeDefinition createUnion(Map<String, Object> input) {
-        assertTrue(input.get("kind").equals("UNION"), "wrong input");
+        assertTrue(input.get("kind").equals("UNION"), () -> "wrong input");
 
         UnionTypeDefinition.Builder unionTypeDefinition = UnionTypeDefinition.newUnionTypeDefinition();
         unionTypeDefinition.name((String) input.get("name"));
@@ -159,7 +159,7 @@ public class IntrospectionResultToSchema {
 
     @SuppressWarnings("unchecked")
     EnumTypeDefinition createEnum(Map<String, Object> input) {
-        assertTrue(input.get("kind").equals("ENUM"), "wrong input");
+        assertTrue(input.get("kind").equals("ENUM"), () -> "wrong input");
 
         EnumTypeDefinition.Builder enumTypeDefinition = EnumTypeDefinition.newEnumTypeDefinition().name((String) input.get("name"));
         enumTypeDefinition.description(toDescription(input));
@@ -181,7 +181,7 @@ public class IntrospectionResultToSchema {
 
     @SuppressWarnings("unchecked")
     InterfaceTypeDefinition createInterface(Map<String, Object> input) {
-        assertTrue(input.get("kind").equals("INTERFACE"), "wrong input");
+        assertTrue(input.get("kind").equals("INTERFACE"), () -> "wrong input");
 
         InterfaceTypeDefinition.Builder interfaceTypeDefinition = InterfaceTypeDefinition.newInterfaceTypeDefinition().name((String) input.get("name"));
         interfaceTypeDefinition.description(toDescription(input));
@@ -194,7 +194,7 @@ public class IntrospectionResultToSchema {
 
     @SuppressWarnings("unchecked")
     InputObjectTypeDefinition createInputObject(Map<String, Object> input) {
-        assertTrue(input.get("kind").equals("INPUT_OBJECT"), "wrong input");
+        assertTrue(input.get("kind").equals("INPUT_OBJECT"), () -> "wrong input");
 
         InputObjectTypeDefinition.Builder inputObjectTypeDefinition = InputObjectTypeDefinition.newInputObjectDefinition()
                 .name((String) input.get("name"))
@@ -209,7 +209,7 @@ public class IntrospectionResultToSchema {
 
     @SuppressWarnings("unchecked")
     ObjectTypeDefinition createObject(Map<String, Object> input) {
-        assertTrue(input.get("kind").equals("OBJECT"), "wrong input");
+        assertTrue(input.get("kind").equals("OBJECT"), () -> "wrong input");
 
         ObjectTypeDefinition.Builder objectTypeDefinition = ObjectTypeDefinition.newObjectTypeDefinition().name((String) input.get("name"));
         objectTypeDefinition.description(toDescription(input));

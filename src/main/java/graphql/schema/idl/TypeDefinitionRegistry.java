@@ -22,7 +22,6 @@ import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.UnionTypeExtensionDefinition;
 import graphql.schema.idl.errors.DirectiveRedefinitionError;
-import graphql.schema.idl.errors.OperationRedefinitionError;
 import graphql.schema.idl.errors.SchemaProblem;
 import graphql.schema.idl.errors.SchemaRedefinitionError;
 import graphql.schema.idl.errors.TypeRedefinitionError;
@@ -238,10 +237,11 @@ public class TypeDefinitionRegistry {
 
     /**
      * Removes a {@code SDLDefinition} from the definition list.
+     *
      * @param definition
      */
     public void remove(SDLDefinition definition) {
-        assertNotNull(definition, "definition to remove can't be null");
+        assertNotNull(definition, () -> "definition to remove can't be null");
         if (definition instanceof ObjectTypeExtensionDefinition) {
             removeFromList(objectTypeExtensions, (TypeDefinition) definition);
         } else if (definition instanceof InterfaceTypeExtensionDefinition) {
@@ -282,12 +282,13 @@ public class TypeDefinitionRegistry {
 
     /**
      * Removes a {@code SDLDefinition} from a map.
+     *
      * @param key
      * @param definition
      */
     public void remove(String key, SDLDefinition definition) {
-        assertNotNull(definition, "definition to remove can't be null");
-        assertNotNull(key, "key to remove can't be null");
+        assertNotNull(definition, () -> "definition to remove can't be null");
+        assertNotNull(key, () -> "key to remove can't be null");
         if (definition instanceof ObjectTypeExtensionDefinition) {
             removeFromMap(objectTypeExtensions, key);
         } else if (definition instanceof InterfaceTypeExtensionDefinition) {

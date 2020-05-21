@@ -52,7 +52,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLFieldsCont
      * @param description      the description
      * @param fieldDefinitions the fields
      * @param typeResolver     the type resolver function
-     *
      * @deprecated use the {@link #newInterface()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -68,7 +67,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLFieldsCont
      * @param typeResolver     the type resolver function
      * @param directives       the directives on this type element
      * @param definition       the AST definition
-     *
      * @deprecated use the {@link #newInterface()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -79,8 +77,8 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLFieldsCont
 
     public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver, List<GraphQLDirective> directives, InterfaceTypeDefinition definition, List<InterfaceTypeExtensionDefinition> extensionDefinitions) {
         assertValidName(name);
-        assertNotNull(fieldDefinitions, "fieldDefinitions can't null");
-        assertNotNull(directives, "directives cannot be null");
+        assertNotNull(fieldDefinitions, () -> "fieldDefinitions can't null");
+        assertNotNull(directives, () -> "directives cannot be null");
 
         this.name = name;
         this.description = description;
@@ -154,7 +152,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLFieldsCont
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
-     *
      * @return a new object based on calling build on that builder
      */
     public GraphQLInterfaceType transform(Consumer<Builder> builderConsumer) {
@@ -250,7 +247,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLFieldsCont
         }
 
         public Builder field(GraphQLFieldDefinition fieldDefinition) {
-            assertNotNull(fieldDefinition, "fieldDefinition can't be null");
+            assertNotNull(fieldDefinition, () -> "fieldDefinition can't be null");
             this.fields.put(fieldDefinition.getName(), fieldDefinition);
             return this;
         }
@@ -265,11 +262,10 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLFieldsCont
          * </pre>
          *
          * @param builderFunction a supplier for the builder impl
-         *
          * @return this
          */
         public Builder field(UnaryOperator<GraphQLFieldDefinition.Builder> builderFunction) {
-            assertNotNull(builderFunction, "builderFunction can't be null");
+            assertNotNull(builderFunction, () -> "builderFunction can't be null");
             GraphQLFieldDefinition.Builder builder = GraphQLFieldDefinition.newFieldDefinition();
             builder = builderFunction.apply(builder);
             return field(builder);
@@ -280,7 +276,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLFieldsCont
          * from within
          *
          * @param builder an un-built/incomplete GraphQLFieldDefinition
-         *
          * @return this
          */
         public Builder field(GraphQLFieldDefinition.Builder builder) {
@@ -288,13 +283,13 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLFieldsCont
         }
 
         public Builder fields(List<GraphQLFieldDefinition> fieldDefinitions) {
-            assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
+            assertNotNull(fieldDefinitions, () -> "fieldDefinitions can't be null");
             fieldDefinitions.forEach(this::field);
             return this;
         }
 
         public Builder replaceFields(List<GraphQLFieldDefinition> fieldDefinitions) {
-            assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
+            assertNotNull(fieldDefinitions, () -> "fieldDefinitions can't be null");
             this.fields.clear();
             fieldDefinitions.forEach(this::field);
             return this;
@@ -329,13 +324,13 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLFieldsCont
         }
 
         public Builder withDirective(GraphQLDirective directive) {
-            assertNotNull(directive, "directive can't be null");
+            assertNotNull(directive, () -> "directive can't be null");
             directives.put(directive.getName(), directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
-            assertNotNull(directives, "directive can't be null");
+            assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
             for (GraphQLDirective directive : directives) {
                 this.directives.put(directive.getName(), directive);

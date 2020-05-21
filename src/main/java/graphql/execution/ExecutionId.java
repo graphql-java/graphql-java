@@ -32,7 +32,7 @@ public class ExecutionId {
     private final String id;
 
     private ExecutionId(String id) {
-        Assert.assertNotNull(id, "You must provided a non null id");
+        Assert.assertNotNull(id, () -> "You must provided a non null id");
         this.id = id;
     }
 

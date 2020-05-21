@@ -181,7 +181,7 @@ public class ExecutionContextBuilder {
 
     public ExecutionContext build() {
         // preconditions
-        assertNotNull(executionId, "You must provide a query identifier");
+        assertNotNull(executionId, () -> "You must provide a query identifier");
 
         return new ExecutionContext(
                 instrumentation,
