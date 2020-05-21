@@ -64,7 +64,7 @@ class ExecutionStrategyTest extends Specification {
                 executionStrategy, executionStrategy, executionStrategy,
                 [:], null, null,
                 variables, "context", "root", new DataLoaderRegistry(),
-                null, Locale.getDefault(), Collections.emptyList(), ValueUnboxer.DEFAULT)
+                null, Locale.getDefault(), Collections.emptyList(), ValueUnboxer.DEFAULT, null)
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")

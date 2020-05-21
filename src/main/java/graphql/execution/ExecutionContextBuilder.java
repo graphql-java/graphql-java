@@ -41,6 +41,7 @@ public class ExecutionContextBuilder {
     private Locale locale;
     private List<GraphQLError> errors = new ArrayList<>();
     private ValueUnboxer valueUnboxer;
+    private Object localContext;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -74,6 +75,7 @@ public class ExecutionContextBuilder {
         mutationStrategy = other.getMutationStrategy();
         subscriptionStrategy = other.getSubscriptionStrategy();
         context = other.getContext();
+        localContext = other.getLocalContext();
         root = other.getRoot();
         document = other.getDocument();
         operationDefinition = other.getOperationDefinition();
@@ -124,6 +126,11 @@ public class ExecutionContextBuilder {
 
     public ExecutionContextBuilder context(Object context) {
         this.context = context;
+        return this;
+    }
+
+    public ExecutionContextBuilder localContext(Object localContext) {
+        this.localContext = localContext;
         return this;
     }
 
@@ -194,7 +201,8 @@ public class ExecutionContextBuilder {
                 cacheControl,
                 locale,
                 errors,
-                valueUnboxer);
+                valueUnboxer,
+                localContext);
     }
 
 }

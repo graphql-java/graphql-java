@@ -87,6 +87,7 @@ public class Execution {
                 .mutationStrategy(mutationStrategy)
                 .subscriptionStrategy(subscriptionStrategy)
                 .context(executionInput.getContext())
+                .localContext(executionInput.getLocalContext())
                 .root(executionInput.getRoot())
                 .fragmentsByName(fragmentsByName)
                 .variables(coercedVariables)
@@ -145,7 +146,7 @@ public class Execution {
         ExecutionStrategyParameters parameters = newParameters()
                 .executionStepInfo(executionStepInfo)
                 .source(root)
-                .localContext(null) // this is important to default as this
+                .localContext(executionContext.getLocalContext())
                 .fields(fields)
                 .nonNullFieldValidator(nonNullableFieldValidator)
                 .path(path)
