@@ -1063,7 +1063,7 @@ enum Enum {
 '''
 
         when:
-        def resultWithSomeDirectives = new SchemaPrinter(defaultOptions().includeDirectives({it.name == "example" })).print(schema)
+        def resultWithSomeDirectives = new SchemaPrinter(defaultOptions().includeDirectives({ it.name == "example" })).print(schema)
 
         then:
         resultWithSomeDirectives == '''directive @example on FIELD_DEFINITION
@@ -1572,6 +1572,49 @@ scalar Scalar
         _ | 'formfeed-\\f'
         _ | 'carriage-return-\\r'
         _ | 'horizontal-tab-\\t'
+    }
+
+    def 'print interfaces implementing interfaces correctly'() {
+        given:
+        def sdl = """
+            type Query {
+                foo: Resource
+            }
+            
+            interface Node {
+              id: ID!
+            }
+            interface Node2 {
+              id2: ID!
+            }
+
+            interface Resource implements Node & Node2 {
+              id: ID!
+              id2: ID!
+            }
+            """
+        def schema = TestUtil.schema(sdl)
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeDirectives(false)).print(schema)
+
+        then:
+        result == """interface Node {
+  id: ID!
+}
+
+interface Node2 {
+  id2: ID!
+}
+
+interface Resource implements Node & Node2 {
+  id: ID!
+  id2: ID!
+}
+
+type Query {
+  foo: Resource
+}
+"""
     }
 
 }
