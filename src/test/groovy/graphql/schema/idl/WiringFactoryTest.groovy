@@ -52,7 +52,7 @@ class WiringFactoryTest extends Specification {
 
         @Override
         boolean providesScalar(ScalarWiringEnvironment environment) {
-            return name == environment.getInterfaceTypeDefinition().getName()
+            return name == environment.getScalarTypeDefinition().getName()
         }
 
         @Override
@@ -124,6 +124,30 @@ class WiringFactoryTest extends Specification {
         }
     }
 
+    class NamedDefaultDataFetcherWiringFactory implements WiringFactory {
+        def fields = []
+
+        @Override
+        boolean providesDataFetcher(FieldWiringEnvironment environment) {
+            if (environment.getFieldDefinition().getName() == "name") {
+                return true
+            }
+            return false
+        }
+
+        @Override
+        DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
+            new PropertyDataFetcher("name")
+        }
+
+        @Override
+        DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
+            def name = environment.getFieldDefinition().getName()
+            fields.add(name)
+            new PropertyDataFetcher(name)
+        }
+    }
+
 
     def "ensure that wiring factory is called to resolve and create data fetchers"() {
 
@@ -161,16 +185,23 @@ class WiringFactoryTest extends Specification {
                 homePlanet: String
                 cyborg: Cyborg
             }
+            
+            type Other implements Character {
+                name: String!
+                fetchedByDefaultDataFetcher: String!
+            }
         """
 
-
+        WiringFactory defaultDataFetcherWiringFactory = new NamedDefaultDataFetcherWiringFactory()
 
         def combinedWiringFactory = new CombinedWiringFactory([
                 new NamedWiringFactory("Character"),
                 new NamedWiringFactory("Cyborg"),
                 new NamedWiringFactory("Long"),
                 new NamedDataFetcherFactoryWiringFactory("cyborg"),
-                new NamedWiringFactory("friends")])
+                new NamedWiringFactory("friends"),
+                defaultDataFetcherWiringFactory
+        ])
 
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(combinedWiringFactory)
@@ -201,6 +232,9 @@ class WiringFactoryTest extends Specification {
 
         GraphQLScalarType longScalar = schema.getType("Long") as GraphQLScalarType
         longScalar.name == "Long"
+
+        defaultDataFetcherWiringFactory.fields.contains("fetchedByDefaultDataFetcher")
+
     }
 
     def "ensure field wiring environment makes sense"() {
@@ -257,30 +291,7 @@ class WiringFactoryTest extends Specification {
             }
         """
 
-
-        def fields = []
-
-        def wiringFactory = new WiringFactory() {
-            @Override
-            boolean providesDataFetcher(FieldWiringEnvironment environment) {
-                if (environment.getFieldDefinition().getName() == "name") {
-                    return true
-                }
-                return false
-            }
-
-            @Override
-            DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
-                new PropertyDataFetcher("name")
-            }
-
-            @Override
-            DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
-                def name = environment.getFieldDefinition().getName()
-                fields.add(name)
-                new PropertyDataFetcher(name)
-            }
-        }
+        def wiringFactory = new NamedDefaultDataFetcherWiringFactory()
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(wiringFactory)
                 .build()
@@ -289,7 +300,7 @@ class WiringFactoryTest extends Specification {
 
         expect:
 
-        fields == ["id", "homePlanet"]
+        wiringFactory.fields == ["id", "homePlanet"]
     }
 
     def "@fetch directive is respected by default data fetcher wiring"() {
