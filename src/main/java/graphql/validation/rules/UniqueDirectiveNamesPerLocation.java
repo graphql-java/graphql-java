@@ -64,8 +64,13 @@ public class UniqueDirectiveNamesPerLocation extends AbstractRule {
             String directiveName = directive.getName();
             GraphQLDirective graphQLDirective = getValidationContext().getSchema().getDirective(directiveName);
 
-            if (graphQLDirective == null) continue;
-            if (graphQLDirective.getDefinition() != null && graphQLDirective.getDefinition().isRepeatable()) continue;
+            if (graphQLDirective == null) {
+                continue;
+            }
+
+            if (graphQLDirective.isRepeatable()) {
+                continue;
+            }
 
             if (directiveNames.contains(directiveName)) {
                 addError(ValidationErrorType.DuplicateDirectiveName,
