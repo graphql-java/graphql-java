@@ -1,14 +1,20 @@
 package graphql
 
+
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLTypeReference
 import graphql.schema.TypeResolver
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
+import graphql.schema.idl.SchemaPrinter
 import graphql.schema.idl.errors.SchemaProblem
 import spock.lang.Specification
+
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLInterfaceType.newInterface
 
 class InterfacesImplementingInterfacesTest extends Specification {
     def 'Simple interface implementing interface'() {
@@ -953,6 +959,70 @@ class InterfacesImplementingInterfacesTest extends Specification {
         resourceType.getInterfaces().get(0) instanceof GraphQLInterfaceType
         resourceType.getInterfaces().get(0).getName() == "Node"
 
+    }
+
+    def "GraphQLInterfaceType can can implement interfaces"() {
+        given:
+        def node1Type = newInterface()
+                .name("Node1")
+                .field(newFieldDefinition().name("id1").type(Scalars.GraphQLString).build())
+                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
+                .build();
+
+        def node2Type = newInterface()
+                .name("Node2")
+                .field(newFieldDefinition().name("id2").type(Scalars.GraphQLString).build())
+                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
+                .build();
+
+        // references two interfaces: directly and via type ref
+        def resource = newInterface()
+                .name("Resource")
+                .field(newFieldDefinition().name("id1").type(Scalars.GraphQLString).build())
+                .field(newFieldDefinition().name("id2").type(Scalars.GraphQLString).build())
+                .withInterface(GraphQLTypeReference.typeRef("Node1"))
+                .withInterface(node2Type)
+                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
+                .build();
+        def image = GraphQLObjectType.newObject()
+                .name("Image")
+                .field(newFieldDefinition().name("id1").type(Scalars.GraphQLString).build())
+                .field(newFieldDefinition().name("id2").type(Scalars.GraphQLString).build())
+                .withInterface(resource)
+                .build()
+        def query = GraphQLObjectType.newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("image").type(image).build())
+                .build()
+        def schema = GraphQLSchema.newSchema().query(query).additionalType(node1Type).build();
+
+        when:
+        def printedSchema = new SchemaPrinter().print(schema)
+
+        then:
+        printedSchema.contains("""
+interface Node1 {
+  id1: String
+}
+
+interface Node2 {
+  id2: String
+}
+
+interface Resource implements Node1 & Node2 {
+  id1: String
+  id2: String
+}
+
+type Image implements Resource {
+  id1: String
+  id2: String
+}
+
+type Query {
+  image: Image
+}
+""")
     }
 
     def assertErrorMessage(SchemaProblem error, expectedMessage) {
