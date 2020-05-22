@@ -1020,7 +1020,7 @@ many lines''']
         def spec = """type Query {
             sayHello(name: String = "amigo"): String
         }"""
-        DataFetcher df = { dfe ->
+        def df = { dfe ->
             return dfe.getArgument("name")
         } as DataFetcher
         def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
@@ -1038,7 +1038,7 @@ many lines''']
         def spec = """type Query {
             sayHello(name: String): String
         }"""
-        DataFetcher df = { dfe ->
+        def df = { dfe ->
             return dfe.getArgument("name")
         } as DataFetcher
         def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
@@ -1056,7 +1056,7 @@ many lines''']
         def spec = """type Query {
             sayHello(name: String!): String
         }"""
-        DataFetcher df = { dfe ->
+        def df = { dfe ->
             return dfe.getArgument("name")
         } as DataFetcher
         def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
@@ -1074,7 +1074,7 @@ many lines''']
         def spec = """type Query {
             sayHello(name: String): String
         }"""
-        DataFetcher df = { dfe ->
+        def df = { dfe ->
             boolean isNullValue = dfe.containsArgument("name") && dfe.getArgument("name") == null;
             return isNullValue ? "is null" : "error";
         } as DataFetcher
@@ -1093,7 +1093,7 @@ many lines''']
         def spec = """type Query {
             sayHello(name: String = null): String
         }"""
-        DataFetcher df = { dfe ->
+        def df = { dfe ->
             boolean isNullValue = dfe.containsArgument("name") && dfe.getArgument("name") == null;
             return isNullValue ? "is null" : "error";
         } as DataFetcher
@@ -1112,7 +1112,7 @@ many lines''']
         def spec = """type Query {
             sayHello(name: String): String
         }"""
-        DataFetcher df = { dfe ->
+        def df = { dfe ->
             return !dfe.containsArgument("name") ? "not provided" : "error"
         } as DataFetcher
         def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
@@ -1130,7 +1130,7 @@ many lines''']
         def spec = """type Query {
             sayHello(name: String!): String
         }"""
-        DataFetcher df = { dfe ->
+        def df = { dfe ->
             return dfe.getArgument("name")
         } as DataFetcher
         def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
