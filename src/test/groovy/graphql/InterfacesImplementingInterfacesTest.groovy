@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.TypeResolver
@@ -916,6 +917,42 @@ class InterfacesImplementingInterfacesTest extends Specification {
                 imageType   : [interfaces: [[kind: 'INTERFACE', name: 'Resource'], [kind: 'INTERFACE', name: 'Node']]],
                 resourceType: [possibleTypes: [[kind: 'OBJECT', name: 'File'], [kind: 'OBJECT', name: 'Image']], interfaces: [[kind: 'INTERFACE', name: 'Node']]]
         ]
+    }
+
+    def "interfaces introspection field is empty list for interfaces"() {
+        given:
+        def graphQLSchema = createComplexSchema()
+
+        when:
+        def result = GraphQL.newGraphQL(graphQLSchema).build().execute("""
+            { 
+                nodeType: __type(name: "Node") {
+                    interfaces {
+                        kind
+                        name
+                    }
+                }
+            }
+        """)
+
+        then:
+        !result.errors
+        result.data == [
+                nodeType: [interfaces: []]
+        ]
+
+    }
+
+    def "interface type has a reference to implemented interfaces"() {
+        when:
+        def schema = createComplexSchema()
+        def resourceType = schema.getType("Resource") as GraphQLInterfaceType
+
+        then:
+        resourceType.getInterfaces().size() == 1
+        resourceType.getInterfaces().get(0) instanceof GraphQLInterfaceType
+        resourceType.getInterfaces().get(0).getName() == "Node"
+
     }
 
     def assertErrorMessage(SchemaProblem error, expectedMessage) {
