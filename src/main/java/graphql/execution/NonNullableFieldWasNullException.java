@@ -57,9 +57,6 @@ public class NonNullableFieldWasNullException extends RuntimeException {
 
     @Override
     public String toString() {
-        return "NonNullableFieldWasNullException{" +
-                " path=" + path +
-                " executionStepInfo=" + executionStepInfo +
-                '}';
+        return getMessage();
     }
 }
