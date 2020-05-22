@@ -44,7 +44,7 @@ public class FieldCoordinates {
     public void assertValidNames() throws AssertException {
         if (systemCoordinates) {
             assertTrue((null != fieldName) &&
-                    fieldName.startsWith("__"), "Only __ system fields can be addressed without a parent type");
+                    fieldName.startsWith("__"), () -> "Only __ system fields can be addressed without a parent type");
             assertValidName(fieldName);
         } else {
             assertValidName(typeName);

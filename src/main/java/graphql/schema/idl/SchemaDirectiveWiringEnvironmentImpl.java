@@ -108,15 +108,15 @@ public class SchemaDirectiveWiringEnvironmentImpl<T extends GraphQLDirectiveCont
 
     @Override
     public DataFetcher getFieldDataFetcher() {
-        assertNotNull(fieldDefinition, "An output field must be in context to call this method");
-        assertNotNull(fieldsContainer, "An output field container must be in context to call this method");
+        assertNotNull(fieldDefinition, () -> "An output field must be in context to call this method");
+        assertNotNull(fieldsContainer, () -> "An output field container must be in context to call this method");
         return codeRegistry.getDataFetcher(fieldsContainer, fieldDefinition);
     }
 
     @Override
     public GraphQLFieldDefinition setFieldDataFetcher(DataFetcher newDataFetcher) {
-        assertNotNull(fieldDefinition, "An output field must be in context to call this method");
-        assertNotNull(fieldsContainer, "An output field container must be in context to call this method");
+        assertNotNull(fieldDefinition, () -> "An output field must be in context to call this method");
+        assertNotNull(fieldsContainer, () -> "An output field container must be in context to call this method");
 
         FieldCoordinates coordinates = FieldCoordinates.coordinates(fieldsContainer, fieldDefinition);
         codeRegistry.dataFetcher(coordinates, newDataFetcher);

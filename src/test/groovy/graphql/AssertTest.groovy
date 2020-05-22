@@ -21,7 +21,7 @@ class AssertTest extends Specification {
 
     def "assertNull with error message should not throw on none null value"() {
         when:
-        Assert.assertNotNull("some object", "error message")
+        Assert.assertNotNull("some object", { -> "error message"})
 
         then:
         noExceptionThrown()
@@ -29,7 +29,7 @@ class AssertTest extends Specification {
 
     def "assertNull with error message should throw on null value with formatted message"() {
         when:
-        Assert.assertNotNull(value, format, arg)
+        Assert.assertNotNull(value, { -> String.format(format, arg) })
 
         then:
         def error = thrown(AssertException)
@@ -77,7 +77,7 @@ class AssertTest extends Specification {
 
     def "assertNotEmpty collection should throw on null or empty"() {
         when:
-        Assert.assertNotEmpty(value, format, arg)
+        Assert.assertNotEmpty(value, { -> String.format(format, arg) })
 
         then:
         def error = thrown(AssertException)
@@ -91,7 +91,7 @@ class AssertTest extends Specification {
 
     def "assertNotEmpty should not throw on none empty collection"() {
         when:
-        Assert.assertNotEmpty(["some object"], "error message")
+        Assert.assertNotEmpty(["some object"], { -> "error message"})
 
         then:
         noExceptionThrown()
@@ -99,7 +99,7 @@ class AssertTest extends Specification {
 
     def "assertTrue should not throw on true value"() {
         when:
-        Assert.assertTrue(true, "error message")
+        Assert.assertTrue(true, { ->"error message"})
 
         then:
         noExceptionThrown()
@@ -107,7 +107,7 @@ class AssertTest extends Specification {
 
     def "assertTrue with error message should throw on false value with formatted message"() {
         when:
-        Assert.assertTrue(false, format, arg)
+        Assert.assertTrue(false, { -> String.format(format, arg) })
 
         then:
         def error = thrown(AssertException)
@@ -147,7 +147,7 @@ class AssertTest extends Specification {
         where:
         name   | _
         "0abc" | _
-        "едц"  | _
+        "пїЅпїЅпїЅ"  | _
         "_()"  | _
     }
 }

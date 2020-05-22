@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.Directives;
 import graphql.Internal;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Argument;
@@ -15,7 +16,6 @@ import graphql.language.NullValue;
 import graphql.language.ObjectValue;
 import graphql.language.StringValue;
 import graphql.language.Type;
-import graphql.language.TypeName;
 import graphql.language.Value;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
@@ -39,8 +39,11 @@ import java.util.function.Function;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
+import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
 import static graphql.introspection.Introspection.DirectiveLocation.valueOf;
 import static graphql.language.DirectiveLocation.newDirectiveLocation;
+import static graphql.language.NonNullType.newNonNullType;
+import static graphql.language.TypeName.newTypeName;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
@@ -57,19 +60,34 @@ public class SchemaGeneratorHelper {
 
     static final String NO_LONGER_SUPPORTED = "No longer supported";
     static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
+    static final DirectiveDefinition SPECIFIED_BY_DIRECTIVE_DEFINITION;
 
     static {
-        DEPRECATED_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition().name("deprecated")
+        DEPRECATED_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
+                .name(Directives.DeprecatedDirective.getName())
                 .directiveLocation(newDirectiveLocation().name(FIELD_DEFINITION.name()).build())
                 .directiveLocation(newDirectiveLocation().name(ENUM_VALUE.name()).build())
+                .description(createDescription("Marks the field or enum value as deprecated"))
                 .inputValueDefinition(
                         InputValueDefinition.newInputValueDefinition()
                                 .name("reason")
                                 .description(createDescription("The reason for the deprecation"))
-                                .type(TypeName.newTypeName().name("String").build())
+                                .type(newTypeName().name("String").build())
                                 .defaultValue(StringValue.newStringValue().value(NO_LONGER_SUPPORTED).build())
                                 .build())
-                .description(createDescription("Marks the field or enum value as deprecated")).build();
+                .build();
+
+        SPECIFIED_BY_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
+                .name(Directives.SpecifiedByDirective.getName())
+                .directiveLocation(newDirectiveLocation().name(SCALAR.name()).build())
+                .description(createDescription("Exposes a URL that specifies the behaviour of this scalar."))
+                .inputValueDefinition(
+                        InputValueDefinition.newInputValueDefinition()
+                                .name("url")
+                                .description(createDescription("The URL that specifies the behaviour of this scalar."))
+                                .type(newNonNullType(newTypeName().name("String").build()).build())
+                                .build())
+                .build();
     }
 
     private static Description createDescription(String s) {
@@ -161,9 +179,10 @@ public class SchemaGeneratorHelper {
         return null;
     }
 
-    public void addDeprecatedDirectiveDefinition(TypeDefinitionRegistry typeRegistry) {
+    public void addDirectivesIncludedByDefault(TypeDefinitionRegistry typeRegistry) {
         // we synthesize this into the type registry - no need for them to add it
         typeRegistry.add(DEPRECATED_DIRECTIVE_DEFINITION);
+        typeRegistry.add(SPECIFIED_BY_DIRECTIVE_DEFINITION);
     }
 
 

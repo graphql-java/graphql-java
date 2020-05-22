@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
+import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
@@ -45,15 +46,42 @@ public class PropertyDataFetcherHelper {
         }
 
         String key = mkKey(object, propertyName);
+        //
+        // if we have tried all strategies before and they have all failed then we negatively cache
+        // the key and assume that its never going to turn up.  This shortcuts the property lookup
+        // in systems where there was a `foo` graphql property but they never provided an POJO
+        // version of `foo`.
         if (isNegativelyCached(key)) {
             return null;
         }
+        // lets try positive cache mechanisms next.  If we have seen the method or field before
+        // then we invoke it directly without burning any cycles doing reflection.
+        Method cachedMethod = METHOD_CACHE.get(key);
+        if (cachedMethod != null) {
+            MethodFinder methodFinder = (aClass, methodName) -> cachedMethod;
+            try {
+                return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, environment);
+            } catch (NoSuchMethodException ignored) {
+                assertShouldNeverHappen("A method cached as '%s' is no longer available??", key);
+            }
+        }
+        Field cachedField = FIELD_CACHE.get(key);
+        if (cachedField != null) {
+            try {
+                return getPropertyViaFieldAccess(object, propertyName);
+            } catch (FastNoSuchMethodException ignored) {
+                assertShouldNeverHappen("A field cached as '%s' is no longer available??", key);
+            }
+        }
+
         boolean dfeInUse = environment != null;
         try {
-            return getPropertyViaGetterMethod(object, propertyName, graphQLType, (root, methodName) -> findPubliclyAccessibleMethod(propertyName, root, methodName, dfeInUse), environment);
+            MethodFinder methodFinder = (root, methodName) -> findPubliclyAccessibleMethod(propertyName, root, methodName, dfeInUse);
+            return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, environment);
         } catch (NoSuchMethodException ignored) {
             try {
-                return getPropertyViaGetterMethod(object, propertyName, graphQLType, (aClass, methodName) -> findViaSetAccessible(propertyName, aClass, methodName, dfeInUse), environment);
+                MethodFinder methodFinder = (aClass, methodName) -> findViaSetAccessible(propertyName, aClass, methodName, dfeInUse);
+                return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, environment);
             } catch (NoSuchMethodException ignored2) {
                 try {
                     return getPropertyViaFieldAccess(object, propertyName);
@@ -125,16 +153,12 @@ public class PropertyDataFetcherHelper {
         Class<?> currentClass = root;
         while (currentClass != null) {
             String key = mkKey(currentClass, propertyName);
-            Method method = METHOD_CACHE.get(key);
-            if (method != null) {
-                return method;
-            }
             if (Modifier.isPublic(currentClass.getModifiers())) {
                 if (dfeInUse) {
                     //
                     // try a getter that takes DataFetchingEnvironment first (if we have one)
                     try {
-                        method = currentClass.getMethod(methodName, DataFetchingEnvironment.class);
+                        Method method = currentClass.getMethod(methodName, DataFetchingEnvironment.class);
                         if (Modifier.isPublic(method.getModifiers())) {
                             METHOD_CACHE.putIfAbsent(key, method);
                             return method;
@@ -143,7 +167,7 @@ public class PropertyDataFetcherHelper {
                         // ok try the next approach
                     }
                 }
-                method = currentClass.getMethod(methodName);
+                Method method = currentClass.getMethod(methodName);
                 if (Modifier.isPublic(method.getModifiers())) {
                     METHOD_CACHE.putIfAbsent(key, method);
                     return method;
@@ -161,10 +185,6 @@ public class PropertyDataFetcherHelper {
         Class<?> currentClass = aClass;
         while (currentClass != null) {
             String key = mkKey(currentClass, propertyName);
-            Method method = METHOD_CACHE.get(key);
-            if (method != null) {
-                return method;
-            }
 
             Predicate<Method> whichMethods = mth -> {
                 if (dfeInUse) {
@@ -180,7 +200,7 @@ public class PropertyDataFetcherHelper {
             if (m.isPresent()) {
                 try {
                     // few JVMs actually enforce this but it might happen
-                    method = m.get();
+                    Method method = m.get();
                     method.setAccessible(true);
                     METHOD_CACHE.putIfAbsent(key, method);
                     return method;
@@ -196,11 +216,8 @@ public class PropertyDataFetcherHelper {
         Class<?> aClass = object.getClass();
         String key = mkKey(aClass, propertyName);
         try {
-            Field field = FIELD_CACHE.get(key);
-            if (field == null) {
-                field = aClass.getField(propertyName);
-                FIELD_CACHE.putIfAbsent(key, field);
-            }
+            Field field = aClass.getField(propertyName);
+            FIELD_CACHE.putIfAbsent(key, field);
             return field.get(object);
         } catch (NoSuchFieldException e) {
             if (!USE_SET_ACCESSIBLE.get()) {

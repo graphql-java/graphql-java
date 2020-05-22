@@ -50,7 +50,7 @@ public class TreeTransformerUtil {
 
     private static <T> void replaceZipperForNode(List<NodeZipper<T>> zippers, T currentNode, T newNode) {
         int index = FpKit.findIndex(zippers, zipper -> zipper.getCurNode() == currentNode);
-        assertTrue(index >= 0, "No current zipper found for provided node");
+        assertTrue(index >= 0, () -> "No current zipper found for provided node");
         NodeZipper<T> newZipper = zippers.get(index).withNewNode(newNode);
         zippers.set(index, newZipper);
     }

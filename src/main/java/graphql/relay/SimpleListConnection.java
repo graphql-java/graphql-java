@@ -24,8 +24,8 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>>, Triv
     private final List<T> data;
 
     public SimpleListConnection(List<T> data, String prefix) {
-        this.data = assertNotNull(data, " data cannot be null");
-        assertTrue(prefix != null && !prefix.isEmpty(), "prefix cannot be null or empty");
+        this.data = assertNotNull(data, () -> " data cannot be null");
+        assertTrue(prefix != null && !prefix.isEmpty(), () -> "prefix cannot be null or empty");
         this.prefix = prefix;
     }
 
