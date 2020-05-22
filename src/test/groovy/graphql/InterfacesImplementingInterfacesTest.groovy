@@ -989,6 +989,8 @@ class InterfacesImplementingInterfacesTest extends Specification {
                 .field(newFieldDefinition().name("id1").type(Scalars.GraphQLString).build())
                 .field(newFieldDefinition().name("id2").type(Scalars.GraphQLString).build())
                 .withInterface(resource)
+                .withInterface(node1Type)
+                .withInterface(node2Type)
                 .build()
         def query = GraphQLObjectType.newObject()
                 .name("Query")
@@ -1014,7 +1016,7 @@ interface Resource implements Node1 & Node2 {
   id2: String
 }
 
-type Image implements Resource {
+type Image implements Node1 & Node2 & Resource {
   id1: String
   id2: String
 }
