@@ -90,6 +90,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         if (defaultValue != null) {
             result.add(defaultValue);
         }
+        result.addAll(directives);
         return result;
     }
 
