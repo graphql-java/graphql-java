@@ -9,7 +9,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
 
 /**
- * This example publisher will create count "messages" and then terminate. Its
+ * This example publisher will create count "messages" and then terminate. It
  * uses the reactive streams TCK as its implementation
  */
 public class ReactiveStreamsMessagePublisher implements Publisher<Message> {

@@ -40,7 +40,7 @@ class ValuesResolverTest extends Specification {
     def "getVariableValues: simple variable input #inputValue"() {
         given:
         def schema = TestUtil.schemaWithInputType(inputType)
-        VariableDefinition variableDefinition = new VariableDefinition("variable", variableType)
+        VariableDefinition variableDefinition = new VariableDefinition("variable", variableType,null)
         when:
         def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], [variable: inputValue])
         then:
@@ -137,6 +137,23 @@ class ValuesResolverTest extends Specification {
         def argument = new Argument("arg", new VariableReference("var"))
 
         when:
+        def values = resolver.getArgumentValues([fieldArgument], [argument], variables)
+
+        then:
+        values['arg'] == 'hello'
+    }
+
+    def "getArgumentValues: uses default value with null variable reference value"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("inputObject")
+                .build()
+
+        def fieldArgument = new GraphQLArgument("arg", "", inputObjectType, "hello")
+        def argument = new Argument("arg", new VariableReference("var"))
+
+        when:
+        def variables = [:]
         def values = resolver.getArgumentValues([fieldArgument], [argument], variables)
 
         then:

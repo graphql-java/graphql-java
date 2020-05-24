@@ -102,7 +102,7 @@ public class SingleSubscriberPublisher<T> implements Publisher<T> {
 
     @Override
     public void subscribe(Subscriber<? super T> subscriber) {
-        assertNotNullWithNPE(subscriber, "Subscriber passed to subscribe must not be null");
+        assertNotNullWithNPE(subscriber, () -> "Subscriber passed to subscribe must not be null");
         mutex.execute(() -> {
             if (this.subscriber == null) {
                 this.subscriber = subscriber;

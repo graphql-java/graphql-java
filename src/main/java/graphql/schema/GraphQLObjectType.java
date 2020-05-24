@@ -98,8 +98,8 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
                               List<ObjectTypeExtensionDefinition> extensionDefinitions,
                               Comparator<? super GraphQLSchemaElement> interfaceComparator) {
         assertValidName(name);
-        assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
-        assertNotNull(interfaces, "interfaces can't be null");
+        assertNotNull(fieldDefinitions, () -> "fieldDefinitions can't be null");
+        assertNotNull(interfaces, () -> "interfaces can't be null");
         this.name = name;
         this.description = description;
         this.interfaceComparator = interfaceComparator;
@@ -280,7 +280,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         }
 
         public Builder field(GraphQLFieldDefinition fieldDefinition) {
-            assertNotNull(fieldDefinition, "fieldDefinition can't be null");
+            assertNotNull(fieldDefinition, () -> "fieldDefinition can't be null");
             this.fields.put(fieldDefinition.getName(), fieldDefinition);
             return this;
         }
@@ -299,7 +299,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
          * @return this
          */
         public Builder field(UnaryOperator<GraphQLFieldDefinition.Builder> builderFunction) {
-            assertNotNull(builderFunction, "builderFunction can't be null");
+            assertNotNull(builderFunction, () -> "builderFunction can't be null");
             GraphQLFieldDefinition.Builder builder = GraphQLFieldDefinition.newFieldDefinition();
             builder = builderFunction.apply(builder);
             return field(builder.build());
@@ -318,13 +318,13 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         }
 
         public Builder fields(List<GraphQLFieldDefinition> fieldDefinitions) {
-            assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
+            assertNotNull(fieldDefinitions, () -> "fieldDefinitions can't be null");
             fieldDefinitions.forEach(this::field);
             return this;
         }
 
         public Builder replaceFields(List<GraphQLFieldDefinition> fieldDefinitions) {
-            assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
+            assertNotNull(fieldDefinitions, () -> "fieldDefinitions can't be null");
             this.fields.clear();
             fieldDefinitions.forEach(this::field);
             return this;
@@ -346,13 +346,13 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
 
 
         public Builder withInterface(GraphQLInterfaceType interfaceType) {
-            assertNotNull(interfaceType, "interfaceType can't be null");
+            assertNotNull(interfaceType, () -> "interfaceType can't be null");
             this.interfaces.put(interfaceType.getName(), interfaceType);
             return this;
         }
 
         public Builder replaceInterfaces(List<GraphQLInterfaceType> interfaces) {
-            assertNotNull(interfaces, "interfaces can't be null");
+            assertNotNull(interfaces, () -> "interfaces can't be null");
             this.interfaces.clear();
             for (GraphQLInterfaceType interfaceType : interfaces) {
                 this.interfaces.put(interfaceType.getName(), interfaceType);
@@ -361,7 +361,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         }
 
         public Builder withInterface(GraphQLTypeReference reference) {
-            assertNotNull(reference, "reference can't be null");
+            assertNotNull(reference, () -> "reference can't be null");
             this.interfaces.put(reference.getName(), reference);
             return this;
         }
@@ -374,7 +374,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
-            assertNotNull(directives, "directive can't be null");
+            assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
             for (GraphQLDirective directive : directives) {
                 this.directives.put(directive.getName(), directive);
@@ -408,7 +408,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         }
 
         public Builder withDirective(GraphQLDirective directive) {
-            assertNotNull(directive, "directive can't be null");
+            assertNotNull(directive, () -> "directive can't be null");
             directives.put(directive.getName(), directive);
             return this;
         }

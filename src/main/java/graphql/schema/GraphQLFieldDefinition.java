@@ -81,9 +81,9 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
     @Deprecated
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcherFactory dataFetcherFactory, List<GraphQLArgument> arguments, String deprecationReason, List<GraphQLDirective> directives, FieldDefinition definition) {
         assertValidName(name);
-        assertNotNull(dataFetcherFactory, "you have to provide a DataFetcher (or DataFetcherFactory)");
-        assertNotNull(type, "type can't be null");
-        assertNotNull(arguments, "arguments can't be null");
+        assertNotNull(dataFetcherFactory, () -> "you have to provide a DataFetcher (or DataFetcherFactory)");
+        assertNotNull(type, () -> "type can't be null");
+        assertNotNull(arguments, () -> "arguments can't be null");
         this.name = name;
         this.description = description;
         this.originalType = type;
@@ -294,7 +294,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          */
         @Deprecated
         public Builder dataFetcher(DataFetcher<?> dataFetcher) {
-            assertNotNull(dataFetcher, "dataFetcher must be not null");
+            assertNotNull(dataFetcher, () -> "dataFetcher must be not null");
             this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(dataFetcher);
             return this;
         }
@@ -310,7 +310,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          */
         @Deprecated
         public Builder dataFetcherFactory(DataFetcherFactory dataFetcherFactory) {
-            assertNotNull(dataFetcherFactory, "dataFetcherFactory must be not null");
+            assertNotNull(dataFetcherFactory, () -> "dataFetcherFactory must be not null");
             this.dataFetcherFactory = dataFetcherFactory;
             return this;
         }
@@ -331,7 +331,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         }
 
         public Builder argument(GraphQLArgument argument) {
-            assertNotNull(argument, "argument can't be null");
+            assertNotNull(argument, () -> "argument can't be null");
             this.arguments.put(argument.getName(), argument);
             return this;
         }
@@ -390,7 +390,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * @return this
          */
         public Builder arguments(List<GraphQLArgument> arguments) {
-            assertNotNull(arguments, "arguments can't be null");
+            assertNotNull(arguments, () -> "arguments can't be null");
             for (GraphQLArgument argument : arguments) {
                 argument(argument);
             }
@@ -398,7 +398,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         }
 
         public Builder replaceArguments(List<GraphQLArgument> arguments) {
-            assertNotNull(arguments, "arguments can't be null");
+            assertNotNull(arguments, () -> "arguments can't be null");
             this.arguments.clear();
             for (GraphQLArgument argument : arguments) {
                 argument(argument);
@@ -423,7 +423,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         }
 
         public Builder withDirectives(GraphQLDirective... directives) {
-            assertNotNull(directives, "directives can't be null");
+            assertNotNull(directives, () -> "directives can't be null");
             for (GraphQLDirective directive : directives) {
                 withDirective(directive);
             }
@@ -431,13 +431,13 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         }
 
         public Builder withDirective(GraphQLDirective directive) {
-            assertNotNull(directive, "directive can't be null");
+            assertNotNull(directive, () -> "directive can't be null");
             directives.put(directive.getName(), directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
-            assertNotNull(directives, "directive can't be null");
+            assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
             for (GraphQLDirective directive : directives) {
                 this.directives.put(directive.getName(), directive);

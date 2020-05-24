@@ -30,6 +30,8 @@ import graphql.validation.rules.UniqueOperationNames;
 import graphql.validation.rules.VariableDefaultValuesOfCorrectType;
 import graphql.validation.rules.VariableTypesMatchRule;
 import graphql.validation.rules.VariablesAreInputTypes;
+import graphql.validation.rules.UniqueArgumentNamesRule;
+import graphql.validation.rules.UniqueVariableNamesRule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +51,7 @@ public class Validator {
         return validationErrorCollector.getErrors();
     }
 
-    private List<AbstractRule> createRules(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+    public List<AbstractRule> createRules(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         List<AbstractRule> rules = new ArrayList<>();
 
         ExecutableDefinitions executableDefinitions = new ExecutableDefinitions(validationContext, validationErrorCollector);
@@ -120,6 +122,12 @@ public class Validator {
 
         DeferredMustBeOnAllFields deferredMustBeOnAllFields = new DeferredMustBeOnAllFields(validationContext, validationErrorCollector);
         rules.add(deferredMustBeOnAllFields);
+
+        UniqueArgumentNamesRule uniqueArgumentNamesRule = new UniqueArgumentNamesRule(validationContext, validationErrorCollector);
+        rules.add(uniqueArgumentNamesRule);
+
+        UniqueVariableNamesRule uniqueVariableNamesRule = new UniqueVariableNamesRule(validationContext, validationErrorCollector);
+        rules.add(uniqueVariableNamesRule);
 
         return rules;
     }

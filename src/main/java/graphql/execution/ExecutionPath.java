@@ -4,9 +4,9 @@ import graphql.Assert;
 import graphql.AssertException;
 import graphql.PublicApi;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.StringTokenizer;
 
 import static graphql.Assert.assertNotNull;
@@ -32,26 +32,31 @@ public class ExecutionPath {
     }
 
     private final ExecutionPath parent;
-    private final PathSegment segment;
-    private final List<Object> pathList;
+    private final Object segment;
+
+    // hash is effective immutable but lazily initialized similar to the hash code of java.lang.String
+    private int hash;
 
     private ExecutionPath() {
         parent = null;
         segment = null;
-        pathList = toListImpl();
     }
 
-    private ExecutionPath(ExecutionPath parent, PathSegment segment) {
-        this.parent = assertNotNull(parent, "Must provide a parent path");
-        this.segment = assertNotNull(segment, "Must provide a sub path");
-        pathList = toListImpl();
+    private ExecutionPath(ExecutionPath parent, String segment) {
+        this.parent = assertNotNull(parent, () -> "Must provide a parent path");
+        this.segment = assertNotNull(segment, () -> "Must provide a sub path");
+    }
+
+    private ExecutionPath(ExecutionPath parent, int segment) {
+        this.parent = assertNotNull(parent, () -> "Must provide a parent path");
+        this.segment = segment;
     }
 
     public int getLevel() {
         int counter = 0;
         ExecutionPath currentPath = this;
         while (currentPath != null) {
-            if (currentPath.segment instanceof StringPathSegment) {
+            if (currentPath.segment instanceof String) {
                 counter++;
             }
             currentPath = currentPath.parent;
@@ -63,44 +68,65 @@ public class ExecutionPath {
         if (ROOT_PATH.equals(this)) {
             return ROOT_PATH;
         }
-        if (segment instanceof StringPathSegment) {
+        if (segment instanceof String) {
             return this;
         }
         return parent;
     }
 
+    /**
+     * @return true if the end of the path has a list style segment eg 'a/b[2]'
+     */
+    public boolean isListSegment() {
+        return segment instanceof Integer;
+    }
+
+    /**
+     * @return true if the end of the path has a named style segment eg 'a/b[2]/c'
+     */
+    public boolean isNamedSegment() {
+        return segment instanceof String;
+    }
+
+
     public String getSegmentName() {
-        if (segment instanceof StringPathSegment) {
-            return ((StringPathSegment) segment).getValue();
-        } else {
-            if (parent == null) {
-                return null;
-            }
-            return ((StringPathSegment) parent.segment).getValue();
-        }
+        return (String) segment;
+    }
+
+    public int getSegmentIndex() {
+        return (int) segment;
+    }
+
+    public Object getSegmentValue() {
+        return segment;
+    }
+
+    public ExecutionPath getParent() {
+        return parent;
     }
 
     /**
      * Parses an execution path from the provided path string in the format /segment1/segment2[index]/segmentN
      *
      * @param pathString the path string
+     *
      * @return a parsed execution path
      */
     public static ExecutionPath parse(String pathString) {
         pathString = pathString == null ? "" : pathString;
-        pathString = pathString.trim();
-        StringTokenizer st = new StringTokenizer(pathString, "/[]", true);
+        String finalPathString = pathString.trim();
+        StringTokenizer st = new StringTokenizer(finalPathString, "/[]", true);
         ExecutionPath path = ExecutionPath.rootPath();
         while (st.hasMoreTokens()) {
             String token = st.nextToken();
             if ("/".equals(token)) {
-                assertTrue(st.hasMoreTokens(), mkErrMsg(), pathString);
+                assertTrue(st.hasMoreTokens(), () -> String.format(mkErrMsg(), finalPathString));
                 path = path.segment(st.nextToken());
             } else if ("[".equals(token)) {
-                assertTrue(st.countTokens() >= 2, mkErrMsg(), pathString);
+                assertTrue(st.countTokens() >= 2, () -> String.format(mkErrMsg(), finalPathString));
                 path = path.segment(Integer.parseInt(st.nextToken()));
                 String closingBrace = st.nextToken();
-                assertTrue(closingBrace.equals("]"), mkErrMsg(), pathString);
+                assertTrue(closingBrace.equals("]"), () -> String.format(mkErrMsg(), finalPathString));
             } else {
                 throw new AssertException(format(mkErrMsg(), pathString));
             }
@@ -112,16 +138,17 @@ public class ExecutionPath {
      * This will create an execution path from the list of objects
      *
      * @param objects the path objects
+     *
      * @return a new execution path
      */
     public static ExecutionPath fromList(List<?> objects) {
         assertNotNull(objects);
         ExecutionPath path = ExecutionPath.rootPath();
         for (Object object : objects) {
-            if (object instanceof Number) {
-                path = path.segment(((Number) object).intValue());
+            if (object instanceof String) {
+                path = path.segment(((String) object));
             } else {
-                path = path.segment(String.valueOf(object));
+                path = path.segment((int) object);
             }
         }
         return path;
@@ -135,20 +162,22 @@ public class ExecutionPath {
      * Takes the current path and adds a new segment to it, returning a new path
      *
      * @param segment the string path segment to add
+     *
      * @return a new path containing that segment
      */
     public ExecutionPath segment(String segment) {
-        return new ExecutionPath(this, new StringPathSegment(segment));
+        return new ExecutionPath(this, segment);
     }
 
     /**
      * Takes the current path and adds a new segment to it, returning a new path
      *
      * @param segment the int path segment to add
+     *
      * @return a new path containing that segment
      */
     public ExecutionPath segment(int segment) {
-        return new ExecutionPath(this, new IntPathSegment(segment));
+        return new ExecutionPath(this, segment);
     }
 
     /**
@@ -168,14 +197,12 @@ public class ExecutionPath {
      * equals "/a/b[9]"
      *
      * @param segment the integer segment to use
+     *
      * @return a new path with the last segment replaced
      */
     public ExecutionPath replaceSegment(int segment) {
-        Assert.assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
-
-        List<Object> objects = this.toList();
-        objects.set(objects.size() - 1, new IntPathSegment(segment).getValue());
-        return fromList(objects);
+        Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
+        return new ExecutionPath(parent, segment);
     }
 
     /**
@@ -183,30 +210,14 @@ public class ExecutionPath {
      * equals "/a/b/x"
      *
      * @param segment the string segment to use
+     *
      * @return a new path with the last segment replaced
      */
     public ExecutionPath replaceSegment(String segment) {
-        Assert.assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
-
-        List<Object> objects = this.toList();
-        objects.set(objects.size() - 1, new StringPathSegment(segment).getValue());
-        return fromList(objects);
+        Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
+        return new ExecutionPath(parent, segment);
     }
 
-
-    /**
-     * @return true if the end of the path has a list style segment eg 'a/b[2]'
-     */
-    public boolean isListSegment() {
-        return segment instanceof IntPathSegment;
-    }
-
-    /**
-     * @return true if the end of the path has a named style segment eg 'a/b[2]/c'
-     */
-    public boolean isNamedSegment() {
-        return segment instanceof StringPathSegment;
-    }
 
     /**
      * @return true if the path is the {@link #rootPath()}
@@ -219,6 +230,7 @@ public class ExecutionPath {
      * Appends the provided path to the current one
      *
      * @param path the path to append
+     *
      * @return a new path
      */
     public ExecutionPath append(ExecutionPath path) {
@@ -229,28 +241,28 @@ public class ExecutionPath {
 
 
     public ExecutionPath sibling(String siblingField) {
-        Assert.assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
-        return new ExecutionPath(this.parent, new StringPathSegment(siblingField));
+        Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
+        return new ExecutionPath(this.parent, siblingField);
+    }
+
+    public ExecutionPath sibling(int siblingField) {
+        Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
+        return new ExecutionPath(this.parent, siblingField);
     }
 
     /**
      * @return converts the path into a list of segments
      */
     public List<Object> toList() {
-        return new ArrayList<>(pathList);
-    }
-
-    private List<Object> toListImpl() {
         if (parent == null) {
-            return Collections.emptyList();
+            return new LinkedList<>();
         }
-        List<Object> list = new ArrayList<>();
+        LinkedList<Object> list = new LinkedList<>();
         ExecutionPath p = this;
         while (p.segment != null) {
-            list.add(p.segment.getValue());
+            list.addFirst(p.segment);
             p = p.parent;
         }
-        Collections.reverse(list);
         return list;
     }
 
@@ -265,66 +277,57 @@ public class ExecutionPath {
         }
 
         if (ROOT_PATH.equals(parent)) {
-            return segment.toString();
+            return segmentToString();
         }
 
-        return parent.toString() + segment.toString();
+        return parent.toString() + segmentToString();
+    }
+
+    public String segmentToString() {
+        if (segment instanceof String) {
+            return "/" + segment;
+        } else {
+            return "[" + segment + "]";
+        }
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
+        ExecutionPath self = this;
         ExecutionPath that = (ExecutionPath) o;
+        while (self.segment != null && that.segment != null) {
+            if (!Objects.equals(self.segment, that.segment)) {
+                return false;
+            }
+            self = self.parent;
+            that = that.parent;
+        }
 
-        return pathList.equals(that.pathList);
+        return self.isRootPath() && that.isRootPath();
     }
 
     @Override
     public int hashCode() {
-        return pathList.hashCode();
+        int h = hash;
+        if (h == 0) {
+            h = 1;
+            ExecutionPath self = this;
+            while (self != null) {
+                Object value = self.segment;
+                h = 31 * h + (value == null ? 0 : value.hashCode());
+                self = self.parent;
+            }
+            hash = h;
+        }
+        return h;
     }
 
 
-    private interface PathSegment<T> {
-        T getValue();
-    }
-
-    private static class StringPathSegment implements PathSegment<String> {
-        private final String value;
-
-        StringPathSegment(String value) {
-            assertTrue(value != null && !value.isEmpty(), "empty path component");
-            this.value = value;
-        }
-
-        @Override
-        public String getValue() {
-            return value;
-        }
-
-        @Override
-        public String toString() {
-            return '/' + value;
-        }
-    }
-
-    private static class IntPathSegment implements PathSegment<Integer> {
-        private final int value;
-
-        IntPathSegment(int value) {
-            this.value = value;
-        }
-
-        @Override
-        public Integer getValue() {
-            return value;
-        }
-
-        @Override
-        public String toString() {
-            return "[" + value + ']';
-        }
-    }
 }

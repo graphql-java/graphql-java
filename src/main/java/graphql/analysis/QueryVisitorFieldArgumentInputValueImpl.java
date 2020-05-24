@@ -64,7 +64,6 @@ public class QueryVisitorFieldArgumentInputValueImpl implements QueryVisitorFiel
         return "QueryVisitorFieldArgumentInputValueImpl{" +
                 "inputValue=" + inputValueDefinition +
                 ", value=" + value +
-                ", parent=" + parent +
                 '}';
     }
 }

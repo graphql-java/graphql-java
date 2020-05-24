@@ -399,11 +399,12 @@ public class AstPrinter {
     private NodePrinter<VariableDefinition> variableDefinition() {
         String nameTypeSep = compactMode ? ":" : ": ";
         String defaultValueEquals = compactMode ? "=" : " = ";
-        return (out, node) -> out.printf("$%s%s%s%s",
+        return (out, node) -> out.printf("$%s%s%s%s%s",
                 node.getName(),
                 nameTypeSep,
                 type(node.getType()),
-                wrap(defaultValueEquals, node.getDefaultValue(), "")
+                wrap(defaultValueEquals, node.getDefaultValue(), ""),
+                directives(node.getDirectives())
         );
     }
 
@@ -417,7 +418,7 @@ public class AstPrinter {
 
     private String node(Node node, Class startClass) {
         if (startClass != null) {
-            assertTrue(startClass.isInstance(node), "The starting class must be in the inherit tree");
+            assertTrue(startClass.isInstance(node), () -> "The starting class must be in the inherit tree");
         }
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);

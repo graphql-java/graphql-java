@@ -15,6 +15,7 @@ import graphql.language.NodeVisitorStub;
 import graphql.language.ObjectField;
 import graphql.language.TypeName;
 import graphql.language.Value;
+import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLCompositeType;
@@ -32,6 +33,7 @@ import java.util.Map;
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.util.TraverserContext.Phase.LEAVE;
+import static java.lang.String.format;
 
 /**
  * Internally used node visitor which delegates to a {@link QueryVisitor} with type
@@ -137,8 +139,9 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         QueryTraversalContext parentEnv = context.getVarFromParents(QueryTraversalContext.class);
 
         GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
-        assertNotNull(typeCondition, "Invalid type condition '%s' in fragment '%s'", fragmentDefinition.getTypeCondition().getName(),
-                fragmentDefinition.getName());
+        assertNotNull(typeCondition,
+                () -> format("Invalid type condition '%s' in fragment '%s'", fragmentDefinition.getTypeCondition().getName(),
+                        fragmentDefinition.getName()));
         context.setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, parentEnv.getEnvironment(), fragmentDefinition));
         return TraversalControl.CONTINUE;
     }
@@ -232,6 +235,10 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
 
     @Override
     protected TraversalControl visitValue(Value<?> value, TraverserContext<Node> context) {
+        if (context.getParentNode() instanceof VariableDefinition) {
+            return TraversalControl.CONTINUE;
+        }
+
         QueryVisitorFieldArgumentEnvironment fieldArgEnv = context.getVarFromParents(QueryVisitorFieldArgumentEnvironment.class);
         QueryVisitorFieldArgumentInputValueImpl inputValue = context.getVarFromParents(QueryVisitorFieldArgumentInputValue.class);
         // previous visits have set up the previous information

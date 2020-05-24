@@ -492,7 +492,7 @@ class TypeDefinitionRegistryTest extends Specification {
         InputObjectTypeDefinition.newInputObjectDefinition().name("foo").build() | _
     }
 
-    def "remove directive definition"() {
+    def "remove single directive definition from list"() {
         given:
         DirectiveDefinition definition = DirectiveDefinition.newDirectiveDefinition().name("foo").build()
         def registry = new TypeDefinitionRegistry()
@@ -503,8 +503,47 @@ class TypeDefinitionRegistryTest extends Specification {
         !registry.getDirectiveDefinition(definition.getName()).isPresent()
     }
 
+    def "remove multiple directive definition from list"() {
+        given:
+        DirectiveDefinition definition1 = DirectiveDefinition.newDirectiveDefinition().name("foo").build()
+        DirectiveDefinition definition2 = DirectiveDefinition.newDirectiveDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(definition1)
+        registry.add(definition2)
+        when:
+        registry.remove(definition1)
+        then:
+        !registry.getDirectiveDefinition(definition1.getName()).isPresent()
+        registry.getDirectiveDefinition(definition2.getName()).isPresent()
+    }
 
-    def "remove object type extension"() {
+    def "remove single directive definition from map"() {
+        given:
+        DirectiveDefinition definition = DirectiveDefinition.newDirectiveDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(definition)
+        when:
+        registry.remove(definition.getName(), definition)
+        then:
+        !registry.getDirectiveDefinition(definition.getName()).isPresent()
+    }
+
+    def "remove multiple directive definition from map"() {
+        given:
+        DirectiveDefinition definition1 = DirectiveDefinition.newDirectiveDefinition().name("foo").build()
+        DirectiveDefinition definition2 = DirectiveDefinition.newDirectiveDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(definition1)
+        registry.add(definition2)
+        when:
+        registry.remove(definition1.getName(), definition1)
+        then:
+        !registry.getDirectiveDefinition(definition1.getName()).isPresent()
+        registry.getDirectiveDefinition(definition2.getName()).isPresent()
+    }
+
+
+    def "remove single object type extension from list"() {
         given:
         def extension = ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition().name("foo").build()
         def registry = new TypeDefinitionRegistry()
@@ -512,10 +551,51 @@ class TypeDefinitionRegistryTest extends Specification {
         when:
         registry.remove(extension)
         then:
-        !registry.objectTypeExtensions().get(extension.getName()).contains(extension)
+        !registry.objectTypeExtensions().containsKey(extension.getName())
     }
 
-    def "remove interface type extension"() {
+    def "remove multiple object type extension from list"() {
+        given:
+        def extension1 = ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition().name("foo").build()
+        def extension2 = ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1)
+        then:
+        !registry.objectTypeExtensions().containsKey(extension1.getName())
+        registry.objectTypeExtensions().containsKey(extension2.getName())
+        registry.objectTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single object type extension from map"() {
+        given:
+        def extension = ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension.getName(), extension)
+        then:
+        !registry.objectTypeExtensions().containsKey(extension.getName())
+    }
+
+    def "remove multiple object type extension from map"() {
+        given:
+        def extension1 = ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition().name("foo").build()
+        def extension2 = ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1.getName(), extension1)
+        then:
+        !registry.objectTypeExtensions().containsKey(extension1.getName())
+        registry.objectTypeExtensions().containsKey(extension2.getName())
+        registry.objectTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single interface type extension from list"() {
         given:
         def extension = InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition().name("foo").build()
         def registry = new TypeDefinitionRegistry()
@@ -523,10 +603,51 @@ class TypeDefinitionRegistryTest extends Specification {
         when:
         registry.remove(extension)
         then:
-        !registry.interfaceTypeExtensions().get(extension.getName()).contains(extension)
+        !registry.interfaceTypeExtensions().containsKey(extension.getName())
     }
 
-    def "remove union type extension"() {
+    def "remove multiple interface type extension from list"() {
+        given:
+        def extension1 = InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition().name("foo").build()
+        def extension2 = InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1)
+        then:
+        !registry.interfaceTypeExtensions().containsKey(extension1.getName())
+        registry.interfaceTypeExtensions().containsKey(extension2.getName())
+        registry.interfaceTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single interface type extension from map"() {
+        given:
+        def extension = InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension.getName(), extension)
+        then:
+        !registry.interfaceTypeExtensions().containsKey(extension.getName())
+    }
+
+    def "remove multiple interface type extension from map"() {
+        given:
+        def extension1 = InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition().name("foo").build()
+        def extension2 = InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1.getName(), extension1)
+        then:
+        !registry.interfaceTypeExtensions().containsKey(extension1.getName())
+        registry.interfaceTypeExtensions().containsKey(extension2.getName())
+        registry.interfaceTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single union type extension from list"() {
         given:
         def extension = UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition().name("foo").build()
         def registry = new TypeDefinitionRegistry()
@@ -534,10 +655,51 @@ class TypeDefinitionRegistryTest extends Specification {
         when:
         registry.remove(extension)
         then:
-        !registry.unionTypeExtensions().get(extension.getName()).contains(extension)
+        !registry.unionTypeExtensions().containsKey(extension.getName())
     }
 
-    def "remove enum type extension"() {
+    def "remove multiple union type extension from list"() {
+        given:
+        def extension1 = UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition().name("foo").build()
+        def extension2 = UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1)
+        then:
+        !registry.unionTypeExtensions().containsKey(extension1.getName())
+        registry.unionTypeExtensions().containsKey(extension2.getName())
+        registry.unionTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single union type extension from map"() {
+        given:
+        def extension = UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension.getName(), extension)
+        then:
+        !registry.unionTypeExtensions().containsKey(extension.getName())
+    }
+
+    def "remove multiple union type extension from map"() {
+        given:
+        def extension1 = UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition().name("foo").build()
+        def extension2 = UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1.getName(), extension1)
+        then:
+        !registry.unionTypeExtensions().containsKey(extension1.getName())
+        registry.unionTypeExtensions().containsKey(extension2.getName())
+        registry.unionTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single enum type extension from list"() {
         given:
         def extension = EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition().name("foo").build()
         def registry = new TypeDefinitionRegistry()
@@ -545,10 +707,51 @@ class TypeDefinitionRegistryTest extends Specification {
         when:
         registry.remove(extension)
         then:
-        !registry.enumTypeExtensions().get(extension.getName()).contains(extension)
+        !registry.enumTypeExtensions().containsKey(extension.getName())
     }
 
-    def "remove scalar type extension"() {
+    def "remove multiple enum type extension from list"() {
+        given:
+        def extension1 = EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition().name("foo").build()
+        def extension2 = EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1)
+        then:
+        !registry.enumTypeExtensions().containsKey(extension1.getName())
+        registry.enumTypeExtensions().containsKey(extension2.getName())
+        registry.enumTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single enum type extension from map"() {
+        given:
+        def extension = EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension.getName(), extension)
+        then:
+        !registry.enumTypeExtensions().containsKey(extension.getName())
+    }
+
+    def "remove multiple enum type extension from map"() {
+        given:
+        def extension1 = EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition().name("foo").build()
+        def extension2 = EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1.getName(), extension1)
+        then:
+        !registry.enumTypeExtensions().containsKey(extension1.getName())
+        registry.enumTypeExtensions().containsKey(extension2.getName())
+        registry.enumTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single scalar type extension from list"() {
         given:
         def extension = ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition().name("foo").build()
         def registry = new TypeDefinitionRegistry()
@@ -556,10 +759,51 @@ class TypeDefinitionRegistryTest extends Specification {
         when:
         registry.remove(extension)
         then:
-        !registry.scalarTypeExtensions().get(extension.getName()).contains(extension)
+        !registry.scalarTypeExtensions().containsKey(extension.getName())
     }
 
-    def "remove input object type extension"() {
+    def "remove multiple scalar type extension from list"() {
+        given:
+        def extension1 = ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition().name("foo").build()
+        def extension2 = ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1)
+        then:
+        !registry.scalarTypeExtensions().containsKey(extension1.getName())
+        registry.scalarTypeExtensions().containsKey(extension2.getName())
+        registry.scalarTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single scalar type extension from map"() {
+        given:
+        def extension = ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension.getName(), extension)
+        then:
+        !registry.scalarTypeExtensions().containsKey(extension.getName())
+    }
+
+    def "remove multiple scalar type extension from map"() {
+        given:
+        def extension1 = ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition().name("foo").build()
+        def extension2 = ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1.getName(), extension1)
+        then:
+        !registry.scalarTypeExtensions().containsKey(extension1.getName())
+        registry.scalarTypeExtensions().containsKey(extension2.getName())
+        registry.scalarTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single input object type extension from list"() {
         given:
         def extension = InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition().name("foo").build()
         def registry = new TypeDefinitionRegistry()
@@ -567,7 +811,48 @@ class TypeDefinitionRegistryTest extends Specification {
         when:
         registry.remove(extension)
         then:
-        !registry.inputObjectTypeExtensions().get(extension.getName()).contains(extension)
+        !registry.inputObjectTypeExtensions().containsKey(extension.getName())
+    }
+
+    def "remove multiple input object type extension from list"() {
+        given:
+        def extension1 = InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition().name("foo").build()
+        def extension2 = InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1)
+        then:
+        !registry.inputObjectTypeExtensions().containsKey(extension1.getName())
+        registry.inputObjectTypeExtensions().containsKey(extension2.getName())
+        registry.inputObjectTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single input object type extension from map"() {
+        given:
+        def extension = InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension.getName(), extension)
+        then:
+        !registry.inputObjectTypeExtensions().containsKey(extension.getName())
+    }
+
+    def "remove multiple input object type extension from map"() {
+        given:
+        def extension1 = InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition().name("foo").build()
+        def extension2 = InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1.getName(), extension1)
+        then:
+        !registry.inputObjectTypeExtensions().containsKey(extension1.getName())
+        registry.inputObjectTypeExtensions().containsKey(extension2.getName())
+        registry.inputObjectTypeExtensions().get(extension2.getName()).contains(extension2)
     }
 
     def "remove schema definition"() {

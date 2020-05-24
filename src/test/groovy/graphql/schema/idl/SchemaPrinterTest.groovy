@@ -8,6 +8,7 @@ import graphql.introspection.IntrospectionQuery
 import graphql.introspection.IntrospectionResultToSchema
 import graphql.schema.Coercing
 import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputObjectType
@@ -603,6 +604,45 @@ type Query {
 '''
     }
 
+    def "prints type with no fields"() {
+        given:
+        def emptyInputObject = GraphQLInputObjectType.newInputObject().name("EmptyInputObject").build()
+        def emptyObject = GraphQLObjectType.newObject().name("EmptyObject").build()
+        def argument = GraphQLArgument.newArgument().name("arg").type(emptyInputObject).build()
+        GraphQLFieldDefinition field1 = newFieldDefinition().name("field1").type(emptyObject).argument(argument).build()
+
+        def emptyInterface = GraphQLInterfaceType.newInterface().name("EmptyInterface").build()
+        def emptyObjectWithInterface = GraphQLObjectType.newObject().name("EmptyObjectWithInterface").withInterface(emptyInterface).build()
+        GraphQLFieldDefinition field2 = newFieldDefinition().name("field2").type(emptyObjectWithInterface).build()
+
+        def emptyEnum = GraphQLEnumType.newEnum().name("EmptyEnum").build()
+        GraphQLFieldDefinition field3 = newFieldDefinition().name("field3").type(emptyEnum).build()
+
+        def queryType = GraphQLObjectType.newObject().name("Query").field(field1).field(field2).field(field3).build()
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().typeResolver(emptyInterface, { env -> null }).build();
+        def schema = GraphQLSchema.newSchema().query(queryType).codeRegistry(codeRegistry).build()
+        when:
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+
+        then:
+        result == '''interface EmptyInterface
+
+type EmptyObject
+
+type EmptyObjectWithInterface implements EmptyInterface
+
+type Query {
+  field1(arg: EmptyInputObject): EmptyObject
+  field2: EmptyObjectWithInterface
+  field3: EmptyEnum
+}
+
+enum EmptyEnum
+
+input EmptyInputObject
+'''
+    }
+
     def "concurrentModificationException should not occur when multiple extended graphQL types are used"() {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition().name("field").type(GraphQLString).build()
@@ -891,6 +931,12 @@ directive @deprecated(
     reason: String = "No longer supported"
   ) on FIELD_DEFINITION | ENUM_VALUE
 
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
 interface SomeInterface @interfaceTypeDirective {
   fieldA: String @interfaceFieldDirective
 }
@@ -1016,6 +1062,12 @@ directive @deprecated(
     reason: String = "No longer supported"
   ) on FIELD_DEFINITION | ENUM_VALUE
 
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
 type Field {
   active: Enum
   deprecated: Enum @deprecated(reason : "No longer supported")
@@ -1098,6 +1150,77 @@ directive @deprecated(
     "The reason for the deprecation"
     reason: String = "No longer supported"
   ) on FIELD_DEFINITION | ENUM_VALUE
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
+type Query {
+  fieldA: String @example @moreComplex(arg1 : "default", arg2 : 666)
+}
+'''
+    }
+
+    def "directive definitions are not printed when the includeDirectiveDefinitions flag is set to false"() {
+        def simpleIdlWithDirective = '''
+                directive @example on FIELD_DEFINITION
+                
+                directive @moreComplex(arg1 : String = "default", arg2 : Int) 
+                    on FIELD_DEFINITION | 
+                        INPUT_FIELD_DEFINITION
+               
+                type Query {
+                    fieldA : String @example @moreComplex(arg2 : 666)
+                }
+            '''
+        given:
+        def registry = new SchemaParser().parse(simpleIdlWithDirective)
+        def runtimeWiring = newRuntimeWiring().build()
+        def options = SchemaGenerator.Options.defaultOptions()
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+
+        when:
+        def resultWithNoDirectiveDefinitions = new SchemaPrinter(defaultOptions().includeDirectiveDefinitions(false)).print(schema)
+
+        then:
+        resultWithNoDirectiveDefinitions == '''type Query {
+  fieldA: String @example @moreComplex(arg1 : "default", arg2 : 666)
+}
+'''
+
+        when:
+        def resultWithDirectiveDefinitions = new SchemaPrinter(defaultOptions().includeDirectiveDefinitions(true)).print(schema)
+
+        then:
+        resultWithDirectiveDefinitions == '''"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to skip this field or fragment when the `if`'argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @example on FIELD_DEFINITION
+
+directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+"Marks the field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ENUM_VALUE
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
 
 type Query {
   fieldA: String @example @moreComplex(arg1 : "default", arg2 : 666)
@@ -1224,6 +1347,12 @@ directive @deprecated(
     "The reason for the deprecation"
     reason: String = "No longer supported"
   ) on FIELD_DEFINITION | ENUM_VALUE
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
 
 interface Interface {
   foo: String

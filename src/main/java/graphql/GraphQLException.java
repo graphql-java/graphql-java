@@ -18,5 +18,4 @@ public class GraphQLException extends RuntimeException {
         super(cause);
     }
 
-
 }

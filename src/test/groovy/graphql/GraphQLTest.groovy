@@ -3,6 +3,7 @@ package graphql
 import graphql.analysis.MaxQueryComplexityInstrumentation
 import graphql.analysis.MaxQueryDepthInstrumentation
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.DataFetcherResult
 import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionIdProvider
@@ -1015,4 +1016,158 @@ many lines''']
 
     }
 
+    def "default argument values are respected when variable is not provided"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String = "amigo"): String
+        }"""
+        def df = { dfe ->
+            return dfe.getArgument("name")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String){sayHello(name:$var)}').getData();
+
+        then:
+        data == [sayHello: "amigo"]
+
+    }
+
+    def "default variable values are respected"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String): String
+        }"""
+        def df = { dfe ->
+            return dfe.getArgument("name")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String = "amigo"){sayHello(name:$var)}').getData();
+
+        then:
+        data == [sayHello: "amigo"]
+
+    }
+
+    def "default variable values are respected for non null arguments"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String!): String
+        }"""
+        def df = { dfe ->
+            return dfe.getArgument("name")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String! = "amigo"){sayHello(name:$var)}').getData();
+
+        then:
+        data == [sayHello: "amigo"]
+
+    }
+
+    def "null as default variable value is used"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String): String
+        }"""
+        def df = { dfe ->
+            boolean isNullValue = dfe.containsArgument("name") && dfe.getArgument("name") == null;
+            return isNullValue ? "is null" : "error";
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String = null){sayHello(name:$var)}').getData();
+
+        then:
+        data == [sayHello: "is null"]
+
+    }
+
+    def "null as default argument value is used with no provided variable"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String = null): String
+        }"""
+        def df = { dfe ->
+            boolean isNullValue = dfe.containsArgument("name") && dfe.getArgument("name") == null;
+            return isNullValue ? "is null" : "error";
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String){sayHello(name:$var)}').getData();
+
+        then:
+        data == [sayHello: "is null"]
+
+    }
+
+    def "not provided variable results in not provided argument"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String): String
+        }"""
+        def df = { dfe ->
+            return !dfe.containsArgument("name") ? "not provided" : "error"
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String){sayHello(name:$var)}').getData();
+
+        then:
+        data == [sayHello: "not provided"]
+
+    }
+
+    def "null variable default value produces error for non null argument"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String!): String
+        }"""
+        def df = { dfe ->
+            return dfe.getArgument("name")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def errors = graphQL.execute('query($var:String=null){sayHello(name:$var)}').getErrors();
+
+        then:
+        errors.size() == 1
+
+    }
+
+    def "specified url can be defined and queried via introspection"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema('type Query {foo: MyScalar} scalar MyScalar @specifiedBy(url:"myUrl")');
+
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute('{__type(name: "MyScalar") {name specifiedByUrl}}').getData();
+
+        then:
+        result == [__type: [name: "MyScalar", specifiedByUrl: "myUrl"]]
+    }
+
+    def "test DFR and CF"() {
+        def sdl = 'type Query { f : String } '
+
+        DataFetcher df = { env ->
+
+            def dfr = DataFetcherResult.newResult().data("hi").build()
+            return CompletableFuture.supplyAsync({ -> dfr })
+        }
+        def schema = TestUtil.schema(sdl, [Query: [f: df]])
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        when:
+        def er = graphQL.execute("{f}")
+        then:
+        er.data["f"] == "hi"
+    }
 }

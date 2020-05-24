@@ -22,6 +22,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     private final String name;
     private final Type type;
     private final Value defaultValue;
+    private final List<Directive> directives;
 
     public static final String CHILD_TYPE = "type";
     public static final String CHILD_DEFAULT_VALUE = "defaultValue";
@@ -30,6 +31,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     protected VariableDefinition(String name,
                                  Type type,
                                  Value defaultValue,
+                                 List<Directive> directives,
                                  SourceLocation sourceLocation,
                                  List<Comment> comments,
                                  IgnoredChars ignoredChars,
@@ -38,6 +40,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;
+        this.directives=directives;
     }
 
     /**
@@ -50,7 +53,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     public VariableDefinition(String name,
                               Type type,
                               Value defaultValue) {
-        this(name, type, defaultValue, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, type, defaultValue, null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     /**
@@ -61,9 +64,8 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
      */
     public VariableDefinition(String name,
                               Type type) {
-        this(name, type, null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, type, null, null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
-
 
     public Value getDefaultValue() {
         return defaultValue;
@@ -75,6 +77,10 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
 
     public Type getType() {
         return type;
+    }
+
+    public List<Directive> getDirectives() {
+        return directives;
     }
 
     @Override
@@ -123,6 +129,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         return new VariableDefinition(name,
                 deepCopy(type),
                 deepCopy(defaultValue),
+                deepCopy(directives),
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),
@@ -172,6 +179,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         private List<Comment> comments = new ArrayList<>();
         private Type type;
         private Value defaultValue;
+        private List<Directive> directives = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -213,6 +221,16 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
             return this;
         }
 
+        public Builder directives(List<Directive> directives) {
+            this.directives = directives;
+            return this;
+        }
+
+        public Builder directive(Directive directive) {
+            this.directives.add(directive);
+            return this;
+        }
+
         public Builder ignoredChars(IgnoredChars ignoredChars) {
             this.ignoredChars = ignoredChars;
             return this;
@@ -227,12 +245,12 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
             this.additionalData.put(key, value);
             return this;
         }
-
         public VariableDefinition build() {
             return new VariableDefinition(
                     name,
                     type,
                     defaultValue,
+                    directives,
                     sourceLocation,
                     comments,
                     ignoredChars,

@@ -13,7 +13,7 @@ public class NaturalEnumValuesProvider<T extends Enum<T>> implements EnumValuesP
     private final Class<T> enumType;
 
     public NaturalEnumValuesProvider(Class<T> enumType) {
-        Assert.assertNotNull(enumType, "enumType can't be null");
+        Assert.assertNotNull(enumType, () -> "enumType can't be null");
         this.enumType = enumType;
     }
 

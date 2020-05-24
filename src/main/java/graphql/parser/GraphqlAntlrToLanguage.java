@@ -151,14 +151,12 @@ public class GraphqlAntlrToLanguage {
         fragmentSpread.directives(createDirectives(ctx.directives()));
         return fragmentSpread.build();
     }
-
     protected List<VariableDefinition> createVariableDefinitions(GraphqlParser.VariableDefinitionsContext ctx) {
         if (ctx == null) {
             return new ArrayList<>();
         }
         return ctx.variableDefinition().stream().map(this::createVariableDefinition).collect(toList());
     }
-
     protected VariableDefinition createVariableDefinition(GraphqlParser.VariableDefinitionContext ctx) {
         VariableDefinition.Builder variableDefinition = VariableDefinition.newVariableDefinition();
         addCommonData(variableDefinition, ctx);
@@ -168,6 +166,7 @@ public class GraphqlAntlrToLanguage {
             variableDefinition.defaultValue(value);
         }
         variableDefinition.type(createType(ctx.type()));
+        variableDefinition.directives(createDirectives(ctx.directives()));
         return variableDefinition.build();
 
     }
