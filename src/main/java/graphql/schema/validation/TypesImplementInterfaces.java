@@ -2,6 +2,7 @@ package graphql.schema.validation;
 
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLImplementingType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLObjectType;
@@ -9,7 +10,9 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static graphql.schema.GraphQLTypeUtil.isList;
@@ -20,10 +23,16 @@ import static graphql.schema.validation.SchemaValidationErrorType.ObjectDoesNotI
 import static java.lang.String.format;
 
 /**
- * Schema validation rule ensuring object types have all the fields that they need to implement the interfaces
- * they say they implement
+ * Schema validation rule ensuring object and interface types have all the fields that they need to
+ * implement the interfaces they say they implement.
  */
-public class ObjectsImplementInterfaces implements SchemaValidationRule {
+public class TypesImplementInterfaces implements SchemaValidationRule {
+    private static final Map<Class<? extends GraphQLImplementingType>, String> TYPE_OF_MAP = new HashMap<>();
+
+    static {
+        TYPE_OF_MAP.put(GraphQLObjectType.class, "object");
+        TYPE_OF_MAP.put(GraphQLInterfaceType.class, "interface");
+    }
 
     @Override
     public void check(GraphQLFieldDefinition fieldDef, SchemaValidationErrorCollector validationErrorCollector) {
@@ -31,56 +40,74 @@ public class ObjectsImplementInterfaces implements SchemaValidationRule {
 
     @Override
     public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
-        if (type instanceof GraphQLObjectType) {
-            check((GraphQLObjectType) type, validationErrorCollector);
+        if (type instanceof GraphQLImplementingType) {
+            check((GraphQLImplementingType) type, validationErrorCollector);
         }
     }
 
-    private void check(GraphQLObjectType objectType, SchemaValidationErrorCollector validationErrorCollector) {
-        List<GraphQLNamedOutputType> interfaces = objectType.getInterfaces();
+    private void check(GraphQLImplementingType implementingType, SchemaValidationErrorCollector validationErrorCollector) {
+        List<GraphQLNamedOutputType> interfaces = implementingType.getInterfaces();
         interfaces.forEach(interfaceType -> {
             // we have resolved the interfaces at this point and hence the cast is ok
-            checkObjectImplementsInterface(objectType, (GraphQLInterfaceType) interfaceType, validationErrorCollector);
+            checkObjectImplementsInterface(implementingType, (GraphQLInterfaceType) interfaceType, validationErrorCollector);
         });
 
     }
 
     // this deliberately has open field visibility here since its validating the schema
     // when completely open
-    private void checkObjectImplementsInterface(GraphQLObjectType objectType, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector) {
+    private void checkObjectImplementsInterface(GraphQLImplementingType implementingType, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector) {
         List<GraphQLFieldDefinition> fieldDefinitions = interfaceType.getFieldDefinitions();
         for (GraphQLFieldDefinition interfaceFieldDef : fieldDefinitions) {
-            GraphQLFieldDefinition objectFieldDef = objectType.getFieldDefinition(interfaceFieldDef.getName());
+            GraphQLFieldDefinition objectFieldDef = implementingType.getFieldDefinition(interfaceFieldDef.getName());
             if (objectFieldDef == null) {
                 validationErrorCollector.addError(
-                        error(format("object type '%s' does not implement interface '%s' because field '%s' is missing",
-                                objectType.getName(), interfaceType.getName(), interfaceFieldDef.getName())));
+                        error(format("%s type '%s' does not implement interface '%s' because field '%s' is missing",
+                                TYPE_OF_MAP.get(implementingType.getClass()), implementingType.getName(), interfaceType.getName(), interfaceFieldDef.getName())));
             } else {
-                checkFieldTypeCompatibility(objectType, interfaceType, validationErrorCollector, interfaceFieldDef, objectFieldDef);
+                checkFieldTypeCompatibility(implementingType, interfaceType, validationErrorCollector, interfaceFieldDef, objectFieldDef);
             }
         }
+
+        checkTransitiveImplementations(implementingType, interfaceType, validationErrorCollector);
     }
 
-    private void checkFieldTypeCompatibility(GraphQLObjectType objectType, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector, GraphQLFieldDefinition interfaceFieldDef, GraphQLFieldDefinition objectFieldDef) {
+    private void checkTransitiveImplementations(GraphQLImplementingType implementingType, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector) {
+        List<GraphQLNamedOutputType> implementedInterfaces = implementingType.getInterfaces();
+        interfaceType.getInterfaces().forEach(transitiveInterface -> {
+            if (transitiveInterface.equals(implementingType)) {
+                validationErrorCollector.addError(
+                        error(format("%s type '%s' cannot implement '%s' because that would result on a circular reference",
+                                TYPE_OF_MAP.get(implementingType.getClass()), implementingType.getName(), interfaceType.getName()))
+                );
+            } else if (!implementedInterfaces.contains(transitiveInterface)) {
+                validationErrorCollector.addError(
+                        error(format("%s type '%s' must implement '%s' because it is implemented by '%s'",
+                                TYPE_OF_MAP.get(implementingType.getClass()), implementingType.getName(), transitiveInterface.getName(), interfaceType.getName())));
+            }
+        });
+    }
+
+    private void checkFieldTypeCompatibility(GraphQLImplementingType implementingType, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector, GraphQLFieldDefinition interfaceFieldDef, GraphQLFieldDefinition objectFieldDef) {
         String interfaceFieldDefStr = simplePrint(interfaceFieldDef.getType());
         String objectFieldDefStr = simplePrint(objectFieldDef.getType());
 
         if (!isCompatible(interfaceFieldDef.getType(), objectFieldDef.getType())) {
             validationErrorCollector.addError(
-                    error(format("object type '%s' does not implement interface '%s' because field '%s' is defined as '%s' type and not as '%s' type",
-                            objectType.getName(), interfaceType.getName(), interfaceFieldDef.getName(), objectFieldDefStr, interfaceFieldDefStr)));
+                    error(format("%s type '%s' does not implement interface '%s' because field '%s' is defined as '%s' type and not as '%s' type",
+                            TYPE_OF_MAP.get(implementingType.getClass()), implementingType.getName(), interfaceType.getName(), interfaceFieldDef.getName(), objectFieldDefStr, interfaceFieldDefStr)));
         } else {
-            checkFieldArgumentEquivalence(objectType, interfaceType, validationErrorCollector, interfaceFieldDef, objectFieldDef);
+            checkFieldArgumentEquivalence(implementingType, interfaceType, validationErrorCollector, interfaceFieldDef, objectFieldDef);
         }
     }
 
-    private void checkFieldArgumentEquivalence(GraphQLObjectType objectTyoe, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector, GraphQLFieldDefinition interfaceFieldDef, GraphQLFieldDefinition objectFieldDef) {
+    private void checkFieldArgumentEquivalence(GraphQLImplementingType implementingType, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector, GraphQLFieldDefinition interfaceFieldDef, GraphQLFieldDefinition objectFieldDef) {
         List<GraphQLArgument> interfaceArgs = interfaceFieldDef.getArguments();
         List<GraphQLArgument> objectArgs = objectFieldDef.getArguments();
         if (interfaceArgs.size() != objectArgs.size()) {
             validationErrorCollector.addError(
-                    error(format("object type '%s' does not implement interface '%s' because field '%s' has a different number of arguments",
-                            objectTyoe.getName(), interfaceType.getName(), interfaceFieldDef.getName())));
+                    error(format("%s type '%s' does not implement interface '%s' because field '%s' has a different number of arguments",
+                            TYPE_OF_MAP.get(implementingType.getClass()), implementingType.getName(), interfaceType.getName(), interfaceFieldDef.getName())));
         } else {
             for (int i = 0; i < interfaceArgs.size(); i++) {
                 GraphQLArgument interfaceArg = interfaceArgs.get(i);
@@ -98,8 +125,8 @@ public class ObjectsImplementInterfaces implements SchemaValidationRule {
                 }
                 if (!same) {
                     validationErrorCollector.addError(
-                            error(format("object type '%s' does not implement interface '%s' because field '%s' argument '%s' is defined differently",
-                                    objectTyoe.getName(), interfaceType.getName(), interfaceFieldDef.getName(), interfaceArg.getName())));
+                            error(format("%s type '%s' does not implement interface '%s' because field '%s' argument '%s' is defined differently",
+                                    TYPE_OF_MAP.get(implementingType.getClass()), implementingType.getName(), interfaceType.getName(), interfaceFieldDef.getName(), interfaceArg.getName())));
                 }
 
             }
@@ -119,7 +146,7 @@ public class ObjectsImplementInterfaces implements SchemaValidationRule {
     }
 
     /**
-     * @return {@code true} if the specified objectType satisfies the constraintType.
+     * @return {@code true} if the specified implementingType satisfies the constraintType.
      */
     boolean isCompatible(GraphQLOutputType constraintType, GraphQLOutputType objectType) {
         if (isSameType(constraintType, objectType)) {

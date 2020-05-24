@@ -39,7 +39,6 @@ import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphqlTypeComparatorEnvironment;
 import graphql.schema.GraphqlTypeComparatorRegistry;
 import graphql.schema.visibility.GraphqlFieldVisibility;
-import graphql.util.EscapeUtil;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -423,17 +422,36 @@ public class SchemaPrinter {
                 return;
             }
 
-            GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
-                    .parentType(GraphQLInterfaceType.class)
-                    .elementType(GraphQLFieldDefinition.class)
-                    .build();
-            Comparator<? super GraphQLSchemaElement> comparator = options.comparatorRegistry.getComparator(environment);
-
             if (shouldPrintAsAst(type.getDefinition())) {
                 printAsAst(out, type.getDefinition(), type.getExtensionDefinitions());
             } else {
                 printComments(out, type, "");
-                out.format("interface %s%s", type.getName(), directivesString(GraphQLInterfaceType.class, type.getDirectives()));
+                if (type.getInterfaces().isEmpty()) {
+                    out.format("interface %s%s", type.getName(), directivesString(GraphQLInterfaceType.class, type.getDirectives()));
+                } else {
+
+                    GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
+                            .parentType(GraphQLInterfaceType.class)
+                            .elementType(GraphQLOutputType.class)
+                            .build();
+                    Comparator<? super GraphQLSchemaElement> implementsComparator = options.comparatorRegistry.getComparator(environment);
+
+                    Stream<String> interfaceNames = type.getInterfaces()
+                            .stream()
+                            .sorted(implementsComparator)
+                            .map(GraphQLNamedType::getName);
+                    out.format("interface %s implements %s%s",
+                            type.getName(),
+                            interfaceNames.collect(joining(" & ")),
+                            directivesString(GraphQLInterfaceType.class, type.getDirectives()));
+                }
+
+                GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
+                        .parentType(GraphQLInterfaceType.class)
+                        .elementType(GraphQLFieldDefinition.class)
+                        .build();
+                Comparator<? super GraphQLSchemaElement> comparator = options.comparatorRegistry.getComparator(environment);
+
                 printFieldDefinitions(out, comparator, visibility.getFieldDefinitions(type));
                 out.format("\n\n");
             }

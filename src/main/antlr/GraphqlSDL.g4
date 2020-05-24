@@ -72,11 +72,12 @@ argumentsDefinition : '(' inputValueDefinition+ ')';
 
 inputValueDefinition : description? name ':' type defaultValue? directives?;
 
-interfaceTypeDefinition : description? INTERFACE name directives? fieldsDefinition?;
+interfaceTypeDefinition : description? INTERFACE name implementsInterfaces? directives? fieldsDefinition?;
 
 interfaceTypeExtensionDefinition :
-    EXTEND INTERFACE name directives? extensionFieldsDefinition |
-    EXTEND INTERFACE name directives emptyParentheses?
+    EXTEND INTERFACE name implementsInterfaces? directives? extensionFieldsDefinition |
+    EXTEND INTERFACE name implementsInterfaces? directives emptyParentheses? |
+    EXTEND INTERFACE name implementsInterfaces
 ;
 
 

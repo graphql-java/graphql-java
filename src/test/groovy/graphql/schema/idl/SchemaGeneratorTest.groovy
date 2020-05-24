@@ -544,13 +544,6 @@ class SchemaGeneratorTest extends Specification {
             extend type BaseType {
                extraField5 : Boolean!
             }
-            #
-            # if we repeat a definition, that's ok as long as its the same types as before
-            # they will be de-duped since the effect is the same
-            #
-            extend type BaseType implements Interface1 {
-               extraField1 : String
-            }
             
             schema {
               query: BaseType

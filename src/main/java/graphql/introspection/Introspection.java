@@ -256,6 +256,9 @@ public class Introspection {
         if (type instanceof GraphQLObjectType) {
             return ((GraphQLObjectType) type).getInterfaces();
         }
+        if (type instanceof GraphQLInterfaceType) {
+            return ((GraphQLInterfaceType) type).getInterfaces();
+        }
         return null;
     };
 

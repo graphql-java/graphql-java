@@ -21,7 +21,7 @@ public class SchemaValidator {
 
     public SchemaValidator() {
         rules.add(new NoUnbrokenInputCycles());
-        rules.add(new ObjectsImplementInterfaces());
+        rules.add(new TypesImplementInterfaces());
     }
 
     SchemaValidator(List<SchemaValidationRule> rules) {

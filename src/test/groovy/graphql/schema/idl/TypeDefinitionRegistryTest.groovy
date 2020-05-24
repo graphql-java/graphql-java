@@ -383,7 +383,7 @@ class TypeDefinitionRegistryTest extends Specification {
         when:
         def registry = parse(spec)
         def interfaceDef = registry.getType("Interface", InterfaceTypeDefinition.class).get()
-        def objectTypeDefinitions = registry.getImplementationsOf(interfaceDef)
+        def objectTypeDefinitions = registry.getAllImplementationsOf(interfaceDef)
         def names = objectTypeDefinitions.collect { it.getName() }
         then:
         names == ["Type1", "Type2", "Type3"]

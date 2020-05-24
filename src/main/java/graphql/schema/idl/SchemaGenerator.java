@@ -507,8 +507,38 @@ public class SchemaGenerator {
         return objectType;
     }
 
-    private void buildObjectTypeInterfaces(BuildContext buildCtx, ObjectTypeDefinition
-            typeDefinition, GraphQLObjectType.Builder builder, List<ObjectTypeExtensionDefinition> extensions) {
+    private void buildObjectTypeInterfaces(BuildContext buildCtx,
+                                           ObjectTypeDefinition typeDefinition,
+                                           GraphQLObjectType.Builder builder,
+                                           List<ObjectTypeExtensionDefinition> extensions) {
+        Map<String, GraphQLOutputType> interfaces = new LinkedHashMap<>();
+        typeDefinition.getImplements().forEach(type -> {
+            GraphQLNamedOutputType newInterfaceType = buildOutputType(buildCtx, type);
+            interfaces.put(newInterfaceType.getName(), newInterfaceType);
+        });
+
+        extensions.forEach(extension -> extension.getImplements().forEach(type -> {
+            GraphQLInterfaceType interfaceType = buildOutputType(buildCtx, type);
+            if (!interfaces.containsKey(interfaceType.getName())) {
+                interfaces.put(interfaceType.getName(), interfaceType);
+            }
+        }));
+
+        interfaces.values().forEach(interfaze -> {
+            if (interfaze instanceof GraphQLInterfaceType) {
+                builder.withInterface((GraphQLInterfaceType) interfaze);
+                return;
+            }
+            if (interfaze instanceof GraphQLTypeReference) {
+                builder.withInterface((GraphQLTypeReference) interfaze);
+            }
+        });
+    }
+
+    private void buildInterfaceTypeInterfaces(BuildContext buildCtx,
+                                              InterfaceTypeDefinition typeDefinition,
+                                              GraphQLInterfaceType.Builder builder,
+                                              List<InterfaceTypeExtensionDefinition> extensions) {
         Map<String, GraphQLOutputType> interfaces = new LinkedHashMap<>();
         typeDefinition.getImplements().forEach(type -> {
             GraphQLNamedOutputType newInterfaceType = buildOutputType(buildCtx, type);
@@ -559,6 +589,8 @@ public class SchemaGenerator {
                 builder.field(fieldDefinition);
             }
         }));
+
+        buildInterfaceTypeInterfaces(buildCtx, typeDefinition, builder, extensions);
 
         GraphQLInterfaceType interfaceType = builder.build();
         if (!buildCtx.codeRegistry.hasTypeResolver(interfaceType.getName())) {

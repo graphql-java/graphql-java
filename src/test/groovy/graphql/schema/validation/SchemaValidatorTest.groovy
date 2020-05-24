@@ -16,7 +16,7 @@ class SchemaValidatorTest extends Specification {
         then:
         rules.size() == 2
         rules[0] instanceof NoUnbrokenInputCycles
-        rules[1] instanceof ObjectsImplementInterfaces
+        rules[1] instanceof TypesImplementInterfaces
     }
 
     def "rules are used"() {
