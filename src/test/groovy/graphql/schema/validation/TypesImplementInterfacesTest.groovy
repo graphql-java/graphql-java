@@ -2,9 +2,12 @@ package graphql.schema.validation
 
 import graphql.TypeResolutionEnvironment
 import graphql.schema.GraphQLInterfaceType
+import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.TypeResolver
 import spock.lang.Specification
+
+import java.util.stream.Collectors
 
 import static SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces
 import static graphql.Scalars.GraphQLBoolean
@@ -317,4 +320,82 @@ class TypesImplementInterfacesTest extends Specification {
         goodErrorCollector.getErrors().isEmpty()
     }
 
+    def "type can declare extra optional field arguments"() {
+        given:
+
+        GraphQLInterfaceType InterfaceType = newInterface()
+                .name("Interface")
+                .field(newFieldDefinition().name("argField").type(GraphQLString))
+                .build()
+
+        SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
+
+        GraphQLObjectType objType = GraphQLObjectType.newObject()
+                .name("Object")
+                .withInterface(InterfaceType)
+                .field(newFieldDefinition().name("argField").type(GraphQLString)
+                        .argument(newArgument().name("arg1").type(GraphQLInt))
+                )
+                .build()
+
+        when:
+        new TypesImplementInterfaces().check(objType, errorCollector)
+
+        then:
+        def errors = errorCollector.getErrors()
+        errors.isEmpty()
+    }
+
+    def "type cannot declare extra non-null field arguments"() {
+        given:
+
+        GraphQLInterfaceType InterfaceType = newInterface()
+                .name("Interface")
+                .field(newFieldDefinition().name("argField").type(GraphQLString))
+                .build()
+
+        SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
+
+        GraphQLObjectType objType = GraphQLObjectType.newObject()
+                .name("Object")
+                .withInterface(InterfaceType)
+                .field(newFieldDefinition().name("argField").type(GraphQLString)
+                        .argument(newArgument().name("arg1").type(nonNull(GraphQLInt)))
+                )
+                .build()
+
+        when:
+        new TypesImplementInterfaces().check(objType, errorCollector)
+
+        then:
+        def errors = errorCollector.getErrors()
+        errors.size() == 1
+        errors.iterator().next().description == "object type 'Object' field 'argField' defines an additional non-optional argument 'arg1' which is not allowed because field is also defined in interface 'Interface'"
+    }
+
+    def "type can change order of field arguments"() {
+        given:
+
+        GraphQLInterfaceType InterfaceType = newInterface()
+                .name("Interface")
+                .field(newFieldDefinition().name("argField1").type(GraphQLString))
+                .field(newFieldDefinition().name("argField2").type(GraphQLString))
+                .build()
+
+        SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
+
+        GraphQLObjectType objType = GraphQLObjectType.newObject()
+                .name("Object")
+                .withInterface(InterfaceType)
+                .field(newFieldDefinition().name("argField2").type(GraphQLString))
+                .field(newFieldDefinition().name("argField1").type(GraphQLString))
+                .build()
+
+        when:
+        new TypesImplementInterfaces().check(objType, errorCollector)
+
+        then:
+        def errors = errorCollector.getErrors()
+        errors.isEmpty()
+    }
 }
