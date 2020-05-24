@@ -38,7 +38,7 @@ import static java.util.Collections.unmodifiableList;
  * See http://graphql.org/learn/schema/#interfaces for more details on the concept.
  */
 @PublicApi
-public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer, GraphQLImplementingType {
 
     private final String name;
     private final String description;
@@ -216,11 +216,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLFieldsCont
         );
     }
 
-    /**
-     * @return This returns GraphQLInterface or GraphQLTypeReference instances, if the type
-     * references are not resolved yet. After they are resolved it contains only GraphQLInterface.
-     * Reference resolving happens when a full schema is built.
-     */
+    @Override
     public List<GraphQLNamedOutputType> getInterfaces() {
         if (replacedInterfaces != null) {
             return Collections.unmodifiableList(replacedInterfaces);

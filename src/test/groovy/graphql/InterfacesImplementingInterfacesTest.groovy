@@ -1,6 +1,5 @@
 package graphql
 
-
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
@@ -11,10 +10,15 @@ import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.SchemaPrinter
 import graphql.schema.idl.errors.SchemaProblem
+import graphql.schema.validation.InvalidSchemaException
 import spock.lang.Specification
 
+import static graphql.Scalars.GraphQLInt
+import static graphql.Scalars.GraphQLString
+import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInterfaceType.newInterface
+import static graphql.schema.GraphQLObjectType.newObject
 
 class InterfacesImplementingInterfacesTest extends Specification {
     def 'Simple interface implementing interface'() {
@@ -965,34 +969,34 @@ class InterfacesImplementingInterfacesTest extends Specification {
         given:
         def node1Type = newInterface()
                 .name("Node1")
-                .field(newFieldDefinition().name("id1").type(Scalars.GraphQLString).build())
+                .field(newFieldDefinition().name("id1").type(GraphQLString).build())
                 .typeResolver({ env -> Assert.assertShouldNeverHappen() })
                 .build();
 
         def node2Type = newInterface()
                 .name("Node2")
-                .field(newFieldDefinition().name("id2").type(Scalars.GraphQLString).build())
+                .field(newFieldDefinition().name("id2").type(GraphQLString).build())
                 .typeResolver({ env -> Assert.assertShouldNeverHappen() })
                 .build();
 
         // references two interfaces: directly and via type ref
         def resource = newInterface()
                 .name("Resource")
-                .field(newFieldDefinition().name("id1").type(Scalars.GraphQLString).build())
-                .field(newFieldDefinition().name("id2").type(Scalars.GraphQLString).build())
+                .field(newFieldDefinition().name("id1").type(GraphQLString).build())
+                .field(newFieldDefinition().name("id2").type(GraphQLString).build())
                 .withInterface(GraphQLTypeReference.typeRef("Node1"))
                 .withInterface(node2Type)
                 .typeResolver({ env -> Assert.assertShouldNeverHappen() })
                 .build();
-        def image = GraphQLObjectType.newObject()
+        def image = newObject()
                 .name("Image")
-                .field(newFieldDefinition().name("id1").type(Scalars.GraphQLString).build())
-                .field(newFieldDefinition().name("id2").type(Scalars.GraphQLString).build())
+                .field(newFieldDefinition().name("id1").type(GraphQLString).build())
+                .field(newFieldDefinition().name("id2").type(GraphQLString).build())
                 .withInterface(resource)
                 .withInterface(node1Type)
                 .withInterface(node2Type)
                 .build()
-        def query = GraphQLObjectType.newObject()
+        def query = newObject()
                 .name("Query")
                 .field(newFieldDefinition().name("image").type(image).build())
                 .build()
@@ -1027,6 +1031,224 @@ type Query {
 """)
     }
 
+    def "When programmatically created interface does not implement interface correctly, then creation fails"() {
+        given:
+        def interface1 = newInterface()
+                .name("Interface1")
+                .field(
+                        newFieldDefinition().name("field1").type(GraphQLString)
+                                .argument(newArgument().name("arg1").type(GraphQLString))
+                )
+                .field(newFieldDefinition().name("field2").type(GraphQLString))
+                .field(
+                        newFieldDefinition().name("field3").type(GraphQLString)
+                                .argument(newArgument().name("arg3").type(GraphQLString))
+                )
+                .field(newFieldDefinition().name("field4").type(GraphQLString))
+                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
+                .build()
+
+        def interface2 = newInterface()
+                .name("Interface2")
+                .field(
+                        newFieldDefinition().name("field1").type(GraphQLString)
+                                .argument(newArgument().name("arg1").type(GraphQLInt))
+                )
+                .field(newFieldDefinition().name("field2").type(GraphQLInt))
+                .field(newFieldDefinition().name("field3").type(GraphQLString))
+                .withInterface(interface1)
+                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
+                .build()
+
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("interface2").type(interface2).build())
+                .build()
+
+
+        when:
+        GraphQLSchema.newSchema().query(query).build()
+
+        then:
+        def error = thrown(InvalidSchemaException)
+
+        assertErrorMessage(error,
+                "interface type 'Interface2' does not implement interface 'Interface1' because field 'field1' argument 'arg1' is defined differently",
+                "interface type 'Interface2' does not implement interface 'Interface1' because field 'field2' is defined as 'Int' type and not as 'String' type",
+                "interface type 'Interface2' does not implement interface 'Interface1' because field 'field3' has a different number of arguments",
+                "interface type 'Interface2' does not implement interface 'Interface1' because field 'field4' is missing"
+        )
+    }
+
+    def "When programmatically created interface implement interface correctly, then creation succeeds"() {
+        given:
+        def interface1 = newInterface()
+                .name("Interface1")
+                .field(
+                        newFieldDefinition().name("field1").type(GraphQLString)
+                                .argument(newArgument().name("arg1").type(GraphQLString))
+                )
+                .field(newFieldDefinition().name("field2").type(GraphQLString))
+                .field(
+                        newFieldDefinition().name("field3").type(GraphQLString)
+                                .argument(newArgument().name("arg3").type(GraphQLString))
+                )
+                .field(newFieldDefinition().name("field4").type(GraphQLString))
+                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
+                .build()
+
+        def interface2 = newInterface()
+                .name("Interface2")
+                .field(
+                        newFieldDefinition().name("field1").type(GraphQLString)
+                                .argument(newArgument().name("arg1").type(GraphQLString))
+                )
+                .field(newFieldDefinition().name("field2").type(GraphQLString))
+                .field(
+                        newFieldDefinition().name("field3").type(GraphQLString)
+                                .argument(newArgument().name("arg3").type(GraphQLString))
+                )
+                .field(newFieldDefinition().name("field4").type(GraphQLString))
+                .withInterface(interface1)
+                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
+                .build()
+
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("interface2").type(interface2).build())
+                .build()
+
+
+        when:
+        GraphQLSchema.newSchema().query(query).build()
+
+        then:
+        noExceptionThrown()
+    }
+
+    def "When programmatically created type does not implement all transitive interfaces, then creation fails"() {
+        given:
+        def interface1 = newInterface()
+                .name("Interface1")
+                .field(newFieldDefinition().name("field1").type(GraphQLString))
+                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
+                .build()
+
+        def interface2 = newInterface()
+                .name("Interface2")
+                .field(newFieldDefinition().name("field1").type(GraphQLString))
+                .field(newFieldDefinition().name("field2").type(GraphQLString))
+                .withInterface(interface1)
+                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
+                .build()
+
+        def type = newObject()
+                .name("Type")
+                .field(newFieldDefinition().name("field1").type(GraphQLString))
+                .field(newFieldDefinition().name("field2").type(GraphQLString))
+                .withInterface(interface2)
+                .build()
+
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("find").type(type).build())
+                .build()
+
+
+        when:
+        GraphQLSchema.newSchema().query(query).build()
+
+        then:
+        def error = thrown(InvalidSchemaException)
+
+        assertErrorMessage(error, "object type 'Type' must implement 'Interface1' because it is implemented by 'Interface2'")
+    }
+
+    def "When programmatically created type implement all transitive interfaces, then creation succeeds"() {
+        given:
+        def interface1 = newInterface()
+                .name("Interface1")
+                .field(newFieldDefinition().name("field1").type(GraphQLString))
+                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
+                .build()
+
+        def interface2 = newInterface()
+                .name("Interface2")
+                .field(newFieldDefinition().name("field1").type(GraphQLString))
+                .field(newFieldDefinition().name("field2").type(GraphQLString))
+                .withInterface(interface1)
+                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
+                .build()
+
+        def type = newObject()
+                .name("Type")
+                .field(newFieldDefinition().name("field1").type(GraphQLString))
+                .field(newFieldDefinition().name("field2").type(GraphQLString))
+                .withInterface(interface1)
+                .withInterface(interface2)
+                .build()
+
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("find").type(type).build())
+                .build()
+
+
+        when:
+        GraphQLSchema.newSchema().query(query).build()
+
+        then:
+        noExceptionThrown()
+    }
+
+    def "When interface implementation results in circular reference, then creation fails"() {
+        given:
+        def interface1 = newInterface()
+                .name("Interface1")
+                .field(newFieldDefinition().name("field1").type(GraphQLString))
+                .withInterface(GraphQLTypeReference.typeRef("Interface3"))
+                .withInterface(GraphQLTypeReference.typeRef("Interface2"))
+                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
+                .build()
+
+        def interface2 = newInterface()
+                .name("Interface2")
+                .field(newFieldDefinition().name("field1").type(GraphQLString))
+                .withInterface(interface1)
+                .withInterface(GraphQLTypeReference.typeRef("Interface3"))
+                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
+                .build()
+
+        def interface3 = newInterface()
+                .name("Interface3")
+                .field(newFieldDefinition().name("field1").type(GraphQLString))
+                .withInterface(interface1)
+                .withInterface(interface2)
+                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
+                .build()
+
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("find").type(interface3).build())
+                .build()
+
+
+        when:
+        GraphQLSchema.newSchema().query(query).build()
+
+        then:
+        def error = thrown(InvalidSchemaException)
+
+        assertErrorMessage(error,
+                "interface type 'Interface1' cannot implement 'Interface3' because that would result on a circular reference",
+                "interface type 'Interface1' cannot implement 'Interface2' because that would result on a circular reference",
+                "interface type 'Interface2' cannot implement 'Interface1' because that would result on a circular reference",
+                "interface type 'Interface2' cannot implement 'Interface3' because that would result on a circular reference",
+                "interface type 'Interface3' cannot implement 'Interface1' because that would result on a circular reference",
+                "interface type 'Interface3' cannot implement 'Interface2' because that would result on a circular reference"
+        )
+    }
+
     def assertErrorMessage(SchemaProblem error, expectedMessage) {
         def normalizedMessages = error.errors.collect { it.message.replaceAll($/\[@[0-9]+:[0-9]+]/$, '[@n:n]') }
 
@@ -1035,6 +1257,12 @@ type Query {
         }
 
         return true
+    }
+
+    def assertErrorMessage(InvalidSchemaException exception, String... expectedErrors) {
+        def expectedMessage = "invalid schema:\n" + expectedErrors.join("\n")
+
+        return exception.message == expectedMessage
     }
 
     def parseSchema(schema) {

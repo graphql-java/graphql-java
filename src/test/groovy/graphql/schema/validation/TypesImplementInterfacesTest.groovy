@@ -18,7 +18,7 @@ import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLUnionType.newUnionType
 
-class ObjectsImplementInterfacesTest extends Specification {
+class TypesImplementInterfacesTest extends Specification {
 
     TypeResolver typeResolver = new TypeResolver() {
         @Override
@@ -76,7 +76,7 @@ class ObjectsImplementInterfacesTest extends Specification {
                 .build()
 
         when:
-        new ObjectsImplementInterfaces().check(objType, errorCollector)
+        new TypesImplementInterfaces().check(objType, errorCollector)
 
         then:
 
@@ -138,8 +138,8 @@ class ObjectsImplementInterfacesTest extends Specification {
         SchemaValidationErrorCollector badErrorCollector = new SchemaValidationErrorCollector()
 
         when:
-        new ObjectsImplementInterfaces().check(goodImpl, goodErrorCollector)
-        new ObjectsImplementInterfaces().check(badImpl, badErrorCollector)
+        new TypesImplementInterfaces().check(goodImpl, goodErrorCollector)
+        new TypesImplementInterfaces().check(badImpl, badErrorCollector)
 
         then:
         goodErrorCollector.getErrors().isEmpty()
@@ -187,8 +187,8 @@ class ObjectsImplementInterfacesTest extends Specification {
         SchemaValidationErrorCollector badErrorCollector = new SchemaValidationErrorCollector()
 
         when:
-        new ObjectsImplementInterfaces().check(goodImpl, goodErrorCollector)
-        new ObjectsImplementInterfaces().check(badImpl, badErrorCollector)
+        new TypesImplementInterfaces().check(goodImpl, goodErrorCollector)
+        new TypesImplementInterfaces().check(badImpl, badErrorCollector)
 
         then:
         goodErrorCollector.getErrors().isEmpty()
@@ -241,8 +241,8 @@ class ObjectsImplementInterfacesTest extends Specification {
         SchemaValidationErrorCollector badErrorCollector = new SchemaValidationErrorCollector()
 
         when:
-        new ObjectsImplementInterfaces().check(goodImpl, goodErrorCollector)
-        new ObjectsImplementInterfaces().check(badImpl, badErrorCollector)
+        new TypesImplementInterfaces().check(goodImpl, goodErrorCollector)
+        new TypesImplementInterfaces().check(badImpl, badErrorCollector)
 
         then:
         goodErrorCollector.getErrors().isEmpty()
@@ -273,8 +273,8 @@ class ObjectsImplementInterfacesTest extends Specification {
         SchemaValidationErrorCollector badErrorCollector = new SchemaValidationErrorCollector()
 
         when:
-        new ObjectsImplementInterfaces().check(goodImpl, goodErrorCollector)
-        new ObjectsImplementInterfaces().check(badImpl, badErrorCollector)
+        new TypesImplementInterfaces().check(goodImpl, goodErrorCollector)
+        new TypesImplementInterfaces().check(badImpl, badErrorCollector)
 
         then:
         goodErrorCollector.getErrors().isEmpty()
@@ -311,7 +311,7 @@ class ObjectsImplementInterfacesTest extends Specification {
         SchemaValidationErrorCollector goodErrorCollector = new SchemaValidationErrorCollector()
 
         when:
-        new ObjectsImplementInterfaces().check(testInterfaceImpl, goodErrorCollector)
+        new TypesImplementInterfaces().check(testInterfaceImpl, goodErrorCollector)
 
         then:
         goodErrorCollector.getErrors().isEmpty()
