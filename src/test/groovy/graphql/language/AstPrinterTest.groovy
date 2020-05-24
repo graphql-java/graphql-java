@@ -586,4 +586,22 @@ extend input Input @directive {
 
     }
 
+    def 'Interfaces implementing interfaces in extension'() {
+        given:
+        AstPrinter astPrinter = new AstPrinter(true)
+        def interfaceType = InterfaceTypeExtensionDefinition
+                .newInterfaceTypeExtensionDefinition()
+                .name("Resource")
+                .implementz(new TypeName("Node"))
+                .implementz(new TypeName("Extra"))
+                .build()
+
+        when:
+        def result = astPrinter.printAst(interfaceType)
+
+        then:
+        result == "extend interface Resource implements Node & Extra {}"
+
+    }
+
 }
