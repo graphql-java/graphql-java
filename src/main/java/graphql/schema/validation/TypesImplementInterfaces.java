@@ -5,10 +5,12 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLImplementingType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedOutputType;
+import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
+import graphql.util.FpKit;
 
 import java.util.HashMap;
 import java.util.List;
@@ -104,32 +106,41 @@ public class TypesImplementInterfaces implements SchemaValidationRule {
     private void checkFieldArgumentEquivalence(GraphQLImplementingType implementingType, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector, GraphQLFieldDefinition interfaceFieldDef, GraphQLFieldDefinition objectFieldDef) {
         List<GraphQLArgument> interfaceArgs = interfaceFieldDef.getArguments();
         List<GraphQLArgument> objectArgs = objectFieldDef.getArguments();
-        if (interfaceArgs.size() != objectArgs.size()) {
+
+        if (interfaceArgs.size() > objectArgs.size()) {
             validationErrorCollector.addError(
                     error(format("%s type '%s' does not implement interface '%s' because field '%s' has a different number of arguments",
                             TYPE_OF_MAP.get(implementingType.getClass()), implementingType.getName(), interfaceType.getName(), interfaceFieldDef.getName())));
         } else {
-            for (int i = 0; i < interfaceArgs.size(); i++) {
-                GraphQLArgument interfaceArg = interfaceArgs.get(i);
-                GraphQLArgument objectArg = objectArgs.get(i);
+            Map<String, GraphQLArgument> interfaceArgsByName = FpKit.getByName(interfaceArgs, GraphQLArgument::getName);
 
-                String interfaceArgStr = makeArgStr(interfaceArg);
-                String objectArgStr = makeArgStr(objectArg);
+            objectArgs.forEach(objectArg -> {
+                GraphQLArgument interfaceArg = interfaceArgsByName.get(objectArg.getName());
 
-                boolean same = true;
-                if (!interfaceArgStr.equals(objectArgStr)) {
-                    same = false;
-                }
-                if (!Objects.equals(interfaceArg.getDefaultValue(), objectArg.getDefaultValue())) {
-                    same = false;
-                }
-                if (!same) {
-                    validationErrorCollector.addError(
-                            error(format("%s type '%s' does not implement interface '%s' because field '%s' argument '%s' is defined differently",
-                                    TYPE_OF_MAP.get(implementingType.getClass()), implementingType.getName(), interfaceType.getName(), interfaceFieldDef.getName(), interfaceArg.getName())));
-                }
+                if (interfaceArg == null) {
+                    if (objectArg.getType() instanceof GraphQLNonNull) {
+                        validationErrorCollector.addError(
+                                error(format("%s type '%s' field '%s' defines an additional non-optional argument '%s' which is not allowed because field is also defined in interface '%s'",
+                                        TYPE_OF_MAP.get(implementingType.getClass()), implementingType.getName(), objectFieldDef.getName(), objectArg.getName(), interfaceType.getName())));
+                    }
+                } else {
+                    String interfaceArgStr = makeArgStr(objectArg);
+                    String objectArgStr = makeArgStr(interfaceArg);
 
-            }
+                    boolean same = true;
+                    if (!interfaceArgStr.equals(objectArgStr)) {
+                        same = false;
+                    }
+                    if (!Objects.equals(objectArg.getDefaultValue(), interfaceArg.getDefaultValue())) {
+                        same = false;
+                    }
+                    if (!same) {
+                        validationErrorCollector.addError(
+                                error(format("%s type '%s' does not implement interface '%s' because field '%s' argument '%s' is defined differently",
+                                        TYPE_OF_MAP.get(implementingType.getClass()), implementingType.getName(), interfaceType.getName(), interfaceFieldDef.getName(), objectArg.getName())));
+                    }
+                }
+            });
         }
     }
 
