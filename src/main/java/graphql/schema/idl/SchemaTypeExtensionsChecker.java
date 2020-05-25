@@ -3,7 +3,6 @@ package graphql.schema.idl;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.language.Argument;
-import graphql.language.AstPrinter;
 import graphql.language.Directive;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValueDefinition;
@@ -14,7 +13,6 @@ import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
-import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
@@ -328,10 +326,7 @@ class SchemaTypeExtensionsChecker {
         fieldDefinitions.forEach(fld -> {
             FieldDefinition reference = referenceMap.get(fld.getName());
             if (referenceMap.containsKey(fld.getName())) {
-                // ok they have the same field but is it the same type
-                if (!isSameType(fld.getType(), reference.getType())) {
-                    errors.add(new TypeExtensionFieldRedefinitionError(typeDefinition, fld));
-                }
+                errors.add(new TypeExtensionFieldRedefinitionError(typeDefinition, fld));
             }
         });
     }
@@ -342,10 +337,7 @@ class SchemaTypeExtensionsChecker {
         inputValueDefinitions.forEach(fld -> {
             InputValueDefinition reference = referenceMap.get(fld.getName());
             if (referenceMap.containsKey(fld.getName())) {
-                // ok they have the same field but is it the same type
-                if (!isSameType(fld.getType(), reference.getType())) {
-                    errors.add(new TypeExtensionFieldRedefinitionError(typeDefinition, fld));
-                }
+                errors.add(new TypeExtensionFieldRedefinitionError(typeDefinition, fld));
             }
         });
     }
@@ -369,12 +361,4 @@ class SchemaTypeExtensionsChecker {
             consumer.accept(t);
         }
     }
-
-
-    private boolean isSameType(Type type1, Type type2) {
-        String s1 = AstPrinter.printAst(type1);
-        String s2 = AstPrinter.printAst(type2);
-        return s1.equals(s2);
-    }
-
 }
