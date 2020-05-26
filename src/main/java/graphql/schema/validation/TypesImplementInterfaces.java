@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
@@ -107,13 +108,18 @@ public class TypesImplementInterfaces implements SchemaValidationRule {
         List<GraphQLArgument> interfaceArgs = interfaceFieldDef.getArguments();
         List<GraphQLArgument> objectArgs = objectFieldDef.getArguments();
 
-        if (interfaceArgs.size() > objectArgs.size()) {
-            validationErrorCollector.addError(
-                    error(format("%s type '%s' does not implement interface '%s' because field '%s' has a different number of arguments",
-                            TYPE_OF_MAP.get(implementingType.getClass()), implementingType.getName(), interfaceType.getName(), interfaceFieldDef.getName())));
-        } else {
-            Map<String, GraphQLArgument> interfaceArgsByName = FpKit.getByName(interfaceArgs, GraphQLArgument::getName);
+        Map<String, GraphQLArgument> interfaceArgsByName = FpKit.getByName(interfaceArgs, GraphQLArgument::getName);
+        List<String> objectArgsNames = FpKit.map(objectArgs, GraphQLArgument::getName);
 
+        if (!objectArgsNames.containsAll(interfaceArgsByName.keySet())) {
+            final String missingArgsNames = interfaceArgsByName.keySet().stream()
+                    .filter(name -> !objectArgsNames.contains(name))
+                    .collect(Collectors.joining(", "));
+
+            validationErrorCollector.addError(
+                    error(format("%s type '%s' does not implement interface '%s' because field '%s' is missing argument(s): '%s'",
+                            TYPE_OF_MAP.get(implementingType.getClass()), implementingType.getName(), interfaceType.getName(), interfaceFieldDef.getName(), missingArgsNames)));
+        } else {
             objectArgs.forEach(objectArg -> {
                 GraphQLArgument interfaceArg = interfaceArgsByName.get(objectArg.getName());
 
