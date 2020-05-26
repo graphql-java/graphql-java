@@ -345,11 +345,11 @@ class SubscriptionExecutionStrategyTest extends Specification {
             if (i == 5) {
                 message.data == null
                 assert message.errors.size() == 2
-                assert message.errors[0].errorType == ErrorType.DataFetchingException
-                assert message.errors[0].message == "Cannot return null for non-nullable type: 'String' within parent 'Message' (/newMessage/sender)"
+                assert message.errors[0].errorType == ErrorType.NullValueInNonNullableField
+                assert message.errors[0].message.contains("/newMessage/sender")
 
-                assert message.errors[1].errorType == ErrorType.DataFetchingException
-                assert message.errors[1].message == "Cannot return null for non-nullable type: 'String' within parent 'Message' (/newMessage/text)"
+                assert message.errors[1].errorType == ErrorType.NullValueInNonNullableField
+                assert message.errors[1].message.contains("/newMessage/text")
             } else {
                 assert message.data == ["newMessage": [sender: "sender" + i, text: "text" + i]]
             }
