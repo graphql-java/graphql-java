@@ -188,7 +188,9 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         Map<Object, Object> dataLoaderStats = buildStatsMap(state);
         statsMap.put("dataloader", dataLoaderStats);
 
-        log.debug("Data loader stats : {}", dataLoaderStats);
+        if (log.isDebugEnabled()) {
+            log.debug("Data loader stats : {}", dataLoaderStats);
+        }
 
         return CompletableFuture.completedFuture(new ExecutionResultImpl(executionResult.getData(), executionResult.getErrors(), statsMap));
     }

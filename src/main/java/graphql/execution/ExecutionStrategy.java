@@ -268,13 +268,19 @@ public abstract class ExecutionStrategy {
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
         ExecutionId executionId = executionContext.getExecutionId();
         try {
-            log.debug("'{}' fetching field '{}' using data fetcher '{}'...", executionId, executionStepInfo.getPath(), dataFetcher.getClass().getName());
+            if (log.isDebugEnabled()) {
+                log.debug("'{}' fetching field '{}' using data fetcher '{}'...", executionId, executionStepInfo.getPath(), dataFetcher.getClass().getName());
+            }
             Object fetchedValueRaw = dataFetcher.get(environment);
-            logNotSafe.debug("'{}' field '{}' fetch returned '{}'", executionId, executionStepInfo.getPath(), fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
+            if (logNotSafe.isDebugEnabled()) {
+                logNotSafe.debug("'{}' field '{}' fetch returned '{}'", executionId, executionStepInfo.getPath(), fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
+            }
 
             fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
         } catch (Exception e) {
-            logNotSafe.debug(String.format("'%s', field '%s' fetch threw exception", executionId, executionStepInfo.getPath()), e);
+            if (logNotSafe.isDebugEnabled()) {
+                logNotSafe.debug("'{}', field '{}' fetch threw exception", executionId, executionStepInfo.getPath(), e);
+            }
 
             fetchedValue = new CompletableFuture<>();
             fetchedValue.completeExceptionally(e);
@@ -385,7 +391,9 @@ public abstract class ExecutionStrategy {
                         .nonNullFieldValidator(nonNullableFieldValidator)
         );
 
-        log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), executionStepInfo.getPath());
+        if (log.isDebugEnabled()) {
+            log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), executionStepInfo.getPath());
+        }
 
         FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
 

@@ -288,7 +288,9 @@ public class FieldLevelTrackingApproach {
 
     void dispatch() {
         DataLoaderRegistry dataLoaderRegistry = getDataLoaderRegistry();
-        log.debug("Dispatching data loaders ({})", dataLoaderRegistry.getKeys());
+        if (log.isDebugEnabled()) {
+            log.debug("Dispatching data loaders ({})", dataLoaderRegistry.getKeys());
+        }
         dataLoaderRegistry.dispatchAll();
     }
 

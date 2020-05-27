@@ -161,7 +161,9 @@ public class Execution {
             } else {
                 executionStrategy = executionContext.getQueryStrategy();
             }
-            logNotSafe.debug("Executing '{}' query operation: '{}' using '{}' execution strategy", executionContext.getExecutionId(), operation, executionStrategy.getClass().getName());
+            if (logNotSafe.isDebugEnabled()) {
+                logNotSafe.debug("Executing '{}' query operation: '{}' using '{}' execution strategy", executionContext.getExecutionId(), operation, executionStrategy.getClass().getName());
+            }
             result = executionStrategy.execute(executionContext, parameters);
         } catch (NonNullableFieldWasNullException e) {
             // this means it was non null types all the way from an offending non null type

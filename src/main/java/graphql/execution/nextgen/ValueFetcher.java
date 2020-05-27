@@ -162,12 +162,18 @@ public class ValueFetcher {
         CompletableFuture<Object> result = new CompletableFuture<>();
         try {
             DataFetcher dataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);
-            log.debug("'{}' fetching field '{}' using data fetcher '{}'...", executionId, path, dataFetcher.getClass().getName());
+            if (log.isDebugEnabled()) {
+                log.debug("'{}' fetching field '{}' using data fetcher '{}'...", executionId, path, dataFetcher.getClass().getName());
+            }
             Object fetchedValueRaw = dataFetcher.get(environment);
-            logNotSafe.debug("'{}' field '{}' fetch returned '{}'", executionId, path, fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
+            if (logNotSafe.isDebugEnabled()) {
+                logNotSafe.debug("'{}' field '{}' fetch returned '{}'", executionId, path, fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
+            }
             handleFetchedValue(fetchedValueRaw, result);
         } catch (Exception e) {
-            logNotSafe.debug(String.format("'%s', field '%s' fetch threw exception", executionId, path), e);
+            if (logNotSafe.isDebugEnabled()) {
+                logNotSafe.debug("'{}', field '{}' fetch threw exception", executionId, path, e);
+            }
             result.completeExceptionally(e);
         }
         return result;

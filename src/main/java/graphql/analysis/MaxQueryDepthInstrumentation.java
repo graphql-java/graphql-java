@@ -56,7 +56,9 @@ public class MaxQueryDepthInstrumentation extends SimpleInstrumentation {
             }
             QueryTraverser queryTraverser = newQueryTraverser(parameters);
             int depth = queryTraverser.reducePreOrder((env, acc) -> Math.max(getPathLength(env.getParentEnvironment()), acc), 0);
-            log.debug("Query depth info: {}", depth);
+            if (log.isDebugEnabled()) {
+                log.debug("Query depth info: {}", depth);
+            }
             if (depth > maxDepth) {
                 QueryDepthInfo queryDepthInfo = QueryDepthInfo.newQueryDepthInfo()
                         .depth(depth)
