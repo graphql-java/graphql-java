@@ -17,7 +17,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static java.util.Collections.emptyMap;
 
 @PublicApi
-public class VariableDefinition extends AbstractNode<VariableDefinition> implements NamedNode<VariableDefinition> {
+public class VariableDefinition extends AbstractNode<VariableDefinition> implements DirectivesContainer<VariableDefinition>, NamedNode<VariableDefinition> {
 
     private final String name;
     private final Type type;
@@ -26,6 +26,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
 
     public static final String CHILD_TYPE = "type";
     public static final String CHILD_DEFAULT_VALUE = "defaultValue";
+    public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
     protected VariableDefinition(String name,
@@ -53,7 +54,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     public VariableDefinition(String name,
                               Type type,
                               Value defaultValue) {
-        this(name, type, defaultValue, null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, type, defaultValue, new ArrayList<>(), null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     /**
@@ -64,7 +65,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
      */
     public VariableDefinition(String name,
                               Type type) {
-        this(name, type, null, null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, type, null, new ArrayList<>(), null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public Value getDefaultValue() {
@@ -79,8 +80,9 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         return type;
     }
 
+    @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return new ArrayList<>(directives);
     }
 
     @Override
@@ -90,6 +92,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         if (defaultValue != null) {
             result.add(defaultValue);
         }
+        result.addAll(directives);
         return result;
     }
 
@@ -98,6 +101,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         return newNodeChildrenContainer()
                 .child(CHILD_TYPE, type)
                 .child(CHILD_DEFAULT_VALUE, defaultValue)
+                .children(CHILD_DIRECTIVES, directives)
                 .build();
     }
 
@@ -106,6 +110,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         return transform(builder -> builder
                 .type(newChildren.getChildOrNull(CHILD_TYPE))
                 .defaultValue(newChildren.getChildOrNull(CHILD_DEFAULT_VALUE))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
         );
     }
 
@@ -142,6 +147,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
                 "name='" + name + '\'' +
                 ", type=" + type +
                 ", defaultValue=" + defaultValue +
+                ", directives=" + directives +
                 '}';
     }
 
@@ -173,7 +179,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         return builder.build();
     }
 
-    public static final class Builder implements NodeBuilder {
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private String name;
         private List<Comment> comments = new ArrayList<>();
@@ -192,6 +198,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
             this.name = existing.getName();
             this.type = existing.getType();
             this.defaultValue = existing.getDefaultValue();
+            this.directives = existing.getDirectives();
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
@@ -221,6 +228,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
             return this;
         }
 
+        @Override
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;
