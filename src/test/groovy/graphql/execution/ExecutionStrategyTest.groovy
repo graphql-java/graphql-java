@@ -60,11 +60,21 @@ class ExecutionStrategyTest extends Specification {
     def buildContext(GraphQLSchema schema = null) {
         ExecutionId executionId = ExecutionId.from("executionId123")
         def variables = [arg1: "value1"]
-        new ExecutionContext(SimpleInstrumentation.INSTANCE, executionId, schema ?: StarWarsSchema.starWarsSchema, null,
-                executionStrategy, executionStrategy, executionStrategy,
-                [:], null, null,
-                variables, "context", "root", new DataLoaderRegistry(),
-                null, Locale.getDefault(), Collections.emptyList(), ValueUnboxer.DEFAULT)
+        def builder = ExecutionContextBuilder.newExecutionContextBuilder()
+                .instrumentation(SimpleInstrumentation.INSTANCE)
+                .executionId(executionId)
+                .graphQLSchema(schema ?: StarWarsSchema.starWarsSchema)
+                .queryStrategy(executionStrategy)
+                .mutationStrategy(executionStrategy)
+                .subscriptionStrategy(executionStrategy)
+                .variables(variables)
+                .context("context")
+                .root("root")
+                .dataLoaderRegistry(new DataLoaderRegistry())
+                .locale(Locale.getDefault())
+                .valueUnboxer(ValueUnboxer.DEFAULT)
+
+        new ExecutionContext(builder)
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")

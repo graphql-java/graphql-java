@@ -3,6 +3,7 @@ package graphql.schema
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.Scalars
+import graphql.StarWarsSchema
 import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
 import graphql.schema.visibility.GraphqlFieldVisibility
@@ -167,13 +168,36 @@ class GraphQLCodeRegistryTest extends Specification {
         (schema.getCodeRegistry().getFieldVisibility() as NamedFieldVisibility).name == "B"
     }
 
+    def "PropertyDataFetcher is the default data fetcher used when no data fetcher is available"() {
+
+        when:
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().build()
+        def dataFetcher = codeRegistry.getDataFetcher(StarWarsSchema.humanType, StarWarsSchema.humanType.getFieldDefinition("name"))
+        then:
+        dataFetcher instanceof PropertyDataFetcher
+    }
+
+    def "custom DF can be the default data fetcher used when no data fetcher is available"() {
+
+        when:
+
+        DataFetcher customDF = { env -> "hi" }
+        DataFetcherFactory customDataFetcherFactory = { env -> customDF }
+
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().defaultDataFetcher(customDataFetcherFactory).build()
+        def dataFetcher = codeRegistry.getDataFetcher(StarWarsSchema.humanType, StarWarsSchema.humanType.getFieldDefinition("name"))
+        then:
+        dataFetcher == customDF
+        dataFetcher.get(null) == "hi"
+    }
+
     def "integration test that code registry gets asked for data fetchers"() {
 
         def queryType = newObject().name("Query")
                 .field(newFieldDefinition().name("codeRegistryField").type(Scalars.GraphQLString))
                 .field(newFieldDefinition().name("nonCodeRegistryField").type(Scalars.GraphQLString)
-        // df comes from the field itself here
-                .dataFetcher(new NamedDF("nonCodeRegistryFieldValue")))
+                // df comes from the field itself here
+                        .dataFetcher(new NamedDF("nonCodeRegistryFieldValue")))
                 .field(newFieldDefinition().name("neitherSpecified").type(Scalars.GraphQLString))
                 .build()
 
@@ -211,7 +235,7 @@ class GraphQLCodeRegistryTest extends Specification {
 
         def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .dataFetchers("Query", [codeRegistryField: new NamedDF("codeRegistryFieldValue")]
-        )
+                )
         def runtime = newRuntimeWiring().type(newTypeWiring("Query")
                 .dataFetcher("nonCodeRegistryField", new NamedDF("nonCodeRegistryFieldValue")))
                 .codeRegistry(codeRegistry)

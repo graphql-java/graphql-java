@@ -7,7 +7,6 @@ import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
-import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 
 
@@ -23,10 +22,6 @@ public class VariableDefaultValuesOfCorrectType extends AbstractRule {
     public void checkVariableDefinition(VariableDefinition variableDefinition) {
         GraphQLInputType inputType = getValidationContext().getInputType();
         if (inputType == null) return;
-        if (isNonNull(inputType) && variableDefinition.getDefaultValue() != null) {
-            String message = "Missing value for non null type";
-            addError(ValidationErrorType.DefaultForNonNullArgument, variableDefinition.getSourceLocation(), message);
-        }
         if (variableDefinition.getDefaultValue() != null
                 && !getValidationUtil().isValidLiteralValue(variableDefinition.getDefaultValue(), inputType, getValidationContext().getSchema())) {
             String message = String.format("Bad default value %s for type %s", variableDefinition.getDefaultValue(), simplePrint(inputType));

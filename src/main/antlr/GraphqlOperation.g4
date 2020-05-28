@@ -7,7 +7,7 @@ operationType  name? variableDefinitions? directives? selectionSet;
 
 variableDefinitions : '(' variableDefinition+ ')';
 
-variableDefinition : variable ':' type defaultValue?;
+variableDefinition : variable ':' type defaultValue? directives?;
 
 
 selectionSet :  '{' selection+ '}';

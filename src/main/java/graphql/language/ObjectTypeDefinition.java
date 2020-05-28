@@ -17,7 +17,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static java.util.Collections.emptyMap;
 
 @PublicApi
-public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefinition> implements TypeDefinition<ObjectTypeDefinition>, DirectivesContainer<ObjectTypeDefinition>, NamedNode<ObjectTypeDefinition> {
+public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefinition> implements ImplementingTypeDefinition<ObjectTypeDefinition>, DirectivesContainer<ObjectTypeDefinition>, NamedNode<ObjectTypeDefinition> {
     private final String name;
     private final List<Type> implementz;
     private final List<Directive> directives;
@@ -53,6 +53,7 @@ public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefini
         this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
+    @Override
     public List<Type> getImplements() {
         return new ArrayList<>(implementz);
     }
@@ -62,6 +63,7 @@ public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefini
         return new ArrayList<>(directives);
     }
 
+    @Override
     public List<FieldDefinition> getFieldDefinitions() {
         return new ArrayList<>(fieldDefinitions);
     }

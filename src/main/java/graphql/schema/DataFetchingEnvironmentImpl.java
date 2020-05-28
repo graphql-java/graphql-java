@@ -19,12 +19,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Supplier;
 
 @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
 @Internal
 public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Object source;
-    private final Map<String, Object> arguments;
+    private final Supplier<Map<String, Object>> arguments;
     private final Object context;
     private final Object localContext;
     private final Object root;
@@ -36,7 +37,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final ExecutionId executionId;
     private final DataFetchingFieldSelectionSet selectionSet;
-    private final ExecutionStepInfo executionStepInfo;
+    private final Supplier<ExecutionStepInfo> executionStepInfo;
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
     private final Locale locale;
@@ -47,7 +48,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     private DataFetchingEnvironmentImpl(Builder builder) {
         this.source = builder.source;
-        this.arguments = builder.arguments == null ? Collections.emptyMap() : builder.arguments;
+        this.arguments = builder.arguments == null ? Collections::emptyMap : builder.arguments;
         this.context = builder.context;
         this.localContext = builder.localContext;
         this.root = builder.root;
@@ -89,7 +90,6 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                 .dataLoaderRegistry(executionContext.getDataLoaderRegistry())
                 .cacheControl(executionContext.getCacheControl())
                 .locale(executionContext.getLocale())
-                .locale(executionContext.getLocale())
                 .document(executionContext.getDocument())
                 .operationDefinition(executionContext.getOperationDefinition())
                 .variables(executionContext.getVariables())
@@ -103,22 +103,22 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public Map<String, Object> getArguments() {
-        return Collections.unmodifiableMap(arguments);
+        return Collections.unmodifiableMap(arguments.get());
     }
 
     @Override
     public boolean containsArgument(String name) {
-        return arguments.containsKey(name);
+        return arguments.get().containsKey(name);
     }
 
     @Override
     public <T> T getArgument(String name) {
-        return (T) arguments.get(name);
+        return (T) arguments.get().get(name);
     }
 
     @Override
     public <T> T getArgumentOrDefault(String name, T defaultValue) {
-        return (T) arguments.getOrDefault(name, defaultValue);
+        return (T) arguments.get().getOrDefault(name, defaultValue);
     }
 
     @Override
@@ -193,7 +193,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public ExecutionStepInfo getExecutionStepInfo() {
-        return executionStepInfo;
+        return executionStepInfo.get();
     }
 
     @Override
@@ -251,13 +251,13 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private GraphQLSchema graphQLSchema;
         private ExecutionId executionId;
         private DataFetchingFieldSelectionSet selectionSet;
-        private ExecutionStepInfo executionStepInfo;
+        private Supplier<ExecutionStepInfo> executionStepInfo;
         private DataLoaderRegistry dataLoaderRegistry;
         private CacheControl cacheControl;
         private Locale locale;
         private OperationDefinition operationDefinition;
         private Document document;
-        private Map<String, Object> arguments;
+        private Supplier<Map<String, Object>> arguments;
         private Map<String, FragmentDefinition> fragmentsByName;
         private Map<String, Object> variables;
         private QueryDirectives queryDirectives;
@@ -279,7 +279,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.executionStepInfo = env.executionStepInfo;
             this.dataLoaderRegistry = env.dataLoaderRegistry;
             this.cacheControl = env.cacheControl;
-            this.localContext = env.locale;
+            this.locale = env.locale;
             this.operationDefinition = env.operationDefinition;
             this.document = env.document;
             this.variables = env.variables;
@@ -295,6 +295,10 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         }
 
         public Builder arguments(Map<String, Object> arguments) {
+            return arguments(() -> arguments);
+        }
+
+        public Builder arguments(Supplier<Map<String, Object>> arguments) {
             this.arguments = arguments;
             return this;
         }
@@ -355,6 +359,10 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         }
 
         public Builder executionStepInfo(ExecutionStepInfo executionStepInfo) {
+            return executionStepInfo(() -> executionStepInfo);
+        }
+
+        public Builder executionStepInfo(Supplier<ExecutionStepInfo> executionStepInfo) {
             this.executionStepInfo = executionStepInfo;
             return this;
         }

@@ -25,8 +25,8 @@ public class GraphqlElementParentTree {
 
     @Internal
     public GraphqlElementParentTree(Deque<GraphQLSchemaElement> nodeStack) {
-        assertNotNull(nodeStack, "You MUST have a non null stack of elements");
-        assertTrue(!nodeStack.isEmpty(), "You MUST have a non empty stack of element");
+        assertNotNull(nodeStack, () -> "You MUST have a non null stack of elements");
+        assertTrue(!nodeStack.isEmpty(), () -> "You MUST have a non empty stack of element");
 
         Deque<GraphQLSchemaElement> copy = new ArrayDeque<>(nodeStack);
         element = copy.pop();

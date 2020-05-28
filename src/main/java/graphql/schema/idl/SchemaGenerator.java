@@ -1,8 +1,10 @@
 package graphql.schema.idl;
 
+import graphql.Directives;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.introspection.Introspection.DirectiveLocation;
+import graphql.language.Argument;
 import graphql.language.Directive;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
@@ -18,6 +20,7 @@ import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.OperationTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.ScalarTypeExtensionDefinition;
+import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
@@ -54,6 +57,7 @@ import graphql.schema.TypeResolverProxy;
 import graphql.schema.idl.errors.NotAnInputTypeError;
 import graphql.schema.idl.errors.NotAnOutputTypeError;
 import graphql.schema.idl.errors.SchemaProblem;
+import graphql.util.FpKit;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -83,6 +87,7 @@ import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
 import static graphql.introspection.Introspection.DirectiveLocation.UNION;
 import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition;
 import static graphql.schema.GraphQLTypeReference.typeRef;
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 /**
@@ -102,7 +107,6 @@ public class SchemaGenerator {
         public static Options defaultOptions() {
             return new Options();
         }
-
     }
 
 
@@ -136,7 +140,8 @@ public class SchemaGenerator {
         @SuppressWarnings({"OptionalGetWithoutIsPresent", "ConstantConditions"})
         TypeDefinition getTypeDefinition(Type type) {
             Optional<TypeDefinition> optionalTypeDefinition = typeRegistry.getType(type);
-            assertTrue(optionalTypeDefinition.isPresent(), " type definition for type '" + type + "' not found");
+            assertTrue(optionalTypeDefinition.isPresent(),
+                    () -> format(" type definition for type '%s' not found", type));
             return optionalTypeDefinition.get();
         }
 
@@ -213,9 +218,7 @@ public class SchemaGenerator {
      *
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
-     *
      * @return an executable schema
-     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -229,9 +232,7 @@ public class SchemaGenerator {
      * @param options      the controlling options
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
-     *
      * @return an executable schema
-     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(Options options, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -239,7 +240,7 @@ public class SchemaGenerator {
         TypeDefinitionRegistry typeRegistryCopy = new TypeDefinitionRegistry();
         typeRegistryCopy.merge(typeRegistry);
 
-        schemaGeneratorHelper.addDeprecatedDirectiveDefinition(typeRegistryCopy);
+        schemaGeneratorHelper.addDirectivesIncludedByDefault(typeRegistryCopy);
 
         List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistryCopy, wiring);
         if (!errors.isEmpty()) {
@@ -355,7 +356,6 @@ public class SchemaGenerator {
      * but then we build the rest of the types specified and put them in as additional types
      *
      * @param buildCtx the context we need to work out what we are doing
-     *
      * @return the additional types not referenced from the top level operations
      */
     private Set<GraphQLType> buildAdditionalTypes(BuildContext buildCtx) {
@@ -400,7 +400,6 @@ public class SchemaGenerator {
      *
      * @param buildCtx the context we need to work out what we are doing
      * @param rawType  the type to be built
-     *
      * @return an output type
      */
     @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
@@ -508,8 +507,38 @@ public class SchemaGenerator {
         return objectType;
     }
 
-    private void buildObjectTypeInterfaces(BuildContext buildCtx, ObjectTypeDefinition
-            typeDefinition, GraphQLObjectType.Builder builder, List<ObjectTypeExtensionDefinition> extensions) {
+    private void buildObjectTypeInterfaces(BuildContext buildCtx,
+                                           ObjectTypeDefinition typeDefinition,
+                                           GraphQLObjectType.Builder builder,
+                                           List<ObjectTypeExtensionDefinition> extensions) {
+        Map<String, GraphQLOutputType> interfaces = new LinkedHashMap<>();
+        typeDefinition.getImplements().forEach(type -> {
+            GraphQLNamedOutputType newInterfaceType = buildOutputType(buildCtx, type);
+            interfaces.put(newInterfaceType.getName(), newInterfaceType);
+        });
+
+        extensions.forEach(extension -> extension.getImplements().forEach(type -> {
+            GraphQLInterfaceType interfaceType = buildOutputType(buildCtx, type);
+            if (!interfaces.containsKey(interfaceType.getName())) {
+                interfaces.put(interfaceType.getName(), interfaceType);
+            }
+        }));
+
+        interfaces.values().forEach(interfaze -> {
+            if (interfaze instanceof GraphQLInterfaceType) {
+                builder.withInterface((GraphQLInterfaceType) interfaze);
+                return;
+            }
+            if (interfaze instanceof GraphQLTypeReference) {
+                builder.withInterface((GraphQLTypeReference) interfaze);
+            }
+        });
+    }
+
+    private void buildInterfaceTypeInterfaces(BuildContext buildCtx,
+                                              InterfaceTypeDefinition typeDefinition,
+                                              GraphQLInterfaceType.Builder builder,
+                                              List<InterfaceTypeExtensionDefinition> extensions) {
         Map<String, GraphQLOutputType> interfaces = new LinkedHashMap<>();
         typeDefinition.getImplements().forEach(type -> {
             GraphQLNamedOutputType newInterfaceType = buildOutputType(buildCtx, type);
@@ -560,6 +589,8 @@ public class SchemaGenerator {
                 builder.field(fieldDefinition);
             }
         }));
+
+        buildInterfaceTypeInterfaces(buildCtx, typeDefinition, builder, extensions);
 
         GraphQLInterfaceType interfaceType = builder.build();
         if (!buildCtx.codeRegistry.hasTypeResolver(interfaceType.getName())) {
@@ -657,7 +688,8 @@ public class SchemaGenerator {
         Object value;
         if (enumValuesProvider != null) {
             value = enumValuesProvider.getValue(evd.getName());
-            assertNotNull(value, "EnumValuesProvider for %s returned null for %s", typeDefinition.getName(), evd.getName());
+            assertNotNull(value,
+                    () -> format("EnumValuesProvider for %s returned null for %s", typeDefinition.getName(), evd.getName()));
         } else {
             value = evd.getName();
         }
@@ -694,15 +726,30 @@ public class SchemaGenerator {
             scalar = scalar.transform(builder -> builder
                     .definition(typeDefinition)
                     .comparatorRegistry(buildCtx.getComparatorRegistry())
-                    .withDirectives(
-                            buildDirectives(typeDefinition.getDirectives(),
-                                    directivesOf(extensions), SCALAR, buildCtx.getDirectiveDefinitions(), buildCtx.getComparatorRegistry())
+                    .specifiedByUrl(getSpecifiedByUrl(typeDefinition, extensions))
+                    .withDirectives(buildDirectives(
+                            typeDefinition.getDirectives(),
+                            directivesOf(extensions),
+                            SCALAR,
+                            buildCtx.getDirectiveDefinitions(),
+                            buildCtx.getComparatorRegistry())
                     ));
-            //
-            // only allow modification of custom scalars
             scalar = directiveBehaviour.onScalar(scalar, buildCtx.mkBehaviourParams());
         }
         return scalar;
+    }
+
+    private String getSpecifiedByUrl(ScalarTypeDefinition scalarTypeDefinition, List<ScalarTypeExtensionDefinition> extensions) {
+        List<Directive> allDirectives = new ArrayList<>(scalarTypeDefinition.getDirectives());
+        extensions.forEach(extension -> allDirectives.addAll(extension.getDirectives()));
+        Optional<Directive> specifiedByDirective = FpKit.findOne(allDirectives,
+                directiveDefinition -> directiveDefinition.getName().equals(Directives.SpecifiedByDirective.getName()));
+        if (!specifiedByDirective.isPresent()) {
+            return null;
+        }
+        Argument urlArgument = specifiedByDirective.get().getArgument("url");
+        StringValue url = (StringValue) urlArgument.getValue();
+        return url.getValue();
     }
 
     private GraphQLFieldDefinition buildField(BuildContext buildCtx, TypeDefinition parentType, FieldDefinition
@@ -751,14 +798,14 @@ public class SchemaGenerator {
         DataFetcherFactory<?> dataFetcherFactory;
         if (wiringFactory.providesDataFetcherFactory(wiringEnvironment)) {
             dataFetcherFactory = wiringFactory.getDataFetcherFactory(wiringEnvironment);
-            assertNotNull(dataFetcherFactory, "The WiringFactory indicated it provides a data fetcher factory but then returned null");
+            assertNotNull(dataFetcherFactory, () -> "The WiringFactory indicated it provides a data fetcher factory but then returned null");
         } else {
             //
             // ok they provide a data fetcher directly
             DataFetcher<?> dataFetcher;
             if (wiringFactory.providesDataFetcher(wiringEnvironment)) {
                 dataFetcher = wiringFactory.getDataFetcher(wiringEnvironment);
-                assertNotNull(dataFetcher, "The WiringFactory indicated it provides a data fetcher but then returned null");
+                assertNotNull(dataFetcher, () -> "The WiringFactory indicated it provides a data fetcher but then returned null");
             } else {
                 dataFetcher = runtimeWiring.getDataFetcherForType(parentTypeName).get(fieldName);
                 if (dataFetcher == null) {
@@ -869,7 +916,7 @@ public class SchemaGenerator {
 
         if (wiringFactory.providesTypeResolver(environment)) {
             typeResolver = wiringFactory.getTypeResolver(environment);
-            assertNotNull(typeResolver, "The WiringFactory indicated it union provides a type resolver but then returned null");
+            assertNotNull(typeResolver, () -> "The WiringFactory indicated it union provides a type resolver but then returned null");
 
         } else {
             typeResolver = wiring.getTypeResolvers().get(unionType.getName());
@@ -894,7 +941,7 @@ public class SchemaGenerator {
 
         if (wiringFactory.providesTypeResolver(environment)) {
             typeResolver = wiringFactory.getTypeResolver(environment);
-            assertNotNull(typeResolver, "The WiringFactory indicated it provides a interface type resolver but then returned null");
+            assertNotNull(typeResolver, () -> "The WiringFactory indicated it provides a interface type resolver but then returned null");
 
         } else {
             typeResolver = wiring.getTypeResolvers().get(interfaceType.getName());
@@ -907,10 +954,12 @@ public class SchemaGenerator {
     }
 
 
-    private GraphQLDirective[] buildDirectives
-            (List<Directive> directives, List<Directive> extensionDirectives, DirectiveLocation
-                    directiveLocation, Set<GraphQLDirective> directiveDefinitions, GraphqlTypeComparatorRegistry
-                     comparatorRegistry) {
+    private GraphQLDirective[] buildDirectives(
+            List<Directive> directives,
+            List<Directive> extensionDirectives,
+            DirectiveLocation directiveLocation,
+            Set<GraphQLDirective> directiveDefinitions,
+            GraphqlTypeComparatorRegistry comparatorRegistry) {
         directives = directives == null ? emptyList() : directives;
         extensionDirectives = extensionDirectives == null ? emptyList() : extensionDirectives;
         Set<String> names = new LinkedHashSet<>();

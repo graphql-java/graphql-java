@@ -48,6 +48,7 @@ public class ValuesResolver {
      * @param schema              the schema
      * @param variableDefinitions the variable definitions
      * @param variableValues      the supplied variables
+     *
      * @return coerced variable values as a map
      */
     public Map<String, Object> coerceVariableValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> variableValues) {
@@ -103,15 +104,25 @@ public class ValuesResolver {
         for (GraphQLArgument fieldArgument : argumentTypes) {
             String argName = fieldArgument.getName();
             Argument argument = argumentMap.get(argName);
-            Object value;
+            Object value = null;
             if (argument != null) {
                 value = coerceValueAst(codeRegistry.getFieldVisibility(), fieldArgument.getType(), argument.getValue(), variables);
-            } else {
+            }
+            if (value == null) {
                 value = fieldArgument.getDefaultValue();
             }
-            // only put an arg into the result IF they specified a variable at all or
-            // the default value ended up being something non null
-            if (argumentMap.containsKey(argName) || value != null) {
+            boolean wasValueProvided = false;
+            if (argumentMap.containsKey(argName)) {
+                if (argument.getValue() instanceof VariableReference) {
+                    wasValueProvided = variables.containsKey(((VariableReference) argument.getValue()).getName());
+                } else {
+                    wasValueProvided = true;
+                }
+            }
+            if (fieldArgument.hasSetDefaultValue()) {
+                wasValueProvided = true;
+            }
+            if (wasValueProvided) {
                 result.put(argName, value);
             }
         }
@@ -292,7 +303,7 @@ public class ValuesResolver {
                 }
 
                 if (fieldObject == null) {
-                    if (! (field.getValue() instanceof NullValue)) {
+                    if (!(field.getValue() instanceof NullValue)) {
                         fieldObject = inputTypeField.getDefaultValue();
                     }
                 }

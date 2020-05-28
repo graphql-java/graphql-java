@@ -28,6 +28,15 @@ public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {
     }
 
     @Override
+    public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLSchemaElement> context) {
+        node.replaceInterfaces(node.getInterfaces().stream()
+                .map(type -> (GraphQLNamedOutputType) typeMap.get(type.getName()))
+                .collect(Collectors.toList()));
+        return super.visitGraphQLInterfaceType(node, context);
+    }
+
+
+    @Override
     public TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLSchemaElement> context) {
 
         node.replaceTypes(node.getTypes().stream()
@@ -43,7 +52,7 @@ public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {
 
     public TraversalControl handleTypeReference(GraphQLTypeReference node, TraverserContext<GraphQLSchemaElement> context) {
         final GraphQLType resolvedType = typeMap.get(node.getName());
-        assertNotNull(resolvedType, "type %s not found in schema", node.getName());
+        assertNotNull(resolvedType, () -> String.format("type %s not found in schema", node.getName()));
         context.getParentContext().thisNode().accept(context, new TypeRefResolvingVisitor(resolvedType));
         return CONTINUE;
     }

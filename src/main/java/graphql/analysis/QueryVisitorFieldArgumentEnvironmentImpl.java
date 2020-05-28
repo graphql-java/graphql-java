@@ -80,7 +80,6 @@ public class QueryVisitorFieldArgumentEnvironmentImpl implements QueryVisitorFie
                 ", graphQLArgument=" + graphQLArgument +
                 ", argumentValue=" + argumentValue +
                 ", variables=" + variables +
-                ", parentEnvironment=" + parentEnvironment +
                 ", traverserContext=" + traverserContext +
                 ", schema=" + schema +
                 '}';

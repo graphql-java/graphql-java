@@ -93,6 +93,8 @@ class DataFetchingEnvironmentImplTest extends Specification {
                 .variables(variables)
                 .dataLoaderRegistry(dataLoaderRegistry)
                 .cacheControl(cacheControl)
+                .locale(Locale.CANADA)
+                .localContext("localContext")
                 .build()
 
         when:
@@ -116,6 +118,8 @@ class DataFetchingEnvironmentImplTest extends Specification {
         dfe.getVariables() == dfeCopy.getVariables()
         dfe.getDataLoader("dataLoader") == dataLoader
         dfe.getCacheControl() == cacheControl
+        dfe.getLocale() == dfeCopy.getLocale()
+        dfe.getLocalContext() == dfeCopy.getLocalContext()
     }
 
     def "get or default support"() {

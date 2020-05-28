@@ -17,19 +17,22 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static java.util.Collections.emptyMap;
 
 @PublicApi
-public class VariableDefinition extends AbstractNode<VariableDefinition> implements NamedNode<VariableDefinition> {
+public class VariableDefinition extends AbstractNode<VariableDefinition> implements DirectivesContainer<VariableDefinition>, NamedNode<VariableDefinition> {
 
     private final String name;
     private final Type type;
     private final Value defaultValue;
+    private final List<Directive> directives;
 
     public static final String CHILD_TYPE = "type";
     public static final String CHILD_DEFAULT_VALUE = "defaultValue";
+    public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
     protected VariableDefinition(String name,
                                  Type type,
                                  Value defaultValue,
+                                 List<Directive> directives,
                                  SourceLocation sourceLocation,
                                  List<Comment> comments,
                                  IgnoredChars ignoredChars,
@@ -38,6 +41,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;
+        this.directives=directives;
     }
 
     /**
@@ -50,7 +54,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     public VariableDefinition(String name,
                               Type type,
                               Value defaultValue) {
-        this(name, type, defaultValue, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, type, defaultValue, new ArrayList<>(), null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
 
     /**
@@ -61,9 +65,8 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
      */
     public VariableDefinition(String name,
                               Type type) {
-        this(name, type, null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, type, null, new ArrayList<>(), null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
     }
-
 
     public Value getDefaultValue() {
         return defaultValue;
@@ -78,12 +81,18 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     }
 
     @Override
+    public List<Directive> getDirectives() {
+        return new ArrayList<>(directives);
+    }
+
+    @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         result.add(type);
         if (defaultValue != null) {
             result.add(defaultValue);
         }
+        result.addAll(directives);
         return result;
     }
 
@@ -92,6 +101,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         return newNodeChildrenContainer()
                 .child(CHILD_TYPE, type)
                 .child(CHILD_DEFAULT_VALUE, defaultValue)
+                .children(CHILD_DIRECTIVES, directives)
                 .build();
     }
 
@@ -100,6 +110,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         return transform(builder -> builder
                 .type(newChildren.getChildOrNull(CHILD_TYPE))
                 .defaultValue(newChildren.getChildOrNull(CHILD_DEFAULT_VALUE))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
         );
     }
 
@@ -123,6 +134,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         return new VariableDefinition(name,
                 deepCopy(type),
                 deepCopy(defaultValue),
+                deepCopy(directives),
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),
@@ -135,6 +147,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
                 "name='" + name + '\'' +
                 ", type=" + type +
                 ", defaultValue=" + defaultValue +
+                ", directives=" + directives +
                 '}';
     }
 
@@ -166,12 +179,13 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         return builder.build();
     }
 
-    public static final class Builder implements NodeBuilder {
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private String name;
         private List<Comment> comments = new ArrayList<>();
         private Type type;
         private Value defaultValue;
+        private List<Directive> directives = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -184,6 +198,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
             this.name = existing.getName();
             this.type = existing.getType();
             this.defaultValue = existing.getDefaultValue();
+            this.directives = existing.getDirectives();
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
@@ -213,6 +228,17 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
             return this;
         }
 
+        @Override
+        public Builder directives(List<Directive> directives) {
+            this.directives = directives;
+            return this;
+        }
+
+        public Builder directive(Directive directive) {
+            this.directives.add(directive);
+            return this;
+        }
+
         public Builder ignoredChars(IgnoredChars ignoredChars) {
             this.ignoredChars = ignoredChars;
             return this;
@@ -227,12 +253,12 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
             this.additionalData.put(key, value);
             return this;
         }
-
         public VariableDefinition build() {
             return new VariableDefinition(
                     name,
                     type,
                     defaultValue,
+                    directives,
                     sourceLocation,
                     comments,
                     ignoredChars,

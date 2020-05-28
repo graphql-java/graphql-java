@@ -400,8 +400,8 @@ class SchemaTypeCheckerTest extends Specification {
         result.get(0).getMessage().contains("tried to redefine field 'fieldA'")
     }
 
-    def "test ext type can redefine fields in their base type of the same type"() {
-
+    def "test ext type cannot redefine fields in their base type of the same type"() {
+        given:
         def spec = """                       
 
             type BaseType {
@@ -418,11 +418,12 @@ class SchemaTypeCheckerTest extends Specification {
             }
         """
 
+        when:
         def result = check(spec)
 
-        expect:
+        then:
 
-        result.isEmpty()
+        errorContaining(result, "BaseType' extension type [@n:n] tried to redefine field 'fieldA' [@n:n]")
     }
 
     def "test ext type redefines fields in their peer types"() {
@@ -454,7 +455,7 @@ class SchemaTypeCheckerTest extends Specification {
     }
 
     def "test ext type redefines fields in their peer types of the same type is ok"() {
-
+        given:
         def spec = """                       
 
             type BaseType {
@@ -474,11 +475,11 @@ class SchemaTypeCheckerTest extends Specification {
             }
         """
 
+        when:
         def result = check(spec)
 
-        expect:
-
-        result.isEmpty()
+        then:
+        errorContaining(result, "BaseType' extension type [@n:n] tried to redefine field 'fieldB' [@n:n]")
     }
 
     def "test ext type is missing the base type"() {
@@ -1665,4 +1666,76 @@ class SchemaTypeCheckerTest extends Specification {
 
     }
 
+    def "field in base interface type redefined in extension type should cause an error"() {
+        given:
+        def sdl = """
+            type Query { hello: String }
+            
+            interface Human {
+                id: ID!
+                name: String!
+            }
+            extend interface Human {
+                name: String!
+                friends: [String]
+            }
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        errorContaining(result, "'Human' extension type [@n:n] tried to redefine field 'name' [@n:n]")
+
+    }
+
+    def "field in interface extension type redefined in another extension type should cause an error"() {
+        given:
+        def sdl = """
+            type Query { hello: String }
+            
+            interface Human {
+                id: ID!
+            }
+            
+            extend interface Human {
+                name: String!
+            }
+            
+            extend interface Human {
+                name: String!
+                friends: [String]
+            }
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        errorContaining(result, "'Human' extension type [@n:n] tried to redefine field 'name' [@n:n]")
+
+    }
+
+    def "field in base input type redefined in extension type should cause an error"() {
+        given:
+        def sdl = """
+            type Query { hello: String }
+            
+            input Human {
+                id: ID!
+                name: String!
+            }
+            extend input Human {
+                name: String!
+                friends: [String]
+            }
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        errorContaining(result, "'Human' extension type [@n:n] tried to redefine field 'name' [@n:n]")
+
+    }
 }

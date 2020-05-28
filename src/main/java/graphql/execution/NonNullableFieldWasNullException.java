@@ -42,9 +42,20 @@ public class NonNullableFieldWasNullException extends RuntimeException {
         GraphQLType unwrappedTyped = executionStepInfo.getUnwrappedNonNullType();
         if (executionStepInfo.hasParent()) {
             GraphQLType unwrappedParentType = executionStepInfo.getParent().getUnwrappedNonNullType();
-            return String.format("Cannot return null for non-nullable type: '%s' within parent '%s' (%s)", simplePrint(unwrappedTyped), simplePrint(unwrappedParentType), path);
+            return String.format(
+                    "The field at path '%s' was declared as a non null type, but the code involved in retrieving" +
+                            " data has wrongly returned a null value.  The graphql specification requires that the" +
+                            " parent field be set to null, or if that is non nullable that it bubble up null to its parent and so on." +
+                            " The non-nullable type is '%s' within parent type '%s'",
+                    path, simplePrint(unwrappedTyped), simplePrint(unwrappedParentType));
+        } else {
+            return String.format(
+                    "The field at path '%s' was declared as a non null type, but the code involved in retrieving" +
+                            " data has wrongly returned a null value.  The graphql specification requires that the" +
+                            " parent field be set to null, or if that is non nullable that it bubble up null to its parent and so on." +
+                            " The non-nullable type is '%s'",
+                    path, simplePrint(unwrappedTyped));
         }
-        return String.format("Cannot return null for non-nullable type: '%s' (%s)", simplePrint(unwrappedTyped), path);
     }
 
     public ExecutionStepInfo getExecutionStepInfo() {
@@ -57,9 +68,6 @@ public class NonNullableFieldWasNullException extends RuntimeException {
 
     @Override
     public String toString() {
-        return "NonNullableFieldWasNullException{" +
-                " path=" + path +
-                " executionStepInfo=" + executionStepInfo +
-                '}';
+        return getMessage();
     }
 }

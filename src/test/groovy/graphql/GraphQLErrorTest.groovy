@@ -47,9 +47,9 @@ class GraphQLErrorTest extends Specification {
 
         new NonNullableFieldWasNullError(new NonNullableFieldWasNullException(mkTypeInfo(), mkPath())) |
                 [
-                        message: 'Cannot return null for non-nullable type: \'__Schema\' (/heroes[0]/abilities/speed[4])',
+                        message: '''The field at path '/heroes[0]/abilities/speed[4]' was declared as a non null type, but the code involved in retrieving data has wrongly returned a null value.  The graphql specification requires that the parent field be set to null, or if that is non nullable that it bubble up null to its parent and so on. The non-nullable type is '__Schema\'''',
                         path   : ["heroes", 0, "abilities", "speed", 4],
-                        extensions:[classification:"DataFetchingException"],
+                        extensions:[classification:"NullValueInNonNullableField"],
                 ]
 
         new SerializationError(mkPath(), new CoercingSerializeException("Bad coercing"))               |

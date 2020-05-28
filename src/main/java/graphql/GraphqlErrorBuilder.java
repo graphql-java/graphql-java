@@ -92,7 +92,7 @@ public class GraphqlErrorBuilder {
      * @return a newly built GraphqlError
      */
     public GraphQLError build() {
-        assertNotNull(message, "You must provide error message");
+        assertNotNull(message, () -> "You must provide error message");
         return new GraphqlErrorImpl(message, locations, errorType, path, extensions);
     }
 
@@ -134,6 +134,11 @@ public class GraphqlErrorBuilder {
         @Override
         public Map<String, Object> getExtensions() {
             return extensions;
+        }
+
+        @Override
+        public String toString() {
+            return message;
         }
     }
 

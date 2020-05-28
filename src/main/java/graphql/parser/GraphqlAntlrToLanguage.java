@@ -60,6 +60,7 @@ import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
+import graphql.util.FpKit;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
@@ -150,14 +151,12 @@ public class GraphqlAntlrToLanguage {
         fragmentSpread.directives(createDirectives(ctx.directives()));
         return fragmentSpread.build();
     }
-
     protected List<VariableDefinition> createVariableDefinitions(GraphqlParser.VariableDefinitionsContext ctx) {
         if (ctx == null) {
             return new ArrayList<>();
         }
         return ctx.variableDefinition().stream().map(this::createVariableDefinition).collect(toList());
     }
-
     protected VariableDefinition createVariableDefinition(GraphqlParser.VariableDefinitionContext ctx) {
         VariableDefinition.Builder variableDefinition = VariableDefinition.newVariableDefinition();
         addCommonData(variableDefinition, ctx);
@@ -167,6 +166,7 @@ public class GraphqlAntlrToLanguage {
             variableDefinition.defaultValue(value);
         }
         variableDefinition.type(createType(ctx.type()));
+        variableDefinition.directives(createDirectives(ctx.directives()));
         return variableDefinition.build();
 
     }
@@ -433,12 +433,7 @@ public class GraphqlAntlrToLanguage {
         def.description(newDescription(ctx.description()));
         def.directives(createDirectives(ctx.directives()));
         GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext = ctx.implementsInterfaces();
-        List<Type> implementz = new ArrayList<>();
-        while (implementsInterfacesContext != null) {
-            List<TypeName> typeNames = implementsInterfacesContext.typeName().stream().map(this::createTypeName).collect(toList());
-            implementz.addAll(0, typeNames);
-            implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
-        }
+        List<Type> implementz = getImplementz(implementsInterfacesContext);
         def.implementz(implementz);
         if (ctx.fieldsDefinition() != null) {
             def.fieldDefinitions(createFieldDefinitions(ctx.fieldsDefinition()));
@@ -452,12 +447,7 @@ public class GraphqlAntlrToLanguage {
         addCommonData(def, ctx);
         def.directives(createDirectives(ctx.directives()));
         GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext = ctx.implementsInterfaces();
-        List<Type> implementz = new ArrayList<>();
-        while (implementsInterfacesContext != null) {
-            List<TypeName> typeNames = implementsInterfacesContext.typeName().stream().map(this::createTypeName).collect(toList());
-            implementz.addAll(0, typeNames);
-            implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
-        }
+        List<Type> implementz = getImplementz(implementsInterfacesContext);
         def.implementz(implementz);
         if (ctx.extensionFieldsDefinition() != null) {
             def.fieldDefinitions(createFieldDefinitions(ctx.extensionFieldsDefinition()));
@@ -517,6 +507,9 @@ public class GraphqlAntlrToLanguage {
         addCommonData(def, ctx);
         def.description(newDescription(ctx.description()));
         def.directives(createDirectives(ctx.directives()));
+        GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext = ctx.implementsInterfaces();
+        List<Type> implementz = getImplementz(implementsInterfacesContext);
+        def.implementz(implementz);
         def.definitions(createFieldDefinitions(ctx.fieldsDefinition()));
         return def.build();
     }
@@ -526,6 +519,9 @@ public class GraphqlAntlrToLanguage {
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
         def.directives(createDirectives(ctx.directives()));
+        GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext = ctx.implementsInterfaces();
+        List<Type> implementz = getImplementz(implementsInterfacesContext);
+        def.implementz(implementz);
         def.definitions(createFieldDefinitions(ctx.extensionFieldsDefinition()));
         return def.build();
     }
@@ -882,4 +878,15 @@ public class GraphqlAntlrToLanguage {
         return comments;
     }
 
+
+    private List<Type> getImplementz(GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext) {
+        List<Type> implementz = new ArrayList<>();
+        while (implementsInterfacesContext != null) {
+            List<TypeName> typeNames = FpKit.map(implementsInterfacesContext.typeName(), this::createTypeName);
+
+            implementz.addAll(0, typeNames);
+            implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
+        }
+        return implementz;
+    }
 }

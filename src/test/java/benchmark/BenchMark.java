@@ -1,8 +1,10 @@
 package benchmark;
 
 import graphql.GraphQL;
+import graphql.execution.ExecutionStepInfo;
 import graphql.execution.instrumentation.tracing.TracingInstrumentation;
 import graphql.schema.DataFetcher;
+import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
@@ -26,9 +28,9 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 /**
  * See http://hg.openjdk.java.net/code-tools/jmh/file/tip/jmh-samples/src/main/java/org/openjdk/jmh/samples/ for more samples
  * on what you can do with JMH
- *
+ * <p>
  * You MUST have the JMH plugin for IDEA in place for this to work :  https://github.com/artyushov/idea-jmh-plugin
- *
+ * <p>
  * Install it and then just hit "Run" on a certain benchmark method
  */
 @Warmup(iterations = 2, time = 5, batchSize = 3)
@@ -62,7 +64,7 @@ public class BenchMark {
         InputStream sdl = BenchMark.class.getClassLoader().getResourceAsStream("starWarsSchema.graphqls");
         TypeDefinitionRegistry definitionRegistry = new SchemaParser().parse(new InputStreamReader(sdl));
 
-        DataFetcher heroDataFetcher = environment -> CharacterDTO.mkCharacter("r2d2", NUMBER_OF_FRIENDS);
+        DataFetcher heroDataFetcher = environment -> CharacterDTO.mkCharacter(environment, "r2d2", NUMBER_OF_FRIENDS);
 
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
                 .type(
@@ -95,10 +97,12 @@ public class BenchMark {
             return friends;
         }
 
-        public static CharacterDTO mkCharacter(String name, int friendCount) {
+        public static CharacterDTO mkCharacter(DataFetchingEnvironment environment, String name, int friendCount) {
+            Object sideEffect = environment.getArgument("episode");
+            ExecutionStepInfo anotherSideEffect = environment.getExecutionStepInfo();
             List<CharacterDTO> friends = new ArrayList<>(friendCount);
             for (int i = 0; i < friendCount; i++) {
-                friends.add(mkCharacter("friend" + i, 0));
+                friends.add(mkCharacter(environment, "friend" + i, 0));
             }
             return new CharacterDTO(name, friends);
         }

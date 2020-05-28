@@ -1,5 +1,7 @@
 package graphql.execution;
 
+import graphql.ExecutionInput;
+import graphql.ExecutionInput;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -23,24 +25,26 @@ import static graphql.Assert.assertNotNull;
 @PublicApi
 public class ExecutionContextBuilder {
 
-    private Instrumentation instrumentation;
-    private ExecutionId executionId;
-    private InstrumentationState instrumentationState;
-    private GraphQLSchema graphQLSchema;
-    private ExecutionStrategy queryStrategy;
-    private ExecutionStrategy mutationStrategy;
-    private ExecutionStrategy subscriptionStrategy;
-    private Object context;
-    private Object root;
-    private Document document;
-    private OperationDefinition operationDefinition;
-    private Map<String, Object> variables = new LinkedHashMap<>();
-    private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
-    private DataLoaderRegistry dataLoaderRegistry;
-    private CacheControl cacheControl;
-    private Locale locale;
-    private List<GraphQLError> errors = new ArrayList<>();
-    private ValueUnboxer valueUnboxer;
+    Instrumentation instrumentation;
+    ExecutionId executionId;
+    InstrumentationState instrumentationState;
+    GraphQLSchema graphQLSchema;
+    ExecutionStrategy queryStrategy;
+    ExecutionStrategy mutationStrategy;
+    ExecutionStrategy subscriptionStrategy;
+    Object context;
+    Object root;
+    Document document;
+    OperationDefinition operationDefinition;
+    Map<String, Object> variables = new LinkedHashMap<>();
+    Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
+    DataLoaderRegistry dataLoaderRegistry;
+    CacheControl cacheControl;
+    Locale locale;
+    List<GraphQLError> errors = new ArrayList<>();
+    ValueUnboxer valueUnboxer;
+    Object localContext;
+    ExecutionInput executionInput;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -53,7 +57,6 @@ public class ExecutionContextBuilder {
      * Creates a new builder based on a previous execution context
      *
      * @param other the previous execution to clone
-     *
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
      */
     public static ExecutionContextBuilder newExecutionContextBuilder(ExecutionContext other) {
@@ -74,6 +77,7 @@ public class ExecutionContextBuilder {
         mutationStrategy = other.getMutationStrategy();
         subscriptionStrategy = other.getSubscriptionStrategy();
         context = other.getContext();
+        localContext = other.getLocalContext();
         root = other.getRoot();
         document = other.getDocument();
         operationDefinition = other.getOperationDefinition();
@@ -84,7 +88,7 @@ public class ExecutionContextBuilder {
         locale = other.getLocale();
         errors = new ArrayList<>(other.getErrors());
         valueUnboxer = other.getValueUnboxer();
-
+        executionInput = other.getExecutionInput();
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -124,6 +128,11 @@ public class ExecutionContextBuilder {
 
     public ExecutionContextBuilder context(Object context) {
         this.context = context;
+        return this;
+    }
+
+    public ExecutionContextBuilder localContext(Object localContext) {
+        this.localContext = localContext;
         return this;
     }
 
@@ -172,29 +181,19 @@ public class ExecutionContextBuilder {
         return this;
     }
 
-    public ExecutionContext build() {
-        // preconditions
-        assertNotNull(executionId, "You must provide a query identifier");
-
-        return new ExecutionContext(
-                instrumentation,
-                executionId,
-                graphQLSchema,
-                instrumentationState,
-                queryStrategy,
-                mutationStrategy,
-                subscriptionStrategy,
-                fragmentsByName,
-                document,
-                operationDefinition,
-                variables,
-                context,
-                root,
-                dataLoaderRegistry,
-                cacheControl,
-                locale,
-                errors,
-                valueUnboxer);
+    public ExecutionContextBuilder executionInput(ExecutionInput executionInput) {
+        this.executionInput = executionInput;
+        return this;
     }
 
+    public ExecutionContextBuilder resetErrors() {
+        this.errors.clear();
+        return this;
+    }
+
+    public ExecutionContext build() {
+        // preconditions
+        assertNotNull(executionId, () -> "You must provide a query identifier");
+        return new ExecutionContext(this);
+    }
 }

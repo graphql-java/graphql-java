@@ -53,6 +53,9 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_TYPE = "type";
 
+    private static final Object DEFAULT_VALUE_SENTINEL = new Object() {
+    };
+
     /**
      * @param name         the arg name
      * @param description  the arg description
@@ -76,7 +79,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     @Internal
     @Deprecated
     public GraphQLArgument(String name, GraphQLInputType type) {
-        this(name, null, type, null, null);
+        this(name, null, type, DEFAULT_VALUE_SENTINEL, null);
     }
 
     /**
@@ -94,7 +97,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
 
     private GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, Object value, InputValueDefinition definition, List<GraphQLDirective> directives) {
         assertValidName(name);
-        assertNotNull(type, "type can't be null");
+        assertNotNull(type, () -> "type can't be null");
         this.name = name;
         this.description = description;
         this.originalType = type;
@@ -126,7 +129,11 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * @return the default value of an argument
      */
     public Object getDefaultValue() {
-        return defaultValue;
+        return defaultValue == DEFAULT_VALUE_SENTINEL ? null : defaultValue;
+    }
+
+    public boolean hasSetDefaultValue() {
+        return defaultValue != DEFAULT_VALUE_SENTINEL;
     }
 
     /**
@@ -217,7 +224,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     public static class Builder extends GraphqlTypeBuilder {
 
         private GraphQLInputType type;
-        private Object defaultValue;
+        private Object defaultValue = DEFAULT_VALUE_SENTINEL;
         private Object value;
         private InputValueDefinition definition;
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
@@ -275,7 +282,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         }
 
         public Builder withDirectives(GraphQLDirective... directives) {
-            assertNotNull(directives, "directives can't be null");
+            assertNotNull(directives, () -> "directives can't be null");
             for (GraphQLDirective directive : directives) {
                 withDirective(directive);
             }
@@ -283,13 +290,13 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         }
 
         public Builder withDirective(GraphQLDirective directive) {
-            assertNotNull(directive, "directive can't be null");
+            assertNotNull(directive, () -> "directive can't be null");
             directives.put(directive.getName(), directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
-            assertNotNull(directives, "directive can't be null");
+            assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
             for (GraphQLDirective directive : directives) {
                 this.directives.put(directive.getName(), directive);

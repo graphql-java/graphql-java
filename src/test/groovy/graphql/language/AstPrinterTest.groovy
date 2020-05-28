@@ -561,34 +561,47 @@ extend input Input @directive {
         result == expected
 
         where:
-        strValue                                  | expected
-        'VALUE'                                   | '"VALUE"'
-        'VA\n\t\f\n\b\\LUE'                       | '"VA\\n\\t\\f\\n\\b\\\\LUE"'
-        'VA\\L"UE'                                | '"VA\\\\L\\"UE"'
+        strValue            | expected
+        'VALUE'             | '"VALUE"'
+        'VA\n\t\f\n\b\\LUE' | '"VA\\n\\t\\f\\n\\b\\\\LUE"'
+        'VA\\L"UE'          | '"VA\\\\L\\"UE"'
     }
 
-    def "1105 - encoding of json strings"() {
+    def 'Interfaces implementing interfaces'() {
+        given:
+        AstPrinter astPrinter = new AstPrinter(true)
+        def interfaceType = InterfaceTypeDefinition
+                .newInterfaceTypeDefinition()
+                .name("Resource")
+                .implementz(new TypeName("Node"))
+                .implementz(new TypeName("Extra"))
+                .build()
+
 
         when:
-        def json = AstPrinter.escapeString(strValue)
+        def result = astPrinter.printAst(interfaceType)
 
         then:
-        json == expected
+        result == "interface Resource implements Node & Extra {}"
 
-        where:
-        strValue                                  | expected
-        ''                                        | ''
-        'json'                                    | 'json'
-        'quotation-"'                             | 'quotation-\\"'
-        'reverse-solidus-\\'                      | 'reverse-solidus-\\\\'
-        'backspace-\b'                            | 'backspace-\\b'
-        'formfeed-\f'                             | 'formfeed-\\f'
-        'newline-\n'                              | 'newline-\\n'
-        'carriage-return-\r'                      | 'carriage-return-\\r'
-        'horizontal-tab-\t'                       | 'horizontal-tab-\\t'
+    }
 
-        // this is some AST from issue 1105
-        '''"{"operator":"eq", "operands": []}"''' | '''\\"{\\"operator\\":\\"eq\\", \\"operands\\": []}\\"'''
+    def 'Interfaces implementing interfaces in extension'() {
+        given:
+        AstPrinter astPrinter = new AstPrinter(true)
+        def interfaceType = InterfaceTypeExtensionDefinition
+                .newInterfaceTypeExtensionDefinition()
+                .name("Resource")
+                .implementz(new TypeName("Node"))
+                .implementz(new TypeName("Extra"))
+                .build()
+
+        when:
+        def result = astPrinter.printAst(interfaceType)
+
+        then:
+        result == "extend interface Resource implements Node & Extra {}"
+
     }
 
 }

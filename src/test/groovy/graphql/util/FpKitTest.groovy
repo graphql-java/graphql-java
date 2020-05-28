@@ -1,6 +1,9 @@
 package graphql.util
 
+
 import spock.lang.Specification
+
+import java.util.function.Supplier
 
 class FpKitTest extends Specification {
 
@@ -40,5 +43,25 @@ class FpKitTest extends Specification {
         actual = FpKit.toCollection(iterableThing)
         then:
         actual == expected
+    }
+
+    void "memoized supplier"() {
+
+        def count = 0
+        Supplier<Integer> supplier = { -> count++; return count }
+
+        when:
+        def memoizeSupplier = FpKit.memoize(supplier)
+        def val1 = supplier.get()
+        def val2 = supplier.get()
+        def memoVal1 = memoizeSupplier.get()
+        def memoVal2 = memoizeSupplier.get()
+
+        then:
+        val1 == 1
+        val2 == 2
+
+        memoVal1 == 3
+        memoVal2 == 3
     }
 }

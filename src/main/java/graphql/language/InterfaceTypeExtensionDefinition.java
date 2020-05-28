@@ -16,6 +16,7 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
 
     @Internal
     protected InterfaceTypeExtensionDefinition(String name,
+                                               List<Type> implementz,
                                                List<FieldDefinition> definitions,
                                                List<Directive> directives,
                                                Description description,
@@ -23,12 +24,13 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
                                                List<Comment> comments,
                                                IgnoredChars ignoredChars,
                                                Map<String, String> additionalData) {
-        super(name, definitions, directives, description, sourceLocation, comments, ignoredChars, additionalData);
+        super(name, implementz, definitions, directives, description, sourceLocation, comments, ignoredChars, additionalData);
     }
 
     @Override
     public InterfaceTypeExtensionDefinition deepCopy() {
         return new InterfaceTypeExtensionDefinition(getName(),
+                getImplements(),
                 deepCopy(getFieldDefinitions()),
                 deepCopy(getDirectives()),
                 getDescription(),
@@ -63,6 +65,7 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
         private List<Comment> comments = new ArrayList<>();
         private String name;
         private Description description;
+        private List<Type> implementz = new ArrayList<>();
         private List<FieldDefinition> definitions = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
@@ -77,6 +80,7 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
             this.name = existing.getName();
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
+            this.implementz = existing.getImplements();
             this.definitions = existing.getFieldDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
@@ -99,6 +103,16 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
 
         public Builder description(Description description) {
             this.description = description;
+            return this;
+        }
+
+        public Builder implementz(List<Type> implementz) {
+            this.implementz = implementz;
+            return this;
+        }
+
+        public Builder implementz(Type implementz) {
+            this.implementz.add(implementz);
             return this;
         }
 
@@ -130,6 +144,7 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
 
         public InterfaceTypeExtensionDefinition build() {
             return new InterfaceTypeExtensionDefinition(name,
+                    implementz,
                     definitions,
                     directives,
                     description,

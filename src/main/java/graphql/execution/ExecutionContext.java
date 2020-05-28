@@ -1,7 +1,9 @@
 package graphql.execution;
 
 
+import graphql.ExecutionInput;
 import graphql.GraphQLError;
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
 import graphql.execution.defer.DeferSupport;
@@ -38,6 +40,7 @@ public class ExecutionContext {
     private final Map<String, Object> variables;
     private final Object root;
     private final Object context;
+    private final Object localContext;
     private final Instrumentation instrumentation;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
     private final Set<ExecutionPath> errorPaths = new HashSet<>();
@@ -46,31 +49,38 @@ public class ExecutionContext {
     private final Locale locale;
     private final DeferSupport deferSupport = new DeferSupport();
     private final ValueUnboxer valueUnboxer;
+    private final ExecutionInput executionInput;
 
-    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, Locale locale, List<GraphQLError> startingErrors, ValueUnboxer valueUnboxer) {
-        this.graphQLSchema = graphQLSchema;
-        this.executionId = executionId;
-        this.instrumentationState = instrumentationState;
-        this.queryStrategy = queryStrategy;
-        this.mutationStrategy = mutationStrategy;
-        this.subscriptionStrategy = subscriptionStrategy;
-        this.fragmentsByName = Collections.unmodifiableMap(fragmentsByName);
-        this.variables = Collections.unmodifiableMap(variables);
-        this.document = document;
-        this.operationDefinition = operationDefinition;
-        this.context = context;
-        this.root = root;
-        this.instrumentation = instrumentation;
-        this.dataLoaderRegistry = dataLoaderRegistry;
-        this.cacheControl = cacheControl;
-        this.locale = locale;
-        this.valueUnboxer = valueUnboxer;
-        this.errors.addAll(startingErrors);
+    ExecutionContext(ExecutionContextBuilder builder) {
+        this.graphQLSchema = builder.graphQLSchema;
+        this.executionId = builder.executionId;
+        this.instrumentationState = builder.instrumentationState;
+        this.queryStrategy = builder.queryStrategy;
+        this.mutationStrategy = builder.mutationStrategy;
+        this.subscriptionStrategy = builder.subscriptionStrategy;
+        this.fragmentsByName = Collections.unmodifiableMap(builder.fragmentsByName);
+        this.variables = Collections.unmodifiableMap(builder.variables);
+        this.document = builder.document;
+        this.operationDefinition = builder.operationDefinition;
+        this.context = builder.context;
+        this.root = builder.root;
+        this.instrumentation = builder.instrumentation;
+        this.dataLoaderRegistry = builder.dataLoaderRegistry;
+        this.cacheControl = builder.cacheControl;
+        this.locale = builder.locale;
+        this.valueUnboxer = builder.valueUnboxer;
+        this.errors.addAll(builder.errors);
+        this.localContext = builder.localContext;
+        this.executionInput = builder.executionInput;
     }
 
 
     public ExecutionId getExecutionId() {
         return executionId;
+    }
+
+    public ExecutionInput getExecutionInput() {
+        return executionInput;
     }
 
     public InstrumentationState getInstrumentationState() {
@@ -104,6 +114,10 @@ public class ExecutionContext {
     @SuppressWarnings("unchecked")
     public <T> T getContext() {
         return (T) context;
+    }
+    @SuppressWarnings("unchecked")
+    public <T> T getLocalContext() {
+        return (T) localContext;
     }
 
     @SuppressWarnings("unchecked")
