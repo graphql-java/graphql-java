@@ -1075,7 +1075,7 @@ type Query {
         assertErrorMessage(error,
                 "interface type 'Interface2' does not implement interface 'Interface1' because field 'field1' argument 'arg1' is defined differently",
                 "interface type 'Interface2' does not implement interface 'Interface1' because field 'field2' is defined as 'Int' type and not as 'String' type",
-                "interface type 'Interface2' does not implement interface 'Interface1' because field 'field3' has a different number of arguments",
+                "interface type 'Interface2' does not implement interface 'Interface1' because field 'field3' is missing argument(s): 'arg3'",
                 "interface type 'Interface2' does not implement interface 'Interface1' because field 'field4' is missing"
         )
     }

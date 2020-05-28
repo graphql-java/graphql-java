@@ -2,12 +2,9 @@ package graphql.schema.validation
 
 import graphql.TypeResolutionEnvironment
 import graphql.schema.GraphQLInterfaceType
-import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.TypeResolver
 import spock.lang.Specification
-
-import java.util.stream.Collectors
 
 import static SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces
 import static graphql.Scalars.GraphQLBoolean
@@ -97,7 +94,7 @@ class TypesImplementInterfacesTest extends Specification {
         errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'argField1' argument 'arg4' is defined differently"))
         errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
-                "object type 'obj' does not implement interface 'Interface' because field 'argField2' has a different number of arguments"))
+                "object type 'obj' does not implement interface 'Interface' because field 'argField2' is missing argument(s): 'arg2, arg3'"))
     }
 
     def "field is object implementing interface"() {
@@ -344,6 +341,37 @@ class TypesImplementInterfacesTest extends Specification {
         then:
         def errors = errorCollector.getErrors()
         errors.isEmpty()
+    }
+
+    def "type should declare all arguments present in implemented interface"() {
+        given:
+
+        GraphQLInterfaceType InterfaceType = newInterface()
+                .name("Interface")
+                .field(newFieldDefinition().name("argField").type(GraphQLString)
+                        .argument(newArgument().name("arg1").type(GraphQLInt))
+                        .argument(newArgument().name("arg2").type(GraphQLInt))
+                )
+                .build()
+
+        SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
+
+        GraphQLObjectType objType = GraphQLObjectType.newObject()
+                .name("Object")
+                .withInterface(InterfaceType)
+                .field(newFieldDefinition().name("argField").type(GraphQLString)
+                        .argument(newArgument().name("argX").type(GraphQLInt))
+                        .argument(newArgument().name("argZ").type(GraphQLInt))
+                )
+                .build()
+
+        when:
+        new TypesImplementInterfaces().check(objType, errorCollector)
+
+        then:
+        def errors = errorCollector.getErrors()
+        errors.size() == 1
+        errors.iterator().next().description == "object type 'Object' does not implement interface 'Interface' because field 'argField' is missing argument(s): 'arg1, arg2'"
     }
 
     def "type cannot declare extra non-null field arguments"() {
