@@ -2,6 +2,7 @@ package graphql.validation.rules;
 
 
 import graphql.Internal;
+import graphql.language.NullValue;
 import graphql.language.Value;
 import graphql.schema.GraphQLType;
 
@@ -18,7 +19,7 @@ public class VariablesTypesMatcher {
     }
 
     public GraphQLType effectiveType(GraphQLType variableType, Value defaultValue) {
-        if (defaultValue == null) {
+        if (defaultValue == null || defaultValue instanceof NullValue) {
             return variableType;
         }
         if (isNonNull(variableType)) {

@@ -57,4 +57,28 @@ class IntrospectionTest extends Specification {
                 ]
         ]
     }
+
+    def "schema description can be defined in SDL and queried via introspection"() {
+        given:
+        def sdl = ''' 
+        """
+        This is my schema
+        """
+        schema {
+            query: Foo
+        }
+        
+        type Foo {
+            foo: String
+        }
+        
+        '''
+        def graphql = TestUtil.graphQL(sdl).build()
+        when:
+        def data = graphql.execute("{__schema { description }}").getData()
+
+        then:
+        data == [__schema: [description: "This is my schema"]]
+
+    }
 }

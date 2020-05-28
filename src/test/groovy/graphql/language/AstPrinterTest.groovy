@@ -561,10 +561,47 @@ extend input Input @directive {
         result == expected
 
         where:
-        strValue                                  | expected
-        'VALUE'                                   | '"VALUE"'
-        'VA\n\t\f\n\b\\LUE'                       | '"VA\\n\\t\\f\\n\\b\\\\LUE"'
-        'VA\\L"UE'                                | '"VA\\\\L\\"UE"'
+        strValue            | expected
+        'VALUE'             | '"VALUE"'
+        'VA\n\t\f\n\b\\LUE' | '"VA\\n\\t\\f\\n\\b\\\\LUE"'
+        'VA\\L"UE'          | '"VA\\\\L\\"UE"'
+    }
+
+    def 'Interfaces implementing interfaces'() {
+        given:
+        AstPrinter astPrinter = new AstPrinter(true)
+        def interfaceType = InterfaceTypeDefinition
+                .newInterfaceTypeDefinition()
+                .name("Resource")
+                .implementz(new TypeName("Node"))
+                .implementz(new TypeName("Extra"))
+                .build()
+
+
+        when:
+        def result = astPrinter.printAst(interfaceType)
+
+        then:
+        result == "interface Resource implements Node & Extra {}"
+
+    }
+
+    def 'Interfaces implementing interfaces in extension'() {
+        given:
+        AstPrinter astPrinter = new AstPrinter(true)
+        def interfaceType = InterfaceTypeExtensionDefinition
+                .newInterfaceTypeExtensionDefinition()
+                .name("Resource")
+                .implementz(new TypeName("Node"))
+                .implementz(new TypeName("Extra"))
+                .build()
+
+        when:
+        def result = astPrinter.printAst(interfaceType)
+
+        then:
+        result == "extend interface Resource implements Node & Extra {}"
+
     }
 
 }

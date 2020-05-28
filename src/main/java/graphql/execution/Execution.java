@@ -97,6 +97,7 @@ public class Execution {
                 .cacheControl(executionInput.getCacheControl())
                 .locale(executionInput.getLocale())
                 .valueUnboxer(valueUnboxer)
+                .executionInput(executionInput)
                 .build();
 
 

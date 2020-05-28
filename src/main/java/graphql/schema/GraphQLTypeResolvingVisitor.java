@@ -28,6 +28,15 @@ public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {
     }
 
     @Override
+    public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLSchemaElement> context) {
+        node.replaceInterfaces(node.getInterfaces().stream()
+                .map(type -> (GraphQLNamedOutputType) typeMap.get(type.getName()))
+                .collect(Collectors.toList()));
+        return super.visitGraphQLInterfaceType(node, context);
+    }
+
+
+    @Override
     public TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLSchemaElement> context) {
 
         node.replaceTypes(node.getTypes().stream()

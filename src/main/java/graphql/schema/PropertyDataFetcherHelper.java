@@ -38,9 +38,6 @@ public class PropertyDataFetcherHelper {
     }
 
     public static Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType, DataFetchingEnvironment environment) {
-        if (object == null) {
-            return null;
-        }
         if (object instanceof Map) {
             return ((Map<?, ?>) object).get(propertyName);
         }

@@ -39,7 +39,7 @@ public class NonNullableFieldWasNullError implements GraphQLError {
 
     @Override
     public ErrorType getErrorType() {
-        return ErrorType.DataFetchingException;
+        return ErrorType.NullValueInNonNullableField;
     }
 
     @Override

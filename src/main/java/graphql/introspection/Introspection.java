@@ -256,6 +256,9 @@ public class Introspection {
         if (type instanceof GraphQLObjectType) {
             return ((GraphQLObjectType) type).getInterfaces();
         }
+        if (type instanceof GraphQLInterfaceType) {
+            return ((GraphQLInterfaceType) type).getInterfaces();
+        }
         return null;
     };
 
@@ -472,6 +475,9 @@ public class Introspection {
                     " of a GraphQL server. It exposes all available types and directives on " +
                     "the server, the entry points for query, mutation, and subscription operations.")
             .field(newFieldDefinition()
+                    .name("description")
+                    .type(GraphQLString))
+            .field(newFieldDefinition()
                     .name("types")
                     .description("A list of all types supported by this server.")
                     .type(nonNull(list(nonNull(__Type)))))
@@ -494,6 +500,9 @@ public class Introspection {
             .build();
 
     static {
+        register(__Schema, "description", environment -> {
+            return environment.getGraphQLSchema().getDescription();
+        });
         register(__Schema, "types", environment -> {
             GraphQLSchema schema = environment.getSource();
             return schema.getAllTypesAsList();
@@ -561,6 +570,7 @@ public class Introspection {
      * @param schema     the schema to use
      * @param parentType the type of the parent object
      * @param fieldName  the field to look up
+     *
      * @return a field definition otherwise throws an assertion exception if its null
      */
     public static GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {

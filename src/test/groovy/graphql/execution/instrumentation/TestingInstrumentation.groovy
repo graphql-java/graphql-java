@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture
 class TestingInstrumentation implements Instrumentation {
 
     def instrumentationState = new InstrumentationState() {}
-    def executionList = []
+    List<String> executionList = []
     List<Throwable> throwableList = []
     List<DataFetchingEnvironment> dfInvocations = []
     List<Class> dfClasses = []
@@ -67,6 +67,12 @@ class TestingInstrumentation implements Instrumentation {
     DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
         return new TestingInstrumentContext("deferred-field-$parameters.field.name", executionList, throwableList)
+    }
+
+    @Override
+    InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters) {
+        assert parameters.getInstrumentationState() == instrumentationState
+        return new TestingInstrumentContext("subscribed-field-event-$parameters.field.name", executionList, throwableList)
     }
 
     @Override

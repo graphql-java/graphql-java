@@ -11,7 +11,9 @@ import spock.lang.Specification
 class VariableDirectiveTest extends Specification {
 
     def sdl = '''
-        directive @variableDirective(dirArg : String) on ARGUMENT_DEFINITION
+        directive @variableDirective(dirArg : String) on VARIABLE_DEFINITION
+        
+        directive @argumentDirective(dirArg : String) on ARGUMENT_DEFINITION
  
         type Query {
             f(fieldArg: String) : String
@@ -36,7 +38,7 @@ class VariableDirectiveTest extends Specification {
         def validationErrors = validator.validateDocument(schema, document);
 
         then:
-        validationErrors.size()==0
+        validationErrors.size() == 0
     }
 
     def "invalid variable directive position"() {
@@ -54,8 +56,27 @@ class VariableDirectiveTest extends Specification {
         def validationErrors = validator.validateDocument(schema, document);
 
         then:
-        validationErrors.size()==1
-        validationErrors[0].message=="Validation error of type MisplacedDirective: Directive variableDirective not allowed here @ 'f'"
+        validationErrors.size() == 1
+        validationErrors[0].message == "Validation error of type MisplacedDirective: Directive variableDirective not allowed here @ 'f'"
+    }
+
+    def "invalid directive for variable"() {
+
+        def spec = '''
+            query Foo($arg: String @argumentDirective(dirArg : "directive_arg_value")){
+                f(fieldArg: $arg) 
+                f2
+            }
+        '''
+
+        when:
+        def document = TestUtil.parseQuery(spec)
+        def validator = new Validator();
+        def validationErrors = validator.validateDocument(schema, document);
+
+        then:
+        validationErrors.size() == 1
+        validationErrors[0].message == "Validation error of type MisplacedDirective: Directive argumentDirective not allowed here"
     }
 
 

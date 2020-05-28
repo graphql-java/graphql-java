@@ -531,11 +531,9 @@ class SchemaGeneratorTest extends Specification {
                extraField1 : String
             }
             extend type BaseType implements Interface2 {
-               extraField1 : String
                extraField2 : Int
             }
             extend type BaseType implements Interface3 {
-               extraField1 : String
                extraField3 : ID
             }
             extend type BaseType {
@@ -543,13 +541,6 @@ class SchemaGeneratorTest extends Specification {
             }
             extend type BaseType {
                extraField5 : Boolean!
-            }
-            #
-            # if we repeat a definition, that's ok as long as its the same types as before
-            # they will be de-duped since the effect is the same
-            #
-            extend type BaseType implements Interface1 {
-               extraField1 : String
             }
             
             schema {
@@ -611,7 +602,6 @@ class SchemaGeneratorTest extends Specification {
                 name: String!
             }
             extend type Human implements Character {
-                name: String!
                 friends: [Character]
             }
             extend type Human {
@@ -2114,4 +2104,29 @@ class SchemaGeneratorTest extends Specification {
         schema.getType("UnusedScalar") != null
         schema.getAdditionalTypes().find { it.name == "UnusedScalar" } != null
     }
+
+    def "interface can be implemented with additional optional arguments"() {
+        given:
+        def spec = """
+            interface Vehicle {
+              name: String!
+            }
+
+            type Car implements Vehicle {
+              name(charLimit: Int = 10): String!
+            }
+            type Query {
+                car: Car
+            }
+        """
+        when:
+        def schema = schema(spec)
+        then:
+        (schema.getType("Car") as GraphQLObjectType).getFieldDefinition("name").getArgument("charLimit") != null
+        (schema.getType("Car") as GraphQLObjectType).getInterfaces().size() == 1
+
+        (schema.getType("Vehicle") as GraphQLInterfaceType).getFieldDefinition("name").getArguments().size() == 0
+
+    }
+
 }
