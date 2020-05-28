@@ -17,7 +17,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.directivesByName;
 
 @PublicApi
-public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements SDLDefinition<SchemaDefinition> {
+public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> implements SDLDefinition<SchemaDefinition> {
 
     private final List<Directive> directives;
     private final List<OperationTypeDefinition> operationTypeDefinitions;
@@ -25,14 +25,16 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
     public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_OPERATION_TYPE_DEFINITIONS = "operationTypeDefinitions";
 
+
     @Internal
     protected SchemaDefinition(List<Directive> directives,
                                List<OperationTypeDefinition> operationTypeDefinitions,
                                SourceLocation sourceLocation,
                                List<Comment> comments,
                                IgnoredChars ignoredChars,
-                               Map<String, String> additionalData) {
-        super(sourceLocation, comments, ignoredChars, additionalData);
+                               Map<String, String> additionalData,
+                               Description description) {
+        super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.directives = directives;
         this.operationTypeDefinitions = operationTypeDefinitions;
     }
@@ -52,6 +54,10 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
 
     public List<OperationTypeDefinition> getOperationTypeDefinitions() {
         return new ArrayList<>(operationTypeDefinitions);
+    }
+
+    public Description getDescription() {
+        return description;
     }
 
     @Override
@@ -92,7 +98,7 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
     @Override
     public SchemaDefinition deepCopy() {
         return new SchemaDefinition(deepCopy(directives), deepCopy(operationTypeDefinitions), getSourceLocation(), getComments(),
-                getIgnoredChars(), getAdditionalData());
+                getIgnoredChars(), getAdditionalData(), description);
     }
 
     @Override
@@ -125,6 +131,8 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
         private List<OperationTypeDefinition> operationTypeDefinitions = new ArrayList<>();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
+        private Description description;
+
 
         protected Builder() {
         }
@@ -136,8 +144,13 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
             this.operationTypeDefinitions = existing.getOperationTypeDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
+            this.description = existing.getDescription();
         }
 
+        public Builder description(Description description) {
+            this.description = description;
+            return this;
+        }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
@@ -190,7 +203,8 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
                     sourceLocation,
                     comments,
                     ignoredChars,
-                    additionalData);
+                    additionalData,
+                    description);
         }
     }
 }

@@ -218,7 +218,9 @@ public class SchemaGenerator {
      *
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
+     *
      * @return an executable schema
+     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -232,7 +234,9 @@ public class SchemaGenerator {
      * @param options      the controlling options
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
+     *
      * @return an executable schema
+     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(Options options, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -273,6 +277,9 @@ public class SchemaGenerator {
         GraphQLCodeRegistry codeRegistry = buildCtx.getCodeRegistry().build();
         schemaBuilder.codeRegistry(codeRegistry);
 
+        buildCtx.typeRegistry.schemaDefinition().ifPresent(schemaDefinition -> {
+            schemaBuilder.description(schemaGeneratorHelper.buildDescription(schemaDefinition, schemaDefinition.getDescription()));
+        });
         GraphQLSchema graphQLSchema = schemaBuilder.build();
 
         Collection<SchemaGeneratorPostProcessing> schemaTransformers = buildCtx.getWiring().getSchemaGeneratorPostProcessings();
@@ -356,6 +363,7 @@ public class SchemaGenerator {
      * but then we build the rest of the types specified and put them in as additional types
      *
      * @param buildCtx the context we need to work out what we are doing
+     *
      * @return the additional types not referenced from the top level operations
      */
     private Set<GraphQLType> buildAdditionalTypes(BuildContext buildCtx) {
@@ -400,6 +408,7 @@ public class SchemaGenerator {
      *
      * @param buildCtx the context we need to work out what we are doing
      * @param rawType  the type to be built
+     *
      * @return an output type
      */
     @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})

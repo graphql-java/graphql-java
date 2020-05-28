@@ -1,7 +1,7 @@
 grammar GraphqlSDL;
 import GraphqlCommon;
 
-typeSystemDefinition: description?
+typeSystemDefinition:
 schemaDefinition |
 typeDefinition |
 directiveDefinition

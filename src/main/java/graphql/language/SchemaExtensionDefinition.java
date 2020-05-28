@@ -13,8 +13,13 @@ import static graphql.Assert.assertNotNull;
 @PublicApi
 public class SchemaExtensionDefinition extends SchemaDefinition {
 
-    protected SchemaExtensionDefinition(List<Directive> directives, List<OperationTypeDefinition> operationTypeDefinitions, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
-        super(directives, operationTypeDefinitions, sourceLocation, comments, ignoredChars, additionalData);
+    protected SchemaExtensionDefinition(List<Directive> directives,
+                                        List<OperationTypeDefinition> operationTypeDefinitions,
+                                        SourceLocation sourceLocation,
+                                        List<Comment> comments,
+                                        IgnoredChars ignoredChars,
+                                        Map<String, String> additionalData) {
+        super(directives, operationTypeDefinitions, sourceLocation, comments, ignoredChars, additionalData, null);
     }
 
     @Override
