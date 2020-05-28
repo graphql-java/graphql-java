@@ -27,6 +27,7 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLTypeUtil;
+import graphql.util.FpKit;
 import graphql.util.LogKit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
@@ -115,7 +117,7 @@ public class ValueFetcher {
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         GraphQLFieldsContainer parentType = getFieldsContainer(executionInfo);
 
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
+        Supplier<Map<String, Object>> argumentValues = FpKit.memoize(() -> valuesResolver.getArgumentValues(codeRegistry, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables()));
 
         QueryDirectivesImpl queryDirectives = new QueryDirectivesImpl(sameFields, executionContext.getGraphQLSchema(), executionContext.getVariables());
 

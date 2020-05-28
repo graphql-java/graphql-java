@@ -82,7 +82,7 @@ public class Introspection {
     public static final GraphQLEnumType __TypeKind = GraphQLEnumType.newEnum()
             .name("__TypeKind")
             .description("An enum describing what kind of type a given __Type is")
-            .value("SCALAR", TypeKind.SCALAR, "Indicates this type is a scalar.")
+            .value("SCALAR", TypeKind.SCALAR, "Indicates this type is a scalar. 'specifiedByUrl' is a valid field")
             .value("OBJECT", TypeKind.OBJECT, "Indicates this type is an object. `fields` and `interfaces` are valid fields.")
             .value("INTERFACE", TypeKind.INTERFACE, "Indicates this type is an interface. `fields` and `possibleTypes` are valid fields.")
             .value("UNION", TypeKind.UNION, "Indicates this type is a union. `possibleTypes` is a valid field.")
@@ -256,6 +256,9 @@ public class Introspection {
         if (type instanceof GraphQLObjectType) {
             return ((GraphQLObjectType) type).getInterfaces();
         }
+        if (type instanceof GraphQLInterfaceType) {
+            return ((GraphQLInterfaceType) type).getInterfaces();
+        }
         return null;
     };
 
@@ -308,6 +311,13 @@ public class Introspection {
         return null;
     };
 
+    private static final DataFetcher specifiedByUrlDataFetcher = environment -> {
+        Object type = environment.getSource();
+        if (type instanceof GraphQLScalarType) {
+            return ((GraphQLScalarType) type).getSpecifiedByUrl();
+        }
+        return null;
+    };
 
     public static final GraphQLObjectType __Type = newObject()
             .name("__Type")
@@ -346,6 +356,9 @@ public class Introspection {
             .field(newFieldDefinition()
                     .name("ofType")
                     .type(typeRef("__Type")))
+            .field(newFieldDefinition()
+                    .name("specifiedByUrl")
+                    .type(GraphQLString))
             .build();
 
     static {
@@ -358,6 +371,7 @@ public class Introspection {
         register(__Type, "ofType", OfTypeFetcher);
         register(__Type, "name", nameDataFetcher);
         register(__Type, "description", descriptionDataFetcher);
+        register(__Type, "specifiedByUrl", specifiedByUrlDataFetcher);
     }
 
 
@@ -464,6 +478,9 @@ public class Introspection {
                     " of a GraphQL server. It exposes all available types and directives on " +
                     "the server, the entry points for query, mutation, and subscription operations.")
             .field(newFieldDefinition()
+                    .name("description")
+                    .type(GraphQLString))
+            .field(newFieldDefinition()
                     .name("types")
                     .description("A list of all types supported by this server.")
                     .type(nonNull(list(nonNull(__Type)))))
@@ -486,6 +503,9 @@ public class Introspection {
             .build();
 
     static {
+        register(__Schema, "description", environment -> {
+            return environment.getGraphQLSchema().getDescription();
+        });
         register(__Schema, "types", environment -> {
             GraphQLSchema schema = environment.getSource();
             return schema.getAllTypesAsList();
@@ -553,6 +573,7 @@ public class Introspection {
      * @param schema     the schema to use
      * @param parentType the type of the parent object
      * @param fieldName  the field to look up
+     *
      * @return a field definition otherwise throws an assertion exception if its null
      */
     public static GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {

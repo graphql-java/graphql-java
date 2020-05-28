@@ -5,22 +5,18 @@ import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.TypeRuntimeWiring
 import spock.lang.Specification
 
-/**
- * Tests to make sure that the local context from a root node can be propagated to the children and grandchildren.
- *
- * See <a href="https://github.com/graphql-java/graphql-java/issues/1635">#1635</a> for the original bug report.
- */
-class LocalContextAwareCascadingTest extends Specification {
+class LocalContextTest extends Specification {
 
     // Configuration for the datafetchers for this schema, this will build a local context which will be consumed all the way down to the user
     // of the comments
     def graphql = TestUtil.graphQL("""
                 type Query {
-                    blog: Blog!
+                    blog(arg: String): Blog!
                 }
                 
                 type Blog {
                     name: String!
+                    echoLocalContext: String
                     comments: [Comment!]!
                 }
                 
@@ -40,13 +36,23 @@ class LocalContextAwareCascadingTest extends Specification {
                             .dataFetcher("blog", {
                                 def blog = new Blog()
                                 blog.name = "some name"
-                                DataFetcherResult.newResult()
-                                        .data(blog)
-                                        .localContext("BLOG CONTEXT") // here is where we build the initial context
-                                        .build()
+                                if (it.getArgument("arg") != null) {
+                                    DataFetcherResult.newResult()
+                                            .data("foo")
+                                            .localContext(it.getArgument("arg")) // here is where we build the initial context
+                                            .build()
+                                } else {
+                                    DataFetcherResult.newResult()
+                                            .data(blog)
+                                            .localContext("BLOG CONTEXT") // here is where we build the initial context
+                                            .build()
+                                }
                             })
                     )
                     .type(TypeRuntimeWiring.newTypeWiring("Blog")
+                            .dataFetcher("echoLocalContext", {
+                                return it.getLocalContext()
+                            })
                             .dataFetcher("comments", {
                                 def comment = new Comment()
                                 comment.title = it.getLocalContext() + " (comments data fetcher)"
@@ -67,8 +73,8 @@ class LocalContextAwareCascadingTest extends Specification {
 
     def "when a local context is provided, it can be consumed by the grandchildren node data fetchers"() {
         given:
-            def input = ExecutionInput.newExecutionInput()
-                    .query('''
+        def input = ExecutionInput.newExecutionInput()
+                .query('''
                             query {
                                 blog {
                                     name
@@ -82,26 +88,55 @@ class LocalContextAwareCascadingTest extends Specification {
                                 }
                             }
                             ''')
-                    .build()
+                .build()
         when:
-            def executionResult = graphql.execute(input)
+        def executionResult = graphql.execute(input)
 
         then:
-            executionResult.errors.isEmpty()
-            executionResult.data == [
-                    blog: [
-                            name    : "some name",
-                            comments: [
-                                    [
-                                            title: "BLOG CONTEXT (comments data fetcher)",
-                                            body : "BLOG CONTEXT (comment data fetcher)",
-                                            author: [
-                                                    username: "BLOG CONTEXT (user data fetcher)"
-                                            ]
-                                    ]
-                            ]
-                    ]
-            ]
+        executionResult.errors.isEmpty()
+        executionResult.data == [
+                blog: [
+                        name    : "some name",
+                        comments: [
+                                [
+                                        title : "BLOG CONTEXT (comments data fetcher)",
+                                        body  : "BLOG CONTEXT (comment data fetcher)",
+                                        author: [
+                                                username: "BLOG CONTEXT (user data fetcher)"
+                                        ]
+                                ]
+                        ]
+                ]
+        ]
+    }
+
+    def "different alias produce different local contexts"() {
+        given:
+        def input = ExecutionInput.newExecutionInput()
+                .query('''
+                            query {
+                                blog1: blog(arg: "blog1") {
+                                    echoLocalContext
+                                }
+                                blog2: blog(arg: "blog2") {
+                                    echoLocalContext
+                                }
+                            }
+                            ''')
+                .build()
+        when:
+        def executionResult = graphql.execute(input)
+
+        then:
+        executionResult.errors.isEmpty()
+        executionResult.data == [
+                blog1: [
+                        echoLocalContext: "blog1"
+                ],
+                blog2: [
+                        echoLocalContext: "blog2"
+                ]
+        ]
     }
 
     // Really simply beans, without getters and setters for simplicity

@@ -135,6 +135,11 @@ public class GraphqlErrorBuilder {
         public Map<String, Object> getExtensions() {
             return extensions;
         }
+
+        @Override
+        public String toString() {
+            return message;
+        }
     }
 
     /**

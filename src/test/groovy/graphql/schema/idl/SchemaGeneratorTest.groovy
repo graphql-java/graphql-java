@@ -23,6 +23,7 @@ import graphql.schema.GraphqlTypeComparatorRegistry
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
+import graphql.schema.idl.errors.SchemaProblem
 import graphql.schema.visibility.GraphqlFieldVisibility
 import spock.lang.Specification
 
@@ -32,6 +33,7 @@ import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.schema.idl.SchemaGenerator.Options.defaultOptions
 
 class SchemaGeneratorTest extends Specification {
 
@@ -529,11 +531,9 @@ class SchemaGeneratorTest extends Specification {
                extraField1 : String
             }
             extend type BaseType implements Interface2 {
-               extraField1 : String
                extraField2 : Int
             }
             extend type BaseType implements Interface3 {
-               extraField1 : String
                extraField3 : ID
             }
             extend type BaseType {
@@ -541,13 +541,6 @@ class SchemaGeneratorTest extends Specification {
             }
             extend type BaseType {
                extraField5 : Boolean!
-            }
-            #
-            # if we repeat a definition, that's ok as long as its the same types as before
-            # they will be de-duped since the effect is the same
-            #
-            extend type BaseType implements Interface1 {
-               extraField1 : String
             }
             
             schema {
@@ -609,7 +602,6 @@ class SchemaGeneratorTest extends Specification {
                 name: String!
             }
             extend type Human implements Character {
-                name: String!
                 friends: [Character]
             }
             extend type Human {
@@ -952,6 +944,75 @@ class SchemaGeneratorTest extends Specification {
         queryType.getFieldDefinition("foo").getDeprecationReason() == "foo reason"
         queryType.getFieldDefinition("bar").getDeprecationReason() == "No longer supported" // default according to spec
         !queryType.getFieldDefinition("baz").isDeprecated()
+    }
+
+    def "specifiedBy directive is supported"() {
+        given:
+        def spec = """
+        type Query {
+            foo: MyScalar
+        }
+        scalar MyScalar @specifiedBy(url: "myUrl.example")
+        """
+        when:
+        def schema = schema(spec)
+        GraphQLScalarType scalar = schema.getType("MyScalar") as GraphQLScalarType
+
+        then:
+        scalar.getSpecifiedByUrl() == "myUrl.example"
+    }
+
+    def "specifiedBy requires an url "() {
+        given:
+        def spec = """
+        type Query {
+            foo: MyScalar
+        }
+        scalar MyScalar @specifiedBy
+        """
+        when:
+        def registry = new SchemaParser().parse(spec)
+        new SchemaGenerator().makeExecutableSchema(defaultOptions(), registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        def schemaProblem = thrown(SchemaProblem)
+        schemaProblem.message.contains("failed to provide a value for the non null argument 'url' on directive 'specifiedBy'")
+    }
+
+    def "specifiedBy can be added via extension"() {
+        given:
+        def spec = """
+        type Query {
+            foo: MyScalar
+        }
+        scalar MyScalar
+        extend scalar MyScalar @specifiedBy(url: "myUrl.example")
+        """
+        when:
+        def schema = schema(spec)
+        GraphQLScalarType scalar = schema.getType("MyScalar") as GraphQLScalarType
+
+        then:
+        scalar.getSpecifiedByUrl() == "myUrl.example"
+    }
+
+    def "specifiedBy is only allowed once per scalar"() {
+        given:
+        def spec = """
+        type Query {
+            foo: MyScalar
+        }
+        scalar MyScalar @specifiedBy(url: "myUrl.example")
+        extend scalar MyScalar @specifiedBy(url: "myUrl.example")
+        """
+        when:
+        def registry = new SchemaParser().parse(spec)
+        new SchemaGenerator().makeExecutableSchema(defaultOptions(), registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        def schemaProblem = thrown(SchemaProblem)
+        schemaProblem.message.contains("has redefined the directive called 'specifiedBy")
+
     }
 
 
@@ -1489,7 +1550,7 @@ class SchemaGeneratorTest extends Specification {
         """
 
         when:
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
         def registry = new SchemaParser().parse(spec)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
 
@@ -1526,7 +1587,7 @@ class SchemaGeneratorTest extends Specification {
         """
 
         when:
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
 
         def registry = new SchemaParser().parse(spec)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
@@ -1558,7 +1619,7 @@ class SchemaGeneratorTest extends Specification {
         """
 
         when:
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
         def registry = new SchemaParser().parse(spec)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
 
@@ -1586,7 +1647,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
 
         when:
         def registry = new SchemaParser().parse(spec)
@@ -1839,7 +1900,7 @@ class SchemaGeneratorTest extends Specification {
                 .wiringFactory(wiringFactory)
                 .build()
 
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
 
         def types = new SchemaParser().parse(sdl)
         GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(options, types, runtimeWiring)
@@ -1917,7 +1978,7 @@ class SchemaGeneratorTest extends Specification {
         directives = schema.getDirectives()
 
         then:
-        directives.size() == 6 // built in ones :  include / skip and deprecated
+        directives.size() == 7 // built in ones :  include / skip and deprecated
         def directiveNames = directives.collect { it.name }
         directiveNames.contains("include")
         directiveNames.contains("skip")
@@ -1930,7 +1991,7 @@ class SchemaGeneratorTest extends Specification {
         directivesMap = schema.getDirectiveByName()
 
         then:
-        directivesMap.size() == 6 // built in ones
+        directivesMap.size() == 7 // built in ones
         directivesMap.containsKey("include")
         directivesMap.containsKey("skip")
         directivesMap.containsKey("deprecated")
@@ -2043,4 +2104,29 @@ class SchemaGeneratorTest extends Specification {
         schema.getType("UnusedScalar") != null
         schema.getAdditionalTypes().find { it.name == "UnusedScalar" } != null
     }
+
+    def "interface can be implemented with additional optional arguments"() {
+        given:
+        def spec = """
+            interface Vehicle {
+              name: String!
+            }
+
+            type Car implements Vehicle {
+              name(charLimit: Int = 10): String!
+            }
+            type Query {
+                car: Car
+            }
+        """
+        when:
+        def schema = schema(spec)
+        then:
+        (schema.getType("Car") as GraphQLObjectType).getFieldDefinition("name").getArgument("charLimit") != null
+        (schema.getType("Car") as GraphQLObjectType).getInterfaces().size() == 1
+
+        (schema.getType("Vehicle") as GraphQLInterfaceType).getFieldDefinition("name").getArguments().size() == 0
+
+    }
+
 }

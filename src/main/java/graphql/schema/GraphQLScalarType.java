@@ -44,6 +44,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
     private final ScalarTypeDefinition definition;
     private final List<ScalarTypeExtensionDefinition> extensionDefinitions;
     private final List<GraphQLDirective> directives;
+    private final String specifiedByUrl;
 
     public static final String CHILD_DIRECTIVES = "directives";
 
@@ -73,10 +74,16 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
     @Internal
     @Deprecated
     public GraphQLScalarType(String name, String description, Coercing coercing, List<GraphQLDirective> directives, ScalarTypeDefinition definition) {
-        this(name, description, coercing, directives, definition, emptyList());
+        this(name, description, coercing, directives, definition, emptyList(), null);
     }
 
-    private GraphQLScalarType(String name, String description, Coercing coercing, List<GraphQLDirective> directives, ScalarTypeDefinition definition, List<ScalarTypeExtensionDefinition> extensionDefinitions) {
+    private GraphQLScalarType(String name,
+                              String description,
+                              Coercing coercing,
+                              List<GraphQLDirective> directives,
+                              ScalarTypeDefinition definition,
+                              List<ScalarTypeExtensionDefinition> extensionDefinitions,
+                              String specifiedByUrl) {
         assertValidName(name);
         assertNotNull(coercing, () -> "coercing can't be null");
         assertNotNull(directives, () -> "directives can't be null");
@@ -87,6 +94,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         this.definition = definition;
         this.directives = directives;
         this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
+        this.specifiedByUrl = specifiedByUrl;
     }
 
     @Override
@@ -99,6 +107,9 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         return description;
     }
 
+    public String getSpecifiedByUrl() {
+        return specifiedByUrl;
+    }
 
     public Coercing getCoercing() {
         return coercing;
@@ -179,6 +190,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         private ScalarTypeDefinition definition;
         private List<ScalarTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+        private String specifiedByUrl;
 
         public Builder() {
         }
@@ -190,6 +202,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
             definition = existing.getDefinition();
             extensionDefinitions = existing.getExtensionDefinitions();
             directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+            specifiedByUrl = existing.getSpecifiedByUrl();
         }
 
         @Override
@@ -201,6 +214,11 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         @Override
         public Builder description(String description) {
             super.description(description);
+            return this;
+        }
+
+        public Builder specifiedByUrl(String specifiedByUrl) {
+            this.specifiedByUrl = specifiedByUrl;
             return this;
         }
 
@@ -254,7 +272,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         /**
          * This is used to clear all the directives in the builder so far.
          *
-         * @return the builder
+
          */
         public Builder clearDirectives() {
             directives.clear();
@@ -267,7 +285,8 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
                     coercing,
                     sort(directives, GraphQLScalarType.class, GraphQLDirective.class),
                     definition,
-                    extensionDefinitions);
+                    extensionDefinitions,
+                    specifiedByUrl);
         }
     }
 }

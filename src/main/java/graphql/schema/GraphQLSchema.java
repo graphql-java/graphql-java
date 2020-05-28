@@ -54,8 +54,11 @@ public class GraphQLSchema {
     private final Map<String, GraphQLNamedType> typeMap;
     private final Map<String, List<GraphQLObjectType>> byInterface;
 
+    private final String description;
+
     /**
      * @param queryType the query type
+     *
      * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -68,6 +71,7 @@ public class GraphQLSchema {
      * @param queryType       the query type
      * @param mutationType    the mutation type
      * @param additionalTypes additional types
+     *
      * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -81,6 +85,7 @@ public class GraphQLSchema {
      * @param mutationType     the mutation type
      * @param subscriptionType the subscription type
      * @param additionalTypes  additional types
+     *
      * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -110,6 +115,7 @@ public class GraphQLSchema {
         SchemaUtil schemaUtil = new SchemaUtil();
         this.typeMap = new TreeMap<>(schemaUtil.allTypes(this, additionalTypes, afterTransform));
         this.byInterface = new TreeMap<>(schemaUtil.groupImplementations(this));
+        this.description = builder.description;
     }
 
     // This can be removed once we no longer extract legacy code from types such as data fetchers but for now
@@ -128,6 +134,7 @@ public class GraphQLSchema {
 
         this.typeMap = otherSchema.typeMap;
         this.byInterface = otherSchema.byInterface;
+        this.description = otherSchema.description;
     }
 
 
@@ -147,7 +154,9 @@ public class GraphQLSchema {
      * Called to return a named {@link graphql.schema.GraphQLObjectType} from the schema
      *
      * @param typeName the name of the type
+     *
      * @return a graphql object type or null if there is one
+     *
      * @throws graphql.GraphQLException if the type is NOT a object type
      */
     public GraphQLObjectType getObjectType(String typeName) {
@@ -172,6 +181,7 @@ public class GraphQLSchema {
      * interface type.
      *
      * @param type interface type to obtain implementations of.
+     *
      * @return list of types implementing provided interface
      */
     public List<GraphQLObjectType> getImplementations(GraphQLInterfaceType type) {
@@ -189,6 +199,7 @@ public class GraphQLSchema {
      *
      * @param abstractType abstract type either interface or union
      * @param concreteType concrete type
+     *
      * @return true if possible type, false otherwise.
      */
     public boolean isPossibleType(GraphQLNamedType abstractType, GraphQLObjectType concreteType) {
@@ -219,6 +230,7 @@ public class GraphQLSchema {
 
     /**
      * @return the field visibility
+     *
      * @deprecated use {@link GraphQLCodeRegistry#getFieldVisibility()} instead
      */
     @Deprecated
@@ -307,11 +319,16 @@ public class GraphQLSchema {
         return subscriptionType != null;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
     /**
      * This helps you transform the current GraphQLSchema object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new GraphQLSchema object based on calling build on that builder
      */
     public GraphQLSchema transform(Consumer<Builder> builderConsumer) {
@@ -332,6 +349,7 @@ public class GraphQLSchema {
      * schema and then allows you to replace them.
      *
      * @param existingSchema the existing schema
+     *
      * @return a new schema builder
      */
     public static Builder newSchema(GraphQLSchema existingSchema) {
@@ -345,7 +363,8 @@ public class GraphQLSchema {
                 .additionalDirectives(existingSchema.directives)
                 .clearSchemaDirectives()
                 .withSchemaDirectives(schemaDirectivesArray(existingSchema))
-                .additionalTypes(existingSchema.additionalTypes);
+                .additionalTypes(existingSchema.additionalTypes)
+                .description(existingSchema.getDescription());
     }
 
     private static GraphQLDirective[] schemaDirectivesArray(GraphQLSchema existingSchema) {
@@ -361,6 +380,7 @@ public class GraphQLSchema {
         private Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
         private SchemaDefinition definition;
         private List<SchemaExtensionDefinition> extensionDefinitions;
+        private String description;
 
         // we default these in
         private Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>(
@@ -399,7 +419,9 @@ public class GraphQLSchema {
 
         /**
          * @param fieldVisibility the field visibility
+         *
          * @return this builder
+         *
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry.Builder#fieldVisibility(graphql.schema.visibility.GraphqlFieldVisibility)} instead
          */
         @Deprecated
@@ -481,11 +503,18 @@ public class GraphQLSchema {
             return this;
         }
 
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
         /**
          * Builds the schema
          *
          * @param additionalTypes - please dont use this any more
+         *
          * @return the built schema
+         *
          * @deprecated - Use the {@link #additionalType(GraphQLType)} methods
          */
         @Deprecated
@@ -498,7 +527,9 @@ public class GraphQLSchema {
          *
          * @param additionalTypes      - please don't use this any more
          * @param additionalDirectives - please don't use this any more
+         *
          * @return the built schema
+         *
          * @deprecated - Use the {@link #additionalType(GraphQLType)} and {@link #additionalDirective(GraphQLDirective)} methods
          */
         @Deprecated
@@ -523,6 +554,10 @@ public class GraphQLSchema {
             // schemas - its inherently part of the spec!
             if (additionalDirectives.stream().noneMatch(d -> d.getName().equals(Directives.DeprecatedDirective.getName()))) {
                 additionalDirectives.add(Directives.DeprecatedDirective);
+            }
+
+            if (additionalDirectives.stream().noneMatch(d -> d.getName().equals(Directives.SpecifiedByDirective.getName()))) {
+                additionalDirectives.add(Directives.SpecifiedByDirective);
             }
 
             // grab the legacy code things from types

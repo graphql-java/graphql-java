@@ -20,7 +20,6 @@ import graphql.language.ObjectTypeDefinition;
 import graphql.language.OperationTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.SchemaDefinition;
-import graphql.language.SourceLocation;
 import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
@@ -28,6 +27,7 @@ import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
 import graphql.schema.idl.ScalarInfo;
+import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -135,6 +135,7 @@ public class IntrospectionResultToSchema {
         if (ScalarInfo.isGraphqlSpecifiedScalar(name)) {
             return null;
         }
+        String specifiedBy = (String) input.get("specifiedBy");
         return ScalarTypeDefinition.newScalarTypeDefinition().name(name).build();
     }
 
@@ -185,6 +186,14 @@ public class IntrospectionResultToSchema {
 
         InterfaceTypeDefinition.Builder interfaceTypeDefinition = InterfaceTypeDefinition.newInterfaceTypeDefinition().name((String) input.get("name"));
         interfaceTypeDefinition.description(toDescription(input));
+        if (input.containsKey("interfaces") && input.get("interfaces") != null) {
+            interfaceTypeDefinition.implementz(
+                    FpKit.map(
+                            (List<Map<String, Object>>) input.get("interfaces"),
+                            this::createTypeIndirection
+                    )
+            );
+        }
         List<Map<String, Object>> fields = (List<Map<String, Object>>) input.get("fields");
         interfaceTypeDefinition.definitions(createFields(fields));
 

@@ -178,6 +178,7 @@ public class AstSorter {
             public TraversalControl visitInterfaceTypeDefinition(InterfaceTypeDefinition node, TraverserContext<Node> context) {
                 InterfaceTypeDefinition changedNode = node.transform(builder -> {
                     builder.directives(sort(node.getDirectives(), comparing(Directive::getName)));
+                    builder.implementz(sort(node.getImplements(), comparingTypes()));
                     builder.definitions(sort(node.getFieldDefinitions(), comparing(FieldDefinition::getName)));
                 });
                 return changeNode(context, changedNode);

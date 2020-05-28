@@ -5,6 +5,7 @@ import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.language.DirectiveDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
+import graphql.language.ImplementingTypeDefinition;
 import graphql.language.InputObjectTypeExtensionDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.InterfaceTypeExtensionDefinition;
@@ -503,15 +504,16 @@ public class TypeDefinitionRegistry {
     }
 
     /**
-     * Returns the list of object types that implement the given interface type
+     * Returns the list of object and interface types that implement the given interface type
      *
      * @param targetInterface the target to search for
      * @return the list of object types that implement the given interface type
+     * @see TypeDefinitionRegistry#getImplementationsOf(InterfaceTypeDefinition)
      */
-    public List<ObjectTypeDefinition> getImplementationsOf(InterfaceTypeDefinition targetInterface) {
-        List<ObjectTypeDefinition> objectTypeDefinitions = getTypes(ObjectTypeDefinition.class);
-        return objectTypeDefinitions.stream().filter(objectTypeDefinition -> {
-            List<Type> implementsList = objectTypeDefinition.getImplements();
+    public List<ImplementingTypeDefinition> getAllImplementationsOf(InterfaceTypeDefinition targetInterface) {
+        List<ImplementingTypeDefinition> typeDefinitions = getTypes(ImplementingTypeDefinition.class);
+        return typeDefinitions.stream().filter(typeDefinition -> {
+            List<Type> implementsList = typeDefinition.getImplements();
             for (Type iFace : implementsList) {
                 Optional<InterfaceTypeDefinition> interfaceTypeDef = getType(iFace, InterfaceTypeDefinition.class);
                 if (interfaceTypeDef.isPresent()) {
@@ -526,7 +528,22 @@ public class TypeDefinitionRegistry {
     }
 
     /**
-     * Returns true of the abstract type is in implemented by the object type
+     * Returns the list of object interface types that implement the given interface type
+     *
+     * @param targetInterface the target to search for
+     * @return the list of object types that implement the given interface type
+     * @see TypeDefinitionRegistry#getAllImplementationsOf(InterfaceTypeDefinition)
+     */
+    public List<ObjectTypeDefinition> getImplementationsOf(InterfaceTypeDefinition targetInterface) {
+        return this.getAllImplementationsOf(targetInterface)
+                .stream()
+                .filter(typeDefinition -> typeDefinition instanceof ObjectTypeDefinition)
+                .map(typeDefinition -> (ObjectTypeDefinition) typeDefinition)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns true of the abstract type is in implemented by the object or interface type
      *
      * @param abstractType       the abstract type to check (interface or union)
      * @param possibleObjectType the object type to check
@@ -555,7 +572,7 @@ public class TypeDefinitionRegistry {
             return false;
         } else {
             InterfaceTypeDefinition iFace = (InterfaceTypeDefinition) abstractTypeDef;
-            List<ObjectTypeDefinition> objectTypeDefinitions = getImplementationsOf(iFace);
+            List<ImplementingTypeDefinition> objectTypeDefinitions = getAllImplementationsOf(iFace);
             return objectTypeDefinitions.stream()
                     .anyMatch(od -> od.getName().equals(targetObjectTypeDef.getName()));
         }
