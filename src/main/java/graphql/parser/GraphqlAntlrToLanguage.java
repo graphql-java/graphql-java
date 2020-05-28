@@ -378,6 +378,7 @@ public class GraphqlAntlrToLanguage {
         SchemaDefinition.Builder def = SchemaDefinition.newSchemaDefinition();
         addCommonData(def, ctx);
         def.directives(createDirectives(ctx.directives()));
+        def.description(newDescription(ctx.description()));
         def.operationTypeDefinitions(ctx.operationTypeDefinition().stream()
                 .map(this::createOperationTypeDefinition).collect(toList()));
         return def.build();
