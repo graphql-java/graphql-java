@@ -11,12 +11,15 @@ import spock.lang.Specification
 class RepeatableDirectivesTest extends Specification {
 
     def sdl = '''
-        directive @repeatableDirective(arg: String) repeatable on FIELD
-         
+
         directive @nonRepeatableDirective on FIELD
+        
+        directive @repeatableDirective(arg: String) repeatable on FIELD
+        
+        directive @repeatableDirectiveOnDefinition repeatable on FIELD_DEFINITION
 
         type Query {
-           namedField: String
+           namedField: String @repeatableDirectiveOnDefinition @repeatableDirectiveOnDefinition
         }
     '''
 
