@@ -34,10 +34,12 @@ public class DeferSupport {
 
     public boolean checkForDeferDirective(MergedField currentField, Map<String,Object> variables) {
         for (Field field : currentField.getFields()) {
-            Directive directive = field.getDirective(DeferDirective.getName());
-            if (directive != null) {
-                Map<String, Object> argumentValues = valuesResolver.getArgumentValues(DeferDirective.getArguments(), directive.getArguments(), variables);
-                return (Boolean) argumentValues.get("if");
+            List<Directive> directiveList = field.getDirective(DeferDirective.getName());
+            if (directiveList != null) {
+                for (Directive directive : directiveList) {
+                    Map<String, Object> argumentValues = valuesResolver.getArgumentValues(DeferDirective.getArguments(), directive.getArguments(), variables);
+                    return (Boolean) argumentValues.get("if");
+                }
             }
         }
         return false;

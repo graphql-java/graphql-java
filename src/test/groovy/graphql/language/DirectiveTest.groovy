@@ -36,7 +36,7 @@ class DirectiveTest extends Specification {
                 new Directive("repeated", [new Argument("a1", new StringValue("v1"))]),
                 new Directive("repeated", [new Argument("a1", new StringValue("v2"))]),
         ]
-        def directivesMap = NodeUtil.directivesByName(directives)
+        def directivesMap = NodeUtil.nonRepeatableDirectivesByName(directives)
 
         expect:
 

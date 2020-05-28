@@ -321,6 +321,9 @@ public class Introspection {
 
     public static final GraphQLObjectType __Type = newObject()
             .name("__Type")
+            .description("The core of the type introspection system. It represents scalars, interfaces, object types, " +
+                    "unions, enums in the system. It also represents type modifiers, which are used to modify a type that " +
+                    "it refers to. This is how GraphQL represent lists, non‐nullable types, and the combinations thereof.")
             .field(newFieldDefinition()
                     .name("kind")
                     .type(nonNull(__TypeKind)))
@@ -430,6 +433,7 @@ public class Introspection {
     @SuppressWarnings("deprecation") // because graphql spec still has the deprecated fields
     public static final GraphQLObjectType __Directive = newObject()
             .name("__Directive")
+            .description("The __Directive type represents a Directive that a server supports.")
             .field(newFieldDefinition()
                     .name("name")
                     .type(nonNull(GraphQLString)))

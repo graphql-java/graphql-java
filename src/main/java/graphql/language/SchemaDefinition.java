@@ -14,7 +14,7 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static graphql.language.NodeUtil.directivesByName;
+import static graphql.language.NodeUtil.nonRepeatableDirectivesByName;
 
 @PublicApi
 public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> implements SDLDefinition<SchemaDefinition> {
@@ -44,7 +44,7 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
     }
 
     public Map<String, Directive> getDirectivesByName() {
-        return directivesByName(directives);
+        return nonRepeatableDirectivesByName(directives);
     }
 
     public Directive getDirective(String directiveName) {
