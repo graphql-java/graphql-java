@@ -225,7 +225,7 @@ public class SchemaTypeChecker {
                     return true;
                 }
                 return false;
-            }).collect(Collectors.toList());
+            }).collect(toList());
 
             checkNamedUniqueness(errors, nonRepeatableDirectives, Directive::getName,
                     (directiveName, directive) -> new NonUniqueDirectiveError(typeDefinition, fieldDefinition, directiveName));
@@ -264,7 +264,7 @@ public class SchemaTypeChecker {
                     return true;
                 }
                 return false;
-            }).collect(Collectors.toList());
+            }).collect(toList());
 
             checkNamedUniqueness(errors, nonRepeatableDirectives, Directive::getName,
                     (directiveName, directive) -> new NonUniqueDirectiveError(interfaceType, fieldDefinition, directiveName));
@@ -301,7 +301,7 @@ public class SchemaTypeChecker {
                     return true;
                 }
                 return false;
-            }).collect(Collectors.toList());
+            }).collect(toList());
 
             checkNamedUniqueness(errors, nonRepeatableDirectives, Directive::getName,
                     (directiveName, directive) -> new NonUniqueDirectiveError(enumType, enumValueDefinition, directiveName));
@@ -343,7 +343,7 @@ public class SchemaTypeChecker {
                     return true;
                 }
                 return false;
-            }).collect(Collectors.toList());
+            }).collect(toList());
 
             checkNamedUniqueness(errors, nonRepeatableDirectives, Directive::getName,
                     (directiveName, directive) -> new NonUniqueDirectiveError(inputType, inputValueDefinition, directiveName));

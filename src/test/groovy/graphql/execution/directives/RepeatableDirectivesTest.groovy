@@ -11,7 +11,8 @@ import spock.lang.Specification
 class RepeatableDirectivesTest extends Specification {
 
     def sdl = '''
-
+    
+    
         directive @nonRepeatableDirective on FIELD
         
         directive @repeatableDirective(arg: String) repeatable on FIELD
