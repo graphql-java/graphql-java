@@ -29,8 +29,8 @@ public class NodeUtil {
     }
 
 
-    public static Map<String, Directive> directivesByName(List<Directive> directives) {
-        return FpKit.getByName(directives, Directive::getName, mergeFirst());
+    public static Map<String, List<Directive>> directivesByName(List<Directive> directives) {
+        return FpKit.groupingBy(directives, Directive::getName);
     }
 
     public static Map<String, Argument> argumentsByName(List<Argument> arguments) {
