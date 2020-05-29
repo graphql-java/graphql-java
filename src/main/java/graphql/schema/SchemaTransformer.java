@@ -360,7 +360,13 @@ public class SchemaTransformer {
         }
 
         GraphQLSchemaElement newNode = SCHEMA_ELEMENT_ADAPTER.withNewChildren(parent, childrenMap);
-        List<Breadcrumb<GraphQLSchemaElement>> newBreadcrumbs = sameParent.get(0).getBreadcrumbs().subList(1, sameParent.get(0).getBreadcrumbs().size());
+        final List<Breadcrumb<GraphQLSchemaElement>> oldBreadcrumbs = sameParent.get(0).getBreadcrumbs();
+        List<Breadcrumb<GraphQLSchemaElement>> newBreadcrumbs;
+        if (oldBreadcrumbs.size() > 1) {
+            newBreadcrumbs = oldBreadcrumbs.subList(1, oldBreadcrumbs.size());
+        } else {
+            newBreadcrumbs = Collections.emptyList();
+        }
         return new NodeZipper<>(newNode, newBreadcrumbs, SCHEMA_ELEMENT_ADAPTER);
     }
 
