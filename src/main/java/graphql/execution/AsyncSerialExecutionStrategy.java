@@ -24,7 +24,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
     }
 
     @Override
-    @SuppressWarnings({"TypeParameterUnusedInFormals","FutureReturnValueIgnored"})
+    @SuppressWarnings({"TypeParameterUnusedInFormals", "FutureReturnValueIgnored"})
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -44,7 +44,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
         executionStrategyCtx.onDispatched(overallResult);
 
-        resultsFuture.whenComplete(handleResults(executionContext, fieldNames, overallResult));
+        resultsFuture.whenComplete(handleResults(executionContext, fieldNames, overallResult, parameters));
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
         return overallResult;
     }
