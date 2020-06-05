@@ -1,5 +1,6 @@
 package graphql.execution.nextgen;
 
+import graphql.ExecutionResult;
 import graphql.Internal;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
@@ -39,10 +40,18 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
 
     FetchedValueAnalyzer fetchedValueAnalyzer = new FetchedValueAnalyzer();
     ExecutionStrategyUtil util = new ExecutionStrategyUtil();
+    ExecutionHelper executionHelper = new ExecutionHelper();
 
 
     @Override
-    public CompletableFuture<RootExecutionResultNode> execute(ExecutionContext executionContext, FieldSubSelection fieldSubSelection) {
+    public CompletableFuture<ExecutionResult> execute(ExecutionContext context) {
+        FieldSubSelection fieldSubSelection = executionHelper.getFieldSubSelection(context);
+        return executeImpl(context, fieldSubSelection)
+                .thenApply(ResultNodesUtil::toExecutionResult);
+    }
+
+
+    public CompletableFuture<RootExecutionResultNode> executeImpl(ExecutionContext executionContext, FieldSubSelection fieldSubSelection) {
         CompletableFuture<RootExecutionResultNode> rootCF = Async.each(util.fetchSubSelection(executionContext, fieldSubSelection))
                 .thenApply(RootExecutionResultNode::new);
 
