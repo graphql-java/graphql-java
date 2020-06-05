@@ -8,7 +8,6 @@ import graphql.Internal;
 import graphql.execution.Async;
 import graphql.execution.ExecutionId;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.nextgen.result.ResultNodesUtil;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 
@@ -37,8 +36,7 @@ public class Execution {
 
         try {
             return executionStrategy
-                    .execute(executionData.executionContext, executionData.fieldSubSelection)
-                    .thenApply(ResultNodesUtil::toExecutionResult);
+                    .execute(executionData.executionContext);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

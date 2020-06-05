@@ -32,7 +32,6 @@ public class ExecutionHelper {
 
     public static class ExecutionData {
         public ExecutionContext executionContext;
-        public FieldSubSelection fieldSubSelection;
     }
 
     public ExecutionData createExecutionData(Document document,
@@ -64,28 +63,33 @@ public class ExecutionHelper {
                 .operationDefinition(operationDefinition)
                 .build();
 
-        GraphQLObjectType operationRootType;
-        operationRootType = Common.getOperationRootType(executionContext.getGraphQLSchema(), operationDefinition);
+        ExecutionData executionData = new ExecutionData();
+        executionData.executionContext = executionContext;
+        return executionData;
+
+    }
+
+    public FieldSubSelection getFieldSubSelection(ExecutionContext executionContext) {
+        OperationDefinition operationDefinition = executionContext.getOperationDefinition();
+        GraphQLObjectType operationRootType = Common.getOperationRootType(executionContext.getGraphQLSchema(), operationDefinition);
+
         FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
                 .schema(executionContext.getGraphQLSchema())
                 .objectType(operationRootType)
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
                 .build();
+
         MergedSelectionSet mergedSelectionSet = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
         ExecutionStepInfo executionInfo = newExecutionStepInfo().type(operationRootType).path(ExecutionPath.rootPath()).build();
 
         FieldSubSelection fieldSubSelection = FieldSubSelection.newFieldSubSelection()
-                .source(executionInput.getRoot())
-                .localContext(executionInput.getContext())
+                .source(executionContext.getRoot())
+                .localContext(executionContext.getLocalContext())
                 .mergedSelectionSet(mergedSelectionSet)
                 .executionInfo(executionInfo)
                 .build();
-
-        ExecutionData executionData = new ExecutionData();
-        executionData.executionContext = executionContext;
-        executionData.fieldSubSelection = fieldSubSelection;
-        return executionData;
+        return fieldSubSelection;
 
     }
 }
