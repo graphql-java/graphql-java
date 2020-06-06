@@ -50,38 +50,37 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
         GraphQLOutputType childType = newObject()
                 .name("childType")
                 .field(newFieldDefinition().name("goodField")
-                .type(GraphQLString))
+                        .type(GraphQLString))
                 .field(newFieldDefinition().name("badField")
-                .type(GraphQLString))
+                        .type(GraphQLString))
                 .build()
         GraphQLOutputType parentType = newObject()
                 .name("parentType")
                 .field(newFieldDefinition().name("child")
-                .type(childType))
+                        .type(childType))
                 .build()
         GraphQLOutputType rootType = newObject()
                 .name("rootType")
                 .field(newFieldDefinition().name("parent")
-                .type(parentType)
-                .dataFetcher({ env ->
-            newResult()
-                    .data(new ParentObject())
-                    .mapRelativeErrors(true)
-                    .errors([new DataFetchingErrorGraphQLError("badField is bad", ["child", "badField"])])
-                    .build()
+                        .type(parentType)
+                        .dataFetcher({ env ->
+                            newResult()
+                                    .data(new ParentObject())
+                                    .errors([new DataFetchingErrorGraphQLError("badField is bad", ["child", "badField"])])
+                                    .build()
 
-        }))
+                        }))
                 .build()
 
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("QueryType")
                         .field(newFieldDefinition()
-                        .name("root")
-                        .type(rootType)
-                        .dataFetcher({ env -> [:] })
+                                .name("root")
+                                .type(rootType)
+                                .dataFetcher({ env -> [:] })
 
-                ))
+                        ))
                 .build()
 
         def query = """
@@ -132,39 +131,38 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
         GraphQLOutputType childType = newObject()
                 .name("childType")
                 .field(newFieldDefinition().name("goodField")
-                .type(GraphQLString))
+                        .type(GraphQLString))
                 .field(newFieldDefinition().name("badField")
-                .type(GraphQLString))
+                        .type(GraphQLString))
                 .build()
         GraphQLOutputType parentType = newObject()
                 .name("parentType")
                 .field(newFieldDefinition().name("child")
-                .type(childType)
-                .dataFetcher({ env ->
-            newResult()
-                    .data(["goodField": null, "badField": null])
-                    .mapRelativeErrors(true)
-                    .errors([
-                    new DataFetchingErrorGraphQLError("goodField is bad", ["goodField"]),
-                    new DataFetchingErrorGraphQLError("badField is bad", ["badField"])
-            ]).build()
-        }))
+                        .type(childType)
+                        .dataFetcher({ env ->
+                            newResult()
+                                    .data(["goodField": null, "badField": null])
+                                    .errors([
+                                            new DataFetchingErrorGraphQLError("goodField is bad", ["goodField"]),
+                                            new DataFetchingErrorGraphQLError("badField is bad", ["badField"])
+                                    ]).build()
+                        }))
                 .build()
         GraphQLOutputType rootType = newObject()
                 .name("rootType")
                 .field(newFieldDefinition().name("parent")
-                .type(parentType))
+                        .type(parentType))
                 .build()
 
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("QueryType")
                         .field(newFieldDefinition()
-                        .name("root")
-                        .type(rootType)
-                        .dataFetcher({ env -> ["parent": [:]] })
+                                .name("root")
+                                .type(rootType)
+                                .dataFetcher({ env -> ["parent": [:]] })
 
-                ))
+                        ))
                 .build()
 
         def query = """
@@ -218,32 +216,31 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
         GraphQLOutputType childType = newObject()
                 .name("childType")
                 .field(newFieldDefinition().name("goodField")
-                .type(GraphQLString))
+                        .type(GraphQLString))
                 .field(newFieldDefinition().name("badField")
-                .type(GraphQLString))
+                        .type(GraphQLString))
                 .build()
         GraphQLOutputType parentType = newObject()
                 .name("parentType")
                 .field(newFieldDefinition().name("child")
-                .type(childType)
-                .dataFetcher({ env ->
-            newResult().data(null)
-                    .mapRelativeErrors(true)
-                    .errors([
-                    new DataFetchingErrorGraphQLError("error 1", []),
-                    new DataFetchingErrorGraphQLError("error 2", [])
-            ]).build()
-        }))
+                        .type(childType)
+                        .dataFetcher({ env ->
+                            newResult().data(null)
+                                    .errors([
+                                            new DataFetchingErrorGraphQLError("error 1", []),
+                                            new DataFetchingErrorGraphQLError("error 2", [])
+                                    ]).build()
+                        }))
                 .build()
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("QueryType")
                         .field(newFieldDefinition()
-                        .name("parent")
-                        .type(parentType)
-                        .dataFetcher({ env -> [:] })
+                                .name("parent")
+                                .type(parentType)
+                                .dataFetcher({ env -> [:] })
 
-                ))
+                        ))
                 .build()
 
         def query = """
@@ -294,32 +291,31 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
         GraphQLOutputType childType = newObject()
                 .name("childType")
                 .field(newFieldDefinition().name("goodField")
-                .type(GraphQLString))
+                        .type(GraphQLString))
                 .field(newFieldDefinition().name("badField")
-                .type(GraphQLString))
+                        .type(GraphQLString))
                 .build()
         GraphQLOutputType parentType = newObject()
                 .name("parentType")
                 .field(newFieldDefinition().name("child")
-                .type(childType)
-                .dataFetcher({ env ->
-            CompletableFuture.completedFuture(newResult()
-                    .data(new ChildObject())
-                    .mapRelativeErrors(true)
-                    .error(
-                    new DataFetchingErrorGraphQLError("badField is bad", ["badField"])
-            ).build())
-        }))
+                        .type(childType)
+                        .dataFetcher({ env ->
+                            CompletableFuture.completedFuture(newResult()
+                                    .data(new ChildObject())
+                                    .error(
+                                            new DataFetchingErrorGraphQLError("badField is bad", ["badField"])
+                                    ).build())
+                        }))
                 .build()
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("QueryType")
                         .field(newFieldDefinition()
-                        .name("parent")
-                        .type(parentType)
-                        .dataFetcher({ env -> [:] })
+                                .name("parent")
+                                .type(parentType)
+                                .dataFetcher({ env -> [:] })
 
-                ))
+                        ))
                 .build()
 
         def query = """
@@ -386,25 +382,25 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
 
         def runtimeWiring = RuntimeWiring.newRuntimeWiring()
                 .type("Query",
-                { type ->
-                    type.dataFetcher("first", new ContextPassingDataFetcher())
-                })
+                        { type ->
+                            type.dataFetcher("first", new ContextPassingDataFetcher())
+                        })
                 .type("Level1",
-                { type ->
-                    type.dataFetcher("second", new ContextPassingDataFetcher())
-                })
+                        { type ->
+                            type.dataFetcher("second", new ContextPassingDataFetcher())
+                        })
                 .type("Level2",
-                { type ->
-                    type.dataFetcher("third", new ContextPassingDataFetcher())
-                })
+                        { type ->
+                            type.dataFetcher("third", new ContextPassingDataFetcher())
+                        })
                 .type("Level3",
-                { type ->
-                    type.dataFetcher("skip", new ContextPassingDataFetcher(true))
-                })
+                        { type ->
+                            type.dataFetcher("skip", new ContextPassingDataFetcher(true))
+                        })
                 .type("Level4",
-                { type ->
-                    type.dataFetcher("fourth", new ContextPassingDataFetcher())
-                })
+                        { type ->
+                            type.dataFetcher("fourth", new ContextPassingDataFetcher())
+                        })
                 .build()
 
         def query = '''

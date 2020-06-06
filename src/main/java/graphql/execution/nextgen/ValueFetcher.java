@@ -5,7 +5,6 @@ import graphql.Assert;
 import graphql.ExceptionWhileDataFetching;
 import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.execution.AbsoluteGraphQLError;
 import graphql.execution.Async;
 import graphql.execution.DataFetcherResult;
 import graphql.execution.DefaultValueUnboxer;
@@ -39,7 +38,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 import static java.util.Collections.singletonList;
@@ -200,13 +198,7 @@ public class ValueFetcher {
 
             List<GraphQLError> addErrors;
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result.getFetchedValue();
-            if (dataFetcherResult.isMapRelativeErrors()) {
-                addErrors = dataFetcherResult.getErrors().stream()
-                        .map(relError -> new AbsoluteGraphQLError(sameField, executionPath, relError))
-                        .collect(Collectors.toList());
-            } else {
-                addErrors = new ArrayList<>(dataFetcherResult.getErrors());
-            }
+            addErrors = new ArrayList<>(dataFetcherResult.getErrors());
             List<GraphQLError> newErrors;
             newErrors = new ArrayList<>(result.getErrors());
             newErrors.addAll(addErrors);
