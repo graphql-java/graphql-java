@@ -10,9 +10,8 @@ import graphql.schema.idl.RuntimeWiring
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import java.util.concurrent.CompletableFuture
-
 import static graphql.ExecutionInput.newExecutionInput
+import static graphql.GraphqlErrorBuilder.newError
 import static graphql.Scalars.GraphQLString
 import static graphql.execution.DataFetcherResult.newResult
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
@@ -66,7 +65,11 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
                         .dataFetcher({ env ->
                             newResult()
                                     .data(new ParentObject())
-                                    .errors([new DataFetchingErrorGraphQLError("badField is bad", ["child", "badField"])])
+                                    .errors([newError()
+                                                     .message("badField is bad")
+                                                     .path(["root", "parent", "child", "badField"])
+                                                     .location(env.getField().getSourceLocation())
+                                                     .build()])
                                     .build()
 
                         }))
@@ -107,7 +110,7 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
         result.errors.size() == 1
         result.errors[0].path == ["root", "parent", "child", "badField"]
         result.errors[0].message == "badField is bad"
-        result.errors[0].locations == [new SourceLocation(6, 27)]
+        result.errors[0].locations == [new SourceLocation(4, 17)]
 
         result.data["root"]["parent"]["child"]["goodField"] == "good"
         result.data["root"]["parent"]["child"]["badField"] == null
@@ -143,8 +146,14 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
                             newResult()
                                     .data(["goodField": null, "badField": null])
                                     .errors([
-                                            new DataFetchingErrorGraphQLError("goodField is bad", ["goodField"]),
-                                            new DataFetchingErrorGraphQLError("badField is bad", ["badField"])
+                                            newError().message("goodField is bad")
+                                                    .path(["root", "parent", "child", "goodField"])
+                                                    .location(env.getField().getSourceLocation())
+                                                    .build(),
+                                            newError().message("badField is bad")
+                                                    .path(["root", "parent", "child", "badField"])
+                                                    .location(env.getField().getSourceLocation())
+                                                    .build()
                                     ]).build()
                         }))
                 .build()
@@ -189,161 +198,14 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
         result.errors.size() == 2
         result.errors[0].path == ["root", "parent", "child", "goodField"]
         result.errors[0].message == "goodField is bad"
-        result.errors[0].locations == [new SourceLocation(7, 31)]
+        result.errors[0].locations == [new SourceLocation(5, 21)]
         result.errors[1].path == ["root", "parent", "child", "badField"]
         result.errors[1].message == "badField is bad"
-        result.errors[1].locations == [new SourceLocation(7, 31)]
+        result.errors[1].locations == [new SourceLocation(5, 21)]
 
         result.data["root"]["parent"]["child"]["goodField"] == null
         result.data["root"]["parent"]["child"]["badField"] == null
 
-        where:
-
-        strategyName  | executionStrategy
-        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
-        'async'       | new AsyncExecutionStrategy()
-        'asyncSerial' | new AsyncSerialExecutionStrategy()
-    }
-
-    @Unroll
-    def "#820 - data fetcher can return multiple errors on one field, but collapsed (strategy: #strategyName)"() {
-
-        // see https://github.com/graphql-java/graphql-java/issues/820
-
-        given:
-
-
-        GraphQLOutputType childType = newObject()
-                .name("childType")
-                .field(newFieldDefinition().name("goodField")
-                        .type(GraphQLString))
-                .field(newFieldDefinition().name("badField")
-                        .type(GraphQLString))
-                .build()
-        GraphQLOutputType parentType = newObject()
-                .name("parentType")
-                .field(newFieldDefinition().name("child")
-                        .type(childType)
-                        .dataFetcher({ env ->
-                            newResult().data(null)
-                                    .errors([
-                                            new DataFetchingErrorGraphQLError("error 1", []),
-                                            new DataFetchingErrorGraphQLError("error 2", [])
-                                    ]).build()
-                        }))
-                .build()
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(newFieldDefinition()
-                                .name("parent")
-                                .type(parentType)
-                                .dataFetcher({ env -> [:] })
-
-                        ))
-                .build()
-
-        def query = """
-        query { 
-            parent {
-                child {
-                    goodField
-                    badField
-                }
-            }
-        }
-        """
-
-        def result = GraphQL
-                .newGraphQL(schema)
-                .queryExecutionStrategy(executionStrategy)
-                .build()
-                .execute(executionInput(query))
-
-        expect:
-
-        result.errors.size() == 2
-        result.errors[0].path == ["parent", "child"]
-        result.errors[0].message == "error 1"
-        result.errors[0].locations == [new SourceLocation(6, 27)]
-
-        result.errors[1].path == ["parent", "child"]
-        result.errors[1].message == "error 2"
-        result.errors[1].locations == [new SourceLocation(6, 27)]
-
-        result.data["parent"]["child"] == null
-
-        where:
-
-        strategyName  | executionStrategy
-        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
-        'async'       | new AsyncExecutionStrategy()
-        'asyncSerial' | new AsyncSerialExecutionStrategy()
-    }
-
-    @Unroll
-    def "#820 - data fetcher can return data and errors as completable future (strategy: #strategyName)"() {
-
-        // see https://github.com/graphql-java/graphql-java/issues/820
-
-        given:
-
-        GraphQLOutputType childType = newObject()
-                .name("childType")
-                .field(newFieldDefinition().name("goodField")
-                        .type(GraphQLString))
-                .field(newFieldDefinition().name("badField")
-                        .type(GraphQLString))
-                .build()
-        GraphQLOutputType parentType = newObject()
-                .name("parentType")
-                .field(newFieldDefinition().name("child")
-                        .type(childType)
-                        .dataFetcher({ env ->
-                            CompletableFuture.completedFuture(newResult()
-                                    .data(new ChildObject())
-                                    .error(
-                                            new DataFetchingErrorGraphQLError("badField is bad", ["badField"])
-                                    ).build())
-                        }))
-                .build()
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(newFieldDefinition()
-                                .name("parent")
-                                .type(parentType)
-                                .dataFetcher({ env -> [:] })
-
-                        ))
-                .build()
-
-        def query = """
-        query { 
-            parent {
-                child {
-                    goodField
-                    badField
-                }
-            }
-        }
-        """
-
-        def result = GraphQL
-                .newGraphQL(schema)
-                .queryExecutionStrategy(executionStrategy)
-                .build()
-                .execute(executionInput(query))
-
-        expect:
-
-        result.errors.size() == 1
-        result.errors[0].path == ["parent", "child", "badField"]
-        result.errors[0].message == "badField is bad"
-        result.errors[0].locations == [new SourceLocation(6, 27)]
-
-        result.data["parent"]["child"]["goodField"] == "good"
-        result.data["parent"]["child"]["badField"] == null
         where:
 
         strategyName  | executionStrategy
