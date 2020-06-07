@@ -2129,4 +2129,55 @@ class SchemaGeneratorTest extends Specification {
 
     }
 
+    def "extended enums work as expected for arg values"() {
+
+        given:
+        def spec = """
+        enum AuthRoles {
+            USER
+        }
+
+        extend enum AuthRoles {
+            AUTHENTICATED
+        }
+
+        directive @auth(if: AuthRoles) on FIELD_DEFINITION
+
+        type Query {
+            danger: String @auth(if: AUTHENTICATED)
+        }
+        """
+        when:
+        def schema = schema(spec)
+        then:
+        def enumType = schema.getType("AuthRoles") as GraphQLEnumType
+        def listOfEnumValues = enumType.getValues().collect({ it.getValue() })
+        listOfEnumValues.sort() == ["AUTHENTICATED", "USER"]
+    }
+
+    def "extended input objects work as expected for arg values"() {
+
+        given:
+        def spec = """
+        input ArgInput {
+            fieldA : String
+        }
+
+        extend input ArgInput {
+            fieldB : String
+        }
+
+        directive @auth(if: ArgInput) on FIELD_DEFINITION
+
+        type Query {
+            danger: String @auth(if: { fieldB : "B"} )
+        }
+        """
+        when:
+        def schema = schema(spec)
+        then:
+        def inputType = schema.getType("ArgInput") as GraphQLInputObjectType
+        def listOfEnumValues = inputType.getFieldDefinitions().collect({ it.getName() })
+        listOfEnumValues.sort() == ["fieldA", "fieldB"]
+    }
 }
