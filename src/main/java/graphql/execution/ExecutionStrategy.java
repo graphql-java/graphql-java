@@ -277,7 +277,9 @@ public abstract class ExecutionStrategy {
             Object fetchedValueRaw = dataFetcher.get(environment);
             fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
         } catch (Exception e) {
-            logNotSafe.debug(String.format("'%s', field '%s' fetch threw exception", executionId, executionStepInfo.get().getPath()), e);
+            if (logNotSafe.isDebugEnabled()) {
+                logNotSafe.debug(String.format("'%s', field '%s' fetch threw exception", executionId, executionStepInfo.get().getPath()), e);
+            }
 
             fetchedValue = new CompletableFuture<>();
             fetchedValue.completeExceptionally(e);
@@ -388,7 +390,9 @@ public abstract class ExecutionStrategy {
                         .nonNullFieldValidator(nonNullableFieldValidator)
         );
 
-        log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), executionStepInfo.getPath());
+        if (log.isDebugEnabled()) {
+            log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), executionStepInfo.getPath());
+        }
 
         FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
 

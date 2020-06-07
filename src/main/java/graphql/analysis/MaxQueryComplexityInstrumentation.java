@@ -97,7 +97,9 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
                 }
             });
             int totalComplexity = valuesByParent.getOrDefault(null, 0);
-            log.debug("Query complexity: {}", totalComplexity);
+            if (log.isDebugEnabled()) {
+                log.debug("Query complexity: {}", totalComplexity);
+            }
             if (totalComplexity > maxComplexity) {
                 QueryComplexityInfo queryComplexityInfo = QueryComplexityInfo.newQueryComplexityInfo()
                         .complexity(totalComplexity)
