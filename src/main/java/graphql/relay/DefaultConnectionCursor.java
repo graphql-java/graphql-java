@@ -39,6 +39,8 @@ public class DefaultConnectionCursor implements ConnectionCursor {
 
     @Override
     public String toString() {
-        return value;
+        return "DefaultConnection{" +
+                "value=" + value +
+                '}';
     }
 }

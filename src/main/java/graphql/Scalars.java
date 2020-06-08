@@ -10,6 +10,7 @@ import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLScalarType;
+import graphql.relay.ConnectionCursor;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -281,13 +282,20 @@ public class Scalars {
             if (input instanceof BigInteger) {
                 return String.valueOf(input);
             }
+            if (input instanceof ConnectionCursor) {
+                return ((ConnectionCursor) input).getValue();
+            }
             return String.valueOf(input);
-
         }
 
         @Override
         public String serialize(Object input) {
-            String result = String.valueOf(input);
+            String result;
+            if (input instanceof ConnectionCursor) {
+                result = ((ConnectionCursor) input).getValue();
+            } else {
+                result = String.valueOf(input);
+            }
             if (result == null) {
                 throw new CoercingSerializeException(
                         "Expected type 'ID' but was '" + typeName(input) + "'."
