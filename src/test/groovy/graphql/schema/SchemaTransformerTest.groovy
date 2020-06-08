@@ -7,6 +7,7 @@ import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaPrinter
 import graphql.util.TraversalControl
 import graphql.util.TraverserContext
+import graphql.util.TreeTransformerUtil
 import spock.lang.Specification
 
 import static graphql.schema.FieldCoordinates.coordinates
@@ -442,6 +443,50 @@ type SubChildChanged {
         (newSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         newSchema.getType("Account") == (newSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("account").getType()
 
+    }
+
+    def "failing NPE test as reported in 1928 "() {
+        given:
+
+        def internalNoteHider = new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLDirective(GraphQLDirective node,
+                                                   TraverserContext<GraphQLSchemaElement> context) {
+                if ("internalnote".equals(node.getName())) {
+                    deleteNode(context);
+                }
+                return TraversalControl.CONTINUE;
+            }
+        }
+
+        GraphQLSchema schema = TestUtil.schema("""
+            directive @internalnote(doc: String!) on OBJECT | FIELD_DEFINITION | INTERFACE
+            
+            type Query {
+                fooBar: Foo
+            }
+            
+            interface Manchu @internalnote(doc:"...") {
+              id: ID!
+            }
+            
+            type Foo implements Manchu {
+              id: ID!
+            }
+            
+            type Bar @internalnote(doc:"...") {
+              id: ID! 
+              hidden: String! 
+            }
+          
+            union FooBar = Foo | Bar
+        """)
+
+        when:
+        def output = SchemaTransformer.transformSchema(schema, internalNoteHider)
+
+        then:
+        output.getType("FooBar") != null
     }
 
 }
