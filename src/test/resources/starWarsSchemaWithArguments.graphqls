@@ -5,6 +5,7 @@ schema {
 type QueryType {
     hero(episode: Episode): Character
     human(id : String) : Human
+    humanCharacter(id : String) : Character
     droid(id: ID!): Droid
 }
 

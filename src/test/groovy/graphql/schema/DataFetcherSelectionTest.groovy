@@ -80,11 +80,13 @@ class DataFetcherSelectionTest extends Specification {
             [
                     "hero" : captureSelection(new StaticDataFetcher(StarWarsData.getArtoo())),
                     "human": captureSelection(StarWarsData.getHumanDataFetcher()),
+                    "humanCharacter": captureSelection(StarWarsData.getHumanDataFetcher()),
                     "droid": captureSelection(StarWarsData.getDroidDataFetcher())
             ])
     )
             .type(newTypeWiring("Human")
             .dataFetcher("friends", captureSelection(StarWarsData.getFriendsDataFetcher()))
+            .dataFetcher("homePlanet", captureSelection(new StaticDataFetcher("Home")))
     )
             .type(newTypeWiring("Droid")
             .dataFetcher("friends", captureSelection(StarWarsData.getFriendsDataFetcher()))
@@ -257,6 +259,44 @@ class DataFetcherSelectionTest extends Specification {
                 [id: [:]]
         ]
 
+    }
+
+    def "field selection can be captured for inline fragments when output type is an interface/union"() {
+
+        def query = """
+        query CAPTURED_VIA_DF {
+        
+            humanCharacter(id: "1003") {
+                id
+                __typename
+                friends {
+                    id
+                    otherId: id
+                }
+                ... on Human {          
+                    homePlanet
+                }
+            }
+        }
+        """
+
+
+        expect:
+        when:
+        GraphQL.newGraphQL(executableStarWarsSchema).build().execute(query).data
+
+        then:
+
+        // should homePlanet field be included?
+        captureMap.keySet() == [
+                "id",
+                "__typename",
+                "friends",
+                "friends/id",
+                "friends/otherId",
+                "otherId",
+                "homePlanet"
+        ].toSet()
     }
 
 }

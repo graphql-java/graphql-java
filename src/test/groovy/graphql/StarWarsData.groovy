@@ -108,9 +108,9 @@ class StarWarsData {
         GraphQLObjectType getType(TypeResolutionEnvironment env) {
             def id = env.getObject().id
             if (humanData[id] != null)
-                return StarWarsSchema.humanType
+                return env.getSchema().getType(StarWarsSchema.humanType.name)
             if (droidData[id] != null)
-                return StarWarsSchema.droidType
+                return env.getSchema().getType(StarWarsSchema.droidType.name)
             return null
         }
     }
