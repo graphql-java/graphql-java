@@ -6,6 +6,9 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
+import static graphql.Scalars.GraphQLString
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+
 class SchemaValidatorTest extends Specification {
 
 
@@ -14,14 +17,18 @@ class SchemaValidatorTest extends Specification {
         def validator = new SchemaValidator()
         def rules = validator.rules
         then:
-        rules.size() == 2
+        rules.size() == 3
         rules[0] instanceof NoUnbrokenInputCycles
         rules[1] instanceof TypesImplementInterfaces
+        rules[2] instanceof TypeAndFieldRule
     }
 
     def "rules are used"() {
         def queryType = GraphQLObjectType.newObject()
                 .name("query")
+                .field(newFieldDefinition()
+                        .name("field")
+                        .type(GraphQLString))
                 .build()
         def schema = GraphQLSchema.newSchema()
                 .query(queryType)
@@ -68,6 +75,7 @@ class SchemaValidatorTest extends Specification {
                 .build()
         def queryType = GraphQLObjectType.newObject()
                 .name("query")
+                .field(field)
                 .build()
         def schema = GraphQLSchema.newSchema()
                 .query(queryType)
@@ -78,7 +86,7 @@ class SchemaValidatorTest extends Specification {
         validator.validateSchema(schema)
 
         then:
-        1 * dummyRule.check(field, _ as SchemaValidationErrorCollector)
+        2 * dummyRule.check(field, _ as SchemaValidationErrorCollector)
     }
 
     def "subscription fields are checked"() {
@@ -93,6 +101,7 @@ class SchemaValidatorTest extends Specification {
                 .build()
         def queryType = GraphQLObjectType.newObject()
                 .name("query")
+                .field(field)
                 .build()
         def schema = GraphQLSchema.newSchema()
                 .query(queryType)
@@ -103,7 +112,7 @@ class SchemaValidatorTest extends Specification {
         validator.validateSchema(schema)
 
         then:
-        1 * dummyRule.check(field, _ as SchemaValidationErrorCollector)
+        2 * dummyRule.check(field, _ as SchemaValidationErrorCollector)
     }
 
 }

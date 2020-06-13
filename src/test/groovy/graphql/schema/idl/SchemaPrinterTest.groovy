@@ -11,6 +11,8 @@ import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLEnumValueDefinition
+import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLInterfaceType
@@ -607,42 +609,74 @@ type Query {
 '''
     }
 
-    def "prints type with no fields"() {
+    def "prints type"() {
         given:
-        def emptyInputObject = GraphQLInputObjectType.newInputObject().name("EmptyInputObject").build()
-        def emptyObject = GraphQLObjectType.newObject().name("EmptyObject").build()
-        def argument = GraphQLArgument.newArgument().name("arg").type(emptyInputObject).build()
-        GraphQLFieldDefinition field1 = newFieldDefinition().name("field1").type(emptyObject).argument(argument).build()
+        def inputObjectType = GraphQLInputObjectType.newInputObject()
+                .name("inputObjectType")
+                .field(GraphQLInputObjectField.newInputObjectField().name("field").type(GraphQLString).build())
+                .build()
+        def objectType = GraphQLObjectType.newObject()
+                .name("objectType")
+                .field(GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString).build())
+                .build()
+        def argument = GraphQLArgument.newArgument().name("arg").type(inputObjectType).build()
+        GraphQLFieldDefinition field1 = newFieldDefinition().name("field1").type(objectType).argument(argument).build()
 
-        def emptyInterface = GraphQLInterfaceType.newInterface().name("EmptyInterface").build()
-        def emptyObjectWithInterface = GraphQLObjectType.newObject().name("EmptyObjectWithInterface").withInterface(emptyInterface).build()
-        GraphQLFieldDefinition field2 = newFieldDefinition().name("field2").type(emptyObjectWithInterface).build()
+        def interfaceType = GraphQLInterfaceType.newInterface()
+                .name("interfaceType")
+                .field(GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString).build())
+                .build()
+        def objectWithInterface = GraphQLObjectType.newObject()
+                .name("objectWithInterface")
+                .field(GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString).build())
+                .withInterface(interfaceType)
+                .build()
+        GraphQLFieldDefinition field2 = newFieldDefinition()
+                .name("field2")
+                .type(objectWithInterface)
+                .build()
 
-        def emptyEnum = GraphQLEnumType.newEnum().name("EmptyEnum").build()
-        GraphQLFieldDefinition field3 = newFieldDefinition().name("field3").type(emptyEnum).build()
+        def enumType = GraphQLEnumType.newEnum()
+                .name("enumType")
+                .value(GraphQLEnumValueDefinition.newEnumValueDefinition().name("GraphQLEnumValueDefinition").build())
+                .build()
+        GraphQLFieldDefinition field3 = newFieldDefinition()
+                .name("field3")
+                .type(enumType)
+                .build()
 
         def queryType = GraphQLObjectType.newObject().name("Query").field(field1).field(field2).field(field3).build()
-        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().typeResolver(emptyInterface, { env -> null }).build();
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().typeResolver(interfaceType, { env -> null }).build();
         def schema = GraphQLSchema.newSchema().query(queryType).codeRegistry(codeRegistry).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
         then:
-        result == '''interface EmptyInterface
-
-type EmptyObject
-
-type EmptyObjectWithInterface implements EmptyInterface
-
-type Query {
-  field1(arg: EmptyInputObject): EmptyObject
-  field2: EmptyObjectWithInterface
-  field3: EmptyEnum
+        result == '''interface interfaceType {
+  field: String
 }
 
-enum EmptyEnum
+type Query {
+  field1(arg: inputObjectType): objectType
+  field2: objectWithInterface
+  field3: enumType
+}
 
-input EmptyInputObject
+type objectType {
+  field: String
+}
+
+type objectWithInterface implements interfaceType {
+  field: String
+}
+
+enum enumType {
+  GraphQLEnumValueDefinition
+}
+
+input inputObjectType {
+  field: String
+}
 '''
     }
 
