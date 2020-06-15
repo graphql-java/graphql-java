@@ -47,5 +47,6 @@ class GraphQLInputObjectFieldTest extends Specification {
         transformedField.getDirective("directive1") != null
         transformedField.getDirective("directive2") != null
         transformedField.getDirective("directive3") != null
+        !transformedField.hasSetDefaultValue()
     }
 }

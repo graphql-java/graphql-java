@@ -210,7 +210,7 @@ public class ValuesResolver {
     }
 
     private boolean alwaysHasValue(GraphQLInputObjectField inputField) {
-        return inputField.getDefaultValue() != null
+        return inputField.hasSetDefaultValue()
                 || isNonNull(inputField.getType());
     }
 
@@ -312,7 +312,7 @@ public class ValuesResolver {
                 } else {
                     assertNonNullInputField(inputTypeField);
                 }
-            } else if (inputTypeField.getDefaultValue() != null) {
+            } else if (inputTypeField.hasSetDefaultValue()) {
                 result.put(inputTypeField.getName(), inputTypeField.getDefaultValue());
             } else {
                 assertNonNullInputField(inputTypeField);

@@ -38,8 +38,11 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
 
     private GraphQLInputType replacedType;
 
-    public static final String CHILD_TYPE = "type";
     public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_TYPE = "type";
+
+    private static final Object DEFAULT_VALUE_SENTINEL = new Object() {
+    };
 
     /**
      * @param name the name
@@ -50,7 +53,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
     @Internal
     @Deprecated
     public GraphQLInputObjectField(String name, GraphQLInputType type) {
-        this(name, null, type, null, emptyList(), null);
+        this(name, null, type, DEFAULT_VALUE_SENTINEL, emptyList(), null);
     }
 
     /**
@@ -106,7 +109,11 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
     }
 
     public Object getDefaultValue() {
-        return defaultValue;
+        return defaultValue == DEFAULT_VALUE_SENTINEL ? null : defaultValue;
+    }
+
+    public boolean hasSetDefaultValue() {
+        return defaultValue != DEFAULT_VALUE_SENTINEL;
     }
 
     public String getDescription() {
@@ -195,8 +202,9 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
 
     @PublicApi
     public static class Builder extends GraphqlTypeBuilder {
-        private Object defaultValue;
+
         private GraphQLInputType type;
+        private Object defaultValue = DEFAULT_VALUE_SENTINEL;
         private InputValueDefinition definition;
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
 
@@ -206,7 +214,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         public Builder(GraphQLInputObjectField existing) {
             this.name = existing.getName();
             this.description = existing.getDescription();
-            this.defaultValue = existing.getDefaultValue();
+            this.defaultValue = existing.defaultValue;
             this.type = existing.originalType;
             this.definition = existing.getDefinition();
             this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
