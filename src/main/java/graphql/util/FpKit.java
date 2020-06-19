@@ -190,6 +190,13 @@ public class FpKit {
         return -1;
     }
 
+    public static <T> List<T> filterList(Collection<T> list, Predicate<T> filter) {
+        return list
+                .stream()
+                .filter(filter)
+                .collect(Collectors.toList());
+    }
+
     /**
      * This will memoize the Supplier within the current thread's visibility, that is it does not
      * use volatile reads but rather use a sentinel check and re-reads the delegate supplier

@@ -4,8 +4,7 @@ public enum SchemaValidationErrorType {
 
     UnbrokenInputCycle,
     ObjectDoesNotImplementItsInterfaces,
-    ObjectTypeLackOfFieldError,
-    InterfaceLackOfFieldError,
+    ImplementingTypeLackOfFieldError,
     InputObjectTypeLackOfFieldError,
     EnumLackOfValueError,
     UnionTypeLackOfTypeError,

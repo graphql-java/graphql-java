@@ -42,20 +42,21 @@ class TypeAndFieldRuleTest extends Specification {
         e.message == "invalid schema:\nEnum type \"EnumType\" must define one or more enum values."
     }
 
-    def "the member types of a Union type must be unique"() {
+    def "input type must define one or more fields"() {
         when:
         def sdl = '''
-        type Query { field: Int }
+        type Query {
+            field: String
+        }
+        input InputType {}
         
-        type A{ field: Int }
-        
-        union UnionType = A | A
         '''
 
         TestUtil.schema(sdl)
         then:
         InvalidSchemaException e = thrown(InvalidSchemaException)
-        e.message == "invalid schema:\nThe member types of a Union type must be unique. member type \"A\" in Union \"UnionType\" is not unique."
+        print(e.message)
+        e.message == "invalid schema:\n\"InputType\" must define one or more fields."
     }
 
     def "A non null type cannot wrap an existing non null type"() {
@@ -119,5 +120,50 @@ class TypeAndFieldRuleTest extends Specification {
         then:
         InvalidSchemaException e = thrown(InvalidSchemaException)
         e.message == "invalid schema:\nArgument name \"__arg\" in \"Query-namedField\" must not begin with \"__\", which is reserved by GraphQL introspection."
+    }
+
+    def "interface must define one or more fields."() {
+        when:
+        def sdl = '''
+        type Query { field: Int }
+        interface Interface {}
+        '''
+
+        TestUtil.schema(sdl)
+        then:
+        InvalidSchemaException e = thrown(InvalidSchemaException)
+        e.message == "invalid schema:\n\"Interface\" must define one or more fields."
+    }
+
+    def "interface name must not begin with \"__\""() {
+        when:
+        def sdl = '''
+        type Query { field: Int }
+        
+        interface __A{ field: Int }
+        '''
+
+        TestUtil.schema(sdl)
+        then:
+        InvalidSchemaException e = thrown(InvalidSchemaException)
+        e.message == "invalid schema:\n\"__A\" must not begin with \"__\", which is reserved by GraphQL introspection."
+    }
+
+    def "union name must not begin with \"__\""() {
+        when:
+        def sdl = '''
+        type Query { field: Int }
+        
+        type A{ field: Int }
+        
+        type B{ field: Int }
+        
+        union __AB= A | B
+        '''
+
+        TestUtil.schema(sdl)
+        then:
+        InvalidSchemaException e = thrown(InvalidSchemaException)
+        e.message == "invalid schema:\n\"__AB\" must not begin with \"__\", which is reserved by GraphQL introspection."
     }
 }

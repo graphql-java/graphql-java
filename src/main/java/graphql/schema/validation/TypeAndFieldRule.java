@@ -1,10 +1,10 @@
 package graphql.schema.validation;
 
-import graphql.language.Type;
 import graphql.language.TypeName;
-import graphql.language.UnionTypeDefinition;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
@@ -17,12 +17,17 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLTypeUtil;
+import graphql.util.FpKit;
 
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.function.Predicate;
+
+import static graphql.introspection.Introspection.isIntrospectionTypes;
+import static graphql.schema.idl.ScalarInfo.isGraphqlSpecifiedScalar;
 
 /**
  * The validation about GraphQLObjectType, GraphQLInterfaceType, GraphQLUnionType, GraphQLEnumType, GraphQLInputObjectType, GraphQLScalarType.
@@ -48,7 +53,7 @@ public class TypeAndFieldRule implements SchemaValidationRule {
 
         List<GraphQLNamedType> allTypesAsList = graphQLSchema.getAllTypesAsList();
 
-        List<GraphQLNamedType> filteredType = filterScalarAndIntrospectionTypes(allTypesAsList);
+        List<GraphQLNamedType> filteredType = filterBuiltInTypes(allTypesAsList);
 
         schemaTypeHolder = graphQLSchema.getTypeMap();
 
@@ -67,10 +72,8 @@ public class TypeAndFieldRule implements SchemaValidationRule {
     }
 
     private void checkType(GraphQLType type, SchemaValidationErrorCollector errorCollector) {
-        if (type instanceof GraphQLObjectType) {
-            validateObject((GraphQLObjectType) type, errorCollector);
-        } else if (type instanceof GraphQLInterfaceType) {
-            validateInterface((GraphQLInterfaceType) type, errorCollector);
+        if (type instanceof GraphQLObjectType || type instanceof GraphQLInterfaceType) {
+            validateContainsField((GraphQLFieldsContainer) type, errorCollector);
         } else if (type instanceof GraphQLUnionType) {
             validateUnion((GraphQLUnionType) type, errorCollector);
         } else if (type instanceof GraphQLEnumType) {
@@ -82,29 +85,14 @@ public class TypeAndFieldRule implements SchemaValidationRule {
         }
     }
 
-    private void validateObject(GraphQLObjectType type, SchemaValidationErrorCollector errorCollector) {
+    private void validateContainsField(GraphQLFieldsContainer type, SchemaValidationErrorCollector errorCollector) {
         assertTypeName(type.getName(), errorCollector);
 
         List<GraphQLFieldDefinition> fieldDefinitions = type.getFieldDefinitions();
         if (fieldDefinitions == null || fieldDefinitions.size() == 0) {
-            SchemaValidationError validationError = new SchemaValidationError(SchemaValidationErrorType.ObjectTypeLackOfFieldError, String.format("\"%s\" must define one or more fields.", type.getName()));
+            SchemaValidationError validationError = new SchemaValidationError(SchemaValidationErrorType.ImplementingTypeLackOfFieldError, String.format("\"%s\" must define one or more fields.", type.getName()));
             errorCollector.addError(validationError);
             return;
-        }
-
-        if (fieldDefinitions != null && fieldDefinitions.size() != 0) {
-            for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
-                validateFieldDefinition(type.getName(), fieldDefinition, errorCollector);
-            }
-        }
-    }
-
-    private void validateInterface(GraphQLInterfaceType type, SchemaValidationErrorCollector errorCollector) {
-        assertTypeName(type.getName(), errorCollector);
-        List<GraphQLFieldDefinition> fieldDefinitions = type.getFieldDefinitions();
-        if (fieldDefinitions == null || fieldDefinitions.size() == 0) {
-            SchemaValidationError validationError = new SchemaValidationError(SchemaValidationErrorType.InterfaceLackOfFieldError, type.getName() + " must define one or more fields.");
-            errorCollector.addError(validationError);
         }
 
         if (fieldDefinitions != null && fieldDefinitions.size() != 0) {
@@ -116,31 +104,26 @@ public class TypeAndFieldRule implements SchemaValidationRule {
 
     private void validateInputObject(GraphQLInputObjectType type, SchemaValidationErrorCollector errorCollector) {
         assertTypeName(type.getName(), errorCollector);
-        if (type.getFieldDefinitions() == null || type.getFieldDefinitions().size() == 0) {
-            SchemaValidationError validationError = new SchemaValidationError(SchemaValidationErrorType.InputObjectTypeLackOfFieldError, type.getName() + " must define one or more fields.");
+
+        if (type.getFields() == null || type.getFields().size() == 0) {
+            SchemaValidationError validationError = new SchemaValidationError(SchemaValidationErrorType.InputObjectTypeLackOfFieldError, String.format("\"%s\" must define one or more fields.", type.getName()));
             errorCollector.addError(validationError);
         }
-
     }
 
     private void validateUnion(GraphQLUnionType type, SchemaValidationErrorCollector errorCollector) {
         assertTypeName(type.getName(), errorCollector);
 
-        UnionTypeDefinition definition = type.getDefinition();
-        if (definition == null) {
-            return;
-        }
-
-        List<Type> memberTypes = definition.getMemberTypes();
+        List<GraphQLNamedOutputType> memberTypes = type.getTypes();
         if (memberTypes == null || memberTypes.size() == 0) {
             SchemaValidationError validationError =
                     new SchemaValidationError(SchemaValidationErrorType.UnionTypeLackOfTypeError, String.format("Union type \"%s\" must include one or more unique member types.", type.getName()));
             errorCollector.addError(validationError);
         }
 
-        List<String> typeNames = new ArrayList<>();
-        for (Type memberType : memberTypes) {
-            String typeName = ((TypeName) memberType).getName();
+        Set<String> typeNames = new HashSet<>();
+        for (GraphQLNamedOutputType memberType : memberTypes) {
+            String typeName = memberType.getName();
             GraphQLNamedType graphQLNamedType = schemaTypeHolder.get(typeName);
             if (!(graphQLNamedType instanceof GraphQLObjectType)) {
                 SchemaValidationError validationError =
@@ -232,37 +215,24 @@ public class TypeAndFieldRule implements SchemaValidationRule {
         }
     }
 
-    private List<GraphQLNamedType> filterScalarAndIntrospectionTypes(List<GraphQLNamedType> graphQLNamedTypes) {
+    private List<GraphQLNamedType> filterBuiltInTypes(List<GraphQLNamedType> graphQLNamedTypes) {
         if (graphQLNamedTypes == null || graphQLNamedTypes.isEmpty()) {
             return Collections.emptyList();
         }
 
-        return graphQLNamedTypes.stream().filter(type -> !isScalarOrIntrospectionTypes(type)).collect(Collectors.toList());
+        Predicate<GraphQLNamedType> filterFunction = namedType -> {
+            if (isIntrospectionTypes(namedType)) {
+                return false;
+            }
+            if (namedType instanceof GraphQLScalarType && isGraphqlSpecifiedScalar((GraphQLScalarType) namedType)) {
+                return false;
+            }
+            return true;
+        };
+
+        return FpKit.filterList(graphQLNamedTypes, filterFunction);
     }
 
-    private boolean isScalarOrIntrospectionTypes(GraphQLNamedType type) {
-        if (type instanceof GraphQLScalarType && (
-                type.getName().equals("Int") || type.getName().equals("Float") || type.getName().equals("String") ||
-                        type.getName().equals("Boolean") || type.getName().equals("ID") || type.getName().equals("Long") || type.getName().equals("Short") ||
-                        type.getName().equals("BigInteger") || type.getName().equals("BigDecimal") || type.getName().equals("Char")
-        )) {
-            return true;
-        }
-
-        if (type instanceof GraphQLEnumType && (type.getName().equals("__DirectiveLocation") || type.getName().equals("__TypeKind"))) {
-            return true;
-        }
-
-        if (type instanceof GraphQLObjectType && (
-                type.getName().equals("IntrospectionQuery") || type.getName().equals("__Type") || type.getName().equals("__Schema")
-                        || type.getName().equals("__InputValue") || type.getName().equals("__Field") || type.getName().equals("__EnumValue")
-                        || type.getName().equals("__Directive")
-        )) {
-            return true;
-        }
-
-        return false;
-    }
 
     @Override
     public void check(GraphQLFieldDefinition fieldDef, SchemaValidationErrorCollector validationErrorCollector) {

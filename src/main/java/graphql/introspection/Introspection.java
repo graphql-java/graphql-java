@@ -24,6 +24,7 @@ import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLModifiedType;
 import graphql.schema.GraphQLNamedSchemaElement;
+import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
@@ -33,9 +34,11 @@ import graphql.schema.GraphQLUnionType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static graphql.Assert.assertTrue;
 import static graphql.Scalars.GraphQLBoolean;
@@ -53,6 +56,8 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
 @PublicApi
 public class Introspection {
     private static final Map<FieldCoordinates, DataFetcher> introspectionDataFetchers = new LinkedHashMap<>();
+
+    private static final Set<GraphQLNamedType> introspectionTypes = new HashSet<>();
 
     private static void register(GraphQLFieldsContainer parentType, String fieldName, DataFetcher dataFetcher) {
         introspectionDataFetchers.put(coordinates(parentType.getName(), fieldName), dataFetcher);
@@ -551,16 +556,31 @@ public class Introspection {
             .build();
 
 
+    private static final GraphQLObjectType IntrospectionQuery = newObject()
+            .name("IntrospectionQuery")
+            .field(SchemaMetaFieldDef)
+            .field(TypeMetaFieldDef)
+            .field(TypeNameMetaFieldDef)
+            .build();
+
     static {
-        // make sure all TypeReferences are resolved
-        GraphQLSchema.newSchema()
-                .query(GraphQLObjectType.newObject()
-                        .name("IntrospectionQuery")
-                        .field(SchemaMetaFieldDef)
-                        .field(TypeMetaFieldDef)
-                        .field(TypeNameMetaFieldDef)
-                        .build())
-                .build();
+        introspectionTypes.add(__DirectiveLocation);
+        introspectionTypes.add(__TypeKind);
+        introspectionTypes.add(__Type);
+        introspectionTypes.add(__Schema);
+        introspectionTypes.add(__InputValue);
+        introspectionTypes.add(__Field);
+        introspectionTypes.add(__EnumValue);
+        introspectionTypes.add(__Directive);
+        introspectionTypes.add(IntrospectionQuery);
+
+        // make sure all TypeReferences are resolved.
+        // note: it is important to put this on the bottom of static code block.
+        GraphQLSchema.newSchema().query(IntrospectionQuery).build();
+    }
+
+    public static boolean isIntrospectionTypes(GraphQLNamedType type) {
+        return introspectionTypes.contains(type);
     }
 
     /**
