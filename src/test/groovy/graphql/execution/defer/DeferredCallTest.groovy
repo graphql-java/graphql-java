@@ -6,7 +6,7 @@ import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
-import static graphql.execution.ExecutionPath.parse
+import static graphql.execution.ResultPath.parse
 import static java.util.concurrent.CompletableFuture.completedFuture
 
 class DeferredCallTest extends Specification {

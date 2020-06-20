@@ -15,7 +15,7 @@ class NonNullableFieldValidatorTest extends Specification {
         NonNullableFieldValidator validator = new NonNullableFieldValidator(context, typeInfo)
 
         when:
-        validator.validate(ExecutionPath.rootPath(), null)
+        validator.validate(ResultPath.rootPath(), null)
 
         then:
         thrown(NonNullableFieldWasNullException)
@@ -28,7 +28,7 @@ class NonNullableFieldValidatorTest extends Specification {
         NonNullableFieldValidator validator = new NonNullableFieldValidator(context, typeInfo)
 
         when:
-        def result = validator.validate(ExecutionPath.rootPath(), null)
+        def result = validator.validate(ResultPath.rootPath(), null)
 
         then:
         result == null

@@ -5,7 +5,7 @@ import graphql.DeferredExecutionResultImpl;
 import graphql.ExecutionResult;
 import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.execution.ExecutionPath;
+import graphql.execution.ResultPath;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -17,11 +17,11 @@ import java.util.function.Supplier;
  */
 @Internal
 public class DeferredCall {
-    private final ExecutionPath path;
+    private final ResultPath path;
     private final Supplier<CompletableFuture<ExecutionResult>> call;
     private final DeferredErrorSupport errorSupport;
 
-    public DeferredCall(ExecutionPath path, Supplier<CompletableFuture<ExecutionResult>> call, DeferredErrorSupport deferredErrorSupport) {
+    public DeferredCall(ResultPath path, Supplier<CompletableFuture<ExecutionResult>> call, DeferredErrorSupport deferredErrorSupport) {
         this.path = path;
         this.call = call;
         this.errorSupport = deferredErrorSupport;

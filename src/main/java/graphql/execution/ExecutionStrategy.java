@@ -521,7 +521,7 @@ public abstract class ExecutionStrategy {
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>();
         int index = 0;
         for (Object item : values) {
-            ExecutionPath indexedPath = parameters.getPath().segment(index);
+            ResultPath indexedPath = parameters.getPath().segment(index);
 
             ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, index);
 

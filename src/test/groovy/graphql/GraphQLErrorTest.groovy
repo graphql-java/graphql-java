@@ -1,10 +1,10 @@
 package graphql
 
-import graphql.execution.ExecutionPath
 import graphql.execution.ExecutionStepInfo
 import graphql.execution.MissingRootTypeException
 import graphql.execution.NonNullableFieldWasNullError
 import graphql.execution.NonNullableFieldWasNullException
+import graphql.execution.ResultPath
 import graphql.introspection.Introspection
 import graphql.language.SourceLocation
 import graphql.schema.CoercingSerializeException
@@ -113,8 +113,8 @@ class GraphQLErrorTest extends Specification {
         return new SourceLocation(line, column)
     }
 
-    ExecutionPath mkPath() {
-        return ExecutionPath.rootPath()
+    ResultPath mkPath() {
+        return ResultPath.rootPath()
                 .segment("heroes")
                 .segment(0)
                 .segment("abilities")

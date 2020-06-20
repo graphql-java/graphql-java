@@ -3,7 +3,7 @@ package graphql.execution.defer
 import graphql.DeferredExecutionResult
 import graphql.ExecutionResult
 import graphql.ExecutionResultImpl
-import graphql.execution.ExecutionPath
+import graphql.execution.ResultPath
 import graphql.language.Argument
 import graphql.language.BooleanValue
 import graphql.language.Directive
@@ -255,7 +255,7 @@ class DeferSupportTest extends Specification {
                 new ExecutionResultImpl(data, [])
             })
         }
-        return new DeferredCall(ExecutionPath.parse(path), callSupplier, new DeferredErrorSupport())
+        return new DeferredCall(ResultPath.parse(path), callSupplier, new DeferredErrorSupport())
     }
 
     private
@@ -267,6 +267,6 @@ class DeferSupportTest extends Specification {
                 new ExecutionResultImpl(dataParent, [])
             })
         }
-        return new DeferredCall(ExecutionPath.parse("/field/path"), callSupplier, new DeferredErrorSupport())
+        return new DeferredCall(ResultPath.parse("/field/path"), callSupplier, new DeferredErrorSupport())
     }
 }

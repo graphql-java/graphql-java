@@ -3,7 +3,6 @@ package graphql.execution;
 
 import graphql.ExecutionInput;
 import graphql.GraphQLError;
-import graphql.Internal;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
 import graphql.execution.defer.DeferSupport;
@@ -43,7 +42,7 @@ public class ExecutionContext {
     private final Object localContext;
     private final Instrumentation instrumentation;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
-    private final Set<ExecutionPath> errorPaths = new HashSet<>();
+    private final Set<ResultPath> errorPaths = new HashSet<>();
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
     private final Locale locale;
@@ -151,7 +150,7 @@ public class ExecutionContext {
      * @param error     the error to add
      * @param fieldPath the field path to put it under
      */
-    public void addError(GraphQLError error, ExecutionPath fieldPath) {
+    public void addError(GraphQLError error, ResultPath fieldPath) {
         //
         // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability about how per
         // field errors should be handled - ie only once per field if its already there for nullability
@@ -174,7 +173,7 @@ public class ExecutionContext {
         // on how exactly multiple errors should be handled - ie only once per field or not outside the nullability
         // aspect.
         if (error.getPath() != null) {
-            this.errorPaths.add(ExecutionPath.fromList(error.getPath()));
+            this.errorPaths.add(ResultPath.fromList(error.getPath()));
         }
         this.errors.add(error);
     }

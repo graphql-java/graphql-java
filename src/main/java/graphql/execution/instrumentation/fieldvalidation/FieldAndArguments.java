@@ -1,7 +1,7 @@
 package graphql.execution.instrumentation.fieldvalidation;
 
 import graphql.PublicApi;
-import graphql.execution.ExecutionPath;
+import graphql.execution.ResultPath;
 import graphql.language.Field;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
@@ -37,7 +37,7 @@ public interface FieldAndArguments {
     /**
      * @return the path to this field
      */
-    ExecutionPath getPath();
+    ResultPath getPath();
 
     /**
      * This will be a map of argument names to argument values.  This will contain any variables transferred

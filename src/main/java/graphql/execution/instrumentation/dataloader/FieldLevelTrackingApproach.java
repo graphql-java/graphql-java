@@ -3,9 +3,9 @@ package graphql.execution.instrumentation.dataloader;
 import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.Internal;
-import graphql.execution.ExecutionPath;
 import graphql.execution.FieldValueInfo;
 import graphql.execution.MergedField;
+import graphql.execution.ResultPath;
 import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -130,7 +130,7 @@ public class FieldLevelTrackingApproach {
 
     ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
-        ExecutionPath path = parameters.getExecutionStrategyParameters().getPath();
+        ResultPath path = parameters.getExecutionStrategyParameters().getPath();
         int parentLevel = path.getLevel();
         int curLevel = parentLevel + 1;
         int fieldCount = parameters.getExecutionStrategyParameters().getFields().size();
@@ -237,7 +237,7 @@ public class FieldLevelTrackingApproach {
 
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
-        ExecutionPath path = parameters.getEnvironment().getExecutionStepInfo().getPath();
+        ResultPath path = parameters.getEnvironment().getExecutionStepInfo().getPath();
         int level = path.getLevel();
         return new InstrumentationContext<Object>() {
 
