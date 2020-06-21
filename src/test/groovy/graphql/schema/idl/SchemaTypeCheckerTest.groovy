@@ -1738,4 +1738,80 @@ class SchemaTypeCheckerTest extends Specification {
         errorContaining(result, "'Human' extension type [@n:n] tried to redefine field 'name' [@n:n]")
 
     }
+
+    def "union type name must not begin with '__'"() {
+        given:
+        def sdl = """
+            type Query { hello: String }
+
+            type Bar {
+                id : ID!
+            }
+            
+            type Foo {
+                id : ID!
+            }
+            
+            union __FooBar = Bar | Foo 
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        errorContaining(result, "'__FooBar' must not begin with '__', which is reserved by GraphQL introspection.")
+    }
+
+    def "union type must include one or more member types"() {
+        given:
+        def sdl = """
+            type Query { hello: String }
+           
+            union UnionType 
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        errorContaining(result, "Union type 'UnionType' must include one or more member types.")
+    }
+
+    def "The member types of a Union type must all be object base types"() {
+        given:
+        def sdl = """
+            type Query { hello: String }
+            
+            type A { hello: String }
+            
+            interface B { hello: String }
+            
+            union UnionType = A | B
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        errorContaining(result, "The member types of a Union type must all be Object base types. member type 'B' in Union 'UnionType' is invalid.")
+    }
+
+    def "The member types of a Union type must be unique"() {
+        given:
+        def sdl = """
+            type Query { hello: String }
+            
+            type Bar {
+                id : ID!
+            }
+            
+            union DuplicateBar =  Bar | Bar
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        errorContaining(result, "member type 'Bar' in Union 'DuplicateBar' is not unique. The member types of a Union type must be unique.")
+    }
 }
