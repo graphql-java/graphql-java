@@ -2,8 +2,10 @@ package graphql.normalized;
 
 import graphql.Internal;
 import graphql.execution.MergedField;
+import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
+import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
 import graphql.normalized.FieldCollectorNormalizedQuery.CollectFieldResult;
 import graphql.schema.FieldCoordinates;
@@ -16,6 +18,15 @@ import java.util.Map;
 
 @Internal
 public class NormalizedQueryFactory {
+
+    public static NormalizedQueryFromAst createNormalizedQuery(GraphQLSchema graphQLSchema,
+                                                               Document document,
+                                                               String operationName,
+                                                               Map<String, Object> variables) {
+        NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
+        return createNormalizedQuery(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, variables);
+    }
+
 
     public static NormalizedQueryFromAst createNormalizedQuery(GraphQLSchema graphQLSchema,
                                                                OperationDefinition operationDefinition,
