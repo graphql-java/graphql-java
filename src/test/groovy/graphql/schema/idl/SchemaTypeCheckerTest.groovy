@@ -1738,4 +1738,24 @@ class SchemaTypeCheckerTest extends Specification {
         errorContaining(result, "'Human' extension type [@n:n] tried to redefine field 'name' [@n:n]")
 
     }
+
+    def "xe redefined in extension type should cause an error"() {
+        given:
+        def sdl = """
+            type Query { hello: String }
+            
+            type A { hello: String }
+            
+            type B { hello: String }
+            
+            union UnionType 
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        errorContaining(result, "'Human' extension type [@n:n] tried to redefine field 'name' [@n:n]")
+    }
+
 }
