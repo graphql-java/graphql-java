@@ -266,6 +266,25 @@ public class ExecutionPath {
         return list;
     }
 
+    /**
+     * @return this path as a list of result keys, without any indices
+     */
+    public List<String> getKeysOnly() {
+        if (parent == null) {
+            return new LinkedList<>();
+        }
+        LinkedList<String> list = new LinkedList<>();
+        ExecutionPath p = this;
+        while (p.segment != null) {
+            if(p.segment instanceof String) {
+                list.addFirst((String) p.segment);
+            }
+            p = p.parent;
+        }
+        return list;
+    }
+
+
 
     /**
      * @return the path as a string which represents the call hierarchy

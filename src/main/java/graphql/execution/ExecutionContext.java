@@ -3,7 +3,6 @@ package graphql.execution;
 
 import graphql.ExecutionInput;
 import graphql.GraphQLError;
-import graphql.Internal;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
 import graphql.execution.defer.DeferSupport;
@@ -12,7 +11,10 @@ import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
+import graphql.normalized.NormalizedQueryFactory;
+import graphql.normalized.NormalizedQueryFromAst;
 import graphql.schema.GraphQLSchema;
+import graphql.util.FpKit;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.Collections;
@@ -23,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
@@ -115,6 +118,7 @@ public class ExecutionContext {
     public <T> T getContext() {
         return (T) context;
     }
+
     @SuppressWarnings("unchecked")
     public <T> T getLocalContext() {
         return (T) localContext;
@@ -214,5 +218,9 @@ public class ExecutionContext {
         ExecutionContextBuilder builder = ExecutionContextBuilder.newExecutionContextBuilder(this);
         builderConsumer.accept(builder);
         return builder.build();
+    }
+
+    public Supplier<NormalizedQueryFromAst> getNormalizedQuery() {
+        return FpKit.memoize(() -> NormalizedQueryFactory.createNormalizedQuery(graphQLSchema, operationDefinition, fragmentsByName, variables));
     }
 }

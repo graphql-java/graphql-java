@@ -10,6 +10,7 @@ import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
+import graphql.normalized.NormalizedField;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 
@@ -239,4 +240,6 @@ public interface DataFetchingEnvironment {
      * @return the variables that have been passed to the query that is being executed
      */
     Map<String, Object> getVariables();
+
+    NormalizedField getNormalizeField();
 }
