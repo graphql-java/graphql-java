@@ -6,17 +6,14 @@ import graphql.Internal;
 import graphql.execution.ExecutionPath;
 import graphql.execution.FieldValueInfo;
 import graphql.execution.MergedField;
-import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import org.dataloader.DataLoaderRegistry;
 import org.slf4j.Logger;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -205,35 +202,6 @@ public class FieldLevelTrackingApproach {
         return result;
     }
 
-    DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
-        CallStack callStack = parameters.getInstrumentationState();
-        int level = parameters.getExecutionStrategyParameters().getPath().getLevel();
-        synchronized (callStack) {
-            callStack.clearAndMarkCurrentLevelAsReady(level);
-        }
-
-        return new DeferredFieldInstrumentationContext() {
-            @Override
-            public void onDispatched(CompletableFuture<ExecutionResult> result) {
-
-            }
-
-            @Override
-            public void onCompleted(ExecutionResult result, Throwable t) {
-            }
-
-            @Override
-            public void onFieldValueInfo(FieldValueInfo fieldValueInfo) {
-                boolean dispatchNeeded;
-                synchronized (callStack) {
-                    dispatchNeeded = handleOnFieldValuesInfo(Collections.singletonList(fieldValueInfo), callStack, level);
-                }
-                if (dispatchNeeded) {
-                    dispatch();
-                }
-            }
-        };
-    }
 
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
