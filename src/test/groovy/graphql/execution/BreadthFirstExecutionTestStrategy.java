@@ -36,7 +36,7 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
             MergedField currentField = fields.getSubField(fieldName);
             FetchedValue fetchedValue = fetchedValues.get(fieldName);
 
-            ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
+            ResultPath fieldPath = parameters.getPath().segment(fieldName);
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
 
@@ -54,7 +54,7 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
     private FetchedValue fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, MergedSelectionSet fields, String fieldName) {
         MergedField currentField = fields.getSubField(fieldName);
 
-        ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
+        ResultPath fieldPath = parameters.getPath().segment(fieldName);
         ExecutionStrategyParameters newParameters = parameters
                 .transform(builder -> builder.field(currentField).path(fieldPath));
 

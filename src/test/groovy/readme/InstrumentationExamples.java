@@ -3,7 +3,7 @@ package readme;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.GraphQLError;
-import graphql.execution.ExecutionPath;
+import graphql.execution.ResultPath;
 import graphql.execution.instrumentation.ChainedInstrumentation;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -123,7 +123,7 @@ public class InstrumentationExamples {
 
     private void fieldValidation() {
 
-        ExecutionPath fieldPath = ExecutionPath.parse("/user");
+        ResultPath fieldPath = ResultPath.parse("/user");
         FieldValidation fieldValidation = new SimpleFieldValidation()
                 .addRule(fieldPath, new BiFunction<FieldAndArguments, FieldValidationEnvironment, Optional<GraphQLError>>() {
                     @Override

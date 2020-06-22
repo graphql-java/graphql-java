@@ -3,7 +3,6 @@ package graphql.execution.instrumentation
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.execution.ExecutionContext
-import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
@@ -61,12 +60,6 @@ class TestingInstrumentation implements Instrumentation {
     InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
         return new TestingInstrumentContext("execute-operation", executionList, throwableList)
-    }
-
-    @Override
-    DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState
-        return new TestingInstrumentContext("deferred-field-$parameters.field.name", executionList, throwableList)
     }
 
     @Override

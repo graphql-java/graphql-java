@@ -73,7 +73,7 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
         for (String fieldName : fields.keySet()) {
             final MergedField currentField = fields.getSubField(fieldName);
 
-            ExecutionPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
+            ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
 

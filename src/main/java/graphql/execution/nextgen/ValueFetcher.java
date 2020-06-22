@@ -11,10 +11,10 @@ import graphql.execution.DataFetcherResult;
 import graphql.execution.DefaultValueUnboxer;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
-import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.FetchedValue;
 import graphql.execution.MergedField;
+import graphql.execution.ResultPath;
 import graphql.execution.ValuesResolver;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.language.Field;
@@ -138,7 +138,7 @@ public class ValueFetcher {
                 .build();
 
         ExecutionId executionId = executionContext.getExecutionId();
-        ExecutionPath path = executionInfo.getPath();
+        ResultPath path = executionInfo.getPath();
         return callDataFetcher(codeRegistry, parentType, fieldDef, environment, executionId, path)
                 .thenApply(rawFetchedValue -> FetchedValue.newFetchedValue()
                         .fetchedValue(rawFetchedValue)
@@ -149,7 +149,7 @@ public class ValueFetcher {
                 .thenApply(this::unboxPossibleOptional);
     }
 
-    private FetchedValue handleExceptionWhileFetching(Field field, ExecutionPath path, Throwable exception) {
+    private FetchedValue handleExceptionWhileFetching(Field field, ResultPath path, Throwable exception) {
         ExceptionWhileDataFetching exceptionWhileDataFetching = new ExceptionWhileDataFetching(path, exception, field.getSourceLocation());
         return FetchedValue.newFetchedValue().errors(singletonList(exceptionWhileDataFetching)).build();
     }
@@ -160,7 +160,7 @@ public class ValueFetcher {
         );
     }
 
-    private CompletableFuture<Object> callDataFetcher(GraphQLCodeRegistry codeRegistry, GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment, ExecutionId executionId, ExecutionPath path) {
+    private CompletableFuture<Object> callDataFetcher(GraphQLCodeRegistry codeRegistry, GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment, ExecutionId executionId, ResultPath path) {
         CompletableFuture<Object> result = new CompletableFuture<>();
         try {
             DataFetcher dataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);
@@ -201,14 +201,14 @@ public class ValueFetcher {
         cf.complete(fetchedValue);
     }
 
-    private FetchedValue unboxPossibleDataFetcherResult(MergedField sameField, ExecutionPath executionPath, FetchedValue result, Object localContext) {
+    private FetchedValue unboxPossibleDataFetcherResult(MergedField sameField, ResultPath resultPath, FetchedValue result, Object localContext) {
         if (result.getFetchedValue() instanceof DataFetcherResult) {
 
             List<GraphQLError> addErrors;
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result.getFetchedValue();
             if (dataFetcherResult.isMapRelativeErrors()) {
                 addErrors = dataFetcherResult.getErrors().stream()
-                        .map(relError -> new AbsoluteGraphQLError(sameField, executionPath, relError))
+                        .map(relError -> new AbsoluteGraphQLError(sameField, resultPath, relError))
                         .collect(Collectors.toList());
             } else {
                 addErrors = new ArrayList<>(dataFetcherResult.getErrors());

@@ -10,7 +10,7 @@ import graphql.schema.DataFetcher
 import spock.lang.Specification
 import spock.lang.Unroll
 
-class ExecutionPathTest extends Specification {
+class ResultPathTest extends Specification {
 
     @Unroll
     "unit test toList works as expected : #actual"() {
@@ -19,11 +19,11 @@ class ExecutionPathTest extends Specification {
         actual.toList() == expected
 
         where:
-        actual                                                        || expected
-        ExecutionPath.rootPath()                                      || []
-        ExecutionPath.rootPath().segment("A")                         || ["A"]
-        ExecutionPath.rootPath().segment("A").segment(1).segment("B") || ["A", 1, "B"]
-        ExecutionPath.rootPath().segment("A").segment("B").segment(1) || ["A", "B", 1]
+        actual                                                     || expected
+        ResultPath.rootPath()                                      || []
+        ResultPath.rootPath().segment("A")                         || ["A"]
+        ResultPath.rootPath().segment("A").segment(1).segment("B") || ["A", 1, "B"]
+        ResultPath.rootPath().segment("A").segment("B").segment(1) || ["A", "B", 1]
     }
 
     @Unroll
@@ -33,10 +33,10 @@ class ExecutionPathTest extends Specification {
 
         where:
         actual                                                        || expected
-        ExecutionPath.rootPath()                                      || ""
-        ExecutionPath.rootPath().segment("A")                         || "/A"
-        ExecutionPath.rootPath().segment("A").segment(1).segment("B") || "/A[1]/B"
-        ExecutionPath.rootPath().segment("A").segment("B").segment(1) || "/A/B[1]"
+        ResultPath.rootPath()                                      || ""
+        ResultPath.rootPath().segment("A")                         || "/A"
+        ResultPath.rootPath().segment("A").segment(1).segment("B") || "/A[1]/B"
+        ResultPath.rootPath().segment("A").segment("B").segment(1) || "/A/B[1]"
     }
 
     @Unroll
@@ -47,9 +47,9 @@ class ExecutionPathTest extends Specification {
 
         where:
         actual                                                                     || expected
-        ExecutionPath.rootPath()                                                   || []
-        ExecutionPath.rootPath().segment("A").sibling("B")                         || ["B"]
-        ExecutionPath.rootPath().segment("A").segment(1).segment("B").sibling("C") || ["A", 1, "C"]
+        ResultPath.rootPath()                                                   || []
+        ResultPath.rootPath().segment("A").sibling("B")                         || ["B"]
+        ResultPath.rootPath().segment("A").segment(1).segment("B").sibling("C") || ["A", 1, "C"]
     }
 
 
@@ -150,7 +150,7 @@ class ExecutionPathTest extends Specification {
 
 
         expect:
-        ExecutionPath.parse(pathString).toList() == expectedList
+        ResultPath.parse(pathString).toList() == expectedList
 
         where:
 
@@ -166,7 +166,7 @@ class ExecutionPathTest extends Specification {
     def "test worst case parsing"() {
 
         when:
-        ExecutionPath.parse(badPathString)
+        ResultPath.parse(badPathString)
 
         then:
         thrown(AssertException)
@@ -188,7 +188,7 @@ class ExecutionPathTest extends Specification {
 
 
         expect:
-        ExecutionPath.fromList(inputList).toString() == expectedString
+        ResultPath.fromList(inputList).toString() == expectedString
 
         where:
 
@@ -201,7 +201,7 @@ class ExecutionPathTest extends Specification {
 
     def "get path without list end"() {
         when:
-        def path = ExecutionPath.fromList(["a", "b", 9])
+        def path = ResultPath.fromList(["a", "b", 9])
         path = path.getPathWithoutListEnd()
         then:
         path.toList() == ["a", "b"]
@@ -215,8 +215,8 @@ class ExecutionPathTest extends Specification {
 
     def "can append paths"() {
         when:
-        def path = ExecutionPath.fromList(["a", "b", 0])
-        def path2 = ExecutionPath.fromList(["x", "y", 9])
+        def path = ResultPath.fromList(["a", "b", 0])
+        def path2 = ResultPath.fromList(["x", "y", 9])
 
         def newPath = path.append(path2)
 
@@ -225,19 +225,19 @@ class ExecutionPathTest extends Specification {
 
 
         when:
-        newPath = ExecutionPath.rootPath().append(path2)
+        newPath = ResultPath.rootPath().append(path2)
 
         then:
         newPath.toList() == ["x", "y", 9]
 
         when:
-        newPath = path2.append(ExecutionPath.rootPath())
+        newPath = path2.append(ResultPath.rootPath())
 
         then:
         newPath.toList() == ["x", "y", 9]
 
         when:
-        newPath = ExecutionPath.rootPath().append(ExecutionPath.rootPath())
+        newPath = ResultPath.rootPath().append(ResultPath.rootPath())
 
         then:
         newPath.toList() == []
@@ -245,7 +245,7 @@ class ExecutionPathTest extends Specification {
 
     def "replace support"() {
         when:
-        def path = ExecutionPath.fromList(["a", "b", 0])
+        def path = ResultPath.fromList(["a", "b", 0])
         def newPath = path.replaceSegment(1)
 
         then:
@@ -264,19 +264,19 @@ class ExecutionPathTest extends Specification {
         newPath.toList() == ["a", "b", 99]
 
         when:
-        ExecutionPath.rootPath().replaceSegment(1)
+        ResultPath.rootPath().replaceSegment(1)
 
         then:
         thrown(AssertException)
 
         when:
-        ExecutionPath.rootPath().replaceSegment("x")
+        ResultPath.rootPath().replaceSegment("x")
 
         then:
         thrown(AssertException)
 
         when:
-        newPath = ExecutionPath.parse("/a/b[1]").replaceSegment("x")
+        newPath = ResultPath.parse("/a/b[1]").replaceSegment("x")
         then:
         newPath.toList() == ["a", "b", "x"]
     }

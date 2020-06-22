@@ -13,10 +13,10 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
 public class NonNullableFieldWasNullException extends RuntimeException {
 
     private final ExecutionStepInfo executionStepInfo;
-    private final ExecutionPath path;
+    private final ResultPath path;
 
 
-    public NonNullableFieldWasNullException(ExecutionStepInfo executionStepInfo, ExecutionPath path) {
+    public NonNullableFieldWasNullException(ExecutionStepInfo executionStepInfo, ResultPath path) {
         super(
                 mkMessage(assertNotNull(executionStepInfo),
                         assertNotNull(path))
@@ -38,7 +38,7 @@ public class NonNullableFieldWasNullException extends RuntimeException {
     }
 
 
-    private static String mkMessage(ExecutionStepInfo executionStepInfo, ExecutionPath path) {
+    private static String mkMessage(ExecutionStepInfo executionStepInfo, ResultPath path) {
         GraphQLType unwrappedTyped = executionStepInfo.getUnwrappedNonNullType();
         if (executionStepInfo.hasParent()) {
             GraphQLType unwrappedParentType = executionStepInfo.getParent().getUnwrappedNonNullType();
@@ -62,7 +62,7 @@ public class NonNullableFieldWasNullException extends RuntimeException {
         return executionStepInfo;
     }
 
-    public ExecutionPath getPath() {
+    public ResultPath getPath() {
         return path;
     }
 

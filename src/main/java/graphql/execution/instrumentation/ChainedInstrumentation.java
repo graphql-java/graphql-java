@@ -8,7 +8,6 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.FieldValueInfo;
 import graphql.execution.MergedField;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -121,15 +120,6 @@ public class ChainedInstrumentation implements Instrumentation {
                 .collect(toList()));
     }
 
-    @Override
-    public DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
-        return new ChainedDeferredExecutionStrategyInstrumentationContext(instrumentations.stream()
-                .map(instrumentation -> {
-                    InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
-                    return instrumentation.beginDeferredField(parameters.withNewState(state));
-                })
-                .collect(toList()));
-    }
 
     @Override
     public InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters) {
@@ -299,28 +289,5 @@ public class ChainedInstrumentation implements Instrumentation {
         }
     }
 
-    private static class ChainedDeferredExecutionStrategyInstrumentationContext implements DeferredFieldInstrumentationContext {
-
-        private final List<DeferredFieldInstrumentationContext> contexts;
-
-        ChainedDeferredExecutionStrategyInstrumentationContext(List<DeferredFieldInstrumentationContext> contexts) {
-            this.contexts = Collections.unmodifiableList(contexts);
-        }
-
-        @Override
-        public void onDispatched(CompletableFuture<ExecutionResult> result) {
-            contexts.forEach(context -> context.onDispatched(result));
-        }
-
-        @Override
-        public void onCompleted(ExecutionResult result, Throwable t) {
-            contexts.forEach(context -> context.onCompleted(result, t));
-        }
-
-        @Override
-        public void onFieldValueInfo(FieldValueInfo fieldValueInfo) {
-            contexts.forEach(context -> context.onFieldValueInfo(fieldValueInfo));
-        }
-    }
 }
 
