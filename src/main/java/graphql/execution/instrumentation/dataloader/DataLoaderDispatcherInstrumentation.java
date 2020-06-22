@@ -5,14 +5,12 @@ import graphql.ExecutionResultImpl;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategy;
-import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.SimpleInstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -143,26 +141,6 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         return state.getApproach().beginExecutionStrategy(parameters.withNewState(state.getState()));
     }
 
-    @Override
-    public DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
-        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
-        //
-        // if there are no data loaders, there is nothing to do
-        //
-        if (state.hasNoDataLoaders()) {
-            return new DeferredFieldInstrumentationContext() {
-                @Override
-                public void onDispatched(CompletableFuture<ExecutionResult> result) {
-                }
-
-                @Override
-                public void onCompleted(ExecutionResult result, Throwable t) {
-                }
-            };
-
-        }
-        return state.getApproach().beginDeferredField(parameters.withNewState(state.getState()));
-    }
 
     @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {

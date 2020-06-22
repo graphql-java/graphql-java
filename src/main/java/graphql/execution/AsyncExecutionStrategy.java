@@ -1,19 +1,14 @@
 package graphql.execution;
 
 import graphql.ExecutionResult;
-import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLObjectType;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -83,31 +78,5 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
         return overallResult;
-    }
-
-
-    @SuppressWarnings("FutureReturnValueIgnored")
-    private Supplier<CompletableFuture<ExecutionResult>> deferredExecutionResult(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        return () -> {
-            GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().getSingleField());
-            GraphQLObjectType fieldContainer = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
-
-            Instrumentation instrumentation = executionContext.getInstrumentation();
-            DeferredFieldInstrumentationContext fieldCtx = instrumentation.beginDeferredField(
-                    new InstrumentationDeferredFieldParameters(executionContext, parameters, fieldDef, createExecutionStepInfo(executionContext, parameters, fieldDef, fieldContainer))
-            );
-            CompletableFuture<ExecutionResult> result = new CompletableFuture<>();
-            fieldCtx.onDispatched(result);
-            CompletableFuture<FieldValueInfo> fieldValueInfoFuture = resolveFieldWithInfo(executionContext, parameters);
-
-            fieldValueInfoFuture.whenComplete((fieldValueInfo, throwable) -> {
-                fieldCtx.onFieldValueInfo(fieldValueInfo);
-
-                CompletableFuture<ExecutionResult> execResultFuture = fieldValueInfo.getFieldValue();
-                execResultFuture = execResultFuture.whenComplete(fieldCtx::onCompleted);
-                Async.copyResults(execResultFuture, result);
-            });
-            return result;
-        };
     }
 }
