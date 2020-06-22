@@ -345,7 +345,6 @@ public abstract class ExecutionStrategy {
         DataFetcherExceptionHandlerResult handlerResult = dataFetcherExceptionHandler.onException(handlerParameters);
         handlerResult.getErrors().forEach(executionContext::addError);
 
-        parameters.deferredErrorSupport().onFetchingException(parameters, e);
     }
 
     /**
@@ -461,7 +460,6 @@ public abstract class ExecutionStrategy {
         logNotSafe.warn(error.getMessage(), e);
         context.addError(error);
 
-        parameters.deferredErrorSupport().onError(error);
     }
 
     private CompletableFuture<ExecutionResult> completeValueForNull(ExecutionStrategyParameters parameters) {
@@ -669,7 +667,6 @@ public abstract class ExecutionStrategy {
         logNotSafe.warn(error.getMessage(), e);
         context.addError(error);
 
-        parameters.deferredErrorSupport().onError(error);
 
         return null;
     }
@@ -708,7 +705,6 @@ public abstract class ExecutionStrategy {
         logNotSafe.warn("{} got {}", error.getMessage(), result.getClass());
         context.addError(error);
 
-        parameters.deferredErrorSupport().onError(error);
     }
 
 

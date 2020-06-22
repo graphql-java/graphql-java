@@ -83,12 +83,6 @@ import static graphql.execution.ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDE
 @PublicApi
 public class GraphQL {
 
-    /**
-     * When @defer directives are used, this is the extension key name used to contain the {@link org.reactivestreams.Publisher}
-     * of deferred results
-     */
-    public static final String DEFERRED_RESULTS = "deferredResults";
-
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
     private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(GraphQL.class);
 
