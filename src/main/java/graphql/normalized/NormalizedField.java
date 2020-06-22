@@ -1,5 +1,6 @@
 package graphql.normalized;
 
+import graphql.Assert;
 import graphql.PublicApi;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
@@ -170,16 +171,32 @@ public class NormalizedField {
                 '}';
     }
 
+    public List<NormalizedField> getChildren(int includingRelativeLevel) {
+        List<NormalizedField> result = new ArrayList<>();
+        Assert.assertTrue(includingRelativeLevel >= 1, () -> "relative level must be >= 1");
+
+        this.getChildren().forEach(child -> {
+            traverseImpl(child, result::add, 1, includingRelativeLevel);
+        });
+        return result;
+    }
+
     public void traverseSubTree(Consumer<NormalizedField> consumer) {
         this.getChildren().forEach(child -> {
-            traverseImpl(child, consumer);
+            traverseImpl(child, consumer, 1, Integer.MAX_VALUE);
         });
     }
 
-    private void traverseImpl(NormalizedField root, Consumer<NormalizedField> consumer) {
+    private void traverseImpl(NormalizedField root,
+                              Consumer<NormalizedField> consumer,
+                              int curRelativeLevel,
+                              int abortAfter) {
+        if (curRelativeLevel > abortAfter) {
+            return;
+        }
         consumer.accept(root);
         root.getChildren().forEach(child -> {
-            traverseImpl(child, consumer);
+            traverseImpl(child, consumer, curRelativeLevel + 1, abortAfter);
         });
     }
 
