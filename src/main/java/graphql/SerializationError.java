@@ -1,7 +1,7 @@
 package graphql;
 
 
-import graphql.execution.ExecutionPath;
+import graphql.execution.ResultPath;
 import graphql.language.SourceLocation;
 import graphql.schema.CoercingSerializeException;
 
@@ -18,13 +18,13 @@ public class SerializationError implements GraphQLError {
     private final List<Object> path;
     private final CoercingSerializeException exception;
 
-    public SerializationError(ExecutionPath path, CoercingSerializeException exception) {
+    public SerializationError(ResultPath path, CoercingSerializeException exception) {
         this.path = assertNotNull(path).toList();
         this.exception = assertNotNull(exception);
         this.message = mkMessage(path, exception);
     }
 
-    private String mkMessage(ExecutionPath path, CoercingSerializeException exception) {
+    private String mkMessage(ResultPath path, CoercingSerializeException exception) {
         return format("Can't serialize value (%s) : %s", path, exception.getMessage());
     }
 

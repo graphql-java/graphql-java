@@ -10,7 +10,6 @@ import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.DataFetcherExceptionHandlerResult;
 import graphql.execution.ExecutionContext;
-import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStrategy;
 import graphql.execution.ExecutionStrategyParameters;
@@ -19,6 +18,7 @@ import graphql.execution.MergedField;
 import graphql.execution.MergedSelectionSet;
 import graphql.execution.NonNullableFieldValidator;
 import graphql.execution.ResolveType;
+import graphql.execution.ResultPath;
 import graphql.execution.SimpleDataFetcherExceptionHandler;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.instrumentation.Instrumentation;
@@ -169,7 +169,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .parentInfo(currentParentExecutionStepInfo.getParent())
                 .build();
 
-        ExecutionPath fieldPath = curNode.getExecutionStepInfo().getPath().segment(mkNameForPath(currentField));
+        ResultPath fieldPath = curNode.getExecutionStepInfo().getPath().segment(mkNameForPath(currentField));
         GraphQLFieldDefinition fieldDefinition = getFieldDef(executionContext.getGraphQLSchema(), curNode.getType(), currentField.getSingleField());
 
         ExecutionStepInfo executionStepInfo = newExecutionStepInfo()
@@ -429,7 +429,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
         ExecutionStepInfo executionStepInfo = fetchedValues.getExecutionStepInfo();
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
-        ExecutionPath path = fetchedValues.getPath();
+        ResultPath path = fetchedValues.getPath();
         for (FetchedValue value : fetchedValues.getValues()) {
             nonNullableFieldValidator.validate(path, value.getValue());
         }

@@ -136,7 +136,7 @@ public class Execution {
 
         MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
 
-        ExecutionPath path = ExecutionPath.rootPath();
+        ResultPath path = ResultPath.rootPath();
         ExecutionStepInfo executionStepInfo = newExecutionStepInfo().type(operationRootType).path(path).build();
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
 

@@ -1,6 +1,6 @@
 package graphql
 
-import graphql.execution.ExecutionPath
+import graphql.execution.ResultPath
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -15,7 +15,7 @@ import static graphql.language.Field.newField
 class GraphqlErrorBuilderTest extends Specification {
     def location = new SourceLocation(6, 9)
     def field = newMergedField(newField("f").sourceLocation(location).build()).build()
-    def stepInfo = newExecutionStepInfo().path(ExecutionPath.fromList(["a", "b"])).type(GraphQLString).build()
+    def stepInfo = newExecutionStepInfo().path(ResultPath.fromList(["a", "b"])).type(GraphQLString).build()
 
     def "dfe is passed on"() {
         DataFetchingEnvironment dfe = DataFetchingEnvironmentImpl.newDataFetchingEnvironment()

@@ -3,11 +3,9 @@ package graphql.cachecontrol;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
-import graphql.execution.ExecutionPath;
+import graphql.execution.ResultPath;
 import graphql.schema.DataFetchingEnvironment;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +80,7 @@ public class CacheControl {
      *
      * @return this object builder style
      */
-    public CacheControl hint(ExecutionPath path, Integer maxAge, Scope scope) {
+    public CacheControl hint(ResultPath path, Integer maxAge, Scope scope) {
         assertNotNull(path);
         assertNotNull(scope);
         hints.add(new Hint(path.toList(), maxAge, scope));
@@ -97,7 +95,7 @@ public class CacheControl {
      *
      * @return this object builder style
      */
-    public CacheControl hint(ExecutionPath path, Scope scope) {
+    public CacheControl hint(ResultPath path, Scope scope) {
         return hint(path, null, scope);
     }
 
@@ -109,7 +107,7 @@ public class CacheControl {
      *
      * @return this object builder style
      */
-    public CacheControl hint(ExecutionPath path, Integer maxAge) {
+    public CacheControl hint(ResultPath path, Integer maxAge) {
         return hint(path, maxAge, Scope.PUBLIC);
     }
 

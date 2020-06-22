@@ -192,7 +192,7 @@ class ExecutionStepInfoTest extends Specification {
         executionTypeInfos[0].path.toString() == "/hero"
         (executionTypeInfos[0].type as GraphQLObjectType).name == "User"
         executionTypeInfos[0].field.getName() == "hero"
-        executionTypeInfos[0].parent.path == ExecutionPath.rootPath()
+        executionTypeInfos[0].parent.path == ResultPath.rootPath()
         (executionTypeInfos[0].parent.type as GraphQLObjectType).name == "Query"
         executionTypeInfos[0].arguments == [id: "1234"]
         executionTypeInfos[0].getArgument("id") == "1234"

@@ -48,7 +48,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         for (String fieldName : fieldNames) {
             MergedField currentField = fields.getSubField(fieldName);
 
-            ExecutionPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
+            ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath).parent(parameters));
 
