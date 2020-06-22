@@ -274,16 +274,15 @@ public class ResultPath {
             return new LinkedList<>();
         }
         LinkedList<String> list = new LinkedList<>();
-        ExecutionPath p = this;
+        ResultPath p = this;
         while (p.segment != null) {
-            if(p.segment instanceof String) {
+            if (p.segment instanceof String) {
                 list.addFirst((String) p.segment);
             }
             p = p.parent;
         }
         return list;
     }
-
 
 
     /**

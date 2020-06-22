@@ -2,8 +2,8 @@ package graphql.normalized;
 
 import graphql.Assert;
 import graphql.PublicApi;
-import graphql.execution.ExecutionPath;
 import graphql.execution.MergedField;
+import graphql.execution.ResultPath;
 import graphql.language.Field;
 import graphql.schema.FieldCoordinates;
 
@@ -52,7 +52,7 @@ public class NormalizedQueryFromAst {
         return normalizedFieldToMergedField.get(normalizedField);
     }
 
-    public NormalizedField getNormalizedField(MergedField mergedField, ExecutionPath resultPath) {
+    public NormalizedField getNormalizedField(MergedField mergedField, ResultPath resultPath) {
         List<NormalizedField> normalizedFields = fieldToNormalizedField.get(mergedField.getSingleField());
         List<String> keysOnlyPath = resultPath.getKeysOnly();
         for (NormalizedField normalizedField : normalizedFields) {
