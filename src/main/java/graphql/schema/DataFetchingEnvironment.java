@@ -11,6 +11,7 @@ import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.normalized.NormalizedField;
+import graphql.normalized.NormalizedQueryFromAst;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 
@@ -34,6 +35,7 @@ public interface DataFetchingEnvironment {
      * For the root query, it is equal to {{@link DataFetchingEnvironment#getRoot}
      *
      * @param <T> you decide what type it is
+     *
      * @return can be null for the root query, otherwise it is never null
      */
     <T> T getSource();
@@ -47,6 +49,7 @@ public interface DataFetchingEnvironment {
      * Returns true of the named argument is present
      *
      * @param name the name of the argument
+     *
      * @return true of the named argument is present
      */
     boolean containsArgument(String name);
@@ -56,6 +59,7 @@ public interface DataFetchingEnvironment {
      *
      * @param name the name of the argument
      * @param <T>  you decide what type it is
+     *
      * @return the named argument or null if its not present
      */
     <T> T getArgument(String name);
@@ -66,6 +70,7 @@ public interface DataFetchingEnvironment {
      * @param name         the name of the argument
      * @param defaultValue the default value if the argument is not present
      * @param <T>          you decide what type it is
+     *
      * @return the named argument or the default if its not present
      */
     <T> T getArgumentOrDefault(String name, T defaultValue);
@@ -77,6 +82,7 @@ public interface DataFetchingEnvironment {
      * This is a info object which is provided to all DataFetchers, but never used by graphql-java itself.
      *
      * @param <T> you decide what type it is
+     *
      * @return can be null
      */
     <T> T getContext();
@@ -93,6 +99,7 @@ public interface DataFetchingEnvironment {
      * fields execute.
      *
      * @param <T> you decide what type it is
+     *
      * @return can be null if no field context objects are passed back by previous parent fields
      */
     <T> T getLocalContext();
@@ -101,6 +108,7 @@ public interface DataFetchingEnvironment {
      * This is the source object for the root query.
      *
      * @param <T> you decide what type it is
+     *
      * @return can be null
      */
     <T> T getRoot();
@@ -113,6 +121,7 @@ public interface DataFetchingEnvironment {
 
     /**
      * @return the list of fields
+     *
      * @deprecated Use {@link #getMergedField()}.
      */
     @Deprecated
@@ -191,6 +200,7 @@ public interface DataFetchingEnvironment {
      * This gives you access to the directives related to this field
      *
      * @return the {@link graphql.execution.directives.QueryDirectives} for the currently executing field
+     *
      * @see graphql.execution.directives.QueryDirectives for more information
      */
     QueryDirectives getQueryDirectives();
@@ -201,7 +211,9 @@ public interface DataFetchingEnvironment {
      * @param dataLoaderName the name of the data loader to fetch
      * @param <K>            the key type
      * @param <V>            the value type
+     *
      * @return the named data loader or null
+     *
      * @see org.dataloader.DataLoaderRegistry#getDataLoader(String)
      */
     <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
@@ -242,4 +254,7 @@ public interface DataFetchingEnvironment {
     Map<String, Object> getVariables();
 
     NormalizedField getNormalizeField();
+
+    NormalizedQueryFromAst getNormalizedQueryFromAst();
+
 }

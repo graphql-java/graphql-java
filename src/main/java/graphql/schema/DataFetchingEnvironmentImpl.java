@@ -242,6 +242,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
+    public NormalizedQueryFromAst getNormalizedQueryFromAst() {
+        return normalizedQueryFromAstSupplier.get();
+    }
+
+    @Override
     public String toString() {
         return "DataFetchingEnvironmentImpl{" +
                 "executionStepInfo=" + executionStepInfo +

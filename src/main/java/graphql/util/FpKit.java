@@ -198,10 +198,25 @@ public class FpKit {
      *
      * @param delegate the supplier to delegate to
      * @param <T>      for two
+     *
      * @return a supplier that will memoize values in the context of the current thread
      */
     public static <T> Supplier<T> memoize(Supplier<T> delegate) {
-        return new MemoizedSupplier<>(delegate);
+        return new WeakMemoizedSupplier<>(delegate);
+    }
+
+    /**
+     * Tis will memoize the Supplier across threads and make sure the Supplier is exactly called once.
+     *
+     * Use for potentially costly actions. Otherwiese consider {@link #memoize(Supplier)}
+     *
+     * @param delegate
+     * @param <T>
+     *
+     * @return
+     */
+    public static <T> Supplier<T> strongMemoize(Supplier<T> delegate) {
+        return new StrongMemoizedSupplier<>(delegate);
     }
 
 }

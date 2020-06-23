@@ -215,6 +215,6 @@ public class ExecutionContext {
     }
 
     public Supplier<NormalizedQueryFromAst> getNormalizedQuery() {
-        return FpKit.memoize(() -> NormalizedQueryFactory.createNormalizedQuery(graphQLSchema, operationDefinition, fragmentsByName, variables));
+        return FpKit.strongMemoize(() -> NormalizedQueryFactory.createNormalizedQuery(graphQLSchema, operationDefinition, fragmentsByName, variables));
     }
 }

@@ -7,7 +7,7 @@ import java.util.function.Supplier;
 import static graphql.Assert.assertNotNull;
 
 @Internal
-class MemoizedSupplier<T> implements Supplier<T> {
+class WeakMemoizedSupplier<T> implements Supplier<T> {
     private final static Object SENTINEL = new Object() {
     };
 
@@ -15,7 +15,7 @@ class MemoizedSupplier<T> implements Supplier<T> {
     private T value = (T) SENTINEL;
     private final Supplier<T> delegate;
 
-    MemoizedSupplier(Supplier<T> delegate) {
+    WeakMemoizedSupplier(Supplier<T> delegate) {
         this.delegate = assertNotNull(delegate);
     }
 
