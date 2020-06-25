@@ -4,6 +4,7 @@ import graphql.language.TypeName;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLInterfaceType;
@@ -95,19 +96,23 @@ public class TypeAndFieldRule implements SchemaValidationRule {
             return;
         }
 
-        if (fieldDefinitions != null && fieldDefinitions.size() != 0) {
-            for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
-                validateFieldDefinition(type.getName(), fieldDefinition, errorCollector);
-            }
+        for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
+            validateFieldDefinition(type.getName(), fieldDefinition, errorCollector);
         }
     }
 
     private void validateInputObject(GraphQLInputObjectType type, SchemaValidationErrorCollector errorCollector) {
         assertTypeName(type.getName(), errorCollector);
 
-        if (type.getFields() == null || type.getFields().size() == 0) {
+        List<GraphQLInputObjectField> inputObjectFields = type.getFields();
+        if (inputObjectFields == null || inputObjectFields.size() == 0) {
             SchemaValidationError validationError = new SchemaValidationError(SchemaValidationErrorType.InputObjectTypeLackOfFieldError, String.format("\"%s\" must define one or more fields.", type.getName()));
             errorCollector.addError(validationError);
+            return;
+        }
+
+        for (GraphQLInputObjectField inputObjectField : inputObjectFields) {
+            validateInputFieldDefinition(inputObjectField.getName(),inputObjectField,errorCollector);
         }
     }
 
@@ -170,6 +175,11 @@ public class TypeAndFieldRule implements SchemaValidationRule {
         }
     }
 
+    private void validateInputFieldDefinition(String typeName, GraphQLInputObjectField inputObjectField, SchemaValidationErrorCollector errorCollector) {
+        assertFieldName(typeName, inputObjectField.getName(), errorCollector);
+        assertNonNullType(inputObjectField.getType(), errorCollector);
+    }
+
     private void validateFieldDefinitionArgument(String typeName, String fieldName, GraphQLArgument argument, SchemaValidationErrorCollector errorCollector) {
         assertArgumentName(typeName, fieldName, argument.getName(), errorCollector);
         assertNonNullType(argument.getType(), errorCollector);
@@ -210,7 +220,7 @@ public class TypeAndFieldRule implements SchemaValidationRule {
     private void assertNonNullType(GraphQLType type, SchemaValidationErrorCollector errorCollector) {
         if (type instanceof GraphQLNonNull && ((GraphQLNonNull) type).getWrappedType() instanceof GraphQLNonNull) {
             SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.NonNullWrapNonNullError,
-                    String.format("Non‐Null type \"%s\" must not wrap another Non‐Null type.", GraphQLTypeUtil.simplePrint(type)));
+                    String.format("Non‐Null type must not wrap another Non‐Null type: \"%s\" is invalid.", GraphQLTypeUtil.simplePrint(type)));
             errorCollector.addError(schemaValidationError);
         }
     }

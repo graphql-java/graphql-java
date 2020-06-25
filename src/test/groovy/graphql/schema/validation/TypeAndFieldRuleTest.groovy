@@ -1,16 +1,8 @@
 package graphql.schema.validation
 
-import graphql.AssertException
 import graphql.TestUtil
-import graphql.schema.GraphQLNonNull
-import graphql.schema.GraphQLObjectType
 import spock.lang.Specification
 
-
-import static graphql.Scalars.GraphQLString
-import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
-import static graphql.schema.GraphQLObjectType.newObject
-import static graphql.schema.GraphQLSchema.newSchema
 
 class TypeAndFieldRuleTest extends Specification {
 
@@ -57,31 +49,6 @@ class TypeAndFieldRuleTest extends Specification {
         InvalidSchemaException e = thrown(InvalidSchemaException)
         print(e.message)
         e.message == "invalid schema:\n\"InputType\" must define one or more fields."
-    }
-
-    def "A non null type cannot wrap an existing non null type"() {
-        given:
-        def graphqlObjectType = GraphQLObjectType.newObject()
-                .name("TypeA")
-                .field(newFieldDefinition()
-                        .name("field")
-                        .type(GraphQLString))
-                .build()
-
-        when:
-        def nestedNonNullType = GraphQLNonNull.nonNull(GraphQLNonNull.nonNull(graphqlObjectType))
-        newSchema().query(
-                newObject()
-                        .name("RootQueryType")
-                        .field(newFieldDefinition()
-                                .name("field")
-                                .type(nestedNonNullType))
-                        .build()
-        ).build()
-
-        then:
-        def exception = thrown(AssertException)
-        exception.message.contains("A non null type cannot wrap an existing non null type")
     }
 
     def "customized type name must not begin with \"__\""() {
