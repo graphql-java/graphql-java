@@ -13,6 +13,7 @@ import static java.util.stream.Collectors.toList;
  * common things (hashcode/ equals ) and to specification more easily
  */
 @SuppressWarnings("SimplifiableIfStatement")
+@Internal
 public class GraphqlErrorHelper {
 
     public static Map<String, Object> toSpecification(GraphQLError error) {

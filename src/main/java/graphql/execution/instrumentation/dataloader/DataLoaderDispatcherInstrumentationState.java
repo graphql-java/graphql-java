@@ -2,6 +2,7 @@ package graphql.execution.instrumentation.dataloader;
 
 import graphql.Assert;
 import graphql.Internal;
+import graphql.PublicApi;
 import graphql.execution.instrumentation.InstrumentationState;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
@@ -12,6 +13,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * A base class that keeps track of whether aggressive batching can be used
  */
+@PublicApi
 public class DataLoaderDispatcherInstrumentationState implements InstrumentationState {
 
     @Internal

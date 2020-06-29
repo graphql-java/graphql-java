@@ -1,6 +1,7 @@
 package graphql.validation.rules;
 
 
+import graphql.Internal;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Directive;
 import graphql.language.Field;
@@ -19,6 +20,7 @@ import graphql.validation.ValidationErrorType;
 
 import java.util.List;
 
+@Internal
 public class KnownDirectives extends AbstractRule {
 
 

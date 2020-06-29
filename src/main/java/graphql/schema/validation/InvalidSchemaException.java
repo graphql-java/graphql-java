@@ -1,9 +1,11 @@
 package graphql.schema.validation;
 
 import graphql.GraphQLException;
+import graphql.Internal;
 
 import java.util.Collection;
 
+@Internal
 public class InvalidSchemaException extends GraphQLException {
 
     public InvalidSchemaException(Collection<SchemaValidationError> errors) {

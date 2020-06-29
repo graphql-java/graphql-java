@@ -1,5 +1,6 @@
 package graphql.validation.rules;
 
+import graphql.Internal;
 import graphql.language.Directive;
 import graphql.language.Document;
 import graphql.language.Field;
@@ -20,6 +21,7 @@ import java.util.Set;
 /**
  * https://facebook.github.io/graphql/June2018/#sec-Directives-Are-Unique-Per-Location
  */
+@Internal
 public class UniqueDirectiveNamesPerLocation extends AbstractRule {
 
     public UniqueDirectiveNamesPerLocation(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {

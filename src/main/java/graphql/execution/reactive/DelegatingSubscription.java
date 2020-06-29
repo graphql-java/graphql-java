@@ -1,5 +1,6 @@
 package graphql.execution.reactive;
 
+import graphql.PublicApi;
 import org.reactivestreams.Subscription;
 
 import static graphql.Assert.assertNotNull;
@@ -7,6 +8,7 @@ import static graphql.Assert.assertNotNull;
 /**
  * A simple subscription that delegates to another
  */
+@PublicApi
 public class DelegatingSubscription implements Subscription {
     private final Subscription upstreamSubscription;
 

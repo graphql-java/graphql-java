@@ -1,9 +1,11 @@
 package graphql.schema.idl.errors;
 
+import graphql.Internal;
 import graphql.language.Node;
 
 import static java.lang.String.format;
 
+@Internal
 public class DirectiveMissingNonNullArgumentError extends BaseError {
 
     public DirectiveMissingNonNullArgumentError(Node element, String elementName, String directiveName, String argumentName) {

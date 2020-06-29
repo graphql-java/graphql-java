@@ -1,5 +1,6 @@
 package graphql.schema.visibility;
 
+import graphql.PublicApi;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLInputFieldsContainer;
@@ -10,6 +11,7 @@ import java.util.List;
 /**
  * The default field visibility of graphql-java is that everything is visible
  */
+@PublicApi
 public class DefaultGraphqlFieldVisibility implements GraphqlFieldVisibility {
 
     public static final DefaultGraphqlFieldVisibility DEFAULT_FIELD_VISIBILITY = new DefaultGraphqlFieldVisibility();

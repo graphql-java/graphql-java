@@ -1,10 +1,11 @@
 package graphql.schema.idl.errors;
 
+import graphql.Internal;
 import graphql.language.OperationTypeDefinition;
-import graphql.language.SchemaDefinition;
 
 import static java.lang.String.format;
 
+@Internal
 public class OperationRedefinitionError extends BaseError {
 
     public OperationRedefinitionError(OperationTypeDefinition oldEntry, OperationTypeDefinition newEntry) {

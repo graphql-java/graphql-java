@@ -1,5 +1,6 @@
 package graphql.execution.reactive;
 
+import graphql.Internal;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -19,6 +20,7 @@ import java.util.function.Function;
  * @param <D> the down stream type
  * @param <U> the up stream type to be mapped to
  */
+@Internal
 public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
     private final Publisher<U> upstreamPublisher;
     private final Function<U, CompletionStage<D>> mapper;

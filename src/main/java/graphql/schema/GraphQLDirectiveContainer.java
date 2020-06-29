@@ -1,6 +1,8 @@
 package graphql.schema;
 
 
+import graphql.PublicApi;
+
 import java.util.List;
 import java.util.Map;
 
@@ -9,6 +11,7 @@ import static graphql.DirectivesUtil.directivesByName;
 /**
  * Represents a graphql object that can have {@link graphql.schema.GraphQLDirective}s
  */
+@PublicApi
 public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
 
     /**

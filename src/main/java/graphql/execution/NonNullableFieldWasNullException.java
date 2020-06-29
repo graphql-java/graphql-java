@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import graphql.Internal;
 import graphql.schema.GraphQLType;
 
 import static graphql.Assert.assertNotNull;
@@ -10,6 +11,7 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
  * actually resolves to a null value and the parent type is nullable then the parent must in fact become null
  * so we use exceptions to indicate this special case
  */
+@Internal
 public class NonNullableFieldWasNullException extends RuntimeException {
 
     private final ExecutionStepInfo executionStepInfo;

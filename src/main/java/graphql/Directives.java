@@ -17,6 +17,7 @@ import static graphql.schema.GraphQLNonNull.nonNull;
 /**
  * The directives that are understood by graphql-java
  */
+@PublicApi
 public class Directives {
 
     public static final GraphQLDirective IncludeDirective = GraphQLDirective.newDirective()

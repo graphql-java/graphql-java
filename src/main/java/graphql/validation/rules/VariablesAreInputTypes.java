@@ -1,6 +1,7 @@
 package graphql.validation.rules;
 
 
+import graphql.Internal;
 import graphql.language.TypeName;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLType;
@@ -11,6 +12,7 @@ import graphql.validation.ValidationErrorType;
 
 import static graphql.schema.GraphQLTypeUtil.isInput;
 
+@Internal
 public class VariablesAreInputTypes extends AbstractRule {
 
     public VariablesAreInputTypes(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {

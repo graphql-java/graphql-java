@@ -1,5 +1,6 @@
 package graphql.schema.validation;
 
+import graphql.Internal;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLImplementingType;
@@ -29,6 +30,7 @@ import static java.lang.String.format;
  * Schema validation rule ensuring object and interface types have all the fields that they need to
  * implement the interfaces they say they implement.
  */
+@Internal
 public class TypesImplementInterfaces implements SchemaValidationRule {
     private static final Map<Class<? extends GraphQLImplementingType>, String> TYPE_OF_MAP = new HashMap<>();
 

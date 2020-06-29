@@ -1,5 +1,6 @@
 package graphql.schema.visibility;
 
+import graphql.PublicApi;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 
@@ -12,6 +13,7 @@ import static graphql.schema.visibility.BlockedFields.newBlock;
  * system in contravention of the specification - http://facebook.github.io/graphql/#sec-Introspection but some
  * production systems want this lock down in place.
  */
+@PublicApi
 public class NoIntrospectionGraphqlFieldVisibility implements GraphqlFieldVisibility {
 
     public static NoIntrospectionGraphqlFieldVisibility NO_INTROSPECTION_FIELD_VISIBILITY = new NoIntrospectionGraphqlFieldVisibility();
