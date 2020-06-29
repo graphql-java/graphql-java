@@ -6,7 +6,6 @@ import graphql.PublicApi;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.FieldValueInfo;
-import graphql.execution.MergedField;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -283,10 +282,6 @@ public class ChainedInstrumentation implements Instrumentation {
             contexts.forEach(context -> context.onFieldValuesInfo(fieldValueInfoList));
         }
 
-        @Override
-        public void onDeferredField(MergedField field) {
-            contexts.forEach(context -> context.onDeferredField(field));
-        }
     }
 
 }

@@ -4,7 +4,6 @@ import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.Internal;
 import graphql.execution.FieldValueInfo;
-import graphql.execution.MergedField;
 import graphql.execution.ResultPath;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -152,19 +151,6 @@ public class FieldLevelTrackingApproach {
                 boolean dispatchNeeded;
                 synchronized (callStack) {
                     dispatchNeeded = handleOnFieldValuesInfo(fieldValueInfoList, callStack, curLevel);
-                }
-                if (dispatchNeeded) {
-                    dispatch();
-                }
-            }
-
-            @Override
-            public void onDeferredField(MergedField field) {
-                boolean dispatchNeeded;
-                // fake fetch count for this field
-                synchronized (callStack) {
-                    callStack.increaseFetchCount(curLevel);
-                    dispatchNeeded = dispatchIfNeeded(callStack, curLevel);
                 }
                 if (dispatchNeeded) {
                     dispatch();
