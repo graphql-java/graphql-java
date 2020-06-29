@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.PublicApi;
 import graphql.Scalars;
 import graphql.language.ScalarTypeDefinition;
 import graphql.schema.GraphQLScalarType;
@@ -12,6 +13,7 @@ import java.util.Map;
 /**
  * Info on all the standard scalar objects provided by graphql-java
  */
+@PublicApi
 public class ScalarInfo {
 
     /**

@@ -1,11 +1,13 @@
 package graphql.schema.idl.errors;
 
+import graphql.Internal;
 import graphql.language.Node;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 
 import static java.lang.String.format;
 
+@Internal
 public class MissingTypeError extends BaseError {
 
     public MissingTypeError(String typeOfType, TypeDefinition typeDefinition, TypeName typeName) {

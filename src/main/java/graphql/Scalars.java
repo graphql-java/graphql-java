@@ -24,6 +24,7 @@ import static graphql.Assert.assertShouldNeverHappen;
  *
  * For more info see http://graphql.org/learn/schema/#scalar-types and more specifically http://facebook.github.io/graphql/#sec-Scalars
  */
+@PublicApi
 public class Scalars {
 
     private static final BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);

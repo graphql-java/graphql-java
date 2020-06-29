@@ -3,6 +3,7 @@ package graphql.validation;
 
 import graphql.Assert;
 import graphql.GraphQLError;
+import graphql.Internal;
 import graphql.language.ArrayValue;
 import graphql.language.ListType;
 import graphql.language.NonNullType;
@@ -35,6 +36,7 @@ import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 
+@Internal
 public class ValidationUtil {
 
     public TypeName getUnmodifiedType(Type<?> type) {

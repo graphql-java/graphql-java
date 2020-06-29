@@ -1,6 +1,7 @@
 package graphql.validation.rules;
 
 
+import graphql.Internal;
 import graphql.language.Definition;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
@@ -17,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Internal
 public class NoFragmentCycles extends AbstractRule {
 
     private final Map<String, List<FragmentSpread>> fragmentSpreads = new LinkedHashMap<>();

@@ -4,12 +4,14 @@ import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.GraphQLException;
 import graphql.GraphqlErrorHelper;
+import graphql.Internal;
 import graphql.language.Node;
 import graphql.language.SourceLocation;
 
 import java.util.Collections;
 import java.util.List;
 
+@Internal
 class BaseError extends GraphQLException implements GraphQLError {
     protected static final SourceLocation NO_WHERE = new SourceLocation(-1, -1);
 

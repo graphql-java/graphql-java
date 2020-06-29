@@ -1,5 +1,6 @@
 package graphql.validation.rules;
 
+import graphql.Internal;
 import graphql.VisibleForTesting;
 import graphql.language.FragmentDefinition;
 import graphql.validation.AbstractRule;
@@ -10,6 +11,7 @@ import graphql.validation.ValidationErrorType;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+@Internal
 public class UniqueFragmentNames extends AbstractRule {
 
 

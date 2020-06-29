@@ -1,5 +1,6 @@
 package graphql.schema.validation;
 
+import graphql.Internal;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
@@ -22,6 +23,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
  * Schema validation rule ensuring no input type forms an unbroken non-nullable recursion,
  * as such a type would be impossible to satisfy
  */
+@Internal
 public class NoUnbrokenInputCycles implements SchemaValidationRule {
 
     @Override

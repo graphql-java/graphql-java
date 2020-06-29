@@ -1,8 +1,11 @@
 package graphql.schema.validation;
 
+import graphql.Internal;
+
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+@Internal
 public class SchemaValidationErrorCollector {
 
     private final LinkedHashSet<SchemaValidationError> errors = new LinkedHashSet<>();
