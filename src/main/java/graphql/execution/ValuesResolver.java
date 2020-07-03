@@ -61,7 +61,7 @@ public class ValuesResolver {
             if (!variableValues.containsKey(variableName)) {
                 Value defaultValue = variableDefinition.getDefaultValue();
                 if (defaultValue != null) {
-                    Object coercedValue = coerceValueAst(fieldVisibility, variableType, variableDefinition.getDefaultValue(), null);
+                    Object coercedValue = coerceValueAst(fieldVisibility, variableType, defaultValue, null);
                     coercedValues.put(variableName, coercedValue);
                 } else if (isNonNull(variableType)) {
                     throw new NonNullableValueCoercedAsNullException(variableDefinition, variableType);
