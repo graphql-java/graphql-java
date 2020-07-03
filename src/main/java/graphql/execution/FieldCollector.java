@@ -13,10 +13,11 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static graphql.execution.MergedSelectionSet.newMergedSelectionSet;
 import static graphql.execution.TypeFromAST.getTypeFromAST;
@@ -32,7 +33,7 @@ public class FieldCollector {
 
     public MergedSelectionSet collectFields(FieldCollectorParameters parameters, MergedField mergedField) {
         Map<String, MergedField> subFields = new LinkedHashMap<>();
-        List<String> visitedFragments = new ArrayList<>();
+        Set<String> visitedFragments = new LinkedHashSet<>();
         for (Field field : mergedField.getFields()) {
             if (field.getSelectionSet() == null) {
                 continue;
@@ -52,13 +53,13 @@ public class FieldCollector {
      */
     public MergedSelectionSet collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet) {
         Map<String, MergedField> subFields = new LinkedHashMap<>();
-        List<String> visitedFragments = new ArrayList<>();
+        Set<String> visitedFragments = new LinkedHashSet<>();
         this.collectFields(parameters, selectionSet, visitedFragments, subFields);
         return newMergedSelectionSet().subFields(subFields).build();
     }
 
 
-    private void collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet, List<String> visitedFragments, Map<String, MergedField> fields) {
+    private void collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet, Set<String> visitedFragments, Map<String, MergedField> fields) {
 
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
@@ -71,7 +72,7 @@ public class FieldCollector {
         }
     }
 
-    private void collectFragmentSpread(FieldCollectorParameters parameters, List<String> visitedFragments, Map<String, MergedField> fields, FragmentSpread fragmentSpread) {
+    private void collectFragmentSpread(FieldCollectorParameters parameters, Set<String> visitedFragments, Map<String, MergedField> fields, FragmentSpread fragmentSpread) {
         if (visitedFragments.contains(fragmentSpread.getName())) {
             return;
         }
@@ -90,7 +91,7 @@ public class FieldCollector {
         collectFields(parameters, fragmentDefinition.getSelectionSet(), visitedFragments, fields);
     }
 
-    private void collectInlineFragment(FieldCollectorParameters parameters, List<String> visitedFragments, Map<String, MergedField> fields, InlineFragment inlineFragment) {
+    private void collectInlineFragment(FieldCollectorParameters parameters, Set<String> visitedFragments, Map<String, MergedField> fields, InlineFragment inlineFragment) {
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), inlineFragment.getDirectives()) ||
                 !doesFragmentConditionMatch(parameters, inlineFragment)) {
             return;
