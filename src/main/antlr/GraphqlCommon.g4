@@ -2,7 +2,7 @@ grammar GraphqlCommon;
 
 operationType : SUBSCRIPTION | MUTATION | QUERY;
 
-description : stringValue;
+description : StringValue;
 
 enumValue : enumValueName ;
 
@@ -35,7 +35,7 @@ enumValueName: baseName | ON_KEYWORD;
 name: baseName | BooleanValue | NullValue | ON_KEYWORD;
 
 value :
-stringValue |
+StringValue |
 IntValue |
 FloatValue |
 BooleanValue |
@@ -47,7 +47,7 @@ objectValue;
 
 valueWithVariable :
 variable |
-stringValue |
+StringValue |
 IntValue |
 FloatValue |
 BooleanValue |
@@ -61,10 +61,6 @@ variable : '$' name;
 
 defaultValue : '=' value;
 
-stringValue
- : TripleQuotedStringValue
- | StringValue
- ;
 type : typeName | listType | nonNullType;
 
 typeName : name;
@@ -108,19 +104,26 @@ ExponentPart : ('e'|'E') ('+'|'-')? Digit+;
 
 Digit : '0'..'9';
 
+// StringValue
+StringValue:
+'""'  { _input.LA(1) != '"'}? |
+'"' StringCharacter+ '"' |
+'"""' BlockStringCharacter*? '"""';
 
-StringValue
- : '"' ( ~["\\\n\r\u2028\u2029] | EscapedChar )* '"'
- ;
+fragment BlockStringCharacter:
+'\\"""'|
+ExtendedSourceCharacter;
 
-TripleQuotedStringValue
- : '"""' TripleQuotedStringPart? '"""'
- ;
+fragment StringCharacter:
+// this is SoureCharacter without '"' and '\'
+([\u0009\u0020\u0021] | [\u0023-\u005b] | [\u005d-\u{10FFFF}]) |
+'\\u' EscapedUnicode  |
+'\\' EscapedCharacter;
 
+fragment EscapedCharacter :  ["\\/bfnrt];
+fragment EscapedUnicode : Hex Hex Hex Hex;
+fragment Hex : [0-9a-fA-F];
 
-// Fragments never become a token of their own: they are only used inside other lexer rules
-fragment TripleQuotedStringPart : ( EscapedTripleQuote | ExtendedSourceCharacter )+?;
-fragment EscapedTripleQuote : '\\"""';
 
 // this is currently not covered by the spec because we allow all unicode chars
 // u0009 = \t Horizontal tab
@@ -136,10 +139,6 @@ fragment ExtendedSourceCharacterWithoutLineFeed :[\u0009\u0020-\u{10FFFF}];
 
 
 Comment: '#' ExtendedSourceCharacterWithoutLineFeed* -> channel(2);
-
-fragment EscapedChar :   '\\' (["\\/bfnrt] | Unicode) ;
-fragment Unicode : 'u' Hex Hex Hex Hex ;
-fragment Hex : [0-9a-fA-F] ;
 
 LF: [\n] -> channel(3);
 CR: [\r] -> channel(3);

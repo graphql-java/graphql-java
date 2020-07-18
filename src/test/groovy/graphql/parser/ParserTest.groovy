@@ -554,6 +554,45 @@ class ParserTest extends Specification {
         selection.name == "foo"
     }
 
+    def "four quotation marks is an illegal string"() {
+        given:
+        def input = '''{foo(arg:[""""])}'''
+
+        when:
+        Document document = Parser.parse(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+        e.message.contains("Invalid Syntax")
+    }
+
+    def "three quotation marks is an illegal string"() {
+        given:
+        def input = '''{foo(arg: ["""])}'''
+
+        when:
+        Document document = Parser.parse(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+        e.message.contains("Invalid Syntax")
+    }
+
+    def "escaped triple quote inside block string"() {
+        given:
+        def input = '''{foo(arg: """\\"""""")}'''
+
+        when:
+        Document document = Parser.parse(input)
+        OperationDefinition operationDefinition = document.definitions[0]
+        Selection selection = operationDefinition.getSelectionSet().getSelections()[0]
+        Field field = (Field) selection
+
+        then:
+        field.getArguments().size() == 1
+        argValue(field, 0) == '"""'
+    }
+
     def "triple quoted strings"() {
         given:
         def input = '''{ field(triple : """triple
@@ -787,7 +826,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
             @Override
             protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
                 // this pattern is used in Nadel - its backdoor but needed
-                return new GraphqlAntlrToLanguage(tokens,multiSourceReader) {
+                return new GraphqlAntlrToLanguage(tokens, multiSourceReader) {
                     @Override
                     protected void addCommonData(NodeBuilder nodeBuilder, ParserRuleContext parserRuleContext) {
                         super.addCommonData(nodeBuilder, parserRuleContext)
