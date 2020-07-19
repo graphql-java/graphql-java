@@ -1,5 +1,6 @@
 grammar GraphqlCommon;
 
+
 operationType : SUBSCRIPTION | MUTATION | QUERY;
 
 description : StringValue;
@@ -90,19 +91,20 @@ ON_KEYWORD: 'on';
 NAME: [_A-Za-z][_0-9A-Za-z]*;
 
 
-IntValue : Sign? IntegerPart;
 
-FloatValue : Sign? IntegerPart ('.' Digit+)? ExponentPart?;
+// Int Value
+IntValue :  IntegerPart { !isDigit(_input.LA(1)) && !isDot(_input.LA(1)) && !isNameStart(_input.LA(1))  }?;
+fragment IntegerPart : NegativeSign? '0' | NegativeSign? NonZeroDigit Digit*;
+fragment NegativeSign : '-';
+fragment NonZeroDigit: '1'..'9';
 
-Sign : '-';
-
-IntegerPart : '0' | NonZeroDigit | NonZeroDigit Digit+;
-
-NonZeroDigit: '1'.. '9';
-
-ExponentPart : ('e'|'E') ('+'|'-')? Digit+;
-
-Digit : '0'..'9';
+// Float Value
+FloatValue : (IntegerPart FractionalPart? ExponentPart?) { !isDigit(_input.LA(1)) && !isDot(_input.LA(1)) && !isNameStart(_input.LA(1))  }?;
+fragment FractionalPart: '.' Digit+;
+fragment ExponentPart :  ExponentIndicator Sign? Digit+;
+fragment ExponentIndicator: 'e' | 'E';
+fragment Sign: '+'|'-';
+fragment Digit : '0'..'9';
 
 // StringValue
 StringValue:
@@ -115,8 +117,7 @@ fragment BlockStringCharacter:
 ExtendedSourceCharacter;
 
 fragment StringCharacter:
-// this is SoureCharacter without '"' and '\'
-([\u0009\u0020\u0021] | [\u0023-\u005b] | [\u005d-\u{10FFFF}]) |
+([\u0009\u0020\u0021] | [\u0023-\u005b] | [\u005d-\u{10FFFF}]) |  // this is SoureCharacter without '"' and '\'
 '\\u' EscapedUnicode  |
 '\\' EscapedCharacter;
 
@@ -131,7 +132,6 @@ fragment Hex : [0-9a-fA-F];
 // u000d = \r carriage return
 // u0020 = space
 fragment ExtendedSourceCharacter :[\u0009\u000A\u000D\u0020-\u{10FFFF}];
-
 fragment ExtendedSourceCharacterWithoutLineFeed :[\u0009\u0020-\u{10FFFF}];
 
 // this is the spec definition
