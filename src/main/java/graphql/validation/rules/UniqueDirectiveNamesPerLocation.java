@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * https://facebook.github.io/graphql/June2018/#sec-Directives-Are-Unique-Per-Location
+ * http://spec.graphql.org/draft/#sec-Directives-Are-Unique-Per-Location
  */
 public class UniqueDirectiveNamesPerLocation extends AbstractRule {
 
@@ -64,8 +64,13 @@ public class UniqueDirectiveNamesPerLocation extends AbstractRule {
             String directiveName = directive.getName();
             GraphQLDirective graphQLDirective = getValidationContext().getSchema().getDirective(directiveName);
 
-            if (graphQLDirective == null) continue;
-            if (graphQLDirective.getDefinition() != null && graphQLDirective.getDefinition().isRepeatable()) continue;
+            if (graphQLDirective == null) {
+                continue;
+            }
+
+            if (graphQLDirective.isRepeatable()) {
+                continue;
+            }
 
             if (directiveNames.contains(directiveName)) {
                 addError(ValidationErrorType.DuplicateDirectiveName,

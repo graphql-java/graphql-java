@@ -45,8 +45,8 @@ class DirectiveTest extends Specification {
         // we always return the first
 
         directivesMap.size() == 3
-        directivesMap.get("d1") == d1
+        directivesMap.get("d1").get(0) == d1
         directivesMap.get("null") == null
-        directivesMap.get("repeated").getArgument("a1").getValue().isEqualTo(new StringValue("v1"))
+        directivesMap.get("repeated").get(0).getArgument("a1").getValue().isEqualTo(new StringValue("v1"))
     }
 }

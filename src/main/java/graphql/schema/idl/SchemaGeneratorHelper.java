@@ -172,6 +172,7 @@ public class SchemaGeneratorHelper {
         GraphQLDirective directiveDefinition = FpKit.findOne(directiveDefinitions, dd -> dd.getName().equals(directive.getName())).get();
         GraphQLDirective.Builder builder = GraphQLDirective.newDirective()
                 .name(directive.getName())
+                .isRepeatable(directiveDefinition.isRepeatable())
                 .description(buildDescription(directive, null))
                 .comparatorRegistry(comparatorRegistry)
                 .validLocations(directiveLocation);
@@ -229,6 +230,7 @@ public class SchemaGeneratorHelper {
 
         GraphQLDirective.Builder builder = GraphQLDirective.newDirective()
                 .name(directiveDefinition.getName())
+                .isRepeatable(directiveDefinition.isRepeatable())
                 .definition(directiveDefinition)
                 .description(buildDescription(directiveDefinition, directiveDefinition.getDescription()));
 

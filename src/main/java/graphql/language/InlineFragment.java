@@ -68,11 +68,11 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         return new ArrayList<>(directives);
     }
 
-    public Map<String, Directive> getDirectivesByName() {
+    public Map<String, List<Directive>> getDirectivesByName() {
         return directivesByName(directives);
     }
 
-    public Directive getDirective(String directiveName) {
+    public List<Directive> getDirective(String directiveName) {
         return getDirectivesByName().get(directiveName);
     }
 

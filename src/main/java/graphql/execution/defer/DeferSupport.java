@@ -9,6 +9,7 @@ import graphql.execution.ValuesResolver;
 import graphql.execution.reactive.SingleSubscriberPublisher;
 import graphql.language.Directive;
 import graphql.language.Field;
+import graphql.util.FpKit;
 import org.reactivestreams.Publisher;
 
 import java.util.Deque;
@@ -34,7 +35,12 @@ public class DeferSupport {
 
     public boolean checkForDeferDirective(MergedField currentField, Map<String,Object> variables) {
         for (Field field : currentField.getFields()) {
-            Directive directive = field.getDirective(DeferDirective.getName());
+            List<Directive> directives = field.getDirectives();
+            if (directives == null || directives.isEmpty()) {
+                return false;
+            }
+
+            Directive directive = FpKit.findOneOrNull(directives, d -> d.getName().equals(DeferDirective.getName()));
             if (directive != null) {
                 Map<String, Object> argumentValues = valuesResolver.getArgumentValues(DeferDirective.getArguments(), directive.getArguments(), variables);
                 return (Boolean) argumentValues.get("if");

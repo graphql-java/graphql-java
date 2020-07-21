@@ -416,6 +416,7 @@ public class Introspection {
     @SuppressWarnings("deprecation") // because graphql spec still has the deprecated fields
     public static final GraphQLObjectType __Directive = newObject()
             .name("__Directive")
+            .description("The __Directive type represents a Directive that a server supports.")
             .field(newFieldDefinition()
                     .name("name")
                     .type(nonNull(GraphQLString)))

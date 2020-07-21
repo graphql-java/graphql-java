@@ -20,20 +20,20 @@ public interface DirectivesContainer<T extends DirectivesContainer> extends Node
     List<Directive> getDirectives();
 
     /**
-     * @return a a map of directives by directive name
+     * @return a map of directives by directive name
      */
-    default Map<String, Directive> getDirectivesByName() {
+    default Map<String, List<Directive>> getDirectivesByName() {
         return directivesByName(getDirectives());
     }
 
     /**
-     * Returns a directive with the provided name
+     * Returns a directive list with the provided name
      *
      * @param directiveName the name of the directive to retrieve
      *
-     * @return the directive or null if there is one one with that name
+     * @return the directive list or null if there is one one with that name
      */
-    default Directive getDirective(String directiveName) {
+    default List<Directive> getDirective(String directiveName) {
         return getDirectivesByName().get(directiveName);
     }
 }
