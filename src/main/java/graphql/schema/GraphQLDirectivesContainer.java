@@ -9,7 +9,7 @@ import static graphql.DirectivesUtil.directivesByName;
 /**
  * Represents a graphql object that can have {@link graphql.schema.GraphQLDirective}s
  */
-public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
+public interface GraphQLDirectivesContainer extends GraphQLNamedSchemaElement {
 
     /**
      * @return a list of directives associated with the type or field
@@ -19,7 +19,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
     /**
      * @return a a map of directives by directive name
      */
-    default Map<String, GraphQLDirective> getDirectivesByName() {
+    default Map<String, List<GraphQLDirective>> getDirectivesByName() {
         return directivesByName(getDirectives());
     }
 
@@ -30,7 +30,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      *
      * @return the directive or null if there is one one with that name
      */
-    default GraphQLDirective getDirective(String directiveName) {
+    default List<GraphQLDirective> getDirective(String directiveName) {
         return getDirectivesByName().get(directiveName);
     }
 

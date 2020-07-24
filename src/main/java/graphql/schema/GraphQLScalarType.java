@@ -36,7 +36,7 @@ import static java.util.Collections.emptyList;
  *
  * @see graphql.Scalars
  */
-public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectivesContainer {
 
     private final String name;
     private final String description;

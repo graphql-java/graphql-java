@@ -37,7 +37,7 @@ import static java.util.Collections.unmodifiableList;
  * See http://graphql.org/learn/schema/#object-types-and-fields for more details on the concept.
  */
 @PublicApi
-public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectivesContainer {
 
 
     private final String name;

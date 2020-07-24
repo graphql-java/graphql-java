@@ -11,15 +11,16 @@ import java.util.Optional;
 @Internal
 public class DirectivesUtil {
 
-    public static Map<String, GraphQLDirective> directivesByName(List<GraphQLDirective> directiveList) {
-        return FpKit.getByName(directiveList, GraphQLDirective::getName, FpKit.mergeFirst());
+    public static Map<String, List<GraphQLDirective>> directivesByName(List<GraphQLDirective> directiveList) {
+        return FpKit.groupingBy(directiveList, gd -> gd.getName());
     }
 
     public static Optional<GraphQLArgument> directiveWithArg(List<GraphQLDirective> directiveList, String directiveName, String argumentName) {
-        GraphQLDirective directive = directivesByName(directiveList).get(directiveName);
+        GraphQLDirective graphQLDirective = FpKit.findOneOrNull(directiveList, d -> d.getName().equals(directiveName));
+
         GraphQLArgument argument = null;
-        if (directive != null) {
-            argument = directive.getArgument(argumentName);
+        if (graphQLDirective != null) {
+            argument = graphQLDirective.getArgument(argumentName);
         }
         return Optional.ofNullable(argument);
     }

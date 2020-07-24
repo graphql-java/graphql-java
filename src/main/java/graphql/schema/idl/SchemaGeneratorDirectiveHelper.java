@@ -6,7 +6,7 @@ import graphql.language.NodeParentTree;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
-import graphql.schema.GraphQLDirectiveContainer;
+import graphql.schema.GraphQLDirectivesContainer;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLFieldDefinition;
@@ -264,18 +264,18 @@ public class SchemaGeneratorDirectiveHelper {
     //
     // builds a type safe SchemaDirectiveWiringEnvironment
     //
-    interface EnvBuilder<T extends GraphQLDirectiveContainer> {
+    interface EnvBuilder<T extends GraphQLDirectivesContainer> {
         SchemaDirectiveWiringEnvironment<T> apply(T outputElement, List<GraphQLDirective> allDirectives, GraphQLDirective registeredDirective);
     }
 
     //
     // invokes the SchemaDirectiveWiring with the provided environment
     //
-    interface EnvInvoker<T extends GraphQLDirectiveContainer> {
+    interface EnvInvoker<T extends GraphQLDirectivesContainer> {
         T apply(SchemaDirectiveWiring schemaDirectiveWiring, SchemaDirectiveWiringEnvironment<T> env);
     }
 
-    private <T extends GraphQLDirectiveContainer> T wireDirectives(
+    private <T extends GraphQLDirectivesContainer> T wireDirectives(
             Parameters parameters, T element,
             List<GraphQLDirective> allDirectives,
             EnvBuilder<T> envBuilder,
@@ -314,7 +314,7 @@ public class SchemaGeneratorDirectiveHelper {
         return outputObject;
     }
 
-    private <T extends GraphQLDirectiveContainer> T invokeWiring(T element, EnvInvoker<T> invoker, SchemaDirectiveWiring schemaDirectiveWiring, SchemaDirectiveWiringEnvironment<T> env) {
+    private <T extends GraphQLDirectivesContainer> T invokeWiring(T element, EnvInvoker<T> invoker, SchemaDirectiveWiring schemaDirectiveWiring, SchemaDirectiveWiringEnvironment<T> env) {
         T newElement = invoker.apply(schemaDirectiveWiring, env);
         assertNotNull(newElement, () -> "The SchemaDirectiveWiring MUST return a non null return value for element '" + element.getName() + "'");
         return newElement;

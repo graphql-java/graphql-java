@@ -55,7 +55,7 @@ public interface GraphQLTypeVisitor {
         throw new UnsupportedOperationException();
     }
 
-    default TraversalControl visitGraphQLDirectiveContainer(GraphQLDirectiveContainer node, TraverserContext<GraphQLSchemaElement> context) {
+    default TraversalControl visitGraphQLDirectiveContainer(GraphQLDirectivesContainer node, TraverserContext<GraphQLSchemaElement> context) {
         throw new UnsupportedOperationException();
     }
 

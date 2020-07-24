@@ -28,7 +28,7 @@ import static java.util.Collections.emptyList;
  * @see graphql.schema.GraphQLEnumType
  */
 @PublicApi
-public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, GraphQLDirectiveContainer {
+public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, GraphQLDirectivesContainer {
 
     private final String name;
     private final String description;
@@ -120,12 +120,12 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
     }
 
     @Override
-    public Map<String, GraphQLDirective> getDirectivesByName() {
+    public Map<String, List<GraphQLDirective>> getDirectivesByName() {
         return DirectivesUtil.directivesByName(directives);
     }
 
     @Override
-    public GraphQLDirective getDirective(String directiveName) {
+    public List<GraphQLDirective> getDirective(String directiveName) {
         return getDirectivesByName().get(directiveName);
     }
 

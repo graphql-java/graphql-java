@@ -242,7 +242,7 @@ public class GraphQLSchema {
      *
      * @return a map of directives
      */
-    public Map<String, GraphQLDirective> getDirectiveByName() {
+    public Map<String, List<GraphQLDirective>> getDirectiveByName() {
         return directivesByName(getDirectives());
     }
 
@@ -275,7 +275,7 @@ public class GraphQLSchema {
      *
      * @return a list of directives
      */
-    public Map<String, GraphQLDirective> getSchemaDirectiveByName() {
+    public Map<String, List<GraphQLDirective>> getSchemaDirectiveByName() {
         return directivesByName(getSchemaDirectives());
     }
 

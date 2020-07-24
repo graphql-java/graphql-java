@@ -34,7 +34,7 @@ import static java.util.Collections.unmodifiableList;
  * See http://graphql.org/learn/schema/#union-types for more details on the concept.
  */
 @PublicApi
-public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectivesContainer {
 
     private final String name;
     private final String description;

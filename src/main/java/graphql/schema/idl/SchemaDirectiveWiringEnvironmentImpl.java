@@ -7,7 +7,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
-import graphql.schema.GraphQLDirectiveContainer;
+import graphql.schema.GraphQLDirectivesContainer;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphqlElementParentTree;
@@ -20,7 +20,7 @@ import java.util.Map;
 import static graphql.Assert.assertNotNull;
 
 @Internal
-public class SchemaDirectiveWiringEnvironmentImpl<T extends GraphQLDirectiveContainer> implements SchemaDirectiveWiringEnvironment<T> {
+public class SchemaDirectiveWiringEnvironmentImpl<T extends GraphQLDirectivesContainer> implements SchemaDirectiveWiringEnvironment<T> {
 
     private final T element;
     private final Map<String, GraphQLDirective> directives;

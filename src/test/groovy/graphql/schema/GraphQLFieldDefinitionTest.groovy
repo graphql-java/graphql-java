@@ -42,7 +42,6 @@ class GraphQLFieldDefinitionTest extends Specification {
                     .argument(newArgument().name("argStr").type(GraphQLString))
                     .argument(newArgument().name("argInt").type(GraphQLBoolean))
                     .argument(newArgument().name("argIntAdded").type(GraphQLInt))
-                    .withDirective(newDirective().name("directive1"))
                     .withDirective(newDirective().name("directive3"))
 
         })

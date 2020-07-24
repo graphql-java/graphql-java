@@ -2,7 +2,7 @@ package graphql.schema.transform
 
 import graphql.Scalars
 import graphql.TestUtil
-import graphql.schema.GraphQLDirectiveContainer
+import graphql.schema.GraphQLDirectivesContainer
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
@@ -19,7 +19,7 @@ import static graphql.schema.GraphQLTypeReference.typeRef
 class FieldVisibilitySchemaTransformationTest extends Specification {
 
     def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation({ environment ->
-        def directives = (environment.schemaElement as GraphQLDirectiveContainer).directives
+        def directives = (environment.schemaElement as GraphQLDirectivesContainer).directives
         return directives.find({ directive -> directive.name == "private" }) == null
     })
 
@@ -978,7 +978,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         def callbacks = []
 
         def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation({ environment ->
-            def directives = (environment.schemaElement as GraphQLDirectiveContainer).directives
+            def directives = (environment.schemaElement as GraphQLDirectivesContainer).directives
             return directives.find({ directive -> directive.name == "private" }) == null
         }, { -> callbacks << "before" }, { -> callbacks << "after"} )
 

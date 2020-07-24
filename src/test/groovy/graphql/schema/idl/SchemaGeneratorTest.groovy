@@ -5,7 +5,7 @@ import graphql.TestUtil
 import graphql.introspection.Introspection
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLDirective
-import graphql.schema.GraphQLDirectiveContainer
+import graphql.schema.GraphQLDirectivesContainer
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLFieldsContainer
@@ -1193,7 +1193,7 @@ class SchemaGeneratorTest extends Specification {
         """
 
         def schema = schema(spec)
-        GraphQLDirectiveContainer container = schema.getType(typeName) as GraphQLDirectiveContainer
+        GraphQLDirectivesContainer container = schema.getType(typeName) as GraphQLDirectivesContainer
 
         expect:
 
@@ -1465,10 +1465,11 @@ class SchemaGeneratorTest extends Specification {
 
         argInt.getDirective("thirdDirective") != null
 
-        def intDirective = argInt.getDirective("intDirective")
-        intDirective.name == "intDirective"
-        intDirective.arguments.size() == 1
-        def directiveArg = intDirective.getArgument("inception")
+        def intDirectives = argInt.getDirective("intDirective")
+        intDirectives.size() == 1
+        intDirectives.get(0).name == "intDirective"
+        intDirectives.get(0).arguments.size() == 1
+        def directiveArg = intDirectives.get(0).getArgument("inception")
         directiveArg.name == "inception"
         directiveArg.type == GraphQLBoolean
         directiveArg.value == true
@@ -1563,18 +1564,19 @@ class SchemaGeneratorTest extends Specification {
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
 
         then:
-        def directive = schema.getObjectType("Query").getFieldDefinition("f").getDirective("testDirective")
-        directive.getArgument("knownArg1").type == GraphQLString
-        directive.getArgument("knownArg1").value == "overrideVal1"
-        directive.getArgument("knownArg1").defaultValue == "defaultValue1"
+        def directives = schema.getObjectType("Query").getFieldDefinition("f").getDirective("testDirective")
+        directives.size() == 1
+        directives.get(0).getArgument("knownArg1").type == GraphQLString
+        directives.get(0).getArgument("knownArg1").value == "overrideVal1"
+        directives.get(0).getArgument("knownArg1").defaultValue == "defaultValue1"
 
-        directive.getArgument("knownArg2").type == GraphQLInt
-        directive.getArgument("knownArg2").value == 666
-        directive.getArgument("knownArg2").defaultValue == 666
+        directives.get(0).getArgument("knownArg2").type == GraphQLInt
+        directives.get(0).getArgument("knownArg2").value == 666
+        directives.get(0).getArgument("knownArg2").defaultValue == 666
 
-        directive.getArgument("knownArg3").type == GraphQLString
-        directive.getArgument("knownArg3").value == null
-        directive.getArgument("knownArg3").defaultValue == null
+        directives.get(0).getArgument("knownArg3").type == GraphQLString
+        directives.get(0).getArgument("knownArg3").value == null
+        directives.get(0).getArgument("knownArg3").defaultValue == null
     }
 
     def "deprecated directive is implicit"() {
@@ -1596,12 +1598,13 @@ class SchemaGeneratorTest extends Specification {
         def f1 = schema.getObjectType("Query").getFieldDefinition("f1")
         f1.getDeprecationReason() == "No longer supported" // spec default text
 
-        def directive = f1.getDirective("deprecated")
-        directive.name == "deprecated"
-        directive.getArgument("reason").type == GraphQLString
-        directive.getArgument("reason").value == "No longer supported"
-        directive.getArgument("reason").defaultValue == "No longer supported"
-        directive.validLocations().collect { it.name() } == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
+        def directives = f1.getDirective("deprecated")
+        directives.size() == 1
+        directives.get(0).name == "deprecated"
+        directives.get(0).getArgument("reason").type == GraphQLString
+        directives.get(0).getArgument("reason").value == "No longer supported"
+        directives.get(0).getArgument("reason").defaultValue == "No longer supported"
+        directives.get(0).validLocations().collect { it.name() } == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
 
         when:
         def f2 = schema.getObjectType("Query").getFieldDefinition("f2")
@@ -1609,12 +1612,13 @@ class SchemaGeneratorTest extends Specification {
         then:
         f2.getDeprecationReason() == "Just because"
 
-        def directive2 = f2.getDirective("deprecated")
-        directive2.name == "deprecated"
-        directive2.getArgument("reason").type == GraphQLString
-        directive2.getArgument("reason").value == "Just because"
-        directive2.getArgument("reason").defaultValue == "No longer supported"
-        directive2.validLocations().collect { it.name() } == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
+        def directives2 = f2.getDirective("deprecated")
+        directives2.size() == 1
+        directives2.get(0).name == "deprecated"
+        directives2.get(0).getArgument("reason").type == GraphQLString
+        directives2.get(0).getArgument("reason").value == "Just because"
+        directives2.get(0).getArgument("reason").defaultValue == "No longer supported"
+        directives2.get(0).validLocations().collect { it.name() } == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
 
     }
 

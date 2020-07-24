@@ -6,7 +6,7 @@ import graphql.language.NodeParentTree;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
-import graphql.schema.GraphQLDirectiveContainer;
+import graphql.schema.GraphQLDirectivesContainer;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphqlElementParentTree;
@@ -20,7 +20,7 @@ import java.util.Map;
  * @param <T> the type of the object in play
  */
 @PublicApi
-public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveContainer> {
+public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectivesContainer> {
 
     /**
      * @return the runtime element in play

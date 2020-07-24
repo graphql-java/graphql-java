@@ -11,7 +11,7 @@ import graphql.PublicApi;
  * @see graphql.schema.GraphQLArgument
  */
 @PublicApi
-public interface GraphQLInputValueDefinition extends GraphQLDirectiveContainer {
+public interface GraphQLInputValueDefinition extends GraphQLDirectivesContainer {
 
     <T extends GraphQLInputType> T getType();
 }

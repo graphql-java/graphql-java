@@ -31,7 +31,7 @@ import static graphql.util.FpKit.getByName;
  * See http://graphql.org/learn/queries/#fields for more details on the concept.
  */
 @PublicApi
-public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQLDirectiveContainer {
+public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQLDirectivesContainer {
 
     private final String name;
     private final String description;
@@ -225,7 +225,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         private String deprecationReason;
         private FieldDefinition definition;
         private final Map<String, GraphQLArgument> arguments = new LinkedHashMap<>();
-        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder() {
         }
@@ -239,7 +239,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
             this.deprecationReason = existing.getDeprecationReason();
             this.definition = existing.getDefinition();
             this.arguments.putAll(getByName(existing.getArguments(), GraphQLArgument::getName));
-            this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+            this.directives.addAll(existing.getDirectives());
         }
 
 
@@ -432,16 +432,14 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            directives.put(directive.getName(), directive);
+            directives.add(directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                this.directives.put(directive.getName(), directive);
-            }
+            this.directives.addAll(directives);
             return this;
         }
 
