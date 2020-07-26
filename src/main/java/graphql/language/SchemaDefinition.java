@@ -17,7 +17,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.directivesByName;
 
 @PublicApi
-public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements SDLDefinition<SchemaDefinition> {
+public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements DirectivesContainer<SchemaDefinition>, SDLDefinition<SchemaDefinition> {
 
     private final List<Directive> directives;
     private final List<OperationTypeDefinition> operationTypeDefinitions;
@@ -37,14 +37,17 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
         this.operationTypeDefinitions = operationTypeDefinitions;
     }
 
+    @Override
     public List<Directive> getDirectives() {
         return new ArrayList<>(directives);
     }
 
+    @Override
     public Map<String, List<Directive>> getDirectivesByName() {
         return directivesByName(directives);
     }
 
+    @Override
     public List<Directive> getDirective(String directiveName) {
         return getDirectivesByName().get(directiveName);
     }
