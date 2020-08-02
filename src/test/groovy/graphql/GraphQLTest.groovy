@@ -1016,7 +1016,7 @@ many lines''']
 
     }
 
-    def "default argument values are respected when variable is not provided"() {
+    def "default argument values are respected when variable is not provided in variables and argument is not provided in field"() {
         given:
         def spec = """type Query {
             sayHello(name: String = "amigo"): String
@@ -1027,7 +1027,7 @@ many lines''']
         def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
 
         when:
-        def data = graphQL.execute('query($var:String){sayHello(name:$var)}').getData();
+        def data = graphQL.execute('query{sayHello}').getData();
 
         then:
         data == [sayHello: "amigo"]
@@ -1169,5 +1169,23 @@ many lines''']
         def er = graphQL.execute("{f}")
         then:
         er.data["f"] == "hi"
+    }
+
+    def "use null value when argumentValue defined in Field is null"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String = "amigo"): String
+        }"""
+        def df = { dfe ->
+            return dfe.getArgument("name")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+
+        when:
+        def data = graphQL.execute('query{sayHello(name: null)}').getData();
+
+        then:
+        data == [sayHello: null]
     }
 }
