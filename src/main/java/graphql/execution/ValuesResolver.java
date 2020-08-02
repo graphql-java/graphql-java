@@ -108,7 +108,7 @@ public class ValuesResolver {
             if (argument != null) {
                 value = coerceValueAst(codeRegistry.getFieldVisibility(), fieldArgument.getType(), argument.getValue(), variables);
             }
-            if (value == null) {
+            if (value == null && !(argument != null && argument.getValue() instanceof NullValue)) {
                 value = fieldArgument.getDefaultValue();
             }
             boolean wasValueProvided = false;

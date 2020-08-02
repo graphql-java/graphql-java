@@ -1170,4 +1170,22 @@ many lines''']
         then:
         er.data["f"] == "hi"
     }
+
+    def "use null value when argumentValue is null"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String = "amigo"): String
+        }"""
+        def df = { dfe ->
+            return dfe.getArgument("name")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+
+        when:
+        def data = graphQL.execute('query{sayHello(name: null)}').getData();
+
+        then:
+        data == [sayHello: null]
+    }
 }
