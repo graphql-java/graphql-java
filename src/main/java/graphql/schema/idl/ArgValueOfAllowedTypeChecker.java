@@ -246,13 +246,14 @@ class ArgValueOfAllowedTypeChecker {
             return;
         }
 
+
+        Type unwrappedAllowedType = allowedArgType.getType();
         if (!(instanceValue instanceof ArrayValue)) {
-            addValidationError(errors, EXPECTED_LIST_MESSAGE, instanceValue.getClass().getSimpleName());
+            checkArgValueMatchesAllowedType(errors, instanceValue, unwrappedAllowedType);
             return;
         }
 
         ArrayValue arrayValue = ((ArrayValue) instanceValue);
-        Type unwrappedAllowedType = allowedArgType.getType();
 
         // validate each instance value in the list, all instances must match for the list to match
         arrayValue.getValues().forEach(value -> checkArgValueMatchesAllowedType(errors, value, unwrappedAllowedType));

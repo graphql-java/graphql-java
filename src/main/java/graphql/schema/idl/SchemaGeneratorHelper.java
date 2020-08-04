@@ -22,6 +22,7 @@ import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
@@ -49,6 +50,7 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -99,7 +101,7 @@ public class SchemaGeneratorHelper {
         if (GraphQLTypeUtil.isNonNull(requiredType)) {
             requiredType = unwrapOne(requiredType);
         }
-        if (value == null) {
+        if (value == null || value instanceof NullValue) {
             return null;
         }
         if (requiredType instanceof GraphQLScalarType) {
@@ -108,11 +110,15 @@ public class SchemaGeneratorHelper {
             result = ((EnumValue) value).getName();
         } else if (requiredType instanceof GraphQLEnumType && value instanceof StringValue) {
             result = ((StringValue) value).getValue();
-        } else if (value instanceof ArrayValue && isList(requiredType)) {
-            result = buildArrayValue(requiredType, (ArrayValue) value);
+        } else if (isList(requiredType)) {
+            if (value instanceof ArrayValue) {
+                result = buildArrayValue(requiredType, (ArrayValue) value);
+            } else {
+                result = buildArrayValue(requiredType, ArrayValue.newArrayValue().value(value).build());
+            }
         } else if (value instanceof ObjectValue && requiredType instanceof GraphQLInputObjectType) {
             result = buildObjectValue((ObjectValue) value, (GraphQLInputObjectType) requiredType);
-        } else if (!(value instanceof NullValue)) {
+        } else {
             assertShouldNeverHappen(
                     "cannot build value of type %s from object class %s with instance %s", simplePrint(requiredType), value.getClass().getSimpleName(), String.valueOf(value));
         }
