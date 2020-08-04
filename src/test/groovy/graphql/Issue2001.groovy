@@ -3,6 +3,9 @@ package graphql
 import graphql.language.ArrayValue
 import graphql.schema.CoercingParseLiteralException
 import graphql.schema.idl.RuntimeWiring
+import graphql.schema.idl.SchemaGenerator
+import graphql.schema.idl.SchemaParser
+import graphql.schema.idl.errors.SchemaProblem
 import spock.lang.Specification
 
 class Issue2001 extends Specification {
@@ -50,9 +53,14 @@ class Issue2001 extends Specification {
 
 
         when:
-        def graphql = TestUtil.graphQL(spec)
+        def reader = new StringReader(spec)
+        def registry = new SchemaParser().parse(reader)
+
+        def options = SchemaGenerator.Options.defaultOptions()
+
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
 
         then:
-        thrown(CoercingParseLiteralException.class)
+        thrown(SchemaProblem.class)
     }
 }

@@ -254,9 +254,16 @@ class ArgValueOfAllowedTypeChecker {
         }
 
         ArrayValue arrayValue = ((ArrayValue) instanceValue);
+        boolean isUnwrappedList = unwrappedAllowedType instanceof ListType;
 
         // validate each instance value in the list, all instances must match for the list to match
-        arrayValue.getValues().forEach(value -> checkArgValueMatchesAllowedType(errors, value, unwrappedAllowedType));
+        arrayValue.getValues().forEach(value -> {
+            // restrictive check for sub-arrays
+            if (isUnwrappedList && ! (value instanceof ArrayValue)) {
+                addValidationError(errors, EXPECTED_LIST_MESSAGE, value.getClass().getSimpleName());
+            }
+            checkArgValueMatchesAllowedType(errors, value, unwrappedAllowedType);
+        });
     }
 
     private boolean isArgumentValueScalarLiteral(GraphQLScalarType scalarType, Value instanceValue) {
