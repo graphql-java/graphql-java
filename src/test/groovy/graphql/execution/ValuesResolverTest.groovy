@@ -196,7 +196,7 @@ class ValuesResolverTest extends Specification {
         values['arg'] == null
     }
 
-    def "use null value when argumentValue defined in Field is null"() {
+    def "getArgumentValues: use null value when argumentValue defined in Field is null"() {
         given: "schema defining input object"
         def inputObjectType = newInputObject()
                 .name("inputObject")
@@ -501,5 +501,53 @@ class ValuesResolverTest extends Specification {
 
         then:
         thrown(GraphQLException)
+    }
+
+    def "getVariableValues: use null when reference value in variables is null"() {
+        given:
+        def schema = TestUtil.schemaWithInputType(GraphQLString)
+        VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("String"))
+
+        when:
+        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], ['variable': null])
+
+        then:
+        resolvedValues['variable'] == null
+    }
+
+    def "getVariableValues: use default with value not provided in variables map"() {
+        given:
+        def schema = TestUtil.schemaWithInputType(GraphQLString)
+        VariableDefinition variableDefinition =
+                VariableDefinition.newVariableDefinition()
+                        .name("variable")
+                        .type(new TypeName("String"))
+                        .defaultValue(new StringValue("strValue"))
+                        .build();
+
+
+        when:
+        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], [:])
+
+        then:
+        resolvedValues['variable'] == 'strValue'
+    }
+
+    def "getVariableValues: use null default value even the type of variableDefinition is non-null"() {
+        given:
+        def schema = TestUtil.schemaWithInputType(GraphQLString)
+        VariableDefinition variableDefinition =
+                VariableDefinition.newVariableDefinition()
+                        .name("variable")
+                        .type(new NonNullType(new TypeName("String")))
+                        .defaultValue(NullValue.newNullValue().build())
+                        .build();
+
+
+        when:
+        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], [:])
+
+        then:
+        resolvedValues['variable'] == null
     }
 }
