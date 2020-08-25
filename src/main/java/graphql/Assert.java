@@ -2,6 +2,7 @@ package graphql;
 
 import java.util.Collection;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 import static java.lang.String.format;
 
@@ -100,6 +101,8 @@ public class Assert {
 
     private static final String invalidNameErrorMessage = "Name must be non-null, non-empty and match [_A-Za-z][_0-9A-Za-z]* - was '%s'";
 
+    private static final Pattern validNamePattern = Pattern.compile("[_A-Za-z][_0-9A-Za-z]*");
+
     /**
      * Validates that the Lexical token name matches the current spec.
      * currently non null, non empty,
@@ -108,7 +111,7 @@ public class Assert {
      * @return the name if valid, or AssertException if invalid.
      */
     public static String assertValidName(String name) {
-        if (name != null && !name.isEmpty() && name.matches("[_A-Za-z][_0-9A-Za-z]*")) {
+        if (name != null && !name.isEmpty() && validNamePattern.matcher(name).matches()) {
             return name;
         }
         throw new AssertException(String.format(invalidNameErrorMessage, name));
