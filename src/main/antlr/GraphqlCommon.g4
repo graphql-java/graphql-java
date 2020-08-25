@@ -99,7 +99,9 @@ fragment NegativeSign : '-';
 fragment NonZeroDigit: '1'..'9';
 
 // Float Value
-FloatValue : (IntegerPart FractionalPart? ExponentPart?) { !isDigit(_input.LA(1)) && !isDot(_input.LA(1)) && !isNameStart(_input.LA(1))  }?;
+FloatValue : ((IntegerPart FractionalPart ExponentPart) { !isDigit(_input.LA(1)) && !isDot(_input.LA(1)) && !isNameStart(_input.LA(1))  }?) |
+    ((IntegerPart FractionalPart ) { !isDigit(_input.LA(1)) && !isDot(_input.LA(1)) && !isNameStart(_input.LA(1))  }?) |
+    ((IntegerPart ExponentPart) { !isDigit(_input.LA(1)) && !isDot(_input.LA(1)) && !isNameStart(_input.LA(1))  }?);
 fragment FractionalPart: '.' Digit+;
 fragment ExponentPart :  ExponentIndicator Sign? Digit+;
 fragment ExponentIndicator: 'e' | 'E';
