@@ -57,4 +57,27 @@ class DataFetcherExceptionHandlerTest extends Specification {
         !result.errors.isEmpty()
         result.errors[0].message == "The thing went BANG"
     }
+
+    def "if an exception handler itself throws an exception than that is handled"() {
+        DataFetcherExceptionHandler handler = {
+            throw new RuntimeException("The handler itself went BANG!")
+        }
+
+        def dataFetchers = [
+                Query: [field: { env -> throw new RuntimeException("BANG") } as DataFetcher]
+        ]
+
+        def graphQL = TestUtil.graphQL('''
+            type Query {
+                field : String
+            }
+        ''', dataFetchers)
+                .queryExecutionStrategy(new AsyncExecutionStrategy(handler))
+                .build()
+        when:
+        def result = graphQL.execute(ExecutionInput.newExecutionInput().query(' { field }'))
+        then:
+        !result.errors.isEmpty()
+        result.errors[0].message.contains("The handler itself went BANG!")
+    }
 }

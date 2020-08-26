@@ -344,10 +344,10 @@ public abstract class ExecutionStrategy {
         DataFetcherExceptionHandlerResult handlerResult;
         try {
             handlerResult = dataFetcherExceptionHandler.onException(handlerParameters);
-        } catch (Exception exception) {
+        } catch (Exception handlerException) {
             handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                     .dataFetchingEnvironment(environment)
-                    .exception(e)
+                    .exception(handlerException)
                     .build();
             handlerResult = new SimpleDataFetcherExceptionHandler().onException(handlerParameters);
         }
