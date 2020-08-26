@@ -289,7 +289,7 @@ public abstract class ExecutionStrategy {
                 .handle((result, exception) -> {
                     fetchCtx.onCompleted(result, exception);
                     if (exception != null) {
-                        handleFetchingException(executionContext, parameters, environment, exception);
+                        handleFetchingException(executionContext, environment, exception);
                         return null;
                     } else {
                         return result;
@@ -333,8 +333,7 @@ public abstract class ExecutionStrategy {
         }
     }
 
-    private void handleFetchingException(ExecutionContext executionContext,
-                                         ExecutionStrategyParameters parameters,
+    protected void handleFetchingException(ExecutionContext executionContext,
                                          DataFetchingEnvironment environment,
                                          Throwable e) {
         DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
@@ -342,7 +341,16 @@ public abstract class ExecutionStrategy {
                 .exception(e)
                 .build();
 
-        DataFetcherExceptionHandlerResult handlerResult = dataFetcherExceptionHandler.onException(handlerParameters);
+        DataFetcherExceptionHandlerResult handlerResult;
+        try {
+            handlerResult = dataFetcherExceptionHandler.onException(handlerParameters);
+        } catch (Exception exception) {
+            handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
+                    .dataFetchingEnvironment(environment)
+                    .exception(e)
+                    .build();
+            handlerResult = new SimpleDataFetcherExceptionHandler().onException(handlerParameters);
+        }
         handlerResult.getErrors().forEach(executionContext::addError);
 
     }
