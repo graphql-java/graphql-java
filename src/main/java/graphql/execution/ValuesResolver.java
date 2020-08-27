@@ -102,7 +102,6 @@ public class ValuesResolver {
             if (value == null
                     && !(argument != null && argument.getValue() instanceof NullValue)
                     && !(argument != null && argument.getValue() instanceof VariableReference)
-
             ) {
                 value = fieldArgument.getDefaultValue();
             }
