@@ -9,6 +9,7 @@ import graphql.language.EnumValue
 import graphql.language.IntValue
 import graphql.language.ListType
 import graphql.language.NonNullType
+import graphql.language.NullValue
 import graphql.language.ObjectField
 import graphql.language.ObjectValue
 import graphql.language.StringValue
@@ -448,5 +449,41 @@ class ValuesResolverTest extends Specification {
 
         then:
         thrown(GraphQLException)
+    }
+
+    // Note: use NullValue defined in Field when it exists,
+    // and ignore defaultValue defined in type system
+    def "getArgumentValues: use null value when argumentValue defined in Field is null"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("inputObject")
+                .build()
+
+        def fieldArgument = new GraphQLArgument("arg", "", inputObjectType, "hello")
+        def argument = new Argument("arg", NullValue.newNullValue().build())
+
+        when:
+        def variables = [:]
+        def values = resolver.getArgumentValues([fieldArgument], [argument], variables)
+
+        then:
+        values['arg'] == null
+    }
+
+    def "getArgumentValues: use null when reference value in variables is null"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("inputObject")
+                .build()
+
+        def fieldArgument = new GraphQLArgument("arg", "", inputObjectType, "hello")
+        def argument = new Argument("arg", new VariableReference("var"))
+
+        when:
+        def variables = ["var": null]
+        def values = resolver.getArgumentValues([fieldArgument], [argument], variables)
+
+        then:
+        values['arg'] == null
     }
 }
