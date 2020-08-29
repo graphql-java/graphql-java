@@ -14,10 +14,9 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static graphql.language.NodeUtil.directivesByName;
 
 @PublicApi
-public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> implements SDLDefinition<SchemaDefinition> {
+public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> implements SDLDefinition<SchemaDefinition>, DirectivesContainer<SchemaDefinition> {
 
     private final List<Directive> directives;
     private final List<OperationTypeDefinition> operationTypeDefinitions;
@@ -42,15 +41,6 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
     public List<Directive> getDirectives() {
         return new ArrayList<>(directives);
     }
-
-    public Map<String, Directive> getDirectivesByName() {
-        return directivesByName(directives);
-    }
-
-    public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
-    }
-
 
     public List<OperationTypeDefinition> getOperationTypeDefinitions() {
         return new ArrayList<>(operationTypeDefinitions);

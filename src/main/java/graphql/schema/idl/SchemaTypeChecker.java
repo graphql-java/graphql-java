@@ -184,25 +184,35 @@ public class SchemaTypeChecker {
     private void checkFieldsAreSensible(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
         Map<String, TypeDefinition> typesMap = typeRegistry.types();
 
+        Map<String, DirectiveDefinition> directiveDefinitionMap = typeRegistry.getDirectiveDefinitions();
+
         // objects
         List<ObjectTypeDefinition> objectTypes = filterTo(typesMap, ObjectTypeDefinition.class);
-        objectTypes.forEach(objectType -> checkObjTypeFields(errors, objectType, objectType.getFieldDefinitions()));
+        objectTypes.forEach(objectType -> checkObjTypeFields(errors, objectType, objectType.getFieldDefinitions(), directiveDefinitionMap));
 
         // interfaces
         List<InterfaceTypeDefinition> interfaceTypes = filterTo(typesMap, InterfaceTypeDefinition.class);
-        interfaceTypes.forEach(interfaceType -> checkInterfaceFields(errors, interfaceType, interfaceType.getFieldDefinitions()));
+        interfaceTypes.forEach(interfaceType -> checkInterfaceFields(errors, interfaceType, interfaceType.getFieldDefinitions(), directiveDefinitionMap));
 
         // enum types
         List<EnumTypeDefinition> enumTypes = filterTo(typesMap, EnumTypeDefinition.class);
-        enumTypes.forEach(enumType -> checkEnumValues(errors, enumType, enumType.getEnumValueDefinitions()));
+        enumTypes.forEach(enumType -> checkEnumValues(errors, enumType, enumType.getEnumValueDefinitions(), directiveDefinitionMap));
 
         // input types
         List<InputObjectTypeDefinition> inputTypes = filterTo(typesMap, InputObjectTypeDefinition.class);
-        inputTypes.forEach(inputType -> checkInputValues(errors, inputType, inputType.getInputValueDefinitions()));
+        inputTypes.forEach(inputType -> checkInputValues(errors, inputType, inputType.getInputValueDefinitions(), directiveDefinitionMap));
     }
 
 
-    private void checkObjTypeFields(List<GraphQLError> errors, ObjectTypeDefinition typeDefinition, List<FieldDefinition> fieldDefinitions) {
+    private List<Directive> nonRepeatableDirectivesOnly(Map<String, DirectiveDefinition> directiveDefinitionMap, List<Directive> directives) {
+        return directives.stream().filter(directive -> {
+            String directiveName = directive.getName();
+            DirectiveDefinition directiveDefinition = directiveDefinitionMap.get(directiveName);
+            return directiveDefinition == null || !directiveDefinition.isRepeatable();
+        }).collect(toList());
+    }
+
+    private void checkObjTypeFields(List<GraphQLError> errors, ObjectTypeDefinition typeDefinition, List<FieldDefinition> fieldDefinitions, Map<String, DirectiveDefinition> directiveDefinitionMap) {
         // field unique ness
         checkNamedUniqueness(errors, fieldDefinitions, FieldDefinition::getName,
                 (name, fieldDef) -> new NonUniqueNameError(typeDefinition, fieldDef));
@@ -212,9 +222,13 @@ public class SchemaTypeChecker {
                 (name, inputValueDefinition) -> new NonUniqueArgumentError(typeDefinition, fld, name)));
 
         // directive checks
-        fieldDefinitions.forEach(fld -> checkNamedUniqueness(errors, fld.getDirectives(), Directive::getName,
-                (directiveName, directive) -> new NonUniqueDirectiveError(typeDefinition, fld, directiveName)));
+        for (FieldDefinition fieldDefinition : fieldDefinitions) {
+            List<Directive> directives = fieldDefinition.getDirectives();
+            List<Directive> nonRepeatableDirectives = nonRepeatableDirectivesOnly(directiveDefinitionMap, directives);
 
+            checkNamedUniqueness(errors, nonRepeatableDirectives, Directive::getName,
+                    (directiveName, directive) -> new NonUniqueDirectiveError(typeDefinition, fieldDefinition, directiveName));
+        }
         fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive -> {
             checkDeprecatedDirective(errors, directive,
                     () -> new InvalidDeprecationDirectiveError(typeDefinition, fld));
@@ -225,7 +239,7 @@ public class SchemaTypeChecker {
         }));
     }
 
-    private void checkInterfaceFields(List<GraphQLError> errors, InterfaceTypeDefinition interfaceType, List<FieldDefinition> fieldDefinitions) {
+    private void checkInterfaceFields(List<GraphQLError> errors, InterfaceTypeDefinition interfaceType, List<FieldDefinition> fieldDefinitions, Map<String, DirectiveDefinition> directiveDefinitionMap) {
         // field unique ness
         checkNamedUniqueness(errors, fieldDefinitions, FieldDefinition::getName,
                 (name, fieldDef) -> new NonUniqueNameError(interfaceType, fieldDef));
@@ -235,9 +249,13 @@ public class SchemaTypeChecker {
                 (name, inputValueDefinition) -> new NonUniqueArgumentError(interfaceType, fld, name)));
 
         // directive checks
-        fieldDefinitions.forEach(fld -> checkNamedUniqueness(errors, fld.getDirectives(), Directive::getName,
-                (directiveName, directive) -> new NonUniqueDirectiveError(interfaceType, fld, directiveName)));
+        for (FieldDefinition fieldDefinition : fieldDefinitions) {
+            List<Directive> directives = fieldDefinition.getDirectives();
+            List<Directive> nonRepeatableDirectives = nonRepeatableDirectivesOnly(directiveDefinitionMap, directives);
 
+            checkNamedUniqueness(errors, nonRepeatableDirectives, Directive::getName,
+                    (directiveName, directive) -> new NonUniqueDirectiveError(interfaceType, fieldDefinition, directiveName));
+        }
         fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive -> {
             checkDeprecatedDirective(errors, directive,
                     () -> new InvalidDeprecationDirectiveError(interfaceType, fld));
@@ -248,7 +266,7 @@ public class SchemaTypeChecker {
         }));
     }
 
-    private void checkEnumValues(List<GraphQLError> errors, EnumTypeDefinition enumType, List<EnumValueDefinition> enumValueDefinitions) {
+    private void checkEnumValues(List<GraphQLError> errors, EnumTypeDefinition enumType, List<EnumValueDefinition> enumValueDefinitions, Map<String, DirectiveDefinition> directiveDefinitionMap) {
 
         // enum unique ness
         checkNamedUniqueness(errors, enumValueDefinitions, EnumValueDefinition::getName,
@@ -256,6 +274,15 @@ public class SchemaTypeChecker {
 
 
         // directive checks
+        for (EnumValueDefinition enumValueDefinition : enumValueDefinitions) {
+            List<Directive> directives = enumValueDefinition.getDirectives();
+            List<Directive> nonRepeatableDirectives = nonRepeatableDirectivesOnly(directiveDefinitionMap, directives);
+
+            checkNamedUniqueness(errors, nonRepeatableDirectives, Directive::getName,
+                    (directiveName, directive) -> new NonUniqueDirectiveError(enumType, enumValueDefinition, directiveName));
+        }
+
+
         enumValueDefinitions.forEach(enumValue -> {
             BiFunction<String, Directive, NonUniqueDirectiveError> errorFunction = (directiveName, directive) -> new NonUniqueDirectiveError(enumType, enumValue, directiveName);
             checkNamedUniqueness(errors, enumValue.getDirectives(), Directive::getName, errorFunction);
@@ -271,7 +298,7 @@ public class SchemaTypeChecker {
         }));
     }
 
-    private void checkInputValues(List<GraphQLError> errors, InputObjectTypeDefinition inputType, List<InputValueDefinition> inputValueDefinitions) {
+    private void checkInputValues(List<GraphQLError> errors, InputObjectTypeDefinition inputType, List<InputValueDefinition> inputValueDefinitions, Map<String, DirectiveDefinition> directiveDefinitionMap) {
 
         // field unique ness
         checkNamedUniqueness(errors, inputValueDefinitions, InputValueDefinition::getName,
@@ -284,8 +311,13 @@ public class SchemaTypeChecker {
 
 
         // directive checks
-        inputValueDefinitions.forEach(inputValueDef -> checkNamedUniqueness(errors, inputValueDef.getDirectives(), Directive::getName,
-                (directiveName, directive) -> new NonUniqueDirectiveError(inputType, inputValueDef, directiveName)));
+        for (InputValueDefinition inputValueDefinition : inputValueDefinitions) {
+            List<Directive> directives = inputValueDefinition.getDirectives();
+            List<Directive> nonRepeatableDirectives = nonRepeatableDirectivesOnly(directiveDefinitionMap, directives);
+
+            checkNamedUniqueness(errors, nonRepeatableDirectives, Directive::getName,
+                    (directiveName, directive) -> new NonUniqueDirectiveError(inputType, inputValueDefinition, directiveName));
+        }
 
         inputValueDefinitions.forEach(inputValueDef -> inputValueDef.getDirectives().forEach(directive -> {
             checkDeprecatedDirective(errors, directive,

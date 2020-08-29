@@ -121,7 +121,9 @@ inputObjectValueDefinitions : '{' inputValueDefinition* '}';
 extensionInputObjectValueDefinitions : '{' inputValueDefinition+ '}';
 
 
-directiveDefinition : description? DIRECTIVE '@' name argumentsDefinition? 'on' directiveLocations;
+directiveDefinition : description? DIRECTIVE '@' name argumentsDefinition? repeatable? 'on' directiveLocations;
+
+repeatable: 'repeatable';
 
 directiveLocation : name;
 

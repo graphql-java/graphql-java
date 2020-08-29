@@ -22,7 +22,6 @@ import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
-import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
@@ -50,7 +49,6 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -198,6 +196,7 @@ public class SchemaGeneratorHelper {
         GraphQLDirective.Builder builder = GraphQLDirective.newDirective()
                 .name(directive.getName())
                 .description(buildDescription(directive, null))
+                .repeatable(directiveDefinition.isRepeatable())
                 .comparatorRegistry(comparatorRegistry)
                 .validLocations(directiveLocation);
 
@@ -255,6 +254,7 @@ public class SchemaGeneratorHelper {
         GraphQLDirective.Builder builder = GraphQLDirective.newDirective()
                 .name(directiveDefinition.getName())
                 .definition(directiveDefinition)
+                .repeatable(directiveDefinition.isRepeatable())
                 .description(buildDescription(directiveDefinition, directiveDefinition.getDescription()));
 
 

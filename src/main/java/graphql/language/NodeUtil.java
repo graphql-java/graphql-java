@@ -1,5 +1,6 @@
 package graphql.language;
 
+import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.UnknownOperationException;
 import graphql.util.FpKit;
@@ -8,6 +9,7 @@ import graphql.util.NodeLocation;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static graphql.util.FpKit.mergeFirst;
 
@@ -28,9 +30,26 @@ public class NodeUtil {
         return true;
     }
 
+    public static Map<String, List<Directive>> allDirectivesByName(List<Directive> directives) {
+        return FpKit.groupingBy(directives, Directive::getName);
+    }
 
     public static Map<String, Directive> directivesByName(List<Directive> directives) {
-        return FpKit.getByName(directives, Directive::getName, mergeFirst());
+        Map<String, List<Directive>> map = allDirectivesByName(directives);
+        List<Directive> singletonDirectives = map.entrySet().stream()
+                // only those that have 1 non repeated entry
+                .filter(e -> e.getKey() != null && e.getValue().size() == 1)
+                .flatMap(e -> e.getValue().stream()).collect(Collectors.toList());
+        return FpKit.getByName(singletonDirectives, Directive::getName);
+    }
+
+    public static Directive nonRepeatedDirectiveByNameWithAssert(Map<String, List<Directive>> directives, String directiveName) {
+        List<Directive> directiveList = directives.get(directiveName);
+        if (directiveList == null) {
+            return null;
+        }
+        Assert.assertTrue(directiveList.size() == 1, () -> String.format("%s is a repeatable directive", directiveName));
+        return directiveList.get(0);
     }
 
     public static Map<String, Argument> argumentsByName(List<Argument> arguments) {

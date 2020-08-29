@@ -9,6 +9,7 @@ import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.Node;
 import graphql.language.OperationDefinition;
+import graphql.schema.GraphQLDirective;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
@@ -62,7 +63,8 @@ public class UniqueDirectiveNamesPerLocation extends AbstractRule {
         Set<String> names = new LinkedHashSet<>();
         directives.forEach(directive -> {
             String name = directive.getName();
-            if (names.contains(name)) {
+            GraphQLDirective graphQLDirective = getValidationContext().getSchema().getDirective(name);
+            if (names.contains(name) && !graphQLDirective.isRepeatable()) {
                 addError(ValidationErrorType.DuplicateDirectiveName,
                         directive.getSourceLocation(),
                         duplicateDirectiveNameMessage(name, directivesContainer.getClass().getSimpleName()));
@@ -73,6 +75,6 @@ public class UniqueDirectiveNamesPerLocation extends AbstractRule {
     }
 
     private String duplicateDirectiveNameMessage(String directiveName, String location) {
-        return String.format("Directives must be uniquely named within a location. The directive '%s' used on a '%s' is not unique.", directiveName, location);
+        return String.format("Non repeatable directives must be uniquely named within a location. The directive '%s' used on a '%s' is not unique.", directiveName, location);
     }
 }

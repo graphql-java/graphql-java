@@ -14,7 +14,6 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static graphql.language.NodeUtil.directivesByName;
 import static java.util.Collections.emptyMap;
 
 @PublicApi
@@ -66,14 +65,6 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
 
     public List<Directive> getDirectives() {
         return new ArrayList<>(directives);
-    }
-
-    public Map<String, Directive> getDirectivesByName() {
-        return directivesByName(directives);
-    }
-
-    public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
     }
 
     @Override
