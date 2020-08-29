@@ -60,18 +60,21 @@ public class UniqueDirectiveNamesPerLocation extends AbstractRule {
     }
 
     private void checkDirectivesUniqueness(Node<?> directivesContainer, List<Directive> directives) {
-        Set<String> names = new LinkedHashSet<>();
-        directives.forEach(directive -> {
+        Set<String> directiveNames = new LinkedHashSet<>();
+        for (Directive directive : directives) {
             String name = directive.getName();
             GraphQLDirective graphQLDirective = getValidationContext().getSchema().getDirective(name);
-            if (names.contains(name) && !graphQLDirective.isRepeatable()) {
+            if (graphQLDirective == null) {
+                continue;
+            }
+            if (directiveNames.contains(name) && !graphQLDirective.isRepeatable()) {
                 addError(ValidationErrorType.DuplicateDirectiveName,
                         directive.getSourceLocation(),
                         duplicateDirectiveNameMessage(name, directivesContainer.getClass().getSimpleName()));
             } else {
-                names.add(name);
+                directiveNames.add(name);
             }
-        });
+        }
     }
 
     private String duplicateDirectiveNameMessage(String directiveName, String location) {

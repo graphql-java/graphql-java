@@ -629,8 +629,7 @@ public class GraphqlAntlrToLanguage {
         addCommonData(def, ctx);
         def.description(newDescription(ctx.description()));
 
-        String repeatableText = ctx.repeatable() == null ? null : ctx.repeatable().getText();
-        def.repeatable(isRepeatable(repeatableText));
+        def.repeatable(ctx.REPEATABLE() != null);
 
         GraphqlParser.DirectiveLocationsContext directiveLocationsContext = ctx.directiveLocations();
         List<DirectiveLocation> directiveLocations = new ArrayList<>();
@@ -643,10 +642,6 @@ public class GraphqlAntlrToLanguage {
             def.inputValueDefinitions(createInputValueDefinitions(ctx.argumentsDefinition().inputValueDefinition()));
         }
         return def.build();
-    }
-
-    private boolean isRepeatable(String text) {
-        return "repeatable".equals(text);
     }
 
     protected DirectiveLocation createDirectiveLocation(GraphqlParser.DirectiveLocationContext ctx) {

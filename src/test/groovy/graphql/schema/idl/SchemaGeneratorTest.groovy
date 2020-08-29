@@ -1988,7 +1988,7 @@ class SchemaGeneratorTest extends Specification {
         directiveNames.contains("sd3")
 
         when:
-        directivesMap = schema.getDirectiveByName()
+        directivesMap = schema.getDirectivesByName()
 
         then:
         directivesMap.size() == 7 // built in ones
