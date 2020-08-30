@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.Directives;
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.SchemaDefinition;
@@ -30,6 +31,7 @@ import static graphql.DirectivesUtil.nonRepeatedDirectiveByNameWithAssert;
 import static graphql.schema.GraphqlTypeComparators.byNameAsc;
 import static graphql.schema.GraphqlTypeComparators.sortTypes;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 
 /**
  * The schema represents the combined type system of the graphql engine.  This is how the engine knows
@@ -308,10 +310,15 @@ public class GraphQLSchema {
      * directives for all schema elements, whereas this is just for the schema
      * element itself
      *
+     * @param directiveName the name of the directive
      * @return a named directive
      */
-    public GraphQLDirective getSchemaDirective(String name) {
-        return getSchemaDirectiveByName().get(name);
+    public GraphQLDirective getSchemaDirective(String directiveName) {
+        return DirectivesUtil.nonRepeatedDirectiveByNameWithAssert(getAllDirectivesByName(), directiveName);
+    }
+
+    public List<GraphQLDirective> getSchemaDirectives(String directiveName) {
+        return getAllDirectivesByName().getOrDefault(directiveName, emptyList());
     }
 
     public SchemaDefinition getDefinition() {

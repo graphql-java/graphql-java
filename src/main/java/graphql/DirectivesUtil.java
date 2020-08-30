@@ -4,10 +4,13 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.util.FpKit;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static graphql.Assert.assertNotNull;
 
 @Internal
 public class DirectivesUtil {
@@ -54,5 +57,35 @@ public class DirectivesUtil {
             }
         }
         return true;
+    }
+
+    public static List<GraphQLDirective> enforceAdd(List<GraphQLDirective> directives, GraphQLDirective newDirective) {
+        assertNotNull(directives, () -> "directive list can't be null");
+        assertNotNull(newDirective, () -> "directive can't be null");
+
+        Map<String, List<GraphQLDirective>> map = allDirectivesByName(directives);
+        assertNonRepeatable(newDirective, map);
+        directives.add(newDirective);
+        return directives;
+    }
+
+    public static List<GraphQLDirective> enforceAddAll(List<GraphQLDirective> directives, List<GraphQLDirective> newDirectives) {
+        assertNotNull(directives, () -> "directive list can't be null");
+        assertNotNull(newDirectives, () -> "directive list can't be null");
+        Map<String, List<GraphQLDirective>> map = allDirectivesByName(directives);
+        for (GraphQLDirective newDirective : newDirectives) {
+            assertNonRepeatable(newDirective, map);
+            directives.add(newDirective);
+        }
+        return directives;
+    }
+
+    private static void assertNonRepeatable(GraphQLDirective directive, Map<String, List<GraphQLDirective>> mapOfDirectives) {
+        if (!directive.isRepeatable()) {
+            int currentSize = mapOfDirectives.getOrDefault(directive.getName(), Collections.emptyList()).size();
+            if (currentSize > 0) {
+                Assert.assertShouldNeverHappen("%s is a non repeatable directive but there is already one present in this list", directive.getName());
+            }
+        }
     }
 }

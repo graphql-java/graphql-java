@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.FieldDefinition;
@@ -23,11 +24,11 @@ import static graphql.util.FpKit.getByName;
 /**
  * Fields are the ways you get data values in graphql and a field definition represents a field, its type, the arguments it takes
  * and the {@link graphql.schema.DataFetcher} used to get data values for that field.
- *
+ * <p>
  * Fields can be thought of as functions in graphql, they have a name, take defined arguments and return a value.
- *
+ * <p>
  * Fields can also be deprecated, which indicates the consumers that a field wont be supported in the future.
- *
+ * <p>
  * See http://graphql.org/learn/queries/#fields for more details on the concept.
  */
 @PublicApi
@@ -56,7 +57,6 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
      * @param dataFetcher       the field data fetcher
      * @param arguments         the field arguments
      * @param deprecationReason the deprecation reason
-     *
      * @deprecated use the {@link #newFieldDefinition()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -74,7 +74,6 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
      * @param deprecationReason  the deprecation reason
      * @param directives         the directives on this type element
      * @param definition         the AST definition
-     *
      * @deprecated use the {@link #newFieldDefinition()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -167,7 +166,6 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
-     *
      * @return a new field based on calling build on that builder
      */
     public GraphQLFieldDefinition transform(Consumer<Builder> builderConsumer) {
@@ -225,7 +223,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         private String deprecationReason;
         private FieldDefinition definition;
         private final Map<String, GraphQLArgument> arguments = new LinkedHashMap<>();
-        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder() {
         }
@@ -239,7 +237,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
             this.deprecationReason = existing.getDeprecationReason();
             this.definition = existing.getDefinition();
             this.arguments.putAll(getByName(existing.getArguments(), GraphQLArgument::getName));
-            this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+            DirectivesUtil.enforceAddAll(this.directives, existing.getDirectives());
         }
 
 
@@ -287,9 +285,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * Sets the {@link graphql.schema.DataFetcher} to use with this field.
          *
          * @param dataFetcher the data fetcher to use
-         *
          * @return this builder
-         *
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
         @Deprecated
@@ -303,9 +299,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * Sets the {@link graphql.schema.DataFetcherFactory} to use with this field.
          *
          * @param dataFetcherFactory the data fetcher factory
-         *
          * @return this builder
-         *
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
         @Deprecated
@@ -319,9 +313,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * This will cause the data fetcher of this field to always return the supplied value
          *
          * @param value the value to always return
-         *
          * @return this builder
-         *
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
         @Deprecated
@@ -346,7 +338,6 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * </pre>
          *
          * @param builderFunction a supplier for the builder impl
-         *
          * @return this
          */
         public Builder argument(UnaryOperator<GraphQLArgument.Builder> builderFunction) {
@@ -360,7 +351,6 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * from within
          *
          * @param builder an un-built/incomplete GraphQLArgument
-         *
          * @return this
          */
         public Builder argument(GraphQLArgument.Builder builder) {
@@ -372,9 +362,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * This adds the list of arguments to the field.
          *
          * @param arguments the arguments to add
-         *
          * @return this
-         *
          * @deprecated This is a badly named method and is replaced by {@link #arguments(java.util.List)}
          */
         @Deprecated
@@ -386,7 +374,6 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * This adds the list of arguments to the field.
          *
          * @param arguments the arguments to add
-         *
          * @return this
          */
         public Builder arguments(List<GraphQLArgument> arguments) {
@@ -432,16 +419,14 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            directives.put(directive.getName(), directive);
+            DirectivesUtil.enforceAdd(this.directives, directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                this.directives.put(directive.getName(), directive);
-            }
+            DirectivesUtil.enforceAddAll(this.directives, directives);
             return this;
         }
 

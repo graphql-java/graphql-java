@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.UnionTypeDefinition;
@@ -193,7 +194,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         private List<UnionTypeExtensionDefinition> extensionDefinitions = emptyList();
 
         private final Map<String, GraphQLNamedOutputType> types = new LinkedHashMap<>();
-        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder() {
         }
@@ -205,7 +206,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
             this.definition = existing.getDefinition();
             this.extensionDefinitions = existing.getExtensionDefinitions();
             this.types.putAll(getByName(existing.originalTypes, GraphQLNamedType::getName));
-            this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+            DirectivesUtil.enforceAddAll(this.directives,existing.getDirectives());
         }
 
         @Override
@@ -301,15 +302,13 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                this.directives.put(directive.getName(), directive);
-            }
+            DirectivesUtil.enforceAddAll(this.directives, directives);
             return this;
         }
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            directives.put(directive.getName(), directive);
+            DirectivesUtil.enforceAdd(this.directives, directive);
             return this;
         }
 

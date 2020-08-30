@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
@@ -198,7 +199,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         private Object defaultValue;
         private GraphQLInputType type;
         private InputValueDefinition definition;
-        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder() {
         }
@@ -209,7 +210,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
             this.defaultValue = existing.getDefaultValue();
             this.type = existing.originalType;
             this.definition = existing.getDefinition();
-            this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+            DirectivesUtil.enforceAddAll(this.directives,existing.getDirectives());
         }
 
         @Override
@@ -259,16 +260,14 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            directives.put(directive.getName(), directive);
+            DirectivesUtil.enforceAdd(this.directives, directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                this.directives.put(directive.getName(), directive);
-            }
+            DirectivesUtil.enforceAddAll(this.directives, directives);
             return this;
         }
 

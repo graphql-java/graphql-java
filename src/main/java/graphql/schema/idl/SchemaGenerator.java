@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.Assert;
 import graphql.Directives;
 import graphql.GraphQLError;
 import graphql.PublicApi;
@@ -218,9 +219,7 @@ public class SchemaGenerator {
      *
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
-     *
      * @return an executable schema
-     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -234,9 +233,7 @@ public class SchemaGenerator {
      * @param options      the controlling options
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
-     *
      * @return an executable schema
-     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(Options options, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -363,7 +360,6 @@ public class SchemaGenerator {
      * but then we build the rest of the types specified and put them in as additional types
      *
      * @param buildCtx the context we need to work out what we are doing
-     *
      * @return the additional types not referenced from the top level operations
      */
     private Set<GraphQLType> buildAdditionalTypes(BuildContext buildCtx) {
@@ -408,7 +404,6 @@ public class SchemaGenerator {
      *
      * @param buildCtx the context we need to work out what we are doing
      * @param rawType  the type to be built
-     *
      * @return an output type
      */
     @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
@@ -971,22 +966,28 @@ public class SchemaGenerator {
             GraphqlTypeComparatorRegistry comparatorRegistry) {
         directives = directives == null ? emptyList() : directives;
         extensionDirectives = extensionDirectives == null ? emptyList() : extensionDirectives;
-        Set<String> names = new LinkedHashSet<>();
+        Set<String> previousNames = new LinkedHashSet<>();
 
         List<GraphQLDirective> output = new ArrayList<>();
         for (Directive directive : directives) {
-            if (!names.contains(directive.getName())) {
-                names.add(directive.getName());
-                output.add(schemaGeneratorHelper.buildDirective(directive, directiveDefinitions, directiveLocation, comparatorRegistry));
-            }
+            GraphQLDirective gqlDirective = buildDirective(directive, directiveLocation, directiveDefinitions, comparatorRegistry, previousNames);
+            output.add(gqlDirective);
         }
         for (Directive directive : extensionDirectives) {
-            if (!names.contains(directive.getName())) {
-                names.add(directive.getName());
-                output.add(schemaGeneratorHelper.buildDirective(directive, directiveDefinitions, directiveLocation, comparatorRegistry));
-            }
+            GraphQLDirective gqlDirective = buildDirective(directive, directiveLocation, directiveDefinitions, comparatorRegistry, previousNames);
+            output.add(gqlDirective);
         }
         return output.toArray(new GraphQLDirective[0]);
+    }
+
+    private GraphQLDirective buildDirective(Directive directive, DirectiveLocation directiveLocation, Set<GraphQLDirective> directiveDefinitions, GraphqlTypeComparatorRegistry comparatorRegistry, Set<String> previousNames) {
+        GraphQLDirective gqlDirective = schemaGeneratorHelper.buildDirective(directive, directiveDefinitions, directiveLocation, comparatorRegistry);
+        if (previousNames.contains(directive.getName())) {
+            // other parts of the code protect against duplicate non repeatable directives
+            Assert.assertTrue(gqlDirective.isRepeatable(), () -> String.format("The directive %s MUST be a repeatable directive", directive.getName()));
+        }
+        previousNames.add(gqlDirective.getName());
+        return gqlDirective;
     }
 
 

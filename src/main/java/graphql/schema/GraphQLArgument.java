@@ -1,18 +1,16 @@
 package graphql.schema;
 
 
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
-import graphql.util.FpKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -20,19 +18,19 @@ import static graphql.Assert.assertValidName;
 
 /**
  * This defines an argument that can be supplied to a graphql field (via {@link graphql.schema.GraphQLFieldDefinition}.
- *
+ * <p>
  * Fields can be thought of as "functions" that take arguments and return a value.
- *
+ * <p>
  * See http://graphql.org/learn/queries/#arguments for more details on the concept.
- *
+ * <p>
  * {@link graphql.schema.GraphQLArgument} is used in two contexts, one context is graphql queries where it represents the arguments that can be
  * set on a field and the other is in Schema Definition Language (SDL) where it can be used to represent the argument value instances
  * that have been supplied on a {@link graphql.schema.GraphQLDirective}.
- *
+ * <p>
  * The difference is the 'value' and 'defaultValue' properties.  In a query argument, the 'value' is never in the GraphQLArgument
  * object but rather in the AST direct or in the query variables map and the 'defaultValue' represents a value to use if both of these are
  * not present. You can think of them like a descriptor of what shape an argument might have.
- *
+ * <p>
  * However with directives on SDL elements, the value is specified in AST only and transferred into the GraphQLArgument object and the
  * 'defaultValue' comes instead from the directive definition elsewhere in the SDL.  You can think of them as 'instances' of arguments, their shape and their
  * specific value on that directive.
@@ -61,7 +59,6 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * @param description  the arg description
      * @param type         the arg type
      * @param defaultValue the default value
-     *
      * @deprecated use the {@link #newArgument()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -73,7 +70,6 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     /**
      * @param name the arg name
      * @param type the arg type
-     *
      * @deprecated use the {@link #newArgument()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -88,7 +84,6 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * @param type         the arg type
      * @param defaultValue the default value
      * @param definition   the AST definition
-     *
      * @deprecated use the {@link #newArgument()} builder pattern instead, as this constructor will be made private in a future version.
      */
     public GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, InputValueDefinition definition) {
@@ -189,7 +184,6 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
-     *
      * @return a new field based on calling build on that builder
      */
     public GraphQLArgument transform(Consumer<Builder> builderConsumer) {
@@ -227,7 +221,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         private Object defaultValue = DEFAULT_VALUE_SENTINEL;
         private Object value;
         private InputValueDefinition definition;
-        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder() {
         }
@@ -239,7 +233,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
             this.defaultValue = existing.defaultValue;
             this.description = existing.getDescription();
             this.definition = existing.getDefinition();
-            this.directives.putAll(FpKit.getByName(existing.getDirectives(), GraphQLDirective::getName));
+            DirectivesUtil.enforceAddAll(this.directives,existing.getDirectives());
         }
 
         @Override
@@ -291,16 +285,14 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            directives.put(directive.getName(), directive);
+            DirectivesUtil.enforceAdd(this.directives, directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                this.directives.put(directive.getName(), directive);
-            }
+            DirectivesUtil.enforceAddAll(this.directives, directives);
             return this;
         }
 

@@ -282,12 +282,6 @@ public class SchemaTypeChecker {
                     (directiveName, directive) -> new NonUniqueDirectiveError(enumType, enumValueDefinition, directiveName));
         }
 
-
-        enumValueDefinitions.forEach(enumValue -> {
-            BiFunction<String, Directive, NonUniqueDirectiveError> errorFunction = (directiveName, directive) -> new NonUniqueDirectiveError(enumType, enumValue, directiveName);
-            checkNamedUniqueness(errors, enumValue.getDirectives(), Directive::getName, errorFunction);
-        });
-
         enumValueDefinitions.forEach(enumValue -> enumValue.getDirectives().forEach(directive -> {
             checkDeprecatedDirective(errors, directive,
                     () -> new InvalidDeprecationDirectiveError(enumType, enumValue));

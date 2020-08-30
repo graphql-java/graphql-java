@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.AssertException;
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InterfaceTypeDefinition;
@@ -244,7 +245,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
         private InterfaceTypeDefinition definition;
         private List<InterfaceTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLFieldDefinition> fields = new LinkedHashMap<>();
-        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
         private final Map<String, GraphQLNamedOutputType> interfaces = new LinkedHashMap<>();
 
         public Builder() {
@@ -257,8 +258,8 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
             this.definition = existing.getDefinition();
             this.extensionDefinitions = existing.getExtensionDefinitions();
             this.fields.putAll(getByName(existing.getFieldDefinitions(), GraphQLFieldDefinition::getName));
-            this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
             this.interfaces.putAll(getByName(existing.originalInterfaces, GraphQLNamedType::getName));
+            DirectivesUtil.enforceAddAll(this.directives,existing.getDirectives());
         }
 
         @Override
@@ -370,16 +371,14 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            directives.put(directive.getName(), directive);
+            DirectivesUtil.enforceAdd(this.directives, directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                this.directives.put(directive.getName(), directive);
-            }
+            DirectivesUtil.enforceAddAll(this.directives, directives);
             return this;
         }
 

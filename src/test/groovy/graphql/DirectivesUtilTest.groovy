@@ -53,4 +53,38 @@ class DirectivesUtilTest extends Specification {
         then:
         thrown(AssertException)
     }
+
+    def "enforcedAddAll works as expected"() {
+        when: "things are empty"
+        DirectivesUtil.enforceAddAll([], [d1, d2, d3r])
+        then:
+        notThrown(AssertException)
+
+        when: "there is a non repeatable directive"
+        DirectivesUtil.enforceAddAll([d1], [d1, d2, d3r])
+        then:
+        thrown(AssertException)
+
+        when: "repeated directives are allowed to be added"
+        DirectivesUtil.enforceAddAll([d3r], [d1, d2, d3r])
+        then:
+        notThrown(AssertException)
+    }
+
+    def "enforcedAdd works as expected"() {
+        when: "things are empty"
+        DirectivesUtil.enforceAdd([], d3r)
+        then:
+        notThrown(AssertException)
+
+        when: "there is a non repeatable directive"
+        DirectivesUtil.enforceAdd([d1], d1)
+        then:
+        thrown(AssertException)
+
+        when: "repeated directives are allowed to be added"
+        DirectivesUtil.enforceAdd([d3r], d3r)
+        then:
+        notThrown(AssertException)
+    }
 }

@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.AssertException;
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputObjectTypeDefinition;
@@ -197,7 +198,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         private InputObjectTypeDefinition definition;
         private List<InputObjectTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLInputObjectField> fields = new LinkedHashMap<>();
-        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder() {
         }
@@ -208,7 +209,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
             this.definition = existing.getDefinition();
             this.extensionDefinitions = existing.getExtensionDefinitions();
             this.fields.putAll(getByName(existing.getFields(), GraphQLInputObjectField::getName));
-            this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+            DirectivesUtil.enforceAddAll(this.directives,existing.getDirectives());
         }
 
         @Override
@@ -284,7 +285,6 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
         public Builder replaceFields(List<GraphQLInputObjectField> fields) {
             this.fields.clear();
-            ;
             fields.forEach(this::field);
             return this;
         }
@@ -312,16 +312,14 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            directives.put(directive.getName(), directive);
+            DirectivesUtil.enforceAdd(this.directives, directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                this.directives.put(directive.getName(), directive);
-            }
+            DirectivesUtil.enforceAddAll(this.directives, directives);
             return this;
         }
 

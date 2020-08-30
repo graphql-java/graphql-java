@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.AssertException;
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.ObjectTypeDefinition;
@@ -236,7 +237,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         private List<ObjectTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLFieldDefinition> fields = new LinkedHashMap<>();
         private final Map<String, GraphQLNamedOutputType> interfaces = new LinkedHashMap<>();
-        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder() {
         }
@@ -248,7 +249,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
             extensionDefinitions = existing.getExtensionDefinitions();
             fields.putAll(getByName(existing.getFieldDefinitions(), GraphQLFieldDefinition::getName));
             interfaces.putAll(getByName(existing.originalInterfaces, GraphQLNamedType::getName));
-            directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+            DirectivesUtil.enforceAddAll(this.directives,existing.getDirectives());
         }
 
         @Override
@@ -373,15 +374,6 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
             return this;
         }
 
-        public Builder replaceDirectives(List<GraphQLDirective> directives) {
-            assertNotNull(directives, () -> "directive can't be null");
-            this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                this.directives.put(directive.getName(), directive);
-            }
-            return this;
-        }
-
         public Builder withInterfaces(GraphQLTypeReference... references) {
             for (GraphQLTypeReference reference : references) {
                 withInterface(reference);
@@ -399,6 +391,12 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
             return this;
         }
 
+        public Builder replaceDirectives(List<GraphQLDirective> directives) {
+            assertNotNull(directives, () -> "directive can't be null");
+            this.directives.clear();
+            DirectivesUtil.enforceAddAll(this.directives, directives);
+            return this;
+        }
 
         public Builder withDirectives(GraphQLDirective... directives) {
             for (GraphQLDirective directive : directives) {
@@ -409,7 +407,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            directives.put(directive.getName(), directive);
+            DirectivesUtil.enforceAdd(this.directives, directive);
             return this;
         }
 
