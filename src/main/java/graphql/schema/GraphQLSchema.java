@@ -25,7 +25,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.DirectivesUtil.allDirectivesByName;
-import static graphql.DirectivesUtil.directivesByName;
+import static graphql.DirectivesUtil.nonRepeatableDirectivesByName;
 import static graphql.DirectivesUtil.nonRepeatedDirectiveByNameWithAssert;
 import static graphql.schema.GraphqlTypeComparators.byNameAsc;
 import static graphql.schema.GraphqlTypeComparators.sortTypes;
@@ -245,7 +245,7 @@ public class GraphQLSchema {
      * @return a a map of non repeatable directives by directive name
      */
     public Map<String, GraphQLDirective> getDirectivesByName() {
-        return directivesByName(getDirectives());
+        return nonRepeatableDirectivesByName(getDirectives());
     }
 
     /**
@@ -289,7 +289,7 @@ public class GraphQLSchema {
      * @return a list of directives
      */
     public Map<String, GraphQLDirective> getSchemaDirectiveByName() {
-        return directivesByName(getSchemaDirectives());
+        return nonRepeatableDirectivesByName(getSchemaDirectives());
     }
 
     /**

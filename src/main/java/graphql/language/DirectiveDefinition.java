@@ -56,6 +56,12 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
         return name;
     }
 
+    /**
+     * An AST node can have multiple directives associated with it IF the directive definition allows
+     * repeatable directives.
+     *
+     * @return true if this directive definition allows repeatable directives
+     */
     public boolean isRepeatable() {
         return repeatable;
     }

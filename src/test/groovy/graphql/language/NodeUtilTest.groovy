@@ -1,5 +1,6 @@
 package graphql.language
 
+import graphql.AssertException
 import graphql.TestUtil
 import graphql.execution.UnknownOperationException
 import spock.lang.Specification
@@ -34,5 +35,48 @@ class NodeUtilTest extends Specification {
         then:
         def ex = thrown(UnknownOperationException)
         ex.message == "Unknown operation named 'Unknown'."
+    }
+
+    def d1 = Directive.newDirective().name("d1").build()
+    def d2 = Directive.newDirective().name("d2").build()
+    def d3r = Directive.newDirective().name("d3").build()
+
+    def "can filter out repeatable directives"() {
+        when:
+        def result = NodeUtil.nonRepeatableDirectivesByName([d1, d2, d3r, d3r,])
+        then:
+        result == [d1: d1, d2: d2]
+    }
+
+    def "can filter out repeatable directives completely"() {
+        when:
+        def result = NodeUtil.nonRepeatableDirectivesByName([d3r, d3r])
+        then:
+        result == [:]
+    }
+
+    def "can create a map if all directives"() {
+        when:
+        def result = NodeUtil.allDirectivesByName([d1, d2, d3r, d3r])
+        then:
+        result == [d1: [d1], d2: [d2], d3: [d3r, d3r],]
+    }
+
+    def "will assert on repeated directives"() {
+        def mapOfDirectives = NodeUtil.allDirectivesByName([d1, d2, d3r, d3r,])
+        when:
+        def directive = NodeUtil.nonRepeatedDirectiveByNameWithAssert(mapOfDirectives, "d1")
+        then:
+        directive == d1
+
+        when:
+        directive = NodeUtil.nonRepeatedDirectiveByNameWithAssert(mapOfDirectives, "nonExistent")
+        then:
+        directive == null
+
+        when:
+        NodeUtil.nonRepeatedDirectiveByNameWithAssert(mapOfDirectives, "d3")
+        then:
+        thrown(AssertException)
     }
 }

@@ -34,7 +34,7 @@ public class NodeUtil {
         return FpKit.groupingBy(directives, Directive::getName);
     }
 
-    public static Map<String, Directive> directivesByName(List<Directive> directives) {
+    public static Map<String, Directive> nonRepeatableDirectivesByName(List<Directive> directives) {
         Map<String, List<Directive>> map = allDirectivesByName(directives);
         List<Directive> singletonDirectives = map.entrySet().stream()
                 // only those that have 1 non repeated entry

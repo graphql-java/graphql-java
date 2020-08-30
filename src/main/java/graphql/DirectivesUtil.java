@@ -13,11 +13,11 @@ import java.util.stream.Collectors;
 public class DirectivesUtil {
 
 
-    public static Map<String, GraphQLDirective> directivesByName(List<GraphQLDirective> directives) {
+    public static Map<String, GraphQLDirective> nonRepeatableDirectivesByName(List<GraphQLDirective> directives) {
         Map<String, List<GraphQLDirective>> map = allDirectivesByName(directives);
         List<GraphQLDirective> singletonDirectives = map.entrySet().stream()
                 // only those that have 1 non repeated entry
-                .filter(e -> e.getKey() != null && e.getValue().size() == 1)
+                .filter(e -> e.getKey() != null && isAllNonRepeatable(e.getValue()))
                 .flatMap(e -> e.getValue().stream()).collect(Collectors.toList());
         return FpKit.getByName(singletonDirectives, GraphQLDirective::getName);
     }
@@ -28,19 +28,31 @@ public class DirectivesUtil {
 
     public static GraphQLDirective nonRepeatedDirectiveByNameWithAssert(Map<String, List<GraphQLDirective>> directives, String directiveName) {
         List<GraphQLDirective> directiveList = directives.get(directiveName);
-        if (directiveList == null) {
+        if (directiveList == null || directiveList.isEmpty()) {
             return null;
         }
-        Assert.assertTrue(directiveList.size() == 1, () -> String.format("%s is a repeatable directive", directiveName));
+        Assert.assertTrue(isAllNonRepeatable(directiveList), () -> String.format("%s is a repeatable directive", directiveName));
         return directiveList.get(0);
     }
 
     public static Optional<GraphQLArgument> directiveWithArg(List<GraphQLDirective> directives, String directiveName, String argumentName) {
-        GraphQLDirective directive = directivesByName(directives).get(directiveName);
+        GraphQLDirective directive = nonRepeatableDirectivesByName(directives).get(directiveName);
         GraphQLArgument argument = null;
         if (directive != null) {
             argument = directive.getArgument(argumentName);
         }
         return Optional.ofNullable(argument);
+    }
+
+    private static boolean isAllNonRepeatable(List<GraphQLDirective> directives) {
+        if (directives == null || directives.isEmpty()) {
+            return false;
+        }
+        for (GraphQLDirective graphQLDirective : directives) {
+            if (graphQLDirective.isRepeatable()) {
+                return false;
+            }
+        }
+        return true;
     }
 }

@@ -38,7 +38,7 @@ class DirectiveTest extends Specification {
         ]
 
         when:
-        def directivesMap = NodeUtil.directivesByName(directives)
+        def directivesMap = NodeUtil.nonRepeatableDirectivesByName(directives)
 
         then:
 

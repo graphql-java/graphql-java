@@ -7,31 +7,41 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.language.NodeUtil.allDirectivesByName;
-import static graphql.language.NodeUtil.directivesByName;
+import static graphql.language.NodeUtil.nonRepeatableDirectivesByName;
 import static graphql.language.NodeUtil.nonRepeatedDirectiveByNameWithAssert;
 import static java.util.Collections.emptyList;
 
 /**
- * Represents a language node that can contain Directives.
+ * Represents a language node that can contain Directives.  Directives can be repeatable and (by default) non repeatable.
+ * <p>
+ * There are access methods here that get the two different types.
+ *
+ * @see graphql.language.DirectiveDefinition
+ * @see DirectiveDefinition#isRepeatable()
  */
 @PublicApi
 public interface DirectivesContainer<T extends DirectivesContainer> extends Node<T> {
 
     /**
-     * @return a list of directives associated with this Node
+     * This will return a list of all the directives that have been put on {@link graphql.language.Node} as a flat list, which may contain repeatable
+     * and non repeatable directives.
+     *
+     * @return a list of all the directives associated with this Node
      */
     List<Directive> getDirectives();
 
     /**
-     * @return a map of directives by directive name where the directives are only the ones with a single value
+     * This will return a Map of the non repeatable directives that are associated with a {@link graphql.language.Node}.  Any repeatable directives
+     * will be filtered out of this map.
+     *
+     * @return a map of non repeatable directives by directive name.
      */
     default Map<String, Directive> getDirectivesByName() {
-        return directivesByName(getDirectives());
+        return nonRepeatableDirectivesByName(getDirectives());
     }
 
     /**
-     * Directives can be `repeatable` and hence this returns a list of directives by name, some with an arity of 1 and some with an arity of greather than
-     * 1.
+     * This will return a Map of the all directives that are associated with a {@link graphql.language.Node}, including both repeatable and non repeatable directives.
      *
      * @return a map of all directives by directive name
      */
@@ -40,8 +50,8 @@ public interface DirectivesContainer<T extends DirectivesContainer> extends Node
     }
 
     /**
-     * Returns a directive with the provided name.  This will throw a {@link graphql.AssertException} if
-     * the directive is a repeatable directive and has more then one instance.
+     * Returns a non repeatable directive with the provided name.  This will throw a {@link graphql.AssertException} if
+     * the directive is a repeatable directive that has more then one instance.
      *
      * @param directiveName the name of the directive to retrieve
      * @return the directive or null if there is not one with that name
@@ -51,7 +61,7 @@ public interface DirectivesContainer<T extends DirectivesContainer> extends Node
     }
 
     /**
-     * Returns all of the directives with the provided name.
+     * Returns all of the directives with the provided name, including repeatable and non repeatable directives.
      *
      * @param directiveName the name of the directives to retrieve
      * @return the directives or empty list if there is not one with that name
