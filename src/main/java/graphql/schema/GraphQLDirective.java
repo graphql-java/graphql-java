@@ -74,6 +74,10 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         return repeatable;
     }
 
+    public boolean isNonRepeatable() {
+        return !repeatable;
+    }
+
     public List<GraphQLArgument> getArguments() {
         return new ArrayList<>(arguments);
     }

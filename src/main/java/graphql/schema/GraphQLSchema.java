@@ -261,13 +261,34 @@ public class GraphQLSchema {
     }
 
     /**
-     * Returns a named directive
+     * Returns a named directive that (for legacy reasons) will be only in the set of non repeatable directives
      *
      * @param directiveName the name of the directive to retrieve
-     * @return the directive or null if there is one one with that name
+     * @return the directive or null if there is not one with that name
      */
     public GraphQLDirective getDirective(String directiveName) {
         return nonRepeatedDirectiveByNameWithAssert(getAllDirectivesByName(), directiveName);
+    }
+
+    /**
+     * Returns a list of named directive that can include non repeatable and repeatable directives.
+     *
+     * @param directiveName the name of the directives to retrieve
+     * @return the directive or empty list if there is not one with that name
+     */
+    public List<GraphQLDirective> getDirectives(String directiveName) {
+        return getAllDirectivesByName().getOrDefault(directiveName, emptyList());
+    }
+
+    /**
+     * Returns a the first named directive that can include non repeatable and repeatable directives
+     * or null if there is not one called that name
+     *
+     * @param directiveName the name of the directives to retrieve
+     * @return the directive or null if there is not one with that name
+     */
+    public GraphQLDirective getFirstDirective(String directiveName) {
+        return DirectivesUtil.getFirstDirective(directiveName,getAllDirectivesByName());
     }
 
     /**

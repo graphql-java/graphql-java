@@ -997,7 +997,7 @@ class SchemaTypeCheckerTest extends Specification {
         expect:
 
         !result.isEmpty()
-        result.size() == 6
+        result.size() == 5
     }
 
     def "test that directives args are valid"() {

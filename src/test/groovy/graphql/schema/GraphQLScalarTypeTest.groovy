@@ -35,7 +35,6 @@ class GraphQLScalarTypeTest extends Specification {
         def transformedScalar = startingScalar.transform({ builder ->
             builder.name("S2")
                     .description("S2_description")
-                    .withDirective(newDirective().name("directive1"))
                     .withDirective(newDirective().name("directive3"))
         })
 

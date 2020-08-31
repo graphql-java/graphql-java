@@ -727,17 +727,18 @@ public class SchemaGenerator {
         }
 
         if (!ScalarInfo.isGraphqlSpecifiedScalar(scalar)) {
+            List<GraphQLDirective> newDirectives = Arrays.asList(buildDirectives(
+                    typeDefinition.getDirectives(),
+                    directivesOf(extensions),
+                    SCALAR,
+                    buildCtx.getDirectiveDefinitions(),
+                    buildCtx.getComparatorRegistry()));
+
             scalar = scalar.transform(builder -> builder
                     .definition(typeDefinition)
                     .comparatorRegistry(buildCtx.getComparatorRegistry())
                     .specifiedByUrl(getSpecifiedByUrl(typeDefinition, extensions))
-                    .withDirectives(buildDirectives(
-                            typeDefinition.getDirectives(),
-                            directivesOf(extensions),
-                            SCALAR,
-                            buildCtx.getDirectiveDefinitions(),
-                            buildCtx.getComparatorRegistry())
-                    ));
+                    .replaceDirectives(newDirectives));
             scalar = directiveBehaviour.onScalar(scalar, buildCtx.mkBehaviourParams());
         }
         return scalar;
@@ -984,7 +985,7 @@ public class SchemaGenerator {
         GraphQLDirective gqlDirective = schemaGeneratorHelper.buildDirective(directive, directiveDefinitions, directiveLocation, comparatorRegistry);
         if (previousNames.contains(directive.getName())) {
             // other parts of the code protect against duplicate non repeatable directives
-            Assert.assertTrue(gqlDirective.isRepeatable(), () -> String.format("The directive %s MUST be a repeatable directive", directive.getName()));
+            Assert.assertTrue(gqlDirective.isRepeatable(), () -> String.format("The directive '%s' MUST be defined as a repeatable directive if its repeated on an SDL element", directive.getName()));
         }
         previousNames.add(gqlDirective.getName());
         return gqlDirective;

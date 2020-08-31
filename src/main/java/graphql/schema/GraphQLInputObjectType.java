@@ -285,7 +285,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
         public Builder replaceFields(List<GraphQLInputObjectField> fields) {
             this.fields.clear();
-            fields.forEach(this::field);
+             fields.forEach(this::field);
             return this;
         }
 

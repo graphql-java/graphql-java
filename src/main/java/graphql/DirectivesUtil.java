@@ -4,13 +4,13 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.util.FpKit;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
+import static java.util.Collections.emptyList;
 
 @Internal
 public class DirectivesUtil {
@@ -34,7 +34,7 @@ public class DirectivesUtil {
         if (directiveList == null || directiveList.isEmpty()) {
             return null;
         }
-        Assert.assertTrue(isAllNonRepeatable(directiveList), () -> String.format("%s is a repeatable directive", directiveName));
+        Assert.assertTrue(isAllNonRepeatable(directiveList), () -> String.format("'%s' is a repeatable directive and you have used a non repeatable access method", directiveName));
         return directiveList.get(0);
     }
 
@@ -47,7 +47,7 @@ public class DirectivesUtil {
         return Optional.ofNullable(argument);
     }
 
-    private static boolean isAllNonRepeatable(List<GraphQLDirective> directives) {
+    public static boolean isAllNonRepeatable(List<GraphQLDirective> directives) {
         if (directives == null || directives.isEmpty()) {
             return false;
         }
@@ -59,33 +59,42 @@ public class DirectivesUtil {
         return true;
     }
 
-    public static List<GraphQLDirective> enforceAdd(List<GraphQLDirective> directives, GraphQLDirective newDirective) {
-        assertNotNull(directives, () -> "directive list can't be null");
+    public static List<GraphQLDirective> enforceAdd(List<GraphQLDirective> targetList, GraphQLDirective newDirective) {
+        assertNotNull(targetList, () -> "directive list can't be null");
         assertNotNull(newDirective, () -> "directive can't be null");
 
-        Map<String, List<GraphQLDirective>> map = allDirectivesByName(directives);
+        Map<String, List<GraphQLDirective>> map = allDirectivesByName(targetList);
         assertNonRepeatable(newDirective, map);
-        directives.add(newDirective);
-        return directives;
+        targetList.add(newDirective);
+        return targetList;
     }
 
-    public static List<GraphQLDirective> enforceAddAll(List<GraphQLDirective> directives, List<GraphQLDirective> newDirectives) {
-        assertNotNull(directives, () -> "directive list can't be null");
+    public static List<GraphQLDirective> enforceAddAll(List<GraphQLDirective> targetList, List<GraphQLDirective> newDirectives) {
+        assertNotNull(targetList, () -> "directive list can't be null");
         assertNotNull(newDirectives, () -> "directive list can't be null");
-        Map<String, List<GraphQLDirective>> map = allDirectivesByName(directives);
+        Map<String, List<GraphQLDirective>> map = allDirectivesByName(targetList);
         for (GraphQLDirective newDirective : newDirectives) {
             assertNonRepeatable(newDirective, map);
-            directives.add(newDirective);
+            targetList.add(newDirective);
         }
-        return directives;
+        return targetList;
     }
 
     private static void assertNonRepeatable(GraphQLDirective directive, Map<String, List<GraphQLDirective>> mapOfDirectives) {
-        if (!directive.isRepeatable()) {
-            int currentSize = mapOfDirectives.getOrDefault(directive.getName(), Collections.emptyList()).size();
+        if (directive.isNonRepeatable()) {
+            List<GraphQLDirective> currentDirectives = mapOfDirectives.getOrDefault(directive.getName(), emptyList());
+            int currentSize = currentDirectives.size();
             if (currentSize > 0) {
                 Assert.assertShouldNeverHappen("%s is a non repeatable directive but there is already one present in this list", directive.getName());
             }
         }
+    }
+
+    public static GraphQLDirective getFirstDirective(String name, Map<String, List<GraphQLDirective>> allDirectivesByName) {
+        List<GraphQLDirective> directives = allDirectivesByName.getOrDefault(name, emptyList());
+        if (directives.isEmpty()) {
+            return null;
+        }
+        return directives.get(0);
     }
 }
