@@ -814,7 +814,7 @@ type Query {
         return """
             directive @interfaceFieldDirective on FIELD_DEFINITION
             directive @unionTypeDirective on UNION
-            directive @query1 on OBJECT
+            directive @query1 repeatable on OBJECT
             directive @query2(arg1: String) on OBJECT
             directive @fieldDirective1 on FIELD_DEFINITION
             directive @fieldDirective2(argStr: String, argInt: Int, argFloat: Float, argBool: Boolean) on FIELD_DEFINITION
@@ -898,7 +898,7 @@ directive @interfaceFieldDirective on FIELD_DEFINITION
 
 directive @unionTypeDirective on UNION
 
-directive @query1 on OBJECT
+directive @query1 repeatable on OBJECT
 
 directive @query2(arg1: String) on OBJECT
 
