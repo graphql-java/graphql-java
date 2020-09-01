@@ -33,6 +33,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
+import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
 import static graphql.schema.idl.SchemaTypeChecker.checkDeprecatedDirective;
 import static graphql.schema.idl.SchemaTypeChecker.checkNamedUniqueness;
 import static graphql.util.FpKit.mergeFirst;
@@ -85,7 +87,7 @@ class SchemaTypeExtensionsChecker {
                                         (directiveName, directive) -> new NonUniqueDirectiveError(extension, fld, directiveName)));
 
                                 fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive -> {
-                                    checkDeprecatedDirective(errors, directive,
+                                    checkDeprecatedDirective(errors, directive, FIELD_DEFINITION,
                                             () -> new InvalidDeprecationDirectiveError(extension, fld));
 
                                     checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
@@ -139,7 +141,7 @@ class SchemaTypeExtensionsChecker {
                                 (directiveName, directive) -> new NonUniqueDirectiveError(extension, fld, directiveName)));
 
                         fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive -> {
-                            checkDeprecatedDirective(errors, directive,
+                            checkDeprecatedDirective(errors, directive, FIELD_DEFINITION,
                                     () -> new InvalidDeprecationDirectiveError(extension, fld));
 
                             checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
@@ -214,6 +216,11 @@ class SchemaTypeExtensionsChecker {
                         checkNamedUniqueness(errors, enumValueDefinitions, EnumValueDefinition::getName,
                                 (namedField, enumValue) -> new NonUniqueNameError(extension, enumValue));
 
+                        // directives
+                        enumValueDefinitions.forEach(enumValueDef -> enumValueDef.getDirectives()
+                                .forEach(directive -> checkDeprecatedDirective(errors, directive, ENUM_VALUE,
+                                        () -> new InvalidDeprecationDirectiveError(extension, enumValueDef))));
+
                         //
                         // enum values must be unique within a type extension
                         forEachBut(extension, extensions,
@@ -271,7 +278,7 @@ class SchemaTypeExtensionsChecker {
                                 (directiveName, directive) -> new NonUniqueDirectiveError(extension, fld, directiveName)));
 
                         inputValueDefinitions.forEach(fld -> fld.getDirectives().forEach(directive -> {
-                            checkDeprecatedDirective(errors, directive,
+                            checkDeprecatedDirective(errors, directive, ENUM_VALUE,
                                     () -> new InvalidDeprecationDirectiveError(extension, fld));
 
                             checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
