@@ -48,7 +48,6 @@ import java.util.function.Supplier;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
-import static graphql.introspection.Introspection.DirectiveLocation.valueOf;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -317,23 +316,26 @@ public class SchemaTypeChecker {
      */
     static void checkDeprecatedDirective(List<GraphQLError> errors, Directive directive, Introspection.DirectiveLocation actualLocation, Supplier<InvalidDeprecationDirectiveError> errorSupplier) {
         if ("deprecated".equals(directive.getName())) {
+            boolean ok = false;
             // it can have zero args
             List<Argument> arguments = directive.getArguments();
             if (arguments.size() == 0) {
-                return;
+                ok = true;
             }
             // but if has more than it must have 1 called "reason" of type StringValue
-            if (arguments.size() == 1) {
+            else if (arguments.size() == 1) {
                 Argument arg = arguments.get(0);
-                if ("reason".equals(arg.getName()) && arg.getValue() instanceof StringValue) {
-                    return;
+                if (("reason".equals(arg.getName()) && arg.getValue() instanceof StringValue)) {
+                    ok = true;
                 }
             }
-            if (DEPRECATED_ALLOWED_LOCATIONS.contains(actualLocation)) {
-                return;
+            if (ok && !DEPRECATED_ALLOWED_LOCATIONS.contains(actualLocation)) {
+                ok = false;
             }
             // not valid
-            errors.add(errorSupplier.get());
+            if (!ok) {
+                errors.add(errorSupplier.get());
+            }
         }
     }
 

@@ -945,11 +945,14 @@ class SchemaTypeCheckerTest extends Specification {
             }
             
             enum EnumType {
-                
                 enumA @deprecated(badName : "must be called reason"),
                 enumB @deprecated(reason : "it must have", one : "argument value")
             }
+            
             # deprecation is no allowed on input field definitions and args atm, see: https://github.com/graphql-java/graphql-java/issues/1770
+            input InputType {
+                inputField : String @deprecated
+            }
         """
 
         def result = check(spec)
@@ -957,7 +960,7 @@ class SchemaTypeCheckerTest extends Specification {
         expect:
 
         !result.isEmpty()
-        result.size() == 6
+        result.size() == 7
     }
 
     def "test that directives are valid"() {

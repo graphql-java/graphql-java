@@ -1,6 +1,5 @@
 package graphql.schema.idl;
 
-import graphql.Directives;
 import graphql.Internal;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Argument;
@@ -22,7 +21,6 @@ import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
-import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
@@ -38,19 +36,15 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static graphql.Assert.assertShouldNeverHappen;
-import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
-import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
-import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
+import static graphql.Directives.DEPRECATED_DIRECTIVE_DEFINITION;
+import static graphql.Directives.NO_LONGER_SUPPORTED;
+import static graphql.Directives.SPECIFIED_BY_DIRECTIVE_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.valueOf;
-import static graphql.language.DirectiveLocation.newDirectiveLocation;
-import static graphql.language.NonNullType.newNonNullType;
-import static graphql.language.TypeName.newTypeName;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -59,42 +53,6 @@ import static java.util.stream.Collectors.toMap;
  */
 @Internal
 public class SchemaGeneratorHelper {
-
-    static final String NO_LONGER_SUPPORTED = "No longer supported";
-    static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
-    static final DirectiveDefinition SPECIFIED_BY_DIRECTIVE_DEFINITION;
-
-    static {
-        DEPRECATED_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
-                .name(Directives.DeprecatedDirective.getName())
-                .directiveLocation(newDirectiveLocation().name(FIELD_DEFINITION.name()).build())
-                .directiveLocation(newDirectiveLocation().name(ENUM_VALUE.name()).build())
-                .description(createDescription("Marks the field or enum value as deprecated"))
-                .inputValueDefinition(
-                        InputValueDefinition.newInputValueDefinition()
-                                .name("reason")
-                                .description(createDescription("The reason for the deprecation"))
-                                .type(newTypeName().name("String").build())
-                                .defaultValue(StringValue.newStringValue().value(NO_LONGER_SUPPORTED).build())
-                                .build())
-                .build();
-
-        SPECIFIED_BY_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
-                .name(Directives.SpecifiedByDirective.getName())
-                .directiveLocation(newDirectiveLocation().name(SCALAR.name()).build())
-                .description(createDescription("Exposes a URL that specifies the behaviour of this scalar."))
-                .inputValueDefinition(
-                        InputValueDefinition.newInputValueDefinition()
-                                .name("url")
-                                .description(createDescription("The URL that specifies the behaviour of this scalar."))
-                                .type(newNonNullType(newTypeName().name("String").build()).build())
-                                .build())
-                .build();
-    }
-
-    private static Description createDescription(String s) {
-        return new Description(s, null, false);
-    }
 
     public Object buildValue(Value value, GraphQLType requiredType) {
         Object result = null;
