@@ -16,6 +16,7 @@ import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_SPR
 import static graphql.introspection.Introspection.DirectiveLocation.INLINE_FRAGMENT;
 import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
 import static graphql.language.DirectiveLocation.newDirectiveLocation;
+import static graphql.language.InputValueDefinition.*;
 import static graphql.language.NonNullType.newNonNullType;
 import static graphql.language.TypeName.newTypeName;
 import static graphql.schema.GraphQLArgument.newArgument;
@@ -27,18 +28,22 @@ import static graphql.schema.GraphQLNonNull.nonNull;
 @PublicApi
 public class Directives {
 
+    private static final String SPECIFIED_BY = "specifiedBy";
+    private static final String DEPRECATED = "deprecated";
+
     public static final String NO_LONGER_SUPPORTED = "No longer supported";
     public static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
     public static final DirectiveDefinition SPECIFIED_BY_DIRECTIVE_DEFINITION;
 
+
     static {
         DEPRECATED_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
-                .name(Directives.DeprecatedDirective.getName())
+                .name(DEPRECATED)
                 .directiveLocation(newDirectiveLocation().name(FIELD_DEFINITION.name()).build())
                 .directiveLocation(newDirectiveLocation().name(ENUM_VALUE.name()).build())
                 .description(createDescription("Marks the field or enum value as deprecated"))
                 .inputValueDefinition(
-                        InputValueDefinition.newInputValueDefinition()
+                        newInputValueDefinition()
                                 .name("reason")
                                 .description(createDescription("The reason for the deprecation"))
                                 .type(newTypeName().name("String").build())
@@ -47,18 +52,17 @@ public class Directives {
                 .build();
 
         SPECIFIED_BY_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
-                .name(Directives.SpecifiedByDirective.getName())
+                .name(SPECIFIED_BY)
                 .directiveLocation(newDirectiveLocation().name(SCALAR.name()).build())
                 .description(createDescription("Exposes a URL that specifies the behaviour of this scalar."))
                 .inputValueDefinition(
-                        InputValueDefinition.newInputValueDefinition()
+                        newInputValueDefinition()
                                 .name("url")
                                 .description(createDescription("The URL that specifies the behaviour of this scalar."))
                                 .type(newNonNullType(newTypeName().name("String").build()).build())
                                 .build())
                 .build();
     }
-
     public static final GraphQLDirective IncludeDirective = GraphQLDirective.newDirective()
             .name("include")
             .description("Directs the executor to include this field or fragment only when the `if` argument is true")
@@ -86,7 +90,7 @@ public class Directives {
      * See https://graphql.github.io/graphql-spec/June2018/#sec--deprecated
      */
     public static final GraphQLDirective DeprecatedDirective = GraphQLDirective.newDirective()
-            .name("deprecated")
+            .name(DEPRECATED)
             .description("Marks the field or enum value as deprecated")
             .argument(newArgument()
                     .name("reason")
@@ -101,7 +105,7 @@ public class Directives {
      * The "specifiedBy" directive allows to provide a specification URL for a Scalar
      */
     public static final GraphQLDirective SpecifiedByDirective = GraphQLDirective.newDirective()
-            .name("specifiedBy")
+            .name(SPECIFIED_BY)
             .description("Exposes a URL that specifies the behaviour of this scalar.")
             .argument(newArgument()
                     .name("url")

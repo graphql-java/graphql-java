@@ -1761,7 +1761,7 @@ type Query {
             type PrintMeQuery {
                 field : PrintMeType
                 fieldPrintMe : SomeType
-                fieldPrintMeWithArgs(arg1 : String, arg2PrintMe : String @deprecated @directivePrintMe) : SomeType @someOtherDirective
+                fieldPrintMeWithArgs(arg1 : String, arg2PrintMe : String @directivePrintMe) : SomeType @someOtherDirective
             }
             
             type PrintMeType {
