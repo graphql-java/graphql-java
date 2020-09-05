@@ -53,15 +53,7 @@ public class PropertyDataFetcherHelper {
         }
 
         String cacheKey = mkKey(object, propertyName);
-        //
-        // if we have tried all strategies before and they have all failed then we negatively cache
-        // the cacheKey and assume that its never going to turn up.  This shortcuts the property lookup
-        // in systems where there was a `foo` graphql property but they never provided an POJO
-        // version of `foo`.
-        if (isNegativelyCached(cacheKey)) {
-            return null;
-        }
-        // lets try positive cache mechanisms next.  If we have seen the method or field before
+        // lets try positive cache mechanisms first.  If we have seen the method or field before
         // then we invoke it directly without burning any cycles doing reflection.
         CachedMethod cachedMethod = METHOD_CACHE.get(cacheKey);
         if (cachedMethod != null) {
@@ -76,6 +68,22 @@ public class PropertyDataFetcherHelper {
             return invokeField(object, cachedField);
         }
 
+        //
+        // if we have tried all strategies before and they have all failed then we negatively cache
+        // the cacheKey and assume that its never going to turn up.  This shortcuts the property lookup
+        // in systems where there was a `foo` graphql property but they never provided an POJO
+        // version of `foo`.
+        //
+        // we do this second because we believe in the positive cached version will mostly prevail
+        // but if we then look it up and negatively cache it then lest do that look up next
+        //
+        if (isNegativelyCached(cacheKey)) {
+            return null;
+        }
+        //
+        // ok we haven't cached it and we haven't negatively cached it so we have to find the POJO method which is the most
+        // expensive operation here
+        //
         boolean dfeInUse = environment != null;
         try {
             MethodFinder methodFinder = (root, methodName) -> findPubliclyAccessibleMethod(cacheKey, propertyName, root, methodName, dfeInUse);
