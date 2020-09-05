@@ -516,7 +516,7 @@ public abstract class ExecutionStrategy {
                 instrumentationParams
         );
 
-        List<FieldValueInfo> fieldValueInfos = new ArrayList<>();
+        List<FieldValueInfo> fieldValueInfos = new ArrayList<>(values.size());
         int index = 0;
         for (Object item : values) {
             ResultPath indexedPath = parameters.getPath().segment(index);
@@ -552,7 +552,7 @@ public abstract class ExecutionStrategy {
                 completeListCtx.onCompleted(executionResult, exception);
                 return;
             }
-            List<Object> completedResults = new ArrayList<>();
+            List<Object> completedResults = new ArrayList<>(results.size());
             for (ExecutionResult completedValue : results) {
                 completedResults.add(completedValue.getData());
             }
