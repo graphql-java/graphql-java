@@ -163,8 +163,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         }
         DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
         Map<Object, Object> currentExt = executionResult.getExtensions();
-        Map<Object, Object> statsMap = new LinkedHashMap<>();
-        statsMap.putAll(currentExt == null ? Collections.emptyMap() : currentExt);
+        Map<Object, Object> statsMap = new LinkedHashMap<>(currentExt == null ? Collections.emptyMap() : currentExt);
         Map<Object, Object> dataLoaderStats = buildStatsMap(state);
         statsMap.put("dataloader", dataLoaderStats);
 
