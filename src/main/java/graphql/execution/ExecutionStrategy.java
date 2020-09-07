@@ -263,8 +263,23 @@ public abstract class ExecutionStrategy {
         InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment, parameters, dataFetcher instanceof TrivialDataFetcher);
         InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParams);
 
-        CompletableFuture<Object> fetchedValue;
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
+
+        CompletableFuture<Object> fetchedValue = fetchValue(executionContext, executionStepInfo, environment, dataFetcher);
+        fetchCtx.onDispatched(fetchedValue);
+
+        return fetchedValue
+                .whenComplete(fetchCtx::onCompleted)
+                .handle((result, exception) -> unboxValue(executionContext, environment, fetchedValue));
+    }
+
+    private CompletableFuture<Object> fetchValue(
+            ExecutionContext executionContext,
+            Supplier<ExecutionStepInfo> executionStepInfo,
+            DataFetchingEnvironment environment,
+            DataFetcher<?> dataFetcher
+    ) {
+        CompletableFuture<Object> fetchedValue;
         ExecutionId executionId = executionContext.getExecutionId();
         try {
             Object fetchedValueRaw = dataFetcher.get(environment);
@@ -277,18 +292,7 @@ public abstract class ExecutionStrategy {
             fetchedValue = new CompletableFuture<>();
             fetchedValue.completeExceptionally(e);
         }
-        fetchCtx.onDispatched(fetchedValue);
-        return fetchedValue
-                .handle((result, exception) -> {
-                    fetchCtx.onCompleted(result, exception);
-                    if (exception != null) {
-                        handleFetchingException(executionContext, environment, exception);
-                        return null;
-                    } else {
-                        return result;
-                    }
-                })
-                .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result));
+        return fetchedValue;
     }
 
     protected Supplier<NormalizedField> getNormalizedField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Supplier<ExecutionStepInfo> executionStepInfo) {
@@ -296,41 +300,16 @@ public abstract class ExecutionStrategy {
         return () -> normalizedQuery.get().getNormalizedField(parameters.getField(), executionStepInfo.get().getObjectType(), executionStepInfo.get().getPath());
     }
 
-    protected FetchedValue unboxPossibleDataFetcherResult(ExecutionContext executionContext,
-                                                ExecutionStrategyParameters parameters,
-                                                Object result) {
-
-        if (result instanceof DataFetcherResult) {
-            //noinspection unchecked
-            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result;
-            dataFetcherResult.getErrors().forEach(executionContext::addError);
-
-            Object localContext = dataFetcherResult.getLocalContext();
-            if (localContext == null) {
-                // if the field returns nothing then they get the context of their parent field
-                localContext = parameters.getLocalContext();
-            }
-            return FetchedValue.newFetchedValue()
-                    .fetchedValue(executionContext.getValueUnboxer().unbox(dataFetcherResult.getData()))
-                    .rawFetchedValue(dataFetcherResult.getData())
-                    .errors(dataFetcherResult.getErrors())
-                    .localContext(localContext)
-                    .build();
-        } else {
-            return FetchedValue.newFetchedValue()
-                    .fetchedValue(executionContext.getValueUnboxer().unbox(result))
-                    .rawFetchedValue(result)
-                    .localContext(parameters.getLocalContext())
-                    .build();
-        }
+    protected FetchedValue unboxValue(ExecutionContext executionContext, DataFetchingEnvironment environment, Object value) {
+        return FetchedValueCreator.unbox(executionContext.getValueUnboxer(), (exception, unboxingContext) -> {
+            handleFetchingException(environment, exception).forEach(unboxingContext::addError);
+        }, environment, value);
     }
 
-    protected void handleFetchingException(ExecutionContext executionContext,
-                                         DataFetchingEnvironment environment,
-                                         Throwable e) {
+    protected List<GraphQLError> handleFetchingException(DataFetchingEnvironment environment, Throwable exception) {
         DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                 .dataFetchingEnvironment(environment)
-                .exception(e)
+                .exception(exception)
                 .build();
 
         DataFetcherExceptionHandlerResult handlerResult;
@@ -343,8 +322,7 @@ public abstract class ExecutionStrategy {
                     .build();
             handlerResult = new SimpleDataFetcherExceptionHandler().onException(handlerParameters);
         }
-        handlerResult.getErrors().forEach(executionContext::addError);
-
+        return handlerResult.getErrors();
     }
 
     /**
@@ -387,7 +365,8 @@ public abstract class ExecutionStrategy {
             log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), executionStepInfo.getPath());
         }
 
-        FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
+        fetchedValue.getErrors().forEach(executionContext::addError);
+        FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters, fetchedValue.getDataFetchingEnvironment());
 
         CompletableFuture<ExecutionResult> executionResultFuture = fieldValueInfo.getFieldValue();
         ctxCompleteField.onDispatched(executionResultFuture);
@@ -407,12 +386,13 @@ public abstract class ExecutionStrategy {
      *
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
+     * @param environment      for error handling
      * @return a {@link FieldValueInfo}
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
-    protected FieldValueInfo completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+    protected FieldValueInfo completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters, DataFetchingEnvironment environment) throws NonNullableFieldWasNullException {
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
-        Object result = executionContext.getValueUnboxer().unbox(parameters.getSource());
+        Object result =  parameters.getSource(); // already unboxed
         GraphQLType fieldType = executionStepInfo.getUnwrappedNonNullType();
         CompletableFuture<ExecutionResult> fieldValue;
 
@@ -420,7 +400,7 @@ public abstract class ExecutionStrategy {
             fieldValue = completeValueForNull(parameters);
             return FieldValueInfo.newFieldValueInfo(NULL).fieldValue(fieldValue).build();
         } else if (isList(fieldType)) {
-            return completeValueForList(executionContext, parameters, result);
+            return completeValueForList(executionContext, parameters, environment, result);
         } else if (isScalar(fieldType)) {
             fieldValue = completeValueForScalar(executionContext, parameters, (GraphQLScalarType) fieldType, result);
             return FieldValueInfo.newFieldValueInfo(SCALAR).fieldValue(fieldValue).build();
@@ -463,14 +443,15 @@ public abstract class ExecutionStrategy {
 
     /**
      * Called to complete a list of value for a field based on a list type.  This iterates the values and calls
-     * {@link #completeValue(ExecutionContext, ExecutionStrategyParameters)} for each value.
+     * {@link #completeValue(ExecutionContext, ExecutionStrategyParameters, DataFetchingEnvironment)} for each value.
      *
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
+     * @param environment      for error handling
      * @param result           the result to complete, raw result
      * @return a {@link FieldValueInfo}
      */
-    protected FieldValueInfo completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object result) {
+    protected FieldValueInfo completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, DataFetchingEnvironment environment, Object result) {
         Iterable<Object> resultIterable = toIterable(executionContext, parameters, result);
         try {
             resultIterable = parameters.getNonNullFieldValidator().validate(parameters.getPath(), resultIterable);
@@ -480,19 +461,20 @@ public abstract class ExecutionStrategy {
         if (resultIterable == null) {
             return FieldValueInfo.newFieldValueInfo(LIST).fieldValue(completedFuture(new ExecutionResultImpl(null, null))).build();
         }
-        return completeValueForList(executionContext, parameters, resultIterable);
+        return completeValueForList(executionContext, parameters, environment, resultIterable);
     }
 
     /**
      * Called to complete a list of value for a field based on a list type.  This iterates the values and calls
-     * {@link #completeValue(ExecutionContext, ExecutionStrategyParameters)} for each value.
+     * {@link #completeValue(ExecutionContext, ExecutionStrategyParameters, DataFetchingEnvironment)} for each value.
      *
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
+     * @param environment      for error handling
      * @param iterableValues   the values to complete, can't be null
      * @return a {@link FieldValueInfo}
      */
-    protected FieldValueInfo completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Iterable<Object> iterableValues) {
+    protected FieldValueInfo completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, DataFetchingEnvironment environment, Iterable<Object> iterableValues) {
 
         OptionalInt size = FpKit.toSize(iterableValues);
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
@@ -507,25 +489,9 @@ public abstract class ExecutionStrategy {
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>(size.orElse(1));
         int index = 0;
         for (Object item : iterableValues) {
-            ResultPath indexedPath = parameters.getPath().segment(index);
-
-            ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, index);
-
-            NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, stepInfoForListElement);
-
-            int finalIndex = index;
-            FetchedValue value = unboxPossibleDataFetcherResult(executionContext, parameters, item);
-
-            ExecutionStrategyParameters newParameters = parameters.transform(builder ->
-                    builder.executionStepInfo(stepInfoForListElement)
-                            .nonNullFieldValidator(nonNullableFieldValidator)
-                            .listSize(size.orElse(-1)) // -1 signals that we don't know the size
-                            .localContext(value.getLocalContext())
-                            .currentListIndex(finalIndex)
-                            .path(indexedPath)
-                            .source(value.getFetchedValue())
-            );
-            fieldValueInfos.add(completeValue(executionContext, newParameters));
+            FieldValueInfo fieldValueInfo =
+                    completeValueForListElement(executionContext, parameters, environment, size, executionStepInfo, index, item);
+            fieldValueInfos.add(fieldValueInfo);
             index++;
         }
 
@@ -553,6 +519,30 @@ public abstract class ExecutionStrategy {
                 .fieldValue(overallResult)
                 .fieldValueInfos(fieldValueInfos)
                 .build();
+    }
+
+    private FieldValueInfo completeValueForListElement(ExecutionContext executionContext, ExecutionStrategyParameters parameters, DataFetchingEnvironment environment,
+                                                       OptionalInt size, ExecutionStepInfo executionStepInfo, int index, Object item) {
+        ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, index);
+
+        DataFetchingEnvironment listElementEnvironment = newDataFetchingEnvironment(environment)
+                .executionStepInfo(stepInfoForListElement)
+                .build();
+
+        FetchedValue value = unboxValue(executionContext, listElementEnvironment, item);
+        value.getErrors().forEach(executionContext::addError);
+        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, stepInfoForListElement);
+
+        ExecutionStrategyParameters newParameters = parameters.transform(builder ->
+                builder.executionStepInfo(stepInfoForListElement)
+                        .nonNullFieldValidator(nonNullableFieldValidator)
+                        .listSize(size.orElse(-1)) // -1 signals that we don't know the size
+                        .localContext(value.getLocalContext())
+                        .currentListIndex(index)
+                        .path(stepInfoForListElement.getPath())
+                        .source(value.getFetchedValue())
+        );
+        return completeValue(executionContext, newParameters, listElementEnvironment);
     }
 
     /**

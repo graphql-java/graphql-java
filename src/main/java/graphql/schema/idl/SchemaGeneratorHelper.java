@@ -1209,9 +1209,9 @@ public class SchemaGeneratorHelper {
         return new PropertyDataFetcher(fieldName);
     }
 
-    private List<Directive> directivesOf(List<? extends TypeDefinition> typeDefinitions) {
+    private List<Directive> directivesOf(List<? extends TypeDefinition<?>> typeDefinitions) {
         return typeDefinitions.stream()
                 .map(TypeDefinition::getDirectives).filter(Objects::nonNull)
-                .<Directive>flatMap(List::stream).collect(Collectors.toList());
+                .flatMap(List::stream).collect(Collectors.toList());
     }
 }

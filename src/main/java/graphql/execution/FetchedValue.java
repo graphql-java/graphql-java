@@ -3,8 +3,9 @@ package graphql.execution;
 import com.google.common.collect.ImmutableList;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.schema.DataFetchingEnvironment;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -14,12 +15,14 @@ public class FetchedValue {
     private final Object rawFetchedValue;
     private final Object localContext;
     private final ImmutableList<GraphQLError> errors;
+    private final DataFetchingEnvironment dataFetchingEnvironment;
 
-    private FetchedValue(Object fetchedValue, Object rawFetchedValue, List<GraphQLError> errors, Object localContext) {
+    private FetchedValue(Object fetchedValue, Object rawFetchedValue, List<GraphQLError> errors, Object localContext, DataFetchingEnvironment dataFetchingEnvironment) {
         this.fetchedValue = fetchedValue;
         this.rawFetchedValue = rawFetchedValue;
         this.errors = ImmutableList.copyOf(errors);
         this.localContext = localContext;
+        this.dataFetchingEnvironment = dataFetchingEnvironment;
     }
 
     /*
@@ -41,6 +44,10 @@ public class FetchedValue {
         return localContext;
     }
 
+    public DataFetchingEnvironment getDataFetchingEnvironment() {
+        return dataFetchingEnvironment;
+    }
+
     public FetchedValue transform(Consumer<Builder> builderConsumer) {
         Builder builder = newFetchedValue(this);
         builderConsumer.accept(builder);
@@ -53,6 +60,7 @@ public class FetchedValue {
                 "fetchedValue=" + fetchedValue +
                 ", rawFetchedValue=" + rawFetchedValue +
                 ", localContext=" + localContext +
+                ", dataFetchingEnvironment=" + dataFetchingEnvironment +
                 ", errors=" + errors +
                 '}';
     }
@@ -67,7 +75,7 @@ public class FetchedValue {
                 .rawFetchedValue(otherValue.getRawFetchedValue())
                 .errors(otherValue.getErrors())
                 .localContext(otherValue.getLocalContext())
-                ;
+                .dataFetchingEnvironment(otherValue.getDataFetchingEnvironment());
     }
 
     public static class Builder {
@@ -75,7 +83,8 @@ public class FetchedValue {
         private Object fetchedValue;
         private Object rawFetchedValue;
         private Object localContext;
-        private List<GraphQLError> errors = new ArrayList<>();
+        private DataFetchingEnvironment dataFetchingEnvironment;
+        private List<GraphQLError> errors = Collections.emptyList();
 
         public Builder fetchedValue(Object fetchedValue) {
             this.fetchedValue = fetchedValue;
@@ -97,8 +106,13 @@ public class FetchedValue {
             return this;
         }
 
+        public Builder dataFetchingEnvironment(DataFetchingEnvironment dataFetchingEnvironment) {
+            this.dataFetchingEnvironment = dataFetchingEnvironment;
+            return this;
+        }
+
         public FetchedValue build() {
-            return new FetchedValue(fetchedValue, rawFetchedValue, errors, localContext);
+            return new FetchedValue(fetchedValue, rawFetchedValue, errors, localContext, dataFetchingEnvironment);
         }
     }
 }

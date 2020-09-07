@@ -78,6 +78,15 @@ class ExecutionStrategyTest extends Specification {
         new ExecutionContext(builder)
     }
 
+    def buildEnvironment(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        DataFetchingEnvironmentImpl.newDataFetchingEnvironment(executionContext)
+                .executionStepInfo(parameters.getExecutionStepInfo())
+                .source(parameters.getSource())
+                .localContext(parameters.getLocalContext())
+                .mergedField(parameters.getField())
+                .build();
+    }
+
     @SuppressWarnings("GroovyAssignabilityCheck")
     def "complete values always calls query strategy to execute more"() {
         given:
@@ -114,16 +123,16 @@ class ExecutionStrategyTest extends Specification {
                 .fields(mergedSelectionSet(["fld": [Field.newField().build()]]))
                 .field(mergedField(Field.newField().build()))
                 .build()
+        def environment = buildEnvironment(executionContext, parameters)
 
         when:
-        executionStrategy.completeValue(executionContext, parameters)
+        executionStrategy.completeValue(executionContext, parameters, environment)
 
         then:
         1 * executionContext.queryStrategy.execute(_, _)
         0 * executionContext.mutationStrategy.execute(_, _)
         0 * executionContext.subscriptionStrategy.execute(_, _)
     }
-
 
     def "completes value for a java.util.List"() {
         given:
@@ -143,204 +152,50 @@ class ExecutionStrategyTest extends Specification {
                 .fields(mergedSelectionSet(["fld": []]))
                 .field(mergedField(field))
                 .build()
+        def environment = buildEnvironment(executionContext, parameters)
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters, environment).fieldValue.join()
 
         then:
         executionResult.data == result
     }
 
-    def "completes value for java.util.Optional"() {
+    def "completes value for a java.util.List with nested errors"() {
         given:
         ExecutionContext executionContext = buildContext()
-        def fieldType = GraphQLString
+        def fieldType = list(GraphQLString)
+        Field field = new Field("someField")
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
-        def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
+        def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(ResultPath.rootPath()).fieldDefinition(fldDef).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
-        def parameters = newParameters()
-                .executionStepInfo(executionStepInfo)
-                .nonNullFieldValidator(nullableFieldValidator)
-                .source(result)
-                .fields(mergedSelectionSet(["fld": []]))
-                .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        def parameters = newParameters()
+                .executionStepInfo(executionStepInfo)
+                .source(result)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .fields(mergedSelectionSet(["fld": []]))
+                .field(mergedField(field))
+                .build()
+        def environment = buildEnvironment(executionContext, parameters)
+        def executionResult = executionStrategy.completeValue(executionContext, parameters, environment).fieldValue.join()
 
         then:
-        executionResult.data == expected
+        executionResult.data == data
+        executionContext.errors.size() == errors.size()
+        FetchedValueCreatorTest.errorsEndWith(executionContext.errors, errors)
 
         where:
-        result                    || expected
-        Optional.of("hello")      || "hello"
-        Optional.ofNullable(null) || null
+        result                                                                                                                  || data                      || errors
+
+        [CompletableFuture.completedFuture("test"), exceptional("1"), exceptional("2"), CompletableFuture.completedFuture("3")] || ["test", null, null, "3"] || ["1", "2"]
     }
 
-    def "completes value for an empty java.util.Optional that triggers non null exception"() {
-        given:
-        ExecutionContext executionContext = buildContext()
-        def fieldType = nonNull(GraphQLString)
-        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
-        def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
-        def parameters = newParameters()
-                .executionStepInfo(executionStepInfo)
-                .nonNullFieldValidator(nullableFieldValidator)
-                .source(Optional.ofNullable(null))
-                .fields(mergedSelectionSet(["fld": []]))
-                .build()
-
-        when:
-        executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
-
-        then:
-        def e = thrown(CompletionException)
-        e.getCause() instanceof NonNullableFieldWasNullException
-    }
-
-    def "completes value for java.util.OptionalInt"() {
-        given:
-        ExecutionContext executionContext = buildContext()
-        def fieldType = GraphQLString
-        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
-        def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
-        def parameters = newParameters()
-                .executionStepInfo(executionStepInfo)
-                .nonNullFieldValidator(nullableFieldValidator)
-                .source(result)
-                .fields(mergedSelectionSet(["fld": []]))
-                .build()
-
-        when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
-
-        then:
-        executionResult.data == expected
-
-        where:
-        result              || expected
-        OptionalInt.of(10)  || "10"
-        OptionalInt.empty() || null
-    }
-
-    def "completes value for an empty java.util.OptionalInt that triggers non null exception"() {
-        given:
-        ExecutionContext executionContext = buildContext()
-        def fieldType = nonNull(GraphQLString)
-        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
-        def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
-        def parameters = newParameters()
-                .executionStepInfo(executionStepInfo)
-                .nonNullFieldValidator(nullableFieldValidator)
-                .source(OptionalInt.empty())
-                .fields(mergedSelectionSet(["fld": []]))
-                .build()
-
-        when:
-        executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
-
-        then:
-        def e = thrown(CompletionException)
-        e.getCause() instanceof NonNullableFieldWasNullException
-    }
-
-    def "completes value for java.util.OptionalDouble"() {
-        given:
-        ExecutionContext executionContext = buildContext()
-        def fieldType = GraphQLString
-        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
-        def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
-        def parameters = newParameters()
-                .executionStepInfo(executionStepInfo)
-                .nonNullFieldValidator(nullableFieldValidator)
-                .source(result)
-                .fields(mergedSelectionSet(["fld": []]))
-                .build()
-
-        when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
-
-        then:
-        executionResult.data == expected
-
-        where:
-        result                 || expected
-        OptionalDouble.of(10)  || "10.0"
-        OptionalDouble.empty() || null
-    }
-
-    def "completes value for an empty java.util.OptionalDouble that triggers non null exception"() {
-        given:
-        ExecutionContext executionContext = buildContext()
-        def fieldType = nonNull(GraphQLString)
-        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
-        def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
-        def parameters = newParameters()
-                .executionStepInfo(typeInfo)
-                .nonNullFieldValidator(nullableFieldValidator)
-                .source(OptionalDouble.empty())
-                .fields(mergedSelectionSet(["fld": []]))
-                .build()
-
-        when:
-        executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
-
-        then:
-        def e = thrown(CompletionException)
-        e.getCause() instanceof NonNullableFieldWasNullException
-    }
-
-    def "completes value for java.util.OptionalLong"() {
-        given:
-        ExecutionContext executionContext = buildContext()
-        def fieldType = GraphQLString
-        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
-        def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
-        def parameters = newParameters()
-                .executionStepInfo(typeInfo)
-                .nonNullFieldValidator(nullableFieldValidator)
-                .source(result)
-                .fields(mergedSelectionSet(["fld": []]))
-                .build()
-
-        when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
-
-        then:
-        executionResult.data == expected
-
-        where:
-        result               || expected
-        OptionalLong.of(10)  || "10"
-        OptionalLong.empty() || null
-    }
-
-    def "completes value for an empty java.util.OptionalLong that triggers non null exception"() {
-        given:
-        ExecutionContext executionContext = buildContext()
-        def fieldType = nonNull(GraphQLString)
-        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
-        def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
-        def parameters = newParameters()
-                .executionStepInfo(typeInfo)
-                .nonNullFieldValidator(nullableFieldValidator)
-                .source(OptionalLong.empty())
-                .fields(mergedSelectionSet(["fld": []]))
-                .build()
-
-        when:
-        executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
-
-        then:
-        def e = thrown(CompletionException)
-        e.getCause() instanceof NonNullableFieldWasNullException
+    private static def exceptional(String message) {
+        def future = new CompletableFuture();
+        future.completeExceptionally(new RuntimeException(message))
+        return future
     }
 
     def "completes value for an array"() {
@@ -358,9 +213,10 @@ class ExecutionStrategyTest extends Specification {
                 .fields(mergedSelectionSet(["fld": []]))
                 .field(mergedField(new Field("someField")))
                 .build()
+        def environment = buildEnvironment(executionContext, parameters)
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters, environment).fieldValue.join()
 
         then:
         executionResult.data == result
@@ -380,9 +236,10 @@ class ExecutionStrategyTest extends Specification {
                 .nonNullFieldValidator(nullableFieldValidator)
                 .fields(mergedSelectionSet(["dummy": []]))
                 .build()
+        def environment = buildEnvironment(executionContext, parameters)
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters, environment).fieldValue.join()
 
         then:
         executionResult.data == null
@@ -405,9 +262,10 @@ class ExecutionStrategyTest extends Specification {
                 .nonNullFieldValidator(nullableFieldValidator)
                 .fields(mergedSelectionSet(["dummy": []]))
                 .build()
+        def environment = buildEnvironment(executionContext, parameters)
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters, environment).fieldValue.join()
 
         then:
         executionResult.data == null
@@ -451,10 +309,11 @@ class ExecutionStrategyTest extends Specification {
                 .fields(mergedSelectionSet(["dummy": []]))
                 .nonNullFieldValidator(nullableFieldValidator)
                 .build()
+        def environment = buildEnvironment(executionContext, parameters)
 
         Exception actualException = null
         try {
-            executionStrategy.completeValue(executionContext, parameters)
+            executionStrategy.completeValue(executionContext, parameters, environment)
         } catch (Exception e) {
             actualException = e
         }
@@ -683,9 +542,10 @@ class ExecutionStrategyTest extends Specification {
                 .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().build())]]))
                 .field(mergedField(Field.newField().build()))
                 .build()
+        def environment = buildEnvironment(executionContext, parameters)
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue
+        def executionResult = executionStrategy.completeValue(executionContext, parameters, environment).fieldValue
 
         then:
         executionResult.get().data == [1L, 2L, 3L]
@@ -707,9 +567,10 @@ class ExecutionStrategyTest extends Specification {
                 .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().build())]]))
                 .field(mergedField(Field.newField().build()))
                 .build()
+        def environment = buildEnvironment(executionContext, parameters)
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue
+        def executionResult = executionStrategy.completeValue(executionContext, parameters, environment).fieldValue
 
         then:
         executionResult.get().data == [1L, 2L, 3L]
@@ -731,9 +592,10 @@ class ExecutionStrategyTest extends Specification {
                 .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().build())]]))
                 .field(mergedField(Field.newField().build()))
                 .build()
+        def environment = buildEnvironment(executionContext, parameters)
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue
+        def executionResult = executionStrategy.completeValue(executionContext, parameters, environment).fieldValue
 
         then:
         executionResult.get().data == [1L, 2L, 3L]
@@ -746,18 +608,20 @@ class ExecutionStrategyTest extends Specification {
         ExecutionContext executionContext = buildContext()
         def fieldType = list(Scalars.GraphQLLong)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
-        def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
+        def executionPath = ResultPath.fromList(["parent"])
+        def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(executionPath).fieldDefinition(fldDef).build()
         def field = Field.newField("parent").sourceLocation(new SourceLocation(5, 10)).build()
         def parameters = newParameters()
-                .path(ResultPath.fromList(["parent"]))
+                .path(executionPath)
                 .field(mergedField(field))
                 .fields(mergedSelectionSet(["parent": [mergedField(field)]]))
                 .executionStepInfo(executionStepInfo)
                 .build()
+        def environment = buildEnvironment(executionContext, parameters)
 
         def executionData = ["child": [:]]
         when:
-        def fetchedValue = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters,
+        def fetchedValue = executionStrategy.unboxValue(executionContext, environment,
                 DataFetcherResult.newResult().data(executionData)
                         .error(GraphqlErrorBuilder.newError().message("bad foo").path(["child", "foo"]).build())
                         .build()
@@ -765,9 +629,9 @@ class ExecutionStrategyTest extends Specification {
 
         then:
         fetchedValue.getFetchedValue() == executionData
-//        executionContext.getErrors()[0].locations == [new SourceLocation(7, 20)]
-        executionContext.getErrors()[0].message == "bad foo"
-        executionContext.getErrors()[0].path == [ "child", "foo"]
+        fetchedValue.getErrors()[0].locations == []
+        fetchedValue.getErrors()[0].message == "bad foo"
+        fetchedValue.getErrors()[0].path == ["child", "foo"]
     }
 
     def "#1558 forward localContext on nonBoxed return from DataFetcher"() {
@@ -785,9 +649,10 @@ class ExecutionStrategyTest extends Specification {
                 .fields(mergedSelectionSet(["parent": [mergedField(field)]]))
                 .executionStepInfo(executionStepInfo)
                 .build()
+        def environment = buildEnvironment(executionContext, parameters)
 
         when:
-        def fetchedValue = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters, new Object())
+        def fetchedValue = executionStrategy.unboxValue(executionContext, environment, new Object())
 
         then:
         fetchedValue.localContext == localContext
@@ -807,18 +672,19 @@ class ExecutionStrategyTest extends Specification {
                 .fields(mergedSelectionSet(["parent": [mergedField(field)]]))
                 .executionStepInfo(executionStepInfo)
                 .build()
+        def environment = buildEnvironment(executionContext, parameters)
 
         def executionData = ["child": [:]]
         when:
-        def fetchedValue = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters,
+        def fetchedValue = executionStrategy.unboxValue(executionContext, environment,
                 DataFetcherResult.newResult().data(executionData)
                         .error(GraphqlErrorBuilder.newError().message("bad foo").build())
                         .build())
         then:
         fetchedValue.getFetchedValue() == executionData
-        executionContext.getErrors()[0].locations == []
-        executionContext.getErrors()[0].message == "bad foo"
-        executionContext.getErrors()[0].path == null
+        fetchedValue.getErrors()[0].locations == []
+        fetchedValue.getErrors()[0].message == "bad foo"
+        fetchedValue.getErrors()[0].path == null
     }
 
     def "completes value for an iterable"() {
@@ -837,9 +703,10 @@ class ExecutionStrategyTest extends Specification {
                 .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().build())]]))
                 .field(mergedField(Field.newField().build()))
                 .build()
+        def environment = buildEnvironment(executionContext, parameters)
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue
+        def executionResult = executionStrategy.completeValue(executionContext, parameters, environment).fieldValue
 
         then:
         executionResult.get().data == [1L, 2L, 3L]
@@ -861,9 +728,10 @@ class ExecutionStrategyTest extends Specification {
                 .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().build())]]))
                 .field(mergedField(Field.newField().build()))
                 .build()
+        def environment = buildEnvironment(executionContext, parameters)
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters, environment).fieldValue.join()
 
         then:
         executionResult.data == null

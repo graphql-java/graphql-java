@@ -3,6 +3,7 @@ package graphql.execution.batched;
 import graphql.PublicApi;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ResultPath;
+import graphql.schema.DataFetchingEnvironment;
 
 import java.util.List;
 
@@ -11,13 +12,11 @@ import java.util.List;
 public class FetchedValues {
 
     private final List<FetchedValue> fetchedValues;
-    private final ExecutionStepInfo executionStepInfo;
-    private final ResultPath path;
+    private final DataFetchingEnvironment dataFetchingEnvironment;
 
-    public FetchedValues(List<FetchedValue> fetchedValues, ExecutionStepInfo executionStepInfo, ResultPath path) {
+    public FetchedValues(List<FetchedValue> fetchedValues, DataFetchingEnvironment dataFetchingEnvironment) {
         this.fetchedValues = fetchedValues;
-        this.executionStepInfo = executionStepInfo;
-        this.path = path;
+        this.dataFetchingEnvironment = dataFetchingEnvironment;
     }
 
     public List<FetchedValue> getValues() {
@@ -25,10 +24,14 @@ public class FetchedValues {
     }
 
     public ExecutionStepInfo getExecutionStepInfo() {
-        return executionStepInfo;
+        return dataFetchingEnvironment.getExecutionStepInfo();
     }
 
     public ResultPath getPath() {
-        return path;
+        return dataFetchingEnvironment.getExecutionStepInfo().getPath();
+    }
+
+    public DataFetchingEnvironment getDataFetchingEnvironment() {
+        return dataFetchingEnvironment;
     }
 }

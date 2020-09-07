@@ -1,21 +1,19 @@
 package graphql.execution.nextgen;
 
 
-import com.google.common.collect.ImmutableList;
 import graphql.Assert;
 import graphql.ExceptionWhileDataFetching;
 import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.collect.ImmutableKit;
 import graphql.execution.Async;
-import graphql.execution.DataFetcherResult;
-import graphql.execution.DefaultValueUnboxer;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.FetchedValue;
+import graphql.execution.FetchedValueCreator;
 import graphql.execution.MergedField;
 import graphql.execution.ResultPath;
+import graphql.execution.ValueUnboxer;
 import graphql.execution.ValuesResolver;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.language.Field;
@@ -44,7 +42,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
-import static java.util.Collections.singletonList;
 
 @Internal
 public class ValueFetcher {
@@ -144,25 +141,14 @@ public class ValueFetcher {
 
         ExecutionId executionId = executionContext.getExecutionId();
         ResultPath path = executionInfo.getPath();
-        return callDataFetcher(codeRegistry, parentType, fieldDef, environment, executionId, path)
-                .thenApply(rawFetchedValue -> FetchedValue.newFetchedValue()
-                        .fetchedValue(rawFetchedValue)
-                        .rawFetchedValue(rawFetchedValue)
-                        .build())
-                .exceptionally(exception -> handleExceptionWhileFetching(field, path, exception))
-                .thenApply(result -> unboxPossibleDataFetcherResult(sameFields, path, result, localContext))
-                .thenApply(this::unboxPossibleOptional);
-    }
+        CompletableFuture<Object> fetchedValueCompletableFuture =
+                callDataFetcher(codeRegistry, parentType, fieldDef, environment, executionId, path);
 
-    private FetchedValue handleExceptionWhileFetching(Field field, ResultPath path, Throwable exception) {
-        ExceptionWhileDataFetching exceptionWhileDataFetching = new ExceptionWhileDataFetching(path, exception, field.getSourceLocation());
-        return FetchedValue.newFetchedValue().errors(singletonList(exceptionWhileDataFetching)).build();
-    }
-
-    private FetchedValue unboxPossibleOptional(FetchedValue result) {
-        return result.transform(
-                builder -> builder.fetchedValue(DefaultValueUnboxer.unboxValue(result.getFetchedValue()))
-        );
+        return fetchedValueCompletableFuture.handle((result, ex) -> {
+            return FetchedValueCreator.unbox(ValueUnboxer.DEFAULT, (exception, unboxingContext) -> {
+                unboxingContext.addError(new ExceptionWhileDataFetching(path, exception, field.getSourceLocation()));
+            }, environment, fetchedValueCompletableFuture);
+        });
     }
 
     private CompletableFuture<Object> callDataFetcher(GraphQLCodeRegistry codeRegistry, GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment, ExecutionId executionId, ResultPath path) {
@@ -204,28 +190,5 @@ public class ValueFetcher {
             return;
         }
         cf.complete(fetchedValue);
-    }
-
-    private FetchedValue unboxPossibleDataFetcherResult(MergedField sameField, ResultPath resultPath, FetchedValue result, Object localContext) {
-        if (result.getFetchedValue() instanceof DataFetcherResult) {
-
-            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result.getFetchedValue();
-            List<GraphQLError> addErrors = ImmutableList.copyOf(dataFetcherResult.getErrors());
-            List<GraphQLError> newErrors = ImmutableKit.concatLists(result.getErrors(), addErrors);
-
-            Object newLocalContext = dataFetcherResult.getLocalContext();
-            if (newLocalContext == null) {
-                // if the field returns nothing then they get the context of their parent field
-                newLocalContext = localContext;
-            }
-            return FetchedValue.newFetchedValue()
-                    .fetchedValue(dataFetcherResult.getData())
-                    .rawFetchedValue(result.getRawFetchedValue())
-                    .errors(newErrors)
-                    .localContext(newLocalContext)
-                    .build();
-        } else {
-            return result;
-        }
     }
 }

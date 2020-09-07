@@ -47,7 +47,7 @@ class UnionTypesChecker {
         List<UnionTypeExtensionDefinition> unionTypeExtensions = typeRegistry.getTypes(UnionTypeExtensionDefinition.class);
 
         Stream.of(unionTypes.stream(), unionTypeExtensions.stream())
-                .flatMap(Function.identity())
+                .<UnionTypeDefinition>flatMap(Function.identity())
                 .forEach(type -> checkUnionType(typeRegistry, type, errors));
     }
 

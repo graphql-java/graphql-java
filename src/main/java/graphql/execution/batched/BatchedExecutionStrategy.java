@@ -3,6 +3,7 @@ package graphql.execution.batched;
 import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.TrivialDataFetcher;
 import graphql.execution.Async;
@@ -11,6 +12,7 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStrategy;
 import graphql.execution.ExecutionStrategyParameters;
+import graphql.execution.FetchedValueCreator;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.MergedField;
 import graphql.execution.MergedSelectionSet;
@@ -287,29 +289,30 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             fetchedValue.completeExceptionally(e);
         }
         return fetchedValue
-                .thenApply((result) -> assertResult(parentResults, result))
+                .thenApply(result -> assertResult(parentResults, result))
                 .whenComplete(fetchCtx::onCompleted)
-                .handle(handleResult(executionContext, parameters, parentResults, environment));
+                .handle(handleResult(executionContext, parentResults, environment));
     }
 
-    private BiFunction<List<Object>, Throwable, FetchedValues> handleResult(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<MapOrList> parentResults, DataFetchingEnvironment environment) {
+    private BiFunction<List<Object>, Throwable, FetchedValues> handleResult(ExecutionContext executionContext, List<MapOrList> parentResults, DataFetchingEnvironment environment) {
         return (result, exception) -> {
             if (exception != null) {
                 if (exception instanceof CompletionException) {
                     exception = exception.getCause();
                 }
 
-                handleFetchingException(executionContext, environment, exception);
+                handleFetchingException(environment, exception).forEach(executionContext::addError);
 
                 result = Collections.nCopies(parentResults.size(), null);
             }
             List<Object> values = result;
             List<FetchedValue> retVal = new ArrayList<>();
             for (int i = 0; i < parentResults.size(); i++) {
-                Object value = executionContext.getValueUnboxer().unbox(values.get(i));
+                // unboxers are limited, this is deprecated anyway
+                Object value = FetchedValueCreator.unbox(executionContext.getValueUnboxer(), null, environment, values.get(i)).getFetchedValue();
                 retVal.add(new FetchedValue(parentResults.get(i), value));
             }
-            return new FetchedValues(retVal, parameters.getExecutionStepInfo(), parameters.getPath());
+            return new FetchedValues(retVal, environment);
         };
     }
 
@@ -361,6 +364,11 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         GraphQLList listType = (GraphQLList) executionStepInfo.getUnwrappedNonNullType();
         List<FetchedValue> flattenedValues = new ArrayList<>();
 
+        GraphQLOutputType innerSubType = (GraphQLOutputType) listType.getWrappedType();
+        ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull((GraphQLOutputType) GraphQLTypeUtil.unwrapNonNull(innerSubType));
+        DataFetchingEnvironment itemEnvironment = newDataFetchingEnvironment(fetchedValues.getDataFetchingEnvironment())
+                .executionStepInfo(newExecutionStepInfo)
+                .build();
         for (FetchedValue value : fetchedValues.getValues()) {
             MapOrList mapOrList = value.getParentResult();
 
@@ -371,14 +379,13 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
             MapOrList listResult = mapOrList.createAndPutList(fieldName);
             for (Object rawValue : toIterable(value.getValue())) {
-                rawValue = executionContext.getValueUnboxer().unbox(rawValue);
+                // unboxers are limited, this is deprecated anyway
+                rawValue = FetchedValueCreator.unbox(executionContext.getValueUnboxer(), null, itemEnvironment, rawValue).getFetchedValue();
                 flattenedValues.add(new FetchedValue(listResult, rawValue));
             }
         }
-        GraphQLOutputType innerSubType = (GraphQLOutputType) listType.getWrappedType();
-        ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull((GraphQLOutputType) GraphQLTypeUtil.unwrapNonNull(innerSubType));
-        FetchedValues flattenedFetchedValues = new FetchedValues(flattenedValues, newExecutionStepInfo, fetchedValues.getPath());
 
+        FetchedValues flattenedFetchedValues = new FetchedValues(flattenedValues, itemEnvironment);
         return completeValues(executionContext, flattenedFetchedValues, newExecutionStepInfo, fieldName, fields, argumentValues);
     }
 
