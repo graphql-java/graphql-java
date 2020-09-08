@@ -1,5 +1,9 @@
 package graphql.schema.idl;
 
+
+import graphql.PublicApi;
+
+@PublicApi
 abstract class WiringEnvironment {
 
     private final TypeDefinitionRegistry registry;

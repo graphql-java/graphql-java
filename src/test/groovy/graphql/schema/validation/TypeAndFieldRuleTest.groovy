@@ -1,7 +1,23 @@
 package graphql.schema.validation
 
 import graphql.TestUtil
+import graphql.schema.GraphQLNamedType
+import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLType
+import graphql.schema.GraphQLUnionType
+import graphql.schema.TypeResolverProxy
 import spock.lang.Specification
+
+import static graphql.Scalars.GraphQLBoolean
+import static graphql.Scalars.GraphQLBoolean
+import static graphql.Scalars.GraphQLBoolean
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLUnionType.newUnionType
 
 
 class TypeAndFieldRuleTest extends Specification {
@@ -120,15 +136,25 @@ class TypeAndFieldRuleTest extends Specification {
         when:
         def sdl = '''
         type Query { field: Int }
-        
-        type A{ field: Int }
-        
-        type B{ field: Int }
-        
-        union __AB= A | B
         '''
 
-        TestUtil.schema(sdl)
+        def objType1 = newObject().name("A")
+                .field(newFieldDefinition().name("f1").type(GraphQLBoolean))
+                .build()
+        def objType2 = newObject().name("B")
+                .field(newFieldDefinition().name("f1").type(GraphQLBoolean))
+                .build()
+
+        def unionType = newUnionType().name("__AB")
+                .description("StartingDescription")
+                .possibleType(objType1)
+                .possibleType(objType2)
+                .typeResolver(new TypeResolverProxy())
+                .build()
+
+        def graphQLSchema = TestUtil.schema(sdl)
+        graphQLSchema.transform({ schema -> schema.additionalType(unionType) })
+
         then:
         InvalidSchemaException e = thrown(InvalidSchemaException)
         e.message == "invalid schema:\n\"__AB\" must not begin with \"__\", which is reserved by GraphQL introspection."

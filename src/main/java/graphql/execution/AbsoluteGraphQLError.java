@@ -43,8 +43,8 @@ public class AbsoluteGraphQLError implements GraphQLError {
         }
     }
 
-    public AbsoluteGraphQLError(MergedField sameField, ExecutionPath executionPath, GraphQLError relativeError) {
-        this.absolutePath = createAbsolutePath(executionPath, relativeError);
+    public AbsoluteGraphQLError(MergedField sameField, ResultPath resultPath, GraphQLError relativeError) {
+        this.absolutePath = createAbsolutePath(resultPath, relativeError);
         this.locations = createAbsoluteLocations(relativeError, sameField);
         this.message = relativeError.getMessage();
         this.errorType = relativeError.getErrorType();
@@ -91,17 +91,17 @@ public class AbsoluteGraphQLError implements GraphQLError {
      *
      * @return List of paths from the root.
      */
-    private List<Object> createAbsolutePath(ExecutionPath executionPath,
+    private List<Object> createAbsolutePath(ResultPath resultPath,
                                             GraphQLError relativeError) {
         return Optional.ofNullable(relativeError.getPath())
                 .map(originalPath -> {
                     List<Object> path = new ArrayList<>();
-                    path.addAll(executionPath.toList());
+                    path.addAll(resultPath.toList());
                     path.addAll(relativeError.getPath());
                     return path;
                 })
                 .map(Collections::unmodifiableList)
-                .orElse(executionPath.toList());
+                .orElse(resultPath.toList());
     }
 
     /**

@@ -99,7 +99,7 @@ public class Parser {
     /**
      * Allows you to override the ANTLR to AST code.
      *
-     * @param tokens            the toke stream
+     * @param tokens            the token stream
      * @param multiSourceReader the source of the query document
      * @return a new GraphqlAntlrToLanguage instance
      */

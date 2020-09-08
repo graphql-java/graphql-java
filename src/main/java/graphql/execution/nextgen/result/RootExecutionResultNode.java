@@ -1,6 +1,7 @@
 package graphql.execution.nextgen.result;
 
 import graphql.GraphQLError;
+import graphql.Internal;
 import graphql.execution.ExecutionStepInfo;
 
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ import java.util.List;
 
 import static graphql.Assert.assertShouldNeverHappen;
 
+@Internal
 public class RootExecutionResultNode extends ObjectExecutionResultNode {
 
 

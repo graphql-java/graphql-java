@@ -51,9 +51,9 @@ public class ExecutionStepInfo {
     private final GraphQLOutputType type;
 
     /**
-     * A list element is characterized by having a path ending with an index segment. (ExecutionPath.isListSegment())
+     * A list element is characterized by having a path ending with an index segment. (ResultPath.isListSegment())
      */
-    private final ExecutionPath path;
+    private final ResultPath path;
     private final ExecutionStepInfo parent;
 
     /**
@@ -69,7 +69,7 @@ public class ExecutionStepInfo {
     private ExecutionStepInfo(GraphQLOutputType type,
                               GraphQLFieldDefinition fieldDefinition,
                               MergedField field,
-                              ExecutionPath path,
+                              ResultPath path,
                               ExecutionStepInfo parent,
                               Map<String, Object> arguments,
                               GraphQLObjectType fieldsContainer) {
@@ -131,9 +131,9 @@ public class ExecutionStepInfo {
     }
 
     /**
-     * @return the {@link ExecutionPath} to this info
+     * @return the {@link ResultPath} to this info
      */
-    public ExecutionPath getPath() {
+    public ResultPath getPath() {
         return path;
     }
 
@@ -248,7 +248,7 @@ public class ExecutionStepInfo {
         GraphQLFieldDefinition fieldDefinition;
         GraphQLObjectType fieldContainer;
         MergedField field;
-        ExecutionPath path;
+        ResultPath path;
         Map<String, Object> arguments;
 
         /**
@@ -288,8 +288,8 @@ public class ExecutionStepInfo {
             return this;
         }
 
-        public Builder path(ExecutionPath executionPath) {
-            this.path = executionPath;
+        public Builder path(ResultPath resultPath) {
+            this.path = resultPath;
             return this;
         }
 

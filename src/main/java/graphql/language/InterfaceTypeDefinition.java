@@ -178,6 +178,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
             this.definitions = existing.getFieldDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
+            this.implementz = existing.getImplements();
         }
 
 

@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation.parameters;
 
+import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.instrumentation.Instrumentation;
@@ -10,6 +11,7 @@ import graphql.schema.GraphQLFieldDefinition;
 /**
  * Parameters sent to {@link Instrumentation} methods
  */
+@PublicApi
 public class InstrumentationFieldFetchParameters extends InstrumentationFieldParameters {
     private final DataFetchingEnvironment environment;
     private final ExecutionStrategyParameters executionStrategyParameters;

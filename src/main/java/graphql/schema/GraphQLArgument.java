@@ -236,7 +236,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
             this.name = existing.getName();
             this.type = existing.originalType;
             this.value = existing.getValue();
-            this.defaultValue = existing.getDefaultValue();
+            this.defaultValue = existing.defaultValue;
             this.description = existing.getDescription();
             this.definition = existing.getDefinition();
             this.directives.putAll(FpKit.getByName(existing.getDirectives(), GraphQLDirective::getName));

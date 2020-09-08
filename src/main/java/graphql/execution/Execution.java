@@ -1,14 +1,11 @@
 package graphql.execution;
 
 
-import graphql.DeferredExecutionResult;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
-import graphql.GraphQL;
 import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.execution.defer.DeferSupport;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -22,7 +19,6 @@ import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.util.LogKit;
-import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 
 import java.util.Collections;
@@ -140,7 +136,7 @@ public class Execution {
 
         MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
 
-        ExecutionPath path = ExecutionPath.rootPath();
+        ResultPath path = ResultPath.rootPath();
         ExecutionStepInfo executionStepInfo = newExecutionStepInfo().type(operationRootType).path(path).build();
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
 
@@ -183,27 +179,9 @@ public class Execution {
 
         result = result.whenComplete(executeOperationCtx::onCompleted);
 
-        return deferSupport(executionContext, result);
+        return result;
     }
 
-    /*
-     * Adds the deferred publisher if its needed at the end of the query.  This is also a good time for the deferred code to start running
-     */
-    private CompletableFuture<ExecutionResult> deferSupport(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result) {
-        return result.thenApply(er -> {
-            DeferSupport deferSupport = executionContext.getDeferSupport();
-            if (deferSupport.isDeferDetected()) {
-                // we start the rest of the query now to maximize throughput.  We have the initial important results
-                // and now we can start the rest of the calls as early as possible (even before some one subscribes)
-                Publisher<DeferredExecutionResult> publisher = deferSupport.startDeferredCalls();
-                return ExecutionResultImpl.newExecutionResult().from(er)
-                        .addExtension(GraphQL.DEFERRED_RESULTS, publisher)
-                        .build();
-            }
-            return er;
-        });
-
-    }
 
     private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition operationDefinition) {
         OperationDefinition.Operation operation = operationDefinition.getOperation();

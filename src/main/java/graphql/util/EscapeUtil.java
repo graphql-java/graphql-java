@@ -1,5 +1,8 @@
 package graphql.util;
 
+import graphql.Internal;
+
+@Internal
 public final class EscapeUtil {
 
     private EscapeUtil() {

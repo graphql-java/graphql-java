@@ -64,8 +64,10 @@ public class SchemaTypeChecker {
         typeExtensionsChecker.checkTypeExtensions(errors, typeRegistry);
 
         ImplementingTypesChecker implementingTypesChecker = new ImplementingTypesChecker();
-
         implementingTypesChecker.checkImplementingTypes(errors, typeRegistry);
+
+        UnionTypesChecker unionTypesChecker = new UnionTypesChecker();
+        unionTypesChecker.checkUnionType(errors, typeRegistry);
 
         SchemaExtensionsChecker.checkSchemaInvariants(errors, typeRegistry);
 

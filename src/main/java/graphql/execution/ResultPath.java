@@ -19,42 +19,42 @@ import static java.lang.String.format;
  * class represents that path as a series of segments.
  */
 @PublicApi
-public class ExecutionPath {
-    private static final ExecutionPath ROOT_PATH = new ExecutionPath();
+public class ResultPath {
+    private static final ResultPath ROOT_PATH = new ResultPath();
 
     /**
      * All paths start from here
      *
      * @return the root path
      */
-    public static ExecutionPath rootPath() {
+    public static ResultPath rootPath() {
         return ROOT_PATH;
     }
 
-    private final ExecutionPath parent;
+    private final ResultPath parent;
     private final Object segment;
 
     // hash is effective immutable but lazily initialized similar to the hash code of java.lang.String
     private int hash;
 
-    private ExecutionPath() {
+    private ResultPath() {
         parent = null;
         segment = null;
     }
 
-    private ExecutionPath(ExecutionPath parent, String segment) {
+    private ResultPath(ResultPath parent, String segment) {
         this.parent = assertNotNull(parent, () -> "Must provide a parent path");
         this.segment = assertNotNull(segment, () -> "Must provide a sub path");
     }
 
-    private ExecutionPath(ExecutionPath parent, int segment) {
+    private ResultPath(ResultPath parent, int segment) {
         this.parent = assertNotNull(parent, () -> "Must provide a parent path");
         this.segment = segment;
     }
 
     public int getLevel() {
         int counter = 0;
-        ExecutionPath currentPath = this;
+        ResultPath currentPath = this;
         while (currentPath != null) {
             if (currentPath.segment instanceof String) {
                 counter++;
@@ -64,7 +64,7 @@ public class ExecutionPath {
         return counter;
     }
 
-    public ExecutionPath getPathWithoutListEnd() {
+    public ResultPath getPathWithoutListEnd() {
         if (ROOT_PATH.equals(this)) {
             return ROOT_PATH;
         }
@@ -101,7 +101,7 @@ public class ExecutionPath {
         return segment;
     }
 
-    public ExecutionPath getParent() {
+    public ResultPath getParent() {
         return parent;
     }
 
@@ -112,11 +112,11 @@ public class ExecutionPath {
      *
      * @return a parsed execution path
      */
-    public static ExecutionPath parse(String pathString) {
+    public static ResultPath parse(String pathString) {
         pathString = pathString == null ? "" : pathString;
         String finalPathString = pathString.trim();
         StringTokenizer st = new StringTokenizer(finalPathString, "/[]", true);
-        ExecutionPath path = ExecutionPath.rootPath();
+        ResultPath path = ResultPath.rootPath();
         while (st.hasMoreTokens()) {
             String token = st.nextToken();
             if ("/".equals(token)) {
@@ -141,9 +141,9 @@ public class ExecutionPath {
      *
      * @return a new execution path
      */
-    public static ExecutionPath fromList(List<?> objects) {
+    public static ResultPath fromList(List<?> objects) {
         assertNotNull(objects);
-        ExecutionPath path = ExecutionPath.rootPath();
+        ResultPath path = ResultPath.rootPath();
         for (Object object : objects) {
             if (object instanceof String) {
                 path = path.segment(((String) object));
@@ -165,8 +165,8 @@ public class ExecutionPath {
      *
      * @return a new path containing that segment
      */
-    public ExecutionPath segment(String segment) {
-        return new ExecutionPath(this, segment);
+    public ResultPath segment(String segment) {
+        return new ResultPath(this, segment);
     }
 
     /**
@@ -176,8 +176,8 @@ public class ExecutionPath {
      *
      * @return a new path containing that segment
      */
-    public ExecutionPath segment(int segment) {
-        return new ExecutionPath(this, segment);
+    public ResultPath segment(int segment) {
+        return new ResultPath(this, segment);
     }
 
     /**
@@ -185,7 +185,7 @@ public class ExecutionPath {
      *
      * @return a new path with the last segment dropped off
      */
-    public ExecutionPath dropSegment() {
+    public ResultPath dropSegment() {
         if (this == rootPath()) {
             return null;
         }
@@ -193,29 +193,29 @@ public class ExecutionPath {
     }
 
     /**
-     * Replaces the last segment on the path eg ExecutionPath.parse("/a/b[1]").replaceSegment(9)
+     * Replaces the last segment on the path eg ResultPath.parse("/a/b[1]").replaceSegment(9)
      * equals "/a/b[9]"
      *
      * @param segment the integer segment to use
      *
      * @return a new path with the last segment replaced
      */
-    public ExecutionPath replaceSegment(int segment) {
+    public ResultPath replaceSegment(int segment) {
         Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
-        return new ExecutionPath(parent, segment);
+        return new ResultPath(parent, segment);
     }
 
     /**
-     * Replaces the last segment on the path eg ExecutionPath.parse("/a/b[1]").replaceSegment("x")
+     * Replaces the last segment on the path eg ResultPath.parse("/a/b[1]").replaceSegment("x")
      * equals "/a/b/x"
      *
      * @param segment the string segment to use
      *
      * @return a new path with the last segment replaced
      */
-    public ExecutionPath replaceSegment(String segment) {
+    public ResultPath replaceSegment(String segment) {
         Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
-        return new ExecutionPath(parent, segment);
+        return new ResultPath(parent, segment);
     }
 
 
@@ -233,21 +233,21 @@ public class ExecutionPath {
      *
      * @return a new path
      */
-    public ExecutionPath append(ExecutionPath path) {
+    public ResultPath append(ResultPath path) {
         List<Object> objects = this.toList();
         objects.addAll(assertNotNull(path).toList());
         return fromList(objects);
     }
 
 
-    public ExecutionPath sibling(String siblingField) {
+    public ResultPath sibling(String siblingField) {
         Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
-        return new ExecutionPath(this.parent, siblingField);
+        return new ResultPath(this.parent, siblingField);
     }
 
-    public ExecutionPath sibling(int siblingField) {
+    public ResultPath sibling(int siblingField) {
         Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
-        return new ExecutionPath(this.parent, siblingField);
+        return new ResultPath(this.parent, siblingField);
     }
 
     /**
@@ -258,7 +258,7 @@ public class ExecutionPath {
             return new LinkedList<>();
         }
         LinkedList<Object> list = new LinkedList<>();
-        ExecutionPath p = this;
+        ResultPath p = this;
         while (p.segment != null) {
             list.addFirst(p.segment);
             p = p.parent;
@@ -300,8 +300,8 @@ public class ExecutionPath {
             return false;
         }
 
-        ExecutionPath self = this;
-        ExecutionPath that = (ExecutionPath) o;
+        ResultPath self = this;
+        ResultPath that = (ResultPath) o;
         while (self.segment != null && that.segment != null) {
             if (!Objects.equals(self.segment, that.segment)) {
                 return false;
@@ -318,7 +318,7 @@ public class ExecutionPath {
         int h = hash;
         if (h == 0) {
             h = 1;
-            ExecutionPath self = this;
+            ResultPath self = this;
             while (self != null) {
                 Object value = self.segment;
                 h = 31 * h + (value == null ? 0 : value.hashCode());

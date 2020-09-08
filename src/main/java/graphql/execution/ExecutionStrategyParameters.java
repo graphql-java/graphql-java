@@ -2,7 +2,6 @@ package graphql.execution;
 
 import graphql.Assert;
 import graphql.PublicApi;
-import graphql.execution.defer.DeferredErrorSupport;
 
 import java.util.Map;
 import java.util.function.Consumer;
@@ -20,12 +19,11 @@ public class ExecutionStrategyParameters {
     private final Map<String, Object> arguments;
     private final MergedSelectionSet fields;
     private final NonNullableFieldValidator nonNullableFieldValidator;
-    private final ExecutionPath path;
+    private final ResultPath path;
     private final MergedField currentField;
     private final int listSize;
     private final int currentListIndex;
     private final ExecutionStrategyParameters parent;
-    private final DeferredErrorSupport deferredErrorSupport;
 
     private ExecutionStrategyParameters(ExecutionStepInfo executionStepInfo,
                                         Object source,
@@ -33,12 +31,11 @@ public class ExecutionStrategyParameters {
                                         MergedSelectionSet fields,
                                         Map<String, Object> arguments,
                                         NonNullableFieldValidator nonNullableFieldValidator,
-                                        ExecutionPath path,
+                                        ResultPath path,
                                         MergedField currentField,
                                         int listSize,
                                         int currentListIndex,
-                                        ExecutionStrategyParameters parent,
-                                        DeferredErrorSupport deferredErrorSupport) {
+                                        ExecutionStrategyParameters parent) {
 
         this.executionStepInfo = assertNotNull(executionStepInfo, () -> "executionStepInfo is null");
         this.localContext = localContext;
@@ -51,7 +48,6 @@ public class ExecutionStrategyParameters {
         this.listSize = listSize;
         this.currentListIndex = currentListIndex;
         this.parent = parent;
-        this.deferredErrorSupport = deferredErrorSupport;
     }
 
     public ExecutionStepInfo getExecutionStepInfo() {
@@ -74,7 +70,7 @@ public class ExecutionStrategyParameters {
         return nonNullableFieldValidator;
     }
 
-    public ExecutionPath getPath() {
+    public ResultPath getPath() {
         return path;
     }
 
@@ -92,10 +88,6 @@ public class ExecutionStrategyParameters {
 
     public ExecutionStrategyParameters getParent() {
         return parent;
-    }
-
-    public DeferredErrorSupport deferredErrorSupport() {
-        return deferredErrorSupport;
     }
 
     /**
@@ -134,12 +126,11 @@ public class ExecutionStrategyParameters {
         MergedSelectionSet fields;
         Map<String, Object> arguments;
         NonNullableFieldValidator nonNullableFieldValidator;
-        ExecutionPath path = ExecutionPath.rootPath();
+        ResultPath path = ResultPath.rootPath();
         MergedField currentField;
         int listSize;
         int currentListIndex;
         ExecutionStrategyParameters parent;
-        DeferredErrorSupport deferredErrorSupport = new DeferredErrorSupport();
 
         /**
          * @see ExecutionStrategyParameters#newParameters()
@@ -158,7 +149,6 @@ public class ExecutionStrategyParameters {
             this.arguments = oldParameters.arguments;
             this.nonNullableFieldValidator = oldParameters.nonNullableFieldValidator;
             this.currentField = oldParameters.currentField;
-            this.deferredErrorSupport = oldParameters.deferredErrorSupport;
             this.path = oldParameters.path;
             this.parent = oldParameters.parent;
             this.listSize = oldParameters.listSize;
@@ -205,7 +195,7 @@ public class ExecutionStrategyParameters {
             return this;
         }
 
-        public Builder path(ExecutionPath path) {
+        public Builder path(ResultPath path) {
             this.path = path;
             return this;
         }
@@ -225,13 +215,9 @@ public class ExecutionStrategyParameters {
             return this;
         }
 
-        public Builder deferredErrorSupport(DeferredErrorSupport deferredErrorSupport) {
-            this.deferredErrorSupport = deferredErrorSupport;
-            return this;
-        }
 
         public ExecutionStrategyParameters build() {
-            return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, arguments, nonNullableFieldValidator, path, currentField, listSize, currentListIndex, parent, deferredErrorSupport);
+            return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, arguments, nonNullableFieldValidator, path, currentField, listSize, currentListIndex, parent);
         }
     }
 }

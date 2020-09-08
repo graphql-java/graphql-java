@@ -1,9 +1,12 @@
 package graphql.util;
 
+import graphql.Internal;
+
 import java.util.function.Supplier;
 
 import static graphql.Assert.assertNotNull;
 
+@Internal
 class MemoizedSupplier<T> implements Supplier<T> {
     private final static Object SENTINEL = new Object() {
     };

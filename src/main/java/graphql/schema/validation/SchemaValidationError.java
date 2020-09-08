@@ -1,7 +1,10 @@
 package graphql.schema.validation;
 
+import graphql.Internal;
+
 import static graphql.Assert.assertNotNull;
 
+@Internal
 public class SchemaValidationError {
 
     private final SchemaValidationErrorType errorType;

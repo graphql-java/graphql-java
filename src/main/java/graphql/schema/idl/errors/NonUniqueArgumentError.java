@@ -1,5 +1,6 @@
 package graphql.schema.idl.errors;
 
+import graphql.Internal;
 import graphql.language.EnumValueDefinition;
 import graphql.language.FieldDefinition;
 import graphql.language.InputValueDefinition;
@@ -7,6 +8,7 @@ import graphql.language.TypeDefinition;
 
 import static java.lang.String.format;
 
+@Internal
 public class NonUniqueArgumentError extends BaseError {
 
     public NonUniqueArgumentError(TypeDefinition typeDefinition, FieldDefinition fieldDefinition, String argumentName) {

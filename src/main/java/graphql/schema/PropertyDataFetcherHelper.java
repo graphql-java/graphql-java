@@ -266,7 +266,12 @@ public class PropertyDataFetcherHelper {
     }
 
     private static String mkKey(Class<?> clazz, String propertyName) {
-        return clazz.getName() + "__" + propertyName;
+        ClassLoader classLoader = clazz.getClassLoader();
+        if (classLoader != null) {
+            return classLoader.hashCode() + "__" + clazz.getName() + "__" + propertyName;
+        } else {
+            return clazz.getName() + "__" + propertyName;
+        }
     }
 
     // by not filling out the stack trace, we gain speed when using the exception as flow control

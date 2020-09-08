@@ -1,7 +1,7 @@
 package graphql;
 
 
-import graphql.execution.ExecutionPath;
+import graphql.execution.ResultPath;
 import graphql.language.SourceLocation;
 
 import java.util.Collections;
@@ -24,7 +24,7 @@ public class ExceptionWhileDataFetching implements GraphQLError {
     private final List<SourceLocation> locations;
     private final Map<String, Object> extensions;
 
-    public ExceptionWhileDataFetching(ExecutionPath path, Throwable exception, SourceLocation sourceLocation) {
+    public ExceptionWhileDataFetching(ResultPath path, Throwable exception, SourceLocation sourceLocation) {
         this.path = assertNotNull(path).toList();
         this.exception = assertNotNull(exception);
         this.locations = Collections.singletonList(sourceLocation);
@@ -32,7 +32,7 @@ public class ExceptionWhileDataFetching implements GraphQLError {
         this.message = mkMessage(path, exception);
     }
 
-    private String mkMessage(ExecutionPath path, Throwable exception) {
+    private String mkMessage(ResultPath path, Throwable exception) {
         return format("Exception while fetching data (%s) : %s", path, exception.getMessage());
     }
 

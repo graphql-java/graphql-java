@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.PublicApi;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -31,6 +32,7 @@ import static java.util.Collections.singletonMap;
  * See https://github.com/facebook/graphql/blob/master/spec/Section%206%20--%20Execution.md
  * See http://www.reactive-streams.org/
  */
+@PublicApi
 public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
     public SubscriptionExecutionStrategy() {
@@ -158,7 +160,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         MergedSelectionSet fields = parameters.getFields();
         MergedField firstField = fields.getSubField(fields.getKeys().get(0));
 
-        ExecutionPath fieldPath = parameters.getPath().segment(mkNameForPath(firstField.getSingleField()));
+        ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(firstField.getSingleField()));
         return parameters.transform(builder -> builder.field(firstField).path(fieldPath));
     }
 

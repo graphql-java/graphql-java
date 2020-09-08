@@ -7,7 +7,7 @@ import graphql.analysis.QueryTraverser;
 import graphql.analysis.QueryVisitorFieldEnvironment;
 import graphql.analysis.QueryVisitorStub;
 import graphql.execution.ExecutionContext;
-import graphql.execution.ExecutionPath;
+import graphql.execution.ResultPath;
 import graphql.language.Field;
 import graphql.language.SourceLocation;
 import graphql.schema.GraphQLCompositeType;
@@ -27,7 +27,7 @@ class FieldValidationSupport {
 
     static List<GraphQLError> validateFieldsAndArguments(FieldValidation fieldValidation, ExecutionContext executionContext) {
 
-        Map<ExecutionPath, List<FieldAndArguments>> fieldArgumentsMap = new LinkedHashMap<>();
+        Map<ResultPath, List<FieldAndArguments>> fieldArgumentsMap = new LinkedHashMap<>();
 
         QueryTraverser queryTraverser = QueryTraverser.newQueryTraverser()
                 .schema(executionContext.getGraphQLSchema())
@@ -45,7 +45,7 @@ class FieldValidationSupport {
                     // only fields that have arguments make any sense to placed in play
                     // since only they have variable input
                     FieldAndArguments fieldArguments = new FieldAndArgumentsImpl(env);
-                    ExecutionPath path = fieldArguments.getPath();
+                    ResultPath path = fieldArguments.getPath();
                     List<FieldAndArguments> list = fieldArgumentsMap.getOrDefault(path, new ArrayList<>());
                     list.add(fieldArguments);
                     fieldArgumentsMap.put(path, list);
@@ -62,7 +62,7 @@ class FieldValidationSupport {
     private static class FieldAndArgumentsImpl implements FieldAndArguments {
         private final QueryVisitorFieldEnvironment traversalEnv;
         private final FieldAndArguments parentArgs;
-        private final ExecutionPath path;
+        private final ResultPath path;
 
         FieldAndArgumentsImpl(QueryVisitorFieldEnvironment traversalEnv) {
             this.traversalEnv = traversalEnv;
@@ -74,10 +74,10 @@ class FieldValidationSupport {
             return traversalEnv.getParentEnvironment() != null ? new FieldAndArgumentsImpl(traversalEnv.getParentEnvironment()) : null;
         }
 
-        private ExecutionPath mkPath(QueryVisitorFieldEnvironment traversalEnv) {
+        private ResultPath mkPath(QueryVisitorFieldEnvironment traversalEnv) {
             QueryVisitorFieldEnvironment parentEnvironment = traversalEnv.getParentEnvironment();
             if (parentEnvironment == null) {
-                return ExecutionPath.rootPath().segment(traversalEnv.getField().getName());
+                return ResultPath.rootPath().segment(traversalEnv.getField().getName());
             } else {
                 Deque<QueryVisitorFieldEnvironment> stack = new ArrayDeque<>();
                 stack.push(traversalEnv);
@@ -85,7 +85,7 @@ class FieldValidationSupport {
                     stack.push(parentEnvironment);
                     parentEnvironment = parentEnvironment.getParentEnvironment();
                 }
-                ExecutionPath path = ExecutionPath.rootPath();
+                ResultPath path = ResultPath.rootPath();
                 while (!stack.isEmpty()) {
                     QueryVisitorFieldEnvironment environment = stack.pop();
                     path = path.segment(environment.getField().getName());
@@ -110,7 +110,7 @@ class FieldValidationSupport {
         }
 
         @Override
-        public ExecutionPath getPath() {
+        public ResultPath getPath() {
             return path;
         }
 
@@ -134,10 +134,10 @@ class FieldValidationSupport {
 
     private static class FieldValidationEnvironmentImpl implements FieldValidationEnvironment {
         private final ExecutionContext executionContext;
-        private final Map<ExecutionPath, List<FieldAndArguments>> fieldArgumentsMap;
+        private final Map<ResultPath, List<FieldAndArguments>> fieldArgumentsMap;
         private final List<FieldAndArguments> fieldArguments;
 
-        FieldValidationEnvironmentImpl(ExecutionContext executionContext, Map<ExecutionPath, List<FieldAndArguments>> fieldArgumentsMap) {
+        FieldValidationEnvironmentImpl(ExecutionContext executionContext, Map<ResultPath, List<FieldAndArguments>> fieldArgumentsMap) {
             this.executionContext = executionContext;
             this.fieldArgumentsMap = fieldArgumentsMap;
             this.fieldArguments = fieldArgumentsMap.values().stream().flatMap(List::stream).collect(Collectors.toList());
@@ -155,7 +155,7 @@ class FieldValidationSupport {
         }
 
         @Override
-        public Map<ExecutionPath, List<FieldAndArguments>> getFieldsByPath() {
+        public Map<ResultPath, List<FieldAndArguments>> getFieldsByPath() {
             return fieldArgumentsMap;
         }
 
@@ -175,7 +175,7 @@ class FieldValidationSupport {
         private final List<SourceLocation> locations;
         private final List<Object> path;
 
-        FieldAndArgError(String message, Field field, ExecutionPath path) {
+        FieldAndArgError(String message, Field field, ResultPath path) {
             this.message = message;
             this.locations = field == null ? null : Collections.singletonList(field.getSourceLocation());
             this.path = path == null ? null : path.toList();

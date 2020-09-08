@@ -3,7 +3,7 @@ package graphql.execution.instrumentation.fieldvalidation;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
-import graphql.execution.ExecutionPath;
+import graphql.execution.ResultPath;
 
 import java.util.List;
 import java.util.Map;
@@ -36,7 +36,7 @@ public interface FieldValidationEnvironment {
     /**
      * @return a map of field paths to {@link FieldAndArguments}
      */
-    Map<ExecutionPath, List<FieldAndArguments>> getFieldsByPath();
+    Map<ResultPath, List<FieldAndArguments>> getFieldsByPath();
 
     /**
      * This helper method allows you to make error messages to be passed back out in case of validation failure.  Note you

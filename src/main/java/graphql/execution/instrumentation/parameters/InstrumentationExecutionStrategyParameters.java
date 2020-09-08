@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation.parameters;
 
+import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -7,6 +8,7 @@ import graphql.execution.instrumentation.InstrumentationState;
 /**
  * Parameters sent to {@link graphql.execution.instrumentation.Instrumentation} methods
  */
+@PublicApi
 public class InstrumentationExecutionStrategyParameters {
 
     private final ExecutionContext executionContext;

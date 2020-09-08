@@ -9,7 +9,7 @@ import graphql.execution.AbortExecutionException
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.Execution
 import graphql.execution.ExecutionId
-import graphql.execution.ExecutionPath
+import graphql.execution.ResultPath
 import graphql.execution.ValueUnboxer
 import graphql.execution.instrumentation.SimpleInstrumentation
 import spock.lang.Specification
@@ -79,7 +79,7 @@ class FieldValidationTest extends Specification {
 
                 def fieldArgumentsMap = validationEnvironment.getFieldsByPath()
 
-                FieldAndArguments field1Args = fieldArgumentsMap.get(ExecutionPath.parse("/field1"))[0]
+                FieldAndArguments field1Args = fieldArgumentsMap.get(ResultPath.parse("/field1"))[0]
 
                 argValues = field1Args.getArgumentValuesByName()
 
@@ -89,27 +89,27 @@ class FieldValidationTest extends Specification {
                 assert !argValues.containsKey('intArg')
 
 
-                argValues = fieldArgumentsMap.get(ExecutionPath.parse("/field2"))[0]
+                argValues = fieldArgumentsMap.get(ResultPath.parse("/field2"))[0]
                         .getArgumentValuesByName()
 
                 assert argValues['stringArg'] == "stringValue"
 
-                argValues = fieldArgumentsMap.get(ExecutionPath.parse("/field3"))[0]
+                argValues = fieldArgumentsMap.get(ResultPath.parse("/field3"))[0]
                         .getArgumentValuesByName()
 
                 assert argValues['intArg'] == 666
 
-                assert !fieldArgumentsMap.containsKey(ExecutionPath.parse("/noArgField"))
+                assert !fieldArgumentsMap.containsKey(ResultPath.parse("/noArgField"))
 
                 argValues = fieldArgumentsMap.get(
-                        ExecutionPath.parse("/field1/informationLink/informationString"))[0]
+                        ResultPath.parse("/field1/informationLink/informationString"))[0]
                         .getArgumentValuesByName()
 
                 assert argValues['fmt1'] == "inlineFmt1" // inlined from query
                 assert argValues['fmt2'] == "defaultFmt2" // defaulted from schema
 
                 def linkLink = fieldArgumentsMap.get(
-                        ExecutionPath.parse("/field1/informationLink/informationLink/informationString"))[0]
+                        ResultPath.parse("/field1/informationLink/informationLink/informationString"))[0]
                 argValues = linkLink
                         .getArgumentValuesByName()
 
@@ -153,11 +153,11 @@ class FieldValidationTest extends Specification {
         ]
 
         SimpleFieldValidation validation = new SimpleFieldValidation()
-                .addRule(ExecutionPath.parse("/field1"),
+                .addRule(ResultPath.parse("/field1"),
                 { fieldAndArguments, env -> err("Not happy Jan!", env, fieldAndArguments) })
-                .addRule(ExecutionPath.parse("/field1/informationLink/informationLink/informationString"),
+                .addRule(ResultPath.parse("/field1/informationLink/informationLink/informationString"),
                 { fieldAndArguments, env -> err("Also not happy Jan!", env, fieldAndArguments) })
-                .addRule(ExecutionPath.parse("/does/not/exist"),
+                .addRule(ResultPath.parse("/does/not/exist"),
                 { fieldAndArguments, env -> err("Wont happen", env, fieldAndArguments) })
 
 
@@ -202,7 +202,7 @@ class FieldValidationTest extends Specification {
         '''
 
         SimpleFieldValidation validation = new SimpleFieldValidation()
-                .addRule(ExecutionPath.parse("/field1/informationString"),
+                .addRule(ResultPath.parse("/field1/informationString"),
                 { fieldAndArguments, env ->
                     def value = fieldAndArguments.getArgumentValue("fmt1")
                     if (value != "ok") {
@@ -248,7 +248,7 @@ class FieldValidationTest extends Specification {
         '''
 
         SimpleFieldValidation validation = new SimpleFieldValidation()
-                .addRule(ExecutionPath.parse("/field1/informationString"),
+                .addRule(ResultPath.parse("/field1/informationString"),
                 { fieldAndArguments, env ->
                     String value = fieldAndArguments.getArgumentValue("fmt1")
                     if (value.contains("alias")) {

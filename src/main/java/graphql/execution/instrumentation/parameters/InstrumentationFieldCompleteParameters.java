@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation.parameters;
 
+import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStrategyParameters;
@@ -9,6 +10,7 @@ import graphql.schema.GraphQLFieldDefinition;
 /**
  * Parameters sent to {@link graphql.execution.instrumentation.Instrumentation} methods
  */
+@PublicApi
 public class InstrumentationFieldCompleteParameters {
     private final ExecutionContext executionContext;
     private final GraphQLFieldDefinition fieldDef;
