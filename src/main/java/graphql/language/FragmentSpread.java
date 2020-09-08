@@ -67,9 +67,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
-        result.addAll(directives);
-        return result;
+        return new ArrayList<>(directives);
     }
 
     @Override
@@ -173,7 +171,6 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
             this.additionalData.put(key, value);
             return this;
         }
-
 
         public FragmentSpread build() {
             return new FragmentSpread(name, directives, sourceLocation, comments, ignoredChars, additionalData);

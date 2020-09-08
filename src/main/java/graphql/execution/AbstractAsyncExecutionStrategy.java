@@ -32,7 +32,7 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
                 handleNonNullException(executionContext, overallResult, exception);
                 return;
             }
-            Map<String, Object> resolvedValuesByField = new LinkedHashMap<>();
+            Map<String, Object> resolvedValuesByField = new LinkedHashMap<>(fieldNames.size());
             int ix = 0;
             for (ExecutionResult executionResult : results) {
 

@@ -66,9 +66,7 @@ public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefiniti
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
-        result.addAll(directives);
-        return result;
+        return new ArrayList<>(directives);
     }
 
     @Override
