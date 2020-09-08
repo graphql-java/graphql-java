@@ -26,15 +26,17 @@ public class Async {
     public static <U> CompletableFuture<List<U>> each(List<CompletableFuture<U>> futures) {
         CompletableFuture<List<U>> overallResult = new CompletableFuture<>();
 
+        @SuppressWarnings("unchecked")
+        CompletableFuture<U>[] arrayOfFutures = futures.toArray(new CompletableFuture[0]);
         CompletableFuture
-                .allOf(futures.toArray(new CompletableFuture[0]))
-                .whenComplete((noUsed, exception) -> {
+                .allOf(arrayOfFutures)
+                .whenComplete((ignored, exception) -> {
                     if (exception != null) {
                         overallResult.completeExceptionally(exception);
                         return;
                     }
-                    List<U> results = new ArrayList<>();
-                    for (CompletableFuture<U> future : futures) {
+                    List<U> results = new ArrayList<>(arrayOfFutures.length);
+                    for (CompletableFuture<U> future : arrayOfFutures) {
                         results.add(future.join());
                     }
                     overallResult.complete(results);
