@@ -1,6 +1,7 @@
 package graphql;
 
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -9,7 +10,7 @@ import java.util.Map;
  */
 @PublicApi
 @SuppressWarnings("TypeParameterUnusedInFormals")
-public interface ExecutionResult {
+public interface ExecutionResult extends Serializable {
 
     /**
      * @return the errors that occurred during execution or empty list if there is none

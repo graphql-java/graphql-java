@@ -200,5 +200,32 @@ class ExecutionResultImplTest extends Specification {
         extensions == [ext1:"here", ext2 : "aswell"]
     }
 
+    def "test result serialize"() {
+        given:
+        def result = new ExecutionResultImpl("Some Data", KNOWN_ERRORS)
+
+        when:
+        ByteArrayOutputStream bo = new ByteArrayOutputStream()
+        ObjectOutputStream oo = new ObjectOutputStream(bo)
+        oo.writeObject(result)
+        def bytes = bo.toByteArray()
+        bo.close()
+        oo.close()
+
+
+        ByteArrayInputStream bi = new ByteArrayInputStream(bytes);
+        ObjectInputStream oi = new ObjectInputStream(bi);
+        def obj = (ExecutionResultImpl)oi.readObject();
+        def specMap = obj.toSpecification()
+        bo.close()
+        oi.close()
+
+        then:
+        specMap["data"] == "Some Data"
+        print(specMap["errors"])
+        specMap["errors"] == [
+                ['message': 'Yikes', 'locations': [[line: 666, column: 664]], extensions:[classification:"InvalidSyntax"]],
+        ]
+    }
 
 }

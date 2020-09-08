@@ -12,11 +12,12 @@ import static java.util.stream.Collectors.toList;
 
 @Internal
 public class ExecutionResultImpl implements ExecutionResult {
+    private static final long serialVersionUID = 1L;
 
     private final List<GraphQLError> errors;
     private final Object data;
-    private final transient Map<Object, Object> extensions;
-    private final transient boolean dataPresent;
+    private final Map<Object, Object> extensions;
+    private final boolean dataPresent;
 
     public ExecutionResultImpl(GraphQLError error) {
         this(false, null, Collections.singletonList(error), null);
