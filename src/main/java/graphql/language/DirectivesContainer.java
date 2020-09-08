@@ -34,6 +34,11 @@ public interface DirectivesContainer<T extends DirectivesContainer> extends Node
      * @return the directive or null if there is one one with that name
      */
     default Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
+        for (Directive directive : getDirectives()) {
+            if (directive.getName().equals(directiveName)) {
+                return directive;
+            }
+        }
+        return null;
     }
 }

@@ -16,7 +16,13 @@ public class DirectivesUtil {
     }
 
     public static Optional<GraphQLArgument> directiveWithArg(List<GraphQLDirective> directiveList, String directiveName, String argumentName) {
-        GraphQLDirective directive = directivesByName(directiveList).get(directiveName);
+        GraphQLDirective directive = null;
+        for (GraphQLDirective ele : directiveList) {
+            if (ele.getName().equals(directiveName)) {
+                directive = ele;
+            }
+        }
+
         GraphQLArgument argument = null;
         if (directive != null) {
             argument = directive.getArgument(argumentName);

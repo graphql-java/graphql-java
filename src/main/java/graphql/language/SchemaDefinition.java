@@ -48,7 +48,12 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
     }
 
     public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
+        for (Directive directive : directives) {
+            if (directive.getName().equals(directiveName)) {
+                return directive;
+            }
+        }
+        return null;
     }
 
 

@@ -73,7 +73,12 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     }
 
     public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
+        for (Directive directive : directives) {
+            if (directive.getName().equals(directiveName)) {
+                return directive;
+            }
+        }
+        return null;
     }
 
     @Override
