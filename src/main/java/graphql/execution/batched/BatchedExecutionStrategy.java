@@ -214,7 +214,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         Instrumentation instrumentation = executionContext.getInstrumentation();
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
         InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(
-                new InstrumentationFieldParameters(executionContext, fieldDef, executionStepInfo)
+                new InstrumentationFieldParameters(executionContext, () -> executionStepInfo)
         );
 
         CompletableFuture<FetchedValues> fetchedData = fetchData(executionContext, parameters, fieldName, node, fieldDef);
