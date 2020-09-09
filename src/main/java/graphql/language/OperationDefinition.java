@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -120,7 +121,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
 
         OperationDefinition that = (OperationDefinition) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name) && operation == that.operation;
+        return Objects.equals(this.name, that.name) && operation == that.operation;
 
     }
 
