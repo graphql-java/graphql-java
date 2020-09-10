@@ -168,6 +168,7 @@ public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefiniti
             return this;
         }
 
+        @Override
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;
