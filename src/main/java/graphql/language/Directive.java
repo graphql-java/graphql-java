@@ -16,6 +16,7 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.argumentsByName;
+import static graphql.language.NodeUtil.getArgumentByName;
 import static java.util.Collections.emptyMap;
 
 @PublicApi
@@ -62,7 +63,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     }
 
     public Argument getArgument(String argumentName) {
-        return getArgumentsByName().get(argumentName);
+        return getArgumentByName(arguments, argumentName).orElse(null);
     }
 
     @Override

@@ -126,7 +126,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
 
     @Override
     public GraphQLDirective getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
+        return DirectivesUtil.directiveByName(directives, directiveName).orElse(null);
     }
 
     public EnumValueDefinition getDefinition() {

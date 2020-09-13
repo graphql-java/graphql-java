@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
+import static graphql.language.NodeUtil.directiveByName;
 
 /**
  * Represents a language node that can contain Directives.
@@ -34,6 +35,6 @@ public interface DirectivesContainer<T extends DirectivesContainer> extends Node
      * @return the directive or null if there is one one with that name
      */
     default Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
+        return directiveByName(getDirectives(), directiveName).orElse(null);
     }
 }
