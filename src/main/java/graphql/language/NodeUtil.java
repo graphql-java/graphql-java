@@ -17,18 +17,6 @@ import static graphql.util.FpKit.mergeFirst;
 @Internal
 public class NodeUtil {
 
-    public static boolean isEqualTo(String thisStr, String thatStr) {
-        if (null == thisStr) {
-            if (null != thatStr) {
-                return false;
-            }
-        } else if (!thisStr.equals(thatStr)) {
-            return false;
-        }
-        return true;
-    }
-
-
     public static Map<String, Directive> directivesByName(List<Directive> directives) {
         return FpKit.getByName(directives, Directive::getName, mergeFirst());
     }
