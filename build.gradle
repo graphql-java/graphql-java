@@ -51,6 +51,9 @@ jar {
     from "src/main/antlr/GraphqlOperation.g4"
     from "src/main/antlr/GraphqlSDL.g4"
     from "src/main/antlr/GraphqlCommon.g4"
+    manifest {
+        attributes('Automatic-Module-Name': 'com.graphql-java')
+    }
 }
 
 dependencies {
@@ -95,6 +98,7 @@ generateGrammarSource {
     outputDirectory = file("${project.buildDir}/generated-src/antlr/main/graphql/parser/antlr")
 }
 generateGrammarSource.inputs.dir('src/main/antlr')
+
 
 task sourcesJar(type: Jar) {
     dependsOn classes
