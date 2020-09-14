@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -61,7 +62,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     }
 
     public Argument getArgument(String argumentName) {
-        return getArgumentsByName().get(argumentName);
+        return NodeUtil.getArgumentByName(arguments, argumentName);
     }
 
     @Override
@@ -100,7 +101,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
 
         Directive that = (Directive) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name);
+        return Objects.equals(this.name, that.name);
 
     }
 

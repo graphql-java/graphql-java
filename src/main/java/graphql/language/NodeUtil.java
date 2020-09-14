@@ -56,6 +56,15 @@ public class NodeUtil {
         return FpKit.getByName(arguments, Argument::getName, mergeFirst());
     }
 
+    public static Argument getArgumentByName(List<Argument> arguments, String name) {
+        for (Argument argument : arguments) {
+            if (argument.getName().equals(name)) {
+                return argument;
+            }
+        }
+        return null;
+    }
+
 
     public static class GetOperationResult {
         public OperationDefinition operationDefinition;

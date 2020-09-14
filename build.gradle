@@ -55,6 +55,7 @@ dependencies {
     compile 'org.slf4j:slf4j-api:' + slf4jVersion
     compile 'com.graphql-java:java-dataloader:2.2.3'
     compile 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
+
     antlr "org.antlr:antlr4:4.7.2"
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
@@ -75,6 +76,8 @@ dependencies {
 
     testCompile 'org.openjdk.jmh:jmh-core:1.21'
     testCompile 'org.openjdk.jmh:jmh-generator-annprocess:1.21'
+
+    testCompile 'is.tagomor.woothee:woothee-java:1.11.0'
 }
 
 

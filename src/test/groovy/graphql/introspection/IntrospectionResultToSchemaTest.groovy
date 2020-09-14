@@ -2,9 +2,9 @@ package graphql.introspection
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import graphql.ExecutionInput
+import graphql.ExecutionResultImpl
 import graphql.GraphQL
 import graphql.TestUtil
-import graphql.language.AstPrinter
 import graphql.language.Document
 import graphql.language.EnumTypeDefinition
 import graphql.language.InputObjectTypeDefinition
@@ -663,4 +663,14 @@ input InputType {
         null                  | '{"name":"Subscription"}'
     }
 
+    def "create schema fail"() {
+        given:
+        def failResult = ExecutionResultImpl.newExecutionResult().build()
+
+        when:
+        Document document = introspectionResultToSchema.createSchemaDefinition(failResult)
+
+        then:
+        document == null
+    }
 }

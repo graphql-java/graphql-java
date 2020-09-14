@@ -16,7 +16,6 @@ public class ExecutionStrategyParameters {
     private final ExecutionStepInfo executionStepInfo;
     private final Object source;
     private final Object localContext;
-    private final Map<String, Object> arguments;
     private final MergedSelectionSet fields;
     private final NonNullableFieldValidator nonNullableFieldValidator;
     private final ResultPath path;
@@ -29,7 +28,6 @@ public class ExecutionStrategyParameters {
                                         Object source,
                                         Object localContext,
                                         MergedSelectionSet fields,
-                                        Map<String, Object> arguments,
                                         NonNullableFieldValidator nonNullableFieldValidator,
                                         ResultPath path,
                                         MergedField currentField,
@@ -41,7 +39,6 @@ public class ExecutionStrategyParameters {
         this.localContext = localContext;
         this.fields = assertNotNull(fields, () -> "fields is null");
         this.source = source;
-        this.arguments = arguments;
         this.nonNullableFieldValidator = nonNullableFieldValidator;
         this.path = path;
         this.currentField = currentField;
@@ -60,10 +57,6 @@ public class ExecutionStrategyParameters {
 
     public MergedSelectionSet getFields() {
         return fields;
-    }
-
-    public Map<String, Object> getArguments() {
-        return arguments;
     }
 
     public NonNullableFieldValidator getNonNullFieldValidator() {
@@ -124,7 +117,6 @@ public class ExecutionStrategyParameters {
         Object source;
         Object localContext;
         MergedSelectionSet fields;
-        Map<String, Object> arguments;
         NonNullableFieldValidator nonNullableFieldValidator;
         ResultPath path = ResultPath.rootPath();
         MergedField currentField;
@@ -146,7 +138,6 @@ public class ExecutionStrategyParameters {
             this.source = oldParameters.source;
             this.localContext = oldParameters.localContext;
             this.fields = oldParameters.fields;
-            this.arguments = oldParameters.arguments;
             this.nonNullableFieldValidator = oldParameters.nonNullableFieldValidator;
             this.currentField = oldParameters.currentField;
             this.path = oldParameters.path;
@@ -185,11 +176,6 @@ public class ExecutionStrategyParameters {
             return this;
         }
 
-        public Builder arguments(Map<String, Object> arguments) {
-            this.arguments = arguments;
-            return this;
-        }
-
         public Builder nonNullFieldValidator(NonNullableFieldValidator nonNullableFieldValidator) {
             this.nonNullableFieldValidator = Assert.assertNotNull(nonNullableFieldValidator, () -> "requires a NonNullValidator");
             return this;
@@ -217,7 +203,7 @@ public class ExecutionStrategyParameters {
 
 
         public ExecutionStrategyParameters build() {
-            return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, arguments, nonNullableFieldValidator, path, currentField, listSize, currentListIndex, parent);
+            return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, nonNullableFieldValidator, path, currentField, listSize, currentListIndex, parent);
         }
     }
 }

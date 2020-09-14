@@ -440,7 +440,7 @@ class PropertyDataFetcherTest extends Specification {
 
     private static class Bar implements Foo {
         @Override
-        public String getSomething() {
+        String getSomething() {
             return "bar";
         }
     }
@@ -455,6 +455,13 @@ class PropertyDataFetcherTest extends Specification {
         dfe.getSource() >> bar
         when:
         def result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == "bar"
+
+        // repeat - should be cached
+        when:
+        result = propertyDataFetcher.get(dfe)
 
         then:
         result == "bar"

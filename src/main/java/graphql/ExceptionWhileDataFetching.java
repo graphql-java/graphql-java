@@ -46,8 +46,7 @@ public class ExceptionWhileDataFetching implements GraphQLError {
         if (exception instanceof GraphQLError) {
             Map<String, Object> map = ((GraphQLError) exception).getExtensions();
             if (map != null) {
-                extensions = new LinkedHashMap<>();
-                extensions.putAll(map);
+                extensions = new LinkedHashMap<>(map);
             }
         }
         return extensions;

@@ -33,7 +33,6 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
-import graphql.schema.SchemaUtil;
 
 import java.util.ArrayList;
 import java.util.List;

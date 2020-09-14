@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -157,7 +158,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
 
         Field that = (Field) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name) && NodeUtil.isEqualTo(this.alias, that.alias);
+        return Objects.equals(this.name, that.name) && Objects.equals(this.alias, that.alias);
     }
 
     @Override
@@ -208,7 +209,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         return builder.build();
     }
 
-    public static final class Builder implements NodeBuilder {
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private String name;
@@ -260,6 +261,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
             return this;
         }
 
+        @Override
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;

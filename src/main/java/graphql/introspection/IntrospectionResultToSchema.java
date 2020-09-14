@@ -51,6 +51,10 @@ public class IntrospectionResultToSchema {
      * @return a IDL Document of the schema
      */
     public Document createSchemaDefinition(ExecutionResult introspectionResult) {
+        if (!introspectionResult.isDataPresent()) {
+            return null;
+        }
+
         Map<String, Object> introspectionResultMap = introspectionResult.getData();
         return createSchemaDefinition(introspectionResultMap);
     }
