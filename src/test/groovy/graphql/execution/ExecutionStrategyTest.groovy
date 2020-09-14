@@ -511,7 +511,7 @@ class ExecutionStrategyTest extends Specification {
         executionStrategy.resolveField(executionContext, parameters)
 
         then:
-        1 * dataFetcher.get({ it -> environment = it } as DataFetchingEnvironment)
+        1 * dataFetcher.get(_) >> { args -> environment = args[0] }
         environment.fieldDefinition == fieldDefinition
         environment.graphQLSchema == schema
         environment.context == "context"
