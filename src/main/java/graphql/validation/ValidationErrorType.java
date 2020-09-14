@@ -33,5 +33,6 @@ public enum ValidationErrorType {
     DuplicateFragmentName,
     DuplicateDirectiveName,
     DuplicateArgumentNames,
-    DuplicateVariableName
+    DuplicateVariableName,
+    NullValueForNonNullArgument
 }
