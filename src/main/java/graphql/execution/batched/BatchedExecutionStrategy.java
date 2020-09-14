@@ -7,8 +7,6 @@ import graphql.PublicApi;
 import graphql.TrivialDataFetcher;
 import graphql.execution.Async;
 import graphql.execution.DataFetcherExceptionHandler;
-import graphql.execution.DataFetcherExceptionHandlerParameters;
-import graphql.execution.DataFetcherExceptionHandlerResult;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStrategy;
@@ -66,17 +64,17 @@ import static java.util.stream.Collectors.toList;
  * <blockquote>
  * BatchedExecutionStrategy has been deprecated in favour of {@link graphql.execution.AsyncExecutionStrategy}
  * and {@link graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation}.
- *
+ * <p>
  * BatchedExecutionStrategy does not properly implement the graphql runtime specification.  Specifically it
  * does not correctly handle non null fields and how they are to cascade up their parent fields.  It has proven
  * an intractable problem to make this code handle these cases.
- *
+ * <p>
  * See http://facebook.github.io/graphql/October2016/#sec-Errors-and-Non-Nullability
- *
+ * <p>
  * We will remove it once we are sure the alternative is as least good as the BatchedExecutionStrategy.
  *
  * </blockquote>
- *
+ * <p>
  * Execution Strategy that minimizes calls to the data fetcher when used in conjunction with {@link DataFetcher}s that have
  * {@link DataFetcher#get(DataFetchingEnvironment)} methods annotated with {@link Batched}. See the javadoc comment on
  * {@link Batched} for a more detailed description of batched data fetchers.
@@ -296,13 +294,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 if (exception instanceof CompletionException) {
                     exception = exception.getCause();
                 }
-                DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
-                        .dataFetchingEnvironment(environment)
-                        .exception(exception)
-                        .build();
 
-                DataFetcherExceptionHandlerResult handlerResult = dataFetcherExceptionHandler.onException(handlerParameters);
-                handlerResult.getErrors().forEach(executionContext::addError);
+                handleFetchingException(executionContext, environment, exception);
 
                 result = Collections.nCopies(parentResults.size(), null);
             }
