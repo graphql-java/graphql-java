@@ -3,7 +3,6 @@ package graphql.execution;
 import graphql.Assert;
 import graphql.PublicApi;
 
-import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;

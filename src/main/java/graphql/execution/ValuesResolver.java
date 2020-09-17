@@ -131,7 +131,7 @@ public class ValuesResolver {
 
 
     private Map<String, Argument> argumentMap(List<Argument> arguments) {
-        Map<String, Argument> result = new LinkedHashMap<>();
+        Map<String, Argument> result = new LinkedHashMap<>(arguments.size());
         for (Argument argument : arguments) {
             result.put(argument.getName(), argument);
         }

@@ -263,7 +263,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .queryDirectives(queryDirectives)
                 .build();
 
-        DataFetcher supplied = codeRegistry.getDataFetcher(parentType, fieldDef);
+        DataFetcher<?> supplied = codeRegistry.getDataFetcher(parentType, fieldDef);
         boolean trivialDataFetcher = supplied instanceof TrivialDataFetcher;
         BatchedDataFetcher batchedDataFetcher = batchingFactory.create(supplied);
 
@@ -350,7 +350,6 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private List<ExecutionNode> handleList(ExecutionContext executionContext, Map<String, Object> argumentValues,
                                            FetchedValues fetchedValues, String fieldName, MergedField fields,
                                            ExecutionStepInfo executionStepInfo) {
@@ -379,7 +378,6 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         return completeValues(executionContext, flattenedFetchedValues, newExecutionStepInfo, fieldName, fields, argumentValues);
     }
 
-    @SuppressWarnings("UnnecessaryLocalVariable")
     private List<ExecutionNode> handleObject(ExecutionContext executionContext, Map<String, Object> argumentValues,
                                              FetchedValues fetchedValues, String fieldName, MergedField fields,
                                              ExecutionStepInfo executionStepInfo) {
