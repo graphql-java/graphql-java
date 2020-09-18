@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -194,20 +195,16 @@ public class GraphQL {
     public GraphQL transform(Consumer<GraphQL.Builder> builderConsumer) {
         Builder builder = new Builder(this.graphQLSchema);
         builder
-                .queryExecutionStrategy(nvl(this.queryStrategy, builder.queryExecutionStrategy))
-                .mutationExecutionStrategy(nvl(this.mutationStrategy, builder.mutationExecutionStrategy))
-                .subscriptionExecutionStrategy(nvl(this.subscriptionStrategy, builder.subscriptionExecutionStrategy))
-                .executionIdProvider(nvl(this.idProvider, builder.idProvider))
-                .instrumentation(nvl(this.instrumentation, builder.instrumentation))
-                .preparsedDocumentProvider(nvl(this.preparsedDocumentProvider, builder.preparsedDocumentProvider));
+                .queryExecutionStrategy(Optional.ofNullable(this.queryStrategy).orElse(builder.queryExecutionStrategy))
+                .mutationExecutionStrategy(Optional.ofNullable(this.mutationStrategy).orElse(builder.mutationExecutionStrategy))
+                .subscriptionExecutionStrategy(Optional.ofNullable(this.subscriptionStrategy).orElse(builder.subscriptionExecutionStrategy))
+                .executionIdProvider(Optional.ofNullable(this.idProvider).orElse(builder.idProvider))
+                .instrumentation(Optional.ofNullable(this.instrumentation).orElse(builder.instrumentation))
+                .preparsedDocumentProvider(Optional.ofNullable(this.preparsedDocumentProvider).orElse(builder.preparsedDocumentProvider));
 
         builderConsumer.accept(builder);
 
         return builder.build();
-    }
-
-    private static <T> T nvl(T obj, T elseObj) {
-        return obj == null ? elseObj : obj;
     }
 
     @PublicApi
