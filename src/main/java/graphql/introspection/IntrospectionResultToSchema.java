@@ -61,7 +61,7 @@ public class IntrospectionResultToSchema {
 
 
     /**
-     * Returns a IDL Document that reprSesents the schema as defined by the introspection result map
+     * Returns a IDL Document that represents the schema as defined by the introspection result map
      *
      * @param introspectionResult the result of an introspection query on a schema
      *
@@ -79,6 +79,7 @@ public class IntrospectionResultToSchema {
         boolean nonDefaultQueryName = !"Query".equals(query.getName());
 
         SchemaDefinition.Builder schemaDefinition = SchemaDefinition.newSchemaDefinition();
+        schemaDefinition.description(toDescription(schema));
         schemaDefinition.operationTypeDefinition(OperationTypeDefinition.newOperationTypeDefinition().name("query").typeName(query).build());
 
         Map<String, Object> mutationType = (Map<String, Object>) schema.get("mutationType");
@@ -139,8 +140,10 @@ public class IntrospectionResultToSchema {
         if (ScalarInfo.isGraphqlSpecifiedScalar(name)) {
             return null;
         }
-        String specifiedBy = (String) input.get("specifiedBy");
-        return ScalarTypeDefinition.newScalarTypeDefinition().name(name).build();
+        return ScalarTypeDefinition.newScalarTypeDefinition()
+                .name(name)
+                .description(toDescription(input))
+                .build();
     }
 
 
