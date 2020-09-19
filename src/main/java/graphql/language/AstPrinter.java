@@ -101,7 +101,7 @@ public class AstPrinter {
         return (out, node) -> {
             String arguments = wrap("(", join(node.getInputValueDefinitions(), argSep), ")");
             String locations = join(node.getDirectiveLocations(), " | ");
-            out.printf("directive @%s%s on %s", node.getName(), arguments, locations);
+            out.printf("%sdirective @%s%s on %s", description(node), node.getName(), arguments, locations);
         };
     }
 
@@ -489,6 +489,7 @@ public class AstPrinter {
         return "";
     }
 
+    // todo #？
     private String description(Node<?> node) {
         Description description = ((AbstractDescribedNode) node).getDescription();
         if (description == null || description.getContent() == null || compactMode) {

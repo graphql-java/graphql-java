@@ -6,6 +6,8 @@ import graphql.language.Argument;
 import graphql.language.AstValueHelper;
 import graphql.language.Description;
 import graphql.language.Directive;
+import graphql.language.DirectiveDefinition;
+import graphql.language.DirectiveLocation;
 import graphql.language.Document;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValueDefinition;
@@ -38,6 +40,7 @@ import java.util.stream.Collectors;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
+import static graphql.DirectiveInfo.isGraphqlSpecifiedDirective;
 
 @SuppressWarnings("unchecked")
 @PublicApi
@@ -110,7 +113,50 @@ public class IntrospectionResultToSchema {
             document.definition(typeDefinition);
         }
 
+        List<Map<String, Object>> directives = (List<Map<String, Object>>) schema.get("directives");
+        if (directives != null) {
+            for (Map<String, Object> directive : directives) {
+                DirectiveDefinition directiveDefinition = createDirective(directive);
+                if (directiveDefinition == null) {
+                    continue;
+                }
+                document.definition(directiveDefinition);
+            }
+        }
+
         return document.build();
+    }
+
+    private DirectiveDefinition createDirective(Map<String, Object> input) {
+        String directiveName = (String) input.get("name");
+        if(isGraphqlSpecifiedDirective(directiveName)){
+            return null;
+        }
+
+        DirectiveDefinition.Builder directiveDefBuilder = DirectiveDefinition.newDirectiveDefinition();
+        directiveDefBuilder
+                .name(directiveName)
+                .description(toDescription(input));
+
+        List<Object> locations = (List<Object>) input.get("locations");
+        List<DirectiveLocation> directiveLocations = createDirectiveLocations(locations);
+        directiveDefBuilder.directiveLocations(directiveLocations);
+
+
+        List<Map<String, Object>> args = (List<Map<String, Object>>) input.get("args");
+        List<InputValueDefinition> inputValueDefinitions = createInputValueDefinitions(args);
+        directiveDefBuilder.inputValueDefinitions(inputValueDefinitions);
+
+        return directiveDefBuilder.build();
+    }
+
+    private List<DirectiveLocation> createDirectiveLocations(List<Object> locations) {
+        ArrayList<DirectiveLocation> result = new ArrayList<>();
+        for (Object location : locations) {
+            DirectiveLocation directiveLocation = DirectiveLocation.newDirectiveLocation().name(location.toString()).build();
+            result.add(directiveLocation);
+        }
+        return result;
     }
 
     private TypeDefinition createTypeDefinition(Map<String, Object> type) {

@@ -674,4 +674,64 @@ input InputType {
         then:
         document == null
     }
+
+    def "create scalars"() {
+        def input = ''' {
+            "kind": "SCALAR",
+            "name": "ScalarType",
+            "description": "description of ScalarType",
+      }
+      '''
+        def parsed = slurp(input)
+
+        when:
+        def scalarTypeDefinition = introspectionResultToSchema.createScalar(parsed)
+        def result = printAst(scalarTypeDefinition)
+
+        then:
+        result == """"description of ScalarType"
+scalar ScalarType"""
+
+    }
+
+    def "create directives"() {
+        def input = '''{
+            "name": "customizedDirective",
+            "description": "customized directive",
+            "locations": [
+                "FIELD",
+                "FRAGMENT_SPREAD",
+                "INLINE_FRAGMENT"
+            ],
+            "args": [
+                  {
+                    "name": "directiveArg",
+                    "description": "directive arg",
+                    "type": {
+                      "kind": "SCALAR",
+                      "name": "String",
+                      "ofType": null
+                    },
+                    "isDeprecated": false,
+                    "deprecationReason": null,
+                    "defaultValue": "\\"default Value\\""
+                  }
+             ]
+        }
+      '''
+        def parsed = slurp(input)
+
+        when:
+        def directiveDefinition = introspectionResultToSchema.createDirective(parsed)
+        def result = printAst(directiveDefinition)
+
+        then:
+        result == """"customized directive"
+directive @customizedDirective("directive arg"
+directiveArg: String = "default Value") on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT"""
+    }
+
+    def "create directives without args"() {
+        // todo
+    }
 }
