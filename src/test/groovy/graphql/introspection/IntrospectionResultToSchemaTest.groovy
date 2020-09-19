@@ -355,6 +355,7 @@ input CharacterInput {
             "queryType": {
               "name": "QueryType"
             },
+            "description": "testDesc",
             "mutationType": {"name":"MutationType"},
             "subscriptionType": {"name":"SubscriptionType"},
             "types": [
