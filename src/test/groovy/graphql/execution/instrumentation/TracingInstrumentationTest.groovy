@@ -169,4 +169,37 @@ class TracingInstrumentationTest extends Specification {
         then:
         options.isIncludeTrivialDataFetchers()
     }
+
+    def 'do not trace introspection information'() {
+        given:
+        def queryWithIntrospectionField = """
+        {
+            __typename
+        }
+        """
+
+        when:
+        def instrumentation = new TracingInstrumentation(newOptions().includeTrivialDataFetchers(false))
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .queryExecutionStrategy(testExecutionStrategy)
+                .instrumentation(instrumentation)
+                .build()
+
+        def executionResult = graphQL.execute(queryWithIntrospectionField)
+        def extensions = executionResult.getExtensions()
+
+        then:
+        extensions != null
+        def tracing = extensions['tracing']
+        List resolvers = tracing['execution']['resolvers'] as List
+        resolvers.size() == 0
+
+        where:
+        testExecutionStrategy              | _
+        new AsyncExecutionStrategy()       | _
+        new AsyncSerialExecutionStrategy() | _
+        new BatchedExecutionStrategy()     | _
+    }
 }
