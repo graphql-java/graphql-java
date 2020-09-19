@@ -206,13 +206,6 @@ public abstract class ExecutionStrategy {
         return result;
     }
 
-    protected CompletableFuture<FieldValueInfo> resolveFieldWithInfoToNull(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        FetchedValue fetchedValue = FetchedValue.newFetchedValue().build();
-        FieldValueInfo fieldValueInfo = completeField(executionContext, parameters, fetchedValue);
-        return CompletableFuture.completedFuture(fieldValueInfo);
-    }
-
-
     /**
      * Called to fetch a value for a field from the {@link DataFetcher} associated with the field
      * {@link GraphQLFieldDefinition}.
