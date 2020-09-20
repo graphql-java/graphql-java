@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
@@ -127,6 +128,12 @@ public class IntrospectionResultToSchema {
         return document.build();
     }
 
+    //type __Directive {
+    //  description: String
+    //  locations: [__DirectiveLocation!]!
+    //  args: [__InputValue!]!
+    //  isRepeatable: Boolean!
+    //}
     private DirectiveDefinition createDirective(Map<String, Object> input) {
         String directiveName = (String) input.get("name");
         if(isGraphqlSpecifiedDirective(directiveName)){
@@ -151,6 +158,7 @@ public class IntrospectionResultToSchema {
     }
 
     private List<DirectiveLocation> createDirectiveLocations(List<Object> locations) {
+        assertNotEmpty(locations, () -> "the locations of directive should not be empty.");
         ArrayList<DirectiveLocation> result = new ArrayList<>();
         for (Object location : locations) {
             DirectiveLocation directiveLocation = DirectiveLocation.newDirectiveLocation().name(location.toString()).build();
