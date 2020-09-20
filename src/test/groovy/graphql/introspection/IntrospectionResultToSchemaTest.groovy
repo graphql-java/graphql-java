@@ -734,4 +734,54 @@ directiveArg: String = "default Value") on FIELD | FRAGMENT_SPREAD | INLINE_FRAG
     def "create directives without args"() {
         // todo
     }
+
+    def "create schema with directives"() {
+        def input = """{
+          "__schema": {
+            "queryType": {
+              "name": "QueryType"
+            },
+            "types": [],
+            "directives": [
+                {
+                    "name": "customizedDirective",
+                    "description": "customized directive",
+                    "locations": [
+                        "FIELD",
+                        "FRAGMENT_SPREAD",
+                        "INLINE_FRAGMENT"
+                    ],
+                    "args": [
+                          {
+                            "name": "directiveArg",
+                            "description": "directive arg",
+                            "type": {
+                              "kind": "SCALAR",
+                              "name": "String",
+                              "ofType": null
+                            },
+                            "isDeprecated": false,
+                            "deprecationReason": null,
+                            "defaultValue": "\\"default Value\\""
+                          }
+                     ]
+                }
+            ]
+         }"""
+        def parsed = slurp(input)
+
+        when:
+        Document document = introspectionResultToSchema.createSchemaDefinition(parsed)
+        def result = printAst(document)
+
+        then:
+        result == """schema {
+  query: QueryType
+}
+
+"customized directive"
+directive @customizedDirective("directive arg"
+directiveArg: String = "default Value") on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+"""
+    }
 }
