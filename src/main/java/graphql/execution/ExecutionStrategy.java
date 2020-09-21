@@ -296,8 +296,7 @@ public abstract class ExecutionStrategy {
                                                 Object result) {
 
         if (result instanceof DataFetcherResult) {
-            //noinspection unchecked
-            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result;
+            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult<?>) result;
             if (dataFetcherResult.isMapRelativeErrors()) {
                 dataFetcherResult.getErrors().stream()
                         .map(relError -> new AbsoluteGraphQLError(parameters, relError))
@@ -665,7 +664,6 @@ public abstract class ExecutionStrategy {
      * @return an Iterable from that object
      * @throws java.lang.ClassCastException if its not an Iterable
      */
-    @SuppressWarnings("unchecked")
     protected Iterable<Object> toIterable(Object result) {
         return FpKit.toCollection(result);
     }
