@@ -45,8 +45,8 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         MergedSelectionSet fields = parameters.getFields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());
-        List<CompletableFuture<FieldValueInfo>> futures = new ArrayList<>();
-        List<String> resolvedFields = new ArrayList<>();
+        List<CompletableFuture<FieldValueInfo>> futures = new ArrayList<>(fieldNames.size());
+        List<String> resolvedFields = new ArrayList<>(fieldNames.size());
         for (String fieldName : fieldNames) {
             MergedField currentField = fields.getSubField(fieldName);
 

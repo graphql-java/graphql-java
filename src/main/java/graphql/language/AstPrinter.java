@@ -99,6 +99,7 @@ public class AstPrinter {
     private NodePrinter<DirectiveDefinition> directiveDefinition() {
         final String argSep = compactMode ? "," : ", ";
         return (out, node) -> {
+            out.printf("%s", description(node));
             String arguments = wrap("(", join(node.getInputValueDefinitions(), argSep), ")");
             String locations = join(node.getDirectiveLocations(), " | ");
             out.printf("directive @%s%s on %s", node.getName(), arguments, locations);
@@ -331,6 +332,7 @@ public class AstPrinter {
 
     private NodePrinter<SchemaDefinition> schemaDefinition() {
         return (out, node) -> {
+            out.printf("%s", description(node));
             out.printf("%s", spaced(
                     "schema",
                     directives(node.getDirectives()),
