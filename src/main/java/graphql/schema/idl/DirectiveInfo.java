@@ -1,5 +1,7 @@
-package graphql;
+package graphql.schema.idl;
 
+import graphql.Directives;
+import graphql.PublicApi;
 import graphql.schema.GraphQLDirective;
 
 import java.util.LinkedHashMap;

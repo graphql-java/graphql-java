@@ -41,7 +41,7 @@ import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
-import static graphql.DirectiveInfo.isGraphqlSpecifiedDirective;
+import static graphql.schema.idl.DirectiveInfo.isGraphqlSpecifiedDirective;
 
 @SuppressWarnings("unchecked")
 @PublicApi
