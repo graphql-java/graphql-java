@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.util.FpKit.map;
 
@@ -46,7 +47,8 @@ public class CacheControl {
         private final Scope scope;
 
         private Hint(List<Object> path, Integer maxAge, Scope scope) {
-            this.path = assertNotNull(path);
+            assertNotEmpty(path);
+            this.path = path;
             this.maxAge = maxAge;
             this.scope = scope;
         }
