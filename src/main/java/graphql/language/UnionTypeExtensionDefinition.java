@@ -57,6 +57,14 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
         return new Builder();
     }
 
+    @Override
+    public UnionTypeExtensionDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transformExtension(builder -> builder
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .memberTypes(newChildren.getChildren(CHILD_MEMBER_TYPES))
+        );
+    }
+
     public UnionTypeExtensionDefinition transformExtension(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);

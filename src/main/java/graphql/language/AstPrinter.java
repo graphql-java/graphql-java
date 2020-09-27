@@ -65,6 +65,7 @@ public class AstPrinter {
         printers.put(ScalarTypeDefinition.class, scalarTypeDefinition());
         printers.put(ScalarTypeExtensionDefinition.class, scalarTypeExtensionDefinition());
         printers.put(SchemaDefinition.class, schemaDefinition());
+        printers.put(SchemaExtensionDefinition.class, schemaExtensionDefinition());
         printers.put(SelectionSet.class, selectionSet());
         printers.put(StringValue.class, value());
         printers.put(TypeName.class, type());
@@ -382,6 +383,10 @@ public class AstPrinter {
 
     private NodePrinter<InputObjectTypeExtensionDefinition> inputObjectTypeExtensionDefinition() {
         return (out, node) -> out.printf("extend %s", node(node, InputObjectTypeDefinition.class));
+    }
+
+    private NodePrinter<SchemaExtensionDefinition> schemaExtensionDefinition() {
+        return (out, node) -> out.printf("extend %s", node(node, SchemaDefinition.class));
     }
 
     private NodePrinter<UnionTypeDefinition> unionTypeDefinition() {

@@ -35,7 +35,7 @@ import static java.util.Collections.singletonList;
  * visitField calls.
  */
 @PublicApi
-public class    QueryTraverser {
+public class QueryTraverser {
 
     private final Collection<? extends Node> roots;
     private final GraphQLSchema schema;
