@@ -7,6 +7,7 @@ import graphql.util.TraverserContext;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static graphql.Assert.assertNotNull;
 
@@ -66,8 +67,7 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
         GraphQLList that = (GraphQLList) o;
         GraphQLType wrappedType = getWrappedType();
 
-        return !(wrappedType != null ? !wrappedType.equals(that.getWrappedType()) : that.getWrappedType() != null);
-
+        return Objects.equals(wrappedType, that.getWrappedType());
     }
 
     @Override
