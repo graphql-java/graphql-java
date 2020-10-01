@@ -5,6 +5,7 @@ import graphql.util.TraversalControl
 import graphql.util.TraverserContext
 import spock.lang.Specification
 
+import static graphql.language.AstPrinter.printAst
 import static graphql.language.AstPrinter.printAstCompact
 import static graphql.util.TreeTransformerUtil.changeNode
 import static graphql.util.TreeTransformerUtil.deleteNode
@@ -795,5 +796,105 @@ class AstTransformerTest extends Specification {
 
     }
 
+    def "regression: changing a property of an extension should not change the extension to a base definition"() {
+        def document = TestUtil.toDocument("""
+            extend schema { query: Query }
+            extend type MyObjectType { login: String }
+            extend input MyInputObjectType { login: String }
+            extend interface MyInterface { login: String }
+            extend enum MyEnum { MONDAY }
+            extend scalar MyScalar @myDirective
+            extend union MyUnion = MyObjectType
+         """)
 
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitFieldDefinition(FieldDefinition fieldDefinition, TraverserContext<Node> context) {
+                if (fieldDefinition.name == "login") {
+                    // change name
+                    FieldDefinition signin = fieldDefinition.transform({ builder -> builder.name("signin") })
+                    return changeNode(context, signin)
+                }
+                return super.visitFieldDefinition(fieldDefinition, context)
+            }
+
+            @Override
+            TraversalControl visitInputValueDefinition(InputValueDefinition fieldDefinition, TraverserContext<Node> context) {
+                if (fieldDefinition.name == "login") {
+                    // change name
+                    InputValueDefinition signin = fieldDefinition.transform({ builder -> builder.name("signin") })
+                    return changeNode(context, signin)
+                }
+                return super.visitInputValueDefinition(fieldDefinition, context)
+            }
+
+            @Override
+            TraversalControl visitEnumValueDefinition(EnumValueDefinition node, TraverserContext<Node> context) {
+                if (node.name == "MONDAY") {
+                    // change name
+                    return changeNode(context, node.transform({ builder -> builder.name("TUESDAY") }))
+                }
+                return super.visitEnumValueDefinition(node, context)
+            }
+
+            @Override
+            TraversalControl visitSchemaDefinition(SchemaDefinition node, TraverserContext<Node> context) {
+                if (node instanceof SchemaExtensionDefinition) {
+                    return changeNode(context, node.transformExtension({
+                        it.operationTypeDefinitions([OperationTypeDefinition.newOperationTypeDefinition()
+                                .name("myQuery")
+                                .typeName(TypeName.newTypeName("MyQuery").build())
+                                .build()])
+                    }))
+                }
+                return super.visitSchemaDefinition(node, context)
+            }
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        newDocument instanceof Document
+
+        and:
+        def transformedDoc = newDocument as Document
+        transformedDoc.definitions.find {it instanceof NamedNode && it.name == "MyObjectType"} instanceof ObjectTypeExtensionDefinition
+        transformedDoc.definitions.find {it instanceof NamedNode && it.name == "MyInputObjectType"} instanceof InputObjectTypeExtensionDefinition
+        transformedDoc.definitions.find {it instanceof NamedNode && it.name == "MyInterface"} instanceof InterfaceTypeExtensionDefinition
+        transformedDoc.definitions.find {it instanceof NamedNode && it.name == "MyEnum"} instanceof EnumTypeExtensionDefinition
+        transformedDoc.definitions.find {it instanceof NamedNode && it.name == "MyScalar"} instanceof ScalarTypeExtensionDefinition
+        transformedDoc.definitions.find {it instanceof NamedNode && it.name == "MyUnion"} instanceof UnionTypeExtensionDefinition
+        transformedDoc.definitions.find {it instanceof SchemaDefinition } instanceof SchemaExtensionDefinition
+
+        and:
+        printAst(newDocument).trim() == """
+        |extend schema {
+        |  myQuery: MyQuery
+        |}
+        |
+        |extend type MyObjectType {
+        |  signin: String
+        |}
+        |
+        |extend input MyInputObjectType {
+        |  signin: String
+        |}
+        |
+        |extend interface MyInterface {
+        |  signin: String
+        |}
+        |
+        |extend enum MyEnum {
+        |  TUESDAY
+        |}
+        |
+        |extend scalar MyScalar @myDirective
+        |
+        |extend union MyUnion = MyObjectType
+        """.trim().stripMargin()
+    }
 }
