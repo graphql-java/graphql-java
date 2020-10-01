@@ -121,7 +121,7 @@ public abstract class ExecutionStrategy {
 
     protected final ValuesResolver valuesResolver = new ValuesResolver();
     protected final FieldCollector fieldCollector = new FieldCollector();
-    private final ExecutionStepInfoFactory executionStepInfoFactory = new ExecutionStepInfoFactory();
+    protected final ExecutionStepInfoFactory executionStepInfoFactory = new ExecutionStepInfoFactory();
     private final ResolveType resolvedType = new ResolveType();
 
     protected final DataFetcherExceptionHandler dataFetcherExceptionHandler;
@@ -291,7 +291,7 @@ public abstract class ExecutionStrategy {
                 .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result));
     }
 
-    FetchedValue unboxPossibleDataFetcherResult(ExecutionContext executionContext,
+    protected FetchedValue unboxPossibleDataFetcherResult(ExecutionContext executionContext,
                                                 ExecutionStrategyParameters parameters,
                                                 Object result) {
 
