@@ -19,4 +19,9 @@ public class MissingTypeError extends BaseError {
         super(node, format("The %s type '%s' is not present when resolving type '%s' %s",
                 typeOfType, typeName.getName(), name, lineCol(node)));
     }
+
+    public MissingTypeError(String typeOfType, Node node,String name) {
+        super(node, format("The %s type is not present when resolving type '%s' %s",
+                typeOfType, name, lineCol(node)));
+    }
 }
