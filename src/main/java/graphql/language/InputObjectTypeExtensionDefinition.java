@@ -51,6 +51,13 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
         return new Builder();
     }
 
+    @Override
+    public InputObjectTypeExtensionDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transformExtension(builder -> builder
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .inputValueDefinitions(newChildren.getChildren(CHILD_INPUT_VALUES_DEFINITIONS))
+        );
+    }
 
     public InputObjectTypeExtensionDefinition transformExtension(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);

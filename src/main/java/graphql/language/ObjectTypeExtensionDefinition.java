@@ -52,6 +52,12 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
                 getAdditionalData());
     }
 
+    @Override
+    public ObjectTypeExtensionDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transformExtension(builder -> builder.implementz(newChildren.getChildren(CHILD_IMPLEMENTZ))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .fieldDefinitions(newChildren.getChildren(CHILD_FIELD_DEFINITIONS)));
+    }
 
     @Override
     public String toString() {

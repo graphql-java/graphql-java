@@ -42,6 +42,13 @@ public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
         return new Builder();
     }
 
+    @Override
+    public ScalarTypeExtensionDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transformExtension(builder -> builder
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
+    }
+
     public ScalarTypeExtensionDefinition transformExtension(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
