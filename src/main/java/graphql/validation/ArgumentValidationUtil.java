@@ -1,6 +1,7 @@
 package graphql.validation;
 
 import graphql.GraphQLError;
+import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.ObjectField;
 import graphql.language.Value;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@Internal
 public class ArgumentValidationUtil extends ValidationUtil {
 
     private final List<String> argumentNames = new ArrayList<>();

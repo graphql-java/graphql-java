@@ -1,5 +1,6 @@
 package graphql.execution.batched;
 
+import graphql.Internal;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
 import graphql.schema.GraphQLObjectType;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 @Deprecated
+@Internal
 class ExecutionNode {
 
     private final GraphQLObjectType type;

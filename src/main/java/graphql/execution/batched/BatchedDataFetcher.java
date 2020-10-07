@@ -1,5 +1,6 @@
 package graphql.execution.batched;
 
+import graphql.PublicApi;
 import graphql.schema.DataFetcher;
 
 /**
@@ -7,6 +8,7 @@ import graphql.schema.DataFetcher;
  * @deprecated This has been deprecated in favour of using {@link graphql.execution.AsyncExecutionStrategy} and {@link graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation}
  */
 @Deprecated
+@PublicApi
 public interface BatchedDataFetcher extends DataFetcher {
     // Marker interface
 }

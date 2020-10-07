@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import graphql.ExecutionResult;
+import graphql.PublicApi;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
 /**
  * The standard graphql execution strategy that runs fields asynchronously non-blocking.
  */
+@PublicApi
 public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
     /**
@@ -43,8 +45,8 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         MergedSelectionSet fields = parameters.getFields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());
-        List<CompletableFuture<FieldValueInfo>> futures = new ArrayList<>();
-        List<String> resolvedFields = new ArrayList<>();
+        List<CompletableFuture<FieldValueInfo>> futures = new ArrayList<>(fieldNames.size());
+        List<String> resolvedFields = new ArrayList<>(fieldNames.size());
         for (String fieldName : fieldNames) {
             MergedField currentField = fields.getSubField(fieldName);
 

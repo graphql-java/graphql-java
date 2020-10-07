@@ -140,10 +140,7 @@ public class TracingSupport implements InstrumentationState {
     }
 
     private Object copyMap(Map<String, Object> map) {
-        Map<String, Object> mapCopy = new LinkedHashMap<>();
-        mapCopy.putAll(map);
-        return mapCopy;
-
+        return new LinkedHashMap<>(map);
     }
 
     private Map<String, Object> executionData() {

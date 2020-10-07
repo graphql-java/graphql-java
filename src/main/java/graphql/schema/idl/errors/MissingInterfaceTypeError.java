@@ -1,10 +1,12 @@
 package graphql.schema.idl.errors;
 
+import graphql.Internal;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 
 import static java.lang.String.format;
 
+@Internal
 public class MissingInterfaceTypeError extends BaseError {
 
     public MissingInterfaceTypeError(String typeOfType, TypeDefinition typeDefinition, TypeName typeName) {

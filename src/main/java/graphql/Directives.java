@@ -17,6 +17,7 @@ import static graphql.schema.GraphQLNonNull.nonNull;
 /**
  * The directives that are understood by graphql-java
  */
+@PublicApi
 public class Directives {
 
     public static final GraphQLDirective IncludeDirective = GraphQLDirective.newDirective()
@@ -39,21 +40,6 @@ public class Directives {
             .validLocations(FRAGMENT_SPREAD, INLINE_FRAGMENT, FIELD)
             .build();
 
-    /**
-     * The @defer directive can be used to defer sending data for a field till later in the query.  This is an opt in
-     * directive that is not available unless it is explicitly put into the schema.
-     */
-    public static final GraphQLDirective DeferDirective = GraphQLDirective.newDirective()
-            .name("defer")
-            .description("This directive allows results to be deferred during execution")
-            .argument(newArgument()
-                    .name("if")
-                    .type(nonNull(GraphQLBoolean))
-                    .description("Deferred behaviour is controlled by this argument")
-                    .defaultValue(true)
-            )
-            .validLocations(FIELD)
-            .build();
 
     /**
      * The "deprecated" directive is special and is always available in a graphql schema

@@ -6,6 +6,7 @@ import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
 import graphql.execution.directives.QueryDirectives;
+import graphql.introspection.IntrospectionDataFetchingEnvironment;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -26,7 +27,7 @@ import java.util.Map;
  */
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
-public interface DataFetchingEnvironment {
+public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnvironment {
 
     /**
      * This is the value of the current object to be queried.

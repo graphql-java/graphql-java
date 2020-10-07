@@ -1,9 +1,11 @@
 package graphql.schema.idl.errors;
 
+import graphql.Internal;
 import graphql.language.TypeDefinition;
 
 import static java.lang.String.format;
 
+@Internal
 public class TypeExtensionMissingBaseTypeError extends BaseError {
 
     public TypeExtensionMissingBaseTypeError(TypeDefinition typeExtensionDefinition) {

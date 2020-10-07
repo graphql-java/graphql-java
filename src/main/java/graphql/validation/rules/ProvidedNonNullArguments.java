@@ -1,6 +1,7 @@
 package graphql.validation.rules;
 
 
+import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.Directive;
 import graphql.language.Field;
@@ -19,6 +20,7 @@ import java.util.Map;
 
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 
+@Internal
 public class ProvidedNonNullArguments extends AbstractRule {
 
     public ProvidedNonNullArguments(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {

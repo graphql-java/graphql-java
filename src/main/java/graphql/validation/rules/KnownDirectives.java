@@ -1,6 +1,7 @@
 package graphql.validation.rules;
 
 
+import graphql.Internal;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Directive;
 import graphql.language.Field;
@@ -18,7 +19,9 @@ import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
 import java.util.List;
+import java.util.EnumSet;
 
+@Internal
 public class KnownDirectives extends AbstractRule {
 
 
@@ -44,21 +47,26 @@ public class KnownDirectives extends AbstractRule {
 
     @SuppressWarnings("deprecation") // the suppression stands because its deprecated but still in graphql spec
     private boolean hasInvalidLocation(GraphQLDirective directive, Node ancestor) {
+        EnumSet<DirectiveLocation> validLocations = directive.validLocations();
         if (ancestor instanceof OperationDefinition) {
             Operation operation = ((OperationDefinition) ancestor).getOperation();
-            return Operation.QUERY.equals(operation) ?
-                    !(directive.validLocations().contains(DirectiveLocation.QUERY)) :
-                    !(directive.validLocations().contains(DirectiveLocation.MUTATION));
+            if (Operation.QUERY.equals(operation)) {
+                return !validLocations.contains(DirectiveLocation.QUERY);
+            } else if (Operation.MUTATION.equals(operation)) {
+                return !validLocations.contains(DirectiveLocation.MUTATION);
+            } else if (Operation.SUBSCRIPTION.equals(operation)) {
+                return !validLocations.contains(DirectiveLocation.SUBSCRIPTION);
+            }
         } else if (ancestor instanceof Field) {
-            return !(directive.validLocations().contains(DirectiveLocation.FIELD));
+            return !(validLocations.contains(DirectiveLocation.FIELD));
         } else if (ancestor instanceof FragmentSpread) {
-            return !(directive.validLocations().contains(DirectiveLocation.FRAGMENT_SPREAD));
+            return !(validLocations.contains(DirectiveLocation.FRAGMENT_SPREAD));
         } else if (ancestor instanceof FragmentDefinition) {
-            return !(directive.validLocations().contains(DirectiveLocation.FRAGMENT_DEFINITION));
+            return !(validLocations.contains(DirectiveLocation.FRAGMENT_DEFINITION));
         } else if (ancestor instanceof InlineFragment) {
-            return !(directive.validLocations().contains(DirectiveLocation.INLINE_FRAGMENT));
+            return !(validLocations.contains(DirectiveLocation.INLINE_FRAGMENT));
         } else if (ancestor instanceof VariableDefinition) {
-            return !(directive.validLocations().contains(DirectiveLocation.VARIABLE_DEFINITION));
+            return !(validLocations.contains(DirectiveLocation.VARIABLE_DEFINITION));
         }
         return true;
     }

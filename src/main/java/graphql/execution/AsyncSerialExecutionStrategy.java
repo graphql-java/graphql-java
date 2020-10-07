@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import graphql.ExecutionResult;
+import graphql.PublicApi;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -13,6 +14,7 @@ import java.util.concurrent.CompletableFuture;
  * Async non-blocking execution, but serial: only one field at the the time will be resolved.
  * See {@link AsyncExecutionStrategy} for a non serial (parallel) execution of every field.
  */
+@PublicApi
 public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
     public AsyncSerialExecutionStrategy() {

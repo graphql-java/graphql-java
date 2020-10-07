@@ -554,6 +554,45 @@ class ParserTest extends Specification {
         selection.name == "foo"
     }
 
+    def "four quotation marks is an illegal string"() {
+        given:
+        def input = '''{foo(arg:[""""])}'''
+
+        when:
+        Document document = Parser.parse(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+        e.message.contains("Invalid Syntax")
+    }
+
+    def "three quotation marks is an illegal string"() {
+        given:
+        def input = '''{foo(arg: ["""])}'''
+
+        when:
+        Document document = Parser.parse(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+        e.message.contains("Invalid Syntax")
+    }
+
+    def "escaped triple quote inside block string"() {
+        given:
+        def input = '''{foo(arg: """\\"""""")}'''
+
+        when:
+        Document document = Parser.parse(input)
+        OperationDefinition operationDefinition = document.definitions[0]
+        Selection selection = operationDefinition.getSelectionSet().getSelections()[0]
+        Field field = (Field) selection
+
+        then:
+        field.getArguments().size() == 1
+        argValue(field, 0) == '"""'
+    }
+
     def "triple quoted strings"() {
         given:
         def input = '''{ field(triple : """triple
@@ -787,7 +826,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
             @Override
             protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
                 // this pattern is used in Nadel - its backdoor but needed
-                return new GraphqlAntlrToLanguage(tokens,multiSourceReader) {
+                return new GraphqlAntlrToLanguage(tokens, multiSourceReader) {
                     @Override
                     protected void addCommonData(NodeBuilder nodeBuilder, ParserRuleContext parserRuleContext) {
                         super.addCommonData(nodeBuilder, parserRuleContext)
@@ -803,5 +842,59 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         document.getAdditionalData().get("key") == "value"
         document.children[0].getAdditionalData().get("key") == "value"
 
+    }
+
+    def "parse integer"() {
+        given:
+        def input = '''{foo(arg: 11)}'''
+
+        when:
+        Document document = Parser.parse(input)
+        OperationDefinition operationDefinition = document.definitions[0]
+        Selection selection = operationDefinition.getSelectionSet().getSelections()[0]
+        Field field = (Field) selection
+
+        then:
+        field.getArguments().size() == 1
+        (field.getArguments()[0].getValue() as IntValue).getValue().intValueExact() == 11
+    }
+
+    @Unroll
+    def "invalid int #value is an error"() {
+        given:
+        def input = "{foo(arg: [$value])}"
+
+        when:
+        Document document = Parser.parse(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+        e.message.contains("Invalid Syntax")
+        where:
+        value | _
+        '00'  | _
+        '01'  | _
+        '123.'  | _
+        '123e'  | _
+        '123E'  | _
+    }
+
+    @Unroll
+    def "invalid float #value is an error"() {
+        given:
+        def input = "{foo(arg: [$value])}"
+
+        when:
+        Document document = Parser.parse(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+        e.message.contains("Invalid Syntax")
+        where:
+        value | _
+        '01.23'  | _
+        '1.2e3.4'  | _
+        '1.23.4'  | _
+        '1.2e3e'  | _
     }
 }
