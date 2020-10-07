@@ -188,7 +188,7 @@ public abstract class ExecutionStrategy {
      */
     protected CompletableFuture<FieldValueInfo> resolveFieldWithInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().getSingleField());
-        Supplier<ExecutionStepInfo> executionStepInfo = FpKit.memoize(() -> createExecutionStepInfo(executionContext, parameters, fieldDef, null));
+        Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(() -> createExecutionStepInfo(executionContext, parameters, fieldDef, null));
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(
@@ -238,7 +238,7 @@ public abstract class ExecutionStrategy {
         QueryDirectives queryDirectives = new QueryDirectivesImpl(field, executionContext.getGraphQLSchema(), executionContext.getVariables());
 
         // if the DF (like PropertyDataFetcher) does not use the arguments of execution step info then dont build any
-        Supplier<ExecutionStepInfo> executionStepInfo = FpKit.memoize(
+        Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(
                 () -> createExecutionStepInfo(executionContext, parameters, fieldDef, parentType));
         Supplier<Map<String, Object>> argumentValues = () -> executionStepInfo.get().getArguments();
 

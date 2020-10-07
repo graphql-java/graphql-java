@@ -4,14 +4,19 @@ import graphql.Internal;
 
 import java.util.function.Supplier;
 
+/**
+ * This memoizing supplier DOES use synchronised double locking to set its value.
+ *
+ * @param <T> for two
+ */
 @Internal
-public class StrongMemoizedSupplier<T> implements Supplier<T> {
+public class InterThreadMemoizedSupplier<T> implements Supplier<T> {
 
     private final Supplier<T> delegate;
     private volatile boolean initialized;
     private T value;
 
-    public StrongMemoizedSupplier(Supplier<T> delegate) {
+    public InterThreadMemoizedSupplier(Supplier<T> delegate) {
         this.delegate = delegate;
     }
 

@@ -152,7 +152,7 @@ public class FpKit {
             for (int j = 0; j < colCount; j++) {
                 T val = matrix.get(i).get(j);
                 if (result.size() <= j) {
-                    result.add(j, new ArrayList());
+                    result.add(j, new ArrayList<>());
                 }
                 result.get(j).add(i, val);
             }
@@ -201,22 +201,22 @@ public class FpKit {
      *
      * @return a supplier that will memoize values in the context of the current thread
      */
-    public static <T> Supplier<T> memoize(Supplier<T> delegate) {
-        return new WeakMemoizedSupplier<>(delegate);
+    public static <T> Supplier<T> intraThreadMemoize(Supplier<T> delegate) {
+        return new IntraThreadMemoizedSupplier<>(delegate);
     }
 
     /**
      * Tis will memoize the Supplier across threads and make sure the Supplier is exactly called once.
      *
-     * Use for potentially costly actions. Otherwiese consider {@link #memoize(Supplier)}
+     * Use for potentially costly actions. Otherwise consider {@link #intraThreadMemoize(Supplier)}
      *
-     * @param delegate
-     * @param <T>
+     * @param delegate the supplier to delegate to
+     * @param <T>      for two
      *
-     * @return
+     * @return a supplier that will memoize values in the context of the all the threads
      */
-    public static <T> Supplier<T> strongMemoize(Supplier<T> delegate) {
-        return new StrongMemoizedSupplier<>(delegate);
+    public static <T> Supplier<T> interThreadMemoize(Supplier<T> delegate) {
+        return new InterThreadMemoizedSupplier<>(delegate);
     }
 
 }
