@@ -6,5 +6,6 @@ import graphql.Internal;
 public enum SchemaValidationErrorType {
 
     UnbrokenInputCycle,
-    ObjectDoesNotImplementItsInterfaces
+    ObjectDoesNotImplementItsInterfaces,
+    ObjectDoesNotContainsAnyField
 }
