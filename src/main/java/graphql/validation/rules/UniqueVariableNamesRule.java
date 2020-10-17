@@ -1,5 +1,6 @@
 package graphql.validation.rules;
 
+import graphql.Internal;
 import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
 import graphql.validation.AbstractRule;
@@ -16,6 +17,7 @@ import java.util.Set;
  * <p>
  * A GraphQL operation is only valid if all its variables are uniquely named.
  */
+@Internal
 public class UniqueVariableNamesRule extends AbstractRule {
 
     public UniqueVariableNamesRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {

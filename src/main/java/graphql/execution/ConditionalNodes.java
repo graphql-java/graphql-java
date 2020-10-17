@@ -9,7 +9,7 @@ import java.util.Map;
 
 import static graphql.Directives.IncludeDirective;
 import static graphql.Directives.SkipDirective;
-import static graphql.language.NodeUtil.directivesByName;
+import static graphql.language.NodeUtil.directiveByName;
 
 
 @Internal
@@ -29,7 +29,7 @@ public class ConditionalNodes {
         if (directives.isEmpty()) {
             return null;
         }
-        return directivesByName(directives).get(name);
+        return directiveByName(directives, name).orElse(null);
     }
 
     private boolean getDirectiveResult(Map<String, Object> variables, List<Directive> directives, String directiveName, boolean defaultValue) {

@@ -75,4 +75,29 @@ fragment X on SomeType {
         newDoc != null
         printAst(newDoc) == expectedQuery
     }
+
+    def "can do signature on queries with no name"() {
+        def query = """
+    {
+        allIssues(arg1 : "UGC", arg2 : 666) {
+            id
+        }
+    }"""
+
+        def expectedQuery = """query {
+  allIssues(arg1: "", arg2: 0) {
+    id
+  }
+}
+"""
+
+        def doc = TestUtil.parseQuery(query)
+        when:
+        def newDoc = new AstSignature().signatureQuery(doc, null)
+        then:
+        newDoc != null
+        printAst(newDoc) == expectedQuery
+
+
+    }
 }

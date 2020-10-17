@@ -1,9 +1,11 @@
 package graphql.schema.idl.errors;
 
+import graphql.Internal;
 import graphql.language.Node;
 
 import static java.lang.String.format;
 
+@Internal
 public class DirectiveIllegalArgumentTypeError extends BaseError {
 
     public static final String DUPLICATED_KEYS_MESSAGE = "Argument value object keys [%s] appear more than once.";

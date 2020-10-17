@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -112,7 +113,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
 
         InterfaceTypeDefinition that = (InterfaceTypeDefinition) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name);
+        return Objects.equals(this.name, that.name);
     }
 
     @Override
@@ -154,7 +155,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
         return builder.build();
     }
 
-    public static final class Builder implements NodeBuilder {
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private String name;
@@ -178,6 +179,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
             this.definitions = existing.getFieldDefinitions();
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
+            this.implementz = existing.getImplements();
         }
 
 
@@ -222,6 +224,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
             return this;
         }
 
+        @Override
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;

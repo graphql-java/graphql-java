@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.PublicApi;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactory;
 import graphql.schema.GraphQLScalarType;
@@ -15,6 +16,7 @@ import static graphql.Assert.assertShouldNeverHappen;
  * This combines a number of {@link WiringFactory}s together to act as one.  It asks each one
  * whether it handles a type and delegates to the first one to answer yes.
  */
+@PublicApi
 public class CombinedWiringFactory implements WiringFactory {
     private final List<WiringFactory> factories;
 

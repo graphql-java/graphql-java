@@ -3,6 +3,7 @@ package graphql.schema;
 import graphql.Assert;
 import graphql.PublicApi;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -63,7 +64,7 @@ public class GraphqlTypeComparatorEnvironment {
 
         GraphqlTypeComparatorEnvironment that = (GraphqlTypeComparatorEnvironment) o;
 
-        if (parentType != null ? !parentType.equals(that.parentType) : that.parentType != null) {
+        if (!Objects.equals(parentType, that.parentType)) {
             return false;
         }
         return elementType.equals(that.elementType);

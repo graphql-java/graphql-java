@@ -2,17 +2,16 @@ package graphql.execution.instrumentation.dataloader;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.PublicApi;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategy;
-import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.SimpleInstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -44,6 +43,7 @@ import java.util.concurrent.CompletableFuture;
  * @see org.dataloader.DataLoader
  * @see org.dataloader.DataLoaderRegistry
  */
+@PublicApi
 public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
     private static final Logger log = LoggerFactory.getLogger(DataLoaderDispatcherInstrumentation.class);
@@ -143,26 +143,6 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         return state.getApproach().beginExecutionStrategy(parameters.withNewState(state.getState()));
     }
 
-    @Override
-    public DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
-        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
-        //
-        // if there are no data loaders, there is nothing to do
-        //
-        if (state.hasNoDataLoaders()) {
-            return new DeferredFieldInstrumentationContext() {
-                @Override
-                public void onDispatched(CompletableFuture<ExecutionResult> result) {
-                }
-
-                @Override
-                public void onCompleted(ExecutionResult result, Throwable t) {
-                }
-            };
-
-        }
-        return state.getApproach().beginDeferredField(parameters.withNewState(state.getState()));
-    }
 
     @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
@@ -183,8 +163,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         }
         DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
         Map<Object, Object> currentExt = executionResult.getExtensions();
-        Map<Object, Object> statsMap = new LinkedHashMap<>();
-        statsMap.putAll(currentExt == null ? Collections.emptyMap() : currentExt);
+        Map<Object, Object> statsMap = new LinkedHashMap<>(currentExt == null ? Collections.emptyMap() : currentExt);
         Map<Object, Object> dataLoaderStats = buildStatsMap(state);
         statsMap.put("dataloader", dataLoaderStats);
 

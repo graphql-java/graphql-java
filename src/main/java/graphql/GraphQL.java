@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -83,16 +84,14 @@ import static graphql.execution.ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDE
 @PublicApi
 public class GraphQL {
 
-    /**
-     * When @defer directives are used, this is the extension key name used to contain the {@link org.reactivestreams.Publisher}
-     * of deferred results
-     */
-    public static final String DEFERRED_RESULTS = "deferredResults";
-
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
     private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(GraphQL.class);
 
     private final static Instrumentation DEFAULT_INSTRUMENTATION = new DataLoaderDispatcherInstrumentation();
+    private final static ExecutionStrategy DEFAULT_QUERY_STRATEGY = new AsyncExecutionStrategy();
+    private final static ExecutionStrategy DEFAULT_MUTATION_STRATEGY = new AsyncSerialExecutionStrategy();
+    private final static ExecutionStrategy DEFAULT_SUBSCRIPTION_STRATEGY = new SubscriptionExecutionStrategy();
+
 
     private final GraphQLSchema graphQLSchema;
     private final ExecutionStrategy queryStrategy;
@@ -167,9 +166,9 @@ public class GraphQL {
                     PreparsedDocumentProvider preparsedDocumentProvider,
                     ValueUnboxer valueUnboxer) {
         this.graphQLSchema = assertNotNull(graphQLSchema, () -> "graphQLSchema must be non null");
-        this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
-        this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
-        this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new SubscriptionExecutionStrategy();
+        this.queryStrategy = queryStrategy != null ? queryStrategy : DEFAULT_QUERY_STRATEGY;
+        this.mutationStrategy = mutationStrategy != null ? mutationStrategy : DEFAULT_MUTATION_STRATEGY;
+        this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : DEFAULT_SUBSCRIPTION_STRATEGY;
         this.idProvider = assertNotNull(idProvider, () -> "idProvider must be non null");
         this.instrumentation = assertNotNull(instrumentation);
         this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, () -> "preparsedDocumentProvider must be non null");
@@ -196,28 +195,24 @@ public class GraphQL {
     public GraphQL transform(Consumer<GraphQL.Builder> builderConsumer) {
         Builder builder = new Builder(this.graphQLSchema);
         builder
-                .queryExecutionStrategy(nvl(this.queryStrategy, builder.queryExecutionStrategy))
-                .mutationExecutionStrategy(nvl(this.mutationStrategy, builder.mutationExecutionStrategy))
-                .subscriptionExecutionStrategy(nvl(this.subscriptionStrategy, builder.subscriptionExecutionStrategy))
-                .executionIdProvider(nvl(this.idProvider, builder.idProvider))
-                .instrumentation(nvl(this.instrumentation, builder.instrumentation))
-                .preparsedDocumentProvider(nvl(this.preparsedDocumentProvider, builder.preparsedDocumentProvider));
+                .queryExecutionStrategy(Optional.ofNullable(this.queryStrategy).orElse(builder.queryExecutionStrategy))
+                .mutationExecutionStrategy(Optional.ofNullable(this.mutationStrategy).orElse(builder.mutationExecutionStrategy))
+                .subscriptionExecutionStrategy(Optional.ofNullable(this.subscriptionStrategy).orElse(builder.subscriptionExecutionStrategy))
+                .executionIdProvider(Optional.ofNullable(this.idProvider).orElse(builder.idProvider))
+                .instrumentation(Optional.ofNullable(this.instrumentation).orElse(builder.instrumentation))
+                .preparsedDocumentProvider(Optional.ofNullable(this.preparsedDocumentProvider).orElse(builder.preparsedDocumentProvider));
 
         builderConsumer.accept(builder);
 
         return builder.build();
     }
 
-    private static <T> T nvl(T obj, T elseObj) {
-        return obj == null ? elseObj : obj;
-    }
-
     @PublicApi
     public static class Builder {
         private GraphQLSchema graphQLSchema;
-        private ExecutionStrategy queryExecutionStrategy = new AsyncExecutionStrategy();
-        private ExecutionStrategy mutationExecutionStrategy = new AsyncSerialExecutionStrategy();
-        private ExecutionStrategy subscriptionExecutionStrategy = new SubscriptionExecutionStrategy();
+        private ExecutionStrategy queryExecutionStrategy = DEFAULT_QUERY_STRATEGY;
+        private ExecutionStrategy mutationExecutionStrategy = DEFAULT_MUTATION_STRATEGY;
+        private ExecutionStrategy subscriptionExecutionStrategy = DEFAULT_SUBSCRIPTION_STRATEGY;
         private ExecutionIdProvider idProvider = DEFAULT_EXECUTION_ID_PROVIDER;
         private Instrumentation instrumentation = null; // deliberate default here
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;

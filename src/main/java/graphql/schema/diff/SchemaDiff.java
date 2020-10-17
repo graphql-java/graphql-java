@@ -1,5 +1,6 @@
 package graphql.schema.diff;
 
+import graphql.PublicSpi;
 import graphql.introspection.IntrospectionResultToSchema;
 import graphql.language.Argument;
 import graphql.language.Directive;
@@ -24,7 +25,6 @@ import graphql.language.Value;
 import graphql.schema.diff.reporting.DifferenceReporter;
 import graphql.schema.idl.TypeInfo;
 
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +44,7 @@ import static graphql.schema.idl.TypeInfo.typeInfo;
  * {@link graphql.schema.diff.reporting.DifferenceReporter}
  */
 @SuppressWarnings("ConstantConditions")
+@PublicSpi
 public class SchemaDiff {
 
     /**

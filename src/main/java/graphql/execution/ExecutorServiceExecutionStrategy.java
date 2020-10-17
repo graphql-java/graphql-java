@@ -20,7 +20,7 @@ import java.util.concurrent.Future;
 /**
  *
  * <p>Deprecation Notice : This execution strategy does not support all of the graphql-java capabilities
- * such as data loader or @defer fields.  Since its so easy to create a data fetcher that uses
+ * such as data loader.  Since its so easy to create a data fetcher that uses
  * {@link java.util.concurrent.CompletableFuture#supplyAsync(java.util.function.Supplier, java.util.concurrent.Executor)}
  * to make field fetching happen off thread we recommend that you use that instead of this class.  This class
  * will be removed in a future version.
@@ -73,7 +73,7 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
         for (String fieldName : fields.keySet()) {
             final MergedField currentField = fields.getSubField(fieldName);
 
-            ExecutionPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
+            ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
 

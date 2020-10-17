@@ -51,6 +51,13 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
         return new Builder();
     }
 
+    @Override
+    public InputObjectTypeExtensionDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transformExtension(builder -> builder
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .inputValueDefinitions(newChildren.getChildren(CHILD_INPUT_VALUES_DEFINITIONS))
+        );
+    }
 
     public InputObjectTypeExtensionDefinition transformExtension(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
@@ -58,7 +65,7 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
         return builder.build();
     }
 
-    public static final class Builder implements NodeBuilder {
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private String name;
@@ -103,6 +110,7 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
             return this;
         }
 
+        @Override
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;

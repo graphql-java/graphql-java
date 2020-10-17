@@ -1,6 +1,7 @@
 package graphql.validation.rules;
 
 
+import graphql.Internal;
 import graphql.execution.TypeFromAST;
 import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
@@ -16,6 +17,7 @@ import graphql.validation.ValidationErrorType;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@Internal
 public class VariableTypesMatchRule extends AbstractRule {
 
     final VariablesTypesMatcher variablesTypesMatcher;

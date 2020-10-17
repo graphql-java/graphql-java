@@ -9,11 +9,11 @@ import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
 import graphql.InvalidSyntaxError;
 import graphql.SerializationError;
-import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MissingRootTypeException;
 import graphql.execution.NonNullableFieldWasNullError;
 import graphql.execution.NonNullableFieldWasNullException;
+import graphql.execution.ResultPath;
 import graphql.introspection.Introspection;
 import graphql.language.SourceLocation;
 import graphql.schema.CoercingSerializeException;
@@ -88,8 +88,8 @@ public class ExecutionResultJSONTesting {
         return new SourceLocation(line, column);
     }
 
-    private ExecutionPath mkPath() {
-        return ExecutionPath.rootPath().segment("heroes").segment(0).segment("abilities").segment("speed").segment(4);
+    private ResultPath mkPath() {
+        return ResultPath.rootPath().segment("heroes").segment(0).segment("abilities").segment("speed").segment(4);
     }
 
     private ExecutionStepInfo mkExecutionInfo() {

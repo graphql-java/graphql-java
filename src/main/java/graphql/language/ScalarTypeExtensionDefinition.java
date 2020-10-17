@@ -42,13 +42,20 @@ public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
         return new Builder();
     }
 
+    @Override
+    public ScalarTypeExtensionDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transformExtension(builder -> builder
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
+    }
+
     public ScalarTypeExtensionDefinition transformExtension(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
         return builder.build();
     }
 
-    public static final class Builder implements NodeBuilder {
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private String name;
@@ -92,6 +99,7 @@ public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
             return this;
         }
 
+        @Override
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;

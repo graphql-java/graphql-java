@@ -1,5 +1,6 @@
 package graphql.validation.rules;
 
+import graphql.Internal;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLInputType;
 import graphql.validation.AbstractRule;
@@ -10,6 +11,7 @@ import graphql.validation.ValidationErrorType;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 
 
+@Internal
 public class VariableDefaultValuesOfCorrectType extends AbstractRule {
 
 

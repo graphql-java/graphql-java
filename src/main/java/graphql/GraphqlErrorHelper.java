@@ -5,6 +5,7 @@ import graphql.language.SourceLocation;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.util.stream.Collectors.toList;
 
@@ -13,6 +14,7 @@ import static java.util.stream.Collectors.toList;
  * common things (hashcode/ equals ) and to specification more easily
  */
 @SuppressWarnings("SimplifiableIfStatement")
+@Internal
 public class GraphqlErrorHelper {
 
     public static Map<String, Object> toSpecification(GraphQLError error) {
@@ -75,12 +77,15 @@ public class GraphqlErrorHelper {
 
         GraphQLError dat = (GraphQLError) o;
 
-        if (dis.getMessage() != null ? !dis.getMessage().equals(dat.getMessage()) : dat.getMessage() != null)
+        if (!Objects.equals(dis.getMessage(), dat.getMessage())) {
             return false;
-        if (dis.getLocations() != null ? !dis.getLocations().equals(dat.getLocations()) : dat.getLocations() != null)
+        }
+        if (!Objects.equals(dis.getLocations(), dat.getLocations())) {
             return false;
-        if (dis.getPath() != null ? !dis.getPath().equals(dat.getPath()) : dat.getPath() != null)
+        }
+        if (!Objects.equals(dis.getPath(), dat.getPath())) {
             return false;
+        }
         return dis.getErrorType() == dat.getErrorType();
     }
 }

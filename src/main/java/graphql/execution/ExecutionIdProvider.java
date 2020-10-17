@@ -1,8 +1,11 @@
 package graphql.execution;
 
+import graphql.PublicSpi;
+
 /**
  * A provider of {@link ExecutionId}s
  */
+@PublicSpi
 public interface ExecutionIdProvider {
 
     ExecutionIdProvider DEFAULT_EXECUTION_ID_PROVIDER = (query, operationName, context) -> ExecutionId.generate();

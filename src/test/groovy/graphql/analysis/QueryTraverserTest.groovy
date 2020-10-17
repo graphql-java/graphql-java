@@ -1407,9 +1407,9 @@ class QueryTraverserTest extends Specification {
             """)
         QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         QueryVisitorFieldEnvironment env
-        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
-            env = it
-        })
+        1 * visitor.visitField(_) >> { args ->
+            env = args[0]
+        }
         when:
         queryTraversal.visitPreOrder(visitor)
         env.typeNameIntrospectionField

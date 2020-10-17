@@ -1,11 +1,13 @@
 package graphql.execution.instrumentation.parameters;
 
 import graphql.ExecutionInput;
+import graphql.PublicApi;
 import graphql.schema.GraphQLSchema;
 
 /**
  * Parameters sent to {@link graphql.execution.instrumentation.Instrumentation} methods
  */
+@PublicApi
 public class InstrumentationCreateStateParameters {
     private final GraphQLSchema schema;
     private final ExecutionInput executionInput;

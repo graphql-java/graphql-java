@@ -12,7 +12,7 @@ import static java.util.Collections.singletonList;
 
 /**
  * An instance of a preparsed document entry represents the result of a query parse and validation, like
- * an either implementation it contains either the correct result in th document property or the errors.
+ * an either implementation it contains either the correct result in the document property or the errors.
  *
  * NOTE: This class implements {@link java.io.Serializable} and hence it can be serialised and placed into a distributed cache.  However we
  * are not aiming to provide long term compatibility and do not intend for you to place this serialised data into permanent storage,

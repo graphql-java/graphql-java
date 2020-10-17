@@ -4,6 +4,7 @@ import graphql.Assert;
 import graphql.Internal;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -26,15 +27,17 @@ public class Async {
     public static <U> CompletableFuture<List<U>> each(List<CompletableFuture<U>> futures) {
         CompletableFuture<List<U>> overallResult = new CompletableFuture<>();
 
+        @SuppressWarnings("unchecked")
+        CompletableFuture<U>[] arrayOfFutures = futures.toArray(new CompletableFuture[0]);
         CompletableFuture
-                .allOf(futures.toArray(new CompletableFuture[0]))
-                .whenComplete((noUsed, exception) -> {
+                .allOf(arrayOfFutures)
+                .whenComplete((ignored, exception) -> {
                     if (exception != null) {
                         overallResult.completeExceptionally(exception);
                         return;
                     }
-                    List<U> results = new ArrayList<>();
-                    for (CompletableFuture<U> future : futures) {
+                    List<U> results = new ArrayList<>(arrayOfFutures.length);
+                    for (CompletableFuture<U> future : arrayOfFutures) {
                         results.add(future.join());
                     }
                     overallResult.complete(results);
@@ -42,8 +45,8 @@ public class Async {
         return overallResult;
     }
 
-    public static <T, U> CompletableFuture<List<U>> each(Iterable<T> list, BiFunction<T, Integer, CompletableFuture<U>> cfFactory) {
-        List<CompletableFuture<U>> futures = new ArrayList<>();
+    public static <T, U> CompletableFuture<List<U>> each(Collection<T> list, BiFunction<T, Integer, CompletableFuture<U>> cfFactory) {
+        List<CompletableFuture<U>> futures = new ArrayList<>(list.size());
         int index = 0;
         for (T t : list) {
             CompletableFuture<U> cf;
@@ -176,13 +179,13 @@ public class Async {
     public static <U, T> List<CompletableFuture<U>> map(List<CompletableFuture<T>> values, Function<T, U> mapper) {
         return values
                 .stream()
-                .map(cf -> cf.thenApply(mapper::apply)).collect(Collectors.toList());
+                .map(cf -> cf.thenApply(mapper)).collect(Collectors.toList());
     }
 
     public static <U, T> List<CompletableFuture<U>> mapCompose(List<CompletableFuture<T>> values, Function<T, CompletableFuture<U>> mapper) {
         return values
                 .stream()
-                .map(cf -> cf.thenCompose(mapper::apply)).collect(Collectors.toList());
+                .map(cf -> cf.thenCompose(mapper)).collect(Collectors.toList());
     }
 
 }

@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.PublicApi;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.TypeResolver;
@@ -15,6 +16,7 @@ import static graphql.Assert.assertNotNull;
  *
  * This is used by {@link RuntimeWiring} to wire together a functional {@link GraphQLSchema}
  */
+@PublicApi
 public class TypeRuntimeWiring {
     private final String typeName;
     private final DataFetcher defaultDataFetcher;

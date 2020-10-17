@@ -30,20 +30,5 @@
  *
  * }
  * </pre>
- *
- * This also has @defer support which sends back HTTP multipart requests.  Since tools like graphiql dont understand http multipart
- * then you might use a tool like curl to see results
- *
- * <pre>
- * {@code
- *      curl \
- *          -X POST \
- *           -H "Content-Type: application/json" \
- *           --data '{ "query": "{ hero { name friends @defer { name } } } "}' \
- *          http://localhost:8080/graphql
- * }
- * </pre>
- *
- * See https://www.apollographql.com/docs/react/features/defer-support.html for some more details on @defer
  */
 package example.http;

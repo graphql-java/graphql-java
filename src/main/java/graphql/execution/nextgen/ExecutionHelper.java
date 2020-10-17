@@ -4,11 +4,11 @@ import graphql.ExecutionInput;
 import graphql.Internal;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
-import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.MergedSelectionSet;
+import graphql.execution.ResultPath;
 import graphql.execution.ValuesResolver;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -81,7 +81,7 @@ public class ExecutionHelper {
                 .build();
 
         MergedSelectionSet mergedSelectionSet = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
-        ExecutionStepInfo executionInfo = newExecutionStepInfo().type(operationRootType).path(ExecutionPath.rootPath()).build();
+        ExecutionStepInfo executionInfo = newExecutionStepInfo().type(operationRootType).path(ResultPath.rootPath()).build();
 
         FieldSubSelection fieldSubSelection = FieldSubSelection.newFieldSubSelection()
                 .source(executionContext.getRoot())

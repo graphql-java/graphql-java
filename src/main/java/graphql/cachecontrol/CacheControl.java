@@ -3,16 +3,15 @@ package graphql.cachecontrol;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
-import graphql.execution.ExecutionPath;
+import graphql.execution.ResultPath;
 import graphql.schema.DataFetchingEnvironment;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.util.FpKit.map;
 
@@ -22,8 +21,8 @@ import static graphql.util.FpKit.map;
  * To best use this class you need to pass a CacheControl object to each {@link graphql.schema.DataFetcher} and have them decide on
  * the caching hint values.
  * <p>
- * The easiest why to do this is create a CacheControl object at query start and pass it in as a "context" object via {@link graphql.ExecutionInput#getContext()} and then have
- * each {@link graphql.schema.DataFetcher} thats wants to make cache control hints use that.
+ * The easiest way to do this is create a CacheControl object at query start and pass it in as a "context" object via {@link graphql.ExecutionInput#getContext()} and then have
+ * each {@link graphql.schema.DataFetcher} that wants to make cache control hints use that.
  * <p>
  * Then at the end of the query you would call {@link #addTo(graphql.ExecutionResult)} to record the cache control hints into the {@link graphql.ExecutionResult}
  * extensions map as per the specification.
@@ -48,7 +47,8 @@ public class CacheControl {
         private final Scope scope;
 
         private Hint(List<Object> path, Integer maxAge, Scope scope) {
-            this.path = assertNotNull(path);
+            assertNotEmpty(path);
+            this.path = path;
             this.maxAge = maxAge;
             this.scope = scope;
         }
@@ -82,7 +82,7 @@ public class CacheControl {
      *
      * @return this object builder style
      */
-    public CacheControl hint(ExecutionPath path, Integer maxAge, Scope scope) {
+    public CacheControl hint(ResultPath path, Integer maxAge, Scope scope) {
         assertNotNull(path);
         assertNotNull(scope);
         hints.add(new Hint(path.toList(), maxAge, scope));
@@ -97,7 +97,7 @@ public class CacheControl {
      *
      * @return this object builder style
      */
-    public CacheControl hint(ExecutionPath path, Scope scope) {
+    public CacheControl hint(ResultPath path, Scope scope) {
         return hint(path, null, scope);
     }
 
@@ -109,7 +109,7 @@ public class CacheControl {
      *
      * @return this object builder style
      */
-    public CacheControl hint(ExecutionPath path, Integer maxAge) {
+    public CacheControl hint(ResultPath path, Integer maxAge) {
         return hint(path, maxAge, Scope.PUBLIC);
     }
 

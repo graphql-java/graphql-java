@@ -61,7 +61,7 @@ public class ValuesResolver {
             if (!variableValues.containsKey(variableName)) {
                 Value defaultValue = variableDefinition.getDefaultValue();
                 if (defaultValue != null) {
-                    Object coercedValue = coerceValueAst(fieldVisibility, variableType, variableDefinition.getDefaultValue(), null);
+                    Object coercedValue = coerceValueAst(fieldVisibility, variableType, defaultValue, null);
                     coercedValues.put(variableName, coercedValue);
                 } else if (isNonNull(variableType)) {
                     throw new NonNullableValueCoercedAsNullException(variableDefinition, variableType);
@@ -131,7 +131,7 @@ public class ValuesResolver {
 
 
     private Map<String, Argument> argumentMap(List<Argument> arguments) {
-        Map<String, Argument> result = new LinkedHashMap<>();
+        Map<String, Argument> result = new LinkedHashMap<>(arguments.size());
         for (Argument argument : arguments) {
             result.put(argument.getName(), argument);
         }

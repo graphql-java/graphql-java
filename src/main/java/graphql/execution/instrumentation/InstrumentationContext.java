@@ -1,5 +1,7 @@
 package graphql.execution.instrumentation;
 
+import graphql.PublicSpi;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -10,6 +12,7 @@ import java.util.concurrent.CompletableFuture;
  * This pattern of construction of an object then call back is intended to allow "timers" to be created that can instrument what has
  * just happened or "loggers" to be called to record what has happened.
  */
+@PublicSpi
 public interface InstrumentationContext<T> {
 
     /**

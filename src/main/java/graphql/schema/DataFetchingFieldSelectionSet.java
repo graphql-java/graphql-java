@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.PublicApi;
 import graphql.execution.MergedSelectionSet;
 
 import java.util.List;
@@ -34,6 +35,7 @@ import java.util.function.Supplier;
  * from the underlying data system.  Imagine a SQL system where this might represent the SQL 'projection'
  * of columns say.
  */
+@PublicApi
 public interface DataFetchingFieldSelectionSet extends Supplier<MergedSelectionSet> {
 
     /**

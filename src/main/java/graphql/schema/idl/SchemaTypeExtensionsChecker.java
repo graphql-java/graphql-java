@@ -324,7 +324,6 @@ class SchemaTypeExtensionsChecker {
         Map<String, FieldDefinition> referenceMap = FpKit.getByName(referenceFieldDefinitions, FieldDefinition::getName, mergeFirst());
 
         fieldDefinitions.forEach(fld -> {
-            FieldDefinition reference = referenceMap.get(fld.getName());
             if (referenceMap.containsKey(fld.getName())) {
                 errors.add(new TypeExtensionFieldRedefinitionError(typeDefinition, fld));
             }
@@ -335,7 +334,6 @@ class SchemaTypeExtensionsChecker {
         Map<String, InputValueDefinition> referenceMap = FpKit.getByName(referenceInputValues, InputValueDefinition::getName, mergeFirst());
 
         inputValueDefinitions.forEach(fld -> {
-            InputValueDefinition reference = referenceMap.get(fld.getName());
             if (referenceMap.containsKey(fld.getName())) {
                 errors.add(new TypeExtensionFieldRedefinitionError(typeDefinition, fld));
             }

@@ -9,9 +9,10 @@ import java.util.Map;
 /**
  * This is passed to a {@link graphql.schema.TypeResolver} to help with object type resolution.
  *
- * See {@link graphql.schema.TypeResolver#getType(TypeResolutionEnvironment)} for how this is used
+ * See {@link graphql.schema.TypeResolver#getType} for how this is used
  */
 @SuppressWarnings("TypeParameterUnusedInFormals")
+@PublicApi
 public class TypeResolutionEnvironment {
 
     private final Object object;
