@@ -1,6 +1,7 @@
 package graphql.normalized;
 
 import graphql.Assert;
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
@@ -8,6 +9,7 @@ import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnmodifiedType;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -17,7 +19,7 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 
-@PublicApi
+@Internal
 public class NormalizedField {
     private final String alias;
     private final Map<String, Object> arguments;
@@ -72,6 +74,10 @@ public class NormalizedField {
 
     public String getAlias() {
         return alias;
+    }
+
+    public boolean isConditional() {
+        return isConditional;
     }
 
     public Map<String, Object> getArguments() {
@@ -164,10 +170,11 @@ public class NormalizedField {
     @Override
     public String toString() {
         return "NormalizedField{" +
-                "alias='" + alias + '\'' +
-                ", objectType.name=" + objectType.getName() +
-                ", fieldDefinition.name=" + fieldDefinition.getName() +
+                objectType.getName() + "." + fieldDefinition.getName() +
+                ", alias=" + alias +
                 ", level=" + level +
+                ", conditional=" + isConditional +
+                ", children=" + children +
                 '}';
     }
 
@@ -207,7 +214,7 @@ public class NormalizedField {
         private int level;
         private NormalizedField parent;
         private String alias;
-        private Map<String, Object> arguments = new LinkedHashMap<>();
+        private Map<String, Object> arguments = Collections.emptyMap();
 
         private Builder() {
 
@@ -235,7 +242,7 @@ public class NormalizedField {
         }
 
         public Builder arguments(Map<String, Object> arguments) {
-            this.arguments = arguments;
+            this.arguments = arguments == null ? Collections.emptyMap() : arguments;
             return this;
         }
 

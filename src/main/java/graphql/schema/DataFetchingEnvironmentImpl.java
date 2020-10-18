@@ -13,7 +13,7 @@ import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.normalized.NormalizedField;
-import graphql.normalized.NormalizedQueryFromAst;
+import graphql.normalized.NormalizedQueryTree;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 
@@ -47,7 +47,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Document document;
     private final Map<String, Object> variables;
     private final QueryDirectives queryDirectives;
-    private final Supplier<NormalizedQueryFromAst> normalizedQueryFromAstSupplier;
+    private final Supplier<NormalizedQueryTree> normalizedQueryTreeSupplier;
 
     private DataFetchingEnvironmentImpl(Builder builder) {
         this.source = builder.source;
@@ -71,7 +71,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.document = builder.document;
         this.variables = builder.variables == null ? Collections.emptyMap() : builder.variables;
         this.queryDirectives = builder.queryDirectives;
-        this.normalizedQueryFromAstSupplier = builder.normalizedQueryFromAstSupplier;
+        this.normalizedQueryTreeSupplier = builder.normalizedQueryFromAstSupplier;
     }
 
     /**
@@ -237,16 +237,6 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public NormalizedField getNormalizeField() {
-        return normalizedQueryFromAstSupplier.get().getNormalizedField(mergedField, executionStepInfo.get().getPath());
-    }
-
-    @Override
-    public NormalizedQueryFromAst getNormalizedQueryFromAst() {
-        return normalizedQueryFromAstSupplier.get();
-    }
-
-    @Override
     public String toString() {
         return "DataFetchingEnvironmentImpl{" +
                 "executionStepInfo=" + executionStepInfo +
@@ -276,7 +266,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private Map<String, FragmentDefinition> fragmentsByName;
         private Map<String, Object> variables;
         private QueryDirectives queryDirectives;
-        private Supplier<NormalizedQueryFromAst> normalizedQueryFromAstSupplier;
+        private Supplier<NormalizedQueryTree> normalizedQueryFromAstSupplier;
 
         public Builder(DataFetchingEnvironmentImpl env) {
             this.source = env.source;
@@ -300,7 +290,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.document = env.document;
             this.variables = env.variables;
             this.queryDirectives = env.queryDirectives;
-            this.normalizedQueryFromAstSupplier = env.normalizedQueryFromAstSupplier;
+            this.normalizedQueryFromAstSupplier = env.normalizedQueryTreeSupplier;
         }
 
         public Builder() {
@@ -419,7 +409,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             return this;
         }
 
-        public Builder normalizedQuery(Supplier<NormalizedQueryFromAst> normalizedQueryFromAstSupplier) {
+        public Builder normalizedQuery(Supplier<NormalizedQueryTree> normalizedQueryFromAstSupplier) {
             this.normalizedQueryFromAstSupplier = normalizedQueryFromAstSupplier;
             return this;
         }

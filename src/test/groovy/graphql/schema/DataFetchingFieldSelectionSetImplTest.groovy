@@ -1,5 +1,6 @@
 package graphql.schema
 
+import graphql.ExecutionInput
 import graphql.Scalars
 import graphql.TestUtil
 import graphql.execution.ExecutionContextBuilder
@@ -9,9 +10,12 @@ import graphql.language.Field
 import graphql.language.FragmentDefinition
 import graphql.language.NodeUtil
 import graphql.language.OperationDefinition
+import graphql.schema.idl.RuntimeWiring
 import spock.lang.Specification
 
 import static graphql.TestUtil.mergedField
+import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
+import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class DataFetchingFieldSelectionSetImplTest extends Specification {
 
@@ -395,6 +399,149 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         then:
         fieldsGlob.collect({ field -> field.qualifiedName }) == expectedFieldName
         fields.collect({ field -> field.qualifiedName }) == expectedFieldName
+    }
+
+    def complexDSL1 = '''
+            type Query {
+                petUnion : PetUnion
+                pet(qualifier : String) : Pet
+                leads : [Lead]
+            }
+            
+            interface Pet {
+                name : String
+                pet(qualifier : String) : Pet
+                petUnion : PetUnion
+                lead : Lead
+            }
+            
+            type Dog implements Pet {
+                name : String
+                pet(qualifier : String) : Pet
+                petUnion : PetUnion
+                lead : Lead
+                woof : String
+            }
+
+            type Bird implements Pet {
+                name : String
+                pet(qualifier : String) : Pet
+                petUnion : PetUnion
+                lead : Lead
+                tweet : String
+            }
+            
+            type Cat implements Pet {
+                name : String
+                pet(qualifier : String) : Pet
+                petUnion : PetUnion
+                lead : Lead
+                meow : String
+            }
+            
+            type Lead {
+                material : String
+            }
+            
+            union PetUnion = Dog | Cat
+                
+        '''
+
+    def "test how it works"() {
+
+        def lassie = [name: "lassie", lead: [material: "leather"]]
+        def grumpyCat = [name: "grumpCat", pet: lassie, petUnion: lassie, lead: [material: "leather"]]
+        def fido = [name: "fido", pet: grumpyCat, petUnion: grumpyCat, lead: [material: "leather"]]
+
+        DataFetchingFieldSelectionSet petSelectionSet = null
+        DataFetcher petDF = { DataFetchingEnvironment env ->
+            petSelectionSet = env.getSelectionSet()
+            return fido
+        }
+        DataFetchingFieldSelectionSet petUnionSelectionSet = null
+        DataFetcher petUnionDF = { DataFetchingEnvironment env ->
+            petUnionSelectionSet = env.getSelectionSet()
+            return fido
+        }
+
+        DataFetchingFieldSelectionSet leadSelectionSet = null
+        DataFetcher leadDF = { DataFetchingEnvironment env ->
+            leadSelectionSet = env.getSelectionSet()
+            return [[material: "rope"]]
+        }
+        DataFetcher simpleSF = { DataFetchingEnvironment env ->
+            def pdf = PropertyDataFetcher.fetching(env.getFieldDefinition().getName())
+            return pdf.get(env)
+        }
+
+        def typeResolver = { e -> e.getSchema().getObjectType("Dog") }
+        RuntimeWiring runtimeWiring = newRuntimeWiring()
+                .type(newTypeWiring("Query")
+                        .dataFetcher("lead", leadDF)
+                        .dataFetcher("pet", petDF)
+                        .dataFetcher("petUnion", petUnionDF)
+                )
+                .type(newTypeWiring("Dog")
+                        .dataFetcher("name", simpleSF)
+                )
+                .type(newTypeWiring("Pet")
+                        .typeResolver(typeResolver)
+                )
+                .type(newTypeWiring("PetUnion")
+                        .typeResolver(typeResolver)
+                )
+                .build()
+        def graphQL = TestUtil.graphQL(complexDSL1, runtimeWiring).build()
+
+        when:
+        def query = '''
+        {
+            leads {
+                material
+            }
+            pet {
+                name
+                lead { material } 
+            }
+            petUnion {
+                ... on Cat {
+                    name
+                    meow
+                    pet {
+                        name
+                    }
+                    ... on Cat {
+                        name
+                        meow
+                    }
+                }
+                ... on Dog {
+                    name
+                    woof
+                    pet {
+                        name
+                    }
+                    ... on Dog {
+                        name
+                        woof
+                        lead { material } 
+                    }
+                }
+            }
+        }
+        '''
+        def ei = ExecutionInput.newExecutionInput(query).build()
+        def er = graphQL.execute(ei)
+        then:
+        er.errors.isEmpty()
+        petSelectionSet.contains("name")
+        petSelectionSet.contains("Dog.name")
+        petSelectionSet.contains("Cat.name")
+        petSelectionSet.contains("Bird.name")
+
+        petSelectionSet.contains("name/lead")
+        petSelectionSet.contains("name/lead/material")
 
     }
+
 }

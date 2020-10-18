@@ -11,7 +11,7 @@ import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.normalized.NormalizedField;
-import graphql.normalized.NormalizedQueryFromAst;
+import graphql.normalized.NormalizedQueryTree;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 
@@ -149,15 +149,5 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
 
     public Map<String, Object> getVariables() {
         return delegateEnvironment.getVariables();
-    }
-
-    @Override
-    public NormalizedField getNormalizeField() {
-        return delegateEnvironment.getNormalizeField();
-    }
-
-    @Override
-    public NormalizedQueryFromAst getNormalizedQueryFromAst() {
-        return delegateEnvironment.getNormalizedQueryFromAst();
     }
 }

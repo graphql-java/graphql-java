@@ -32,6 +32,28 @@ public interface SelectedField {
     Map<String, Object> getArguments();
 
     /**
+     * @return the level of the selected field within the query
+     */
+    int getLevel();
+
+    /**
+     * @return whether the field is conditionally present.
+     */
+    boolean isConditional();
+
+    /**
+     * @return the alias of the selected field or null if not alias was used
+     */
+    String getAlias();
+
+    /**
+     * The result key is either the alias OR the field name in that preference order
+     *
+     * @return the result key of the selected field
+     */
+    String getResultKey();
+
+    /**
      * @return a sub selection set (if it has any)
      */
     DataFetchingFieldSelectionSet getSelectionSet();

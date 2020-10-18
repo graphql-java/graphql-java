@@ -1,6 +1,7 @@
 package graphql.normalized;
 
 import graphql.Assert;
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.execution.MergedField;
 import graphql.execution.ResultPath;
@@ -10,18 +11,18 @@ import graphql.schema.FieldCoordinates;
 import java.util.List;
 import java.util.Map;
 
-@PublicApi
-public class NormalizedQueryFromAst {
+@Internal
+public class NormalizedQueryTree {
 
     private final List<NormalizedField> topLevelFields;
     private final Map<Field, List<NormalizedField>> fieldToNormalizedField;
     private final Map<NormalizedField, MergedField> normalizedFieldToMergedField;
     private final Map<FieldCoordinates, List<NormalizedField>> coordinatesToNormalizedFields;
 
-    public NormalizedQueryFromAst(List<NormalizedField> topLevelFields,
-                                  Map<Field, List<NormalizedField>> fieldToNormalizedField,
-                                  Map<NormalizedField, MergedField> normalizedFieldToMergedField,
-                                  Map<FieldCoordinates, List<NormalizedField>> coordinatesToNormalizedFields) {
+    public NormalizedQueryTree(List<NormalizedField> topLevelFields,
+                               Map<Field, List<NormalizedField>> fieldToNormalizedField,
+                               Map<NormalizedField, MergedField> normalizedFieldToMergedField,
+                               Map<FieldCoordinates, List<NormalizedField>> coordinatesToNormalizedFields) {
         this.topLevelFields = topLevelFields;
         this.fieldToNormalizedField = fieldToNormalizedField;
         this.normalizedFieldToMergedField = normalizedFieldToMergedField;

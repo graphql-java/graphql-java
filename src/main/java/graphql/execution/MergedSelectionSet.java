@@ -11,7 +11,8 @@ import java.util.Set;
 
 
 @PublicApi
-public class MergedSelectionSet {
+public class
+MergedSelectionSet {
 
     private final Map<String, MergedField> subFields;
 

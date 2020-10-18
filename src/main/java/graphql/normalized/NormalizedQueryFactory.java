@@ -19,29 +19,29 @@ import java.util.Map;
 @Internal
 public class NormalizedQueryFactory {
 
-    public static NormalizedQueryFromAst createNormalizedQuery(GraphQLSchema graphQLSchema,
-                                                               Document document,
-                                                               String operationName,
-                                                               Map<String, Object> variables) {
+    public static NormalizedQueryTree createNormalizedQuery(GraphQLSchema graphQLSchema,
+                                                            Document document,
+                                                            String operationName,
+                                                            Map<String, Object> variables) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
         return createNormalizedQuery(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, variables);
     }
 
 
-    public static NormalizedQueryFromAst createNormalizedQuery(GraphQLSchema graphQLSchema,
-                                                               OperationDefinition operationDefinition,
-                                                               Map<String, FragmentDefinition> fragments,
-                                                               Map<String, Object> variables) {
+    public static NormalizedQueryTree createNormalizedQuery(GraphQLSchema graphQLSchema,
+                                                            OperationDefinition operationDefinition,
+                                                            Map<String, FragmentDefinition> fragments,
+                                                            Map<String, Object> variables) {
         return new NormalizedQueryFactory().createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, variables);
     }
 
     /**
      * Creates a new Query execution tree for the provided query
      */
-    private NormalizedQueryFromAst createNormalizedQueryImpl(GraphQLSchema graphQLSchema,
-                                                             OperationDefinition operationDefinition,
-                                                             Map<String, FragmentDefinition> fragments,
-                                                             Map<String, Object> variables) {
+    private NormalizedQueryTree createNormalizedQueryImpl(GraphQLSchema graphQLSchema,
+                                                          OperationDefinition operationDefinition,
+                                                          Map<String, FragmentDefinition> fragments,
+                                                          Map<String, Object> variables) {
 
 
         FieldCollectorNormalizedQuery fieldCollector = new FieldCollectorNormalizedQuery();
@@ -72,7 +72,7 @@ public class NormalizedQueryFactory {
             updateByAstFieldMap(realTopLevel, mergedField, fieldToNormalizedField);
             realRoots.add(realTopLevel);
         }
-        return new NormalizedQueryFromAst(realRoots, fieldToNormalizedField, normalizedFieldToMergedField, coordinatesToNormalizedFields);
+        return new NormalizedQueryTree(realRoots, fieldToNormalizedField, normalizedFieldToMergedField, coordinatesToNormalizedFields);
     }
 
     private void fixUpParentReference(NormalizedField rootNormalizedField) {

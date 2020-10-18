@@ -11,7 +11,7 @@ import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.normalized.NormalizedQueryFactory;
-import graphql.normalized.NormalizedQueryFromAst;
+import graphql.normalized.NormalizedQueryTree;
 import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import org.dataloader.DataLoaderRegistry;
@@ -214,7 +214,7 @@ public class ExecutionContext {
         return builder.build();
     }
 
-    public Supplier<NormalizedQueryFromAst> getNormalizedQuery() {
+    public Supplier<NormalizedQueryTree> getNormalizedQuery() {
         return FpKit.interThreadMemoize(() -> NormalizedQueryFactory.createNormalizedQuery(graphQLSchema, operationDefinition, fragmentsByName, variables));
     }
 }
