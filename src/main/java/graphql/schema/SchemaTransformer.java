@@ -114,8 +114,8 @@ public class SchemaTransformer {
     }
 
     private void badHack(DummyRoot dummyRoot) {
-        GraphQLNonNull.setUseOriginalTypeForEquals(true);
-        GraphQLList.setUseOriginalTypeForEquals(true);
+//        GraphQLNonNull.setUseOriginalTypeForEquals(true);
+//        GraphQLList.setUseOriginalTypeForEquals(true);
     }
 
     public GraphQLSchema transform(final GraphQLSchema schema, GraphQLTypeVisitor visitor) {

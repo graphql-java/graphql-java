@@ -70,35 +70,29 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
         this.replacedWrappedType = type;
     }
 
-    @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Object o) {
         if (this == o) {
             return true;
         }
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        if (useOriginalTypeForEquals) {
-            GraphQLNonNull that = (GraphQLNonNull) o;
-            GraphQLType wrappedType = getOriginalWrappedType();
-            return Objects.equals(wrappedType, that.getOriginalWrappedType());
-
-        } else {
-            GraphQLNonNull that = (GraphQLNonNull) o;
-            GraphQLType wrappedType = getWrappedType();
-            return Objects.equals(wrappedType, that.getWrappedType());
+        GraphQLNonNull that = (GraphQLNonNull) o;
+        GraphQLType wrappedType = getWrappedType();
+        if(wrappedType instanceof GraphQLList) {
+           return ((GraphQLList) wrappedType).isEqualTo(that.getWrappedType());
         }
-
+        return Objects.equals(wrappedType, that.getWrappedType());
     }
-
-    @Override
-    public int hashCode() {
-        if (useOriginalTypeForEquals) {
-            return getOriginalWrappedType() != null ? getOriginalWrappedType().hashCode() : 0;
-        } else {
-            return getWrappedType() != null ? getWrappedType().hashCode() : 0;
-        }
-    }
+//
+//    @Override
+//    public int hashCode() {
+//        if (useOriginalTypeForEquals) {
+//            return getOriginalWrappedType() != null ? getOriginalWrappedType().hashCode() : 0;
+//        } else {
+//            return getWrappedType() != null ? getWrappedType().hashCode() : 0;
+//        }
+//    }
 
     @Override
     public String toString() {

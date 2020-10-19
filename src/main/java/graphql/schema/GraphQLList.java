@@ -64,34 +64,29 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
         GraphQLList.useOriginalTypeForEquals = useOriginalTypeForEquals;
     }
 
-    @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Object o) {
         if (this == o) {
             return true;
         }
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        if (useOriginalTypeForEquals) {
-            GraphQLList that = (GraphQLList) o;
-            GraphQLType wrappedType = getOriginalWrappedType();
-            return Objects.equals(wrappedType, that.getOriginalWrappedType());
-
-        } else {
-            GraphQLList that = (GraphQLList) o;
-            GraphQLType wrappedType = getWrappedType();
-            return Objects.equals(wrappedType, that.getWrappedType());
+        GraphQLList that = (GraphQLList) o;
+        GraphQLType wrappedType = getWrappedType();
+        if (wrappedType instanceof GraphQLNonNull) {
+            return ((GraphQLNonNull) wrappedType).isEqualTo(that.getWrappedType());
         }
+        return Objects.equals(wrappedType, that.getWrappedType());
     }
-
-    @Override
-    public int hashCode() {
-        if (useOriginalTypeForEquals) {
-            return getOriginalWrappedType() != null ? getOriginalWrappedType().hashCode() : 0;
-        } else {
-            return getWrappedType() != null ? getWrappedType().hashCode() : 0;
-        }
-    }
+//
+//    @Override
+//    public int hashCode() {
+//        if (useOriginalTypeForEquals) {
+//            return getOriginalWrappedType() != null ? getOriginalWrappedType().hashCode() : 0;
+//        } else {
+//            return getWrappedType() != null ? getWrappedType().hashCode() : 0;
+//        }
+//    }
 
     @Override
     public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
