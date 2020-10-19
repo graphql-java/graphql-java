@@ -22,7 +22,7 @@ public class GraphQLTypeUtil {
      * @return the type in graphql SDL format, eg [typeName!]!
      */
     public static String simplePrint(GraphQLType type) {
-        Assert.assertNotNull(type,() -> "type can't be null");
+        Assert.assertNotNull(type, () -> "type can't be null");
         StringBuilder sb = new StringBuilder();
         if (isNonNull(type)) {
             sb.append(simplePrint(unwrapOne(type)));
