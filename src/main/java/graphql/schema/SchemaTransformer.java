@@ -113,16 +113,11 @@ public class SchemaTransformer {
         return schemaTransformer.transform(schema, visitor);
     }
 
-    private void badHack(DummyRoot dummyRoot) {
-//        GraphQLNonNull.setUseOriginalTypeForEquals(true);
-//        GraphQLList.setUseOriginalTypeForEquals(true);
-    }
 
     public GraphQLSchema transform(final GraphQLSchema schema, GraphQLTypeVisitor visitor) {
 
 
         DummyRoot dummyRoot = new DummyRoot(schema);
-        badHack(dummyRoot);
 
         List<NodeZipper<GraphQLSchemaElement>> zippers = new LinkedList<>();
         Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByNodeAfterTraversing = new LinkedHashMap<>();

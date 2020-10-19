@@ -84,15 +84,6 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
         }
         return Objects.equals(wrappedType, that.getWrappedType());
     }
-//
-//    @Override
-//    public int hashCode() {
-//        if (useOriginalTypeForEquals) {
-//            return getOriginalWrappedType() != null ? getOriginalWrappedType().hashCode() : 0;
-//        } else {
-//            return getWrappedType() != null ? getWrappedType().hashCode() : 0;
-//        }
-//    }
 
     @Override
     public String toString() {

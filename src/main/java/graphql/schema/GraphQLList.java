@@ -78,15 +78,6 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
         }
         return Objects.equals(wrappedType, that.getWrappedType());
     }
-//
-//    @Override
-//    public int hashCode() {
-//        if (useOriginalTypeForEquals) {
-//            return getOriginalWrappedType() != null ? getOriginalWrappedType().hashCode() : 0;
-//        } else {
-//            return getWrappedType() != null ? getWrappedType().hashCode() : 0;
-//        }
-//    }
 
     @Override
     public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
