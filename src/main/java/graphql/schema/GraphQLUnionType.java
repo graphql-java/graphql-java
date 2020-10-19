@@ -338,4 +338,13 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
                     extensionDefinitions);
         }
     }
+
+    @Override
+    public String toString() {
+        return "GraphQLUnionType{" +
+                "name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", definition=" + definition +
+                '}';
+    }
 }

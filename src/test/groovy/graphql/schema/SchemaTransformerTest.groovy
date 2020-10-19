@@ -7,7 +7,6 @@ import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaPrinter
 import graphql.util.TraversalControl
 import graphql.util.TraverserContext
-import graphql.util.TreeTransformerUtil
 import spock.lang.Specification
 
 import static graphql.schema.FieldCoordinates.coordinates
@@ -453,6 +452,7 @@ type SubChildChanged {
             TraversalControl visitGraphQLDirective(GraphQLDirective node,
                                                    TraverserContext<GraphQLSchemaElement> context) {
                 if ("internalnote".equals(node.getName())) {
+                    // this deletes the declaration and the two usages of it
                     deleteNode(context);
                 }
                 return TraversalControl.CONTINUE;
@@ -483,10 +483,31 @@ type SubChildChanged {
         """)
 
         when:
-        def output = SchemaTransformer.transformSchema(schema, internalNoteHider)
+        def newSchema = SchemaTransformer.transformSchema(schema, internalNoteHider)
 
         then:
-        output.getType("FooBar") != null
+        newSchema.getType("FooBar") != null
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
+        then:
+        printer.print(newSchema) == """interface Manchu {
+  id: ID!
+}
+
+union FooBar = Bar | Foo
+
+type Bar {
+  hidden: String!
+  id: ID!
+}
+
+type Foo implements Manchu {
+  id: ID!
+}
+
+type Query {
+  fooBar: Foo
+}
+"""
     }
 
 }

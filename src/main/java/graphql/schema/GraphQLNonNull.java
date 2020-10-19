@@ -27,6 +27,7 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
      * {@code .type(nonNull(GraphQLString)) }
      *
      * @param wrappedType the type to wrap as being non null
+     *
      * @return a GraphQLNonNull of that wrapped type
      */
     public static GraphQLNonNull nonNull(GraphQLType wrappedType) {
@@ -35,6 +36,7 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
 
     private final GraphQLType originalWrappedType;
     private GraphQLType replacedWrappedType;
+    private static boolean useOriginalTypeForEquals;
 
     public static final String CHILD_WRAPPED_TYPE = "wrappedType";
 
@@ -43,6 +45,10 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
         assertNotNull(wrappedType, () -> "wrappedType can't be null");
         assertNonNullWrapping(wrappedType);
         this.originalWrappedType = wrappedType;
+    }
+
+    public static void setUseOriginalTypeForEquals(boolean useOriginalTypeForEquals) {
+        GraphQLNonNull.useOriginalTypeForEquals = useOriginalTypeForEquals;
     }
 
     private void assertNonNullWrapping(GraphQLType wrappedType) {
@@ -55,6 +61,9 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
         return replacedWrappedType != null ? replacedWrappedType : originalWrappedType;
     }
 
+    public GraphQLType getOriginalWrappedType() {
+        return originalWrappedType;
+    }
 
     void replaceType(GraphQLType type) {
         assertNonNullWrapping(type);
@@ -69,16 +78,26 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
+        if (useOriginalTypeForEquals) {
+            GraphQLNonNull that = (GraphQLNonNull) o;
+            GraphQLType wrappedType = getOriginalWrappedType();
+            return Objects.equals(wrappedType, that.getOriginalWrappedType());
 
-        GraphQLNonNull that = (GraphQLNonNull) o;
-        GraphQLType wrappedType = getWrappedType();
+        } else {
+            GraphQLNonNull that = (GraphQLNonNull) o;
+            GraphQLType wrappedType = getWrappedType();
+            return Objects.equals(wrappedType, that.getWrappedType());
+        }
 
-        return Objects.equals(wrappedType, that.getWrappedType());
     }
 
     @Override
     public int hashCode() {
-        return getWrappedType() != null ? getWrappedType().hashCode() : 0;
+        if (useOriginalTypeForEquals) {
+            return getOriginalWrappedType() != null ? getOriginalWrappedType().hashCode() : 0;
+        } else {
+            return getWrappedType() != null ? getWrappedType().hashCode() : 0;
+        }
     }
 
     @Override

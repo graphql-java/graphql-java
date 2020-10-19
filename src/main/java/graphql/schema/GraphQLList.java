@@ -22,6 +22,7 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
 
     private final GraphQLType originalWrappedType;
     private GraphQLType replacedWrappedType;
+    private static boolean useOriginalTypeForEquals;
 
     public static final String CHILD_WRAPPED_TYPE = "wrappedType";
 
@@ -51,8 +52,16 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
         return replacedWrappedType != null ? replacedWrappedType : originalWrappedType;
     }
 
+    public GraphQLType getOriginalWrappedType() {
+        return originalWrappedType;
+    }
+
     void replaceType(GraphQLType type) {
         this.replacedWrappedType = type;
+    }
+
+    public static void setUseOriginalTypeForEquals(boolean useOriginalTypeForEquals) {
+        GraphQLList.useOriginalTypeForEquals = useOriginalTypeForEquals;
     }
 
     @Override
@@ -63,16 +72,25 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
+        if (useOriginalTypeForEquals) {
+            GraphQLList that = (GraphQLList) o;
+            GraphQLType wrappedType = getOriginalWrappedType();
+            return Objects.equals(wrappedType, that.getOriginalWrappedType());
 
-        GraphQLList that = (GraphQLList) o;
-        GraphQLType wrappedType = getWrappedType();
-
-        return Objects.equals(wrappedType, that.getWrappedType());
+        } else {
+            GraphQLList that = (GraphQLList) o;
+            GraphQLType wrappedType = getWrappedType();
+            return Objects.equals(wrappedType, that.getWrappedType());
+        }
     }
 
     @Override
     public int hashCode() {
-        return getWrappedType() != null ? getWrappedType().hashCode() : 0;
+        if (useOriginalTypeForEquals) {
+            return getOriginalWrappedType() != null ? getOriginalWrappedType().hashCode() : 0;
+        } else {
+            return getWrappedType() != null ? getWrappedType().hashCode() : 0;
+        }
     }
 
     @Override
