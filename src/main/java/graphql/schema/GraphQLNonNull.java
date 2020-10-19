@@ -36,7 +36,6 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
 
     private final GraphQLType originalWrappedType;
     private GraphQLType replacedWrappedType;
-    private static boolean useOriginalTypeForEquals;
 
     public static final String CHILD_WRAPPED_TYPE = "wrappedType";
 
@@ -45,10 +44,6 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
         assertNotNull(wrappedType, () -> "wrappedType can't be null");
         assertNonNullWrapping(wrappedType);
         this.originalWrappedType = wrappedType;
-    }
-
-    public static void setUseOriginalTypeForEquals(boolean useOriginalTypeForEquals) {
-        GraphQLNonNull.useOriginalTypeForEquals = useOriginalTypeForEquals;
     }
 
     private void assertNonNullWrapping(GraphQLType wrappedType) {

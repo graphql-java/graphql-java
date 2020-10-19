@@ -22,7 +22,6 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
 
     private final GraphQLType originalWrappedType;
     private GraphQLType replacedWrappedType;
-    private static boolean useOriginalTypeForEquals;
 
     public static final String CHILD_WRAPPED_TYPE = "wrappedType";
 
@@ -60,9 +59,6 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
         this.replacedWrappedType = type;
     }
 
-    public static void setUseOriginalTypeForEquals(boolean useOriginalTypeForEquals) {
-        GraphQLList.useOriginalTypeForEquals = useOriginalTypeForEquals;
-    }
 
     public boolean isEqualTo(Object o) {
         if (this == o) {
