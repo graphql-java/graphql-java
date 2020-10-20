@@ -281,7 +281,7 @@ public class FpKit {
     }
 
     /**
-     * Tis will memoize the Supplier across threads and make sure the Supplier is exactly called once.
+     * This will memoize the Supplier across threads and make sure the Supplier is exactly called once.
      * <p>
      * Use for potentially costly actions. Otherwise consider {@link #intraThreadMemoize(Supplier)}
      *
