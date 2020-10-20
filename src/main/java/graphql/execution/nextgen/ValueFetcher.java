@@ -125,7 +125,7 @@ public class ValueFetcher {
 
         GraphQLOutputType fieldType = fieldDef.getType();
 
-        Supplier<NormalizedQueryTree> normalizedQuery = executionContext.getNormalizedQuery();
+        Supplier<NormalizedQueryTree> normalizedQuery = executionContext.getNormalizedQueryTree();
         Supplier<NormalizedField> normalisedField = () -> normalizedQuery.get().getNormalizedField(sameFields, executionInfo.getFieldContainer(), executionInfo.getPath());
         DataFetchingFieldSelectionSet selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(fieldType, normalisedField);
 

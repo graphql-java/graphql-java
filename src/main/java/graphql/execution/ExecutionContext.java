@@ -200,6 +200,10 @@ public class ExecutionContext {
         return subscriptionStrategy;
     }
 
+    public Supplier<NormalizedQueryTree> getNormalizedQueryTree() {
+        return FpKit.interThreadMemoize(() -> NormalizedQueryTreeFactory.createNormalizedQuery(graphQLSchema, operationDefinition, fragmentsByName, variables));
+    }
+
     /**
      * This helps you transform the current ExecutionContext object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
@@ -212,9 +216,5 @@ public class ExecutionContext {
         ExecutionContextBuilder builder = ExecutionContextBuilder.newExecutionContextBuilder(this);
         builderConsumer.accept(builder);
         return builder.build();
-    }
-
-    public Supplier<NormalizedQueryTree> getNormalizedQuery() {
-        return FpKit.interThreadMemoize(() -> NormalizedQueryTreeFactory.createNormalizedQuery(graphQLSchema, operationDefinition, fragmentsByName, variables));
     }
 }
