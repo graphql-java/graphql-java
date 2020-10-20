@@ -409,14 +409,14 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
             }
             
             interface Pet {
-                name : String
+                name(nameArg : String) : String
                 pet(qualifier : String) : Pet
                 petUnion : PetUnion
                 lead : Lead
             }
             
             type Dog implements Pet {
-                name : String
+                name(nameArg : String) : String
                 pet(qualifier : String) : Pet
                 petUnion : PetUnion
                 lead : Lead
@@ -424,7 +424,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
             }
 
             type Bird implements Pet {
-                name : String
+                name(nameArg : String) : String
                 pet(qualifier : String) : Pet
                 petUnion : PetUnion
                 lead : Lead
@@ -432,7 +432,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
             }
             
             type Cat implements Pet {
-                name : String
+                name(nameArg : String) : String
                 pet(qualifier : String) : Pet
                 petUnion : PetUnion
                 lead : Lead
@@ -500,31 +500,34 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
                 material
             }
             pet {
-                name
-                lead { material } 
+                name(nameArg : "OnPet")
+                lead { material }
+                ... on Cat {
+                    n1: name(nameArg : "OnCat")
+                } 
             }
             petUnion {
                 ... on Cat {
                     name
                     meow
-                    pet {
+                    pet(qualifier : "cat") {
                         name
-                    }
-                    ... on Cat {
-                        name
-                        meow
+                        ... on Cat {
+                            name
+                            meow
+                        }
                     }
                 }
                 ... on Dog {
                     name
                     woof
-                    pet {
+                    pet(qualifier : "cat") {
                         name
-                    }
-                    ... on Dog {
-                        name
-                        woof
-                        lead { material } 
+                        ... on Dog {
+                            name
+                            woof
+                            lead { material } 
+                        }
                     }
                 }
             }
@@ -534,6 +537,8 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def er = graphQL.execute(ei)
         then:
         er.errors.isEmpty()
+        //! petUnionSelectionSet.contains("foo")
+
         petSelectionSet.contains("name")
         petSelectionSet.contains("Dog.name")
         petSelectionSet.contains("Cat.name")
@@ -541,6 +546,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         petSelectionSet.contains("name/lead")
         petSelectionSet.contains("name/lead/material")
+
 
     }
 

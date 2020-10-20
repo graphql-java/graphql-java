@@ -17,7 +17,7 @@ import spock.lang.Specification
 
 import static graphql.schema.FieldCoordinates.coordinates
 
-class NormalizedQueryFactoryTest extends Specification {
+class NormalizedQueryTreeFactoryTest extends Specification {
 
 
     def "test"() {
@@ -91,7 +91,7 @@ type Dog implements Animal{
 
         Document document = TestUtil.parseQuery(query)
 
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
         def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
@@ -177,7 +177,7 @@ type Dog implements Animal{
 
         Document document = TestUtil.parseQuery(query)
 
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
         def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
@@ -259,7 +259,7 @@ type Dog implements Animal{
 
         Document document = TestUtil.parseQuery(query)
 
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
         def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
@@ -310,7 +310,7 @@ type Dog implements Animal{
 
         Document document = TestUtil.parseQuery(query)
 
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
         def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
@@ -353,7 +353,7 @@ type Dog implements Animal{
 
         Document document = TestUtil.parseQuery(query)
 
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
         def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
@@ -404,7 +404,7 @@ type Dog implements Animal{
 
         Document document = TestUtil.parseQuery(query)
 
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
         def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
@@ -468,7 +468,7 @@ type Dog implements Animal{
 
         Document document = TestUtil.parseQuery(query)
 
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
         def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
@@ -516,7 +516,7 @@ type Dog implements Animal{
 
         Document document = TestUtil.parseQuery(query)
 
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
         def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
@@ -560,7 +560,7 @@ type Dog implements Animal{
 
         Document document = TestUtil.parseQuery(query)
 
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
         def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
@@ -590,7 +590,7 @@ type Dog implements Animal{
 
         Document document = TestUtil.parseQuery(query)
 
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
         def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
@@ -629,7 +629,7 @@ type Dog implements Animal{
 
         Document document = TestUtil.parseQuery(query)
 
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
         def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def printedTree = printTree(tree)
 
@@ -674,7 +674,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
         def subFooField = (document.getDefinitions()[1] as FragmentDefinition).getSelectionSet().getSelections()[0] as Field
 
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
         def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def fieldToNormalizedField = tree.getFieldToNormalizedField()
 
@@ -717,7 +717,7 @@ type Dog implements Animal{
         def petsField = (document.getDefinitions()[0] as OperationDefinition).getSelectionSet().getSelections()[0] as Field
         def idField = petsField.getSelectionSet().getSelections()[0] as Field
 
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
         def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def fieldToNormalizedField = tree.getFieldToNormalizedField()
 
@@ -765,7 +765,7 @@ type Dog implements Animal{
         def schemaField = selections[2]
         def typeField = selections[3]
 
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
         def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def fieldToNormalizedField = tree.getFieldToNormalizedField()
 
@@ -802,7 +802,7 @@ type Dog implements Animal{
 
         Document document = TestUtil.parseQuery(query)
 
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
         def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
         def normalizedFieldToMergedField = tree.getNormalizedFieldToMergedField();
         Traverser<NormalizedField> traverser = Traverser.depthFirst({ it.getChildren() });
@@ -840,7 +840,7 @@ type Dog implements Animal{
 
         Document document = TestUtil.parseQuery(query)
 
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
 
         when:
         def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])

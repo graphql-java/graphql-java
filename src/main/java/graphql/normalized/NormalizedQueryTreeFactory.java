@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @Internal
-public class NormalizedQueryFactory {
+public class NormalizedQueryTreeFactory {
 
     public static NormalizedQueryTree createNormalizedQuery(GraphQLSchema graphQLSchema,
                                                             Document document,
@@ -32,7 +32,7 @@ public class NormalizedQueryFactory {
                                                             OperationDefinition operationDefinition,
                                                             Map<String, FragmentDefinition> fragments,
                                                             Map<String, Object> variables) {
-        return new NormalizedQueryFactory().createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, variables);
+        return new NormalizedQueryTreeFactory().createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, variables);
     }
 
     /**
