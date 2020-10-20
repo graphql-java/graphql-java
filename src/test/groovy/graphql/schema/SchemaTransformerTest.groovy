@@ -444,7 +444,7 @@ type SubChildChanged {
 
     }
 
-    def "failing NPE test as reported in 1928 "() {
+    def "test as reported in 1928 "() {
         given:
 
         def internalNoteHider = new GraphQLTypeVisitorStub() {
@@ -510,4 +510,57 @@ type Query {
 """
     }
 
+    def "test as reported in 1953 "() {
+        given:
+
+        def fieldChanger = new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node,
+                                                         TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getName() == "f") {
+                    changeNode(context, node.transform({ builder -> builder.type(Scalars.GraphQLInt) }))
+                }
+                return TraversalControl.CONTINUE
+            }
+        }
+
+        GraphQLSchema schema = TestUtil.schema("""
+            type Query {
+                manchu: Manchu
+                foo: Foo
+            }
+            
+            interface Manchu {
+              id: ID!
+              f: String
+            }
+            
+            type Foo implements Manchu {
+              id: ID!
+              f: String
+            }
+        """)
+
+        when:
+        def newSchema = SchemaTransformer.transformSchema(schema, fieldChanger)
+
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
+        then:
+        (newSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("f").getType() == Scalars.GraphQLInt
+        printer.print(newSchema) == """interface Manchu {
+  f: Int
+  id: ID!
+}
+
+type Foo implements Manchu {
+  f: Int
+  id: ID!
+}
+
+type Query {
+  foo: Foo
+  manchu: Manchu
+}
+"""
+    }
 }
