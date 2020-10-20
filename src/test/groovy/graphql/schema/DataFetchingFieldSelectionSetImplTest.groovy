@@ -711,6 +711,39 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         selectedFields[1].getFieldDefinition().getName() == "name"
     }
 
+    def "fragments inline and defined work as expected"() {
+        // this is repeating a lot of the underlying NormalisedField tests - so this is not extensively tested here
+        when:
+        def query = '''
+        {
+            pet {
+                name
+                ... on Dog {
+                    name
+                }
+                ... CatFrag
+            }
+         }
+         
+        fragment CatFrag on Cat {
+            name
+        }
+        '''
+        def ei = ExecutionInput.newExecutionInput(query).build()
+        def er = petSchema.execute(ei)
+        then:
+        er.errors.isEmpty()
+
+        when:
+        def selectedFields = petSelectionSet.getFields("name")
+        selectedFields.sort(byName())
+
+        then:
+        selectedFields.size() == 3
+        assertTheyAreExpected(selectedFields,["Bird.name", "Cat.name", "Dog.name"])
+
+    }
+
     def "simple fields do not have selection sets"() {
         when:
         def query = '''
