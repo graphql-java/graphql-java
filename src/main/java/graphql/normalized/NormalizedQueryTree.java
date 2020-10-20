@@ -2,11 +2,11 @@ package graphql.normalized;
 
 import graphql.Assert;
 import graphql.Internal;
-import graphql.PublicApi;
 import graphql.execution.MergedField;
 import graphql.execution.ResultPath;
 import graphql.language.Field;
 import graphql.schema.FieldCoordinates;
+import graphql.schema.GraphQLFieldsContainer;
 
 import java.util.List;
 import java.util.Map;
@@ -53,12 +53,14 @@ public class NormalizedQueryTree {
         return normalizedFieldToMergedField.get(normalizedField);
     }
 
-    public NormalizedField getNormalizedField(MergedField mergedField, ResultPath resultPath) {
+    public NormalizedField getNormalizedField(MergedField mergedField, GraphQLFieldsContainer fieldsContainer, ResultPath resultPath) {
         List<NormalizedField> normalizedFields = fieldToNormalizedField.get(mergedField.getSingleField());
         List<String> keysOnlyPath = resultPath.getKeysOnly();
         for (NormalizedField normalizedField : normalizedFields) {
             if (normalizedField.getListOfResultKeys().equals(keysOnlyPath)) {
-                return normalizedField;
+                if (normalizedField.getFieldContainer() == fieldsContainer) {
+                    return normalizedField;
+                }
             }
         }
         return Assert.assertShouldNeverHappen("normalized field not found");

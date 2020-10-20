@@ -75,9 +75,7 @@ public class FpKit {
      *
      * @param iterableResult the result object
      * @param <T>            the type of thing
-     *
      * @return an Iterable from that object
-     *
      * @throws java.lang.ClassCastException if its not an Iterable
      */
     @SuppressWarnings("unchecked")
@@ -106,7 +104,6 @@ public class FpKit {
      * @param l   the list onto which to append the element
      * @param t   the element to append
      * @param <T> the type of elements of the list
-     *
      * @return a <strong>new</strong> list componsed of the first list elements and the new element
      */
     public static <T> List<T> concat(List<T> l, T t) {
@@ -119,7 +116,6 @@ public class FpKit {
      * @param l1  the first list to concatenate
      * @param l2  the second list to concatenate
      * @param <T> the type of element of the lists
-     *
      * @return a <strong>new</strong> list composed of the two concatenated lists elements
      */
     public static <T> List<T> concat(List<T> l1, List<T> l2) {
@@ -191,6 +187,17 @@ public class FpKit {
     }
 
     /**
+     * Used in simple {@link Map#computeIfAbsent(Object, java.util.function.Function)} cases
+     *
+     * @param <K> for Key
+     * @param <V> for Value
+     * @return a function that allocates a list
+     */
+    public static <K, V> Function<K, List<V>> newList() {
+        return k -> new ArrayList<>();
+    }
+
+    /**
      * This will memoize the Supplier within the current thread's visibility, that is it does not
      * use volatile reads but rather use a sentinel check and re-reads the delegate supplier
      * value if the read has not stuck to this thread.  This means that its possible that your delegate
@@ -198,7 +205,6 @@ public class FpKit {
      *
      * @param delegate the supplier to delegate to
      * @param <T>      for two
-     *
      * @return a supplier that will memoize values in the context of the current thread
      */
     public static <T> Supplier<T> intraThreadMemoize(Supplier<T> delegate) {
@@ -207,12 +213,11 @@ public class FpKit {
 
     /**
      * Tis will memoize the Supplier across threads and make sure the Supplier is exactly called once.
-     *
+     * <p>
      * Use for potentially costly actions. Otherwise consider {@link #intraThreadMemoize(Supplier)}
      *
      * @param delegate the supplier to delegate to
      * @param <T>      for two
-     *
      * @return a supplier that will memoize values in the context of the all the threads
      */
     public static <T> Supplier<T> interThreadMemoize(Supplier<T> delegate) {

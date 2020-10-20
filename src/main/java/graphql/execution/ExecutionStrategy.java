@@ -297,7 +297,7 @@ public abstract class ExecutionStrategy {
 
     protected Supplier<NormalizedField> getNormalizedField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Supplier<ExecutionStepInfo> executionStepInfo) {
         Supplier<NormalizedQueryTree> normalizedQuery = executionContext.getNormalizedQuery();
-        return () -> normalizedQuery.get().getNormalizedField(parameters.getField(), executionStepInfo.get().getPath());
+        return () -> normalizedQuery.get().getNormalizedField(parameters.getField(), executionStepInfo.get().getFieldContainer(), executionStepInfo.get().getPath());
     }
 
     protected FetchedValue unboxPossibleDataFetcherResult(ExecutionContext executionContext,

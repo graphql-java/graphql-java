@@ -2,7 +2,6 @@ package graphql.normalized;
 
 import graphql.Assert;
 import graphql.Internal;
-import graphql.PublicApi;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLTypeUtil;
@@ -10,11 +9,11 @@ import graphql.schema.GraphQLUnmodifiedType;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
@@ -50,7 +49,7 @@ public class NormalizedField {
 
     /**
      * All merged fields have the same name.
-     *
+     * <p>
      * WARNING: This is not always the key in the execution result, because of possible aliases. See {@link #getResultKey()}
      *
      * @return the name of of the merged fields.
@@ -101,7 +100,7 @@ public class NormalizedField {
         return builder.build();
     }
 
-    public GraphQLObjectType getObjectType() {
+    public GraphQLObjectType getFieldContainer() {
         return objectType;
     }
 
@@ -164,7 +163,7 @@ public class NormalizedField {
     }
 
     public boolean isIntrospectionField() {
-        return getFieldDefinition().getName().startsWith("__") || getObjectType().getName().startsWith("__");
+        return getFieldDefinition().getName().startsWith("__") || getFieldContainer().getName().startsWith("__");
     }
 
     @Override
@@ -174,7 +173,7 @@ public class NormalizedField {
                 ", alias=" + alias +
                 ", level=" + level +
                 ", conditional=" + isConditional +
-                ", children=" + children +
+                ", children=" + children.stream().map(NormalizedField::toString).collect(Collectors.joining("\n")) +
                 '}';
     }
 
@@ -223,7 +222,7 @@ public class NormalizedField {
         private Builder(NormalizedField existing) {
             this.alias = existing.alias;
             this.arguments = existing.arguments;
-            this.objectType = existing.getObjectType();
+            this.objectType = existing.getFieldContainer();
             this.fieldDefinition = existing.getFieldDefinition();
             this.children = existing.getChildren();
             this.level = existing.getLevel();
