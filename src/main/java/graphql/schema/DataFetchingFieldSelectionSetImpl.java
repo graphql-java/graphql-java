@@ -188,7 +188,6 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     private void traverseSubSelectedFields(NormalizedField currentNormalisedField, String qualifiedFieldPrefix, String simpleFieldPrefix) {
         List<NormalizedField> children = currentNormalisedField.getChildren();
         for (NormalizedField normalizedSubSelectedField : children) {
-            GraphQLFieldDefinition fieldDefinition = normalizedSubSelectedField.getFieldDefinition();
 
             String typeQualifiedName = mkTypeQualifiedName(normalizedSubSelectedField);
             String simpleName = normalizedSubSelectedField.getName();
@@ -204,6 +203,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
             normalisedSelectionSetFields.computeIfAbsent(globQualifiedName, newList()).add(selectedField);
             normalisedSelectionSetFields.computeIfAbsent(globSimpleName, newList()).add(selectedField);
 
+            GraphQLFieldDefinition fieldDefinition = normalizedSubSelectedField.getFieldDefinition();
             GraphQLType unwrappedType = GraphQLTypeUtil.unwrapAll(fieldDefinition.getType());
             if (!GraphQLTypeUtil.isLeaf(unwrappedType)) {
                 traverseSubSelectedFields(normalizedSubSelectedField, globQualifiedName, globSimpleName);
