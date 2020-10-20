@@ -102,4 +102,20 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
         return GraphQLTypeUtil.simplePrint(this);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
+    }
+
 }

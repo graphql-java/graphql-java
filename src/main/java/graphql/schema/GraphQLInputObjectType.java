@@ -173,6 +173,23 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         );
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
+    }
+
+
     @Override
     public String toString() {
         return "GraphQLInputObjectType{" +

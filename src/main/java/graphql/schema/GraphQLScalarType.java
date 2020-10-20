@@ -176,6 +176,23 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         );
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
+    }
+
+
     public static Builder newScalar() {
         return new Builder();
     }

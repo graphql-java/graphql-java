@@ -18,7 +18,6 @@ import static graphql.Assert.assertTrue;
  * See http://graphql.org/learn/schema/#lists-and-non-null for more details on the concept
  */
 @PublicApi
-
 public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType {
 
     /**
@@ -74,11 +73,12 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
         }
         GraphQLNonNull that = (GraphQLNonNull) o;
         GraphQLType wrappedType = getWrappedType();
-        if(wrappedType instanceof GraphQLList) {
-           return ((GraphQLList) wrappedType).isEqualTo(that.getWrappedType());
+        if (wrappedType instanceof GraphQLList) {
+            return ((GraphQLList) wrappedType).isEqualTo(that.getWrappedType());
         }
         return Objects.equals(wrappedType, that.getWrappedType());
     }
+
 
     @Override
     public String toString() {
@@ -106,4 +106,21 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
     public GraphQLSchemaElement withNewChildren(SchemaElementChildrenContainer newChildren) {
         return nonNull(newChildren.getChildOrNull(CHILD_WRAPPED_TYPE));
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
+    }
+
 }

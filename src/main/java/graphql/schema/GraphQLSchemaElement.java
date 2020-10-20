@@ -40,4 +40,12 @@ public interface GraphQLSchemaElement {
      * @return
      */
     boolean equals(Object obj);
+
+    /**
+     * No GraphQLSchemaElement implements `equals/hashCode` because we need object identity
+     * to treat a GraphQLSchema as an abstract graph.
+     *
+     * @return
+     */
+    int hashCode();
 }
