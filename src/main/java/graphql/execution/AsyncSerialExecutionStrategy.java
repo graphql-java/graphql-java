@@ -46,7 +46,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
         executionStrategyCtx.onDispatched(overallResult);
 
-        resultsFuture.whenComplete(handleResults(executionContext, fieldNames, overallResult, parameters));
+        resultsFuture.whenComplete(handleResults(executionContext, fieldNames, overallResult));
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
         return overallResult;
     }

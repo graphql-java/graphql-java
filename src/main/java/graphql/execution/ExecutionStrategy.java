@@ -41,10 +41,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
@@ -58,7 +58,9 @@ import static graphql.execution.FieldValueInfo.CompleteValueType.NULL;
 import static graphql.execution.FieldValueInfo.CompleteValueType.OBJECT;
 import static graphql.execution.FieldValueInfo.CompleteValueType.SCALAR;
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
+import static graphql.schema.GraphQLTypeUtil.isEnum;
 import static graphql.schema.GraphQLTypeUtil.isList;
+import static graphql.schema.GraphQLTypeUtil.isScalar;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
@@ -430,10 +432,10 @@ public abstract class ExecutionStrategy {
             return FieldValueInfo.newFieldValueInfo(NULL).fieldValue(fieldValue).build();
         } else if (isList(fieldType)) {
             return completeValueForList(executionContext, parameters, result);
-        } else if (fieldType instanceof GraphQLScalarType) {
+        } else if (isScalar(fieldType)) {
             fieldValue = completeValueForScalar(executionContext, parameters, (GraphQLScalarType) fieldType, result);
             return FieldValueInfo.newFieldValueInfo(SCALAR).fieldValue(fieldValue).build();
-        } else if (fieldType instanceof GraphQLEnumType) {
+        } else if (isEnum(fieldType)) {
             fieldValue = completeValueForEnum(executionContext, parameters, (GraphQLEnumType) fieldType, result);
             return FieldValueInfo.newFieldValueInfo(ENUM).fieldValue(fieldValue).build();
         }
@@ -503,19 +505,19 @@ public abstract class ExecutionStrategy {
      */
     protected FieldValueInfo completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Iterable<Object> iterableValues) {
 
-        Collection<Object> values = FpKit.toCollection(iterableValues);
+        OptionalInt size = FpKit.toSize(iterableValues);
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
 
-        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, values);
+        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, iterableValues);
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
         InstrumentationContext<ExecutionResult> completeListCtx = instrumentation.beginFieldListComplete(
                 instrumentationParams
         );
 
-        List<FieldValueInfo> fieldValueInfos = new ArrayList<>(values.size());
+        List<FieldValueInfo> fieldValueInfos = new ArrayList<>(size.orElse(1));
         int index = 0;
-        for (Object item : values) {
+        for (Object item : iterableValues) {
             ResultPath indexedPath = parameters.getPath().segment(index);
 
             ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, index);
@@ -528,7 +530,7 @@ public abstract class ExecutionStrategy {
             ExecutionStrategyParameters newParameters = parameters.transform(builder ->
                     builder.executionStepInfo(stepInfoForListElement)
                             .nonNullFieldValidator(nonNullableFieldValidator)
-                            .listSize(values.size())
+                            .listSize(size.orElse(-1)) // -1 signals that we don't know the size
                             .localContext(value.getLocalContext())
                             .currentListIndex(finalIndex)
                             .path(indexedPath)
@@ -683,13 +685,14 @@ public abstract class ExecutionStrategy {
 
 
     protected Iterable<Object> toIterable(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
-        if (result.getClass().isArray() || result instanceof Iterable) {
-            return toIterable(result);
+        if (FpKit.isIterable(result)) {
+            return FpKit.toIterable(result);
         }
 
         handleTypeMismatchProblem(context, parameters, result);
         return null;
     }
+
 
     private void handleTypeMismatchProblem(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
         TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getUnwrappedNonNullType());

@@ -27,6 +27,7 @@ import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
+import java.util.stream.Stream
 
 import static ExecutionStrategyParameters.newParameters
 import static graphql.Scalars.GraphQLString
@@ -689,6 +690,55 @@ class ExecutionStrategyTest extends Specification {
         then:
         executionResult.get().data == [1L, 2L, 3L]
     }
+
+    def "#842 completes value for java.util.Stream"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        Stream<Long> result = Stream.of(1L, 2L, 3L)
+        def fieldType = list(Scalars.GraphQLLong)
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(ResultPath.rootPath()).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
+
+        def parameters = newParameters()
+                .executionStepInfo(executionStepInfo)
+                .source(result)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().build())]]))
+                .field(mergedField(Field.newField().build()))
+                .build()
+
+        when:
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue
+
+        then:
+        executionResult.get().data == [1L, 2L, 3L]
+    }
+
+    def "#842 completes value for java.util.Iterator"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        Iterator<Long> result = Arrays.asList(1L, 2L, 3L).iterator()
+        def fieldType = list(Scalars.GraphQLLong)
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(ResultPath.rootPath()).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
+
+        def parameters = newParameters()
+                .executionStepInfo(executionStepInfo)
+                .source(result)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().build())]]))
+                .field(mergedField(Field.newField().build()))
+                .build()
+
+        when:
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue
+
+        then:
+        executionResult.get().data == [1L, 2L, 3L]
+    }
+
 
     def "#820 processes DataFetcherResult"() {
         given:

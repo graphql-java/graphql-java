@@ -24,6 +24,7 @@ public class ExecutionInput {
     private final Object localContext;
     private final Object root;
     private final Map<String, Object> variables;
+    private final Map<String, Object> extensions;
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
     private final ExecutionId executionId;
@@ -31,17 +32,18 @@ public class ExecutionInput {
 
 
     @Internal
-    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry, CacheControl cacheControl, ExecutionId executionId, Locale locale, Object localContext) {
-        this.query = assertNotNull(query, () -> "query can't be null");
-        this.operationName = operationName;
-        this.context = context;
-        this.root = root;
-        this.variables = variables;
-        this.dataLoaderRegistry = dataLoaderRegistry;
-        this.cacheControl = cacheControl;
-        this.executionId = executionId;
-        this.locale = locale;
-        this.localContext = localContext;
+    private ExecutionInput(Builder builder) {
+        this.query = assertNotNull(builder.query, () -> "query can't be null");
+        this.operationName = builder.operationName;
+        this.context = builder.context;
+        this.root = builder.root;
+        this.variables = builder.variables;
+        this.dataLoaderRegistry = builder.dataLoaderRegistry;
+        this.cacheControl = builder.cacheControl;
+        this.executionId = builder.executionId;
+        this.locale = builder.locale;
+        this.localContext = builder.localContext;
+        this.extensions = builder.extensions;
     }
 
     /**
@@ -64,6 +66,7 @@ public class ExecutionInput {
     public Object getContext() {
         return context;
     }
+
     /**
      * @return the local context object to pass to all top level (i.e. query, mutation, subscription) data fetchers
      */
@@ -116,6 +119,13 @@ public class ExecutionInput {
     }
 
     /**
+     * @return a map of extension values that can be sent in to a request
+     */
+    public Map<String, Object> getExtensions() {
+        return extensions;
+    }
+
+    /**
      * This helps you transform the current ExecutionInput object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
      *
@@ -132,6 +142,7 @@ public class ExecutionInput {
                 .dataLoaderRegistry(this.dataLoaderRegistry)
                 .cacheControl(this.cacheControl)
                 .variables(this.variables)
+                .extensions(this.extensions)
                 .executionId(this.executionId)
                 .locale(this.locale);
 
@@ -179,6 +190,7 @@ public class ExecutionInput {
         private Object localContext;
         private Object root;
         private Map<String, Object> variables = Collections.emptyMap();
+        public Map<String, Object> extensions = Collections.emptyMap();
         //
         // this is important - it allows code to later known if we never really set a dataloader and hence it can optimize
         // dataloader field tracking away.
@@ -214,7 +226,6 @@ public class ExecutionInput {
          * Sets the locale to use for this operation
          *
          * @param locale the locale to use
-         *
          * @return this builder
          */
         public Builder locale(Locale locale) {
@@ -224,6 +235,7 @@ public class ExecutionInput {
 
         /**
          * Sets initial localContext in root data fetchers
+         *
          * @return this builder
          */
         public Builder localContext(Object localContext) {
@@ -263,6 +275,11 @@ public class ExecutionInput {
             return this;
         }
 
+        public Builder extensions(Map<String, Object> extensions) {
+            this.extensions = assertNotNull(extensions, () -> "extensions map can't be null");
+            return this;
+        }
+
         /**
          * You should create new {@link org.dataloader.DataLoaderRegistry}s and new {@link org.dataloader.DataLoader}s for each execution.  Do not
          * re-use
@@ -282,7 +299,7 @@ public class ExecutionInput {
         }
 
         public ExecutionInput build() {
-            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry, cacheControl, executionId, locale, localContext);
+            return new ExecutionInput(this);
         }
     }
 }

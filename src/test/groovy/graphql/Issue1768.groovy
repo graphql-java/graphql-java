@@ -1,19 +1,7 @@
 package graphql
 
 import graphql.schema.DataFetcher
-import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLSchema
-import graphql.schema.GraphQLSchemaElement
-import graphql.schema.GraphQLTypeVisitorStub
-import graphql.schema.SchemaTransformer
-import graphql.schema.idl.NaturalEnumValuesProvider
-import graphql.util.TraversalControl
-import graphql.util.TraverserContext
-import graphql.util.TreeTransformerUtil
 import spock.lang.Specification
-
-import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
-import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class Issue1768 extends Specification {
 
