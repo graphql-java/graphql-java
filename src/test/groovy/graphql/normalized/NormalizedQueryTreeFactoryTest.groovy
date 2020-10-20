@@ -725,8 +725,8 @@ type Dog implements Animal{
         expect:
         fieldToNormalizedField.size() == 2
         fieldToNormalizedField.get(idField).size() == 2
-        fieldToNormalizedField.get(idField)[0].fieldContainer.name == "Cat"
-        fieldToNormalizedField.get(idField)[1].fieldContainer.name == "Dog"
+        fieldToNormalizedField.get(idField)[0].objectType.name == "Cat"
+        fieldToNormalizedField.get(idField)[1].objectType.name == "Dog"
 
 
     }
@@ -771,15 +771,15 @@ type Dog implements Animal{
 
         expect:
         fieldToNormalizedField.size() == 14
-        fieldToNormalizedField.get(typeNameField)[0].fieldContainer.name == "Query"
+        fieldToNormalizedField.get(typeNameField)[0].objectType.name == "Query"
         fieldToNormalizedField.get(typeNameField)[0].fieldDefinition == Introspection.TypeNameMetaFieldDef
         fieldToNormalizedField.get(aliasedTypeName)[0].alias == "alias"
         fieldToNormalizedField.get(aliasedTypeName)[0].fieldDefinition == Introspection.TypeNameMetaFieldDef
 
-        fieldToNormalizedField.get(schemaField)[0].fieldContainer.name == "Query"
+        fieldToNormalizedField.get(schemaField)[0].objectType.name == "Query"
         fieldToNormalizedField.get(schemaField)[0].fieldDefinition == Introspection.SchemaMetaFieldDef
 
-        fieldToNormalizedField.get(typeField)[0].fieldContainer.name == "Query"
+        fieldToNormalizedField.get(typeField)[0].objectType.name == "Query"
         fieldToNormalizedField.get(typeField)[0].fieldDefinition == Introspection.TypeMetaFieldDef
 
     }

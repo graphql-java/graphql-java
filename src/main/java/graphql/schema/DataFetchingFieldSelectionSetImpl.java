@@ -220,7 +220,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     }
 
     private static String mkTypeQualifiedName(NormalizedField normalizedField) {
-        return normalizedField.getFieldContainer().getName() + "." + normalizedField.getName();
+        return normalizedField.getObjectType().getName() + "." + normalizedField.getName();
     }
 
     private static String mkFieldGlobName(String fieldPrefix, String fieldName) {
@@ -291,8 +291,8 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         }
 
         @Override
-        public GraphQLObjectType getFieldContainer() {
-            return normalizedField.getFieldContainer();
+        public GraphQLObjectType getObjectType() {
+            return normalizedField.getObjectType();
         }
 
         @Override

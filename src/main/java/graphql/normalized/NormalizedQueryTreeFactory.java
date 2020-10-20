@@ -67,7 +67,7 @@ public class NormalizedQueryTreeFactory {
             fixUpParentReference(realTopLevel);
 
             normalizedFieldToMergedField.put(realTopLevel, mergedField);
-            FieldCoordinates coordinates = FieldCoordinates.coordinates(realTopLevel.getFieldContainer(), realTopLevel.getFieldDefinition());
+            FieldCoordinates coordinates = FieldCoordinates.coordinates(realTopLevel.getObjectType(), realTopLevel.getFieldDefinition());
             coordinatesToNormalizedFields.computeIfAbsent(coordinates, k -> new ArrayList<>()).add(realTopLevel);
             updateByAstFieldMap(realTopLevel, mergedField, fieldToNormalizedField);
             realRoots.add(realTopLevel);
@@ -98,7 +98,7 @@ public class NormalizedQueryTreeFactory {
             fixUpParentReference(realChild);
 
             normalizedFieldToMergedField.put(realChild, mergedFieldForChild);
-            FieldCoordinates coordinates = FieldCoordinates.coordinates(realChild.getFieldContainer(), realChild.getFieldDefinition());
+            FieldCoordinates coordinates = FieldCoordinates.coordinates(realChild.getObjectType(), realChild.getFieldDefinition());
             coordinatesToNormalizedFields.computeIfAbsent(coordinates, k -> new ArrayList<>()).add(realChild);
 
             realChildren.add(realChild);

@@ -704,10 +704,10 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         selectedFields.sort(byName())
 
         then:
-        selectedFields[0].getFieldContainer().getName() == "Bird"
+        selectedFields[0].getObjectType().getName() == "Bird"
         selectedFields[0].getFieldDefinition().getName() == "name"
 
-        selectedFields[1].getFieldContainer().getName() == "Cat"
+        selectedFields[1].getObjectType().getName() == "Cat"
         selectedFields[1].getFieldDefinition().getName() == "name"
     }
 
@@ -771,6 +771,6 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
     }
 
     String mkSpecialName(SelectedField selectedField) {
-        (selectedField.getAlias() == null ? "" : selectedField.getAlias() + ":") + selectedField.getFieldContainer().getName() + "." + selectedField.getName()
+        (selectedField.getAlias() == null ? "" : selectedField.getAlias() + ":") + selectedField.getObjectType().getName() + "." + selectedField.getName()
     }
 }

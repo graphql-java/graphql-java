@@ -58,7 +58,7 @@ public class NormalizedQueryTree {
         List<String> keysOnlyPath = resultPath.getKeysOnly();
         for (NormalizedField normalizedField : normalizedFields) {
             if (normalizedField.getListOfResultKeys().equals(keysOnlyPath)) {
-                if (normalizedField.getFieldContainer() == fieldsContainer) {
+                if (normalizedField.getObjectType() == fieldsContainer) {
                     return normalizedField;
                 }
             }

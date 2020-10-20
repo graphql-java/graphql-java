@@ -35,7 +35,7 @@ public interface SelectedField {
     /**
      * @return the containing object type of this selected field
      */
-    GraphQLObjectType getFieldContainer();
+    GraphQLObjectType getObjectType();
 
     /**
      * @return the field runtime definition

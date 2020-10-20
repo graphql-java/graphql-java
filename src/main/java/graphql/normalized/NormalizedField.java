@@ -100,7 +100,7 @@ public class NormalizedField {
         return builder.build();
     }
 
-    public GraphQLObjectType getFieldContainer() {
+    public GraphQLObjectType getObjectType() {
         return objectType;
     }
 
@@ -163,7 +163,7 @@ public class NormalizedField {
     }
 
     public boolean isIntrospectionField() {
-        return getFieldDefinition().getName().startsWith("__") || getFieldContainer().getName().startsWith("__");
+        return getFieldDefinition().getName().startsWith("__") || getObjectType().getName().startsWith("__");
     }
 
     @Override
@@ -222,7 +222,7 @@ public class NormalizedField {
         private Builder(NormalizedField existing) {
             this.alias = existing.alias;
             this.arguments = existing.arguments;
-            this.objectType = existing.getFieldContainer();
+            this.objectType = existing.getObjectType();
             this.fieldDefinition = existing.getFieldDefinition();
             this.children = existing.getChildren();
             this.level = existing.getLevel();
