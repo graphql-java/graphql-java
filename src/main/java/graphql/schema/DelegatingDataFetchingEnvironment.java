@@ -10,8 +10,6 @@ import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
-import graphql.normalized.NormalizedField;
-import graphql.normalized.NormalizedQueryTree;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 

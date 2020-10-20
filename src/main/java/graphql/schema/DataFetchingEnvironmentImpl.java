@@ -46,7 +46,6 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Document document;
     private final Map<String, Object> variables;
     private final QueryDirectives queryDirectives;
-    private final Supplier<NormalizedQueryTree> normalizedQueryTreeSupplier;
 
     private DataFetchingEnvironmentImpl(Builder builder) {
         this.source = builder.source;
@@ -70,7 +69,6 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.document = builder.document;
         this.variables = builder.variables == null ? Collections.emptyMap() : builder.variables;
         this.queryDirectives = builder.queryDirectives;
-        this.normalizedQueryTreeSupplier = builder.normalizedQueryFromAstSupplier;
     }
 
     /**
@@ -96,8 +94,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                 .document(executionContext.getDocument())
                 .operationDefinition(executionContext.getOperationDefinition())
                 .variables(executionContext.getVariables())
-                .executionId(executionContext.getExecutionId())
-                .normalizedQuery(executionContext.getNormalizedQueryTree());
+                .executionId(executionContext.getExecutionId());
     }
 
     @Override
@@ -265,7 +262,6 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private Map<String, FragmentDefinition> fragmentsByName;
         private Map<String, Object> variables;
         private QueryDirectives queryDirectives;
-        private Supplier<NormalizedQueryTree> normalizedQueryFromAstSupplier;
 
         public Builder(DataFetchingEnvironmentImpl env) {
             this.source = env.source;
@@ -289,7 +285,6 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.document = env.document;
             this.variables = env.variables;
             this.queryDirectives = env.queryDirectives;
-            this.normalizedQueryFromAstSupplier = env.normalizedQueryTreeSupplier;
         }
 
         public Builder() {
@@ -405,11 +400,6 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
         public Builder queryDirectives(QueryDirectives queryDirectives) {
             this.queryDirectives = queryDirectives;
-            return this;
-        }
-
-        public Builder normalizedQuery(Supplier<NormalizedQueryTree> normalizedQueryFromAstSupplier) {
-            this.normalizedQueryFromAstSupplier = normalizedQueryFromAstSupplier;
             return this;
         }
 
