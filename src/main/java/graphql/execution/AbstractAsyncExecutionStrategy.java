@@ -21,10 +21,6 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
         super(dataFetcherExceptionHandler);
     }
 
-    protected BiConsumer<List<ExecutionResult>, Throwable> handleResults(ExecutionContext executionContext, List<String> fieldNames, CompletableFuture<ExecutionResult> overallResult, ExecutionStrategyParameters parameters) {
-        return this.handleResults(executionContext, fieldNames, overallResult);
-    }
-
     // This method is kept for backward compatibility. Prefer calling/overriding another handleResults method
     protected BiConsumer<List<ExecutionResult>, Throwable> handleResults(ExecutionContext executionContext, List<String> fieldNames, CompletableFuture<ExecutionResult> overallResult) {
         return (List<ExecutionResult> results, Throwable exception) -> {
