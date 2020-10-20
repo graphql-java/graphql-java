@@ -13,6 +13,7 @@ import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -400,8 +401,13 @@ public class SchemaTransformer {
         }
 
         GraphQLSchemaElement newNode = SCHEMA_ELEMENT_ADAPTER.withNewChildren(parent, childrenMap);
-        NodeZipper<GraphQLSchemaElement> next = sameParent.iterator().next();
-        List<Breadcrumb<GraphQLSchemaElement>> newBreadcrumbs = next.getBreadcrumbs().subList(1, next.getBreadcrumbs().size());
+        final List<Breadcrumb<GraphQLSchemaElement>> oldBreadcrumbs = sameParent.iterator().next().getBreadcrumbs();
+        List<Breadcrumb<GraphQLSchemaElement>> newBreadcrumbs;
+        if (oldBreadcrumbs.size() > 1) {
+            newBreadcrumbs = oldBreadcrumbs.subList(1, oldBreadcrumbs.size());
+        } else {
+            newBreadcrumbs = Collections.emptyList();
+        }
         return new NodeZipper<>(newNode, newBreadcrumbs, SCHEMA_ELEMENT_ADAPTER);
     }
 
