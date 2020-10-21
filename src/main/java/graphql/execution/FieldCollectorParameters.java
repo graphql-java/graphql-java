@@ -6,7 +6,6 @@ import graphql.language.FragmentDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -48,8 +47,8 @@ public class FieldCollectorParameters {
 
     public static class Builder {
         private GraphQLSchema graphQLSchema;
-        private final Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
-        private final Map<String, Object> variables = new LinkedHashMap<>();
+        private Map<String, FragmentDefinition> fragmentsByName;
+        private Map<String, Object> variables;
         private GraphQLObjectType objectType;
 
         /**
@@ -70,12 +69,12 @@ public class FieldCollectorParameters {
         }
 
         public Builder fragments(Map<String, FragmentDefinition> fragmentsByName) {
-            this.fragmentsByName.putAll(fragmentsByName);
+            this.fragmentsByName = fragmentsByName;
             return this;
         }
 
         public Builder variables(Map<String, Object> variables) {
-            this.variables.putAll(variables);
+            this.variables = variables;
             return this;
         }
 
