@@ -949,7 +949,7 @@ public class SchemaPrinter {
             List<String> lines = Arrays.asList(descriptionText.split("\n"));
             if (options.isDescriptionsAsHashComments()) {
                 printMultiLineHashDescription(out, prefix, lines);
-            } else {
+            } else if (!lines.isEmpty()) {
                 if (lines.size() > 1) {
                     printMultiLineDescription(out, prefix, lines);
                 } else {

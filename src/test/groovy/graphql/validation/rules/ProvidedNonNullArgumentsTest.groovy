@@ -3,6 +3,8 @@ package graphql.validation.rules
 import graphql.language.Argument
 import graphql.language.Directive
 import graphql.language.Field
+import graphql.language.NonNullType
+import graphql.language.NullValue
 import graphql.language.StringValue
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLDirective
@@ -140,5 +142,28 @@ class ProvidedNonNullArgumentsTest extends Specification {
 
         then:
         errorCollector.getErrors().isEmpty()
+    }
+
+    def "provide the explicit value null is not valid for non null argument"() {
+        given:
+        def fieldArg = GraphQLArgument.newArgument().name("arg")
+                .type(GraphQLNonNull.nonNull(GraphQLString))
+
+        def fieldDef = GraphQLFieldDefinition.newFieldDefinition()
+                .name("field")
+                .type(GraphQLString)
+                .argument(fieldArg)
+                .build()
+
+        validationContext.getFieldDef() >> fieldDef
+
+        def defaultNullArg = Argument.newArgument().name("arg").value(NullValue.newNullValue().build()).build()
+        def field = new Field("field", [defaultNullArg])
+
+        when:
+        providedNonNullArguments.checkField(field)
+
+        then:
+        errorCollector.containsValidationError(ValidationErrorType.NullValueForNonNullArgument)
     }
 }

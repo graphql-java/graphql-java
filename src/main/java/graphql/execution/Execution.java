@@ -101,11 +101,11 @@ public class Execution {
                 executionInput, graphQLSchema, instrumentationState
         );
         executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters);
-        return executeOperation(executionContext, parameters, executionInput.getRoot(), executionContext.getOperationDefinition());
+        return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
     }
 
 
-    private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, InstrumentationExecutionParameters instrumentationExecutionParameters, Object root, OperationDefinition operationDefinition) {
+    private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
 
         InstrumentationExecuteOperationParameters instrumentationParams = new InstrumentationExecuteOperationParameters(executionContext);
         InstrumentationContext<ExecutionResult> executeOperationCtx = instrumentation.beginExecuteOperation(instrumentationParams);

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.util.FpKit.map;
 
@@ -20,8 +21,8 @@ import static graphql.util.FpKit.map;
  * To best use this class you need to pass a CacheControl object to each {@link graphql.schema.DataFetcher} and have them decide on
  * the caching hint values.
  * <p>
- * The easiest why to do this is create a CacheControl object at query start and pass it in as a "context" object via {@link graphql.ExecutionInput#getContext()} and then have
- * each {@link graphql.schema.DataFetcher} thats wants to make cache control hints use that.
+ * The easiest way to do this is create a CacheControl object at query start and pass it in as a "context" object via {@link graphql.ExecutionInput#getContext()} and then have
+ * each {@link graphql.schema.DataFetcher} that wants to make cache control hints use that.
  * <p>
  * Then at the end of the query you would call {@link #addTo(graphql.ExecutionResult)} to record the cache control hints into the {@link graphql.ExecutionResult}
  * extensions map as per the specification.
@@ -46,7 +47,8 @@ public class CacheControl {
         private final Scope scope;
 
         private Hint(List<Object> path, Integer maxAge, Scope scope) {
-            this.path = assertNotNull(path);
+            assertNotEmpty(path);
+            this.path = path;
             this.maxAge = maxAge;
             this.scope = scope;
         }

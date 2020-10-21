@@ -26,6 +26,7 @@ class ExecutionInputTest extends Specification {
                 .root(root)
                 .context(context)
                 .locale(Locale.GERMAN)
+                .extensions([some: "map"])
                 .build()
         then:
         executionInput.context == context
@@ -35,6 +36,7 @@ class ExecutionInputTest extends Specification {
         executionInput.cacheControl == cacheControl
         executionInput.query == query
         executionInput.locale == Locale.GERMAN
+        executionInput.extensions == [some: "map"]
     }
 
     def "context methods work"() {
@@ -67,6 +69,7 @@ class ExecutionInputTest extends Specification {
                 .dataLoaderRegistry(registry)
                 .cacheControl(cacheControl)
                 .variables(variables)
+                .extensions([some: "map"])
                 .root(root)
                 .context(context)
                 .locale(Locale.GERMAN)
@@ -80,6 +83,7 @@ class ExecutionInputTest extends Specification {
         executionInput.dataLoaderRegistry == registry
         executionInput.cacheControl == cacheControl
         executionInput.locale == Locale.GERMAN
+        executionInput.extensions == [some: "map"]
         executionInput.query == "new query"
     }
 

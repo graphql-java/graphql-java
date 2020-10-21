@@ -54,6 +54,14 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
         return new Builder();
     }
 
+    @Override
+    public InterfaceTypeExtensionDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transformExtension(builder -> builder
+                .definitions(newChildren.getChildren(CHILD_DEFINITIONS))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
+    }
+
     public InterfaceTypeExtensionDefinition transformExtension(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);

@@ -886,6 +886,33 @@ class SchemaGeneratorTest extends Specification {
         enumType.getValue("C").value == ExampleEnum.C
     }
 
+    def " MapEnum values provider"() {
+        given:
+        def spec = '''
+            enum Enum{
+                A
+                B
+                C
+            }
+            
+            type Query{
+                field: Enum
+            }
+        '''
+
+        when:
+        def mapEnumProvider = new MapEnumValuesProvider([A: 11, B: 12, C: 13])
+        def enumTypeWiring = TypeRuntimeWiring.newTypeWiring("Enum").enumValues(mapEnumProvider).build()
+        def wiring = RuntimeWiring.newRuntimeWiring().type(enumTypeWiring).build()
+        def schema = TestUtil.schema(spec, wiring)
+        GraphQLEnumType graphQLEnumType = schema.getType("Enum") as GraphQLEnumType
+
+        then:
+        graphQLEnumType.getValue("A").value == 11
+        graphQLEnumType.getValue("B").value == 12
+        graphQLEnumType.getValue("C").value == 13
+    }
+
     def "enum with no values provider: value is the name"() {
         given:
         def spec = """
