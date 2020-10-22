@@ -147,6 +147,16 @@ public interface DataFetchingFieldSelectionSet {
     List<SelectedField> getFields();
 
     /**
+     * This will return all selected fields that are immediate child fields
+     * of the field being fetched.
+     * <p>
+     * The fields are guaranteed to be in pre-order as they appear in the query.
+     *
+     * @return a list of all selected immediate child fields or empty list if none match
+     */
+    List<SelectedField> getImmediateFields();
+
+    /**
      * This will return a list of selected fields that match a specified "glob" pattern matching ie
      * the glob pattern matching supported by {@link java.nio.file.FileSystem#getPathMatcher}.
      * <p>

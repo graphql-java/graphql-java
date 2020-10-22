@@ -740,8 +740,45 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         then:
         selectedFields.size() == 3
-        assertTheyAreExpected(selectedFields,["Bird.name", "Cat.name", "Dog.name"])
+        assertTheyAreExpected(selectedFields, ["Bird.name", "Cat.name", "Dog.name"])
 
+    }
+
+    def "immediate fields can be found at all levels"() {
+        when:
+        def query = '''
+        {
+            pet {
+                name
+                ... on Dog {
+                    woof
+                }
+                ... on Cat {
+                    meow
+                }
+                lead {
+                    material
+                }
+            }
+         }
+        '''
+        def ei = ExecutionInput.newExecutionInput(query).build()
+        def er = petSchema.execute(ei)
+        then:
+        er.errors.isEmpty()
+        when:
+        def selectedFields = petSelectionSet.getImmediateFields()
+        then:
+        assertTheyAreExpected(selectedFields, [
+                "Bird.lead", "Bird.name",
+                "Cat.lead", "Cat.meow", "Cat.name",
+                "Dog.lead", "Dog.name", "Dog.woof"])
+
+        when:
+        selectedFields = petSelectionSet.getFields("lead")
+        selectedFields = selectedFields[0].getSelectionSet().getImmediateFields()
+        then:
+        assertTheyAreExpected(selectedFields, ["Lead.material"])
     }
 
     def "simple fields do not have selection sets"() {

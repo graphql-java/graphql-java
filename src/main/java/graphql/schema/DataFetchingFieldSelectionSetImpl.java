@@ -52,6 +52,11 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         }
 
         @Override
+        public List<SelectedField> getImmediateFields() {
+            return emptyList();
+        }
+
+        @Override
         public List<SelectedField> getFields(String fieldGlobPattern, String... fieldGlobPatterns) {
             return Collections.emptyList();
         }
@@ -79,6 +84,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     private final Supplier<NormalizedField> normalizedFieldSupplier;
 
     private boolean computedValues;
+    private List<SelectedField> immediateFields;
     private Map<String, List<SelectedField>> normalisedSelectionSetFields;
     private Set<String> flattenedFieldsForGlobSearching;
 
@@ -160,6 +166,12 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     }
 
     @Override
+    public List<SelectedField> getImmediateFields() {
+        computeValuesLazily();
+        return immediateFields;
+    }
+
+    @Override
     public Map<String, List<SelectedField>> getFieldsGroupedByResultKey() {
         return getFields().stream().collect(Collectors.groupingBy(SelectedField::getResultKey));
     }
@@ -179,13 +191,14 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
             }
             flattenedFieldsForGlobSearching = new LinkedHashSet<>();
             normalisedSelectionSetFields = new LinkedHashMap<>();
-            traverseSubSelectedFields(normalizedFieldSupplier.get(), "", "");
+            immediateFields = new ArrayList<>();
+            traverseSubSelectedFields(normalizedFieldSupplier.get(), "", "", true);
             computedValues = true;
         }
     }
 
 
-    private void traverseSubSelectedFields(NormalizedField currentNormalisedField, String qualifiedFieldPrefix, String simpleFieldPrefix) {
+    private void traverseSubSelectedFields(NormalizedField currentNormalisedField, String qualifiedFieldPrefix, String simpleFieldPrefix, boolean firstLevel) {
         List<NormalizedField> children = currentNormalisedField.getChildren();
         for (NormalizedField normalizedSubSelectedField : children) {
 
@@ -200,13 +213,16 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
             flattenedFieldsForGlobSearching.add(globSimpleName);
 
             SelectedFieldImpl selectedField = new SelectedFieldImpl(globSimpleName, globQualifiedName, normalizedSubSelectedField);
+            if (firstLevel) {
+                immediateFields.add(selectedField);
+            }
             normalisedSelectionSetFields.computeIfAbsent(globQualifiedName, newList()).add(selectedField);
             normalisedSelectionSetFields.computeIfAbsent(globSimpleName, newList()).add(selectedField);
 
             GraphQLFieldDefinition fieldDefinition = normalizedSubSelectedField.getFieldDefinition();
             GraphQLType unwrappedType = GraphQLTypeUtil.unwrapAll(fieldDefinition.getType());
             if (!GraphQLTypeUtil.isLeaf(unwrappedType)) {
-                traverseSubSelectedFields(normalizedSubSelectedField, globQualifiedName, globSimpleName);
+                traverseSubSelectedFields(normalizedSubSelectedField, globQualifiedName, globSimpleName, false);
             }
         }
     }
