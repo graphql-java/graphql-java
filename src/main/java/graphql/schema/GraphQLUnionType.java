@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.Assert;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.UnionTypeDefinition;
@@ -56,6 +57,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
      * @param description  the description
      * @param types        the possible types
      * @param typeResolver the type resolver function
+     *
      * @deprecated use the {@link #newUnionType()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -71,6 +73,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
      * @param typeResolver the type resolver function
      * @param directives   the directives on this type element
      * @param definition   the AST definition
+     *
      * @deprecated use the {@link #newUnionType()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -142,6 +145,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new object based on calling build on that builder
      */
     public GraphQLUnionType transform(Consumer<Builder> builderConsumer) {
@@ -279,10 +283,16 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
             return this;
         }
 
-        public Builder replacePossibleTypes(List<GraphQLObjectType> types) {
+        public Builder replacePossibleTypes(List<? extends GraphQLNamedOutputType> types) {
             this.types.clear();
-            for (GraphQLObjectType graphQLType : types) {
-                possibleType(graphQLType);
+            for (GraphQLSchemaElement schemaElement : types) {
+                if (schemaElement instanceof GraphQLTypeReference) {
+                    possibleType((GraphQLTypeReference) schemaElement);
+                } else if (schemaElement instanceof GraphQLObjectType) {
+                    possibleType((GraphQLObjectType) schemaElement);
+                } else {
+                    Assert.assertShouldNeverHappen("Unexpected type " + (schemaElement != null ? schemaElement.getClass() : "null"));
+                }
             }
             return this;
         }

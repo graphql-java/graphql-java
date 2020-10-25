@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.Assert;
 import graphql.AssertException;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -368,11 +369,15 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
             return this;
         }
 
-        public Builder replaceInterfaces(List<GraphQLInterfaceType> interfaces) {
+        public Builder replaceInterfaces(List<? extends GraphQLNamedOutputType> interfaces) {
             assertNotNull(interfaces, () -> "interfaces can't be null");
             this.interfaces.clear();
-            for (GraphQLInterfaceType interfaceType : interfaces) {
-                this.interfaces.put(interfaceType.getName(), interfaceType);
+            for (GraphQLNamedOutputType schemaElement : interfaces) {
+                if (schemaElement instanceof GraphQLInterfaceType || schemaElement instanceof GraphQLTypeReference) {
+                    this.interfaces.put(schemaElement.getName(), schemaElement);
+                } else {
+                    Assert.assertShouldNeverHappen("Unexpected type " + (schemaElement != null ? schemaElement.getClass() : "null"));
+                }
             }
             return this;
         }
