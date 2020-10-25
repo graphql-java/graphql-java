@@ -17,11 +17,10 @@ public class DirectivesUtil {
 
 
     public static Map<String, GraphQLDirective> nonRepeatableDirectivesByName(List<GraphQLDirective> directives) {
-        Map<String, List<GraphQLDirective>> map = allDirectivesByName(directives);
-        List<GraphQLDirective> singletonDirectives = map.entrySet().stream()
-                // only those that have 1 non repeated entry
-                .filter(e -> e.getKey() != null && isAllNonRepeatable(e.getValue()))
-                .flatMap(e -> e.getValue().stream()).collect(Collectors.toList());
+        // filter the repeatable directives
+        List<GraphQLDirective> singletonDirectives = directives.stream()
+                .filter(d -> !d.isRepeatable()).collect(Collectors.toList());
+
         return FpKit.getByName(singletonDirectives, GraphQLDirective::getName);
     }
 
@@ -65,8 +64,11 @@ public class DirectivesUtil {
         assertNotNull(targetList, () -> "directive list can't be null");
         assertNotNull(newDirective, () -> "directive can't be null");
 
-        Map<String, List<GraphQLDirective>> map = allDirectivesByName(targetList);
-        assertNonRepeatable(newDirective, map);
+        // check whether the newDirective is repeatable in advance, to avoid needless operations
+        if(newDirective.isNonRepeatable()){
+            Map<String, List<GraphQLDirective>> map = allDirectivesByName(targetList);
+            assertNonRepeatable(newDirective, map);
+        }
         targetList.add(newDirective);
         return targetList;
     }
