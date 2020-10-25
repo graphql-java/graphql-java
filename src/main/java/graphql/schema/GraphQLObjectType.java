@@ -222,6 +222,23 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         );
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
+    }
+
+
     public static Builder newObject() {
         return new Builder();
     }

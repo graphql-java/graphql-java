@@ -185,6 +185,23 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
+    }
+
+
+    /**
      * This helps you transform the current GraphQLArgument into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
      *

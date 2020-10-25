@@ -209,6 +209,23 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         );
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
+    }
+
+
     public static Builder newFieldDefinition(GraphQLFieldDefinition existing) {
         return new Builder(existing);
     }

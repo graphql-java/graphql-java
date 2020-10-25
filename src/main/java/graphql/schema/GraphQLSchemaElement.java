@@ -29,4 +29,23 @@ public interface GraphQLSchemaElement {
     }
 
     TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor);
+
+
+    /**
+     * No GraphQLSchemaElement implements `equals` because we need object identity
+     * to treat a GraphQLSchema as an abstract graph.
+     *
+     * @param obj
+     *
+     * @return
+     */
+    boolean equals(Object obj);
+
+    /**
+     * No GraphQLSchemaElement implements `equals/hashCode` because we need object identity
+     * to treat a GraphQLSchema as an abstract graph.
+     *
+     * @return
+     */
+    int hashCode();
 }

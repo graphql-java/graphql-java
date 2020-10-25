@@ -228,6 +228,22 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
         this.replacedInterfaces = sortTypes(interfaceComparator, interfaces);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
+    }
+
 
     public static Builder newInterface() {
         return new Builder();
