@@ -16,6 +16,7 @@ import graphql.schema.GraphQLUnionType;
 import graphql.schema.SchemaTransformer;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import graphql.util.TreeTransformerUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -61,7 +62,7 @@ class SchemaDirectiveWiringSchemaGeneratorPostProcessing implements SchemaGenera
 
         private TraversalControl changOrContinue(GraphQLSchemaElement node, GraphQLSchemaElement newNode, TraverserContext<GraphQLSchemaElement> context) {
             if (node != newNode) {
-                context.changeNode(newNode);
+                TreeTransformerUtil.changeNode(context, newNode);
             }
             return CONTINUE;
         }
