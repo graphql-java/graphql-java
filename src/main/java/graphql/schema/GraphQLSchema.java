@@ -45,6 +45,7 @@ public class GraphQLSchema {
     private final GraphQLObjectType subscriptionType;
     private final Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
     private final Set<GraphQLDirective> directives = new LinkedHashSet<>();
+
     private final Map<String, GraphQLDirective> schemaDirectives = new LinkedHashMap<>();
     private final SchemaDefinition definition;
     private final List<SchemaExtensionDefinition> extensionDefinitions;
@@ -467,6 +468,13 @@ public class GraphQLSchema {
 
 
         public Builder withSchemaDirectives(GraphQLDirective... directives) {
+            for (GraphQLDirective directive : directives) {
+                withSchemaDirective(directive);
+            }
+            return this;
+        }
+
+        public Builder withSchemaDirectives(Collection<? extends GraphQLDirective> directives) {
             for (GraphQLDirective directive : directives) {
                 withSchemaDirective(directive);
             }
