@@ -265,6 +265,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
         /**
          * This is used to clear all the directives in the builder so far.
+         * @return this builder
          */
         public Builder clearDirectives() {
             directives.clear();

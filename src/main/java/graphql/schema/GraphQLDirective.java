@@ -22,7 +22,7 @@ import static graphql.util.FpKit.getByName;
 
 /**
  * A directive can be used to modify the behavior of a graphql field or type.
- *
+ * <p>
  * See http://graphql.org/learn/queries/#directives for more details on the concept.
  */
 @PublicApi
@@ -39,6 +39,10 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
     public static final String CHILD_ARGUMENTS = "arguments";
 
     /**
+     * @param name        the name of the directive
+     * @param description the description of the directive
+     * @param locations   the valid locations for the directive
+     * @param arguments   the arguments for the directive
      * @deprecated Use the Builder
      */
     @Deprecated
@@ -118,7 +122,6 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
-     *
      * @return a new field based on calling build on that builder
      */
     public GraphQLDirective transform(Consumer<Builder> builderConsumer) {
@@ -240,7 +243,6 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
          * </pre>
          *
          * @param builderFunction a supplier for the builder impl
-         *
          * @return this
          */
         public Builder argument(UnaryOperator<GraphQLArgument.Builder> builderFunction) {
@@ -254,7 +256,6 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
          * from within
          *
          * @param builder an un-built/incomplete GraphQLArgument
-         *
          * @return this
          */
         public Builder argument(GraphQLArgument.Builder builder) {

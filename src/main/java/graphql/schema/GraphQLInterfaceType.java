@@ -35,7 +35,6 @@ import static java.util.Collections.unmodifiableList;
  * At runtime a {@link graphql.schema.TypeResolver} is used to take an interface object value and decide what {@link graphql.schema.GraphQLObjectType}
  * represents this interface type.
  * <p>
- * <p>
  * See http://graphql.org/learn/schema/#interfaces for more details on the concept.
  */
 @PublicApi
