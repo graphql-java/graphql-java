@@ -38,13 +38,13 @@ public class PropertyFetchingImpl {
         this.singleArgumentType = singleArgumentType;
     }
 
-    private static class CachedMethod {
+    private class CachedMethod {
         Method method;
-        boolean takesDataFetcherEnvironmentAsOnlyArgument;
+        boolean takesSingleArgumentTypeAsOnlyArgument;
 
         CachedMethod(Method method) {
             this.method = method;
-            this.takesDataFetcherEnvironmentAsOnlyArgument = takesDataFetcherEnvironmentAsOnlyArgument(method);
+            this.takesSingleArgumentTypeAsOnlyArgument = takesSingleArgumentTypeAsOnlyArgument(method);
         }
 
     }
@@ -53,7 +53,7 @@ public class PropertyFetchingImpl {
         return getPropertyValue(propertyName, object, graphQLType, null);
     }
 
-    public Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType, DataFetchingEnvironment environment) {
+    public Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType, Object singleArgumentValue) {
         if (object instanceof Map) {
             return ((Map<?, ?>) object).get(propertyName);
         }
@@ -64,7 +64,7 @@ public class PropertyFetchingImpl {
         CachedMethod cachedMethod = METHOD_CACHE.get(cacheKey);
         if (cachedMethod != null) {
             try {
-                return invokeMethod(object, environment, cachedMethod.method, cachedMethod.takesDataFetcherEnvironmentAsOnlyArgument);
+                return invokeMethod(object, singleArgumentValue, cachedMethod.method, cachedMethod.takesSingleArgumentTypeAsOnlyArgument);
             } catch (NoSuchMethodException ignored) {
                 assertShouldNeverHappen("A method cached as '%s' is no longer available??", cacheKey);
             }
@@ -90,14 +90,14 @@ public class PropertyFetchingImpl {
         // ok we haven't cached it and we haven't negatively cached it so we have to find the POJO method which is the most
         // expensive operation here
         //
-        boolean dfeInUse = environment != null;
+        boolean dfeInUse = singleArgumentValue != null;
         try {
             MethodFinder methodFinder = (root, methodName) -> findPubliclyAccessibleMethod(cacheKey, root, methodName, dfeInUse);
-            return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, environment);
+            return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, singleArgumentValue);
         } catch (NoSuchMethodException ignored) {
             try {
                 MethodFinder methodFinder = (aClass, methodName) -> findViaSetAccessible(cacheKey, aClass, methodName, dfeInUse);
-                return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, environment);
+                return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, singleArgumentValue);
             } catch (NoSuchMethodException ignored2) {
                 try {
                     return getPropertyViaFieldAccess(cacheKey, object, propertyName);
@@ -127,22 +127,22 @@ public class PropertyFetchingImpl {
         Method apply(Class<?> aClass, String s) throws NoSuchMethodException;
     }
 
-    private Object getPropertyViaGetterMethod(Object object, String propertyName, GraphQLType graphQLType, MethodFinder methodFinder, DataFetchingEnvironment environment) throws NoSuchMethodException {
+    private Object getPropertyViaGetterMethod(Object object, String propertyName, GraphQLType graphQLType, MethodFinder methodFinder, Object singleArgumentValue) throws NoSuchMethodException {
         if (isBooleanProperty(graphQLType)) {
             try {
-                return getPropertyViaGetterUsingPrefix(object, propertyName, "is", methodFinder, environment);
+                return getPropertyViaGetterUsingPrefix(object, propertyName, "is", methodFinder, singleArgumentValue);
             } catch (NoSuchMethodException e) {
-                return getPropertyViaGetterUsingPrefix(object, propertyName, "get", methodFinder, environment);
+                return getPropertyViaGetterUsingPrefix(object, propertyName, "get", methodFinder, singleArgumentValue);
             }
         } else {
-            return getPropertyViaGetterUsingPrefix(object, propertyName, "get", methodFinder, environment);
+            return getPropertyViaGetterUsingPrefix(object, propertyName, "get", methodFinder, singleArgumentValue);
         }
     }
 
-    private Object getPropertyViaGetterUsingPrefix(Object object, String propertyName, String prefix, MethodFinder methodFinder, DataFetchingEnvironment environment) throws NoSuchMethodException {
+    private Object getPropertyViaGetterUsingPrefix(Object object, String propertyName, String prefix, MethodFinder methodFinder, Object singleArgumentValue) throws NoSuchMethodException {
         String getterName = prefix + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
         Method method = methodFinder.apply(object.getClass(), getterName);
-        return invokeMethod(object, environment, method, takesDataFetcherEnvironmentAsOnlyArgument(method));
+        return invokeMethod(object, singleArgumentValue, method, takesSingleArgumentTypeAsOnlyArgument(method));
     }
 
     /**
@@ -190,7 +190,7 @@ public class PropertyFetchingImpl {
         while (currentClass != null) {
             Predicate<Method> whichMethods = mth -> {
                 if (dfeInUse) {
-                    return hasZeroArgs(mth) || takesDataFetcherEnvironmentAsOnlyArgument(mth);
+                    return hasZeroArgs(mth) || takesSingleArgumentTypeAsOnlyArgument(mth);
                 }
                 return hasZeroArgs(mth);
             };
@@ -240,13 +240,13 @@ public class PropertyFetchingImpl {
         }
     }
 
-    private Object invokeMethod(Object object, DataFetchingEnvironment environment, Method method, boolean takesDataFetcherEnvironmentAsOnlyArgument) throws FastNoSuchMethodException {
+    private Object invokeMethod(Object object, Object singleArgumentValue, Method method, boolean takesSingleArgument) throws FastNoSuchMethodException {
         try {
-            if (takesDataFetcherEnvironmentAsOnlyArgument) {
-                if (environment == null) {
+            if (takesSingleArgument) {
+                if (singleArgumentValue == null) {
                     throw new FastNoSuchMethodException(method.getName());
                 }
-                return method.invoke(object, environment);
+                return method.invoke(object, singleArgumentValue);
             } else {
                 return method.invoke(object);
             }
@@ -303,9 +303,9 @@ public class PropertyFetchingImpl {
         return mth.getParameterCount() == 0;
     }
 
-    private static boolean takesDataFetcherEnvironmentAsOnlyArgument(Method mth) {
+    private boolean takesSingleArgumentTypeAsOnlyArgument(Method mth) {
         return mth.getParameterCount() == 1 &&
-                mth.getParameterTypes()[0].equals(DataFetchingEnvironment.class);
+                mth.getParameterTypes()[0].equals(singleArgumentType);
     }
 
     private static Comparator<? super Method> mostMethodArgsFirst() {
