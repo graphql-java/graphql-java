@@ -502,7 +502,7 @@ public class SchemaGeneratorHelper {
         }));
 
         GraphQLInputObjectType inputObjectType = builder.build();
-        inputObjectType = generatorDirectiveHelper.onInputObjectType(inputObjectType, buildCtx.mkBehaviourParams());
+        //inputObjectType = generatorDirectiveHelper.onInputObjectType(inputObjectType, buildCtx.mkBehaviourParams());
         return inputObjectType;
     }
 
@@ -567,7 +567,7 @@ public class SchemaGeneratorHelper {
         );
 
         GraphQLEnumType enumType = builder.build();
-        enumType = generatorDirectiveHelper.onEnum(enumType, buildCtx.mkBehaviourParams());
+        //enumType = generatorDirectiveHelper.onEnum(enumType, buildCtx.mkBehaviourParams());
         return enumType;
     }
 
@@ -632,7 +632,7 @@ public class SchemaGeneratorHelper {
                             buildCtx.getDirectives(),
                             buildCtx.getComparatorRegistry())
                     ));
-            scalar = generatorDirectiveHelper.onScalar(scalar, buildCtx.mkBehaviourParams());
+            //scalar = generatorDirectiveHelper.onScalar(scalar, buildCtx.mkBehaviourParams());
         }
         return scalar;
     }
@@ -794,7 +794,7 @@ public class SchemaGeneratorHelper {
             buildCtx.getCodeRegistry().typeResolver(interfaceType, typeResolver);
         }
 
-        interfaceType = generatorDirectiveHelper.onInterface(interfaceType, buildCtx.mkBehaviourParams());
+        //interfaceType = generatorDirectiveHelper.onInterface(interfaceType, buildCtx.mkBehaviourParams());
         return interfaceType;
     }
 
@@ -831,7 +831,7 @@ public class SchemaGeneratorHelper {
         buildObjectTypeInterfaces(buildCtx, typeDefinition, builder, extensions);
 
         GraphQLObjectType objectType = builder.build();
-        objectType = generatorDirectiveHelper.onObject(objectType, buildCtx.mkBehaviourParams());
+        //objectType = generatorDirectiveHelper.onObject(objectType, buildCtx.mkBehaviourParams());
         return objectType;
     }
 
@@ -908,7 +908,7 @@ public class SchemaGeneratorHelper {
             TypeResolver typeResolver = getTypeResolverForUnion(buildCtx, typeDefinition);
             buildCtx.getCodeRegistry().typeResolver(unionType, typeResolver);
         }
-        unionType = generatorDirectiveHelper.onUnion(unionType, buildCtx.mkBehaviourParams());
+        //unionType = generatorDirectiveHelper.onUnion(unionType, buildCtx.mkBehaviourParams());
         return unionType;
     }
 

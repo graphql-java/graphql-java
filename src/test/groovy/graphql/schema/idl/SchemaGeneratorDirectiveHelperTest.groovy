@@ -100,7 +100,13 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             input InputType @inputDirective(target : "InputType") {
                 inputField1 : String @inputFieldDirective(target : "inputField1")
                 inputField2 : String @inputFieldDirective(target : "inputField2")
+                circularInputField : IndirectType
             }
+            
+            input IndirectType {
+                inputField3 : InputType
+            }
+                
             
             enum EnumType @enumDirective(target:"EnumType") {
                 enumVal1 @enumValueDirective(target : "enumVal1")
@@ -232,6 +238,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         targetList.contains("InputType")
         targetList.contains("inputField1")
         targetList.contains("inputField2")
+        targetList.contains("circularInputField")
 
         targetList.contains("EnumType")
         targetList.contains("enumVal1")

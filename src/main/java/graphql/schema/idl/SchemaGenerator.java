@@ -1,7 +1,7 @@
 package graphql.schema.idl;
 
-import graphql.PublicApi;
 import graphql.GraphQLError;
+import graphql.PublicApi;
 import graphql.language.OperationTypeDefinition;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
@@ -9,7 +9,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.idl.errors.SchemaProblem;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,9 +45,7 @@ public class SchemaGenerator {
      *
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
-     *
      * @return an executable schema
-     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -61,9 +59,7 @@ public class SchemaGenerator {
      * @param options      the controlling options
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
-     *
      * @return an executable schema
-     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(Options options, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -109,7 +105,12 @@ public class SchemaGenerator {
         });
         GraphQLSchema graphQLSchema = schemaBuilder.build();
 
-        Collection<SchemaGeneratorPostProcessing> schemaTransformers = buildCtx.getWiring().getSchemaGeneratorPostProcessings();
+        List<SchemaGeneratorPostProcessing> schemaTransformers = new ArrayList<>(buildCtx.getWiring().getSchemaGeneratorPostProcessings());
+        // handle directive wiring AFTER the schema has been built and hence type references are resolved
+        schemaTransformers.add(
+                new SchemaDirectiveWiringSchemaGeneratorPostProcessing(buildCtx.getTypeRegistry(), buildCtx.getWiring(), buildCtx.getCodeRegistry())
+        );
+
         for (SchemaGeneratorPostProcessing postProcessing : schemaTransformers) {
             graphQLSchema = postProcessing.process(graphQLSchema);
         }
