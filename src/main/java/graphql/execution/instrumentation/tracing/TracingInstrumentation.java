@@ -77,8 +77,7 @@ public class TracingInstrumentation extends SimpleInstrumentation {
         Map<Object, Object> currentExt = executionResult.getExtensions();
 
         TracingSupport tracingSupport = parameters.getInstrumentationState();
-        Map<Object, Object> tracingMap = new LinkedHashMap<>();
-        tracingMap.putAll(currentExt == null ? Collections.emptyMap() : currentExt);
+        Map<Object, Object> tracingMap = new LinkedHashMap<>(currentExt == null ? Collections.emptyMap() : currentExt);
         tracingMap.put("tracing", tracingSupport.snapshotTracingData());
 
         return CompletableFuture.completedFuture(new ExecutionResultImpl(executionResult.getData(), executionResult.getErrors(), tracingMap));

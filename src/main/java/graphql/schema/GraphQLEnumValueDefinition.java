@@ -126,7 +126,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
 
     @Override
     public GraphQLDirective getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
+        return DirectivesUtil.directiveByName(directives, directiveName).orElse(null);
     }
 
     public EnumValueDefinition getDefinition() {
@@ -170,6 +170,23 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
                 builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
         );
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
+    }
+
 
     public static Builder newEnumValueDefinition() {
         return new Builder();

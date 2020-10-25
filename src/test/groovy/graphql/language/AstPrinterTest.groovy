@@ -454,6 +454,10 @@ type Query {
 
     def "print type extensions"() {
         def query = '''
+    extend schema {
+        query: Query
+    }
+    
     extend type Object @directive {
         objectField : String
     }    
@@ -479,7 +483,11 @@ type Query {
         String output = printAst(document)
 
         expect:
-        output == '''extend type Object @directive {
+        output == '''extend schema {
+  query: Query
+}
+
+extend type Object @directive {
   objectField: String
 }
 

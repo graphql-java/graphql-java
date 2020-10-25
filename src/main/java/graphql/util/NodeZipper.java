@@ -139,5 +139,12 @@ public class NodeZipper<T> {
         return curNode;
     }
 
-
+    @Override
+    public String toString() {
+        return "NodeZipper{" +
+                "curNode=" + curNode +
+                ", breadcrumbs.size=" + breadcrumbs.size() +
+                ", modificationType=" + modificationType +
+                '}';
+    }
 }

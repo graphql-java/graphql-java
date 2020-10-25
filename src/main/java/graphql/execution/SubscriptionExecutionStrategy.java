@@ -122,7 +122,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
         ExecutionStepInfo subscribedFieldStepInfo = createSubscribedFieldStepInfo(executionContext, newParameters);
 
-        InstrumentationFieldParameters i13nFieldParameters = new InstrumentationFieldParameters(executionContext, subscribedFieldStepInfo.getFieldDefinition(), subscribedFieldStepInfo);
+        InstrumentationFieldParameters i13nFieldParameters = new InstrumentationFieldParameters(executionContext, () -> subscribedFieldStepInfo);
         InstrumentationContext<ExecutionResult> subscribedFieldCtx = instrumentation.beginSubscribedFieldEvent(i13nFieldParameters);
 
         FetchedValue fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, parameters, eventPayload);

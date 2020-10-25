@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -61,15 +62,13 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
 
         FragmentSpread that = (FragmentSpread) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name);
+        return Objects.equals(this.name, that.name);
     }
 
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
-        result.addAll(directives);
-        return result;
+        return new ArrayList<>(directives);
     }
 
     @Override
@@ -119,7 +118,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
         return builder.build();
     }
 
-    public static final class Builder implements NodeBuilder {
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private String name;
@@ -154,6 +153,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
             return this;
         }
 
+        @Override
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;
@@ -173,7 +173,6 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
             this.additionalData.put(key, value);
             return this;
         }
-
 
         public FragmentSpread build() {
             return new FragmentSpread(name, directives, sourceLocation, comments, ignoredChars, additionalData);

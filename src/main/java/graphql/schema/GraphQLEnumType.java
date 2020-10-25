@@ -45,7 +45,6 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     public static final String CHILD_DIRECTIVES = "directives";
 
 
-
     /**
      * @param name        the name
      * @param description the description
@@ -235,6 +234,23 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
                         .replaceValues(newChildren.getChildren(CHILD_VALUES))
         );
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
+    }
+
 
     public static Builder newEnum() {
         return new Builder();

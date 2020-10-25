@@ -108,7 +108,10 @@ public class ValuesResolver {
             if (argument != null) {
                 value = coerceValueAst(codeRegistry.getFieldVisibility(), fieldArgument.getType(), argument.getValue(), variables);
             }
-            if (value == null) {
+            if (value == null
+                    && !(argument != null && argument.getValue() instanceof NullValue)
+                    && !(argument != null && argument.getValue() instanceof VariableReference && variables.containsKey(((VariableReference) argument.getValue()).getName()))
+            ) {
                 value = fieldArgument.getDefaultValue();
             }
             boolean wasValueProvided = false;
@@ -131,7 +134,7 @@ public class ValuesResolver {
 
 
     private Map<String, Argument> argumentMap(List<Argument> arguments) {
-        Map<String, Argument> result = new LinkedHashMap<>();
+        Map<String, Argument> result = new LinkedHashMap<>(arguments.size());
         for (Argument argument : arguments) {
             result.put(argument.getName(), argument);
         }

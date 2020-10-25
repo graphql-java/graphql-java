@@ -174,6 +174,8 @@ public class TypesImplementInterfaces implements SchemaValidationRule {
             return objectIsMemberOfUnion((GraphQLUnionType) constraintType, objectType);
         } else if (constraintType instanceof GraphQLInterfaceType && objectType instanceof GraphQLObjectType) {
             return objectImplementsInterface((GraphQLInterfaceType) constraintType, (GraphQLObjectType) objectType);
+        } else if (constraintType instanceof GraphQLInterfaceType && objectType instanceof GraphQLInterfaceType) {
+            return interfaceImplementsInterface((GraphQLInterfaceType) constraintType, (GraphQLInterfaceType) objectType);
         } else if (isList(constraintType) && isList(objectType)) {
             GraphQLOutputType wrappedConstraintType = (GraphQLOutputType) unwrapOne(constraintType);
             GraphQLOutputType wrappedObjectType = (GraphQLOutputType) unwrapOne(objectType);
@@ -200,6 +202,10 @@ public class TypesImplementInterfaces implements SchemaValidationRule {
 
     boolean objectImplementsInterface(GraphQLInterfaceType interfaceType, GraphQLObjectType objectType) {
         return objectType.getInterfaces().contains(interfaceType);
+    }
+
+    boolean interfaceImplementsInterface(GraphQLInterfaceType interfaceType, GraphQLInterfaceType implementingType) {
+        return implementingType.getInterfaces().contains(interfaceType);
     }
 
     boolean objectIsMemberOfUnion(GraphQLUnionType unionType, GraphQLOutputType objectType) {

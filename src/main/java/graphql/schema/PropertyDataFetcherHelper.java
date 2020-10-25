@@ -29,9 +29,19 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 public class PropertyDataFetcherHelper {
     private static final AtomicBoolean USE_SET_ACCESSIBLE = new AtomicBoolean(true);
     private static final AtomicBoolean USE_NEGATIVE_CACHE = new AtomicBoolean(true);
-    private static final ConcurrentMap<String, Method> METHOD_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, CachedMethod> METHOD_CACHE = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, Field> FIELD_CACHE = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, String> NEGATIVE_CACHE = new ConcurrentHashMap<>();
+
+    private static class CachedMethod {
+        CachedMethod(Method method) {
+            this.method = method;
+            this.takesDataFetcherEnvironmentAsOnlyArgument = takesDataFetcherEnvironmentAsOnlyArgument(method);
+        }
+
+        Method method;
+        boolean takesDataFetcherEnvironmentAsOnlyArgument;
+    }
 
     public static Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType) {
         return getPropertyValue(propertyName, object, graphQLType, null);
@@ -42,49 +52,52 @@ public class PropertyDataFetcherHelper {
             return ((Map<?, ?>) object).get(propertyName);
         }
 
-        String key = mkKey(object, propertyName);
-        //
-        // if we have tried all strategies before and they have all failed then we negatively cache
-        // the key and assume that its never going to turn up.  This shortcuts the property lookup
-        // in systems where there was a `foo` graphql property but they never provided an POJO
-        // version of `foo`.
-        if (isNegativelyCached(key)) {
-            return null;
-        }
-        // lets try positive cache mechanisms next.  If we have seen the method or field before
+        String cacheKey = mkKey(object, propertyName);
+        // lets try positive cache mechanisms first.  If we have seen the method or field before
         // then we invoke it directly without burning any cycles doing reflection.
-        Method cachedMethod = METHOD_CACHE.get(key);
+        CachedMethod cachedMethod = METHOD_CACHE.get(cacheKey);
         if (cachedMethod != null) {
-            MethodFinder methodFinder = (aClass, methodName) -> cachedMethod;
             try {
-                return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, environment);
+                return invokeMethod(object, environment, cachedMethod.method, cachedMethod.takesDataFetcherEnvironmentAsOnlyArgument);
             } catch (NoSuchMethodException ignored) {
-                assertShouldNeverHappen("A method cached as '%s' is no longer available??", key);
+                assertShouldNeverHappen("A method cached as '%s' is no longer available??", cacheKey);
             }
         }
-        Field cachedField = FIELD_CACHE.get(key);
+        Field cachedField = FIELD_CACHE.get(cacheKey);
         if (cachedField != null) {
-            try {
-                return getPropertyViaFieldAccess(object, propertyName);
-            } catch (FastNoSuchMethodException ignored) {
-                assertShouldNeverHappen("A field cached as '%s' is no longer available??", key);
-            }
+            return invokeField(object, cachedField);
         }
 
+        //
+        // if we have tried all strategies before and they have all failed then we negatively cache
+        // the cacheKey and assume that its never going to turn up.  This shortcuts the property lookup
+        // in systems where there was a `foo` graphql property but they never provided an POJO
+        // version of `foo`.
+        //
+        // we do this second because we believe in the positive cached version will mostly prevail
+        // but if we then look it up and negatively cache it then lest do that look up next
+        //
+        if (isNegativelyCached(cacheKey)) {
+            return null;
+        }
+        //
+        // ok we haven't cached it and we haven't negatively cached it so we have to find the POJO method which is the most
+        // expensive operation here
+        //
         boolean dfeInUse = environment != null;
         try {
-            MethodFinder methodFinder = (root, methodName) -> findPubliclyAccessibleMethod(propertyName, root, methodName, dfeInUse);
+            MethodFinder methodFinder = (root, methodName) -> findPubliclyAccessibleMethod(cacheKey, propertyName, root, methodName, dfeInUse);
             return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, environment);
         } catch (NoSuchMethodException ignored) {
             try {
-                MethodFinder methodFinder = (aClass, methodName) -> findViaSetAccessible(propertyName, aClass, methodName, dfeInUse);
+                MethodFinder methodFinder = (aClass, methodName) -> findViaSetAccessible(cacheKey, propertyName, aClass, methodName, dfeInUse);
                 return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, environment);
             } catch (NoSuchMethodException ignored2) {
                 try {
-                    return getPropertyViaFieldAccess(object, propertyName);
+                    return getPropertyViaFieldAccess(cacheKey, object, propertyName);
                 } catch (FastNoSuchMethodException e) {
                     // we have nothing to ask for and we have exhausted our lookup strategies
-                    putInNegativeCache(key);
+                    putInNegativeCache(cacheKey);
                     return null;
                 }
             }
@@ -122,21 +135,9 @@ public class PropertyDataFetcherHelper {
 
     private static Object getPropertyViaGetterUsingPrefix(Object object, String propertyName, String prefix, MethodFinder methodFinder, DataFetchingEnvironment environment) throws NoSuchMethodException {
         String getterName = prefix + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
-        try {
-            Method method = methodFinder.apply(object.getClass(), getterName);
-            if (takesDataFetcherEnvironmentAsOnlyArgument(method)) {
-                if (environment == null) {
-                    throw new FastNoSuchMethodException(getterName);
-                }
-                return method.invoke(object, environment);
-            } else {
-                return method.invoke(object);
-            }
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new GraphQLException(e);
-        }
+        Method method = methodFinder.apply(object.getClass(), getterName);
+        return invokeMethod(object, environment, method, takesDataFetcherEnvironmentAsOnlyArgument(method));
     }
-
 
     /**
      * Invoking public methods on package-protected classes via reflection
@@ -146,10 +147,9 @@ public class PropertyDataFetcherHelper {
      * which have abstract public interfaces implemented by package-protected
      * (generated) subclasses.
      */
-    private static Method findPubliclyAccessibleMethod(String propertyName, Class<?> root, String methodName, boolean dfeInUse) throws NoSuchMethodException {
-        Class<?> currentClass = root;
+    private static Method findPubliclyAccessibleMethod(String cacheKey, String propertyName, Class<?> rootClass, String methodName, boolean dfeInUse) throws NoSuchMethodException {
+        Class<?> currentClass = rootClass;
         while (currentClass != null) {
-            String key = mkKey(currentClass, propertyName);
             if (Modifier.isPublic(currentClass.getModifiers())) {
                 if (dfeInUse) {
                     //
@@ -157,7 +157,7 @@ public class PropertyDataFetcherHelper {
                     try {
                         Method method = currentClass.getMethod(methodName, DataFetchingEnvironment.class);
                         if (Modifier.isPublic(method.getModifiers())) {
-                            METHOD_CACHE.putIfAbsent(key, method);
+                            METHOD_CACHE.putIfAbsent(cacheKey, new CachedMethod(method));
                             return method;
                         }
                     } catch (NoSuchMethodException e) {
@@ -166,23 +166,22 @@ public class PropertyDataFetcherHelper {
                 }
                 Method method = currentClass.getMethod(methodName);
                 if (Modifier.isPublic(method.getModifiers())) {
-                    METHOD_CACHE.putIfAbsent(key, method);
+                    METHOD_CACHE.putIfAbsent(cacheKey, new CachedMethod(method));
                     return method;
                 }
             }
             currentClass = currentClass.getSuperclass();
         }
-        return root.getMethod(methodName);
+        assert rootClass != null;
+        return rootClass.getMethod(methodName);
     }
 
-    private static Method findViaSetAccessible(String propertyName, Class<?> aClass, String methodName, boolean dfeInUse) throws NoSuchMethodException {
+    private static Method findViaSetAccessible(String cacheKey, String propertyName, Class<?> aClass, String methodName, boolean dfeInUse) throws NoSuchMethodException {
         if (!USE_SET_ACCESSIBLE.get()) {
             throw new FastNoSuchMethodException(methodName);
         }
         Class<?> currentClass = aClass;
         while (currentClass != null) {
-            String key = mkKey(currentClass, propertyName);
-
             Predicate<Method> whichMethods = mth -> {
                 if (dfeInUse) {
                     return hasZeroArgs(mth) || takesDataFetcherEnvironmentAsOnlyArgument(mth);
@@ -199,7 +198,7 @@ public class PropertyDataFetcherHelper {
                     // few JVMs actually enforce this but it might happen
                     Method method = m.get();
                     method.setAccessible(true);
-                    METHOD_CACHE.putIfAbsent(key, method);
+                    METHOD_CACHE.putIfAbsent(cacheKey, new CachedMethod(method));
                     return method;
                 } catch (SecurityException ignored) {
                 }
@@ -209,28 +208,50 @@ public class PropertyDataFetcherHelper {
         throw new FastNoSuchMethodException(methodName);
     }
 
-    private static Object getPropertyViaFieldAccess(Object object, String propertyName) throws FastNoSuchMethodException {
+    private static Object getPropertyViaFieldAccess(String cacheKey, Object object, String propertyName) throws FastNoSuchMethodException {
         Class<?> aClass = object.getClass();
-        String key = mkKey(aClass, propertyName);
         try {
             Field field = aClass.getField(propertyName);
-            FIELD_CACHE.putIfAbsent(key, field);
+            FIELD_CACHE.putIfAbsent(cacheKey, field);
             return field.get(object);
         } catch (NoSuchFieldException e) {
             if (!USE_SET_ACCESSIBLE.get()) {
-                throw new FastNoSuchMethodException(key);
+                throw new FastNoSuchMethodException(cacheKey);
             }
             // if not public fields then try via setAccessible
             try {
                 Field field = aClass.getDeclaredField(propertyName);
                 field.setAccessible(true);
-                FIELD_CACHE.putIfAbsent(key, field);
+                FIELD_CACHE.putIfAbsent(cacheKey, field);
                 return field.get(object);
             } catch (SecurityException | NoSuchFieldException ignored2) {
-                throw new FastNoSuchMethodException(key);
+                throw new FastNoSuchMethodException(cacheKey);
             } catch (IllegalAccessException e1) {
                 throw new GraphQLException(e);
             }
+        } catch (IllegalAccessException e) {
+            throw new GraphQLException(e);
+        }
+    }
+
+    private static Object invokeMethod(Object object, DataFetchingEnvironment environment, Method method, boolean takesDataFetcherEnvironmentAsOnlyArgument) throws FastNoSuchMethodException {
+        try {
+            if (takesDataFetcherEnvironmentAsOnlyArgument) {
+                if (environment == null) {
+                    throw new FastNoSuchMethodException(method.getName());
+                }
+                return method.invoke(object, environment);
+            } else {
+                return method.invoke(object);
+            }
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new GraphQLException(e);
+        }
+    }
+
+    private static Object invokeField(Object object, Field field) {
+        try {
+            return field.get(object);
         } catch (IllegalAccessException e) {
             throw new GraphQLException(e);
         }
@@ -262,10 +283,7 @@ public class PropertyDataFetcherHelper {
     }
 
     private static String mkKey(Object object, String propertyName) {
-        return mkKey(object.getClass(), propertyName);
-    }
-
-    private static String mkKey(Class<?> clazz, String propertyName) {
+        Class<?> clazz = object.getClass();
         ClassLoader classLoader = clazz.getClassLoader();
         if (classLoader != null) {
             return classLoader.hashCode() + "__" + clazz.getName() + "__" + propertyName;

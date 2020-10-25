@@ -4,6 +4,7 @@ package graphql.language;
 import graphql.PublicApi;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 @PublicApi
 public class SourceLocation implements Serializable {
@@ -43,7 +44,7 @@ public class SourceLocation implements Serializable {
 
         if (line != that.line) return false;
         if (column != that.column) return false;
-        return sourceName != null ? sourceName.equals(that.sourceName) : that.sourceName == null;
+        return Objects.equals(sourceName, that.sourceName);
     }
 
     @Override

@@ -178,6 +178,23 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         );
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
+    }
+
+
     public static Builder newUnionType() {
         return new Builder();
     }
@@ -337,5 +354,14 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
                     definition,
                     extensionDefinitions);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "GraphQLUnionType{" +
+                "name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", definition=" + definition +
+                '}';
     }
 }
