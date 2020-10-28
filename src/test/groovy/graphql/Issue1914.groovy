@@ -53,7 +53,7 @@ class Issue1914 extends Specification {
 
     }
 
-    def "default values in input objects are overridden when variable is provided and otherwise default values in input objects are respected"() {
+    def "default values in input objects are overridden when variable is provided and otherwise are respected"() {
         given:
         def spec = """type Query {
             sayHello(arg: Arg! = {field1: "F1ValOverride"}): String
