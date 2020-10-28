@@ -590,7 +590,7 @@ input CharacterInput {
 }
 
 type Query {
-  outputField(inputArg: InputType = {age : 666, name : "nameViaArg"}, inputBoolean: Boolean = true, inputInt: Int = 1, inputString: String = "viaArgString"): OutputType
+  outputField(inputArg: InputType = {age : 666, complex : {boolean : true, int : 666, string : "string"}, name : "nameViaArg", rocks : true}, inputBoolean: Boolean = true, inputInt: Int = 1, inputString: String = "viaArgString"): OutputType
 }
 
 input ComplexType {
