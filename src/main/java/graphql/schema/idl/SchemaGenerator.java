@@ -105,12 +105,12 @@ public class SchemaGenerator {
         });
         GraphQLSchema graphQLSchema = schemaBuilder.build();
 
-        List<SchemaGeneratorPostProcessing> schemaTransformers = new ArrayList<>(buildCtx.getWiring().getSchemaGeneratorPostProcessings());
-        // handle directive wiring AFTER the schema has been built and hence type references are resolved
-        // this  way they can be truly replaced via schema directive wiring
+        List<SchemaGeneratorPostProcessing> schemaTransformers = new ArrayList<>();
+        // handle directive wiring AFTER the schema has been built and hence type references are resolved at callback time
         schemaTransformers.add(
                 new SchemaDirectiveWiringSchemaGeneratorPostProcessing(buildCtx.getTypeRegistry(), buildCtx.getWiring(), buildCtx.getCodeRegistry())
         );
+        schemaTransformers.addAll(buildCtx.getWiring().getSchemaGeneratorPostProcessings());
 
         for (SchemaGeneratorPostProcessing postProcessing : schemaTransformers) {
             graphQLSchema = postProcessing.process(graphQLSchema);
