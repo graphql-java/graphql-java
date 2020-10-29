@@ -43,10 +43,6 @@ class SchemaDirectiveWiringSchemaGeneratorPostProcessing implements SchemaGenera
 
     @Override
     public GraphQLSchema process(GraphQLSchema originalSchema) {
-        Map<String, SchemaDirectiveWiring> mapOfWiring = runtimeWiring.getRegisteredDirectiveWiring();
-        if (mapOfWiring.isEmpty()) {
-            return originalSchema;
-        }
         GraphQLSchema newSchema = SchemaTransformer.transformSchema(originalSchema, new Visitor());
         return newSchema.transform(builder -> {
             // they could have changed the code registry so rebuild it
