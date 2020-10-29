@@ -495,9 +495,7 @@ public class SchemaGeneratorHelper {
             }
         }));
 
-        GraphQLInputObjectType inputObjectType = builder.build();
-        //inputObjectType = generatorDirectiveHelper.onInputObjectType(inputObjectType, buildCtx.mkBehaviourParams());
-        return inputObjectType;
+        return builder.build();
     }
 
     private GraphQLInputObjectField buildInputField(BuildContext buildCtx, InputValueDefinition fieldDef) {
@@ -819,9 +817,7 @@ public class SchemaGeneratorHelper {
 
         buildObjectTypeInterfaces(buildCtx, typeDefinition, builder, extensions);
 
-        GraphQLObjectType objectType = builder.build();
-        //objectType = generatorDirectiveHelper.onObject(objectType, buildCtx.mkBehaviourParams());
-        return objectType;
+        return builder.build();
     }
 
     private void buildObjectTypeInterfaces(BuildContext buildCtx,
