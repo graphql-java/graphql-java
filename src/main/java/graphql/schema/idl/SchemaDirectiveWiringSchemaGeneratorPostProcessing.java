@@ -30,19 +30,16 @@ class SchemaDirectiveWiringSchemaGeneratorPostProcessing implements SchemaGenera
     private final SchemaGeneratorDirectiveHelper generatorDirectiveHelper = new SchemaGeneratorDirectiveHelper();
     private final TypeDefinitionRegistry typeRegistry;
     private final RuntimeWiring runtimeWiring;
-    private final GraphQLCodeRegistry.Builder codeRegistry;
+    private final GraphQLCodeRegistry.Builder codeRegistryBuilder;
     private final Map<String, Object> directiveBehaviourContext = new HashMap<>();
 
 
-    public SchemaDirectiveWiringSchemaGeneratorPostProcessing(TypeDefinitionRegistry typeRegistry, RuntimeWiring runtimeWiring, GraphQLCodeRegistry.Builder codeRegistry) {
+    public SchemaDirectiveWiringSchemaGeneratorPostProcessing(TypeDefinitionRegistry typeRegistry, RuntimeWiring runtimeWiring, GraphQLCodeRegistry.Builder codeRegistryBuilder) {
         this.typeRegistry = typeRegistry;
         this.runtimeWiring = runtimeWiring;
-        this.codeRegistry = codeRegistry;
+        this.codeRegistryBuilder = codeRegistryBuilder;
     }
 
-    SchemaGeneratorDirectiveHelper.Parameters mkBehaviourParams() {
-        return new SchemaGeneratorDirectiveHelper.Parameters(typeRegistry, runtimeWiring, directiveBehaviourContext, codeRegistry);
-    }
 
     @Override
     public GraphQLSchema process(GraphQLSchema originalSchema) {
@@ -53,12 +50,16 @@ class SchemaDirectiveWiringSchemaGeneratorPostProcessing implements SchemaGenera
         GraphQLSchema newSchema = SchemaTransformer.transformSchema(originalSchema, new Visitor());
         return newSchema.transform(builder -> {
             // they could have changed the code registry so rebuild it
-            GraphQLCodeRegistry codeRegistry = this.codeRegistry.build();
+            GraphQLCodeRegistry codeRegistry = this.codeRegistryBuilder.build();
             builder.codeRegistry(codeRegistry);
         });
     }
 
     public class Visitor extends GraphQLTypeVisitorStub {
+
+        private SchemaGeneratorDirectiveHelper.Parameters mkBehaviourParams() {
+            return new SchemaGeneratorDirectiveHelper.Parameters(typeRegistry, runtimeWiring, directiveBehaviourContext, codeRegistryBuilder);
+        }
 
         private TraversalControl changOrContinue(GraphQLSchemaElement node, GraphQLSchemaElement newNode, TraverserContext<GraphQLSchemaElement> context) {
             if (node != newNode) {
@@ -71,17 +72,17 @@ class SchemaDirectiveWiringSchemaGeneratorPostProcessing implements SchemaGenera
             return type.getName().startsWith("__");
         }
 
-        private <T extends GraphQLNamedType> boolean suitable(T node, Function<T, NamedNode> suitableFunc) {
+        private <T extends GraphQLNamedType> boolean notSuitable(T node, Function<T, NamedNode<?>> suitableFunc) {
             if (isIntrospectionType(node)) {
-                return false;
+                return true;
             }
-            NamedNode definition = suitableFunc.apply(node);
-            return definition != null;
+            NamedNode<?> definition = suitableFunc.apply(node);
+            return definition == null;
         }
 
         @Override
         public TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
-            if (!suitable(node, GraphQLObjectType::getDefinition)) {
+            if (notSuitable(node, GraphQLObjectType::getDefinition)) {
                 return CONTINUE;
             }
             GraphQLSchemaElement newNode = generatorDirectiveHelper.onObject(node, mkBehaviourParams());
@@ -90,7 +91,7 @@ class SchemaDirectiveWiringSchemaGeneratorPostProcessing implements SchemaGenera
 
         @Override
         public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLSchemaElement> context) {
-            if (!suitable(node, GraphQLInterfaceType::getDefinition)) {
+            if (notSuitable(node, GraphQLInterfaceType::getDefinition)) {
                 return CONTINUE;
             }
             GraphQLSchemaElement newNode = generatorDirectiveHelper.onInterface(node, mkBehaviourParams());
@@ -99,7 +100,7 @@ class SchemaDirectiveWiringSchemaGeneratorPostProcessing implements SchemaGenera
 
         @Override
         public TraversalControl visitGraphQLEnumType(GraphQLEnumType node, TraverserContext<GraphQLSchemaElement> context) {
-            if (!suitable(node, GraphQLEnumType::getDefinition)) {
+            if (notSuitable(node, GraphQLEnumType::getDefinition)) {
                 return CONTINUE;
             }
             GraphQLSchemaElement newNode = generatorDirectiveHelper.onEnum(node, mkBehaviourParams());
@@ -108,7 +109,7 @@ class SchemaDirectiveWiringSchemaGeneratorPostProcessing implements SchemaGenera
 
         @Override
         public TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType node, TraverserContext<GraphQLSchemaElement> context) {
-            if (!suitable(node, GraphQLInputObjectType::getDefinition)) {
+            if (notSuitable(node, GraphQLInputObjectType::getDefinition)) {
                 return CONTINUE;
             }
             GraphQLSchemaElement newNode = generatorDirectiveHelper.onInputObjectType(node, mkBehaviourParams());
@@ -117,7 +118,7 @@ class SchemaDirectiveWiringSchemaGeneratorPostProcessing implements SchemaGenera
 
         @Override
         public TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLSchemaElement> context) {
-            if (!suitable(node, GraphQLScalarType::getDefinition)) {
+            if (notSuitable(node, GraphQLScalarType::getDefinition)) {
                 return CONTINUE;
             }
             GraphQLSchemaElement newNode = generatorDirectiveHelper.onScalar(node, mkBehaviourParams());
@@ -126,7 +127,7 @@ class SchemaDirectiveWiringSchemaGeneratorPostProcessing implements SchemaGenera
 
         @Override
         public TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLSchemaElement> context) {
-            if (!suitable(node, GraphQLUnionType::getDefinition)) {
+            if (notSuitable(node, GraphQLUnionType::getDefinition)) {
                 return CONTINUE;
             }
             GraphQLSchemaElement newNode = generatorDirectiveHelper.onUnion(node, mkBehaviourParams());

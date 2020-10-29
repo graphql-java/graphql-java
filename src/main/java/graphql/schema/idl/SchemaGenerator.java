@@ -107,6 +107,7 @@ public class SchemaGenerator {
 
         List<SchemaGeneratorPostProcessing> schemaTransformers = new ArrayList<>(buildCtx.getWiring().getSchemaGeneratorPostProcessings());
         // handle directive wiring AFTER the schema has been built and hence type references are resolved
+        // this  way they can be truly replaced via schema directive wiring
         schemaTransformers.add(
                 new SchemaDirectiveWiringSchemaGeneratorPostProcessing(buildCtx.getTypeRegistry(), buildCtx.getWiring(), buildCtx.getCodeRegistry())
         );

@@ -24,7 +24,7 @@ public class SchemaDirectiveWiringEnvironmentImpl<T extends GraphQLDirectiveCont
 
     private final T element;
     private final Map<String, GraphQLDirective> directives;
-    private final NodeParentTree<NamedNode> nodeParentTree;
+    private final NodeParentTree<NamedNode<?>> nodeParentTree;
     private final TypeDefinitionRegistry typeDefinitionRegistry;
     private final Map<String, Object> context;
     private final GraphQLCodeRegistry.Builder codeRegistry;
@@ -72,7 +72,7 @@ public class SchemaDirectiveWiringEnvironmentImpl<T extends GraphQLDirectiveCont
     }
 
     @Override
-    public NodeParentTree<NamedNode> getNodeParentTree() {
+    public NodeParentTree<NamedNode<?>> getNodeParentTree() {
         return nodeParentTree;
     }
 
@@ -107,14 +107,14 @@ public class SchemaDirectiveWiringEnvironmentImpl<T extends GraphQLDirectiveCont
     }
 
     @Override
-    public DataFetcher getFieldDataFetcher() {
+    public DataFetcher<?> getFieldDataFetcher() {
         assertNotNull(fieldDefinition, () -> "An output field must be in context to call this method");
         assertNotNull(fieldsContainer, () -> "An output field container must be in context to call this method");
         return codeRegistry.getDataFetcher(fieldsContainer, fieldDefinition);
     }
 
     @Override
-    public GraphQLFieldDefinition setFieldDataFetcher(DataFetcher newDataFetcher) {
+    public GraphQLFieldDefinition setFieldDataFetcher(DataFetcher<?> newDataFetcher) {
         assertNotNull(fieldDefinition, () -> "An output field must be in context to call this method");
         assertNotNull(fieldsContainer, () -> "An output field container must be in context to call this method");
 
