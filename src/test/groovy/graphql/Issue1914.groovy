@@ -101,5 +101,31 @@ class Issue1914 extends Specification {
         result.data == [sayHello: "F1ValOverride & F2V"]
 
     }
+
+    def "default values (including null) in input objects are overridden when variable is provided and otherwise are respected"() {
+        given:
+        def spec = """type Query {
+            sayHello(arg: Arg! = {field1: "F1ValOverride"}): String
+        }
+        input Arg {
+            field1: String = "F1V"
+            field2: String = "F2V"
+            field3: String
+        }
+        """
+        DataFetcher df = { dfe ->
+            Map arg = dfe.getArgument("arg")
+            return arg.get("field1") + " & " + arg.get("field2") + " & " + arg.get("field3")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def result = graphQL.execute('{sayHello}')
+
+        then:
+        result.errors.isEmpty()
+        result.data == [sayHello: "F1ValOverride & F2V & null"]
+
+    }
 }
 

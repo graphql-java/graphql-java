@@ -295,12 +295,20 @@ public class SchemaGeneratorHelper {
         Map<String, Object> map = new LinkedHashMap<>();
         objectType.getFieldDefinitions().forEach(
                 f -> {
-                    final Value<?> fieldValueFromDefaultObjectValue = defaultValue.getObjectFields().stream()
-                            .filter(dvf -> dvf.getName().equals(f.getName())).map(ObjectField::getValue).findFirst().orElse(null);
-                    map.put(f.getName(), fieldValueFromDefaultObjectValue != null ? buildValue(fieldValueFromDefaultObjectValue, f.getType()): f.getDefaultValue());
+                    final Value<?> fieldValueFromDefaultObjectValue = getFieldValueFromObjectValue(defaultValue, f.getName());
+                    map.put(f.getName(), fieldValueFromDefaultObjectValue != null ? buildValue(fieldValueFromDefaultObjectValue, f.getType()) : f.getDefaultValue());
                 }
         );
         return map;
+    }
+
+    Value<?> getFieldValueFromObjectValue(final ObjectValue objectValue, final String fieldName) {
+        return objectValue.getObjectFields()
+                .stream()
+                .filter(dvf -> dvf.getName().equals(fieldName))
+                .map(ObjectField::getValue)
+                .findFirst()
+                .orElse(null);
     }
 
     String buildDescription(Node<?> node, Description description) {
