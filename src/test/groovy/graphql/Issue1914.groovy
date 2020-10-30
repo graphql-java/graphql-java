@@ -53,6 +53,30 @@ class Issue1914 extends Specification {
 
     }
 
+    def "default values in input objects are overridden when null value is provided in input"() {
+        given:
+        def spec = """type Query {
+            sayHello(arg: Arg! = {foo: null}): String
+        }
+        input Arg {
+            foo: String = "bar"
+        }
+        """
+        DataFetcher df = { dfe ->
+            Map arg = dfe.getArgument("arg")
+            return arg.get("foo")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def result = graphQL.execute('{sayHello}')
+
+        then:
+        result.errors.isEmpty()
+        result.data == [sayHello: null]
+
+    }
+
     def "default values in input objects are overridden when variable is provided and otherwise are respected"() {
         given:
         def spec = """type Query {
