@@ -14,8 +14,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import static com.google.common.collect.ImmutableMap.copyOf;
 import static graphql.Assert.assertNotNull;
-import static java.util.Collections.emptyMap;
+import static graphql.CollectionsUtil.addToMap;
+import static graphql.CollectionsUtil.emptyList;
+import static graphql.CollectionsUtil.emptyMap;
 
 /*
  * This is provided to a DataFetcher, therefore it is a public API.
@@ -60,7 +63,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
      * @param name of the field
      */
     public Field(String name) {
-        this(name, null, ImmutableList.of(), ImmutableList.of(), null, null, ImmutableList.of(), IgnoredChars.EMPTY, ImmutableMap.of());
+        this(name, null, emptyList(), emptyList(), null, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     /**
@@ -70,7 +73,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
      * @param arguments to the field
      */
     public Field(String name, List<Argument> arguments) {
-        this(name, null, arguments, new ArrayList<>(), null, null, ImmutableList.of(), IgnoredChars.EMPTY, ImmutableMap.of());
+        this(name, null, arguments, emptyList(), null, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     /**
@@ -81,7 +84,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
      * @param selectionSet of the field
      */
     public Field(String name, List<Argument> arguments, SelectionSet selectionSet) {
-        this(name, null, arguments, ImmutableList.of(), selectionSet, null, ImmutableList.of(), IgnoredChars.EMPTY, ImmutableMap.of());
+        this(name, null, arguments, emptyList(), selectionSet, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     /**
@@ -91,7 +94,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
      * @param selectionSet of the field
      */
     public Field(String name, SelectionSet selectionSet) {
-        this(name, null, ImmutableList.of(), ImmutableList.of(), selectionSet, null, ImmutableList.of(), IgnoredChars.EMPTY, emptyMap());
+        this(name, null, emptyList(), emptyList(), selectionSet, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -211,14 +214,14 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
 
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
-        private ImmutableList<Comment> comments = ImmutableList.of();
+        private ImmutableList<Comment> comments = emptyList();
         private String name;
         private String alias;
-        private ImmutableList<Argument> arguments = ImmutableList.of();
-        private ImmutableList<Directive> directives = ImmutableList.of();
+        private ImmutableList<Argument> arguments = emptyList();
+        private ImmutableList<Directive> directives = emptyList();
         private SelectionSet selectionSet;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
-        private ImmutableMap<String, String> additionalData = ImmutableMap.of();
+        private ImmutableMap<String, String> additionalData = emptyMap();
 
         private Builder() {
         }
@@ -232,7 +235,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
             this.directives = ImmutableList.copyOf(existing.getDirectives());
             this.selectionSet = existing.getSelectionSet();
             this.ignoredChars = existing.getIgnoredChars();
-            this.additionalData = ImmutableMap.copyOf(existing.getAdditionalData());
+            this.additionalData = copyOf(existing.getAdditionalData());
         }
 
 
@@ -283,7 +286,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         }
 
         public Builder additionalData(String key, String value) {
-            this.additionalData = ImmutableMap.<String, String>builder().putAll(this.additionalData).put(key, value).build();
+            this.additionalData = addToMap(this.additionalData, key, value);
             return this;
         }
 

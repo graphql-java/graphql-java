@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public abstract class AbstractNode<T extends Node> implements Node<T> {
 
     private final SourceLocation sourceLocation;
-    private final List<Comment> comments;
+    private final ImmutableList<Comment> comments;
     private final IgnoredChars ignoredChars;
     private final ImmutableMap<String, String> additionalData;
 
