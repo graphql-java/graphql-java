@@ -1,18 +1,15 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import graphql.Assert;
 import graphql.PublicApi;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static java.util.Collections.unmodifiableList;
-import static java.util.Collections.unmodifiableMap;
 
 @PublicApi
 public abstract class AbstractNode<T extends Node> implements Node<T> {
@@ -20,7 +17,7 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
     private final SourceLocation sourceLocation;
     private final List<Comment> comments;
     private final IgnoredChars ignoredChars;
-    private final Map<String, String> additionalData;
+    private final ImmutableMap<String, String> additionalData;
 
     public AbstractNode(SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
         this(sourceLocation, comments, ignoredChars, Collections.emptyMap());
@@ -32,8 +29,8 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
         Assert.assertNotNull(additionalData, () -> "additionalData can't be null");
 
         this.sourceLocation = sourceLocation;
-        this.additionalData = unmodifiableMap(new LinkedHashMap<>(additionalData));
-        this.comments = unmodifiableList(new ArrayList<>(comments));
+        this.additionalData = ImmutableMap.copyOf(additionalData);
+        this.comments = ImmutableList.copyOf(comments);
         this.ignoredChars = ignoredChars;
     }
 

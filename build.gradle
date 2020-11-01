@@ -94,6 +94,7 @@ shadowJar {
     configurations = [project.configurations.compileClasspath]
     relocate('com.google.common', 'graphql.com.google.common') {
         include 'com.google.common.collect.*'
+        include 'com.google.common.base.*'
     }
     dependencies {
         include(dependency('com.google.guava:guava:30.0-jre'))
@@ -106,7 +107,30 @@ shadowJar {
     manifest {
         attributes('Automatic-Module-Name': 'com.graphql-java')
     }
+    doLast {
+
+    }
 }
+
+
+task removeNotNeededGuava(type: Zip) {
+    from({ zipTree({"build/libs/graphql-java-${project.version}.jar"})}) {
+        exclude('/com/**')
+    }
+    archiveFileName = "graphql-java-tmp.jar"
+    destinationDirectory = file("${project.buildDir}/libs")
+}
+
+task cleanupJar {
+ doLast {
+     delete("build/libs/graphql-java-${project.version}.jar")
+     file("build/libs/graphql-java-tmp.jar").renameTo(file("build/libs/graphql-java-${project.version}.jar"))
+ }
+}
+
+cleanupJar.dependsOn removeNotNeededGuava
+
+shadowJar.finalizedBy cleanupJar
 
 
 task testng(type: Test) {
