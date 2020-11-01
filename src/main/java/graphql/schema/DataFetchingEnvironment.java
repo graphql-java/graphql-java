@@ -34,7 +34,6 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * For the root query, it is equal to {{@link DataFetchingEnvironment#getRoot}
      *
      * @param <T> you decide what type it is
-     *
      * @return can be null for the root query, otherwise it is never null
      */
     <T> T getSource();
@@ -48,7 +47,6 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * Returns true of the named argument is present
      *
      * @param name the name of the argument
-     *
      * @return true of the named argument is present
      */
     boolean containsArgument(String name);
@@ -58,7 +56,6 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      *
      * @param name the name of the argument
      * @param <T>  you decide what type it is
-     *
      * @return the named argument or null if its not present
      */
     <T> T getArgument(String name);
@@ -69,7 +66,6 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * @param name         the name of the argument
      * @param defaultValue the default value if the argument is not present
      * @param <T>          you decide what type it is
-     *
      * @return the named argument or the default if its not present
      */
     <T> T getArgumentOrDefault(String name, T defaultValue);
@@ -81,7 +77,6 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * This is a info object which is provided to all DataFetchers, but never used by graphql-java itself.
      *
      * @param <T> you decide what type it is
-     *
      * @return can be null
      */
     <T> T getContext();
@@ -98,7 +93,6 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * fields execute.
      *
      * @param <T> you decide what type it is
-     *
      * @return can be null if no field context objects are passed back by previous parent fields
      */
     <T> T getLocalContext();
@@ -107,7 +101,6 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * This is the source object for the root query.
      *
      * @param <T> you decide what type it is
-     *
      * @return can be null
      */
     <T> T getRoot();
@@ -120,7 +113,6 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
 
     /**
      * @return the list of fields
-     *
      * @deprecated Use {@link #getMergedField()}.
      */
     @Deprecated
@@ -199,7 +191,6 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * This gives you access to the directives related to this field
      *
      * @return the {@link graphql.execution.directives.QueryDirectives} for the currently executing field
-     *
      * @see graphql.execution.directives.QueryDirectives for more information
      */
     QueryDirectives getQueryDirectives();
@@ -210,9 +201,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * @param dataLoaderName the name of the data loader to fetch
      * @param <K>            the key type
      * @param <V>            the value type
-     *
      * @return the named data loader or null
-     *
      * @see org.dataloader.DataLoaderRegistry#getDataLoader(String)
      */
     <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
@@ -243,12 +232,16 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
     Document getDocument();
 
     /**
-     * This returns the variables that have been passed into the query.  Note that this is the raw variables themselves and not the
+     * This returns the variables that have been passed into the query.  Note that this is the query variables themselves and not the
      * arguments to the field, which is accessed via {@link #getArguments()}
      * <p>
-     * The field arguments are created by interpolating any referenced variables and AST literals and resolving them into the arguments
+     * The field arguments are created by interpolating any referenced variables and AST literals and resolving them into the arguments.
+     * <p>
+     * Also note that the raw query variables are "coerced" into a map where the leaf scalar and enum types are called to create
+     * input coerced values.  So the values you get here are not exactly as passed via {@link graphql.ExecutionInput#getVariables()}
+     * but have been processed.
      *
-     * @return the variables that have been passed to the query that is being executed
+     * @return the coerced variables that have been passed to the query that is being executed
      */
     Map<String, Object> getVariables();
 }
