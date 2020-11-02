@@ -1,11 +1,12 @@
 package graphql.execution;
 
-import graphql.ExecutionInput;
+import com.google.common.collect.ImmutableMap;
 import graphql.ExecutionInput;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
+import graphql.collect.CollectionsUtil;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -37,7 +38,7 @@ public class ExecutionContextBuilder {
     Document document;
     OperationDefinition operationDefinition;
     Map<String, Object> variables = new LinkedHashMap<>();
-    Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
+    ImmutableMap<String, FragmentDefinition> fragmentsByName = CollectionsUtil.emptyMap();
     DataLoaderRegistry dataLoaderRegistry;
     CacheControl cacheControl;
     Locale locale;
@@ -57,6 +58,7 @@ public class ExecutionContextBuilder {
      * Creates a new builder based on a previous execution context
      *
      * @param other the previous execution to clone
+     *
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
      */
     public static ExecutionContextBuilder newExecutionContextBuilder(ExecutionContext other) {
@@ -82,7 +84,7 @@ public class ExecutionContextBuilder {
         document = other.getDocument();
         operationDefinition = other.getOperationDefinition();
         variables = new LinkedHashMap<>(other.getVariables());
-        fragmentsByName = new LinkedHashMap<>(other.getFragmentsByName());
+        fragmentsByName = ImmutableMap.copyOf(other.getFragmentsByName());
         dataLoaderRegistry = other.getDataLoaderRegistry();
         cacheControl = other.getCacheControl();
         locale = other.getLocale();
@@ -147,7 +149,7 @@ public class ExecutionContextBuilder {
     }
 
     public ExecutionContextBuilder fragmentsByName(Map<String, FragmentDefinition> fragmentsByName) {
-        this.fragmentsByName = fragmentsByName;
+        this.fragmentsByName = ImmutableMap.copyOf(fragmentsByName);
         return this;
     }
 

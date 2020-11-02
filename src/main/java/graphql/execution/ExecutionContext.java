@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import com.google.common.collect.ImmutableMap;
 import graphql.ExecutionInput;
 import graphql.GraphQLError;
 import graphql.PublicApi;
@@ -13,13 +14,13 @@ import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 import org.dataloader.DataLoaderRegistry;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.ArrayList;
 import java.util.function.Consumer;
 
 @SuppressWarnings("TypeParameterUnusedInFormals")
@@ -32,7 +33,7 @@ public class ExecutionContext {
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
-    private final Map<String, FragmentDefinition> fragmentsByName;
+    private final ImmutableMap<String, FragmentDefinition> fragmentsByName;
     private final OperationDefinition operationDefinition;
     private final Document document;
     private final Map<String, Object> variables;
@@ -55,7 +56,7 @@ public class ExecutionContext {
         this.queryStrategy = builder.queryStrategy;
         this.mutationStrategy = builder.mutationStrategy;
         this.subscriptionStrategy = builder.subscriptionStrategy;
-        this.fragmentsByName = Collections.unmodifiableMap(builder.fragmentsByName);
+        this.fragmentsByName = builder.fragmentsByName;
         this.variables = Collections.unmodifiableMap(builder.variables);
         this.document = builder.document;
         this.operationDefinition = builder.operationDefinition;

@@ -6,7 +6,7 @@ import graphql.PublicApi;
 import java.io.Serializable;
 import java.util.List;
 
-import static graphql.CollectionsUtil.emptyList;
+import static graphql.collect.CollectionsUtil.emptyList;
 
 @PublicApi
 public class IgnoredChars implements Serializable {

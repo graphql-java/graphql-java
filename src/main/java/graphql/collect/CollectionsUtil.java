@@ -1,7 +1,8 @@
-package graphql;
+package graphql.collect;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.Internal;
 
 import java.util.List;
 import java.util.Map;
