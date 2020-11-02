@@ -187,6 +187,9 @@ publishing {
                 // The ANTLR-related code below--introduced in `1ac98bf`--addresses an issue with
                 // the Gradle ANTLR plugin. `1ac98bf` can be reverted and this comment removed once
                 // that issue is fixed and Gradle upgraded. See https://goo.gl/L92KiF and https://goo.gl/FY0PVR.
+                //
+                // We are removing here guava because the classes we want to use is "shaded" into the jar itself
+                // via the shadowJar task
                 Node pomNode = asNode()
                 pomNode.dependencies.'*'.findAll() {
                     it.artifactId.text() == 'antlr4' || it.artifactId.text() == 'guava'
