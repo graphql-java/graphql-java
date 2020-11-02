@@ -16,7 +16,6 @@ import graphql.language.ScalarTypeDefinition;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
-import graphql.schema.idl.errors.InvalidDeprecationDirectiveError;
 import graphql.schema.idl.errors.MissingTypeError;
 import graphql.schema.idl.errors.NonUniqueArgumentError;
 import graphql.schema.idl.errors.NonUniqueDirectiveError;
@@ -33,7 +32,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static graphql.schema.idl.SchemaTypeChecker.checkDeprecatedDirective;
 import static graphql.schema.idl.SchemaTypeChecker.checkNamedUniqueness;
 import static graphql.util.FpKit.mergeFirst;
 
@@ -84,14 +82,9 @@ class SchemaTypeExtensionsChecker {
                                 extension.getFieldDefinitions().forEach(fld -> checkNamedUniqueness(errors, fld.getDirectives(), Directive::getName,
                                         (directiveName, directive) -> new NonUniqueDirectiveError(extension, fld, directiveName)));
 
-                                fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive -> {
-                                    checkDeprecatedDirective(errors, directive,
-                                            () -> new InvalidDeprecationDirectiveError(extension, fld));
-
-                                    checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
-                                            (argumentName, argument) -> new NonUniqueArgumentError(extension, fld, argumentName));
-
-                                }));
+                                fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive ->
+                                        checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
+                                                (argumentName, argument) -> new NonUniqueArgumentError(extension, fld, argumentName))));
 
                                 //
                                 // fields must be unique within a type extension
@@ -138,14 +131,9 @@ class SchemaTypeExtensionsChecker {
                         extension.getFieldDefinitions().forEach(fld -> checkNamedUniqueness(errors, fld.getDirectives(), Directive::getName,
                                 (directiveName, directive) -> new NonUniqueDirectiveError(extension, fld, directiveName)));
 
-                        fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive -> {
-                            checkDeprecatedDirective(errors, directive,
-                                    () -> new InvalidDeprecationDirectiveError(extension, fld));
-
-                            checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
-                                    (argumentName, argument) -> new NonUniqueArgumentError(extension, fld, argumentName));
-
-                        }));
+                        fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive ->
+                                checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
+                                        (argumentName, argument) -> new NonUniqueArgumentError(extension, fld, argumentName))));
 
                         //
                         // fields must be unique within a type extension
@@ -270,14 +258,9 @@ class SchemaTypeExtensionsChecker {
                         inputValueDefinitions.forEach(fld -> checkNamedUniqueness(errors, fld.getDirectives(), Directive::getName,
                                 (directiveName, directive) -> new NonUniqueDirectiveError(extension, fld, directiveName)));
 
-                        inputValueDefinitions.forEach(fld -> fld.getDirectives().forEach(directive -> {
-                            checkDeprecatedDirective(errors, directive,
-                                    () -> new InvalidDeprecationDirectiveError(extension, fld));
-
-                            checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
-                                    (argumentName, argument) -> new NonUniqueArgumentError(extension, fld, argumentName));
-
-                        }));
+                        inputValueDefinitions.forEach(fld -> fld.getDirectives().forEach(directive ->
+                                checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
+                                        (argumentName, argument) -> new NonUniqueArgumentError(extension, fld, argumentName))));
                         //
                         // fields must be unique within a type extension
                         forEachBut(extension, extensions,

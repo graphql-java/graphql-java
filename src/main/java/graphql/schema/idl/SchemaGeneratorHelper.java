@@ -724,7 +724,7 @@ public class SchemaGeneratorHelper {
         for (Directive directive : directives) {
             if (!names.contains(directive.getName())) {
                 names.add(directive.getName());
-                output.add(buildDirective(buildCtx,directive, directiveDefinitions, directiveLocation, comparatorRegistry));
+                output.add(buildDirective(buildCtx, directive, directiveDefinitions, directiveLocation, comparatorRegistry));
             }
         }
         for (Directive directive : extensionDirectives) {
@@ -931,7 +931,6 @@ public class SchemaGeneratorHelper {
      *
      * @param buildCtx the context we need to work out what we are doing
      * @param rawType  the type to be built
-     *
      * @return an output type
      */
     @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
@@ -1160,7 +1159,6 @@ public class SchemaGeneratorHelper {
      * but then we build the rest of the types specified and put them in as additional types
      *
      * @param buildCtx the context we need to work out what we are doing
-     *
      * @return the additional types not referenced from the top level operations
      */
     Set<GraphQLType> buildAdditionalTypes(BuildContext buildCtx) {
