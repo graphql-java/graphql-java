@@ -1,9 +1,4 @@
-import com.github.jengelman.gradle.plugins.shadow.transformers.TransformerContext
-import org.apache.tools.zip.ZipOutputStream
-
 import java.text.SimpleDateFormat
-import org.apache.tools.zip.ZipOutputStream
-import org.gradle.api.file.FileTreeElement
 
 plugins {
     id "com.jfrog.bintray" version "1.8.4"
@@ -107,9 +102,6 @@ shadowJar {
     manifest {
         attributes('Automatic-Module-Name': 'com.graphql-java')
     }
-    doLast {
-
-    }
 }
 
 
@@ -119,18 +111,14 @@ task removeNotNeededGuava(type: Zip) {
     }
     archiveFileName = "graphql-java-tmp.jar"
     destinationDirectory = file("${project.buildDir}/libs")
+    doLast {
+        delete("build/libs/graphql-java-${project.version}.jar")
+        file("build/libs/graphql-java-tmp.jar").renameTo(file("build/libs/graphql-java-${project.version}.jar"))
+    }
 }
 
-task cleanupJar {
- doLast {
-     delete("build/libs/graphql-java-${project.version}.jar")
-     file("build/libs/graphql-java-tmp.jar").renameTo(file("build/libs/graphql-java-${project.version}.jar"))
- }
-}
 
-cleanupJar.dependsOn removeNotNeededGuava
-
-shadowJar.finalizedBy cleanupJar
+shadowJar.finalizedBy removeNotNeededGuava
 
 
 task testng(type: Test) {
