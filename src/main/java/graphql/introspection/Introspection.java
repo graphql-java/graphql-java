@@ -440,7 +440,7 @@ public class Introspection {
                     .type(nonNull(GraphQLBoolean)))
             .field(newFieldDefinition()
                     .name("locations")
-                    .type(nonNull(list(__DirectiveLocation))))
+                    .type(nonNull(list(nonNull(__DirectiveLocation)))))
             .field(newFieldDefinition()
                     .name("args")
                     .type(nonNull(list(nonNull(__InputValue)))))
