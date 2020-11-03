@@ -13,23 +13,23 @@ import graphql.language.FieldDefinition;
 import graphql.language.InputObjectTypeDefinition;
 import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
+import graphql.language.NamedNode;
 import graphql.language.Node;
 import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
+import graphql.language.ScalarTypeDefinition;
 import graphql.language.SchemaDefinition;
 import graphql.language.TypeDefinition;
-import graphql.language.ScalarTypeDefinition;
-import graphql.language.NamedNode;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.idl.errors.DirectiveIllegalLocationError;
+import graphql.schema.idl.errors.DirectiveIllegalReferenceError;
 import graphql.schema.idl.errors.DirectiveMissingNonNullArgumentError;
 import graphql.schema.idl.errors.DirectiveUndeclaredError;
 import graphql.schema.idl.errors.DirectiveUnknownArgumentError;
+import graphql.schema.idl.errors.IllegalNameError;
 import graphql.schema.idl.errors.MissingTypeError;
 import graphql.schema.idl.errors.NotAnInputTypeError;
-import graphql.schema.idl.errors.IllegalNameError;
-import graphql.schema.idl.errors.DirectiveIllegalReferenceError;
 
 import java.util.Collection;
 import java.util.List;
@@ -193,7 +193,7 @@ class SchemaTypeDirectivesChecker {
             directiveDefinition.getInputValueDefinitions().forEach(inputValueDefinition -> {
                 assertTypeName(inputValueDefinition, errors);
                 assertExistAndIsInputType(inputValueDefinition, errors);
-                if (inputValueDefinition.getDirective(directiveDefinition.getName()) != null) {
+                if (inputValueDefinition.hasDirective(directiveDefinition.getName())) {
                     errors.add(new DirectiveIllegalReferenceError(directiveDefinition, inputValueDefinition));
                 }
             });

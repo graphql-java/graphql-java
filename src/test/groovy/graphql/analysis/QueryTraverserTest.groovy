@@ -1475,7 +1475,7 @@ class QueryTraverserTest extends Specification {
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
             it.field.name == "bar" && it.traverserContext.getParentNodes().size() == 5 &&
                     it.traverserContext.getParentContext().getParentContext().thisNode() instanceof FragmentDefinition &&
-                    ((FragmentDefinition) it.traverserContext.getParentContext().getParentContext().thisNode()).getDirective("myDirective") != null
+                    ((FragmentDefinition) it.traverserContext.getParentContext().getParentContext().thisNode()).hasDirective("myDirective")
         })
 
 

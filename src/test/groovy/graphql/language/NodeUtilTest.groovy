@@ -1,6 +1,6 @@
 package graphql.language
 
-import graphql.AssertException
+
 import graphql.TestUtil
 import graphql.execution.UnknownOperationException
 import spock.lang.Specification
@@ -62,21 +62,5 @@ class NodeUtilTest extends Specification {
         result == [d1: [d1], d2: [d2], d3: [d3r, d3r],]
     }
 
-    def "will assert on repeated directives"() {
-        def mapOfDirectives = NodeUtil.allDirectivesByName([d1, d2, d3r, d3r,])
-        when:
-        def directive = NodeUtil.nonRepeatedDirectiveByNameWithAssert(mapOfDirectives, "d1")
-        then:
-        directive == d1
 
-        when:
-        directive = NodeUtil.nonRepeatedDirectiveByNameWithAssert(mapOfDirectives, "nonExistent")
-        then:
-        directive == null
-
-        when:
-        NodeUtil.nonRepeatedDirectiveByNameWithAssert(mapOfDirectives, "d3")
-        then:
-        thrown(AssertException)
-    }
 }

@@ -271,8 +271,8 @@ public class SchemaDiff {
         ctx.exitType();
     }
 
-    private boolean isDeprecated(DirectivesContainer node) {
-        return node.getDirective("deprecated") != null;
+    private boolean isDeprecated(DirectivesContainer<?> node) {
+        return node.hasDirective("deprecated");
     }
 
     private boolean isReservedType(String typeName) {
