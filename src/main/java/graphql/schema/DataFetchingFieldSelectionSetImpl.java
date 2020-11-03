@@ -22,7 +22,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.collect.CollectionsUtil.listMap;
@@ -214,16 +213,14 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
                 targetNames.add(flattenedField);
             }
         }
-        return listMap(targetNames,this::getField);
+        return listMap(targetNames, this::getField);
     }
 
     @Override
     public List<SelectedField> getFields() {
         computeValuesLazily();
 
-        return flattenedFields.stream()
-                .map(this::getField)
-                .collect(Collectors.toList());
+        return listMap(flattenedFields, this::getField);
     }
 
     private class SelectedFieldImpl implements SelectedField {

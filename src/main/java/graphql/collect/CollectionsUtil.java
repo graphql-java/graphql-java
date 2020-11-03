@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -30,11 +31,11 @@ public final class CollectionsUtil {
         return ImmutableMap.<K, V>builder().putAll(m1).putAll(m2).build();
     }
 
-    public static <T> ImmutableList<T> mergeLists(List<T> l1, List<T> l2) {
+    public static <T> ImmutableList<T> concatLists(List<T> l1, List<T> l2) {
         return ImmutableList.<T>builder().addAll(l1).addAll(l2).build();
     }
 
-    public static <T, R> ImmutableList<R> listMap(List<T> list, Function<? super T, ? extends R> mapper) {
+    public static <T, R> ImmutableList<R> listMap(Collection<T> list, Function<? super T, ? extends R> mapper) {
         ImmutableList.Builder<R> builder = ImmutableList.<R>builder();
         for (T t : list) {
             R r = mapper.apply(t);

@@ -9,7 +9,8 @@ import graphql.PublicApi;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+
+import static graphql.collect.CollectionsUtil.listMap;
 
 @PublicApi
 public abstract class AbstractNode<T extends Node> implements Node<T> {
@@ -67,6 +68,6 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
         if (list == null) {
             return null;
         }
-        return list.stream().map(Node::deepCopy).map(node -> (V) node).collect(Collectors.toList());
+        return listMap(list, n -> (V) n.deepCopy());
     }
 }

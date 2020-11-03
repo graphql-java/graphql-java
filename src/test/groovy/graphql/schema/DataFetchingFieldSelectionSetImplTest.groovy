@@ -343,7 +343,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         allFieldsViaAsterAster.size() == 14
         allFields.size() == 14
         def allFieldsViaAsterAsterSorted = new ArrayList<>(allFieldsViaAsterAster).sort({ sf -> sf.qualifiedName })
-        def allFieldsSorted = allFields.sort({ sf -> sf.qualifiedName })
+        def allFieldsSorted = new ArrayList<>(allFields).sort({ sf -> sf.qualifiedName })
 
         def expectedFieldName = [
                 "edges",
