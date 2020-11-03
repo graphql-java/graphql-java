@@ -309,7 +309,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         then:
 
         selectedUnderNodesAster.size() == 4
-        def sortedSelectedUnderNodesAster = selectedUnderNodesAster.sort({ sf -> sf.name })
+        def sortedSelectedUnderNodesAster = new ArrayList<>(selectedUnderNodesAster).sort({ sf -> sf.name })
 
         def fieldNames = sortedSelectedUnderNodesAster.collect({ sf -> sf.name })
         fieldNames == ["key", "status", "stuff", "summary"]
@@ -342,7 +342,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         allFieldsViaAsterAster.size() == 14
         allFields.size() == 14
-        def allFieldsViaAsterAsterSorted = allFieldsViaAsterAster.sort({ sf -> sf.qualifiedName })
+        def allFieldsViaAsterAsterSorted = new ArrayList<>(allFieldsViaAsterAster).sort({ sf -> sf.qualifiedName })
         def allFieldsSorted = allFields.sort({ sf -> sf.qualifiedName })
 
         def expectedFieldName = [

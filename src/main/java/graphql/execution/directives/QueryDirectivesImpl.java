@@ -1,5 +1,7 @@
 package graphql.execution.directives;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
 import graphql.execution.MergedField;
 import graphql.language.Directive;
@@ -27,8 +29,8 @@ public class QueryDirectivesImpl implements QueryDirectives {
     private final MergedField mergedField;
     private final GraphQLSchema schema;
     private final Map<String, Object> variables;
-    private volatile Map<Field, List<GraphQLDirective>> fieldDirectivesByField;
-    private volatile Map<String, List<GraphQLDirective>> fieldDirectivesByName;
+    private volatile ImmutableMap<Field, List<GraphQLDirective>> fieldDirectivesByField;
+    private volatile ImmutableMap<String, List<GraphQLDirective>> fieldDirectivesByName;
 
     public QueryDirectivesImpl(MergedField mergedField, GraphQLSchema schema, Map<String, Object> variables) {
         this.mergedField = mergedField;
@@ -50,7 +52,7 @@ public class QueryDirectivesImpl implements QueryDirectives {
                                 .resolveDirectives(directives, schema, variables)
                                 .values()
                 );
-                byField.put(field, Collections.unmodifiableList(resolvedDirectives));
+                byField.put(field, ImmutableList.copyOf(resolvedDirectives));
             });
 
             Map<String, List<GraphQLDirective>> byName = new LinkedHashMap<>();
@@ -60,8 +62,8 @@ public class QueryDirectivesImpl implements QueryDirectives {
                 byName.get(name).add(directive);
             }));
 
-            this.fieldDirectivesByName = Collections.unmodifiableMap(byName);
-            this.fieldDirectivesByField = Collections.unmodifiableMap(byField);
+            this.fieldDirectivesByName = ImmutableMap.copyOf(byName);
+            this.fieldDirectivesByField = ImmutableMap.copyOf(byField);
         }
     }
 

@@ -1,6 +1,9 @@
 package graphql;
 
 
+import com.google.common.collect.ImmutableList;
+import graphql.collect.CollectionsUtil;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -8,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static java.util.stream.Collectors.toList;
+import static graphql.collect.CollectionsUtil.listMap;
 
 @Internal
 public class ExecutionResultImpl implements ExecutionResult {
@@ -43,9 +46,9 @@ public class ExecutionResultImpl implements ExecutionResult {
         this.data = data;
 
         if (errors != null && !errors.isEmpty()) {
-            this.errors = Collections.unmodifiableList(new ArrayList<>(errors));
+            this.errors = ImmutableList.copyOf(errors);
         } else {
-            this.errors = Collections.emptyList();
+            this.errors = CollectionsUtil.emptyList();
         }
 
         this.extensions = extensions;
@@ -88,7 +91,7 @@ public class ExecutionResultImpl implements ExecutionResult {
     }
 
     private Object errorsToSpec(List<GraphQLError> errors) {
-        return errors.stream().map(GraphQLError::toSpecification).collect(toList());
+        return listMap(errors, GraphQLError::toSpecification);
     }
 
     @Override

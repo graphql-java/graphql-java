@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import com.google.common.collect.ImmutableList;
 import graphql.AssertException;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -30,10 +31,10 @@ import static java.util.Collections.unmodifiableList;
 /**
  * This is the work horse type and represents an object with one or more field values that can be retrieved
  * by the graphql system.
- *
+ * <p>
  * Those fields can themselves by object types and so on until you reach the leaf nodes of the type tree represented
  * by {@link graphql.schema.GraphQLScalarType}s.
- *
+ * <p>
  * See http://graphql.org/learn/schema/#object-types-and-fields for more details on the concept.
  */
 @PublicApi
@@ -44,12 +45,12 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     private final String description;
     private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
-    private final List<GraphQLNamedOutputType> originalInterfaces;
-    private final List<GraphQLDirective> directives;
+    private final ImmutableList<GraphQLNamedOutputType> originalInterfaces;
+    private final ImmutableList<GraphQLDirective> directives;
     private final ObjectTypeDefinition definition;
-    private final List<ObjectTypeExtensionDefinition> extensionDefinitions;
+    private final ImmutableList<ObjectTypeExtensionDefinition> extensionDefinitions;
 
-    private List<GraphQLNamedOutputType> replacedInterfaces;
+    private ImmutableList<GraphQLNamedOutputType> replacedInterfaces;
 
     public static final String CHILD_INTERFACES = "interfaces";
     public static final String CHILD_DIRECTIVES = "directives";
@@ -61,7 +62,6 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
      * @param description      the description
      * @param fieldDefinitions the fields
      * @param interfaces       the possible interfaces
-     *
      * @deprecated use the {@link #newObject()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -78,7 +78,6 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
      * @param interfaces       the possible interfaces
      * @param directives       the directives on this type element
      * @param definition       the AST definition
-     *
      * @deprecated use the {@link #newObject()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -103,15 +102,15 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         this.name = name;
         this.description = description;
         this.interfaceComparator = interfaceComparator;
-        this.originalInterfaces = sortTypes(interfaceComparator, interfaces);
+        this.originalInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
         this.definition = definition;
-        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
-        this.directives = assertNotNull(directives);
+        this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
+        this.directives = ImmutableList.copyOf(assertNotNull(directives));
         buildDefinitionMap(fieldDefinitions);
     }
 
     void replaceInterfaces(List<GraphQLNamedOutputType> interfaces) {
-        this.replacedInterfaces = sortTypes(interfaceComparator, interfaces);
+        this.replacedInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
     }
 
     private void buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
@@ -181,7 +180,6 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
-     *
      * @return a new object based on calling build on that builder
      */
     public GraphQLObjectType transform(Consumer<Builder> builderConsumer) {
@@ -312,7 +310,6 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
          * </pre>
          *
          * @param builderFunction a supplier for the builder impl
-         *
          * @return this
          */
         public Builder field(UnaryOperator<GraphQLFieldDefinition.Builder> builderFunction) {
@@ -327,7 +324,6 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
          * from within
          *
          * @param builder an un-built/incomplete GraphQLFieldDefinition
-         *
          * @return this
          */
         public Builder field(GraphQLFieldDefinition.Builder builder) {

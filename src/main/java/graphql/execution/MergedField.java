@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 import graphql.language.Argument;
 import graphql.language.Field;
@@ -60,14 +61,14 @@ import static java.util.Collections.unmodifiableList;
 @PublicApi
 public class MergedField {
 
-    private final List<Field> fields;
+    private final ImmutableList<Field> fields;
     private final Field singleField;
     private final String name;
     private final String resultKey;
 
     private MergedField(List<Field> fields) {
         assertNotEmpty(fields);
-        this.fields = unmodifiableList(fields);
+        this.fields = ImmutableList.copyOf(fields);
         this.singleField = fields.get(0);
         this.name = singleField.getName();
         this.resultKey = singleField.getAlias() != null ? singleField.getAlias() : name;

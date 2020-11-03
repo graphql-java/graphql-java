@@ -7,6 +7,7 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
 import graphql.collect.CollectionsUtil;
+import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -16,7 +17,6 @@ import graphql.schema.GraphQLSchema;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -37,7 +37,7 @@ public class ExecutionContextBuilder {
     Object root;
     Document document;
     OperationDefinition operationDefinition;
-    Map<String, Object> variables = new LinkedHashMap<>();
+    ImmutableMapWithNullValues<String, Object> variables = ImmutableMapWithNullValues.emptyMap();
     ImmutableMap<String, FragmentDefinition> fragmentsByName = CollectionsUtil.emptyMap();
     DataLoaderRegistry dataLoaderRegistry;
     CacheControl cacheControl;
@@ -58,7 +58,6 @@ public class ExecutionContextBuilder {
      * Creates a new builder based on a previous execution context
      *
      * @param other the previous execution to clone
-     *
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
      */
     public static ExecutionContextBuilder newExecutionContextBuilder(ExecutionContext other) {
@@ -83,7 +82,7 @@ public class ExecutionContextBuilder {
         root = other.getRoot();
         document = other.getDocument();
         operationDefinition = other.getOperationDefinition();
-        variables = new LinkedHashMap<>(other.getVariables());
+        variables = ImmutableMapWithNullValues.copyOf(other.getVariables());
         fragmentsByName = ImmutableMap.copyOf(other.getFragmentsByName());
         dataLoaderRegistry = other.getDataLoaderRegistry();
         cacheControl = other.getCacheControl();
@@ -144,7 +143,7 @@ public class ExecutionContextBuilder {
     }
 
     public ExecutionContextBuilder variables(Map<String, Object> variables) {
-        this.variables = variables;
+        this.variables = ImmutableMapWithNullValues.copyOf(variables);
         return this;
     }
 

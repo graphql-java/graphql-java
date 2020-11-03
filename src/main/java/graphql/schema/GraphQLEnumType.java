@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.AssertException;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -38,7 +39,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     private final String description;
     private final Map<String, GraphQLEnumValueDefinition> valueDefinitionMap = new LinkedHashMap<>();
     private final EnumTypeDefinition definition;
-    private final List<EnumTypeExtensionDefinition> extensionDefinitions;
+    private final ImmutableList<EnumTypeExtensionDefinition> extensionDefinitions;
     private final List<GraphQLDirective> directives;
 
     public static final String CHILD_VALUES = "values";
@@ -80,7 +81,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         this.name = name;
         this.description = description;
         this.definition = definition;
-        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
+        this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
         this.directives = directives;
         buildMap(values);
     }

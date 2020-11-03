@@ -13,7 +13,8 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
+
+import static graphql.collect.CollectionsUtil.listMap;
 
 @Internal
 @SuppressWarnings("FutureReturnValueIgnored")
@@ -99,7 +100,6 @@ public class Async {
      *
      * @param t   - the object to check
      * @param <T> for two
-     *
      * @return a CompletableFuture
      */
     public static <T> CompletableFuture<T> toCompletableFuture(T t) {
@@ -155,10 +155,7 @@ public class Async {
     }
 
     public static <U, T> CompletableFuture<List<U>> flatMap(List<T> inputs, Function<T, CompletableFuture<U>> mapper) {
-        List<CompletableFuture<U>> collect = inputs
-                .stream()
-                .map(mapper)
-                .collect(Collectors.toList());
+        List<CompletableFuture<U>> collect = listMap(inputs, mapper);
         return Async.each(collect);
     }
 
@@ -173,19 +170,15 @@ public class Async {
     }
 
     public static <U, T> CompletableFuture<List<U>> map(CompletableFuture<List<T>> values, Function<T, U> mapper) {
-        return values.thenApply(list -> list.stream().map(mapper).collect(Collectors.toList()));
+        return values.thenApply(list -> listMap(list, mapper));
     }
 
     public static <U, T> List<CompletableFuture<U>> map(List<CompletableFuture<T>> values, Function<T, U> mapper) {
-        return values
-                .stream()
-                .map(cf -> cf.thenApply(mapper)).collect(Collectors.toList());
+        return listMap(values, cf -> cf.thenApply(mapper));
     }
 
     public static <U, T> List<CompletableFuture<U>> mapCompose(List<CompletableFuture<T>> values, Function<T, CompletableFuture<U>> mapper) {
-        return values
-                .stream()
-                .map(cf -> cf.thenCompose(mapper)).collect(Collectors.toList());
+        return listMap(values, cf -> cf.thenCompose(mapper));
     }
 
 }

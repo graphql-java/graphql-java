@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static graphql.collect.CollectionsUtil.listMap;
 import static java.util.Collections.singletonList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.mapping;
@@ -198,10 +199,6 @@ public class FpKit {
     // quickly turn a map of values into its list equivalent
     public static <T> List<T> valuesToList(Map<?, T> map) {
         return new ArrayList<>(map.values());
-    }
-
-    public static <T, U> List<U> map(List<T> list, Function<T, U> function) {
-        return list.stream().map(function).collect(Collectors.toList());
     }
 
     public static <K, V, U> List<U> mapEntries(Map<K, V> map, BiFunction<K, V, U> function) {

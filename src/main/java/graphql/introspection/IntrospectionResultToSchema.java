@@ -41,6 +41,7 @@ import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
+import static graphql.collect.CollectionsUtil.listMap;
 import static graphql.schema.idl.DirectiveInfo.isGraphqlSpecifiedDirective;
 
 @SuppressWarnings("unchecked")
@@ -243,7 +244,7 @@ public class IntrospectionResultToSchema {
         interfaceTypeDefinition.description(toDescription(input));
         if (input.containsKey("interfaces") && input.get("interfaces") != null) {
             interfaceTypeDefinition.implementz(
-                    FpKit.map(
+                    listMap(
                             (List<Map<String, Object>>) input.get("interfaces"),
                             this::createTypeIndirection
                     )

@@ -9,7 +9,6 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLTypeUtil;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -37,7 +36,7 @@ public class ExecutionStepInfo {
 
     /**
      * If this StepInfo represent a field the type is equal to fieldDefinition.getType()
-     *
+     * <p>
      * if this StepInfo is a list element this type is the actual current list element. For example:
      * Query.pets: [[Pet]] with Pet either a Dog or Cat and the actual result is [[Dog1],[[Cat1]]
      * Then the type is (for a query "{pets{name}}"):
@@ -59,7 +58,7 @@ public class ExecutionStepInfo {
 
     /**
      * field, fieldDefinition, fieldContainer and arguments differ per field StepInfo.
-     *
+     * <p>
      * But for list StepInfos these properties are the same as the field returning the list.
      */
     private final MergedField field;
@@ -156,7 +155,7 @@ public class ExecutionStepInfo {
      * @return the resolved arguments that have been passed to this field
      */
     public Map<String, Object> getArguments() {
-        return Collections.unmodifiableMap(arguments);
+        return arguments;
     }
 
     /**
@@ -164,7 +163,6 @@ public class ExecutionStepInfo {
      *
      * @param name the name of the argument
      * @param <T>  you decide what type it is
-     *
      * @return the named argument or null if its not present
      */
     @SuppressWarnings("unchecked")
@@ -193,7 +191,6 @@ public class ExecutionStepInfo {
      * after type resolution has occurred
      *
      * @param newType the new type to be
-     *
      * @return a new type info with the same
      */
     public ExecutionStepInfo changeTypeWithPreservedNonNull(GraphQLOutputType newType) {
@@ -256,7 +253,7 @@ public class ExecutionStepInfo {
          * @see ExecutionStepInfo#newExecutionStepInfo()
          */
         private Builder() {
-            arguments = ImmutableMapWithNullValues.empty();
+            arguments = ImmutableMapWithNullValues.emptyMap();
         }
 
         private Builder(ExecutionStepInfo existing) {
@@ -295,7 +292,7 @@ public class ExecutionStepInfo {
         }
 
         public Builder arguments(Map<String, Object> arguments) {
-            this.arguments = arguments == null ? ImmutableMapWithNullValues.empty() : ImmutableMapWithNullValues.copyOf(arguments);
+            this.arguments = arguments == null ? ImmutableMapWithNullValues.emptyMap() : ImmutableMapWithNullValues.copyOf(arguments);
             return this;
         }
 

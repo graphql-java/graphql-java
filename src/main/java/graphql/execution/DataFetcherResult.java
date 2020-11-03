@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import com.google.common.collect.ImmutableList;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -48,7 +49,7 @@ public class DataFetcherResult<T> {
 
     private DataFetcherResult(T data, List<GraphQLError> errors, Object localContext, boolean mapRelativeErrors) {
         this.data = data;
-        this.errors = unmodifiableList(assertNotNull(errors));
+        this.errors = ImmutableList.copyOf(assertNotNull(errors));
         this.localContext = localContext;
         this.mapRelativeErrors = mapRelativeErrors;
     }

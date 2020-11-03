@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import com.google.common.collect.ImmutableList;
 import graphql.AssertException;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -45,12 +46,12 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
     private final TypeResolver typeResolver;
     private final InterfaceTypeDefinition definition;
-    private final List<InterfaceTypeExtensionDefinition> extensionDefinitions;
-    private final List<GraphQLDirective> directives;
+    private final ImmutableList<InterfaceTypeExtensionDefinition> extensionDefinitions;
+    private final ImmutableList<GraphQLDirective> directives;
 
-    private final List<GraphQLNamedOutputType> originalInterfaces;
+    private final ImmutableList<GraphQLNamedOutputType> originalInterfaces;
     private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
-    private List<GraphQLNamedOutputType> replacedInterfaces;
+    private ImmutableList<GraphQLNamedOutputType> replacedInterfaces;
 
 
     public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
@@ -63,7 +64,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
      * @param description      the description
      * @param fieldDefinitions the fields
      * @param typeResolver     the type resolver function
-     *
      * @deprecated use the {@link #newInterface()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -79,7 +79,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
      * @param typeResolver     the type resolver function
      * @param directives       the directives on this type element
      * @param definition       the AST definition
-     *
      * @deprecated use the {@link #newInterface()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -107,9 +106,9 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
         this.typeResolver = typeResolver;
         this.definition = definition;
         this.interfaceComparator = interfaceComparator;
-        this.originalInterfaces = sortTypes(interfaceComparator, interfaces);
-        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
-        this.directives = directives;
+        this.originalInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
+        this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
+        this.directives = ImmutableList.copyOf(directives);
         buildDefinitionMap(fieldDefinitions);
     }
 
@@ -176,7 +175,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
-     *
      * @return a new object based on calling build on that builder
      */
     public GraphQLInterfaceType transform(Consumer<Builder> builderConsumer) {
@@ -219,13 +217,13 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     @Override
     public List<GraphQLNamedOutputType> getInterfaces() {
         if (replacedInterfaces != null) {
-            return Collections.unmodifiableList(replacedInterfaces);
+            return ImmutableList.copyOf(replacedInterfaces);
         }
-        return unmodifiableList(originalInterfaces);
+        return ImmutableList.copyOf(originalInterfaces);
     }
 
     void replaceInterfaces(List<GraphQLNamedOutputType> interfaces) {
-        this.replacedInterfaces = sortTypes(interfaceComparator, interfaces);
+        this.replacedInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
     }
 
     /**
@@ -321,7 +319,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
          * </pre>
          *
          * @param builderFunction a supplier for the builder impl
-         *
          * @return this
          */
         public Builder field(UnaryOperator<GraphQLFieldDefinition.Builder> builderFunction) {
@@ -336,7 +333,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
          * from within
          *
          * @param builder an un-built/incomplete GraphQLFieldDefinition
-         *
          * @return this
          */
         public Builder field(GraphQLFieldDefinition.Builder builder) {

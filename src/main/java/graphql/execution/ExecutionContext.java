@@ -1,11 +1,13 @@
 package graphql.execution;
 
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.ExecutionInput;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
+import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -36,7 +38,7 @@ public class ExecutionContext {
     private final ImmutableMap<String, FragmentDefinition> fragmentsByName;
     private final OperationDefinition operationDefinition;
     private final Document document;
-    private final Map<String, Object> variables;
+    private final ImmutableMapWithNullValues<String, Object> variables;
     private final Object root;
     private final Object context;
     private final Object localContext;
@@ -57,7 +59,7 @@ public class ExecutionContext {
         this.mutationStrategy = builder.mutationStrategy;
         this.subscriptionStrategy = builder.subscriptionStrategy;
         this.fragmentsByName = builder.fragmentsByName;
-        this.variables = Collections.unmodifiableMap(builder.variables);
+        this.variables = ImmutableMapWithNullValues.copyOf(builder.variables);
         this.document = builder.document;
         this.operationDefinition = builder.operationDefinition;
         this.context = builder.context;
@@ -181,7 +183,7 @@ public class ExecutionContext {
      * @return the total list of errors for this execution context
      */
     public List<GraphQLError> getErrors() {
-        return Collections.unmodifiableList(errors);
+        return ImmutableList.copyOf(errors);
     }
 
     public ExecutionStrategy getQueryStrategy() {

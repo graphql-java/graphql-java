@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import com.google.common.collect.ImmutableList;
 import graphql.AssertException;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -9,7 +10,6 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +24,7 @@ import static java.util.Collections.emptyList;
 /**
  * graphql clearly delineates between the types of objects that represent the output of a query and input objects that
  * can be fed into a graphql mutation.  You can define objects as input to graphql via this class
- *
+ * <p>
  * See http://graphql.org/learn/schema/#input-types for more details on the concept
  */
 @PublicApi
@@ -34,8 +34,8 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     private final String description;
     private final Map<String, GraphQLInputObjectField> fieldMap = new LinkedHashMap<>();
     private final InputObjectTypeDefinition definition;
-    private final List<InputObjectTypeExtensionDefinition> extensionDefinitions;
-    private final List<GraphQLDirective> directives;
+    private final ImmutableList<InputObjectTypeExtensionDefinition> extensionDefinitions;
+    private final ImmutableList<GraphQLDirective> directives;
 
     public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
     public static final String CHILD_DIRECTIVES = "directives";
@@ -44,7 +44,6 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
      * @param name        the name
      * @param description the description
      * @param fields      the fields
-     *
      * @deprecated use the {@link #newInputObject()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -59,7 +58,6 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
      * @param fields      the fields
      * @param directives  the directives on this type element
      * @param definition  the AST definition
-     *
      * @deprecated use the {@link #newInputObject()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -76,8 +74,8 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         this.name = name;
         this.description = description;
         this.definition = definition;
-        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
-        this.directives = directives;
+        this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
+        this.directives = ImmutableList.copyOf(directives);
         buildMap(fields);
     }
 
@@ -136,7 +134,6 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
-     *
      * @return a new object based on calling build on that builder
      */
     public GraphQLInputObjectType transform(Consumer<Builder> builderConsumer) {
@@ -272,7 +269,6 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
          * </pre>
          *
          * @param builderFunction a supplier for the builder impl
-         *
          * @return this
          */
         public Builder field(UnaryOperator<GraphQLInputObjectField.Builder> builderFunction) {
@@ -287,7 +283,6 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
          * from within
          *
          * @param builder an un-built/incomplete GraphQLFieldDefinition
-         *
          * @return this
          */
         public Builder field(GraphQLInputObjectField.Builder builder) {

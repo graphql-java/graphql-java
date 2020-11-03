@@ -23,7 +23,7 @@ public final class ImmutableMapWithNullValues<K, V> implements Map<K, V> {
     }
 
 
-    public static <K, V> ImmutableMapWithNullValues<K, V> empty() {
+    public static <K, V> ImmutableMapWithNullValues<K, V> emptyMap() {
         return emptyMap;
     }
 

@@ -20,6 +20,7 @@ import graphql.util.FpKit;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static graphql.collect.CollectionsUtil.listMap;
 import static graphql.execution.FieldCollectorParameters.newParameters;
 
 @Internal
@@ -39,7 +40,7 @@ public class ExecutionStrategyUtil {
 
     private List<CompletableFuture<FetchedValueAnalysis>> fetchAndAnalyze(ExecutionContext context, FieldSubSelection fieldSubSelection) {
 
-        return FpKit.map(fieldSubSelection.getMergedSelectionSet().getSubFieldsList(),
+        return listMap(fieldSubSelection.getMergedSelectionSet().getSubFieldsList(),
                 mergedField -> fetchAndAnalyzeField(context, fieldSubSelection.getSource(), fieldSubSelection.getLocalContext(), mergedField, fieldSubSelection.getExecutionStepInfo()));
 
     }
@@ -58,7 +59,7 @@ public class ExecutionStrategyUtil {
     }
 
     public List<ExecutionResultNode> fetchedValueAnalysisToNodes(List<FetchedValueAnalysis> fetchedValueAnalysisList) {
-        return FpKit.map(fetchedValueAnalysisList, fetchedValueAnalysis -> resultNodesCreator.createResultNode(fetchedValueAnalysis));
+        return listMap(fetchedValueAnalysisList, fetchedValueAnalysis -> resultNodesCreator.createResultNode(fetchedValueAnalysis));
     }
 
 

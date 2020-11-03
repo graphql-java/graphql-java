@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.CollectionsUtil.listMap;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
@@ -213,9 +214,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
                 targetNames.add(flattenedField);
             }
         }
-        return targetNames.stream()
-                .map(this::getField)
-                .collect(Collectors.toList());
+        return listMap(targetNames,this::getField);
     }
 
     @Override

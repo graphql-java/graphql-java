@@ -84,6 +84,7 @@ import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.collect.CollectionsUtil.listMap;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
@@ -285,8 +286,7 @@ public class SchemaGeneratorHelper {
 
     Object buildArrayValue(GraphQLType requiredType, ArrayValue arrayValue) {
         GraphQLType wrappedType = unwrapOne(requiredType);
-        Object result = arrayValue.getValues().stream()
-                .map(item -> buildValue(item, wrappedType)).collect(toList());
+        Object result = listMap(arrayValue.getValues(), item -> buildValue(item, wrappedType));
         return result;
     }
 
@@ -353,9 +353,7 @@ public class SchemaGeneratorHelper {
             return buildDirectiveFromDefinition(buildCtx.getTypeRegistry().getDirectiveDefinition(directive.getName()).get(), inputTypeFactory);
         });
 
-        List<GraphQLArgument> arguments = directive.getArguments().stream()
-                .map(arg -> buildDirectiveArgument(arg, graphQLDirective))
-                .collect(toList());
+        List<GraphQLArgument> arguments = listMap(directive.getArguments(), arg -> buildDirectiveArgument(arg, graphQLDirective));
 
         arguments = transferMissingArguments(arguments, graphQLDirective);
         arguments.forEach(builder::argument);
@@ -413,17 +411,15 @@ public class SchemaGeneratorHelper {
         List<DirectiveLocation> locations = buildLocations(directiveDefinition);
         locations.forEach(builder::validLocations);
 
-        List<GraphQLArgument> arguments = directiveDefinition.getInputValueDefinitions().stream()
-                .map(arg -> buildDirectiveArgumentFromDefinition(arg, inputTypeFactory))
-                .collect(toList());
+        List<GraphQLArgument> arguments = listMap(directiveDefinition.getInputValueDefinitions(),
+                arg -> buildDirectiveArgumentFromDefinition(arg, inputTypeFactory));
         arguments.forEach(builder::argument);
         return builder.build();
     }
 
     private List<DirectiveLocation> buildLocations(DirectiveDefinition directiveDefinition) {
-        return directiveDefinition.getDirectiveLocations().stream()
-                .map(dl -> DirectiveLocation.valueOf(dl.getName().toUpperCase()))
-                .collect(toList());
+        return listMap(directiveDefinition.getDirectiveLocations(),
+                dl -> DirectiveLocation.valueOf(dl.getName().toUpperCase()));
     }
 
     private GraphQLArgument buildDirectiveArgumentFromDefinition(InputValueDefinition arg, Function<Type, GraphQLInputType> inputTypeFactory) {
@@ -710,7 +706,7 @@ public class SchemaGeneratorHelper {
         for (Directive directive : directives) {
             if (!names.contains(directive.getName())) {
                 names.add(directive.getName());
-                output.add(buildDirective(buildCtx,directive, directiveDefinitions, directiveLocation, comparatorRegistry));
+                output.add(buildDirective(buildCtx, directive, directiveDefinitions, directiveLocation, comparatorRegistry));
             }
         }
         for (Directive directive : extensionDirectives) {
@@ -917,7 +913,6 @@ public class SchemaGeneratorHelper {
      *
      * @param buildCtx the context we need to work out what we are doing
      * @param rawType  the type to be built
-     *
      * @return an output type
      */
     @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
@@ -1146,7 +1141,6 @@ public class SchemaGeneratorHelper {
      * but then we build the rest of the types specified and put them in as additional types
      *
      * @param buildCtx the context we need to work out what we are doing
-     *
      * @return the additional types not referenced from the top level operations
      */
     Set<GraphQLType> buildAdditionalTypes(BuildContext buildCtx) {
@@ -1204,9 +1198,8 @@ public class SchemaGeneratorHelper {
     }
 
     private List<Directive> directivesOf(List<? extends TypeDefinition> typeDefinitions) {
-        Stream<Directive> directiveStream = typeDefinitions.stream()
+        return typeDefinitions.stream()
                 .map(TypeDefinition::getDirectives).filter(Objects::nonNull)
-                .flatMap(List::stream);
-        return directiveStream.collect(Collectors.toList());
+                .<Directive>flatMap(List::stream).collect(Collectors.toList());
     }
 }

@@ -25,9 +25,9 @@ import java.util.concurrent.CompletableFuture;
 
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertTrue;
+import static graphql.collect.CollectionsUtil.listMap;
 import static graphql.execution.nextgen.result.ResultNodeAdapter.RESULT_NODE_ADAPTER;
 import static graphql.util.FpKit.flatList;
-import static graphql.util.FpKit.map;
 import static graphql.util.FpKit.mapEntries;
 import static graphql.util.FpKit.transposeMatrix;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -92,7 +92,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
     private CompletableFuture<List<NodeZipper<ExecutionResultNode>>> fetchAndAnalyze(ExecutionContext executionContext, List<NodeZipper<ExecutionResultNode>> unresolvedNodes) {
         assertTrue(unresolvedNodes.size() > 0, () -> "unresolvedNodes can't be empty");
 
-        List<FieldSubSelection> fieldSubSelections = map(unresolvedNodes,
+        List<FieldSubSelection> fieldSubSelections = listMap(unresolvedNodes,
                 node -> util.createFieldSubSelection(executionContext, node.getCurNode().getExecutionStepInfo(), node.getCurNode().getResolvedValue()));
 
         //constrain: all fieldSubSelections have the same mergedSelectionSet
@@ -121,7 +121,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
     private List<CompletableFuture<List<FetchedValueAnalysis>>> batchFetchForEachSubField(ExecutionContext executionContext,
                                                                                           List<FieldSubSelection> fieldSubSelections,
                                                                                           MergedSelectionSet mergedSelectionSet) {
-        List<Object> sources = map(fieldSubSelections, FieldSubSelection::getSource);
+        List<Object> sources = listMap(fieldSubSelections, FieldSubSelection::getSource);
         return mapEntries(mergedSelectionSet.getSubFields(), (name, mergedField) -> {
             List<ExecutionStepInfo> newExecutionStepInfos = newExecutionInfos(executionContext, fieldSubSelections, mergedField);
             return valueFetcher
@@ -131,7 +131,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
     }
 
     private List<ExecutionStepInfo> newExecutionInfos(ExecutionContext executionContext, List<FieldSubSelection> fieldSubSelections, MergedField mergedField) {
-        return map(fieldSubSelections,
+        return listMap(fieldSubSelections,
                 subSelection -> executionInfoFactory.newExecutionStepInfoForSubField(executionContext, mergedField, subSelection.getExecutionStepInfo()));
     }
 

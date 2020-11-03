@@ -1,6 +1,8 @@
 package graphql.schema;
 
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import graphql.Directives;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -58,7 +60,6 @@ public class GraphQLSchema {
 
     /**
      * @param queryType the query type
-     *
      * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -71,7 +72,6 @@ public class GraphQLSchema {
      * @param queryType       the query type
      * @param mutationType    the mutation type
      * @param additionalTypes additional types
-     *
      * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -85,7 +85,6 @@ public class GraphQLSchema {
      * @param mutationType     the mutation type
      * @param subscriptionType the subscription type
      * @param additionalTypes  additional types
-     *
      * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -154,9 +153,7 @@ public class GraphQLSchema {
      * Called to return a named {@link graphql.schema.GraphQLObjectType} from the schema
      *
      * @param typeName the name of the type
-     *
      * @return a graphql object type or null if there is one
-     *
      * @throws graphql.GraphQLException if the type is NOT a object type
      */
     public GraphQLObjectType getObjectType(String typeName) {
@@ -169,7 +166,7 @@ public class GraphQLSchema {
     }
 
     public Map<String, GraphQLNamedType> getTypeMap() {
-        return Collections.unmodifiableMap(typeMap);
+        return ImmutableMap.copyOf(typeMap);
     }
 
     public List<GraphQLNamedType> getAllTypesAsList() {
@@ -181,14 +178,13 @@ public class GraphQLSchema {
      * interface type.
      *
      * @param type interface type to obtain implementations of.
-     *
      * @return list of types implementing provided interface
      */
     public List<GraphQLObjectType> getImplementations(GraphQLInterfaceType type) {
         List<GraphQLObjectType> implementations = byInterface.get(type.getName());
         return (implementations == null)
                 ? Collections.emptyList()
-                : Collections.unmodifiableList(sortTypes(byNameAsc(), implementations));
+                : ImmutableList.copyOf(sortTypes(byNameAsc(), implementations));
     }
 
     /**
@@ -199,7 +195,6 @@ public class GraphQLSchema {
      *
      * @param abstractType abstract type either interface or union
      * @param concreteType concrete type
-     *
      * @return true if possible type, false otherwise.
      */
     public boolean isPossibleType(GraphQLNamedType abstractType, GraphQLObjectType concreteType) {
@@ -230,7 +225,6 @@ public class GraphQLSchema {
 
     /**
      * @return the field visibility
-     *
      * @deprecated use {@link GraphQLCodeRegistry#getFieldVisibility()} instead
      */
     @Deprecated
@@ -328,7 +322,6 @@ public class GraphQLSchema {
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
-     *
      * @return a new GraphQLSchema object based on calling build on that builder
      */
     public GraphQLSchema transform(Consumer<Builder> builderConsumer) {
@@ -349,7 +342,6 @@ public class GraphQLSchema {
      * schema and then allows you to replace them.
      *
      * @param existingSchema the existing schema
-     *
      * @return a new schema builder
      */
     public static Builder newSchema(GraphQLSchema existingSchema) {
@@ -419,9 +411,7 @@ public class GraphQLSchema {
 
         /**
          * @param fieldVisibility the field visibility
-         *
          * @return this builder
-         *
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry.Builder#fieldVisibility(graphql.schema.visibility.GraphqlFieldVisibility)} instead
          */
         @Deprecated
@@ -512,9 +502,7 @@ public class GraphQLSchema {
          * Builds the schema
          *
          * @param additionalTypes - please dont use this any more
-         *
          * @return the built schema
-         *
          * @deprecated - Use the {@link #additionalType(GraphQLType)} methods
          */
         @Deprecated
@@ -527,9 +515,7 @@ public class GraphQLSchema {
          *
          * @param additionalTypes      - please don't use this any more
          * @param additionalDirectives - please don't use this any more
-         *
          * @return the built schema
-         *
          * @deprecated - Use the {@link #additionalType(GraphQLType)} and {@link #additionalDirective(GraphQLDirective)} methods
          */
         @Deprecated

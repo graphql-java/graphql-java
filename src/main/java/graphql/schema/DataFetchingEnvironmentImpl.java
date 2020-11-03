@@ -69,7 +69,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.locale = builder.locale;
         this.operationDefinition = builder.operationDefinition;
         this.document = builder.document;
-        this.variables = builder.variables == null ? ImmutableMapWithNullValues.empty() : builder.variables;
+        this.variables = builder.variables == null ? ImmutableMapWithNullValues.emptyMap() : builder.variables;
         this.queryDirectives = builder.queryDirectives;
     }
 
@@ -106,7 +106,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public Map<String, Object> getArguments() {
-        return Collections.unmodifiableMap(arguments.get());
+        return ImmutableMapWithNullValues.copyOf(arguments.get());
     }
 
     @Override
@@ -176,7 +176,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public Map<String, FragmentDefinition> getFragmentsByName() {
-        return Collections.unmodifiableMap(fragmentsByName);
+        return fragmentsByName;
     }
 
     @Override
@@ -231,7 +231,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public Map<String, Object> getVariables() {
-        return Collections.unmodifiableMap(variables);
+        return variables;
     }
 
     @Override
