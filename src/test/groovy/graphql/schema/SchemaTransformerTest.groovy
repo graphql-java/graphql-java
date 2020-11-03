@@ -444,4 +444,123 @@ type SubChildChanged {
 
     }
 
+    def "test as reported in 1928 "() {
+        given:
+
+        def internalNoteHider = new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLDirective(GraphQLDirective node,
+                                                   TraverserContext<GraphQLSchemaElement> context) {
+                if ("internalnote".equals(node.getName())) {
+                    // this deletes the declaration and the two usages of it
+                    deleteNode(context);
+                }
+                return TraversalControl.CONTINUE;
+            }
+        }
+
+        GraphQLSchema schema = TestUtil.schema("""
+            directive @internalnote(doc: String!) on OBJECT | FIELD_DEFINITION | INTERFACE
+            
+            type Query {
+                fooBar: Foo
+            }
+            
+            interface Manchu @internalnote(doc:"...") {
+              id: ID!
+            }
+            
+            type Foo implements Manchu {
+              id: ID!
+            }
+            
+            type Bar @internalnote(doc:"...") {
+              id: ID! 
+              hidden: String! 
+            }
+          
+            union FooBar = Foo | Bar
+        """)
+
+        when:
+        def newSchema = SchemaTransformer.transformSchema(schema, internalNoteHider)
+
+        then:
+        newSchema.getType("FooBar") != null
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
+        then:
+        printer.print(newSchema) == """interface Manchu {
+  id: ID!
+}
+
+union FooBar = Bar | Foo
+
+type Bar {
+  hidden: String!
+  id: ID!
+}
+
+type Foo implements Manchu {
+  id: ID!
+}
+
+type Query {
+  fooBar: Foo
+}
+"""
+    }
+
+    def "test as reported in 1953 "() {
+        given:
+
+        def fieldChanger = new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node,
+                                                         TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getName() == "f") {
+                    changeNode(context, node.transform({ builder -> builder.type(Scalars.GraphQLInt) }))
+                }
+                return TraversalControl.CONTINUE
+            }
+        }
+
+        GraphQLSchema schema = TestUtil.schema("""
+            type Query {
+                manchu: Manchu
+                foo: Foo
+            }
+            
+            interface Manchu {
+              id: ID!
+              f: String
+            }
+            
+            type Foo implements Manchu {
+              id: ID!
+              f: String
+            }
+        """)
+
+        when:
+        def newSchema = SchemaTransformer.transformSchema(schema, fieldChanger)
+
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
+        then:
+        (newSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("f").getType() == Scalars.GraphQLInt
+        printer.print(newSchema) == """interface Manchu {
+  f: Int
+  id: ID!
+}
+
+type Foo implements Manchu {
+  f: Int
+  id: ID!
+}
+
+type Query {
+  foo: Foo
+  manchu: Manchu
+}
+"""
+    }
 }

@@ -1619,11 +1619,11 @@ class SchemaGeneratorTest extends Specification {
 
         then:
         def directiveTest1 = schema.getDirective("test1")
-        directiveTest1.getArgument("include").type == GraphQLNonNull.nonNull(GraphQLBoolean)
+        GraphQLNonNull.nonNull(GraphQLBoolean).isEqualTo(directiveTest1.getArgument("include").type)
         directiveTest1.getArgument("include").value == null
 
         def directiveTest2 = schema.getDirective("test2")
-        directiveTest2.getArgument("include").type == GraphQLNonNull.nonNull(GraphQLBoolean)
+        GraphQLNonNull.nonNull(GraphQLBoolean).isEqualTo(directiveTest2.getArgument("include").type)
         directiveTest2.getArgument("include").value == true
         directiveTest2.getArgument("include").defaultValue == true
 

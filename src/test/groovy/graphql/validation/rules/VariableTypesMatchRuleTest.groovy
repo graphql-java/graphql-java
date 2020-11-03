@@ -59,7 +59,7 @@ class VariableTypesMatchRuleTest extends Specification {
 
         validationContext.getSchema() >> StarWarsSchema.starWarsSchema
         validationContext.getInputType() >> expectedType
-        variablesTypeMatcher.effectiveType(mismatchedType, defaultValue) >> mismatchedType
+        variablesTypeMatcher.effectiveType({ mismatchedType.isEqualTo(it) }, defaultValue) >> mismatchedType
         variablesTypeMatcher
                 .doesVariableTypesMatch(expectedType, defaultValue, expectedType) >> false
 

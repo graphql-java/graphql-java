@@ -15,13 +15,11 @@ import graphql.language.InterfaceTypeDefinition;
 import graphql.language.Node;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
-import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.idl.errors.DirectiveIllegalLocationError;
-import graphql.schema.idl.errors.InvalidDeprecationDirectiveError;
 import graphql.schema.idl.errors.MissingInterfaceTypeError;
 import graphql.schema.idl.errors.MissingScalarImplementationError;
 import graphql.schema.idl.errors.MissingTypeError;
@@ -43,8 +41,8 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
+import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -200,7 +198,7 @@ public class SchemaTypeChecker {
 
         // input types
         List<InputObjectTypeDefinition> inputTypes = filterTo(typesMap, InputObjectTypeDefinition.class);
-        inputTypes.forEach(inputType -> checkInputValues(errors, inputType, inputType.getInputValueDefinitions(), directiveDefinitionMap));
+        inputTypes.forEach(inputType -> checkInputValues(errors, inputType, inputType.getInputValueDefinitions(), INPUT_FIELD_DEFINITION, directiveDefinitionMap));
     }
 
 
@@ -230,8 +228,6 @@ public class SchemaTypeChecker {
                     (directiveName, directive) -> new NonUniqueDirectiveError(typeDefinition, fieldDefinition, directiveName));
         }
         fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive -> {
-            checkDeprecatedDirective(errors, directive,
-                    () -> new InvalidDeprecationDirectiveError(typeDefinition, fld));
 
             checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
                     (argumentName, argument) -> new NonUniqueArgumentError(typeDefinition, fld, argumentName));
@@ -249,21 +245,16 @@ public class SchemaTypeChecker {
                 (name, inputValueDefinition) -> new NonUniqueArgumentError(interfaceType, fld, name)));
 
         // directive checks
-        for (FieldDefinition fieldDefinition : fieldDefinitions) {
+        fieldDefinitions.forEach(fieldDefinition -> {
             List<Directive> directives = fieldDefinition.getDirectives();
             List<Directive> nonRepeatableDirectives = nonRepeatableDirectivesOnly(directiveDefinitionMap, directives);
 
             checkNamedUniqueness(errors, nonRepeatableDirectives, Directive::getName,
                     (directiveName, directive) -> new NonUniqueDirectiveError(interfaceType, fieldDefinition, directiveName));
-        }
-        fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive -> {
-            checkDeprecatedDirective(errors, directive,
-                    () -> new InvalidDeprecationDirectiveError(interfaceType, fld));
 
-            checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
-                    (argumentName, argument) -> new NonUniqueArgumentError(interfaceType, fld, argumentName));
-
-        }));
+            directives.forEach(directive -> checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
+                    (argumentName, argument) -> new NonUniqueArgumentError(interfaceType, fieldDefinition, argumentName)));
+        });
     }
 
     private void checkEnumValues(List<GraphQLError> errors, EnumTypeDefinition enumType, List<EnumValueDefinition> enumValueDefinitions, Map<String, DirectiveDefinition> directiveDefinitionMap) {
@@ -283,8 +274,6 @@ public class SchemaTypeChecker {
         }
 
         enumValueDefinitions.forEach(enumValue -> enumValue.getDirectives().forEach(directive -> {
-            checkDeprecatedDirective(errors, directive,
-                    () -> new InvalidDeprecationDirectiveError(enumType, enumValue));
 
             BiFunction<String, Argument, NonUniqueArgumentError> errorFunction = (argumentName, argument) -> new NonUniqueArgumentError(enumType, enumValue, argumentName);
             checkNamedUniqueness(errors, directive.getArguments(), Argument::getName, errorFunction);
@@ -292,7 +281,7 @@ public class SchemaTypeChecker {
         }));
     }
 
-    private void checkInputValues(List<GraphQLError> errors, InputObjectTypeDefinition inputType, List<InputValueDefinition> inputValueDefinitions, Map<String, DirectiveDefinition> directiveDefinitionMap) {
+    private void checkInputValues(List<GraphQLError> errors, InputObjectTypeDefinition inputType, List<InputValueDefinition> inputValueDefinitions, Introspection.DirectiveLocation directiveLocation, Map<String, DirectiveDefinition> directiveDefinitionMap) {
 
         // field unique ness
         checkNamedUniqueness(errors, inputValueDefinitions, InputValueDefinition::getName,
@@ -313,40 +302,9 @@ public class SchemaTypeChecker {
                     (directiveName, directive) -> new NonUniqueDirectiveError(inputType, inputValueDefinition, directiveName));
         }
 
-        inputValueDefinitions.forEach(inputValueDef -> inputValueDef.getDirectives().forEach(directive -> {
-            checkDeprecatedDirective(errors, directive,
-                    () -> new InvalidDeprecationDirectiveError(inputType, inputValueDef));
-
-            checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
-                    (argumentName, argument) -> new NonUniqueArgumentError(inputType, inputValueDef, argumentName));
-        }));
-    }
-
-
-    /**
-     * A special check for the magic @deprecated directive
-     *
-     * @param errors        the list of errors
-     * @param directive     the directive to check
-     * @param errorSupplier the error supplier function
-     */
-    static void checkDeprecatedDirective(List<GraphQLError> errors, Directive directive, Supplier<InvalidDeprecationDirectiveError> errorSupplier) {
-        if ("deprecated".equals(directive.getName())) {
-            // it can have zero args
-            List<Argument> arguments = directive.getArguments();
-            if (arguments.size() == 0) {
-                return;
-            }
-            // but if has more than it must have 1 called "reason" of type StringValue
-            if (arguments.size() == 1) {
-                Argument arg = arguments.get(0);
-                if ("reason".equals(arg.getName()) && arg.getValue() instanceof StringValue) {
-                    return;
-                }
-            }
-            // not valid
-            errors.add(errorSupplier.get());
-        }
+        inputValueDefinitions.forEach(inputValueDef -> inputValueDef.getDirectives().forEach(directive ->
+                checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
+                        (argumentName, argument) -> new NonUniqueArgumentError(inputType, inputValueDef, argumentName))));
     }
 
     /**

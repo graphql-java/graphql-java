@@ -18,7 +18,6 @@ import static graphql.Assert.assertTrue;
  * See http://graphql.org/learn/schema/#lists-and-non-null for more details on the concept
  */
 @PublicApi
-
 public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType {
 
     /**
@@ -27,6 +26,7 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
      * {@code .type(nonNull(GraphQLString)) }
      *
      * @param wrappedType the type to wrap as being non null
+     *
      * @return a GraphQLNonNull of that wrapped type
      */
     public static GraphQLNonNull nonNull(GraphQLType wrappedType) {
@@ -55,31 +55,30 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
         return replacedWrappedType != null ? replacedWrappedType : originalWrappedType;
     }
 
+    public GraphQLType getOriginalWrappedType() {
+        return originalWrappedType;
+    }
 
     void replaceType(GraphQLType type) {
         assertNonNullWrapping(type);
         this.replacedWrappedType = type;
     }
 
-    @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Object o) {
         if (this == o) {
             return true;
         }
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         GraphQLNonNull that = (GraphQLNonNull) o;
         GraphQLType wrappedType = getWrappedType();
-
+        if (wrappedType instanceof GraphQLList) {
+            return ((GraphQLList) wrappedType).isEqualTo(that.getWrappedType());
+        }
         return Objects.equals(wrappedType, that.getWrappedType());
     }
 
-    @Override
-    public int hashCode() {
-        return getWrappedType() != null ? getWrappedType().hashCode() : 0;
-    }
 
     @Override
     public String toString() {
@@ -107,4 +106,21 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
     public GraphQLSchemaElement withNewChildren(SchemaElementChildrenContainer newChildren) {
         return nonNull(newChildren.getChildOrNull(CHILD_WRAPPED_TYPE));
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
+    }
+
 }

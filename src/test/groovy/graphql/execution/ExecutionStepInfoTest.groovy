@@ -76,7 +76,7 @@ class ExecutionStepInfoTest extends Specification {
         nonNullFieldTypeInfo.parent.type == rootType
         nonNullFieldTypeInfo.isNonNullType()
 
-        listTypeInfo.getUnwrappedNonNullType() == list(fieldType)
+        list(fieldType).isEqualTo(listTypeInfo.getUnwrappedNonNullType())
         listTypeInfo.hasParent()
         listTypeInfo.parent.type == rootType
         listTypeInfo.isListType()
