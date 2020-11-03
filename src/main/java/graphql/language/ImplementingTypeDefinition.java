@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * A {@link TypeDefinition} that might implement interfaces
  *
- * @param <T>
+ * @param <T> for two
  */
 @PublicApi
 public interface ImplementingTypeDefinition<T extends TypeDefinition> extends TypeDefinition<T> {

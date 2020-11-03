@@ -38,17 +38,6 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
 
     public static final String CHILD_ARGUMENTS = "arguments";
 
-    /**
-     * @deprecated Use the Builder
-     */
-    @Deprecated
-    public GraphQLDirective(String name,
-                            String description,
-                            EnumSet<DirectiveLocation> locations,
-                            List<GraphQLArgument> arguments) {
-        this(name, description, locations, arguments, null);
-    }
-
     private GraphQLDirective(String name,
                              String description,
                              EnumSet<DirectiveLocation> locations,
