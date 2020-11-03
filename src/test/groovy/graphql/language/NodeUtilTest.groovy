@@ -41,21 +41,7 @@ class NodeUtilTest extends Specification {
     def d2 = Directive.newDirective().name("d2").build()
     def d3r = Directive.newDirective().name("d3").build()
 
-    def "can filter out repeatable directives"() {
-        when:
-        def result = NodeUtil.nonRepeatableDirectivesByName([d1, d2, d3r, d3r,])
-        then:
-        result == [d1: d1, d2: d2]
-    }
-
-    def "can filter out repeatable directives completely"() {
-        when:
-        def result = NodeUtil.nonRepeatableDirectivesByName([d3r, d3r])
-        then:
-        result == [:]
-    }
-
-    def "can create a map if all directives"() {
+      def "can create a map of all directives"() {
         when:
         def result = NodeUtil.allDirectivesByName([d1, d2, d3r, d3r])
         then:

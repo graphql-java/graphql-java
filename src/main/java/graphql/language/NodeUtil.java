@@ -8,7 +8,6 @@ import graphql.util.NodeLocation;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static graphql.util.FpKit.mergeFirst;
 
@@ -31,15 +30,6 @@ public class NodeUtil {
 
     public static Map<String, List<Directive>> allDirectivesByName(List<Directive> directives) {
         return FpKit.groupingBy(directives, Directive::getName);
-    }
-
-    public static Map<String, Directive> nonRepeatableDirectivesByName(List<Directive> directives) {
-        Map<String, List<Directive>> map = allDirectivesByName(directives);
-        List<Directive> singletonDirectives = map.entrySet().stream()
-                // only those that have 1 non repeated entry
-                .filter(e -> e.getKey() != null && e.getValue().size() == 1)
-                .flatMap(e -> e.getValue().stream()).collect(Collectors.toList());
-        return FpKit.getByName(singletonDirectives, Directive::getName);
     }
 
     public static Map<String, Argument> argumentsByName(List<Argument> arguments) {

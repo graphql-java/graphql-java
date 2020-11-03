@@ -38,25 +38,12 @@ class DirectiveTest extends Specification {
         ]
 
         when:
-        def directivesMap = NodeUtil.nonRepeatableDirectivesByName(directives)
-
-        then:
-
-        //
-        // repeated directives are now allowed and so the old directives logic filters out repeated ones
-        //
-        directivesMap.size() == 2
-        directivesMap.get("d1") == d1
-        directivesMap.get("null") == null
-        directivesMap.get("repeated") == null
-
-        when:
-        directivesMap = NodeUtil.allDirectivesByName(directives)
+        def directivesMap = NodeUtil.allDirectivesByName(directives)
 
         then:
         directivesMap.size() == 3
         directivesMap.get("d1") == [d1]
         directivesMap.get("null") == null
-        directivesMap.get("repeated").collect({d -> d.getName()}) == ["repeated","repeated"]
+        directivesMap.get("repeated").collect({ d -> d.getName() }) == ["repeated", "repeated"]
     }
 }
