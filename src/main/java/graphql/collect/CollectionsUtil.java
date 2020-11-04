@@ -17,6 +17,10 @@ public final class CollectionsUtil {
         return ImmutableList.of();
     }
 
+    public static <T> ImmutableList<T> nonNullCopyOf(Collection<T> collection) {
+        return collection == null ? emptyList() : ImmutableList.copyOf(collection);
+    }
+
     @SuppressWarnings("unchecked")
     public static <K, V> ImmutableMap<K, V> emptyMap() {
         return ImmutableMap.of();
@@ -35,9 +39,9 @@ public final class CollectionsUtil {
         return ImmutableList.<T>builder().addAll(l1).addAll(l2).build();
     }
 
-    public static <T, R> ImmutableList<R> listMap(Collection<T> list, Function<? super T, ? extends R> mapper) {
+    public static <T, R> ImmutableList<R> listMap(Collection<T> collection, Function<? super T, ? extends R> mapper) {
         ImmutableList.Builder<R> builder = ImmutableList.<R>builder();
-        for (T t : list) {
+        for (T t : collection) {
             R r = mapper.apply(t);
             builder.add(r);
         }

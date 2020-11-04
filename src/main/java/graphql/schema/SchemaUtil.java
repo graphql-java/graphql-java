@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
 import graphql.introspection.Introspection;
 
@@ -16,7 +17,7 @@ public class SchemaUtil {
     private static final SchemaTraverser TRAVERSER = new SchemaTraverser();
 
 
-    Map<String, GraphQLNamedType> allTypes(final GraphQLSchema schema, final Set<GraphQLType> additionalTypes, boolean afterTransform) {
+    ImmutableMap<String, GraphQLNamedType> allTypes(final GraphQLSchema schema, final Set<GraphQLType> additionalTypes, boolean afterTransform) {
         List<GraphQLSchemaElement> roots = new ArrayList<>();
         roots.add(schema.getQueryType());
 
@@ -46,7 +47,7 @@ public class SchemaUtil {
             traverser = new SchemaTraverser();
         }
         traverser.depthFirst(visitor, roots);
-        return visitor.getResult();
+        return ImmutableMap.copyOf(visitor.getResult());
     }
 
 
@@ -62,14 +63,14 @@ public class SchemaUtil {
         Map<String, List<GraphQLObjectType>> result = new LinkedHashMap<>();
         for (GraphQLType type : schema.getAllTypesAsList()) {
             if (type instanceof GraphQLObjectType) {
-                for (GraphQLNamedOutputType interfaceType : ((GraphQLObjectType) type).getInterfaces()) {
+                List<GraphQLNamedOutputType> interfaces = ((GraphQLObjectType) type).getInterfaces();
+                for (GraphQLNamedOutputType interfaceType : interfaces) {
                     List<GraphQLObjectType> myGroup = result.computeIfAbsent(interfaceType.getName(), k -> new ArrayList<>());
                     myGroup.add((GraphQLObjectType) type);
                 }
             }
         }
-
-        return result;
+        return ImmutableMap.copyOf(result);
     }
 
     /**
