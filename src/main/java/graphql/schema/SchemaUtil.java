@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 @Internal
 public class SchemaUtil {
@@ -47,7 +48,8 @@ public class SchemaUtil {
             traverser = new SchemaTraverser();
         }
         traverser.depthFirst(visitor, roots);
-        return ImmutableMap.copyOf(visitor.getResult());
+        Map<String, GraphQLNamedType> result = visitor.getResult();
+        return ImmutableMap.copyOf(new TreeMap<>(result));
     }
 
 
@@ -70,7 +72,7 @@ public class SchemaUtil {
                 }
             }
         }
-        return ImmutableMap.copyOf(result);
+        return ImmutableMap.copyOf(new TreeMap<>(result));
     }
 
     /**
