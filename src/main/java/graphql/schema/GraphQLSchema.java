@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableSet;
 import graphql.Directives;
 import graphql.Internal;
 import graphql.PublicApi;
-import graphql.collect.CollectionsUtil;
 import graphql.language.SchemaDefinition;
 import graphql.language.SchemaExtensionDefinition;
 import graphql.schema.validation.InvalidSchemaException;
