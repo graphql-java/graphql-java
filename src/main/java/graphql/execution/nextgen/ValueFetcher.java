@@ -18,6 +18,8 @@ import graphql.execution.ResultPath;
 import graphql.execution.ValuesResolver;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.language.Field;
+import graphql.normalized.NormalizedField;
+import graphql.normalized.NormalizedQueryTree;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingFieldSelectionSet;
@@ -117,12 +119,15 @@ public class ValueFetcher {
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         GraphQLFieldsContainer parentType = getFieldsContainer(executionInfo);
 
-        Supplier<Map<String, Object>> argumentValues = FpKit.memoize(() -> valuesResolver.getArgumentValues(codeRegistry, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables()));
+        Supplier<Map<String, Object>> argumentValues = FpKit.intraThreadMemoize(() -> valuesResolver.getArgumentValues(codeRegistry, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables()));
 
         QueryDirectivesImpl queryDirectives = new QueryDirectivesImpl(sameFields, executionContext.getGraphQLSchema(), executionContext.getVariables());
 
         GraphQLOutputType fieldType = fieldDef.getType();
-        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, sameFields);
+
+        Supplier<NormalizedQueryTree> normalizedQuery = executionContext.getNormalizedQueryTree();
+        Supplier<NormalizedField> normalisedField = () -> normalizedQuery.get().getNormalizedField(sameFields, executionInfo.getObjectType(), executionInfo.getPath());
+        DataFetchingFieldSelectionSet selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(fieldType, normalisedField);
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(source)
@@ -133,7 +138,7 @@ public class ValueFetcher {
                 .fieldType(fieldType)
                 .executionStepInfo(executionInfo)
                 .parentType(parentType)
-                .selectionSet(fieldCollector)
+                .selectionSet(selectionSet)
                 .queryDirectives(queryDirectives)
                 .build();
 

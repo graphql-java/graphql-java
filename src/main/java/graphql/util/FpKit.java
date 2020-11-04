@@ -256,6 +256,17 @@ public class FpKit {
     }
 
     /**
+     * Used in simple {@link Map#computeIfAbsent(Object, java.util.function.Function)} cases
+     *
+     * @param <K> for Key
+     * @param <V> for Value
+     * @return a function that allocates a list
+     */
+    public static <K, V> Function<K, List<V>> newList() {
+        return k -> new ArrayList<>();
+    }
+
+    /**
      * This will memoize the Supplier within the current thread's visibility, that is it does not
      * use volatile reads but rather use a sentinel check and re-reads the delegate supplier
      * value if the read has not stuck to this thread.  This means that its possible that your delegate
@@ -265,8 +276,21 @@ public class FpKit {
      * @param <T>      for two
      * @return a supplier that will memoize values in the context of the current thread
      */
-    public static <T> Supplier<T> memoize(Supplier<T> delegate) {
-        return new MemoizedSupplier<>(delegate);
+    public static <T> Supplier<T> intraThreadMemoize(Supplier<T> delegate) {
+        return new IntraThreadMemoizedSupplier<>(delegate);
+    }
+
+    /**
+     * This will memoize the Supplier across threads and make sure the Supplier is exactly called once.
+     * <p>
+     * Use for potentially costly actions. Otherwise consider {@link #intraThreadMemoize(Supplier)}
+     *
+     * @param delegate the supplier to delegate to
+     * @param <T>      for two
+     * @return a supplier that will memoize values in the context of the all the threads
+     */
+    public static <T> Supplier<T> interThreadMemoize(Supplier<T> delegate) {
+        return new InterThreadMemoizedSupplier<>(delegate);
     }
 
 }
