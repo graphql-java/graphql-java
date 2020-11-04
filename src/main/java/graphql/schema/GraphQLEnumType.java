@@ -2,23 +2,24 @@ package graphql.schema;
 
 
 import com.google.common.collect.ImmutableList;
-import graphql.AssertException;
+import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.EnumValue;
+import graphql.util.FpKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertValidName;
 import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition;
 import static graphql.util.FpKit.getByName;
@@ -37,10 +38,10 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
 
     private final String name;
     private final String description;
-    private final Map<String, GraphQLEnumValueDefinition> valueDefinitionMap = new LinkedHashMap<>();
+    private final ImmutableMap<String, GraphQLEnumValueDefinition> valueDefinitionMap;
     private final EnumTypeDefinition definition;
     private final ImmutableList<EnumTypeExtensionDefinition> extensionDefinitions;
-    private final List<GraphQLDirective> directives;
+    private final ImmutableList<GraphQLDirective> directives;
 
     public static final String CHILD_VALUES = "values";
     public static final String CHILD_DIRECTIVES = "directives";
@@ -82,8 +83,8 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         this.description = description;
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directives = directives;
-        buildMap(values);
+        this.directives = ImmutableList.copyOf(directives);
+        this.valueDefinitionMap = buildMap(values);
     }
 
     @Internal
@@ -121,21 +122,16 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     }
 
     public List<GraphQLEnumValueDefinition> getValues() {
-        return new ArrayList<>(valueDefinitionMap.values());
+        return ImmutableList.copyOf(valueDefinitionMap.values());
     }
 
     public GraphQLEnumValueDefinition getValue(String name) {
         return valueDefinitionMap.get(name);
     }
 
-    private void buildMap(List<GraphQLEnumValueDefinition> values) {
-        for (GraphQLEnumValueDefinition valueDefinition : values) {
-            String name = valueDefinition.getName();
-            if (valueDefinitionMap.containsKey(name)) {
-                throw new AssertException("value " + name + " redefined");
-            }
-            valueDefinitionMap.put(name, valueDefinition);
-        }
+    private ImmutableMap<String, GraphQLEnumValueDefinition> buildMap(List<GraphQLEnumValueDefinition> values) {
+        return ImmutableMap.copyOf(FpKit.getByName(values, GraphQLEnumValueDefinition::getName,
+                (fld1, fld2) -> assertShouldNeverHappen("Duplicated definition for field '%s' in type '%s'", fld1.getName(), this.name)));
     }
 
     private Object getValueByName(Object value) {
@@ -191,7 +187,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     /**

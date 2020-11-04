@@ -1,11 +1,12 @@
 package graphql.schema;
 
 import com.google.common.collect.ImmutableList;
-import graphql.AssertException;
+import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputObjectTypeDefinition;
 import graphql.language.InputObjectTypeExtensionDefinition;
+import graphql.util.FpKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -17,6 +18,8 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.Assert.assertTrue;
 import static graphql.Assert.assertValidName;
 import static graphql.util.FpKit.getByName;
 import static java.util.Collections.emptyList;
@@ -32,7 +35,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
     private final String name;
     private final String description;
-    private final Map<String, GraphQLInputObjectField> fieldMap = new LinkedHashMap<>();
+    private final ImmutableMap<String, GraphQLInputObjectField> fieldMap;
     private final InputObjectTypeDefinition definition;
     private final ImmutableList<InputObjectTypeExtensionDefinition> extensionDefinitions;
     private final ImmutableList<GraphQLDirective> directives;
@@ -44,6 +47,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
      * @param name        the name
      * @param description the description
      * @param fields      the fields
+     *
      * @deprecated use the {@link #newInputObject()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -58,6 +62,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
      * @param fields      the fields
      * @param directives  the directives on this type element
      * @param definition  the AST definition
+     *
      * @deprecated use the {@link #newInputObject()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -76,17 +81,12 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
         this.directives = ImmutableList.copyOf(directives);
-        buildMap(fields);
+        this.fieldMap = buildDefinitionMap(fields);
     }
 
-    private void buildMap(List<GraphQLInputObjectField> fields) {
-        for (GraphQLInputObjectField field : fields) {
-            String name = field.getName();
-            if (fieldMap.containsKey(name)) {
-                throw new AssertException("field " + name + " redefined");
-            }
-            fieldMap.put(name, field);
-        }
+    private ImmutableMap<String, GraphQLInputObjectField> buildDefinitionMap(List<GraphQLInputObjectField> fieldDefinitions) {
+        return ImmutableMap.copyOf(FpKit.getByName(fieldDefinitions, GraphQLInputObjectField::getName,
+                (fld1, fld2) -> assertShouldNeverHappen("Duplicated definition for field '%s' in type '%s'", fld1.getName(), this.name)));
     }
 
     @Override
@@ -99,7 +99,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     }
 
     public List<GraphQLInputObjectField> getFields() {
-        return new ArrayList<>(fieldMap.values());
+        return getFieldDefinitions();
     }
 
     public GraphQLInputObjectField getField(String name) {
@@ -108,7 +108,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     @Override
@@ -118,7 +118,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
     @Override
     public List<GraphQLInputObjectField> getFieldDefinitions() {
-        return new ArrayList<>(fieldMap.values());
+        return ImmutableList.copyOf(fieldMap.values());
     }
 
     public InputObjectTypeDefinition getDefinition() {
@@ -134,6 +134,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new object based on calling build on that builder
      */
     public GraphQLInputObjectType transform(Consumer<Builder> builderConsumer) {
@@ -269,6 +270,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
          * </pre>
          *
          * @param builderFunction a supplier for the builder impl
+         *
          * @return this
          */
         public Builder field(UnaryOperator<GraphQLInputObjectField.Builder> builderFunction) {
@@ -283,6 +285,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
          * from within
          *
          * @param builder an un-built/incomplete GraphQLFieldDefinition
+         *
          * @return this
          */
         public Builder field(GraphQLInputObjectField.Builder builder) {
