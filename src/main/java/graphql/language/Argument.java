@@ -14,6 +14,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.CollectionsUtil.emptyList;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static java.util.Collections.emptyMap;
 
@@ -39,7 +40,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
      * @param value of the argument
      */
     public Argument(String name, Value value) {
-        this(name, value, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, value, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override

@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -19,14 +20,14 @@ import static java.util.Collections.emptyMap;
 @PublicApi
 public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayValue> {
 
-    private final List<Value> values = new ArrayList<>();
+    private final ImmutableList<Value> values;
 
     public static final String CHILD_VALUES = "values";
 
     @Internal
     protected ArrayValue(List<Value> values, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
-        this.values.addAll(values);
+        this.values = ImmutableList.copyOf(values);
     }
 
     /**
@@ -44,7 +45,7 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>(values);
+        return ImmutableList.copyOf(values);
     }
 
     @Override

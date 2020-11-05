@@ -3,11 +3,11 @@ package graphql.language;
 
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.CollectionsUtil;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +34,7 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarVa
      * @param value of the Boolean
      */
     public BooleanValue(boolean value) {
-        this(value, null, new ArrayList<>(), IgnoredChars.EMPTY, Collections.emptyMap());
+        this(value, null, CollectionsUtil.emptyList(), IgnoredChars.EMPTY, CollectionsUtil.emptyMap());
     }
 
     public boolean isValue() {

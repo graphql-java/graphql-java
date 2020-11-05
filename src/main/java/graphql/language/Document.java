@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -14,20 +15,21 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.CollectionsUtil.emptyList;
+import static graphql.collect.CollectionsUtil.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class Document extends AbstractNode<Document> {
 
-    private final List<Definition> definitions;
+    private final ImmutableList<Definition> definitions;
 
     public static final String CHILD_DEFINITIONS = "definitions";
 
     @Internal
     protected Document(List<Definition> definitions, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
-        this.definitions = definitions;
+        this.definitions = ImmutableList.copyOf(definitions);
     }
 
     /**
@@ -36,11 +38,11 @@ public class Document extends AbstractNode<Document> {
      * @param definitions the definitions that make up this document
      */
     public Document(List<Definition> definitions) {
-        this(definitions, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(definitions, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public List<Definition> getDefinitions() {
-        return new ArrayList<>(definitions);
+        return definitions;
     }
 
     /**
@@ -60,7 +62,7 @@ public class Document extends AbstractNode<Document> {
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>(definitions);
+        return ImmutableList.copyOf(definitions);
     }
 
     @Override

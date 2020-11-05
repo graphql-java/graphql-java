@@ -14,9 +14,10 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.CollectionsUtil.emptyList;
+import static graphql.collect.CollectionsUtil.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<FloatValue> {
@@ -35,7 +36,7 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
      * @param value of the Float
      */
     public FloatValue(BigDecimal value) {
-        this(value, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(value, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public BigDecimal getValue() {

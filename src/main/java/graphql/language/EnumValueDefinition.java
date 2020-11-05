@@ -1,8 +1,10 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.CollectionsUtil;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -14,13 +16,14 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.CollectionsUtil.emptyList;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefinition> implements DirectivesContainer<EnumValueDefinition>, NamedNode<EnumValueDefinition> {
     private final String name;
-    private final List<Directive> directives;
+    private final ImmutableList<Directive> directives;
 
     public static final String CHILD_DIRECTIVES = "directives";
 
@@ -33,7 +36,7 @@ public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefiniti
                                   IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
-        this.directives = (null == directives) ? new ArrayList<>() : directives;
+        this.directives = CollectionsUtil.nonNullCopyOf(directives);
     }
 
     /**
@@ -42,7 +45,7 @@ public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefiniti
      * @param name of the enum value
      */
     public EnumValueDefinition(String name) {
-        this(name, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, emptyList(), null, null, emptyList(), IgnoredChars.EMPTY, CollectionsUtil.emptyMap());
     }
 
     /**
@@ -62,12 +65,12 @@ public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefiniti
 
     @Override
     public List<Directive> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>(directives);
+        return ImmutableList.copyOf(directives);
     }
 
     @Override

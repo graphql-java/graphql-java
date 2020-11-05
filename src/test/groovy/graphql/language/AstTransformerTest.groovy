@@ -548,7 +548,7 @@ class AstTransformerTest extends Specification {
 
             @Override
             TraversalControl visitDocument(Document node, TraverserContext<Node> context) {
-                def children = node.getChildren()
+                def children = new ArrayList<>(node.getChildren())
                 children.remove(0)
                 def newNode = node.transform({ builder -> builder.definitions(children) })
                 changeNode(context, newNode)

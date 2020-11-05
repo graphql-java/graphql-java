@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -20,8 +21,8 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObjectTypeDefinition> implements TypeDefinition<InputObjectTypeDefinition>, DirectivesContainer<InputObjectTypeDefinition>, NamedNode<InputObjectTypeDefinition> {
 
     private final String name;
-    private final List<Directive> directives;
-    private final List<InputValueDefinition> inputValueDefinitions;
+    private final ImmutableList<Directive> directives;
+    private final ImmutableList<InputValueDefinition> inputValueDefinitions;
 
     public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_INPUT_VALUES_DEFINITIONS = "inputValueDefinitions";
@@ -37,17 +38,17 @@ public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObject
                                         Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
-        this.directives = directives;
-        this.inputValueDefinitions = inputValueDefinitions;
+        this.directives = ImmutableList.copyOf(directives);
+        this.inputValueDefinitions = ImmutableList.copyOf(inputValueDefinitions);
     }
 
     @Override
     public List<Directive> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
-        return new ArrayList<>(inputValueDefinitions);
+        return inputValueDefinitions;
     }
 
     @Override
