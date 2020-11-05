@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.ExecutionInput;
 import graphql.GraphQLError;
@@ -16,8 +17,6 @@ import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 import org.dataloader.DataLoaderRegistry;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -42,7 +41,7 @@ public class ExecutionContextBuilder {
     DataLoaderRegistry dataLoaderRegistry;
     CacheControl cacheControl;
     Locale locale;
-    List<GraphQLError> errors = new ArrayList<>();
+    ImmutableList<GraphQLError> errors = ImmutableList.of();
     ValueUnboxer valueUnboxer;
     Object localContext;
     ExecutionInput executionInput;
@@ -58,6 +57,7 @@ public class ExecutionContextBuilder {
      * Creates a new builder based on a previous execution context
      *
      * @param other the previous execution to clone
+     *
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
      */
     public static ExecutionContextBuilder newExecutionContextBuilder(ExecutionContext other) {
@@ -87,7 +87,7 @@ public class ExecutionContextBuilder {
         dataLoaderRegistry = other.getDataLoaderRegistry();
         cacheControl = other.getCacheControl();
         locale = other.getLocale();
-        errors = new ArrayList<>(other.getErrors());
+        errors = ImmutableList.copyOf(other.getErrors());
         valueUnboxer = other.getValueUnboxer();
         executionInput = other.getExecutionInput();
     }
@@ -188,7 +188,7 @@ public class ExecutionContextBuilder {
     }
 
     public ExecutionContextBuilder resetErrors() {
-        this.errors.clear();
+        this.errors = ImmutableList.of();
         return this;
     }
 

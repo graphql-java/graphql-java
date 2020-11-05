@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import com.google.common.collect.ImmutableList;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
@@ -747,7 +748,7 @@ public abstract class ExecutionStrategy {
 
     protected ExecutionResult handleNonNullException(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result, Throwable e) {
         ExecutionResult executionResult = null;
-        List<GraphQLError> errors = new ArrayList<>(executionContext.getErrors());
+        List<GraphQLError> errors = ImmutableList.copyOf(executionContext.getErrors());
         Throwable underlyingException = e;
         if (e instanceof CompletionException) {
             underlyingException = e.getCause();

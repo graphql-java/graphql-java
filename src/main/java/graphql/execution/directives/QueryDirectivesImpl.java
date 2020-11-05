@@ -10,7 +10,6 @@ import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,12 +46,12 @@ public class QueryDirectivesImpl implements QueryDirectives {
             final Map<Field, List<GraphQLDirective>> byField = new LinkedHashMap<>();
             mergedField.getFields().forEach(field -> {
                 List<Directive> directives = field.getDirectives();
-                List<GraphQLDirective> resolvedDirectives = new ArrayList<>(
+                ImmutableList<GraphQLDirective> resolvedDirectives = ImmutableList.copyOf(
                         directivesResolver
                                 .resolveDirectives(directives, schema, variables)
                                 .values()
                 );
-                byField.put(field, ImmutableList.copyOf(resolvedDirectives));
+                byField.put(field, resolvedDirectives);
             });
 
             Map<String, List<GraphQLDirective>> byName = new LinkedHashMap<>();
