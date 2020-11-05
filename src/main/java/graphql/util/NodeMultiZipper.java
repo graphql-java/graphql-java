@@ -1,5 +1,6 @@
 package graphql.util;
 
+import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
@@ -20,12 +21,12 @@ import static graphql.util.NodeZipper.ModificationType.REPLACE;
 public class NodeMultiZipper<T> {
 
     private final T commonRoot;
-    private final List<NodeZipper<T>> zippers;
+    private final ImmutableList<NodeZipper<T>> zippers;
     private final NodeAdapter<T> nodeAdapter;
 
     public NodeMultiZipper(T commonRoot, List<NodeZipper<T>> zippers, NodeAdapter<T> nodeAdapter) {
         this.commonRoot = assertNotNull(commonRoot);
-        this.zippers = Collections.unmodifiableList(new ArrayList<>(zippers));
+        this.zippers = ImmutableList.copyOf(zippers);
         this.nodeAdapter = nodeAdapter;
     }
 
@@ -34,7 +35,7 @@ public class NodeMultiZipper<T> {
      */
     private NodeMultiZipper(T commonRoot, List<NodeZipper<T>> zippers, NodeAdapter<T> nodeAdapter, Object dummy) {
         this.commonRoot = assertNotNull(commonRoot);
-        this.zippers = Collections.unmodifiableList(zippers);
+        this.zippers = ImmutableList.copyOf(zippers);
         this.nodeAdapter = nodeAdapter;
     }
 

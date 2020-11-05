@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
-import static java.util.Collections.unmodifiableList;
 
 /**
  * A default implementation of {@link graphql.relay.Connection}

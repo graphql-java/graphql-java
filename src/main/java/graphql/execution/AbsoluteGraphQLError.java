@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import com.google.common.collect.ImmutableList;
 import graphql.ErrorClassification;
 import graphql.GraphQLError;
 import graphql.Internal;
@@ -100,7 +101,7 @@ public class AbsoluteGraphQLError implements GraphQLError {
                     path.addAll(relativeError.getPath());
                     return path;
                 })
-                .map(Collections::unmodifiableList)
+                .map(l -> (List<Object>) ImmutableList.copyOf(l))
                 .orElse(resultPath.toList());
     }
 
@@ -138,7 +139,7 @@ public class AbsoluteGraphQLError implements GraphQLError {
                                                 base.getColumn() + l.getColumn()))
                                         .orElse(null))
                         .collect(Collectors.toList()))
-                .map(Collections::unmodifiableList)
+                .map(l -> (List<SourceLocation>) ImmutableList.copyOf(l))
                 .orElse(null);
     }
 }

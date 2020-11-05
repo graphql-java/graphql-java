@@ -11,7 +11,6 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotEmpty;
-import static java.util.Collections.unmodifiableList;
 
 /**
  * This represent all Fields in a query which overlap and are merged into one.

@@ -11,6 +11,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+@SuppressWarnings({"NullableProblems", "unchecked", "rawtypes"})
 @Internal
 public final class ImmutableMapWithNullValues<K, V> implements Map<K, V> {
 
@@ -60,23 +61,27 @@ public final class ImmutableMapWithNullValues<K, V> implements Map<K, V> {
     }
 
     @Override
+    @Deprecated
     public V put(K key, V value) {
-        return delegate.put(key, value);
+        throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public V remove(Object key) {
-        return delegate.remove(key);
+        throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public void putAll(Map<? extends K, ? extends V> m) {
-        delegate.putAll(m);
+        throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public void clear() {
-        delegate.clear();
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -115,47 +120,56 @@ public final class ImmutableMapWithNullValues<K, V> implements Map<K, V> {
     }
 
     @Override
+    @Deprecated
     public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
-        delegate.replaceAll(function);
+        throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public V putIfAbsent(K key, V value) {
-        return delegate.putIfAbsent(key, value);
+        throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public boolean remove(Object key, Object value) {
-        return delegate.remove(key, value);
+        throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public boolean replace(K key, V oldValue, V newValue) {
-        return delegate.replace(key, oldValue, newValue);
+        throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public V replace(K key, V value) {
-        return delegate.replace(key, value);
+        throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
-        return delegate.computeIfAbsent(key, mappingFunction);
+        throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        return delegate.computeIfPresent(key, remappingFunction);
+        throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        return delegate.compute(key, remappingFunction);
+        throw new UnsupportedOperationException();
     }
 
     @Override
+    @Deprecated
     public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
-        return delegate.merge(key, value, remappingFunction);
+        throw new UnsupportedOperationException();
     }
 }

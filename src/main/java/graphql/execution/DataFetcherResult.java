@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
-import static java.util.Collections.unmodifiableList;
 
 
 /**

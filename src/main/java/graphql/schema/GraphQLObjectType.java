@@ -11,7 +11,6 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,7 +26,6 @@ import static graphql.schema.GraphqlTypeComparators.sortTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.unmodifiableList;
 
 /**
  * This is the work horse type and represents an object with one or more field values that can be retrieved
@@ -140,9 +138,9 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     @Override
     public List<GraphQLNamedOutputType> getInterfaces() {
         if (replacedInterfaces != null) {
-            return Collections.unmodifiableList(replacedInterfaces);
+            return replacedInterfaces;
         }
-        return unmodifiableList(originalInterfaces);
+        return originalInterfaces;
     }
 
     public String getDescription() {
