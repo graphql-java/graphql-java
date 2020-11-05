@@ -204,9 +204,8 @@ public class GraphQLSchema {
      */
     public boolean isPossibleType(GraphQLNamedType abstractType, GraphQLObjectType concreteType) {
         if (abstractType instanceof GraphQLInterfaceType) {
-            return getImplementations((GraphQLInterfaceType) abstractType).stream()
-                    .map(GraphQLObjectType::getName)
-                    .anyMatch(name -> concreteType.getName().equals(name));
+            List<GraphQLObjectType> implementations = getImplementations((GraphQLInterfaceType) abstractType);
+            return implementations.contains(concreteType);
         } else if (abstractType instanceof GraphQLUnionType) {
             return ((GraphQLUnionType) abstractType).getTypes().stream()
                     .map(GraphQLNamedType::getName)
