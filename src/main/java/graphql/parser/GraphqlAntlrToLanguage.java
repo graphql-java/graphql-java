@@ -1,6 +1,7 @@
 package graphql.parser;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.language.Argument;
@@ -72,6 +73,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.collect.CollectionsUtil.emptyList;
 import static graphql.collect.CollectionsUtil.listMap;
 import static graphql.parser.StringValueParsing.parseSingleQuotedString;
 import static graphql.parser.StringValueParsing.parseTripleQuotedString;
@@ -153,7 +155,7 @@ public class GraphqlAntlrToLanguage {
 
     protected List<VariableDefinition> createVariableDefinitions(GraphqlParser.VariableDefinitionsContext ctx) {
         if (ctx == null) {
-            return new ArrayList<>();
+            return emptyList();
         }
         return listMap(ctx.variableDefinition(), this::createVariableDefinition);
     }
@@ -354,7 +356,7 @@ public class GraphqlAntlrToLanguage {
 
     protected List<Argument> createArguments(GraphqlParser.ArgumentsContext ctx) {
         if (ctx == null) {
-            return new ArrayList<>();
+            return emptyList();
         }
         return listMap(ctx.argument(), this::createArgument);
     }
@@ -362,7 +364,7 @@ public class GraphqlAntlrToLanguage {
 
     protected List<Directive> createDirectives(GraphqlParser.DirectivesContext ctx) {
         if (ctx == null) {
-            return new ArrayList<>();
+            return emptyList();
         }
         return listMap(ctx.directive(), this::createDirective);
     }
@@ -457,14 +459,14 @@ public class GraphqlAntlrToLanguage {
 
     protected List<FieldDefinition> createFieldDefinitions(GraphqlParser.FieldsDefinitionContext ctx) {
         if (ctx == null) {
-            return new ArrayList<>();
+            return emptyList();
         }
         return listMap(ctx.fieldDefinition(), this::createFieldDefinition);
     }
 
     protected List<FieldDefinition> createFieldDefinitions(GraphqlParser.ExtensionFieldsDefinitionContext ctx) {
         if (ctx == null) {
-            return new ArrayList<>();
+            return emptyList();
         }
         return listMap(ctx.fieldDefinition(), this::createFieldDefinition);
     }
@@ -871,7 +873,7 @@ public class GraphqlAntlrToLanguage {
             int line = sourceAndLine.getLine() + 1;
             comments.add(new Comment(text, new SourceLocation(line, column, sourceAndLine.getSourceName())));
         }
-        return comments;
+        return ImmutableList.copyOf(comments);
     }
 
 

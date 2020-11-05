@@ -3,7 +3,6 @@ package graphql.language;
 
 import graphql.Internal;
 import graphql.PublicApi;
-import graphql.collect.CollectionsUtil;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -14,6 +13,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.CollectionsUtil.emptyList;
+import static graphql.collect.CollectionsUtil.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
 
@@ -34,7 +35,7 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarVa
      * @param value of the Boolean
      */
     public BooleanValue(boolean value) {
-        this(value, null, CollectionsUtil.emptyList(), IgnoredChars.EMPTY, CollectionsUtil.emptyMap());
+        this(value, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public boolean isValue() {
@@ -43,7 +44,7 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarVa
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>();
+        return emptyList();
     }
 
     @Override

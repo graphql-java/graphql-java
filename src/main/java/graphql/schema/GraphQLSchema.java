@@ -265,7 +265,7 @@ public class GraphQLSchema {
      * @return a list of directives
      */
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return ImmutableList.copyOf(directives);
     }
 
     /**
@@ -328,7 +328,7 @@ public class GraphQLSchema {
     }
 
     public List<SchemaExtensionDefinition> getExtensionDefinitions() {
-        return new ArrayList<>(extensionDefinitions);
+        return extensionDefinitions;
     }
 
     public boolean isSupportingMutations() {

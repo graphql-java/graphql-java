@@ -146,7 +146,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     /**

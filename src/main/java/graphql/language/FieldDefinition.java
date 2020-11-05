@@ -62,7 +62,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
-        return new ArrayList<>(inputValueDefinitions);
+        return inputValueDefinitions;
     }
 
     @Override

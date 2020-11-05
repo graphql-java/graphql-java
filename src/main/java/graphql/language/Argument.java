@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -54,9 +55,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
-        result.add(value);
-        return result;
+        return ImmutableList.of(value);
     }
 
     @Override

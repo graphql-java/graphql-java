@@ -157,7 +157,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
 

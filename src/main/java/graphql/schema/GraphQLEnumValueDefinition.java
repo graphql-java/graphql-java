@@ -155,7 +155,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
 
     @Override
     public List<GraphQLSchemaElement> getChildren() {
-        return new ArrayList<>(directives);
+        return ImmutableList.copyOf(directives);
     }
 
     @Override

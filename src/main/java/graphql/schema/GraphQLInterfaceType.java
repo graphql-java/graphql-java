@@ -130,7 +130,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
     @Override
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
-        return new ArrayList<>(fieldDefinitionsByName.values());
+        return ImmutableList.copyOf(fieldDefinitionsByName.values());
     }
 
     @Override

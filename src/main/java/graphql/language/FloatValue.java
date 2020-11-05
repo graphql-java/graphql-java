@@ -45,7 +45,7 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>();
+        return emptyList();
     }
 
     @Override

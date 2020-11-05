@@ -7,7 +7,6 @@ import graphql.language.DirectiveDefinition;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -124,7 +123,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
 
     @Override
     public List<GraphQLSchemaElement> getChildren() {
-        return new ArrayList<>(arguments);
+        return ImmutableList.copyOf(arguments);
     }
 
     @Override

@@ -58,7 +58,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
-        return new ArrayList<>(inputValueDefinitions);
+        return inputValueDefinitions;
     }
 
     public List<DirectiveLocation> getDirectiveLocations() {

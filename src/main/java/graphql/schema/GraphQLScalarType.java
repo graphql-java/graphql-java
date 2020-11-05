@@ -159,7 +159,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
     @Override
     public List<GraphQLSchemaElement> getChildren() {
-        return new ArrayList<>(directives);
+        return ImmutableList.copyOf(directives);
     }
 
     @Override
