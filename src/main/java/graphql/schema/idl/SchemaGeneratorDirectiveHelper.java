@@ -26,8 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.collect.CollectionsUtil.listMap;
-import static java.util.stream.Collectors.toList;
+import static graphql.collect.CollectionsUtil.map;
 
 /**
  * This contains the helper code that allows {@link graphql.schema.idl.SchemaDirectiveWiring} implementations
@@ -123,7 +122,7 @@ public class SchemaGeneratorDirectiveHelper {
     }
 
     private List<GraphQLArgument> wireArguments(GraphQLFieldDefinition fieldDefinition, GraphQLFieldsContainer fieldsContainer, NamedNode fieldsContainerNode, Parameters params, GraphQLFieldDefinition field) {
-        return listMap(field.getArguments(), argument -> {
+        return map(field.getArguments(), argument -> {
 
             NodeParentTree<NamedNode> nodeParentTree = buildAstTree(fieldsContainerNode, field.getDefinition(), argument.getDefinition());
             GraphqlElementParentTree elementParentTree = buildRuntimeTree(fieldsContainer, field, argument);
@@ -135,7 +134,7 @@ public class SchemaGeneratorDirectiveHelper {
     }
 
     private List<GraphQLFieldDefinition> wireFields(GraphQLFieldsContainer fieldsContainer, NamedNode fieldsContainerNode, Parameters params) {
-        return listMap(fieldsContainer.getFieldDefinitions(),fieldDefinition -> {
+        return map(fieldsContainer.getFieldDefinitions(), fieldDefinition -> {
 
             // and for each argument in the fieldDefinition run the wiring for them - and note that they can change
             List<GraphQLArgument> newArgs = wireArguments(fieldDefinition, fieldsContainer, fieldsContainerNode, params, fieldDefinition);
@@ -181,7 +180,7 @@ public class SchemaGeneratorDirectiveHelper {
 
     public GraphQLEnumType onEnum(GraphQLEnumType enumType, Parameters params) {
 
-        List<GraphQLEnumValueDefinition> newEnums = listMap(enumType.getValues(),enumValueDefinition -> {
+        List<GraphQLEnumValueDefinition> newEnums = map(enumType.getValues(), enumValueDefinition -> {
 
             NodeParentTree<NamedNode> nodeParentTree = buildAstTree(enumType.getDefinition(), enumValueDefinition.getDefinition());
             GraphqlElementParentTree elementParentTree = buildRuntimeTree(enumType, enumValueDefinition);
@@ -202,7 +201,7 @@ public class SchemaGeneratorDirectiveHelper {
     }
 
     public GraphQLInputObjectType onInputObjectType(GraphQLInputObjectType inputObjectType, Parameters params) {
-        List<GraphQLInputObjectField> newFields = listMap(inputObjectType.getFieldDefinitions(),inputField -> {
+        List<GraphQLInputObjectField> newFields = map(inputObjectType.getFieldDefinitions(), inputField -> {
 
             NodeParentTree<NamedNode> nodeParentTree = buildAstTree(inputObjectType.getDefinition(), inputField.getDefinition());
             GraphqlElementParentTree elementParentTree = buildRuntimeTree(inputObjectType, inputField);

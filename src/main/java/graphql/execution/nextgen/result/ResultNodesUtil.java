@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static graphql.collect.CollectionsUtil.listMap;
+import static graphql.collect.CollectionsUtil.map;
 import static graphql.execution.nextgen.result.ResultNodeAdapter.RESULT_NODE_ADAPTER;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
@@ -122,7 +122,7 @@ public class ResultNodesUtil {
     }
 
     public static NonNullableFieldWasNullException newNullableException(ExecutionStepInfo executionStepInfo, List<NamedResultNode> children) {
-        return newNullableException(executionStepInfo, listMap(children, NamedResultNode::getNode));
+        return newNullableException(executionStepInfo, map(children, NamedResultNode::getNode));
     }
 
     public static Map<String, ExecutionResultNode> namedNodesToMap(List<NamedResultNode> namedResultNodes) {

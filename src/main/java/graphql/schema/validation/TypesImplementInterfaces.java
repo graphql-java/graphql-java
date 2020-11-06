@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static graphql.collect.CollectionsUtil.listMap;
+import static graphql.collect.CollectionsUtil.map;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
@@ -112,7 +112,7 @@ public class TypesImplementInterfaces implements SchemaValidationRule {
         List<GraphQLArgument> objectArgs = objectFieldDef.getArguments();
 
         Map<String, GraphQLArgument> interfaceArgsByName = FpKit.getByName(interfaceArgs, GraphQLArgument::getName);
-        List<String> objectArgsNames = listMap(objectArgs, GraphQLArgument::getName);
+        List<String> objectArgsNames = map(objectArgs, GraphQLArgument::getName);
 
         if (!objectArgsNames.containsAll(interfaceArgsByName.keySet())) {
             final String missingArgsNames = interfaceArgsByName.keySet().stream()

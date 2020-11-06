@@ -13,7 +13,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import static graphql.collect.CollectionsUtil.listMap;
+import static graphql.collect.CollectionsUtil.map;
 
 @Internal
 public class ResultNodesCreator {
@@ -60,7 +60,7 @@ public class ResultNodesCreator {
     }
 
     private ExecutionResultNode createListResultNode(FetchedValueAnalysis fetchedValueAnalysis) {
-        List<ExecutionResultNode> executionResultNodes = listMap(fetchedValueAnalysis.getChildren(), this::createResultNode);
+        List<ExecutionResultNode> executionResultNodes = map(fetchedValueAnalysis.getChildren(), this::createResultNode);
         return new ListExecutionResultNode(fetchedValueAnalysis.getExecutionStepInfo(), createResolvedValue(fetchedValueAnalysis), executionResultNodes);
     }
 }

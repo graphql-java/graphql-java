@@ -21,14 +21,13 @@ import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.collect.CollectionsUtil.listMap;
+import static graphql.collect.CollectionsUtil.map;
 
 /**
  * This allows you to chain together a number of {@link graphql.execution.instrumentation.Instrumentation} implementations
@@ -72,7 +71,7 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginExecution(final InstrumentationExecutionParameters parameters) {
-        return new ChainedInstrumentationContext<>(listMap(instrumentations, instrumentation -> {
+        return new ChainedInstrumentationContext<>(map(instrumentations, instrumentation -> {
             InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
             return instrumentation.beginExecution(parameters.withNewState(state));
         }));
@@ -80,7 +79,7 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
-        return new ChainedInstrumentationContext<>(listMap(instrumentations, instrumentation -> {
+        return new ChainedInstrumentationContext<>(map(instrumentations, instrumentation -> {
             InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
             return instrumentation.beginParse(parameters.withNewState(state));
         }));
@@ -88,7 +87,7 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        return new ChainedInstrumentationContext<>(listMap(instrumentations, instrumentation -> {
+        return new ChainedInstrumentationContext<>(map(instrumentations, instrumentation -> {
             InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
             return instrumentation.beginValidation(parameters.withNewState(state));
         }));
@@ -96,7 +95,7 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
-        return new ChainedInstrumentationContext<>(listMap(instrumentations, instrumentation -> {
+        return new ChainedInstrumentationContext<>(map(instrumentations, instrumentation -> {
             InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
             return instrumentation.beginExecuteOperation(parameters.withNewState(state));
         }));
@@ -104,7 +103,7 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @Override
     public ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        return new ChainedExecutionStrategyInstrumentationContext(listMap(instrumentations, instrumentation -> {
+        return new ChainedExecutionStrategyInstrumentationContext(map(instrumentations, instrumentation -> {
             InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
             return instrumentation.beginExecutionStrategy(parameters.withNewState(state));
         }));
@@ -113,7 +112,7 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters) {
-        return new ChainedInstrumentationContext<>(listMap(instrumentations, instrumentation -> {
+        return new ChainedInstrumentationContext<>(map(instrumentations, instrumentation -> {
             InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
             return instrumentation.beginSubscribedFieldEvent(parameters.withNewState(state));
         }));
@@ -121,7 +120,7 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
-        return new ChainedInstrumentationContext<>(listMap(instrumentations, instrumentation -> {
+        return new ChainedInstrumentationContext<>(map(instrumentations, instrumentation -> {
             InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
             return instrumentation.beginField(parameters.withNewState(state));
         }));
@@ -129,7 +128,7 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        return new ChainedInstrumentationContext<>(listMap(instrumentations, instrumentation -> {
+        return new ChainedInstrumentationContext<>(map(instrumentations, instrumentation -> {
             InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
             return instrumentation.beginFieldFetch(parameters.withNewState(state));
         }));
@@ -137,7 +136,7 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters) {
-        return new ChainedInstrumentationContext<>(listMap(instrumentations, instrumentation -> {
+        return new ChainedInstrumentationContext<>(map(instrumentations, instrumentation -> {
             InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
             return instrumentation.beginFieldComplete(parameters.withNewState(state));
         }));
@@ -145,7 +144,7 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
-        return new ChainedInstrumentationContext<>(listMap(instrumentations, instrumentation -> {
+        return new ChainedInstrumentationContext<>(map(instrumentations, instrumentation -> {
             InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
             return instrumentation.beginFieldListComplete(parameters.withNewState(state));
         }));

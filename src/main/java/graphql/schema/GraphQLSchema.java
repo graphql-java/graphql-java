@@ -29,7 +29,7 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.DirectivesUtil.directivesByName;
 import static graphql.collect.CollectionsUtil.emptyList;
-import static graphql.collect.CollectionsUtil.listMap;
+import static graphql.collect.CollectionsUtil.map;
 import static graphql.collect.CollectionsUtil.nonNullCopyOf;
 import static graphql.schema.GraphqlTypeComparators.byNameAsc;
 import static graphql.schema.GraphqlTypeComparators.sortTypes;
@@ -158,7 +158,7 @@ public class GraphQLSchema {
     private ImmutableMap<String, ImmutableList<String>> buildInterfacesToObjectName(ImmutableMap<String, ImmutableList<GraphQLObjectType>> byInterface) {
         ImmutableMap.Builder<String, ImmutableList<String>> map = ImmutableMap.builder();
         for (Map.Entry<String, ImmutableList<GraphQLObjectType>> e : byInterface.entrySet()) {
-            ImmutableList<String> objectTypeNames = listMap(e.getValue(), GraphQLObjectType::getName);
+            ImmutableList<String> objectTypeNames = map(e.getValue(), GraphQLObjectType::getName);
             map.put(e.getKey(), objectTypeNames);
         }
         return map.build();

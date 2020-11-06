@@ -15,7 +15,7 @@ import graphql.util.NodeZipper;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static graphql.collect.CollectionsUtil.listMap;
+import static graphql.collect.CollectionsUtil.map;
 import static graphql.execution.Async.each;
 import static graphql.execution.Async.mapCompose;
 
@@ -51,7 +51,7 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
 
     private CompletableFuture<ExecutionResultNode> resolveAllChildNodes(ExecutionContext context, ExecutionResultNode node) {
         NodeMultiZipper<ExecutionResultNode> unresolvedNodes = ResultNodesUtil.getUnresolvedNodes(node);
-        List<CompletableFuture<NodeZipper<ExecutionResultNode>>> resolvedNodes = listMap(unresolvedNodes.getZippers(), unresolvedNode -> resolveNode(context, unresolvedNode));
+        List<CompletableFuture<NodeZipper<ExecutionResultNode>>> resolvedNodes = map(unresolvedNodes.getZippers(), unresolvedNode -> resolveNode(context, unresolvedNode));
         return resolvedNodesToResultNode(unresolvedNodes, resolvedNodes);
     }
 

@@ -7,7 +7,7 @@ import graphql.util.TraverserContext;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.collect.CollectionsUtil.listMap;
+import static graphql.collect.CollectionsUtil.map;
 import static graphql.util.TraversalControl.CONTINUE;
 
 @Internal
@@ -21,13 +21,13 @@ public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {
     @Override
     public TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
 
-        node.replaceInterfaces(listMap(node.getInterfaces(), type -> (GraphQLNamedOutputType) typeMap.get(type.getName())));
+        node.replaceInterfaces(map(node.getInterfaces(), type -> (GraphQLNamedOutputType) typeMap.get(type.getName())));
         return super.visitGraphQLObjectType(node, context);
     }
 
     @Override
     public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLSchemaElement> context) {
-        node.replaceInterfaces(listMap(node.getInterfaces(), type -> (GraphQLNamedOutputType) typeMap.get(type.getName())));
+        node.replaceInterfaces(map(node.getInterfaces(), type -> (GraphQLNamedOutputType) typeMap.get(type.getName())));
         return super.visitGraphQLInterfaceType(node, context);
     }
 
@@ -35,7 +35,7 @@ public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {
     @Override
     public TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLSchemaElement> context) {
 
-        node.replaceTypes(listMap(node.getTypes(), type -> (GraphQLNamedOutputType) typeMap.get(type.getName())));
+        node.replaceTypes(map(node.getTypes(), type -> (GraphQLNamedOutputType) typeMap.get(type.getName())));
         return super.visitGraphQLUnionType(node, context);
     }
 

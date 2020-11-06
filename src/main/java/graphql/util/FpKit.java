@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static graphql.collect.CollectionsUtil.listMap;
 import static java.util.Collections.singletonList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.mapping;

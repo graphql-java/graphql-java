@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.CollectionsUtil.emptyList;
 
 @PublicApi
 public class ExecutionContextBuilder {
@@ -41,7 +42,7 @@ public class ExecutionContextBuilder {
     DataLoaderRegistry dataLoaderRegistry;
     CacheControl cacheControl;
     Locale locale;
-    ImmutableList<GraphQLError> errors = ImmutableList.of();
+    ImmutableList<GraphQLError> errors = emptyList();
     ValueUnboxer valueUnboxer;
     Object localContext;
     ExecutionInput executionInput;
@@ -188,7 +189,7 @@ public class ExecutionContextBuilder {
     }
 
     public ExecutionContextBuilder resetErrors() {
-        this.errors = ImmutableList.of();
+        this.errors = emptyList();
         return this;
     }
 

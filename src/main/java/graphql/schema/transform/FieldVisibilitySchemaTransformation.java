@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static graphql.collect.CollectionsUtil.listMap;
 import static graphql.schema.SchemaTransformer.transformSchema;
 import static graphql.util.TreeTransformerUtil.deleteNode;
 

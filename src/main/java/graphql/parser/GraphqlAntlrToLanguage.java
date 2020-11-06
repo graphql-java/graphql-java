@@ -74,7 +74,7 @@ import java.util.List;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.collect.CollectionsUtil.emptyList;
-import static graphql.collect.CollectionsUtil.listMap;
+import static graphql.collect.CollectionsUtil.map;
 import static graphql.parser.StringValueParsing.parseSingleQuotedString;
 import static graphql.parser.StringValueParsing.parseTripleQuotedString;
 
@@ -98,7 +98,7 @@ public class GraphqlAntlrToLanguage {
     public Document createDocument(GraphqlParser.DocumentContext ctx) {
         Document.Builder document = Document.newDocument();
         addCommonData(document, ctx);
-        document.definitions(listMap(ctx.definition(), this::createDefinition));
+        document.definitions(map(ctx.definition(), this::createDefinition));
         return document.build();
     }
 
@@ -157,7 +157,7 @@ public class GraphqlAntlrToLanguage {
         if (ctx == null) {
             return emptyList();
         }
-        return listMap(ctx.variableDefinition(), this::createVariableDefinition);
+        return map(ctx.variableDefinition(), this::createVariableDefinition);
     }
 
     protected VariableDefinition createVariableDefinition(GraphqlParser.VariableDefinitionContext ctx) {
@@ -191,7 +191,7 @@ public class GraphqlAntlrToLanguage {
         }
         SelectionSet.Builder builder = SelectionSet.newSelectionSet();
         addCommonData(builder, ctx);
-        List<Selection> selections = listMap(ctx.selection(), selectionContext -> {
+        List<Selection> selections = map(ctx.selection(), selectionContext -> {
             if (selectionContext.field() != null) {
                 return createField(selectionContext.field());
             }
@@ -358,7 +358,7 @@ public class GraphqlAntlrToLanguage {
         if (ctx == null) {
             return emptyList();
         }
-        return listMap(ctx.argument(), this::createArgument);
+        return map(ctx.argument(), this::createArgument);
     }
 
 
@@ -366,7 +366,7 @@ public class GraphqlAntlrToLanguage {
         if (ctx == null) {
             return emptyList();
         }
-        return listMap(ctx.directive(), this::createDirective);
+        return map(ctx.directive(), this::createDirective);
     }
 
     protected Directive createDirective(GraphqlParser.DirectiveContext ctx) {
@@ -382,7 +382,7 @@ public class GraphqlAntlrToLanguage {
         addCommonData(def, ctx);
         def.directives(createDirectives(ctx.directives()));
         def.description(newDescription(ctx.description()));
-        def.operationTypeDefinitions(listMap(ctx.operationTypeDefinition(), this::createOperationTypeDefinition));
+        def.operationTypeDefinitions(map(ctx.operationTypeDefinition(), this::createOperationTypeDefinition));
         return def.build();
     }
 
@@ -397,7 +397,7 @@ public class GraphqlAntlrToLanguage {
         }
         def.directives(directives);
 
-        List<OperationTypeDefinition> operationTypeDefs = listMap(ctx.operationTypeDefinition(), this::createOperationTypeDefinition);
+        List<OperationTypeDefinition> operationTypeDefs = map(ctx.operationTypeDefinition(), this::createOperationTypeDefinition);
         def.operationTypeDefinitions(operationTypeDefs);
         return def.build();
     }
@@ -461,14 +461,14 @@ public class GraphqlAntlrToLanguage {
         if (ctx == null) {
             return emptyList();
         }
-        return listMap(ctx.fieldDefinition(), this::createFieldDefinition);
+        return map(ctx.fieldDefinition(), this::createFieldDefinition);
     }
 
     protected List<FieldDefinition> createFieldDefinitions(GraphqlParser.ExtensionFieldsDefinitionContext ctx) {
         if (ctx == null) {
             return emptyList();
         }
-        return listMap(ctx.fieldDefinition(), this::createFieldDefinition);
+        return map(ctx.fieldDefinition(), this::createFieldDefinition);
     }
 
 
@@ -486,7 +486,7 @@ public class GraphqlAntlrToLanguage {
     }
 
     protected List<InputValueDefinition> createInputValueDefinitions(List<GraphqlParser.InputValueDefinitionContext> defs) {
-        return listMap(defs, this::createInputValueDefinition);
+        return map(defs, this::createInputValueDefinition);
     }
 
     protected InputValueDefinition createInputValueDefinition(GraphqlParser.InputValueDefinitionContext ctx) {
@@ -571,7 +571,7 @@ public class GraphqlAntlrToLanguage {
         def.directives(createDirectives(ctx.directives()));
         if (ctx.enumValueDefinitions() != null) {
             def.enumValueDefinitions(
-                    listMap(ctx.enumValueDefinitions().enumValueDefinition(), this::createEnumValueDefinition));
+                    map(ctx.enumValueDefinitions().enumValueDefinition(), this::createEnumValueDefinition));
         }
         return def.build();
     }
@@ -583,7 +583,7 @@ public class GraphqlAntlrToLanguage {
         def.directives(createDirectives(ctx.directives()));
         if (ctx.extensionEnumValueDefinitions() != null) {
             def.enumValueDefinitions(
-                    listMap(ctx.extensionEnumValueDefinitions().enumValueDefinition(), this::createEnumValueDefinition));
+                    map(ctx.extensionEnumValueDefinitions().enumValueDefinition(), this::createEnumValueDefinition));
         }
         return def.build();
     }
@@ -787,7 +787,7 @@ public class GraphqlAntlrToLanguage {
         if (tokens == null) {
             return Collections.emptyList();
         }
-        return listMap(tokens, this::createIgnoredChar);
+        return map(tokens, this::createIgnoredChar);
 
     }
 
@@ -880,7 +880,7 @@ public class GraphqlAntlrToLanguage {
     private List<Type> getImplementz(GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext) {
         List<Type> implementz = new ArrayList<>();
         while (implementsInterfacesContext != null) {
-            List<TypeName> typeNames = listMap(implementsInterfacesContext.typeName(), this::createTypeName);
+            List<TypeName> typeNames = map(implementsInterfacesContext.typeName(), this::createTypeName);
 
             implementz.addAll(0, typeNames);
             implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();

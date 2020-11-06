@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static graphql.collect.CollectionsUtil.listMap;
+import static graphql.collect.CollectionsUtil.map;
 
 /**
  * This little helper allows GraphQlErrors to implement
@@ -51,7 +51,7 @@ public class GraphqlErrorHelper {
     }
 
     public static Object locations(List<SourceLocation> locations) {
-        return listMap(locations, GraphqlErrorHelper::location);
+        return map(locations, GraphqlErrorHelper::location);
     }
 
     public static Object location(SourceLocation location) {

@@ -13,7 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
-import static graphql.collect.CollectionsUtil.listMap;
+import static graphql.collect.CollectionsUtil.map;
 
 /**
  * This class implements the graphql Cache Control specification as outlined in https://github.com/apollographql/apollo-cache-control
@@ -172,7 +172,7 @@ public class CacheControl {
     }
 
     private Map<String, Object> hintsToCacheControlProperties() {
-        List<Map<String, Object>> recordedHints = listMap(hints, Hint::toMap);
+        List<Map<String, Object>> recordedHints = map(hints, Hint::toMap);
 
         Map<String, Object> cacheControl = new LinkedHashMap<>();
         cacheControl.put("version", 1);

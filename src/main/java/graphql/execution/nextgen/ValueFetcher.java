@@ -42,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
-import static graphql.collect.CollectionsUtil.listMap;
+import static graphql.collect.CollectionsUtil.map;
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 import static java.util.Collections.singletonList;
 
@@ -209,7 +209,7 @@ public class ValueFetcher {
             List<GraphQLError> addErrors;
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result.getFetchedValue();
             if (dataFetcherResult.isMapRelativeErrors()) {
-                addErrors = listMap(dataFetcherResult.getErrors(), relError -> new AbsoluteGraphQLError(sameField, resultPath, relError));
+                addErrors = map(dataFetcherResult.getErrors(), relError -> new AbsoluteGraphQLError(sameField, resultPath, relError));
             } else {
                 addErrors = ImmutableList.copyOf(dataFetcherResult.getErrors());
             }

@@ -2,7 +2,6 @@ package graphql.execution;
 
 
 import graphql.Internal;
-import graphql.collect.CollectionsUtil;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.NullValue;
@@ -31,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertShouldNeverHappen;
-import static graphql.collect.CollectionsUtil.listMap;
+import static graphql.collect.CollectionsUtil.map;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
@@ -193,7 +192,7 @@ public class ValuesResolver {
     private Object coerceValueForInputObjectType(GraphqlFieldVisibility fieldVisibility, VariableDefinition variableDefinition, GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
         Map<String, Object> result = new LinkedHashMap<>();
         List<GraphQLInputObjectField> fields = fieldVisibility.getFieldDefinitions(inputObjectType);
-        List<String> fieldNames = listMap(fields, GraphQLInputObjectField::getName);
+        List<String> fieldNames = map(fields, GraphQLInputObjectField::getName);
         for (String inputFieldName : input.keySet()) {
             if (!fieldNames.contains(inputFieldName)) {
                 throw new InputMapDefinesTooManyFieldsException(inputObjectType, inputFieldName);

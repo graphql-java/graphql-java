@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
-import static graphql.collect.CollectionsUtil.listMap;
+import static graphql.collect.CollectionsUtil.map;
 
 /**
  * The standard graphql execution strategy that runs fields asynchronously non-blocking.
@@ -69,7 +69,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                 handleResultsConsumer.accept(null, throwable.getCause());
                 return;
             }
-            List<CompletableFuture<ExecutionResult>> executionResultFuture = listMap(completeValueInfos, FieldValueInfo::getFieldValue);
+            List<CompletableFuture<ExecutionResult>> executionResultFuture = map(completeValueInfos, FieldValueInfo::getFieldValue);
             executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
             Async.each(executionResultFuture).whenComplete(handleResultsConsumer);
         }).exceptionally((ex) -> {

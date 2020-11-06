@@ -1,5 +1,6 @@
 package graphql.execution.directives;
 
+import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
 import graphql.execution.ValuesResolver;
 import graphql.language.Directive;
@@ -33,7 +34,7 @@ public class DirectivesResolver {
                 directiveMap.put(newDirective.getName(), newDirective);
             }
         });
-        return directiveMap;
+        return ImmutableMap.copyOf(directiveMap);
     }
 
     private void buildArguments(GraphQLDirective.Builder directiveBuilder, GraphQLCodeRegistry codeRegistry, GraphQLDirective protoType, Directive fieldDirective, Map<String, Object> variables) {

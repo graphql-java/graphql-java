@@ -1,5 +1,6 @@
 package graphql.collect;
 
+import graphql.Assert;
 import graphql.Internal;
 
 import java.util.Collection;
@@ -11,16 +12,31 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+/**
+ * The standard ImmutableMap does not allow null values.  The implementation does.
+ * We have cases in graphql, around arguments where a mep entry can be explicitly set to null
+ * and we want immutable smart maps for these case.
+ *
+ * @param <K> for key
+ * @param <V> for victory
+ */
 @SuppressWarnings({"NullableProblems", "unchecked", "rawtypes"})
 @Internal
 public final class ImmutableMapWithNullValues<K, V> implements Map<K, V> {
 
     private final Map<K, V> delegate;
 
-    private static final ImmutableMapWithNullValues emptyMap = copyOf(new LinkedHashMap<>());
+    private static final ImmutableMapWithNullValues emptyMap = new ImmutableMapWithNullValues();
 
     private ImmutableMapWithNullValues(Map<K, V> values) {
         this.delegate = Collections.unmodifiableMap(new LinkedHashMap<>(values));
+    }
+
+    /**
+     * Only used to construct the singleton empty map
+     */
+    private ImmutableMapWithNullValues() {
+        this(Collections.emptyMap());
     }
 
 
@@ -28,11 +44,15 @@ public final class ImmutableMapWithNullValues<K, V> implements Map<K, V> {
         return emptyMap;
     }
 
-    public static <K, V> ImmutableMapWithNullValues<K, V> copyOf(Map<K, V> values) {
-        if (values instanceof ImmutableMapWithNullValues) {
-            return (ImmutableMapWithNullValues<K, V>) values;
+    public static <K, V> ImmutableMapWithNullValues<K, V> copyOf(Map<K, V> map) {
+        Assert.assertNotNull(map);
+        if (map instanceof ImmutableMapWithNullValues) {
+            return (ImmutableMapWithNullValues<K, V>) map;
         }
-        return new ImmutableMapWithNullValues<>(values);
+        if (map.isEmpty()) {
+            return emptyMap();
+        }
+        return new ImmutableMapWithNullValues<>(map);
     }
 
     @Override

@@ -42,7 +42,7 @@ public class ListBenchmark {
 
     @Benchmark
     public void benchmarkImmutableListBuilder(Blackhole blackhole) {
-        List<String> output = CollectionsUtil.listMap(startingList, mapper);
+        List<String> output = CollectionsUtil.map(startingList, mapper);
         blackhole.consume(output);
     }
 

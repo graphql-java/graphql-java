@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static graphql.collect.CollectionsUtil.listMap;
+import static graphql.collect.CollectionsUtil.map;
 
 @Internal
 public class ExecutionResultImpl implements ExecutionResult {
@@ -91,7 +91,7 @@ public class ExecutionResultImpl implements ExecutionResult {
     }
 
     private Object errorsToSpec(List<GraphQLError> errors) {
-        return listMap(errors, GraphQLError::toSpecification);
+        return map(errors, GraphQLError::toSpecification);
     }
 
     @Override
