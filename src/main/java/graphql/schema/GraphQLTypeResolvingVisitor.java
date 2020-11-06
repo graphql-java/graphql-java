@@ -7,7 +7,7 @@ import graphql.util.TraverserContext;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.collect.CollectionsUtil.map;
+import static graphql.collect.ImmutableKit.map;
 import static graphql.util.TraversalControl.CONTINUE;
 
 @Internal

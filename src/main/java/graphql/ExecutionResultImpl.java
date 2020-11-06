@@ -2,7 +2,7 @@ package graphql;
 
 
 import com.google.common.collect.ImmutableList;
-import graphql.collect.CollectionsUtil;
+import graphql.collect.ImmutableKit;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static graphql.collect.CollectionsUtil.map;
+import static graphql.collect.ImmutableKit.map;
 
 @Internal
 public class ExecutionResultImpl implements ExecutionResult {
@@ -48,7 +48,7 @@ public class ExecutionResultImpl implements ExecutionResult {
         if (errors != null && !errors.isEmpty()) {
             this.errors = ImmutableList.copyOf(errors);
         } else {
-            this.errors = CollectionsUtil.emptyList();
+            this.errors = ImmutableKit.emptyList();
         }
 
         this.extensions = extensions;

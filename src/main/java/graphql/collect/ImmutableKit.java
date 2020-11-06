@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Internal
-public final class CollectionsUtil {
+public final class ImmutableKit {
 
     public static <T> ImmutableList<T> emptyList() {
         return ImmutableList.of();

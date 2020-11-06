@@ -7,7 +7,7 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
-import graphql.collect.CollectionsUtil;
+import graphql.collect.ImmutableKit;
 import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -21,7 +21,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.collect.CollectionsUtil.emptyList;
+import static graphql.collect.ImmutableKit.emptyList;
 
 @PublicApi
 public class ExecutionContextBuilder {
@@ -38,7 +38,7 @@ public class ExecutionContextBuilder {
     Document document;
     OperationDefinition operationDefinition;
     ImmutableMapWithNullValues<String, Object> variables = ImmutableMapWithNullValues.emptyMap();
-    ImmutableMap<String, FragmentDefinition> fragmentsByName = CollectionsUtil.emptyMap();
+    ImmutableMap<String, FragmentDefinition> fragmentsByName = ImmutableKit.emptyMap();
     DataLoaderRegistry dataLoaderRegistry;
     CacheControl cacheControl;
     Locale locale;

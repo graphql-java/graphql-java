@@ -4,7 +4,7 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
-import graphql.collect.CollectionsUtil;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -36,7 +36,7 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
      * @param objectFields the list of field that make up this object value
      */
     public ObjectValue(List<ObjectField> objectFields) {
-        this(objectFields, null, CollectionsUtil.emptyList(), IgnoredChars.EMPTY, CollectionsUtil.emptyMap());
+        this(objectFields, null, ImmutableKit.emptyList(), IgnoredChars.EMPTY, ImmutableKit.emptyMap());
     }
 
     public List<ObjectField> getObjectFields() {

@@ -16,9 +16,9 @@ import java.util.function.Consumer;
 
 import static com.google.common.collect.ImmutableMap.copyOf;
 import static graphql.Assert.assertNotNull;
-import static graphql.collect.CollectionsUtil.addToMap;
-import static graphql.collect.CollectionsUtil.emptyList;
-import static graphql.collect.CollectionsUtil.emptyMap;
+import static graphql.collect.ImmutableKit.addToMap;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 
 /*
  * This is provided to a DataFetcher, therefore it is a public API.

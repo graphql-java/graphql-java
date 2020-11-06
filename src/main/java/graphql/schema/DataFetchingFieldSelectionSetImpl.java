@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.collect.CollectionsUtil.map;
+import static graphql.collect.ImmutableKit.map;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 

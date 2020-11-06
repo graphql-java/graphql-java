@@ -20,7 +20,7 @@ class ImmutableMapWithNullValuesTest extends Specification {
         map == ImmutableMapWithNullValues.emptyMap()
 
         when:
-        map = ImmutableMapWithNullValues.copyOf(CollectionsUtil.emptyMap())
+        map = ImmutableMapWithNullValues.copyOf(ImmutableKit.emptyMap())
         then:
         map.isEmpty()
         map == ImmutableMapWithNullValues.emptyMap()

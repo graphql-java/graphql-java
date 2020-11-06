@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
-import static graphql.collect.CollectionsUtil.map;
+import static graphql.collect.ImmutableKit.map;
 
 /**
  * The standard graphql execution strategy that runs fields asynchronously non-blocking.

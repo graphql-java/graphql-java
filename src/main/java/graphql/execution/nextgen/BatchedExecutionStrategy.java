@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertTrue;
-import static graphql.collect.CollectionsUtil.map;
+import static graphql.collect.ImmutableKit.map;
 import static graphql.execution.nextgen.result.ResultNodeAdapter.RESULT_NODE_ADAPTER;
 import static graphql.util.FpKit.flatList;
 import static graphql.util.FpKit.mapEntries;

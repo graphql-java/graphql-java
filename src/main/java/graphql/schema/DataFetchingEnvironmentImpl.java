@@ -4,7 +4,7 @@ package graphql.schema;
 import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
 import graphql.cachecontrol.CacheControl;
-import graphql.collect.CollectionsUtil;
+import graphql.collect.ImmutableKit;
 import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
@@ -60,7 +60,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.fieldType = builder.fieldType;
         this.parentType = builder.parentType;
         this.graphQLSchema = builder.graphQLSchema;
-        this.fragmentsByName = builder.fragmentsByName == null ? CollectionsUtil.emptyMap() : builder.fragmentsByName;
+        this.fragmentsByName = builder.fragmentsByName == null ? ImmutableKit.emptyMap() : builder.fragmentsByName;
         this.executionId = builder.executionId;
         this.selectionSet = builder.selectionSet;
         this.executionStepInfo = builder.executionStepInfo;

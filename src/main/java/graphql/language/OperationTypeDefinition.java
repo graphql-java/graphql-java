@@ -14,8 +14,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.collect.CollectionsUtil.emptyList;
-import static graphql.collect.CollectionsUtil.emptyMap;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi

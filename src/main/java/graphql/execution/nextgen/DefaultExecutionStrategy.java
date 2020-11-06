@@ -15,7 +15,7 @@ import graphql.util.NodeZipper;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static graphql.collect.CollectionsUtil.map;
+import static graphql.collect.ImmutableKit.map;
 import static graphql.execution.Async.each;
 import static graphql.execution.Async.mapCompose;
 

@@ -3,7 +3,7 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
-import graphql.collect.CollectionsUtil;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -15,8 +15,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.collect.CollectionsUtil.emptyList;
-import static graphql.collect.CollectionsUtil.emptyMap;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
@@ -38,8 +38,8 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
                                  IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
-        this.directives = CollectionsUtil.nonNullCopyOf(directives);
-        this.enumValueDefinitions = CollectionsUtil.nonNullCopyOf(enumValueDefinitions);
+        this.directives = ImmutableKit.nonNullCopyOf(directives);
+        this.enumValueDefinitions = ImmutableKit.nonNullCopyOf(enumValueDefinitions);
     }
 
     /**

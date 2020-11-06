@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import graphql.Assert;
 import graphql.AssertException;
 import graphql.PublicApi;
-import graphql.collect.CollectionsUtil;
+import graphql.collect.ImmutableKit;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -251,7 +251,7 @@ public class ResultPath {
      */
     public List<Object> toList() {
         if (parent == null) {
-            return CollectionsUtil.emptyList();
+            return ImmutableKit.emptyList();
         }
         LinkedList<Object> list = new LinkedList<>();
         ResultPath p = this;

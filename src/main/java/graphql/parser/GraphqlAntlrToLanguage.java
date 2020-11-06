@@ -73,8 +73,8 @@ import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertShouldNeverHappen;
-import static graphql.collect.CollectionsUtil.emptyList;
-import static graphql.collect.CollectionsUtil.map;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.map;
 import static graphql.parser.StringValueParsing.parseSingleQuotedString;
 import static graphql.parser.StringValueParsing.parseTripleQuotedString;
 

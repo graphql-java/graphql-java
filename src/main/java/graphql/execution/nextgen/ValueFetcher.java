@@ -6,7 +6,7 @@ import graphql.Assert;
 import graphql.ExceptionWhileDataFetching;
 import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.collect.CollectionsUtil;
+import graphql.collect.ImmutableKit;
 import graphql.execution.AbsoluteGraphQLError;
 import graphql.execution.Async;
 import graphql.execution.DataFetcherResult;
@@ -42,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
-import static graphql.collect.CollectionsUtil.map;
+import static graphql.collect.ImmutableKit.map;
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 import static java.util.Collections.singletonList;
 
@@ -213,7 +213,7 @@ public class ValueFetcher {
             } else {
                 addErrors = ImmutableList.copyOf(dataFetcherResult.getErrors());
             }
-            List<GraphQLError> newErrors = CollectionsUtil.concatLists(result.getErrors(), addErrors);
+            List<GraphQLError> newErrors = ImmutableKit.concatLists(result.getErrors(), addErrors);
 
             Object newLocalContext = dataFetcherResult.getLocalContext();
             if (newLocalContext == null) {

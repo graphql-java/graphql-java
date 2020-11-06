@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertShouldNeverHappen;
-import static graphql.collect.CollectionsUtil.map;
+import static graphql.collect.ImmutableKit.map;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;

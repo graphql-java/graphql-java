@@ -1,6 +1,6 @@
 package benchmark;
 
-import graphql.collect.CollectionsUtil;
+import graphql.collect.ImmutableKit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Measurement;
@@ -42,7 +42,7 @@ public class ListBenchmark {
 
     @Benchmark
     public void benchmarkImmutableListBuilder(Blackhole blackhole) {
-        List<String> output = CollectionsUtil.map(startingList, mapper);
+        List<String> output = ImmutableKit.map(startingList, mapper);
         blackhole.consume(output);
     }
 

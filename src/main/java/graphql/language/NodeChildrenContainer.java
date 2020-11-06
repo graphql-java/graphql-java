@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.collect.CollectionsUtil.emptyList;
+import static graphql.collect.ImmutableKit.emptyList;
 
 /**
  * Container of children of a {@link Node}.

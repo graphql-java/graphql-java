@@ -13,7 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
-import static graphql.collect.CollectionsUtil.map;
+import static graphql.collect.ImmutableKit.map;
 
 /**
  * This class implements the graphql Cache Control specification as outlined in https://github.com/apollographql/apollo-cache-control

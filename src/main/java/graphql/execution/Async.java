@@ -2,7 +2,7 @@ package graphql.execution;
 
 import graphql.Assert;
 import graphql.Internal;
-import graphql.collect.CollectionsUtil;
+import graphql.collect.ImmutableKit;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -154,7 +154,7 @@ public class Async {
     }
 
     public static <U, T> CompletableFuture<List<U>> flatMap(List<T> inputs, Function<T, CompletableFuture<U>> mapper) {
-        List<CompletableFuture<U>> collect = CollectionsUtil.map(inputs, mapper);
+        List<CompletableFuture<U>> collect = ImmutableKit.map(inputs, mapper);
         return Async.each(collect);
     }
 
@@ -169,15 +169,15 @@ public class Async {
     }
 
     public static <U, T> CompletableFuture<List<U>> map(CompletableFuture<List<T>> values, Function<T, U> mapper) {
-        return values.thenApply(list -> CollectionsUtil.map(list, mapper));
+        return values.thenApply(list -> ImmutableKit.map(list, mapper));
     }
 
     public static <U, T> List<CompletableFuture<U>> map(List<CompletableFuture<T>> values, Function<T, U> mapper) {
-        return CollectionsUtil.map(values, cf -> cf.thenApply(mapper));
+        return ImmutableKit.map(values, cf -> cf.thenApply(mapper));
     }
 
     public static <U, T> List<CompletableFuture<U>> mapCompose(List<CompletableFuture<T>> values, Function<T, CompletableFuture<U>> mapper) {
-        return CollectionsUtil.map(values, cf -> cf.thenCompose(mapper));
+        return ImmutableKit.map(values, cf -> cf.thenCompose(mapper));
     }
 
 }

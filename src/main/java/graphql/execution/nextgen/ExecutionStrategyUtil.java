@@ -19,7 +19,7 @@ import graphql.schema.GraphQLOutputType;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static graphql.collect.CollectionsUtil.map;
+import static graphql.collect.ImmutableKit.map;
 import static graphql.execution.FieldCollectorParameters.newParameters;
 
 @Internal

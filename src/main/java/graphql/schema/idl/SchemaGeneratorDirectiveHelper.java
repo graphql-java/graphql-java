@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.collect.CollectionsUtil.map;
+import static graphql.collect.ImmutableKit.map;
 
 /**
  * This contains the helper code that allows {@link graphql.schema.idl.SchemaDirectiveWiring} implementations

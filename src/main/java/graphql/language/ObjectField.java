@@ -4,7 +4,7 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
-import graphql.collect.CollectionsUtil;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -39,7 +39,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
      * @param value of the field
      */
     public ObjectField(String name, Value value) {
-        this(name, value, null, CollectionsUtil.emptyList(), IgnoredChars.EMPTY, CollectionsUtil.emptyMap());
+        this(name, value, null, ImmutableKit.emptyList(), IgnoredChars.EMPTY, ImmutableKit.emptyMap());
     }
 
     @Override

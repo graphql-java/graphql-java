@@ -2,7 +2,7 @@ package graphql.util;
 
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
-import graphql.collect.CollectionsUtil;
+import graphql.collect.ImmutableKit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +54,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
         this.parallel = parallel;
 
         if (parent == null || parent.isRootContext()) {
-            this.breadcrumbs = CollectionsUtil.emptyList();
+            this.breadcrumbs = ImmutableKit.emptyList();
         } else {
             List<Breadcrumb<T>> breadcrumbs = new ArrayList<>(parent.getBreadcrumbs().size() + 1);
             breadcrumbs.add(new Breadcrumb<>(this.parent.thisNode(), this.location));
