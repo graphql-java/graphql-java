@@ -134,6 +134,7 @@ public class NodeMultiZipper<T> {
         Map<String, List<T>> childrenMap = new HashMap<>(nodeAdapter.getNamedChildren(parent));
         Map<String, Integer> indexCorrection = new HashMap<>();
 
+        sameParent = new ArrayList<>(sameParent);
         sameParent.sort((zipper1, zipper2) -> {
             int index1 = zipper1.getBreadcrumbs().get(0).getLocation().getIndex();
             int index2 = zipper2.getBreadcrumbs().get(0).getLocation().getIndex();
