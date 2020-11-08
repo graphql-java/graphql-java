@@ -13,7 +13,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
@@ -58,7 +57,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
         return selections.stream()
                 .filter(d -> selectionClass.isAssignableFrom(d.getClass()))
                 .map(selectionClass::cast)
-                .collect(Collectors.toList());
+                .collect(ImmutableList.toImmutableList());
     }
 
     @Override

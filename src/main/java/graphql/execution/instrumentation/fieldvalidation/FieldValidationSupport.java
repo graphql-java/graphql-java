@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation.fieldvalidation;
 
+import com.google.common.collect.ImmutableList;
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.Internal;
@@ -20,7 +21,6 @@ import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Internal
 class FieldValidationSupport {
@@ -135,12 +135,12 @@ class FieldValidationSupport {
     private static class FieldValidationEnvironmentImpl implements FieldValidationEnvironment {
         private final ExecutionContext executionContext;
         private final Map<ResultPath, List<FieldAndArguments>> fieldArgumentsMap;
-        private final List<FieldAndArguments> fieldArguments;
+        private final ImmutableList<FieldAndArguments> fieldArguments;
 
         FieldValidationEnvironmentImpl(ExecutionContext executionContext, Map<ResultPath, List<FieldAndArguments>> fieldArgumentsMap) {
             this.executionContext = executionContext;
             this.fieldArgumentsMap = fieldArgumentsMap;
-            this.fieldArguments = fieldArgumentsMap.values().stream().flatMap(List::stream).collect(Collectors.toList());
+            this.fieldArguments = fieldArgumentsMap.values().stream().flatMap(List::stream).collect(ImmutableList.toImmutableList());
         }
 
 

@@ -13,7 +13,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 
@@ -89,7 +88,6 @@ public class AbsoluteGraphQLError implements GraphQLError {
      * Relative path is empty -> Absolute paths is path up to the field.
      * Relative path is not empty -> Absolute paths [base Path, relative Path]
      *
-     *
      * @return List of paths from the root.
      */
     private List<Object> createAbsolutePath(ResultPath resultPath,
@@ -138,8 +136,7 @@ public class AbsoluteGraphQLError implements GraphQLError {
                                                 base.getLine() + l.getLine(),
                                                 base.getColumn() + l.getColumn()))
                                         .orElse(null))
-                        .collect(Collectors.toList()))
-                .map(l -> (List<SourceLocation>) ImmutableList.copyOf(l))
+                        .collect(ImmutableList.toImmutableList()))
                 .orElse(null);
     }
 }

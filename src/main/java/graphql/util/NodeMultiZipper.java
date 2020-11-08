@@ -59,11 +59,11 @@ public class NodeMultiZipper<T> {
         while (curZippers.size() > 1) {
 
             List<NodeZipper<T>> deepestZippers = getDeepestZippers(curZippers);
-            Map<T, List<NodeZipper<T>>> sameParent = zipperWithSameParent(deepestZippers);
+            Map<T, ImmutableList<NodeZipper<T>>> sameParent = zipperWithSameParent(deepestZippers);
 
             List<NodeZipper<T>> newZippers = new ArrayList<>();
             Map<T, NodeZipper<T>> zipperByNode = FpKit.groupingByUniqueKey(curZippers, NodeZipper::getCurNode);
-            for (Map.Entry<T, List<NodeZipper<T>>> entry : sameParent.entrySet()) {
+            for (Map.Entry<T, ImmutableList<NodeZipper<T>>> entry : sameParent.entrySet()) {
                 NodeZipper<T> newZipper = moveUp(entry.getKey(), entry.getValue());
                 Optional<NodeZipper<T>> zipperToBeReplaced = Optional.ofNullable(zipperByNode.get(entry.getKey()));
                 zipperToBeReplaced.ifPresent(curZippers::remove);
@@ -122,7 +122,7 @@ public class NodeMultiZipper<T> {
 
 
     private List<NodeZipper<T>> getDeepestZippers(Set<NodeZipper<T>> zippers) {
-        Map<Integer, List<NodeZipper<T>>> grouped = FpKit.groupingBy(zippers, astZipper -> astZipper.getBreadcrumbs().size());
+        Map<Integer, ImmutableList<NodeZipper<T>>> grouped = FpKit.groupingBy(zippers, astZipper -> astZipper.getBreadcrumbs().size());
 
         Integer maxLevel = Collections.max(grouped.keySet());
         return grouped.get(maxLevel);
@@ -189,7 +189,7 @@ public class NodeMultiZipper<T> {
         return new NodeZipper<>(newNode, newBreadcrumbs, this.nodeAdapter);
     }
 
-    private Map<T, List<NodeZipper<T>>> zipperWithSameParent(List<NodeZipper<T>> zippers) {
+    private Map<T, ImmutableList<NodeZipper<T>>> zipperWithSameParent(List<NodeZipper<T>> zippers) {
         return FpKit.groupingBy(zippers, NodeZipper::getParent);
     }
 }
