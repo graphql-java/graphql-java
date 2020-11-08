@@ -13,7 +13,10 @@ import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
+import graphql.normalized.NormalizedQueryTree;
+import graphql.normalized.NormalizedQueryTreeFactory;
 import graphql.schema.GraphQLSchema;
+import graphql.util.FpKit;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.ArrayList;
@@ -24,6 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
@@ -115,6 +119,7 @@ public class ExecutionContext {
     public <T> T getContext() {
         return (T) context;
     }
+
     @SuppressWarnings("unchecked")
     public <T> T getLocalContext() {
         return (T) localContext;
@@ -196,6 +201,10 @@ public class ExecutionContext {
 
     public ExecutionStrategy getSubscriptionStrategy() {
         return subscriptionStrategy;
+    }
+
+    public Supplier<NormalizedQueryTree> getNormalizedQueryTree() {
+        return FpKit.interThreadMemoize(() -> NormalizedQueryTreeFactory.createNormalizedQuery(graphQLSchema, operationDefinition, fragmentsByName, variables));
     }
 
     /**

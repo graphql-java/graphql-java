@@ -22,6 +22,7 @@ import graphql.language.InterfaceTypeDefinition;
 import graphql.language.InterfaceTypeExtensionDefinition;
 import graphql.language.Node;
 import graphql.language.NullValue;
+import graphql.language.ObjectField;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.ObjectValue;
@@ -290,9 +291,22 @@ public class SchemaGeneratorHelper {
 
     Object buildObjectValue(ObjectValue defaultValue, GraphQLInputObjectType objectType) {
         Map<String, Object> map = new LinkedHashMap<>();
-        defaultValue.getObjectFields().forEach(of -> map.put(of.getName(),
-                buildValue(of.getValue(), objectType.getField(of.getName()).getType())));
+        objectType.getFieldDefinitions().forEach(
+                f -> {
+                    final Value<?> fieldValueFromDefaultObjectValue = getFieldValueFromObjectValue(defaultValue, f.getName());
+                    map.put(f.getName(), fieldValueFromDefaultObjectValue != null ? buildValue(fieldValueFromDefaultObjectValue, f.getType()) : f.getDefaultValue());
+                }
+        );
         return map;
+    }
+
+    Value<?> getFieldValueFromObjectValue(final ObjectValue objectValue, final String fieldName) {
+        return objectValue.getObjectFields()
+                .stream()
+                .filter(dvf -> dvf.getName().equals(fieldName))
+                .map(ObjectField::getValue)
+                .findFirst()
+                .orElse(null);
     }
 
     String buildDescription(Node<?> node, Description description) {

@@ -1,6 +1,5 @@
 package graphql.schema.idl;
 
-import graphql.Directives;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.introspection.Introspection.DirectiveLocation;
@@ -13,23 +12,23 @@ import graphql.language.FieldDefinition;
 import graphql.language.InputObjectTypeDefinition;
 import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
+import graphql.language.NamedNode;
 import graphql.language.Node;
 import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
+import graphql.language.ScalarTypeDefinition;
 import graphql.language.SchemaDefinition;
 import graphql.language.TypeDefinition;
-import graphql.language.ScalarTypeDefinition;
-import graphql.language.NamedNode;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.idl.errors.DirectiveIllegalLocationError;
+import graphql.schema.idl.errors.DirectiveIllegalReferenceError;
 import graphql.schema.idl.errors.DirectiveMissingNonNullArgumentError;
 import graphql.schema.idl.errors.DirectiveUndeclaredError;
 import graphql.schema.idl.errors.DirectiveUnknownArgumentError;
+import graphql.schema.idl.errors.IllegalNameError;
 import graphql.schema.idl.errors.MissingTypeError;
 import graphql.schema.idl.errors.NotAnInputTypeError;
-import graphql.schema.idl.errors.IllegalNameError;
-import graphql.schema.idl.errors.DirectiveIllegalReferenceError;
 
 import java.util.Collection;
 import java.util.List;
@@ -137,10 +136,6 @@ class SchemaTypeDirectivesChecker {
 
     private void checkDirectives(DirectiveLocation expectedLocation, List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, Node<?> element, String elementName, List<Directive> directives) {
         directives.forEach(directive -> {
-            // we have special code for the deprecation directive in SchemaTypeChecker.checkDeprecatedDirective
-            if (Directives.DeprecatedDirective.getName().equals(directive.getName())) {
-                return;
-            }
             Optional<DirectiveDefinition> directiveDefinition = typeRegistry.getDirectiveDefinition(directive.getName());
             if (!directiveDefinition.isPresent()) {
                 errors.add(new DirectiveUndeclaredError(element, elementName, directive.getName()));
