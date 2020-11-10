@@ -196,7 +196,7 @@ public class GraphQLSchema {
     }
 
     public Map<String, GraphQLNamedType> getTypeMap() {
-        return ImmutableMap.copyOf(typeMap);
+        return typeMap;
     }
 
     public List<GraphQLNamedType> getAllTypesAsList() {
