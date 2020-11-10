@@ -1,10 +1,13 @@
 package graphql.validation.rules;
 
 
+import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.Directive;
 import graphql.language.Field;
 import graphql.language.Node;
+import graphql.language.NullValue;
+import graphql.language.Value;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLFieldDefinition;
@@ -19,6 +22,7 @@ import java.util.Map;
 
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 
+@Internal
 public class ProvidedNonNullArguments extends AbstractRule {
 
     public ProvidedNonNullArguments(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
@@ -38,6 +42,14 @@ public class ProvidedNonNullArguments extends AbstractRule {
             if (argument == null && nonNullType && noDefaultValue) {
                 String message = String.format("Missing field argument %s", graphQLArgument.getName());
                 addError(ValidationErrorType.MissingFieldArgument, field.getSourceLocation(), message);
+            }
+
+            if(argument!=null) {
+                Value value = argument.getValue();
+                if ((value == null || value instanceof NullValue) && nonNullType && noDefaultValue) {
+                    String message = String.format("null value for non-null field argument %s", graphQLArgument.getName());
+                    addError(ValidationErrorType.NullValueForNonNullArgument, field.getSourceLocation(), message);
+                }
             }
         }
     }

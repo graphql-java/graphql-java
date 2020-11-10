@@ -1,5 +1,6 @@
 package graphql.execution.batched;
 
+import graphql.PublicApi;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
@@ -16,6 +17,7 @@ import java.lang.reflect.Method;
  * @deprecated This has been deprecated in favour of using {@link graphql.execution.AsyncExecutionStrategy} and {@link graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation}
  */
 @Deprecated
+@PublicApi
 public class BatchedDataFetcherFactory {
     public BatchedDataFetcher create(final DataFetcher supplied) {
         if (supplied instanceof BatchedDataFetcher) {

@@ -45,6 +45,22 @@ class GraphQLArgumentTest extends Specification {
         transformedArgument.getDirective("directive3") != null
     }
 
+    def "object can be transformed without setting the default value"() {
+        given:
+        def startingArgument = GraphQLArgument.newArgument().name("A1")
+                .type(GraphQLInt)
+                .build()
+        when:
+        def transformedArgument = startingArgument.transform({
+            it.name("A2")
+        })
+
+        then:
+
+        transformedArgument.name == "A2"
+        !transformedArgument.hasSetDefaultValue()
+    }
+
     def "directive support on arguments via builder"() {
 
         def argument

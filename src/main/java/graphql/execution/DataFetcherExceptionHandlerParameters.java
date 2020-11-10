@@ -25,7 +25,7 @@ public class DataFetcherExceptionHandlerParameters {
         return exception;
     }
 
-    public ExecutionPath getPath() {
+    public ResultPath getPath() {
         return dataFetchingEnvironment.getExecutionStepInfo().getPath();
     }
 

@@ -6,6 +6,7 @@ import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 
 import java.util.Map;
+import java.util.Objects;
 
 @PublicApi
 public class FieldComplexityEnvironment {
@@ -60,13 +61,19 @@ public class FieldComplexityEnvironment {
 
         FieldComplexityEnvironment that = (FieldComplexityEnvironment) o;
 
-        if (field != null ? !field.equals(that.field) : that.field != null) return false;
-        if (fieldDefinition != null ? !fieldDefinition.equals(that.fieldDefinition) : that.fieldDefinition != null)
+        if (!Objects.equals(field, that.field)) {
             return false;
-        if (parentType != null ? !parentType.equals(that.parentType) : that.parentType != null) return false;
-        if (parentEnvironment != null ? !parentEnvironment.equals(that.parentEnvironment) : that.parentEnvironment != null)
+        }
+        if (!Objects.equals(fieldDefinition, that.fieldDefinition)) {
             return false;
-        return arguments != null ? arguments.equals(that.arguments) : that.arguments == null;
+        }
+        if (!Objects.equals(parentType, that.parentType)) {
+            return false;
+        }
+        if (!Objects.equals(parentEnvironment, that.parentEnvironment)) {
+            return false;
+        }
+        return Objects.equals(arguments, that.arguments);
     }
 
     @Override

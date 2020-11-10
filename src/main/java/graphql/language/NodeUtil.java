@@ -8,6 +8,7 @@ import graphql.util.NodeLocation;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static graphql.util.FpKit.mergeFirst;
 
@@ -17,26 +18,31 @@ import static graphql.util.FpKit.mergeFirst;
 @Internal
 public class NodeUtil {
 
-    public static boolean isEqualTo(String thisStr, String thatStr) {
-        if (null == thisStr) {
-            if (null != thatStr) {
-                return false;
-            }
-        } else if (!thisStr.equals(thatStr)) {
-            return false;
-        }
-        return true;
-    }
-
-
     public static Map<String, Directive> directivesByName(List<Directive> directives) {
         return FpKit.getByName(directives, Directive::getName, mergeFirst());
+    }
+
+    public static Optional<Directive> directiveByName(List<Directive> directives, String directiveName) {
+        for (Directive directive : directives) {
+            if (directive.getName().equals(directiveName)) {
+                return Optional.of(directive);
+            }
+        }
+        return Optional.empty();
     }
 
     public static Map<String, Argument> argumentsByName(List<Argument> arguments) {
         return FpKit.getByName(arguments, Argument::getName, mergeFirst());
     }
 
+    public static Optional<Argument> getArgumentByName(List<Argument> arguments, String argumentName) {
+        for (Argument argument : arguments) {
+            if (argument.getName().equals(argumentName)) {
+                return Optional.of(argument);
+            }
+        }
+        return Optional.empty();
+    }
 
     public static class GetOperationResult {
         public OperationDefinition operationDefinition;

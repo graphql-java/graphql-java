@@ -1,5 +1,6 @@
 package graphql.validation.rules;
 
+import graphql.Internal;
 import graphql.language.Argument;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
@@ -10,6 +11,7 @@ import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
 
+@Internal
 public class KnownArgumentNames extends AbstractRule {
 
     public KnownArgumentNames(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {

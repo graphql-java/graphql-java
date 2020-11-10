@@ -67,13 +67,13 @@ public class AbortExecutionException extends GraphQLException implements GraphQL
      * This is useful for turning this abort signal into an execution result which
      * is an error state with the underlying errors in it.
      *
-     * @return an excution result with the errors from this exception
+     * @return an execution result with the errors from this exception
      */
     public ExecutionResult toExecutionResult() {
-        ExecutionResult executionResult = new ExecutionResultImpl(this);
         if (!this.getUnderlyingErrors().isEmpty()) {
-            executionResult = new ExecutionResultImpl(this.getUnderlyingErrors());
+            return new ExecutionResultImpl(this.getUnderlyingErrors());
         }
-        return executionResult;
+
+        return new ExecutionResultImpl(this);
     }
 }

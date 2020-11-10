@@ -1,5 +1,6 @@
 package graphql.schema.validation;
 
+import graphql.Internal;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLImplementingType;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static graphql.collect.ImmutableKit.map;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
@@ -29,6 +31,7 @@ import static java.lang.String.format;
  * Schema validation rule ensuring object and interface types have all the fields that they need to
  * implement the interfaces they say they implement.
  */
+@Internal
 public class TypesImplementInterfaces implements SchemaValidationRule {
     private static final Map<Class<? extends GraphQLImplementingType>, String> TYPE_OF_MAP = new HashMap<>();
 
@@ -109,7 +112,7 @@ public class TypesImplementInterfaces implements SchemaValidationRule {
         List<GraphQLArgument> objectArgs = objectFieldDef.getArguments();
 
         Map<String, GraphQLArgument> interfaceArgsByName = FpKit.getByName(interfaceArgs, GraphQLArgument::getName);
-        List<String> objectArgsNames = FpKit.map(objectArgs, GraphQLArgument::getName);
+        List<String> objectArgsNames = map(objectArgs, GraphQLArgument::getName);
 
         if (!objectArgsNames.containsAll(interfaceArgsByName.keySet())) {
             final String missingArgsNames = interfaceArgsByName.keySet().stream()
@@ -172,6 +175,8 @@ public class TypesImplementInterfaces implements SchemaValidationRule {
             return objectIsMemberOfUnion((GraphQLUnionType) constraintType, objectType);
         } else if (constraintType instanceof GraphQLInterfaceType && objectType instanceof GraphQLObjectType) {
             return objectImplementsInterface((GraphQLInterfaceType) constraintType, (GraphQLObjectType) objectType);
+        } else if (constraintType instanceof GraphQLInterfaceType && objectType instanceof GraphQLInterfaceType) {
+            return interfaceImplementsInterface((GraphQLInterfaceType) constraintType, (GraphQLInterfaceType) objectType);
         } else if (isList(constraintType) && isList(objectType)) {
             GraphQLOutputType wrappedConstraintType = (GraphQLOutputType) unwrapOne(constraintType);
             GraphQLOutputType wrappedObjectType = (GraphQLOutputType) unwrapOne(objectType);
@@ -198,6 +203,10 @@ public class TypesImplementInterfaces implements SchemaValidationRule {
 
     boolean objectImplementsInterface(GraphQLInterfaceType interfaceType, GraphQLObjectType objectType) {
         return objectType.getInterfaces().contains(interfaceType);
+    }
+
+    boolean interfaceImplementsInterface(GraphQLInterfaceType interfaceType, GraphQLInterfaceType implementingType) {
+        return implementingType.getInterfaces().contains(interfaceType);
     }
 
     boolean objectIsMemberOfUnion(GraphQLUnionType unionType, GraphQLOutputType objectType) {

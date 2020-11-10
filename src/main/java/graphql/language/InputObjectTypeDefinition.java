@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -19,8 +21,8 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObjectTypeDefinition> implements TypeDefinition<InputObjectTypeDefinition>, DirectivesContainer<InputObjectTypeDefinition>, NamedNode<InputObjectTypeDefinition> {
 
     private final String name;
-    private final List<Directive> directives;
-    private final List<InputValueDefinition> inputValueDefinitions;
+    private final ImmutableList<Directive> directives;
+    private final ImmutableList<InputValueDefinition> inputValueDefinitions;
 
     public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_INPUT_VALUES_DEFINITIONS = "inputValueDefinitions";
@@ -36,17 +38,17 @@ public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObject
                                         Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
-        this.directives = directives;
-        this.inputValueDefinitions = inputValueDefinitions;
+        this.directives = ImmutableList.copyOf(directives);
+        this.inputValueDefinitions = ImmutableList.copyOf(inputValueDefinitions);
     }
 
     @Override
     public List<Directive> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
-        return new ArrayList<>(inputValueDefinitions);
+        return inputValueDefinitions;
     }
 
     @Override
@@ -89,7 +91,7 @@ public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObject
 
         InputObjectTypeDefinition that = (InputObjectTypeDefinition) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name);
+        return Objects.equals(this.name, that.name);
     }
 
     @Override
@@ -129,7 +131,7 @@ public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObject
         return builder.build();
     }
 
-    public static final class Builder implements NodeBuilder {
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private String name;
@@ -173,6 +175,7 @@ public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObject
             return this;
         }
 
+        @Override
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;

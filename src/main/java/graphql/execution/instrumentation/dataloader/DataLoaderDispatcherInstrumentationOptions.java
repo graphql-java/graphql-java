@@ -1,8 +1,11 @@
 package graphql.execution.instrumentation.dataloader;
 
+import graphql.PublicApi;
+
 /**
  * The options that control the operation of {@link graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation}
  */
+@PublicApi
 public class DataLoaderDispatcherInstrumentationOptions {
 
     private final boolean includeStatistics;

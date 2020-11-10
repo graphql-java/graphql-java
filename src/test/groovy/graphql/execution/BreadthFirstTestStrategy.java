@@ -76,7 +76,7 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
 
     private ExecutionStrategyParameters newParameters(ExecutionStrategyParameters parameters, MergedSelectionSet fields, String fieldName) {
         MergedField currentField = fields.getSubField(fieldName);
-        ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
+        ResultPath fieldPath = parameters.getPath().segment(fieldName);
         return parameters
                 .transform(builder -> builder.field(currentField).path(fieldPath));
     }

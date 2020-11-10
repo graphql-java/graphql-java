@@ -1,6 +1,7 @@
 package graphql.validation.rules;
 
 
+import graphql.Internal;
 import graphql.execution.TypeFromAST;
 import graphql.language.Argument;
 import graphql.language.AstComparator;
@@ -43,6 +44,7 @@ import static java.lang.String.format;
 /**
  * See http://facebook.github.io/graphql/June2018/#sec-Field-Selection-Merging
  */
+@Internal
 public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
 

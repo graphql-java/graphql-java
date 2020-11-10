@@ -14,15 +14,18 @@ import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLInterfaceType
+import graphql.schema.GraphQLNamedSchemaElement
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLOutputType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLSchemaElement
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLUnionType
 import graphql.schema.TypeResolver
 import spock.lang.Specification
 
+import java.util.function.Predicate
 import java.util.function.UnaryOperator
 
 import static graphql.Scalars.GraphQLInt
@@ -646,6 +649,28 @@ input EmptyInputObject
     def "concurrentModificationException should not occur when multiple extended graphQL types are used"() {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition().name("field").type(GraphQLString).build()
+        def queryType = new MyTestGraphQLObjectType("Query", "test", Arrays.asList(fieldDefinition))
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+
+        when:
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+
+        then:
+        result == '''"test"
+type Query {
+  field: String
+}
+'''
+    }
+
+    def "arrayIndexOutOfBoundsException should not occur if a field description of only a newline is passed"() {
+        given:
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
+                .name("field")
+                .description("\n")
+                .type(GraphQLString)
+                .build()
+
         def queryType = new MyTestGraphQLObjectType("Query", "test", Arrays.asList(fieldDefinition))
         def schema = GraphQLSchema.newSchema().query(queryType).build()
 
@@ -1746,4 +1771,58 @@ type Query {
 """
     }
 
+    def "schema element filtering works"() {
+        def sdl = """
+            schema {
+                query : PrintMeQuery
+            }
+            
+            directive @directivePrintMe on ARGUMENT_DEFINITION
+            directive @someOtherDirective on FIELD_DEFINITION
+             
+            type PrintMeQuery {
+                field : PrintMeType
+                fieldPrintMe : SomeType
+                fieldPrintMeWithArgs(arg1 : String, arg2PrintMe : String @directivePrintMe) : SomeType @someOtherDirective
+            }
+            
+            type PrintMeType {
+                fieldPrintMe : String
+            }
+            
+            type SomeType {
+                fieldPrintMe : String
+            }
+            
+        """
+        def schema = TestUtil.schema(sdl)
+
+        when:
+        Predicate<GraphQLSchemaElement> predicate = { element ->
+            if (element instanceof GraphQLNamedSchemaElement) {
+                def printIt = ((GraphQLNamedSchemaElement) element).getName().contains("PrintMe")
+                return printIt
+            }
+            return false
+        }
+        def result = new SchemaPrinter(defaultOptions().includeDirectives(true).includeSchemaElement(predicate)).print(schema)
+
+        then:
+        result == """schema {
+  query: PrintMeQuery
+}
+
+directive @directivePrintMe on ARGUMENT_DEFINITION
+
+type PrintMeQuery {
+  fieldPrintMe: SomeType
+  fieldPrintMeWithArgs(arg2PrintMe: String @directivePrintMe): SomeType
+}
+
+type PrintMeType {
+  fieldPrintMe: String
+}
+"""
+
+    }
 }

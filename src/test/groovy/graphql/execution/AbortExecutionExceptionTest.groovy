@@ -26,7 +26,7 @@ class AbortExecutionExceptionTest extends Specification {
         }
     }
 
-    def "to excution result handling"() {
+    def "to execution result handling"() {
         AbortExecutionException e
         when:
         e = new AbortExecutionException("No underlying errors")

@@ -51,7 +51,7 @@ class FpKitTest extends Specification {
         Supplier<Integer> supplier = { -> count++; return count }
 
         when:
-        def memoizeSupplier = FpKit.memoize(supplier)
+        def memoizeSupplier = FpKit.intraThreadMemoize(supplier)
         def val1 = supplier.get()
         def val2 = supplier.get()
         def memoVal1 = memoizeSupplier.get()

@@ -1,6 +1,7 @@
 package graphql.execution.instrumentation.dataloader;
 
 
+import com.google.common.collect.ImmutableList;
 import org.dataloader.DataLoader;
 
 import java.util.ArrayList;
@@ -54,13 +55,13 @@ public class DataLoaderCompanyProductBackend {
     }
 
     private List<Company> companiesList() {
-        return Collections.unmodifiableList(new ArrayList<>(companies.values()));
+        return ImmutableList.copyOf(companies.values());
     }
 
     public CompletableFuture<List<Project>> getProjectsForCompanies(List<UUID> companyIds) {
         return CompletableFuture.supplyAsync(() -> projects.values().stream()
                 .filter(project -> companyIds.contains(project.getCompanyId()))
-                .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList)));
+                .collect(Collectors.collectingAndThen(Collectors.toList(), ImmutableList::copyOf)));
     }
 
     public CompletableFuture<Company> addCompany() {

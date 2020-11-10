@@ -1,9 +1,18 @@
 package graphql.execution.instrumentation.dataloader
 
+import com.github.javafaker.Faker
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.Async
+import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.DataFetcherExceptionHandler
+import graphql.execution.DataFetcherExceptionHandlerParameters
+import graphql.execution.DataFetcherExceptionHandlerResult
+import graphql.execution.instrumentation.dataloader.models.Company
+import graphql.execution.instrumentation.dataloader.models.Person
+import graphql.execution.instrumentation.dataloader.models.Product
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.RuntimeWiring
@@ -20,6 +29,7 @@ import java.util.concurrent.SynchronousQueue
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
+import java.util.stream.Collectors
 
 import static graphql.ExecutionInput.newExecutionInput
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
@@ -104,11 +114,11 @@ class DataLoaderHangingTest extends Specification {
 
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .type(newTypeWiring("Query")
-                .dataFetcher("listArtists", dataFetcherArtists))
+                        .dataFetcher("listArtists", dataFetcherArtists))
                 .type(newTypeWiring("Artist")
-                .dataFetcher("albums", albumsDf))
+                        .dataFetcher("albums", albumsDf))
                 .type(newTypeWiring("Album")
-                .dataFetcher("songs", songsDf))
+                        .dataFetcher("songs", songsDf))
                 .build()
 
         def schema = TestUtil.schema(sdl, wiring)
@@ -159,11 +169,11 @@ class DataLoaderHangingTest extends Specification {
         // wait for each future to complete and grab the results
         Async.each(futures)
                 .whenComplete({ results, error ->
-            if (error) {
-                throw error
-            }
-            results.each { assert it.errors.empty }
-        })
+                    if (error) {
+                        throw error
+                    }
+                    results.each { assert it.errors.empty }
+                })
                 .join()
     }
 
@@ -206,5 +216,154 @@ class DataLoaderHangingTest extends Specification {
         dataLoaderRegistry.register("artist.albums", dataLoaderAlbums)
         dataLoaderRegistry.register("album.songs", dataLoaderSongs)
         dataLoaderRegistry
+    }
+
+    /*
+      Test code taken from https://github.com/graphql-java/graphql-java/issues/1973
+     */
+    Faker faker = new Faker()
+    String schema = """
+        type Company { 
+           id: Int!
+        } 
+        type Person {
+          company: Company! 
+        } 
+        type Product { 
+          suppliedBy: Person!
+        } 
+        type QueryType { 
+          products: [Product!]! 
+        } 
+        schema { 
+          query: QueryType 
+        }
+        """
+
+    DataFetcherExceptionHandler customExceptionHandlerThatThrows = new DataFetcherExceptionHandler() {
+        @Override
+        DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
+            throw handlerParameters.exception
+        }
+    }
+
+    BatchLoader<Integer, Person> personBatchLoader = new BatchLoader<Integer, Person>() {
+        @Override
+        CompletionStage<List<Person>> load(List<Integer> keys) {
+            return CompletableFuture.supplyAsync({
+                List<Person> people = keys.stream()
+                        .map({ id -> new Person(id, faker.name().fullName(), id + 200) })
+                        .collect(Collectors.toList())
+                return people
+            })
+        }
+    }
+
+    BatchLoader<Integer, Company> companyBatchLoader = new BatchLoader<Integer, Company>() {
+        @Override
+        CompletionStage<List<Company>> load(List<Integer> keys) {
+            return CompletableFuture.supplyAsync({
+                def companies = keys.stream()
+                        .map({ id -> new Company(id, faker.company().name()) })
+                        .collect(Collectors.toList())
+                return companies
+            })
+        }
+    }
+
+    // Always returns exactly 2 products, one supplied by person with ID #0 and one supplied by person with ID #1.
+    DataFetcher productsDF = new DataFetcher() {
+        @Override
+        Object get(DataFetchingEnvironment environment) {
+            List<Product> products = new ArrayList<>()
+            for (int id = 0; id < 2; id++) {
+                products.add(new Product(faker.idNumber().toString(), faker.commerce().productName(), id, []))
+            }
+            return products
+        }
+    }
+
+    // Loads the person pointed to via Product.getSuppliedById.
+    // Then return it, unless the person has ID 0 in which case it fails.
+    DataFetcher suppliedByDF = new DataFetcher() {
+        @Override
+        Object get(DataFetchingEnvironment environment) {
+            Product source = environment.getSource()
+            DataLoaderRegistry dlRegistry = environment.getContext()
+            DataLoader<Integer, Person> personDL = dlRegistry.getDataLoader("person")
+            return personDL.load(source.getSuppliedById()).thenApply({ person ->
+                if (person.id == 0) {
+                    throw new RuntimeException("Failure in suppliedByDF for person with ID == 0.")
+                }
+                return person
+            })
+        }
+    }
+
+    DataFetcher companyDF = new DataFetcher() {
+        @Override
+        Object get(DataFetchingEnvironment environment) {
+            Person source = environment.getSource()
+            DataLoaderRegistry dlRegistry = environment.getContext()
+            DataLoader<Integer, Company> companyDL = dlRegistry.getDataLoader("company")
+            return companyDL.load(source.getCompanyId())
+        }
+    }
+
+    RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
+            .type("QueryType", { builder -> builder.dataFetcher("products", productsDF) })
+            .type("Product", { builder -> builder.dataFetcher("suppliedBy", suppliedByDF) })
+            .type("Person", { builder -> builder.dataFetcher("company", companyDF) })
+            .build()
+
+
+    def graphQLSchema = TestUtil.schema(schema, runtimeWiring)
+
+    def query = """
+        query Products { 
+            products {
+                suppliedBy {
+                    company { 
+                        id 
+                    } 
+                }
+            } 
+        }
+        """
+
+    private DataLoaderRegistry buildRegistry() {
+        DataLoader<Integer, Person> personDataLoader = new DataLoader<>(personBatchLoader)
+        DataLoader<Integer, Company> companyDataLoader = new DataLoader<>(companyBatchLoader)
+
+        DataLoaderRegistry registry = new DataLoaderRegistry()
+        registry.register("person", personDataLoader)
+        registry.register("company", companyDataLoader)
+        return registry
+    }
+
+    def "execution should never hang even if the datafetcher of one object in a list fails"() {
+
+        DataLoaderRegistry registry = buildRegistry()
+
+        GraphQL graphQL = GraphQL
+                .newGraphQL(graphQLSchema)
+                .queryExecutionStrategy(new AsyncExecutionStrategy(customExceptionHandlerThatThrows))
+                .instrumentation(new DataLoaderDispatcherInstrumentation())
+                .build()
+
+        when:
+
+        ExecutionInput executionInput = newExecutionInput()
+                .query(query)
+                .context(registry)
+                .dataLoaderRegistry(registry)
+                .build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+
+        then:
+
+        (executionResult.errors.size() > 0)
     }
 }

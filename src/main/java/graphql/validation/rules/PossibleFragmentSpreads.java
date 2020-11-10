@@ -2,6 +2,7 @@ package graphql.validation.rules;
 
 
 import graphql.Assert;
+import graphql.Internal;
 import graphql.execution.TypeFromAST;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
@@ -22,6 +23,7 @@ import java.util.List;
 
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 
+@Internal
 public class PossibleFragmentSpreads extends AbstractRule {
 
     public PossibleFragmentSpreads(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {

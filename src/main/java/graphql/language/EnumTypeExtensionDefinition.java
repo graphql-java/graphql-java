@@ -51,13 +51,21 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
         return new Builder();
     }
 
+    @Override
+    public EnumTypeExtensionDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transformExtension(builder -> builder
+                .enumValueDefinitions(newChildren.getChildren(CHILD_ENUM_VALUE_DEFINITIONS))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
+    }
+
     public EnumTypeExtensionDefinition transformExtension(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
         return builder.build();
     }
 
-    public static final class Builder implements NodeBuilder {
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private String name;
@@ -106,6 +114,7 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
             return this;
         }
 
+        @Override
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;

@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -13,20 +14,21 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayValue> {
 
-    private final List<Value> values = new ArrayList<>();
+    private final ImmutableList<Value> values;
 
     public static final String CHILD_VALUES = "values";
 
     @Internal
     protected ArrayValue(List<Value> values, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
-        this.values.addAll(values);
+        this.values = ImmutableList.copyOf(values);
     }
 
     /**
@@ -35,7 +37,7 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
      * @param values of the array
      */
     public ArrayValue(List<Value> values) {
-        this(values, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(values, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public List<Value> getValues() {
@@ -44,7 +46,7 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>(values);
+        return ImmutableList.copyOf(values);
     }
 
     @Override

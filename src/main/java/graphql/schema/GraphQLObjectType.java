@@ -1,15 +1,16 @@
 package graphql.schema;
 
-import graphql.AssertException;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
+import graphql.util.FpKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -18,22 +19,21 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertValidName;
 import static graphql.schema.GraphqlTypeComparators.asIsOrder;
 import static graphql.schema.GraphqlTypeComparators.sortTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
-import static java.lang.String.format;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.unmodifiableList;
 
 /**
  * This is the work horse type and represents an object with one or more field values that can be retrieved
  * by the graphql system.
- *
+ * <p>
  * Those fields can themselves by object types and so on until you reach the leaf nodes of the type tree represented
  * by {@link graphql.schema.GraphQLScalarType}s.
- *
+ * <p>
  * See http://graphql.org/learn/schema/#object-types-and-fields for more details on the concept.
  */
 @PublicApi
@@ -43,13 +43,13 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     private final String name;
     private final String description;
     private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
-    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
-    private final List<GraphQLNamedOutputType> originalInterfaces;
-    private final List<GraphQLDirective> directives;
+    private final ImmutableMap<String, GraphQLFieldDefinition> fieldDefinitionsByName;
+    private final ImmutableList<GraphQLNamedOutputType> originalInterfaces;
+    private final ImmutableList<GraphQLDirective> directives;
     private final ObjectTypeDefinition definition;
-    private final List<ObjectTypeExtensionDefinition> extensionDefinitions;
+    private final ImmutableList<ObjectTypeExtensionDefinition> extensionDefinitions;
 
-    private List<GraphQLNamedOutputType> replacedInterfaces;
+    private ImmutableList<GraphQLNamedOutputType> replacedInterfaces;
 
     public static final String CHILD_INTERFACES = "interfaces";
     public static final String CHILD_DIRECTIVES = "directives";
@@ -103,30 +103,25 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         this.name = name;
         this.description = description;
         this.interfaceComparator = interfaceComparator;
-        this.originalInterfaces = sortTypes(interfaceComparator, interfaces);
+        this.originalInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
         this.definition = definition;
-        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
-        this.directives = assertNotNull(directives);
-        buildDefinitionMap(fieldDefinitions);
+        this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
+        this.directives = ImmutableList.copyOf(assertNotNull(directives));
+        this.fieldDefinitionsByName = buildDefinitionMap(fieldDefinitions);
     }
 
     void replaceInterfaces(List<GraphQLNamedOutputType> interfaces) {
-        this.replacedInterfaces = sortTypes(interfaceComparator, interfaces);
+        this.replacedInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
     }
 
-    private void buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
-        for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
-            String name = fieldDefinition.getName();
-            if (fieldDefinitionsByName.containsKey(name)) {
-                throw new AssertException(format("Duplicated definition for field '%s' in type '%s'", name, this.name));
-            }
-            fieldDefinitionsByName.put(name, fieldDefinition);
-        }
+    private ImmutableMap<String, GraphQLFieldDefinition> buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
+        return ImmutableMap.copyOf(FpKit.getByName(fieldDefinitions, GraphQLFieldDefinition::getName,
+                (fld1, fld2) -> assertShouldNeverHappen("Duplicated definition for field '%s' in type '%s'", fld1.getName(), this.name)));
     }
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     @Override
@@ -136,16 +131,16 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
 
     @Override
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
-        return new ArrayList<>(fieldDefinitionsByName.values());
+        return ImmutableList.copyOf(fieldDefinitionsByName.values());
     }
 
 
     @Override
     public List<GraphQLNamedOutputType> getInterfaces() {
         if (replacedInterfaces != null) {
-            return Collections.unmodifiableList(replacedInterfaces);
+            return replacedInterfaces;
         }
-        return unmodifiableList(originalInterfaces);
+        return originalInterfaces;
     }
 
     public String getDescription() {
@@ -221,6 +216,23 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
                         .replaceInterfaces(newChildren.getChildren(CHILD_INTERFACES))
         );
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
+    }
+
 
     public static Builder newObject() {
         return new Builder();

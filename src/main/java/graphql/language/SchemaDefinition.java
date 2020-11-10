@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -14,13 +15,14 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static graphql.language.NodeUtil.directiveByName;
 import static graphql.language.NodeUtil.directivesByName;
 
 @PublicApi
 public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> implements SDLDefinition<SchemaDefinition> {
 
-    private final List<Directive> directives;
-    private final List<OperationTypeDefinition> operationTypeDefinitions;
+    private final ImmutableList<Directive> directives;
+    private final ImmutableList<OperationTypeDefinition> operationTypeDefinitions;
 
     public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_OPERATION_TYPE_DEFINITIONS = "operationTypeDefinitions";
@@ -35,12 +37,12 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
                                Map<String, String> additionalData,
                                Description description) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
-        this.directives = directives;
-        this.operationTypeDefinitions = operationTypeDefinitions;
+        this.directives = ImmutableList.copyOf(directives);
+        this.operationTypeDefinitions = ImmutableList.copyOf(operationTypeDefinitions);
     }
 
     public List<Directive> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     public Map<String, Directive> getDirectivesByName() {
@@ -48,12 +50,12 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
     }
 
     public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
+        return directiveByName(directives, directiveName).orElse(null);
     }
 
 
     public List<OperationTypeDefinition> getOperationTypeDefinitions() {
-        return new ArrayList<>(operationTypeDefinitions);
+        return operationTypeDefinitions;
     }
 
     public Description getDescription() {
@@ -124,7 +126,7 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
         return new Builder();
     }
 
-    public static final class Builder implements NodeBuilder {
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
@@ -162,6 +164,7 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
             return this;
         }
 
+        @Override
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;

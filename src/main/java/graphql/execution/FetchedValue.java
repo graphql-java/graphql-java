@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import com.google.common.collect.ImmutableList;
 import graphql.GraphQLError;
 import graphql.Internal;
 
@@ -12,12 +13,12 @@ public class FetchedValue {
     private final Object fetchedValue;
     private final Object rawFetchedValue;
     private final Object localContext;
-    private final List<GraphQLError> errors;
+    private final ImmutableList<GraphQLError> errors;
 
     private FetchedValue(Object fetchedValue, Object rawFetchedValue, List<GraphQLError> errors, Object localContext) {
         this.fetchedValue = fetchedValue;
         this.rawFetchedValue = rawFetchedValue;
-        this.errors = errors;
+        this.errors = ImmutableList.copyOf(errors);
         this.localContext = localContext;
     }
 
@@ -33,7 +34,7 @@ public class FetchedValue {
     }
 
     public List<GraphQLError> getErrors() {
-        return new ArrayList<>(errors);
+        return errors;
     }
 
     public Object getLocalContext() {

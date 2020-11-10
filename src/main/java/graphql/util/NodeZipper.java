@@ -1,9 +1,9 @@
 package graphql.util;
 
+import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,7 +37,7 @@ public class NodeZipper<T> {
 
     public NodeZipper(T curNode, List<Breadcrumb<T>> breadcrumbs, NodeAdapter<T> nodeAdapter, ModificationType modificationType) {
         this.curNode = assertNotNull(curNode);
-        this.breadcrumbs = Collections.unmodifiableList(new ArrayList<>(assertNotNull(breadcrumbs)));
+        this.breadcrumbs = ImmutableList.copyOf(assertNotNull(breadcrumbs));
         this.nodeAdapter = nodeAdapter;
         this.modificationType = modificationType;
     }
@@ -139,5 +139,12 @@ public class NodeZipper<T> {
         return curNode;
     }
 
-
+    @Override
+    public String toString() {
+        return "NodeZipper{" +
+                "curNode=" + curNode +
+                ", breadcrumbs.size=" + breadcrumbs.size() +
+                ", modificationType=" + modificationType +
+                '}';
+    }
 }

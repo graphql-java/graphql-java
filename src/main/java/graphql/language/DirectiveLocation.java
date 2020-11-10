@@ -7,13 +7,15 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
 
@@ -33,7 +35,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
      * @param name of the directive location
      */
     public DirectiveLocation(String name) {
-        this(name, null, new ArrayList<>(), IgnoredChars.EMPTY, Collections.emptyMap());
+        this(name, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -43,7 +45,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>();
+        return emptyList();
     }
 
     @Override
@@ -68,7 +70,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
 
         DirectiveLocation that = (DirectiveLocation) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name);
+        return Objects.equals(this.name, that.name);
     }
 
     @Override

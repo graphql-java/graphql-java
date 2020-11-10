@@ -1,5 +1,6 @@
 package graphql.execution.nextgen.result;
 
+import com.google.common.collect.ImmutableList;
 import graphql.GraphQLError;
 import graphql.Internal;
 
@@ -14,13 +15,13 @@ public class ResolvedValue {
     private final Object completedValue;
     private final Object localContext;
     private final boolean nullValue;
-    private final List<GraphQLError> errors;
+    private final ImmutableList<GraphQLError> errors;
 
     private ResolvedValue(Builder builder) {
         this.completedValue = builder.completedValue;
         this.localContext = builder.localContext;
         this.nullValue = builder.nullValue;
-        this.errors = builder.errors;
+        this.errors = ImmutableList.copyOf(builder.errors);
     }
 
     public Object getCompletedValue() {
@@ -36,7 +37,7 @@ public class ResolvedValue {
     }
 
     public List<GraphQLError> getErrors() {
-        return Collections.unmodifiableList(errors);
+        return errors;
     }
 
     public static Builder newResolvedValue() {

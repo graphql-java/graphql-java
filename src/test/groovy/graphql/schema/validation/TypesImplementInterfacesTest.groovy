@@ -195,6 +195,55 @@ class TypesImplementInterfacesTest extends Specification {
         !badErrorCollector.getErrors().isEmpty()
     }
 
+    def "field is list of interfaces implementing interface" () {
+        given:
+        def person = newInterface()
+                .name("Person")
+                .field(newFieldDefinition().name("name").type(GraphQLString).build())
+                .typeResolver({})
+                .build()
+
+        def actor = newInterface()
+                .name("Actor")
+                .field(newFieldDefinition().name("name").type(GraphQLString).build())
+                .withInterface(person)
+                .build()
+
+        def prop = newObject()
+                .name("Prop")
+                .field(newFieldDefinition().name("name").type(GraphQLString).build())
+                .build()
+
+        GraphQLInterfaceType interfaceType = newInterface()
+                .name("TestInterface")
+                .field(newFieldDefinition().name("field").type(list(person)).build())
+                .typeResolver({})
+                .build()
+
+        GraphQLObjectType goodImpl = newObject()
+                .name("GoodImpl")
+                .field(newFieldDefinition().name("field").type(list(actor)).build())
+                .withInterface(interfaceType)
+                .build()
+
+        GraphQLObjectType badImpl = newObject()
+                .name("BadImpl")
+                .field(newFieldDefinition().name("field").type(list(prop)).build())
+                .withInterface(interfaceType)
+                .build()
+
+        SchemaValidationErrorCollector goodErrorCollector = new SchemaValidationErrorCollector()
+        SchemaValidationErrorCollector badErrorCollector = new SchemaValidationErrorCollector()
+
+        when:
+        new TypesImplementInterfaces().check(goodImpl, goodErrorCollector)
+        new TypesImplementInterfaces().check(badImpl, badErrorCollector)
+
+        then:
+        goodErrorCollector.getErrors().isEmpty()
+        !badErrorCollector.getErrors().isEmpty()
+    }
+
     def "field is member of union"() {
         given:
         def actor = newObject()

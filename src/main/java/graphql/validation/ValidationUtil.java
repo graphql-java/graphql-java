@@ -1,8 +1,10 @@
 package graphql.validation;
 
 
+import com.google.common.collect.ImmutableSet;
 import graphql.Assert;
 import graphql.GraphQLError;
+import graphql.Internal;
 import graphql.language.ArrayValue;
 import graphql.language.ListType;
 import graphql.language.NonNullType;
@@ -29,12 +31,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 
+@Internal
 public class ValidationUtil {
 
     public TypeName getUnmodifiedType(Type<?> type) {
@@ -93,7 +95,7 @@ public class ValidationUtil {
             return !invalid.isPresent();
         }
         if (type instanceof GraphQLEnumType) {
-            Optional<GraphQLError> invalid = parseLiteralEnum(value,(GraphQLEnumType) type);
+            Optional<GraphQLError> invalid = parseLiteralEnum(value, (GraphQLEnumType) type);
             invalid.ifPresent(graphQLError -> handleEnumError(value, (GraphQLEnumType) type, graphQLError));
             return !invalid.isPresent();
         }
@@ -104,6 +106,7 @@ public class ValidationUtil {
         return type instanceof GraphQLInputObjectType && isValidLiteralValue(value, (GraphQLInputObjectType) type, schema);
 
     }
+
     private Optional<GraphQLError> parseLiteralEnum(Value<?> value, GraphQLEnumType graphQLEnumType) {
         try {
             graphQLEnumType.parseLiteral(value);
@@ -113,7 +116,7 @@ public class ValidationUtil {
         }
     }
 
-    private Optional<GraphQLError> parseLiteral(Value<?> value, Coercing<?,?> coercing) {
+    private Optional<GraphQLError> parseLiteral(Value<?> value, Coercing<?, ?> coercing) {
         try {
             coercing.parseLiteral(value);
             return Optional.empty();
@@ -158,7 +161,7 @@ public class ValidationUtil {
                 .filter(field -> isNonNull(field.getType()))
                 .filter(value -> (value.getDefaultValue() == null) && !objectFieldMap.containsKey(value.getName()))
                 .map(GraphQLInputObjectField::getName)
-                .collect(Collectors.toSet());
+                .collect(ImmutableSet.toImmutableSet());
     }
 
     private Map<String, ObjectField> fieldMap(ObjectValue objectValue) {

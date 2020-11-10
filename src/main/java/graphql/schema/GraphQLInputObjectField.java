@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
@@ -34,7 +35,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
     private final GraphQLInputType originalType;
     private final Object defaultValue;
     private final InputValueDefinition definition;
-    private final List<GraphQLDirective> directives;
+    private final ImmutableList<GraphQLDirective> directives;
 
     private GraphQLInputType replacedType;
 
@@ -88,7 +89,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         this.originalType = type;
         this.defaultValue = defaultValue;
         this.description = description;
-        this.directives = directives;
+        this.directives =ImmutableList.copyOf(directives);
         this.definition = definition;
     }
 
@@ -164,6 +165,23 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
                         .type((GraphQLInputType) newChildren.getChildOrNull(CHILD_TYPE))
         );
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
+    }
+
 
     @Override
     public String toString() {

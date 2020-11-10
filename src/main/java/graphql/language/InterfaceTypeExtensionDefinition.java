@@ -54,13 +54,21 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
         return new Builder();
     }
 
+    @Override
+    public InterfaceTypeExtensionDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transformExtension(builder -> builder
+                .definitions(newChildren.getChildren(CHILD_DEFINITIONS))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
+    }
+
     public InterfaceTypeExtensionDefinition transformExtension(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
         return builder.build();
     }
 
-    public static final class Builder implements NodeBuilder {
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private String name;
@@ -121,6 +129,7 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
             return this;
         }
 
+        @Override
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;

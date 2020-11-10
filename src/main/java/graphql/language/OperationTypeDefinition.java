@@ -10,11 +10,13 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinition> implements NamedNode<OperationTypeDefinition> {
@@ -34,11 +36,11 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
     /**
      * alternative to using a Builder for convenience
      *
-     * @param name of the operation
+     * @param name     of the operation
      * @param typeName the type in play
      */
     public OperationTypeDefinition(String name, TypeName typeName) {
-        this(name, typeName, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, typeName, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public TypeName getTypeName() {
@@ -82,7 +84,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
 
         OperationTypeDefinition that = (OperationTypeDefinition) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name);
+        return Objects.equals(this.name, that.name);
     }
 
     @Override

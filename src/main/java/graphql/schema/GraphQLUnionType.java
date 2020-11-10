@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.UnionTypeDefinition;
@@ -9,7 +10,6 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +21,6 @@ import static graphql.Assert.assertValidName;
 import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChildrenContainer;
 import static graphql.util.FpKit.getByName;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.unmodifiableList;
 
 /**
  * A union type is a polymorphic type that dynamically represents one of more concrete object types.
@@ -38,14 +37,14 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
 
     private final String name;
     private final String description;
-    private final List<GraphQLNamedOutputType> originalTypes;
+    private final ImmutableList<GraphQLNamedOutputType> originalTypes;
     private final TypeResolver typeResolver;
     private final UnionTypeDefinition definition;
-    private final List<UnionTypeExtensionDefinition> extensionDefinitions;
+    private final ImmutableList<UnionTypeExtensionDefinition> extensionDefinitions;
 
-    private final List<GraphQLDirective> directives;
+    private final ImmutableList<GraphQLDirective> directives;
 
-    private List<GraphQLNamedOutputType> replacedTypes;
+    private ImmutableList<GraphQLNamedOutputType> replacedTypes;
 
     public static final String CHILD_TYPES = "types";
     public static final String CHILD_DIRECTIVES = "directives";
@@ -56,6 +55,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
      * @param description  the description
      * @param types        the possible types
      * @param typeResolver the type resolver function
+     *
      * @deprecated use the {@link #newUnionType()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -71,6 +71,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
      * @param typeResolver the type resolver function
      * @param directives   the directives on this type element
      * @param definition   the AST definition
+     *
      * @deprecated use the {@link #newUnionType()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -87,15 +88,15 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
 
         this.name = name;
         this.description = description;
-        this.originalTypes = types;
+        this.originalTypes = ImmutableList.copyOf(types);
         this.typeResolver = typeResolver;
         this.definition = definition;
-        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
-        this.directives = directives;
+        this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
+        this.directives = ImmutableList.copyOf(directives);
     }
 
     void replaceTypes(List<GraphQLNamedOutputType> types) {
-        this.replacedTypes = types;
+        this.replacedTypes = ImmutableList.copyOf(types);
     }
 
     /**
@@ -105,9 +106,20 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
      */
     public List<GraphQLNamedOutputType> getTypes() {
         if (replacedTypes != null) {
-            return Collections.unmodifiableList(replacedTypes);
+            return replacedTypes;
         }
-        return unmodifiableList(originalTypes);
+        return originalTypes;
+    }
+
+    /**
+     * Returns true of the object type is a member of this Union type.
+     *
+     * @param graphQLObjectType the type to check
+     *
+     * @return true if the object type is a member of this union type.
+     */
+    public boolean isPossibleType(GraphQLObjectType graphQLObjectType) {
+        return getTypes().stream().anyMatch(nt -> nt.getName().equals(graphQLObjectType.getName()));
     }
 
     // to be removed in a future version when all code is in the code registry
@@ -134,7 +146,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     /**
@@ -142,6 +154,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new object based on calling build on that builder
      */
     public GraphQLUnionType transform(Consumer<Builder> builderConsumer) {
@@ -177,6 +190,23 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
                         .replacePossibleTypes(newChildren.getChildren(CHILD_TYPES))
         );
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
+    }
+
 
     public static Builder newUnionType() {
         return new Builder();
@@ -337,5 +367,14 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
                     definition,
                     extensionDefinitions);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "GraphQLUnionType{" +
+                "name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", definition=" + definition +
+                '}';
     }
 }

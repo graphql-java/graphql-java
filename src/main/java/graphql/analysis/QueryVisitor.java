@@ -17,8 +17,8 @@ public interface QueryVisitor {
      * visitField variant which lets you control the traversal.
      * default implementation calls visitField for backwards compatibility reason
      *
-     * @param queryVisitorFieldEnvironment
-     * @return
+     * @param queryVisitorFieldEnvironment the environment in play
+     * @return traversal control
      */
     default TraversalControl visitFieldWithControl(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
         visitField(queryVisitorFieldEnvironment);

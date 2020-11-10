@@ -1,6 +1,7 @@
 package graphql.execution.batched;
 
 
+import graphql.PublicApi;
 import graphql.execution.Async;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -19,6 +20,7 @@ import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironm
  * @deprecated This has been deprecated in favour of using {@link graphql.execution.AsyncExecutionStrategy} and {@link graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation}
  */
 @Deprecated
+@PublicApi
 public class UnbatchedDataFetcher implements BatchedDataFetcher {
 
     private final DataFetcher delegate;

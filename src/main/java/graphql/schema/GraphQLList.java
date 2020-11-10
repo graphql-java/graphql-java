@@ -7,6 +7,7 @@ import graphql.util.TraverserContext;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static graphql.Assert.assertNotNull;
 
@@ -50,29 +51,28 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
         return replacedWrappedType != null ? replacedWrappedType : originalWrappedType;
     }
 
+    public GraphQLType getOriginalWrappedType() {
+        return originalWrappedType;
+    }
+
     void replaceType(GraphQLType type) {
         this.replacedWrappedType = type;
     }
 
-    @Override
-    public boolean equals(Object o) {
+
+    public boolean isEqualTo(Object o) {
         if (this == o) {
             return true;
         }
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         GraphQLList that = (GraphQLList) o;
         GraphQLType wrappedType = getWrappedType();
-
-        return !(wrappedType != null ? !wrappedType.equals(that.getWrappedType()) : that.getWrappedType() != null);
-
-    }
-
-    @Override
-    public int hashCode() {
-        return getWrappedType() != null ? getWrappedType().hashCode() : 0;
+        if (wrappedType instanceof GraphQLNonNull) {
+            return ((GraphQLNonNull) wrappedType).isEqualTo(that.getWrappedType());
+        }
+        return Objects.equals(wrappedType, that.getWrappedType());
     }
 
     @Override
@@ -100,6 +100,22 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
     @Override
     public String toString() {
         return GraphQLTypeUtil.simplePrint(this);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
     }
 
 }

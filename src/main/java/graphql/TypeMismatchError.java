@@ -1,6 +1,6 @@
 package graphql;
 
-import graphql.execution.ExecutionPath;
+import graphql.execution.ResultPath;
 import graphql.introspection.Introspection;
 import graphql.language.SourceLocation;
 import graphql.schema.GraphQLEnumType;
@@ -27,13 +27,13 @@ public class TypeMismatchError implements GraphQLError {
     private final List<Object> path;
     private final GraphQLType expectedType;
 
-    public TypeMismatchError(ExecutionPath path, GraphQLType expectedType) {
+    public TypeMismatchError(ResultPath path, GraphQLType expectedType) {
         this.path = assertNotNull(path).toList();
         this.expectedType = assertNotNull(expectedType);
         this.message = mkMessage(path, expectedType);
     }
 
-    private String mkMessage(ExecutionPath path, GraphQLType expectedType) {
+    private String mkMessage(ResultPath path, GraphQLType expectedType) {
         String expectedTypeKind = GraphQLTypeToTypeKindMapping.getTypeKindFromGraphQLType(expectedType).name();
         return format("Can't resolve value (%s) : type mismatch error, expected type %s", path, expectedTypeKind);
     }

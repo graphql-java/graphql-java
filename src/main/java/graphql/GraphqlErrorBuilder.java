@@ -1,7 +1,7 @@
 package graphql;
 
 import graphql.execution.DataFetcherResult;
-import graphql.execution.ExecutionPath;
+import graphql.execution.ResultPath;
 import graphql.language.SourceLocation;
 import graphql.schema.DataFetchingEnvironment;
 
@@ -68,7 +68,7 @@ public class GraphqlErrorBuilder {
         return this;
     }
 
-    public GraphqlErrorBuilder path(ExecutionPath path) {
+    public GraphqlErrorBuilder path(ResultPath path) {
         this.path = assertNotNull(path).toList();
         return this;
     }

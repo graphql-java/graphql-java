@@ -27,7 +27,6 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError;
 import graphql.util.LogKit;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -247,16 +246,24 @@ class ArgValueOfAllowedTypeChecker {
             return;
         }
 
+
+        Type unwrappedAllowedType = allowedArgType.getType();
         if (!(instanceValue instanceof ArrayValue)) {
-            addValidationError(errors, EXPECTED_LIST_MESSAGE, instanceValue.getClass().getSimpleName());
+            checkArgValueMatchesAllowedType(errors, instanceValue, unwrappedAllowedType);
             return;
         }
 
         ArrayValue arrayValue = ((ArrayValue) instanceValue);
-        Type unwrappedAllowedType = allowedArgType.getType();
+        boolean isUnwrappedList = unwrappedAllowedType instanceof ListType;
 
         // validate each instance value in the list, all instances must match for the list to match
-        arrayValue.getValues().forEach(value -> checkArgValueMatchesAllowedType(errors, value, unwrappedAllowedType));
+        arrayValue.getValues().forEach(value -> {
+            // restrictive check for sub-arrays
+            if (isUnwrappedList && ! (value instanceof ArrayValue)) {
+                addValidationError(errors, EXPECTED_LIST_MESSAGE, value.getClass().getSimpleName());
+            }
+            checkArgValueMatchesAllowedType(errors, value, unwrappedAllowedType);
+        });
     }
 
     private boolean isArgumentValueScalarLiteral(GraphQLScalarType scalarType, Value instanceValue) {
@@ -264,7 +271,9 @@ class ArgValueOfAllowedTypeChecker {
             scalarType.getCoercing().parseLiteral(instanceValue);
             return true;
         } catch (CoercingParseLiteralException ex) {
-            logNotSafe.debug("Attempted parsing literal into '{}' but got the following error: ", scalarType.getName(), ex);
+            if (logNotSafe.isDebugEnabled()) {
+                logNotSafe.debug("Attempted parsing literal into '{}' but got the following error: ", scalarType.getName(), ex);
+            }
             return false;
         }
     }

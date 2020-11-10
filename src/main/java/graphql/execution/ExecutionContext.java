@@ -1,28 +1,33 @@
 package graphql.execution;
 
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import graphql.ExecutionInput;
 import graphql.GraphQLError;
-import graphql.Internal;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
-import graphql.execution.defer.DeferSupport;
+import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
+import graphql.normalized.NormalizedQueryTree;
+import graphql.normalized.NormalizedQueryTreeFactory;
 import graphql.schema.GraphQLSchema;
+import graphql.util.FpKit;
 import org.dataloader.DataLoaderRegistry;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
@@ -34,20 +39,19 @@ public class ExecutionContext {
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
-    private final Map<String, FragmentDefinition> fragmentsByName;
+    private final ImmutableMap<String, FragmentDefinition> fragmentsByName;
     private final OperationDefinition operationDefinition;
     private final Document document;
-    private final Map<String, Object> variables;
+    private final ImmutableMapWithNullValues<String, Object> variables;
     private final Object root;
     private final Object context;
     private final Object localContext;
     private final Instrumentation instrumentation;
-    private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
-    private final Set<ExecutionPath> errorPaths = new HashSet<>();
+    private final List<GraphQLError> errors = Collections.synchronizedList(new ArrayList<>());
+    private final Set<ResultPath> errorPaths = new HashSet<>();
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
     private final Locale locale;
-    private final DeferSupport deferSupport = new DeferSupport();
     private final ValueUnboxer valueUnboxer;
     private final ExecutionInput executionInput;
 
@@ -58,8 +62,8 @@ public class ExecutionContext {
         this.queryStrategy = builder.queryStrategy;
         this.mutationStrategy = builder.mutationStrategy;
         this.subscriptionStrategy = builder.subscriptionStrategy;
-        this.fragmentsByName = Collections.unmodifiableMap(builder.fragmentsByName);
-        this.variables = Collections.unmodifiableMap(builder.variables);
+        this.fragmentsByName = builder.fragmentsByName;
+        this.variables = ImmutableMapWithNullValues.copyOf(builder.variables);
         this.document = builder.document;
         this.operationDefinition = builder.operationDefinition;
         this.context = builder.context;
@@ -115,6 +119,7 @@ public class ExecutionContext {
     public <T> T getContext() {
         return (T) context;
     }
+
     @SuppressWarnings("unchecked")
     public <T> T getLocalContext() {
         return (T) localContext;
@@ -151,7 +156,7 @@ public class ExecutionContext {
      * @param error     the error to add
      * @param fieldPath the field path to put it under
      */
-    public void addError(GraphQLError error, ExecutionPath fieldPath) {
+    public void addError(GraphQLError error, ResultPath fieldPath) {
         //
         // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability about how per
         // field errors should be handled - ie only once per field if its already there for nullability
@@ -174,7 +179,7 @@ public class ExecutionContext {
         // on how exactly multiple errors should be handled - ie only once per field or not outside the nullability
         // aspect.
         if (error.getPath() != null) {
-            this.errorPaths.add(ExecutionPath.fromList(error.getPath()));
+            this.errorPaths.add(ResultPath.fromList(error.getPath()));
         }
         this.errors.add(error);
     }
@@ -183,7 +188,7 @@ public class ExecutionContext {
      * @return the total list of errors for this execution context
      */
     public List<GraphQLError> getErrors() {
-        return Collections.unmodifiableList(errors);
+        return ImmutableList.copyOf(errors);
     }
 
     public ExecutionStrategy getQueryStrategy() {
@@ -198,8 +203,8 @@ public class ExecutionContext {
         return subscriptionStrategy;
     }
 
-    public DeferSupport getDeferSupport() {
-        return deferSupport;
+    public Supplier<NormalizedQueryTree> getNormalizedQueryTree() {
+        return FpKit.interThreadMemoize(() -> NormalizedQueryTreeFactory.createNormalizedQuery(graphQLSchema, operationDefinition, fragmentsByName, variables));
     }
 
     /**

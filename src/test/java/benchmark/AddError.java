@@ -3,7 +3,7 @@ package benchmark;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionContextBuilder;
 import graphql.execution.ExecutionId;
-import graphql.execution.ExecutionPath;
+import graphql.execution.ResultPath;
 import graphql.schema.idl.errors.SchemaMissingError;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -31,7 +31,7 @@ public class AddError {
     public ExecutionContext benchMarkAddError() {
         context.addError(
                 new SchemaMissingError(),
-                ExecutionPath.fromList(Collections.singletonList(x++))
+                ResultPath.fromList(Collections.singletonList(x++))
         );
         return context;
     }

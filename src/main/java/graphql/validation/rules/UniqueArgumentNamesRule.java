@@ -1,5 +1,6 @@
 package graphql.validation.rules;
 
+import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.Directive;
 import graphql.language.Field;
@@ -18,6 +19,7 @@ import java.util.Set;
  *
  * A GraphQL field or directive is only valid if all supplied arguments are uniquely named.
  */
+@Internal
 public class UniqueArgumentNamesRule extends AbstractRule {
     public UniqueArgumentNamesRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);

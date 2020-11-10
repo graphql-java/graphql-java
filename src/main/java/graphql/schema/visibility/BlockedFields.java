@@ -1,5 +1,6 @@
 package graphql.schema.visibility;
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.schema.GraphQLFieldDefinition;
@@ -11,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * This helper class will take a list of regular expressions and match them against the fully qualified name
@@ -40,7 +40,7 @@ public class BlockedFields implements GraphqlFieldVisibility {
     public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
         return fieldsContainer.getFieldDefinitions().stream()
                 .filter(fieldDefinition -> !block(mkFQN(fieldsContainer.getName(), fieldDefinition.getName())))
-                .collect(Collectors.toList());
+                .collect(ImmutableList.toImmutableList());
     }
 
     @Override
@@ -58,7 +58,7 @@ public class BlockedFields implements GraphqlFieldVisibility {
     public List<GraphQLInputObjectField> getFieldDefinitions(GraphQLInputFieldsContainer fieldsContainer) {
         return fieldsContainer.getFieldDefinitions().stream()
                 .filter(fieldDefinition -> !block(mkFQN(fieldsContainer.getName(), fieldDefinition.getName())))
-                .collect(Collectors.toList());
+                .collect(ImmutableList.toImmutableList());
     }
 
     @Override
