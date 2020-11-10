@@ -28,9 +28,9 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.collect.ImmutableKit.map;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
@@ -48,7 +48,6 @@ public class ValuesResolver {
      * @param schema              the schema
      * @param variableDefinitions the variable definitions
      * @param variableValues      the supplied variables
-     *
      * @return coerced variable values as a map
      */
     public Map<String, Object> coerceVariableValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> variableValues) {
@@ -193,7 +192,7 @@ public class ValuesResolver {
     private Object coerceValueForInputObjectType(GraphqlFieldVisibility fieldVisibility, VariableDefinition variableDefinition, GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
         Map<String, Object> result = new LinkedHashMap<>();
         List<GraphQLInputObjectField> fields = fieldVisibility.getFieldDefinitions(inputObjectType);
-        List<String> fieldNames = fields.stream().map(GraphQLInputObjectField::getName).collect(Collectors.toList());
+        List<String> fieldNames = map(fields, GraphQLInputObjectField::getName);
         for (String inputFieldName : input.keySet()) {
             if (!fieldNames.contains(inputFieldName)) {
                 throw new InputMapDefinesTooManyFieldsException(inputObjectType, inputFieldName);

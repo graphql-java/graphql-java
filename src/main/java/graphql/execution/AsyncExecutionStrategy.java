@@ -8,9 +8,11 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionStra
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
+
+import static graphql.collect.ImmutableKit.map;
 
 /**
  * The standard graphql execution strategy that runs fields asynchronously non-blocking.
@@ -44,7 +46,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         ExecutionStrategyInstrumentationContext executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
 
         MergedSelectionSet fields = parameters.getFields();
-        List<String> fieldNames = new ArrayList<>(fields.keySet());
+        Set<String> fieldNames = fields.keySet();
         List<CompletableFuture<FieldValueInfo>> futures = new ArrayList<>(fieldNames.size());
         List<String> resolvedFields = new ArrayList<>(fieldNames.size());
         for (String fieldName : fieldNames) {
@@ -67,7 +69,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                 handleResultsConsumer.accept(null, throwable.getCause());
                 return;
             }
-            List<CompletableFuture<ExecutionResult>> executionResultFuture = completeValueInfos.stream().map(FieldValueInfo::getFieldValue).collect(Collectors.toList());
+            List<CompletableFuture<ExecutionResult>> executionResultFuture = map(completeValueInfos, FieldValueInfo::getFieldValue);
             executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
             Async.each(executionResultFuture).whenComplete(handleResultsConsumer);
         }).exceptionally((ex) -> {

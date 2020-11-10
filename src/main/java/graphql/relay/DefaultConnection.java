@@ -1,12 +1,12 @@
 package graphql.relay;
 
+import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 
 import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
-import static java.util.Collections.unmodifiableList;
 
 /**
  * A default implementation of {@link graphql.relay.Connection}
@@ -14,7 +14,7 @@ import static java.util.Collections.unmodifiableList;
 @PublicApi
 public class DefaultConnection<T> implements Connection<T> {
 
-    private final List<Edge<T>> edges;
+    private final ImmutableList<Edge<T>> edges;
     private final PageInfo pageInfo;
 
     /**
@@ -26,7 +26,7 @@ public class DefaultConnection<T> implements Connection<T> {
      * @throws IllegalArgumentException if edges or page info is null. use {@link Collections#emptyList()} for empty edges.
      */
     public DefaultConnection(List<Edge<T>> edges, PageInfo pageInfo) {
-        this.edges = unmodifiableList(assertNotNull(edges, () -> "edges cannot be null"));
+        this.edges = ImmutableList.copyOf(assertNotNull(edges, () -> "edges cannot be null"));
         this.pageInfo = assertNotNull(pageInfo, () -> "page info cannot be null");
     }
 

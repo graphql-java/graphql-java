@@ -1,6 +1,7 @@
 package graphql.util;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 
 import java.lang.reflect.Array;
@@ -42,8 +43,8 @@ public class FpKit {
     }
 
     // normal groupingBy but with LinkedHashMap
-    public static <T, NewKey> Map<NewKey, List<T>> groupingBy(Collection<T> list, Function<T, NewKey> function) {
-        return list.stream().collect(Collectors.groupingBy(function, LinkedHashMap::new, mapping(Function.identity(), Collectors.toList())));
+    public static <T, NewKey> Map<NewKey, ImmutableList<T>> groupingBy(Collection<T> list, Function<T, NewKey> function) {
+        return list.stream().collect(Collectors.groupingBy(function, LinkedHashMap::new, mapping(Function.identity(), ImmutableList.toImmutableList())));
     }
 
     public static <T, NewKey> Map<NewKey, T> groupingByUniqueKey(Collection<T> list, Function<T, NewKey> keyFunction) {
@@ -200,10 +201,6 @@ public class FpKit {
         return new ArrayList<>(map.values());
     }
 
-    public static <T, U> List<U> map(List<T> list, Function<T, U> function) {
-        return list.stream().map(function).collect(Collectors.toList());
-    }
-
     public static <K, V, U> List<U> mapEntries(Map<K, V> map, BiFunction<K, V, U> function) {
         return map.entrySet().stream().map(entry -> function.apply(entry.getKey(), entry.getValue())).collect(Collectors.toList());
     }
@@ -232,7 +229,7 @@ public class FpKit {
     public static <T> List<T> flatList(List<List<T>> listLists) {
         return listLists.stream()
             .flatMap(List::stream)
-            .collect(Collectors.toList());
+            .collect(ImmutableList.toImmutableList());
     }
 
     public static <T> Optional<T> findOne(Collection<T> list, Predicate<T> filter) {

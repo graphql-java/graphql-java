@@ -1,12 +1,12 @@
 package graphql.schema;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 import graphql.language.DirectiveDefinition;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -32,7 +32,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
     private final String name;
     private final String description;
     private final EnumSet<DirectiveLocation> locations;
-    private final List<GraphQLArgument> arguments = new ArrayList<>();
+    private final ImmutableList<GraphQLArgument> arguments;
     private final DirectiveDefinition definition;
 
 
@@ -59,7 +59,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         this.name = name;
         this.description = description;
         this.locations = locations;
-        this.arguments.addAll(arguments);
+        this.arguments = ImmutableList.copyOf(arguments);
         this.definition = definition;
     }
 
@@ -69,7 +69,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
     }
 
     public List<GraphQLArgument> getArguments() {
-        return new ArrayList<>(arguments);
+        return arguments;
     }
 
     public GraphQLArgument getArgument(String name) {
@@ -123,7 +123,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
 
     @Override
     public List<GraphQLSchemaElement> getChildren() {
-        return new ArrayList<>(arguments);
+        return ImmutableList.copyOf(arguments);
     }
 
     @Override

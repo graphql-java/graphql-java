@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import graphql.PublicApi;
+import graphql.collect.ImmutableMapWithNullValues;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
@@ -14,12 +15,12 @@ public class TypeResolutionParameters {
     private final GraphQLUnionType graphQLUnionType;
     private final MergedField field;
     private final Object value;
-    private final Map<String, Object> argumentValues;
+    private final ImmutableMapWithNullValues<String, Object> argumentValues;
     private final GraphQLSchema schema;
     private final Object context;
 
     private TypeResolutionParameters(GraphQLInterfaceType graphQLInterfaceType, GraphQLUnionType graphQLUnionType,
-                                     MergedField field, Object value, Map<String, Object> argumentValues, GraphQLSchema schema, final Object context) {
+                                     MergedField field, Object value, ImmutableMapWithNullValues<String, Object> argumentValues, GraphQLSchema schema, final Object context) {
         this.graphQLInterfaceType = graphQLInterfaceType;
         this.graphQLUnionType = graphQLUnionType;
         this.field = field;
@@ -67,7 +68,7 @@ public class TypeResolutionParameters {
         private GraphQLInterfaceType graphQLInterfaceType;
         private GraphQLUnionType graphQLUnionType;
         private Object value;
-        private Map<String, Object> argumentValues;
+        private ImmutableMapWithNullValues<String, Object> argumentValues;
         private GraphQLSchema schema;
         private Object context;
 
@@ -92,7 +93,7 @@ public class TypeResolutionParameters {
         }
 
         public Builder argumentValues(Map<String, Object> argumentValues) {
-            this.argumentValues = argumentValues;
+            this.argumentValues = ImmutableMapWithNullValues.copyOf(argumentValues);
             return this;
         }
 

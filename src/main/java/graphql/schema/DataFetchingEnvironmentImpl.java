@@ -1,8 +1,11 @@
 package graphql.schema;
 
 
+import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
 import graphql.cachecontrol.CacheControl;
+import graphql.collect.ImmutableKit;
+import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
@@ -12,7 +15,6 @@ import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
-import graphql.normalized.NormalizedQueryTree;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 
@@ -35,7 +37,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final GraphQLOutputType fieldType;
     private final GraphQLType parentType;
     private final GraphQLSchema graphQLSchema;
-    private final Map<String, FragmentDefinition> fragmentsByName;
+    private final ImmutableMap<String, FragmentDefinition> fragmentsByName;
     private final ExecutionId executionId;
     private final DataFetchingFieldSelectionSet selectionSet;
     private final Supplier<ExecutionStepInfo> executionStepInfo;
@@ -44,7 +46,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Locale locale;
     private final OperationDefinition operationDefinition;
     private final Document document;
-    private final Map<String, Object> variables;
+    private final ImmutableMapWithNullValues<String, Object> variables;
     private final QueryDirectives queryDirectives;
 
     private DataFetchingEnvironmentImpl(Builder builder) {
@@ -58,7 +60,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.fieldType = builder.fieldType;
         this.parentType = builder.parentType;
         this.graphQLSchema = builder.graphQLSchema;
-        this.fragmentsByName = builder.fragmentsByName == null ? Collections.emptyMap() : builder.fragmentsByName;
+        this.fragmentsByName = builder.fragmentsByName == null ? ImmutableKit.emptyMap() : builder.fragmentsByName;
         this.executionId = builder.executionId;
         this.selectionSet = builder.selectionSet;
         this.executionStepInfo = builder.executionStepInfo;
@@ -67,7 +69,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.locale = builder.locale;
         this.operationDefinition = builder.operationDefinition;
         this.document = builder.document;
-        this.variables = builder.variables == null ? Collections.emptyMap() : builder.variables;
+        this.variables = builder.variables == null ? ImmutableMapWithNullValues.emptyMap() : builder.variables;
         this.queryDirectives = builder.queryDirectives;
     }
 
@@ -104,7 +106,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public Map<String, Object> getArguments() {
-        return Collections.unmodifiableMap(arguments.get());
+        return ImmutableMapWithNullValues.copyOf(arguments.get());
     }
 
     @Override
@@ -174,7 +176,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public Map<String, FragmentDefinition> getFragmentsByName() {
-        return Collections.unmodifiableMap(fragmentsByName);
+        return fragmentsByName;
     }
 
     @Override
@@ -229,7 +231,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public Map<String, Object> getVariables() {
-        return Collections.unmodifiableMap(variables);
+        return variables;
     }
 
     @Override
@@ -259,8 +261,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private OperationDefinition operationDefinition;
         private Document document;
         private Supplier<Map<String, Object>> arguments;
-        private Map<String, FragmentDefinition> fragmentsByName;
-        private Map<String, Object> variables;
+        private ImmutableMap<String, FragmentDefinition> fragmentsByName;
+        private ImmutableMapWithNullValues<String, Object> variables;
         private QueryDirectives queryDirectives;
 
         public Builder(DataFetchingEnvironmentImpl env) {
@@ -345,7 +347,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         }
 
         public Builder fragmentsByName(Map<String, FragmentDefinition> fragmentsByName) {
-            this.fragmentsByName = fragmentsByName;
+            this.fragmentsByName = ImmutableMap.copyOf(fragmentsByName);
             return this;
         }
 
@@ -394,7 +396,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         }
 
         public Builder variables(Map<String, Object> variables) {
-            this.variables = variables;
+            this.variables = ImmutableMapWithNullValues.copyOf(variables);
             return this;
         }
 

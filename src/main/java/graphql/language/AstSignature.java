@@ -1,5 +1,6 @@
 package graphql.language;
 
+import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -11,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static graphql.util.TreeTransformerUtil.changeNode;
 
@@ -126,7 +126,7 @@ public class AstSignature {
                             return d instanceof FragmentDefinition;
                             // SDL in a query makes no sense - its gone should it be present
                         })
-                        .collect(Collectors.toList());
+                        .collect(ImmutableList.toImmutableList());
 
                 Document changedNode = node.transform(builder -> {
                     builder.definitions(wantedDefinitions);

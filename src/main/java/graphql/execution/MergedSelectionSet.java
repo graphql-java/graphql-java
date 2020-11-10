@@ -1,9 +1,9 @@
 package graphql.execution;
 
+import com.google.common.collect.ImmutableList;
 import graphql.Assert;
 import graphql.PublicApi;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +24,7 @@ public class MergedSelectionSet {
     }
 
     public List<MergedField> getSubFieldsList() {
-        return new ArrayList<>(subFields.values());
+        return ImmutableList.copyOf(subFields.values());
     }
 
     public int size() {
@@ -40,7 +40,7 @@ public class MergedSelectionSet {
     }
 
     public List<String> getKeys() {
-        return new ArrayList<>(keySet());
+        return ImmutableList.copyOf(keySet());
     }
 
     public boolean isEmpty() {

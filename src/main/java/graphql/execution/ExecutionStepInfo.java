@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import graphql.PublicApi;
+import graphql.collect.ImmutableMapWithNullValues;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNonNull;
@@ -8,7 +9,6 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLTypeUtil;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -64,14 +64,14 @@ public class ExecutionStepInfo {
     private final MergedField field;
     private final GraphQLFieldDefinition fieldDefinition;
     private final GraphQLObjectType fieldContainer;
-    private final Map<String, Object> arguments;
+    private final ImmutableMapWithNullValues<String, Object> arguments;
 
     private ExecutionStepInfo(GraphQLOutputType type,
                               GraphQLFieldDefinition fieldDefinition,
                               MergedField field,
                               ResultPath path,
                               ExecutionStepInfo parent,
-                              Map<String, Object> arguments,
+                              ImmutableMapWithNullValues<String, Object> arguments,
                               GraphQLObjectType fieldsContainer) {
         this.fieldDefinition = fieldDefinition;
         this.field = field;
@@ -164,7 +164,7 @@ public class ExecutionStepInfo {
      * @return the resolved arguments that have been passed to this field
      */
     public Map<String, Object> getArguments() {
-        return Collections.unmodifiableMap(arguments);
+        return arguments;
     }
 
     /**
@@ -256,13 +256,13 @@ public class ExecutionStepInfo {
         GraphQLObjectType fieldContainer;
         MergedField field;
         ResultPath path;
-        Map<String, Object> arguments;
+        ImmutableMapWithNullValues<String, Object> arguments;
 
         /**
          * @see ExecutionStepInfo#newExecutionStepInfo()
          */
         private Builder() {
-            arguments = Collections.emptyMap();
+            arguments = ImmutableMapWithNullValues.emptyMap();
         }
 
         private Builder(ExecutionStepInfo existing) {
@@ -272,7 +272,7 @@ public class ExecutionStepInfo {
             this.fieldContainer = existing.fieldContainer;
             this.field = existing.field;
             this.path = existing.path;
-            this.arguments = existing.getArguments();
+            this.arguments = ImmutableMapWithNullValues.copyOf(existing.getArguments());
         }
 
         public Builder type(GraphQLOutputType type) {
@@ -301,7 +301,7 @@ public class ExecutionStepInfo {
         }
 
         public Builder arguments(Map<String, Object> arguments) {
-            this.arguments = arguments == null ? Collections.emptyMap() : arguments;
+            this.arguments = arguments == null ? ImmutableMapWithNullValues.emptyMap() : ImmutableMapWithNullValues.copyOf(arguments);
             return this;
         }
 

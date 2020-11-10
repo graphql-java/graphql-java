@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.normalized.NormalizedField;
 
@@ -154,7 +155,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
         return targetNames.stream()
                 .flatMap(name -> normalisedSelectionSetFields.getOrDefault(name, Collections.emptyList()).stream())
-                .collect(toList());
+                .collect(ImmutableList.toImmutableList());
     }
 
     @Override

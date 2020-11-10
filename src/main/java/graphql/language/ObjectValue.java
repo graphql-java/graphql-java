@@ -1,8 +1,10 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -14,19 +16,18 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class ObjectValue extends AbstractNode<ObjectValue> implements Value<ObjectValue> {
 
-    private final List<ObjectField> objectFields = new ArrayList<>();
+    private final ImmutableList<ObjectField> objectFields;
 
     public static final String CHILD_OBJECT_FIELDS = "objectFields";
 
     @Internal
     protected ObjectValue(List<ObjectField> objectFields, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
-        this.objectFields.addAll(objectFields);
+        this.objectFields = ImmutableList.copyOf(objectFields);
     }
 
     /**
@@ -35,16 +36,16 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
      * @param objectFields the list of field that make up this object value
      */
     public ObjectValue(List<ObjectField> objectFields) {
-        this(objectFields, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(objectFields, null, ImmutableKit.emptyList(), IgnoredChars.EMPTY, ImmutableKit.emptyMap());
     }
 
     public List<ObjectField> getObjectFields() {
-        return new ArrayList<>(objectFields);
+        return objectFields;
     }
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>(objectFields);
+        return ImmutableList.copyOf(objectFields);
     }
 
     @Override

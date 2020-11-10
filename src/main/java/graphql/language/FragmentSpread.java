@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -14,14 +15,15 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class FragmentSpread extends AbstractNode<FragmentSpread> implements Selection<FragmentSpread>, DirectivesContainer<FragmentSpread>, NamedNode<FragmentSpread> {
 
     private final String name;
-    private final List<Directive> directives;
+    private final ImmutableList<Directive> directives;
 
     public static final String CHILD_DIRECTIVES = "directives";
 
@@ -29,7 +31,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
     protected FragmentSpread(String name, List<Directive> directives, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
-        this.directives = new ArrayList<>(directives);
+        this.directives = ImmutableList.copyOf(directives);
     }
 
     /**
@@ -38,7 +40,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
      * @param name of the fragment
      */
     public FragmentSpread(String name) {
-        this(name, new ArrayList<>(), null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, emptyList(), null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -48,7 +50,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
 
     @Override
     public List<Directive> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     @Override
@@ -68,7 +70,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>(directives);
+        return ImmutableList.copyOf(directives);
     }
 
     @Override

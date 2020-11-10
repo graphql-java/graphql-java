@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -12,23 +13,23 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class SelectionSet extends AbstractNode<SelectionSet> {
 
-    private final List<Selection> selections = new ArrayList<>();
+    private final ImmutableList<Selection> selections;
 
     public static final String CHILD_SELECTIONS = "selections";
 
     @Internal
     protected SelectionSet(Collection<? extends Selection> selections, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
-        this.selections.addAll(selections);
+        this.selections = ImmutableList.copyOf(selections);
     }
 
     /**
@@ -37,11 +38,11 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
      * @param selections the list of selection in this selection set
      */
     public SelectionSet(Collection<? extends Selection> selections) {
-        this(selections, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(selections, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public List<Selection> getSelections() {
-        return new ArrayList<>(selections);
+        return selections;
     }
 
     /**
@@ -56,12 +57,12 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
         return selections.stream()
                 .filter(d -> selectionClass.isAssignableFrom(d.getClass()))
                 .map(selectionClass::cast)
-                .collect(Collectors.toList());
+                .collect(ImmutableList.toImmutableList());
     }
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>(selections);
+        return ImmutableList.copyOf(selections);
     }
 
     @Override
@@ -135,7 +136,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
         private Builder(SelectionSet existing) {
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
-            this.selections = existing.getSelections();
+            this.selections = new ArrayList<>(existing.getSelections());
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }

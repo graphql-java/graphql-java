@@ -235,7 +235,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         List<SelectedField> selectedUnderNodesAster = selectionSet.getFields("nodes/*")
 
         selectedUnderNodesAster.size() == 4
-        def sortedSelectedUnderNodesAster = selectedUnderNodesAster.sort({ sf -> sf.name })
+        def sortedSelectedUnderNodesAster = new ArrayList<>(selectedUnderNodesAster).sort({ sf -> sf.name })
 
         def fieldNames = sortedSelectedUnderNodesAster.collect({ sf -> sf.name })
         fieldNames == ["key", "status", "stuff", "summary"]
@@ -269,8 +269,8 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         allFieldsViaAsterAster.size() == 28
         allFields.size() == 28
-        def allFieldsViaAsterAsterSorted = allFieldsViaAsterAster.sort({ sf -> sf.qualifiedName })
-        def allFieldsSorted = allFields.sort({ sf -> sf.qualifiedName })
+        def allFieldsViaAsterAsterSorted = new ArrayList<>(allFieldsViaAsterAster).sort({ sf -> sf.qualifiedName })
+        def allFieldsSorted = new ArrayList<>(allFields).sort({ sf -> sf.qualifiedName })
 
         def expectedFieldNames = [
                 "edges",
@@ -504,7 +504,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         selectedFields.size() == 1
 
         when:
-        selectedFields = petSelectionSet.getFields("lead")
+        selectedFields = new ArrayList<>(petSelectionSet.getFields("lead"))
         selectedFields.sort(byName())
 
         then:
@@ -516,7 +516,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
 
         when:
-        selectedFields = petSelectionSet.getFields("lead/material")
+        selectedFields = new ArrayList<>(petSelectionSet.getFields("lead/material"))
         selectedFields.sort(byName())
 
         then:
@@ -700,7 +700,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         er.errors.isEmpty()
 
         when:
-        def selectedFields = petSelectionSet.getFields("name")
+        def selectedFields = new ArrayList<>(petSelectionSet.getFields("name"))
         selectedFields.sort(byName())
 
         then:
@@ -735,7 +735,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         er.errors.isEmpty()
 
         when:
-        def selectedFields = petSelectionSet.getFields("name")
+        def selectedFields = new ArrayList<>(petSelectionSet.getFields("name"))
         selectedFields.sort(byName())
 
         then:

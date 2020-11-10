@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.FieldDefinition;
@@ -38,8 +39,8 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
     private final GraphQLOutputType originalType;
     private final DataFetcherFactory dataFetcherFactory;
     private final String deprecationReason;
-    private final List<GraphQLArgument> arguments;
-    private final List<GraphQLDirective> directives;
+    private final ImmutableList<GraphQLArgument> arguments;
+    private final ImmutableList<GraphQLDirective> directives;
     private final FieldDefinition definition;
 
     private GraphQLOutputType replacedType;
@@ -88,8 +89,8 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         this.description = description;
         this.originalType = type;
         this.dataFetcherFactory = dataFetcherFactory;
-        this.arguments = Collections.unmodifiableList(arguments);
-        this.directives = directives;
+        this.arguments = ImmutableList.copyOf(arguments);
+        this.directives = ImmutableList.copyOf(directives);
         this.deprecationReason = deprecationReason;
         this.definition = definition;
     }
@@ -126,7 +127,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     public List<GraphQLArgument> getArguments() {

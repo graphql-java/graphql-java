@@ -1,5 +1,6 @@
 package graphql.execution.nextgen;
 
+import com.google.common.collect.ImmutableList;
 import graphql.ExecutionResult;
 import graphql.Internal;
 import graphql.execution.Async;
@@ -25,9 +26,9 @@ import java.util.concurrent.CompletableFuture;
 
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertTrue;
+import static graphql.collect.ImmutableKit.map;
 import static graphql.execution.nextgen.result.ResultNodeAdapter.RESULT_NODE_ADAPTER;
 import static graphql.util.FpKit.flatList;
-import static graphql.util.FpKit.map;
 import static graphql.util.FpKit.mapEntries;
 import static graphql.util.FpKit.transposeMatrix;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -84,7 +85,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
     }
 
     private List<NodeMultiZipper<ExecutionResultNode>> groupNodesIntoBatches(NodeMultiZipper<ExecutionResultNode> unresolvedZipper) {
-        Map<MergedField, List<NodeZipper<ExecutionResultNode>>> zipperBySubSelection = FpKit.groupingBy(unresolvedZipper.getZippers(),
+        Map<MergedField, ImmutableList<NodeZipper<ExecutionResultNode>>> zipperBySubSelection = FpKit.groupingBy(unresolvedZipper.getZippers(),
                 (executionResultZipper -> executionResultZipper.getCurNode().getMergedField()));
         return mapEntries(zipperBySubSelection, (key, value) -> new NodeMultiZipper<ExecutionResultNode>(unresolvedZipper.getCommonRoot(), value, RESULT_NODE_ADAPTER));
     }
