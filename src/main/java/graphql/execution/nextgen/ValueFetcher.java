@@ -7,7 +7,6 @@ import graphql.ExceptionWhileDataFetching;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
-import graphql.execution.AbsoluteGraphQLError;
 import graphql.execution.Async;
 import graphql.execution.DataFetcherResult;
 import graphql.execution.DefaultValueUnboxer;
@@ -44,7 +43,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
-import static graphql.collect.ImmutableKit.map;
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 import static java.util.Collections.singletonList;
 
@@ -211,13 +209,8 @@ public class ValueFetcher {
     private FetchedValue unboxPossibleDataFetcherResult(MergedField sameField, ResultPath resultPath, FetchedValue result, Object localContext) {
         if (result.getFetchedValue() instanceof DataFetcherResult) {
 
-            List<GraphQLError> addErrors;
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result.getFetchedValue();
-            if (dataFetcherResult.isMapRelativeErrors()) {
-                addErrors = map(dataFetcherResult.getErrors(), relError -> new AbsoluteGraphQLError(sameField, resultPath, relError));
-            } else {
-                addErrors = ImmutableList.copyOf(dataFetcherResult.getErrors());
-            }
+            List<GraphQLError> addErrors = ImmutableList.copyOf(dataFetcherResult.getErrors());
             List<GraphQLError> newErrors = ImmutableKit.concatLists(result.getErrors(), addErrors);
 
             Object newLocalContext = dataFetcherResult.getLocalContext();

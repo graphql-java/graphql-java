@@ -37,17 +37,6 @@ class DataFetcherResultTest extends Specification {
         result.hasErrors()
     }
 
-    def "map relative is off by default"() {
-        when:
-        def result = DataFetcherResult.newResult().build()
-        then:
-        !result.isMapRelativeErrors()
-
-        when:
-        result = DataFetcherResult.newResult().mapRelativeErrors(true).build()
-        then:
-        result.isMapRelativeErrors()
-    }
 
     def "transforming"() {
         when:

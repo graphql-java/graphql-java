@@ -301,14 +301,9 @@ public abstract class ExecutionStrategy {
                                                 Object result) {
 
         if (result instanceof DataFetcherResult) {
-            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult<?>) result;
-            if (dataFetcherResult.isMapRelativeErrors()) {
-                dataFetcherResult.getErrors().stream()
-                        .map(relError -> new AbsoluteGraphQLError(parameters, relError))
-                        .forEach(executionContext::addError);
-            } else {
-                dataFetcherResult.getErrors().forEach(executionContext::addError);
-            }
+            //noinspection unchecked
+            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result;
+            dataFetcherResult.getErrors().forEach(executionContext::addError);
 
             Object localContext = dataFetcherResult.getLocalContext();
             if (localContext == null) {
