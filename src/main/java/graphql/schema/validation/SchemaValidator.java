@@ -22,6 +22,7 @@ public class SchemaValidator {
     public SchemaValidator() {
         rules.add(new NoUnbrokenInputCycles());
         rules.add(new TypesImplementInterfaces());
+        rules.add(new TypeAndFieldRule());
     }
 
     SchemaValidator(List<SchemaValidationRule> rules) {
@@ -36,6 +37,7 @@ public class SchemaValidator {
         SchemaValidationErrorCollector validationErrorCollector = new SchemaValidationErrorCollector();
 
         checkTypes(schema, validationErrorCollector);
+        checkSchema(schema, validationErrorCollector);
 
         traverse(schema.getQueryType(), rules, validationErrorCollector);
         if (schema.isSupportingMutations()) {
@@ -45,6 +47,12 @@ public class SchemaValidator {
             traverse(schema.getSubscriptionType(), rules, validationErrorCollector);
         }
         return validationErrorCollector.getErrors();
+    }
+
+    private void checkSchema(GraphQLSchema schema, SchemaValidationErrorCollector validationErrorCollector) {
+        for (SchemaValidationRule rule : rules) {
+            rule.check(schema, validationErrorCollector);
+        }
     }
 
     private void checkTypes(GraphQLSchema schema, SchemaValidationErrorCollector validationErrorCollector) {

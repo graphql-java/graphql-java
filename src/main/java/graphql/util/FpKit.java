@@ -252,6 +252,13 @@ public class FpKit {
         return -1;
     }
 
+    public static <T> List<T> filterList(Collection<T> list, Predicate<T> filter) {
+        return list
+                .stream()
+                .filter(filter)
+                .collect(Collectors.toList());
+    }
+
     /**
      * Used in simple {@link Map#computeIfAbsent(Object, java.util.function.Function)} cases
      *

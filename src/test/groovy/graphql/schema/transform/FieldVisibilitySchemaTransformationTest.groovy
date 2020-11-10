@@ -214,8 +214,10 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         directive @private on FIELD_DEFINITION
 
         type Query {
-            public: FooOrBar @private
-            private: Bar @private
+            privateFooOrBar: FooOrBar @private
+            privateBar: Bar @private
+            privateFoo: Foo @private
+            public: Foo
         }
         
         union FooOrBar = Foo | Bar
@@ -235,11 +237,13 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
 
         then:
-        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("private") == null
-        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("public") == null
-        restrictedSchema.getType("Bar") == null
-        restrictedSchema.getType("Foo") == null
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("privateFooOrBar") == null
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("privateBar") == null
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("privateFoo") == null
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("public") != null
         restrictedSchema.getType("FooOrBar") == null
+        restrictedSchema.getType("Bar") == null
+        restrictedSchema.getType("Foo") != null
     }
 
     def "union type with reference by private interface removed"() {
@@ -527,6 +531,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         type Query {
             bar: String @private
             baz: Boolean @private
+            placeholderField: Int
         }
         """)
 
@@ -587,10 +592,12 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
 
         type Mutation {
             setFoo(foo: String): Foo @private
+            placeholderField: Int
         }
         
         type Subscription {
             barAdded: Bar @private
+            placeholderField: Int
         }
         
         type Foo {
@@ -623,6 +630,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         
         type Foo {
             baz: Baz @private
+            placeholderField: Int
         }
         
         type Bar {
@@ -655,10 +663,12 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         
         type Foo {
             baz: Baz @private
+            placeholderField: Int
         }
         
         type Bar {
             baz: Baz @private
+            placeholderField: Int
         }
         
         type Baz {
@@ -684,6 +694,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         type Query {
             foo: Foo @private
             bar: Bar @private
+            placeholderField: Int
         }
         
         type Foo {
