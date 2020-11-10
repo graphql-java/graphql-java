@@ -2,22 +2,22 @@ package graphql.schema.validation;
 
 import graphql.language.TypeName;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLNamedType;
-import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLUnionType;
-import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLEnumType;
-import graphql.schema.GraphQLScalarType;
-import graphql.schema.GraphQLEnumValueDefinition;
-import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLTypeUtil;
+import graphql.schema.GraphQLUnionType;
 import graphql.util.FpKit;
 
 import java.util.Collections;
@@ -32,17 +32,15 @@ import static graphql.schema.idl.ScalarInfo.isGraphqlSpecifiedScalar;
 
 /**
  * The validation about GraphQLObjectType, GraphQLInterfaceType, GraphQLUnionType, GraphQLEnumType, GraphQLInputObjectType, GraphQLScalarType.
- * <pre>
- *     <ur>
+ *     <ul>
  *         <li>Types must define one or more fields;</li>
  *         <li>Enum type must define one or more enum values;</li>
  *         <li>Union type must include one or more unique member types;</li>
  *         <li>The member types of a Union type must all be Object base types;</li>
  *         <li>Non‐Null type must not wrap another Non‐Null type;</li>
  *         <li>Invalid name begin with "__" (two underscores).</li>
- *     </ur>
- * </pre>
- * <p></p>
+ *     </ul>
+ * <p>
  * details in https://spec.graphql.org/June2018/#sec-Type-System
  */
 public class TypeAndFieldRule implements SchemaValidationRule {
@@ -112,7 +110,7 @@ public class TypeAndFieldRule implements SchemaValidationRule {
         }
 
         for (GraphQLInputObjectField inputObjectField : inputObjectFields) {
-            validateInputFieldDefinition(inputObjectField.getName(),inputObjectField,errorCollector);
+            validateInputFieldDefinition(inputObjectField.getName(), inputObjectField, errorCollector);
         }
     }
 
