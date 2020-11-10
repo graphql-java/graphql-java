@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import graphql.Assert;
 import graphql.Internal;
 import graphql.VisibleForTesting;
 import graphql.language.Directive;
@@ -9,7 +10,7 @@ import java.util.Map;
 
 import static graphql.Directives.IncludeDirective;
 import static graphql.Directives.SkipDirective;
-import static graphql.language.NodeUtil.directivesByName;
+import static graphql.language.NodeUtil.directiveByName;
 
 
 @Internal
@@ -29,14 +30,16 @@ public class ConditionalNodes {
         if (directives.isEmpty()) {
             return null;
         }
-        return directivesByName(directives).get(name);
+        return directiveByName(directives, name).orElse(null);
     }
 
     private boolean getDirectiveResult(Map<String, Object> variables, List<Directive> directives, String directiveName, boolean defaultValue) {
         Directive directive = getDirectiveByName(directives, directiveName);
         if (directive != null) {
             Map<String, Object> argumentValues = valuesResolver.getArgumentValues(SkipDirective.getArguments(), directive.getArguments(), variables);
-            return (Boolean) argumentValues.get("if");
+            Object flag = argumentValues.get("if");
+            Assert.assertTrue(flag instanceof Boolean, () -> String.format("The '%s' directive MUST have a value for the 'if' argument", directiveName));
+            return (Boolean) flag;
         }
 
         return defaultValue;

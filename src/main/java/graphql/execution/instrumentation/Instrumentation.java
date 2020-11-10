@@ -2,9 +2,9 @@ package graphql.execution.instrumentation;
 
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
+import graphql.PublicSpi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -35,6 +35,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.noO
  * one for the step is `dispatched` and one for when the step has `completed`.  This is done because many of the "steps" are asynchronous
  * operations such as fetching data and resolving it into objects.
  */
+@PublicSpi
 public interface Instrumentation {
 
     /**
@@ -105,14 +106,6 @@ public interface Instrumentation {
      */
     ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters);
 
-    /**
-     * This is called just before a deferred field is resolved into a value.
-     *
-     * @param parameters the parameters to this step
-     *
-     * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
-     */
-    DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters);
 
     /**
      * This is called each time a subscription field produces a new reactive stream event value and it needs to be mapped over via the graphql field subselection.

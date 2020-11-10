@@ -10,12 +10,14 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValue>, NamedNode<EnumValue> {
@@ -35,7 +37,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
      * @param name of the enum value
      */
     public EnumValue(String name) {
-        this(name, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -46,7 +48,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>();
+        return emptyList();
     }
 
     @Override
@@ -71,7 +73,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
 
         EnumValue that = (EnumValue) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name);
+        return Objects.equals(this.name, that.name);
     }
 
     @Override

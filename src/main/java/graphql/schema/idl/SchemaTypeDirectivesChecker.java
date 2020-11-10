@@ -1,6 +1,5 @@
 package graphql.schema.idl;
 
-import graphql.Directives;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.introspection.Introspection.DirectiveLocation;
@@ -13,17 +12,25 @@ import graphql.language.FieldDefinition;
 import graphql.language.InputObjectTypeDefinition;
 import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
+import graphql.language.NamedNode;
 import graphql.language.Node;
 import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
+import graphql.language.ScalarTypeDefinition;
 import graphql.language.SchemaDefinition;
 import graphql.language.TypeDefinition;
+import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.idl.errors.DirectiveIllegalLocationError;
+import graphql.schema.idl.errors.DirectiveIllegalReferenceError;
 import graphql.schema.idl.errors.DirectiveMissingNonNullArgumentError;
 import graphql.schema.idl.errors.DirectiveUndeclaredError;
 import graphql.schema.idl.errors.DirectiveUnknownArgumentError;
+import graphql.schema.idl.errors.IllegalNameError;
+import graphql.schema.idl.errors.MissingTypeError;
+import graphql.schema.idl.errors.NotAnInputTypeError;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -91,6 +98,9 @@ class SchemaTypeDirectivesChecker {
         // we need to have a Node for error reporting so we make one in case there is not one
         SchemaDefinition schemaDefinition = typeRegistry.schemaDefinition().orElse(SchemaDefinition.newSchemaDefinition().build());
         checkDirectives(DirectiveLocation.SCHEMA, errors, typeRegistry, schemaDefinition, "schema", schemaDirectives);
+
+        Collection<DirectiveDefinition> directiveDefinitions = typeRegistry.getDirectiveDefinitions().values();
+        commonCheck(directiveDefinitions, errors);
     }
 
 
@@ -126,10 +136,6 @@ class SchemaTypeDirectivesChecker {
 
     private void checkDirectives(DirectiveLocation expectedLocation, List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, Node<?> element, String elementName, List<Directive> directives) {
         directives.forEach(directive -> {
-            // we have special code for the deprecation directive in SchemaTypeChecker.checkDeprecatedDirective
-            if (Directives.DeprecatedDirective.getName().equals(directive.getName())) {
-                return;
-            }
             Optional<DirectiveDefinition> directiveDefinition = typeRegistry.getDirectiveDefinition(directive.getName());
             if (!directiveDefinition.isPresent()) {
                 errors.add(new DirectiveUndeclaredError(element, elementName, directive.getName()));
@@ -174,5 +180,45 @@ class SchemaTypeDirectivesChecker {
 
     private boolean isNoNullArgWithoutDefaultValue(InputValueDefinition definitionArgument) {
         return definitionArgument.getType() instanceof NonNullType && definitionArgument.getDefaultValue() == null;
+    }
+
+    private void commonCheck(Collection<DirectiveDefinition> directiveDefinitions, List<GraphQLError> errors) {
+        directiveDefinitions.forEach(directiveDefinition -> {
+            assertTypeName(directiveDefinition, errors);
+            directiveDefinition.getInputValueDefinitions().forEach(inputValueDefinition -> {
+                assertTypeName(inputValueDefinition, errors);
+                assertExistAndIsInputType(inputValueDefinition, errors);
+                if (inputValueDefinition.getDirective(directiveDefinition.getName()) != null) {
+                    errors.add(new DirectiveIllegalReferenceError(directiveDefinition, inputValueDefinition));
+                }
+            });
+        });
+    }
+
+    private void assertTypeName(NamedNode node, List<GraphQLError> errors) {
+        if (node.getName().length() >= 2 && node.getName().startsWith("__")) {
+            errors.add((new IllegalNameError(node)));
+        }
+    }
+
+    public void assertExistAndIsInputType(InputValueDefinition definition, List<GraphQLError> errors) {
+        TypeName namedType = TypeUtil.unwrapAll(definition.getType());
+
+        TypeDefinition unwrappedType = findTypeDefFromRegistry(namedType.getName(), typeRegistry);
+
+        if (unwrappedType == null) {
+            errors.add(new MissingTypeError(namedType.getName(), definition, definition.getName()));
+            return;
+        }
+
+        if (!(unwrappedType instanceof InputObjectTypeDefinition)
+                && !(unwrappedType instanceof EnumTypeDefinition)
+                && !(unwrappedType instanceof ScalarTypeDefinition)) {
+            errors.add(new NotAnInputTypeError(namedType, unwrappedType));
+        }
+    }
+
+    private TypeDefinition findTypeDefFromRegistry(String typeName, TypeDefinitionRegistry typeRegistry) {
+        return typeRegistry.getType(typeName).orElseGet(() -> typeRegistry.scalars().get(typeName));
     }
 }

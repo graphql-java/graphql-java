@@ -13,11 +13,11 @@ public class TreeTransformerUtil {
     /**
      * Can be called multiple times to change the current node of the context. The latest call wins
      *
-     * @param context
-     * @param changedNode
-     * @param <T>
+     * @param context the context in play
+     * @param changedNode the changed node
+     * @param <T> for two
      *
-     * @return
+     * @return traversal control
      */
     public static <T> TraversalControl changeNode(TraverserContext<T> context, T changedNode) {
         boolean changed = context.isChanged();

@@ -1,5 +1,6 @@
 package graphql.validation.rules;
 
+import graphql.Internal;
 import graphql.language.OperationDefinition;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
@@ -13,6 +14,7 @@ import java.util.Set;
  * A GraphQL document is only valid if all defined operations have unique names.
  * http://facebook.github.io/graphql/October2016/#sec-Operation-Name-Uniqueness
  */
+@Internal
 public class UniqueOperationNames extends AbstractRule {
 
     private Set<String> operationNames = new LinkedHashSet<>();

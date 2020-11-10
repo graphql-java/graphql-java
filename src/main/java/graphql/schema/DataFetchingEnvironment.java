@@ -6,6 +6,7 @@ import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
 import graphql.execution.directives.QueryDirectives;
+import graphql.introspection.IntrospectionDataFetchingEnvironment;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -24,7 +25,7 @@ import java.util.Map;
  */
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
-public interface DataFetchingEnvironment {
+public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnvironment {
 
     /**
      * This is the value of the current object to be queried.
@@ -231,12 +232,16 @@ public interface DataFetchingEnvironment {
     Document getDocument();
 
     /**
-     * This returns the variables that have been passed into the query.  Note that this is the raw variables themselves and not the
+     * This returns the variables that have been passed into the query.  Note that this is the query variables themselves and not the
      * arguments to the field, which is accessed via {@link #getArguments()}
      * <p>
-     * The field arguments are created by interpolating any referenced variables and AST literals and resolving them into the arguments
+     * The field arguments are created by interpolating any referenced variables and AST literals and resolving them into the arguments.
+     * <p>
+     * Also note that the raw query variables are "coerced" into a map where the leaf scalar and enum types are called to create
+     * input coerced values.  So the values you get here are not exactly as passed via {@link graphql.ExecutionInput#getVariables()}
+     * but have been processed.
      *
-     * @return the variables that have been passed to the query that is being executed
+     * @return the coerced variables that have been passed to the query that is being executed
      */
     Map<String, Object> getVariables();
 }

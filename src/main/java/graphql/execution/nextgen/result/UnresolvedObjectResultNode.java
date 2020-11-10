@@ -1,9 +1,11 @@
 package graphql.execution.nextgen.result;
 
+import graphql.Internal;
 import graphql.execution.ExecutionStepInfo;
 
 import java.util.Collections;
 
+@Internal
 public class UnresolvedObjectResultNode extends ObjectExecutionResultNode {
 
     public UnresolvedObjectResultNode(ExecutionStepInfo executionStepInfo, ResolvedValue resolvedValue) {

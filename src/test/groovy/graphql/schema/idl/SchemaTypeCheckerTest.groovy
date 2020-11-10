@@ -945,11 +945,14 @@ class SchemaTypeCheckerTest extends Specification {
             }
             
             enum EnumType {
-                
                 enumA @deprecated(badName : "must be called reason"),
                 enumB @deprecated(reason : "it must have", one : "argument value")
             }
+            
             # deprecation is no allowed on input field definitions and args atm, see: https://github.com/graphql-java/graphql-java/issues/1770
+            input InputType {
+                inputField : String @deprecated
+            }
         """
 
         def result = check(spec)
@@ -957,7 +960,7 @@ class SchemaTypeCheckerTest extends Specification {
         expect:
 
         !result.isEmpty()
-        result.size() == 6
+        result.size() == 7
     }
 
     def "test that directives are valid"() {
@@ -1501,15 +1504,17 @@ class SchemaTypeCheckerTest extends Specification {
         "String"       | '{ an: "object" }'                                                                     | format(EXPECTED_SCALAR_MESSAGE, "ObjectValue")
         "String"       | '["str", "str2"]'                                                                      | format(EXPECTED_SCALAR_MESSAGE, "ArrayValue")
         "ACustomDate"  | '"AFailingDate"'                                                                       | format(NOT_A_VALID_SCALAR_LITERAL_MESSAGE, "ACustomDate")
-        "[String]"     | '"str"'                                                                                | format(EXPECTED_LIST_MESSAGE, "StringValue")
-        "[String]!"    | '"str"'                                                                                | format(EXPECTED_LIST_MESSAGE, "StringValue")
+// Now allowed by #2001
+//        "[String]"     | '"str"'                                                                                | format(EXPECTED_LIST_MESSAGE, "StringValue")
+//        "[String]!"    | '"str"'                                                                                | format(EXPECTED_LIST_MESSAGE, "StringValue")
         "[String!]"    | '["str", null]'                                                                        | format(EXPECTED_NON_NULL_MESSAGE)
         "[[String!]!]" | '[["str"], ["str2", null]]'                                                            | format(EXPECTED_NON_NULL_MESSAGE)
         "WEEKDAY"      | '"somestr"'                                                                            | format(EXPECTED_ENUM_MESSAGE, "StringValue")
         "WEEKDAY"      | 'SATURDAY'                                                                             | format(MUST_BE_VALID_ENUM_VALUE_MESSAGE, "SATURDAY", "MONDAY,TUESDAY")
         "UserInput"    | '{ fieldNonNull: "str", fieldNonNull: "dupeKey" }'                                     | format(DUPLICATED_KEYS_MESSAGE, "fieldNonNull")
         "UserInput"    | '{ fieldNonNull: "str", unknown: "field" }'                                            | format(UNKNOWN_FIELDS_MESSAGE, "unknown", "UserInput")
-        "UserInput"    | '{ fieldNonNull: "str", fieldArray: "strInsteadOfArray" }'                             | format(EXPECTED_LIST_MESSAGE, "StringValue")
+// Now allowed by #2001
+//        "UserInput"    | '{ fieldNonNull: "str", fieldArray: "strInsteadOfArray" }'                             | format(EXPECTED_LIST_MESSAGE, "StringValue")
         "UserInput"    | '{ fieldNonNull: "str", fieldArrayOfArray: ["ArrayInsteadOfArrayOfArray"] }'           | format(EXPECTED_LIST_MESSAGE, "StringValue")
         "UserInput"    | '{ fieldNonNull: "str", fieldNestedInput: "strInsteadOfObject" }'                      | format(EXPECTED_OBJECT_MESSAGE, "StringValue")
         "UserInput"    | '{ fieldNonNull: "str", fieldNestedInput: { street: { s: "objectInsteadOfString" }} }' | format(EXPECTED_SCALAR_MESSAGE, "ObjectValue")
@@ -1737,5 +1742,81 @@ class SchemaTypeCheckerTest extends Specification {
         then:
         errorContaining(result, "'Human' extension type [@n:n] tried to redefine field 'name' [@n:n]")
 
+    }
+
+    def "union type name must not begin with '__'"() {
+        given:
+        def sdl = """
+            type Query { hello: String }
+
+            type Bar {
+                id : ID!
+            }
+            
+            type Foo {
+                id : ID!
+            }
+            
+            union __FooBar = Bar | Foo 
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        errorContaining(result, "'__FooBar' must not begin with '__', which is reserved by GraphQL introspection.")
+    }
+
+    def "union type must include one or more member types"() {
+        given:
+        def sdl = """
+            type Query { hello: String }
+           
+            union UnionType 
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        errorContaining(result, "Union type 'UnionType' must include one or more member types.")
+    }
+
+    def "The member types of a Union type must all be object base types"() {
+        given:
+        def sdl = """
+            type Query { hello: String }
+            
+            type A { hello: String }
+            
+            interface B { hello: String }
+            
+            union UnionType = A | B
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        errorContaining(result, "The member types of a Union type must all be Object base types. member type 'B' in Union 'UnionType' is invalid.")
+    }
+
+    def "The member types of a Union type must be unique"() {
+        given:
+        def sdl = """
+            type Query { hello: String }
+            
+            type Bar {
+                id : ID!
+            }
+            
+            union DuplicateBar =  Bar | Bar
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        errorContaining(result, "member type 'Bar' in Union 'DuplicateBar' is not unique. The member types of a Union type must be unique.")
     }
 }

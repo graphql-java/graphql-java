@@ -1,5 +1,6 @@
 package graphql.execution.directives;
 
+import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
 import graphql.execution.ValuesResolver;
 import graphql.language.Directive;
@@ -33,7 +34,7 @@ public class DirectivesResolver {
                 directiveMap.put(newDirective.getName(), newDirective);
             }
         });
-        return directiveMap;
+        return ImmutableMap.copyOf(directiveMap);
     }
 
     private void buildArguments(GraphQLDirective.Builder directiveBuilder, GraphQLCodeRegistry codeRegistry, GraphQLDirective protoType, Directive fieldDirective, Map<String, Object> variables) {
@@ -45,7 +46,7 @@ public class DirectivesResolver {
                 GraphQLArgument newArgument = protoArg.transform(argBuilder -> argBuilder.value(argValue));
                 directiveBuilder.argument(newArgument);
             } else {
-                // this means they can ask for the argument default value because the arugment on the directive
+                // this means they can ask for the argument default value because the argument on the directive
                 // object is present - but null
                 GraphQLArgument newArgument = protoArg.transform(argBuilder -> argBuilder.value(null));
                 directiveBuilder.argument(newArgument);

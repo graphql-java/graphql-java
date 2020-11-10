@@ -159,12 +159,8 @@ public class QueryTransformer {
             return this;
         }
 
-        /**
-
-         */
         public QueryTransformer build() {
             return new QueryTransformer(schema, root, rootParentType, fragmentsByName, variables);
         }
-
     }
 }

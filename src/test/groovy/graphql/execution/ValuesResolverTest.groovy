@@ -9,6 +9,7 @@ import graphql.language.EnumValue
 import graphql.language.IntValue
 import graphql.language.ListType
 import graphql.language.NonNullType
+import graphql.language.NullValue
 import graphql.language.ObjectField
 import graphql.language.ObjectValue
 import graphql.language.StringValue
@@ -448,5 +449,79 @@ class ValuesResolverTest extends Specification {
 
         then:
         thrown(GraphQLException)
+    }
+
+    def "coerceVariableValues: use null when variable defined in variableValuesMap is null"() {
+        given:
+        def schema = TestUtil.schemaWithInputType(nonNull(GraphQLString))
+
+        def defaultValueForFoo = new StringValue("defaultValueForFoo")
+        VariableDefinition fooVarDef = new VariableDefinition("foo", new TypeName("String"), defaultValueForFoo)
+
+        def defaultValueForBar = new StringValue("defaultValueForBar")
+        VariableDefinition barVarDef = new VariableDefinition("bar", new TypeName("String"), defaultValueForBar)
+
+        def variableValuesMap = ["foo": null, "bar": "barValue"]
+
+        when:
+        def resolvedVars = resolver.coerceVariableValues(schema, [fooVarDef, barVarDef], variableValuesMap)
+
+        then:
+        resolvedVars['foo'] == null
+        resolvedVars['bar'] == "barValue"
+    }
+
+    def "coerceVariableValues: if variableType is a Non‐Nullable type and value is null, throw a query error"() {
+        given:
+        def schema = TestUtil.schemaWithInputType(nonNull(GraphQLString))
+
+        def defaultValueForFoo = new StringValue("defaultValueForFoo")
+        VariableDefinition fooVarDef = new VariableDefinition("foo", new NonNullType(new TypeName("String")), defaultValueForFoo)
+
+
+        def variableValuesMap = ["foo": null]
+
+        when:
+        resolver.coerceVariableValues(schema, [fooVarDef], variableValuesMap)
+
+        then:
+        def error = thrown(NonNullableValueCoercedAsNullException)
+        error.message == "Field 'foo' of variable 'foo' has coerced Null value for NonNull type 'String!'"
+    }
+
+    // Note: use NullValue defined in Field when it exists,
+    // and ignore defaultValue defined in type system
+    def "getArgumentValues: use null value when argumentValue defined in Field is null"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("inputObject")
+                .build()
+
+        def fieldArgument = new GraphQLArgument("arg", "", inputObjectType, "hello")
+        def argument = new Argument("arg", NullValue.newNullValue().build())
+
+        when:
+        def variables = [:]
+        def values = resolver.getArgumentValues([fieldArgument], [argument], variables)
+
+        then:
+        values['arg'] == null
+    }
+
+    def "getArgumentValues: use null when reference value in variables is null"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("inputObject")
+                .build()
+
+        def fieldArgument = new GraphQLArgument("arg", "", inputObjectType, "hello")
+        def argument = new Argument("arg", new VariableReference("var"))
+
+        when:
+        def variables = ["var": null]
+        def values = resolver.getArgumentValues([fieldArgument], [argument], variables)
+
+        then:
+        values['arg'] == null
     }
 }

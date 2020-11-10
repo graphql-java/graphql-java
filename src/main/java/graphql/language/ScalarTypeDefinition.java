@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -10,17 +11,19 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefinition> implements TypeDefinition<ScalarTypeDefinition>, DirectivesContainer<ScalarTypeDefinition>, NamedNode<ScalarTypeDefinition> {
 
     private final String name;
-    private final List<Directive> directives;
+    private final ImmutableList<Directive> directives;
 
     public static final String CHILD_DIRECTIVES = "directives";
 
@@ -34,7 +37,7 @@ public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefini
                                    Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
-        this.directives = directives;
+        this.directives = ImmutableList.copyOf(directives);
     }
 
     /**
@@ -43,12 +46,12 @@ public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefini
      * @param name of the scalar
      */
     public ScalarTypeDefinition(String name) {
-        this(name, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, emptyList(), null, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
     public List<Directive> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     @Override
@@ -58,7 +61,7 @@ public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefini
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>(directives);
+        return ImmutableList.copyOf(directives);
     }
 
     @Override
@@ -86,7 +89,7 @@ public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefini
 
         ScalarTypeDefinition that = (ScalarTypeDefinition) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name);
+        return Objects.equals(this.name, that.name);
     }
 
     @Override
@@ -117,7 +120,7 @@ public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefini
         return builder.build();
     }
 
-    public static final class Builder implements NodeBuilder {
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private String name;
@@ -160,6 +163,7 @@ public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefini
             return this;
         }
 
+        @Override
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;

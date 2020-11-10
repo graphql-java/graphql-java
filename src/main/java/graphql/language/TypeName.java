@@ -10,12 +10,14 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, NamedNode<TypeName> {
@@ -34,7 +36,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, 
      * @param name of the type
      */
     public TypeName(String name) {
-        this(name, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
 
@@ -44,7 +46,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, 
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>();
+        return emptyList();
     }
 
     @Override
@@ -69,7 +71,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, 
 
         TypeName that = (TypeName) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name);
+        return Objects.equals(this.name, that.name);
     }
 
     @Override

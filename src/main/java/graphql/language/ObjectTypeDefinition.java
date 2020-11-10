@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -10,18 +11,20 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefinition> implements ImplementingTypeDefinition<ObjectTypeDefinition>, DirectivesContainer<ObjectTypeDefinition>, NamedNode<ObjectTypeDefinition> {
     private final String name;
-    private final List<Type> implementz;
-    private final List<Directive> directives;
-    private final List<FieldDefinition> fieldDefinitions;
+    private final ImmutableList<Type> implementz;
+    private final ImmutableList<Directive> directives;
+    private final ImmutableList<FieldDefinition> fieldDefinitions;
 
     public static final String CHILD_IMPLEMENTZ = "implementz";
     public static final String CHILD_DIRECTIVES = "directives";
@@ -39,9 +42,9 @@ public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefini
                                    Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
-        this.implementz = implementz;
-        this.directives = directives;
-        this.fieldDefinitions = fieldDefinitions;
+        this.implementz = ImmutableList.copyOf(implementz);
+        this.directives = ImmutableList.copyOf(directives);
+        this.fieldDefinitions = ImmutableList.copyOf(fieldDefinitions);
     }
 
     /**
@@ -50,22 +53,22 @@ public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefini
      * @param name of the object type
      */
     public ObjectTypeDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, emptyList(), emptyList(), emptyList(), null, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
     public List<Type> getImplements() {
-        return new ArrayList<>(implementz);
+        return implementz;
     }
 
     @Override
     public List<Directive> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     @Override
     public List<FieldDefinition> getFieldDefinitions() {
-        return new ArrayList<>(fieldDefinitions);
+        return fieldDefinitions;
     }
 
     @Override
@@ -108,7 +111,8 @@ public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefini
         }
 
         ObjectTypeDefinition that = (ObjectTypeDefinition) o;
-        return NodeUtil.isEqualTo(this.name, that.name);
+
+        return Objects.equals(this.name, that.name);
     }
 
     @Override
@@ -149,7 +153,7 @@ public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefini
         return builder.build();
     }
 
-    public static final class Builder implements NodeBuilder {
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private String name;
@@ -205,6 +209,7 @@ public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefini
             return this;
         }
 
+        @Override
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;

@@ -1,5 +1,6 @@
 package graphql.validation.rules;
 
+import graphql.Internal;
 import graphql.language.Definition;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
@@ -11,6 +12,7 @@ import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
+@Internal
 public class ExecutableDefinitions extends AbstractRule {
 
     public ExecutableDefinitions(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {

@@ -1,9 +1,9 @@
 package graphql.execution.instrumentation;
 
 import graphql.PublicApi;
+import graphql.collect.ImmutableMapWithNullValues;
 import graphql.language.Document;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -12,11 +12,11 @@ import static graphql.Assert.assertNotNull;
 @PublicApi
 public class DocumentAndVariables {
     private final Document document;
-    private final Map<String, Object> variables;
+    private final ImmutableMapWithNullValues<String, Object> variables;
 
     private DocumentAndVariables(Document document, Map<String, Object> variables) {
         this.document = assertNotNull(document);
-        this.variables = assertNotNull(variables);
+        this.variables = ImmutableMapWithNullValues.copyOf(assertNotNull(variables));
     }
 
     public Document getDocument() {
@@ -24,7 +24,7 @@ public class DocumentAndVariables {
     }
 
     public Map<String, Object> getVariables() {
-        return new LinkedHashMap<>(variables);
+        return variables;
     }
 
     public DocumentAndVariables transform(Consumer<Builder> builderConsumer) {

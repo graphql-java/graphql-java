@@ -1,12 +1,14 @@
 package graphql.execution;
 
 import graphql.Assert;
+import graphql.PublicApi;
 
 import java.util.UUID;
 
 /**
  * This opaque identifier is used to identify a unique query execution
  */
+@PublicApi
 public class ExecutionId {
 
     /**

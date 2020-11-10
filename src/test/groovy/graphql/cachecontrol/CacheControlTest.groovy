@@ -3,7 +3,7 @@ package graphql.cachecontrol
 
 import graphql.ExecutionResultImpl
 import graphql.TestUtil
-import graphql.execution.ExecutionPath
+import graphql.execution.ResultPath
 import graphql.schema.DataFetcher
 import spock.lang.Specification
 
@@ -11,10 +11,10 @@ class CacheControlTest extends Specification {
 
     def "can build up hints when there is no extensions present"() {
         def cc = CacheControl.newCacheControl()
-        cc.hint(ExecutionPath.parse("/hint/99"), 99)
-        cc.hint(ExecutionPath.parse("/hint/66"), 66)
-        cc.hint(ExecutionPath.parse("/hint/33/private"), 33, CacheControl.Scope.PRIVATE)
-        cc.hint(ExecutionPath.parse("/hint/private"), CacheControl.Scope.PRIVATE)
+        cc.hint(ResultPath.parse("/hint/99"), 99)
+        cc.hint(ResultPath.parse("/hint/66"), 66)
+        cc.hint(ResultPath.parse("/hint/33/private"), 33, CacheControl.Scope.PRIVATE)
+        cc.hint(ResultPath.parse("/hint/private"), CacheControl.Scope.PRIVATE)
 
         def er = ExecutionResultImpl.newExecutionResult().data("data").build()
 
@@ -38,8 +38,8 @@ class CacheControlTest extends Specification {
 
     def "can build up hints when extensions are present"() {
         def cc = CacheControl.newCacheControl()
-        cc.hint(ExecutionPath.parse("/hint/99"), 99)
-        cc.hint(ExecutionPath.parse("/hint/66"), 66)
+        cc.hint(ResultPath.parse("/hint/99"), 99)
+        cc.hint(ResultPath.parse("/hint/66"), 66)
 
         def startingExtensions = ["someExistingExt": "data"]
 

@@ -1,5 +1,6 @@
 package graphql.validation.rules;
 
+import graphql.Internal;
 import graphql.language.Document;
 import graphql.language.OperationDefinition;
 import graphql.validation.AbstractRule;
@@ -7,6 +8,7 @@ import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
+@Internal
 public class LoneAnonymousOperation extends AbstractRule {
 
     boolean hasAnonymousOp = false;

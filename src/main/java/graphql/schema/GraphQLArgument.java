@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
@@ -46,7 +47,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     private final Object value;
     private final Object defaultValue;
     private final InputValueDefinition definition;
-    private final List<GraphQLDirective> directives;
+    private final ImmutableList<GraphQLDirective> directives;
 
     private GraphQLInputType replacedType;
 
@@ -104,7 +105,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         this.defaultValue = defaultValue;
         this.value = value;
         this.definition = definition;
-        this.directives = directives;
+        this.directives = ImmutableList.copyOf(directives);
     }
 
 
@@ -156,7 +157,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
 
@@ -183,6 +184,23 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
                 builder.type(newChildren.getChildOrNull(CHILD_TYPE))
                         .replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES)));
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
+    }
+
 
     /**
      * This helps you transform the current GraphQLArgument into another one by starting a builder with all
@@ -236,7 +254,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
             this.name = existing.getName();
             this.type = existing.originalType;
             this.value = existing.getValue();
-            this.defaultValue = existing.getDefaultValue();
+            this.defaultValue = existing.defaultValue;
             this.description = existing.getDescription();
             this.definition = existing.getDefinition();
             this.directives.putAll(FpKit.getByName(existing.getDirectives(), GraphQLDirective::getName));

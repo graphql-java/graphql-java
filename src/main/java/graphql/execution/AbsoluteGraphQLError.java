@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import com.google.common.collect.ImmutableList;
 import graphql.ErrorClassification;
 import graphql.GraphQLError;
 import graphql.Internal;
@@ -12,7 +13,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 
@@ -43,8 +43,8 @@ public class AbsoluteGraphQLError implements GraphQLError {
         }
     }
 
-    public AbsoluteGraphQLError(MergedField sameField, ExecutionPath executionPath, GraphQLError relativeError) {
-        this.absolutePath = createAbsolutePath(executionPath, relativeError);
+    public AbsoluteGraphQLError(MergedField sameField, ResultPath resultPath, GraphQLError relativeError) {
+        this.absolutePath = createAbsolutePath(resultPath, relativeError);
         this.locations = createAbsoluteLocations(relativeError, sameField);
         this.message = relativeError.getMessage();
         this.errorType = relativeError.getErrorType();
@@ -88,20 +88,19 @@ public class AbsoluteGraphQLError implements GraphQLError {
      * Relative path is empty -> Absolute paths is path up to the field.
      * Relative path is not empty -> Absolute paths [base Path, relative Path]
      *
-     *
      * @return List of paths from the root.
      */
-    private List<Object> createAbsolutePath(ExecutionPath executionPath,
+    private List<Object> createAbsolutePath(ResultPath resultPath,
                                             GraphQLError relativeError) {
         return Optional.ofNullable(relativeError.getPath())
                 .map(originalPath -> {
                     List<Object> path = new ArrayList<>();
-                    path.addAll(executionPath.toList());
+                    path.addAll(resultPath.toList());
                     path.addAll(relativeError.getPath());
                     return path;
                 })
-                .map(Collections::unmodifiableList)
-                .orElse(executionPath.toList());
+                .map(l -> (List<Object>) ImmutableList.copyOf(l))
+                .orElse(resultPath.toList());
     }
 
     /**
@@ -137,8 +136,7 @@ public class AbsoluteGraphQLError implements GraphQLError {
                                                 base.getLine() + l.getLine(),
                                                 base.getColumn() + l.getColumn()))
                                         .orElse(null))
-                        .collect(Collectors.toList()))
-                .map(Collections::unmodifiableList)
+                        .collect(ImmutableList.toImmutableList()))
                 .orElse(null);
     }
 }

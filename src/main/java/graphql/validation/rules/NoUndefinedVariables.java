@@ -1,6 +1,7 @@
 package graphql.validation.rules;
 
 
+import graphql.Internal;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
@@ -13,6 +14,7 @@ import graphql.validation.ValidationErrorType;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+@Internal
 public class NoUndefinedVariables extends AbstractRule {
 
     private final Set<String> variableNames = new LinkedHashSet<>();

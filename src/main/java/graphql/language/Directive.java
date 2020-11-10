@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -10,17 +11,20 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.argumentsByName;
+import static graphql.language.NodeUtil.getArgumentByName;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class Directive extends AbstractNode<Directive> implements NamedNode<Directive> {
     private final String name;
-    private final List<Argument> arguments = new ArrayList<>();
+    private final ImmutableList<Argument> arguments;
 
     public static final String CHILD_ARGUMENTS = "arguments";
 
@@ -28,7 +32,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     protected Directive(String name, List<Argument> arguments, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
-        this.arguments.addAll(arguments);
+        this.arguments = ImmutableList.copyOf(arguments);
     }
 
     /**
@@ -38,7 +42,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
      * @param arguments of the directive
      */
     public Directive(String name, List<Argument> arguments) {
-        this(name, arguments, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, arguments, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
 
@@ -48,11 +52,11 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
      * @param name of the directive
      */
     public Directive(String name) {
-        this(name, new ArrayList<>(), null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, emptyList(), null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public List<Argument> getArguments() {
-        return new ArrayList<>(arguments);
+        return arguments;
     }
 
     public Map<String, Argument> getArgumentsByName() {
@@ -61,7 +65,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     }
 
     public Argument getArgument(String argumentName) {
-        return getArgumentsByName().get(argumentName);
+        return getArgumentByName(arguments, argumentName).orElse(null);
     }
 
     @Override
@@ -72,7 +76,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>(arguments);
+        return ImmutableList.copyOf(arguments);
     }
 
     @Override
@@ -100,7 +104,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
 
         Directive that = (Directive) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name);
+        return Objects.equals(this.name, that.name);
 
     }
 

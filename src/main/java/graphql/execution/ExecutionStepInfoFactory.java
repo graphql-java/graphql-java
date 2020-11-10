@@ -27,7 +27,7 @@ public class ExecutionStepInfoFactory {
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables());
 
-        ExecutionPath newPath = parentInfo.getPath().segment(mergedField.getResultKey());
+        ResultPath newPath = parentInfo.getPath().segment(mergedField.getResultKey());
 
         return parentInfo.transform(builder -> builder
                 .parentInfo(parentInfo)
@@ -42,7 +42,7 @@ public class ExecutionStepInfoFactory {
     public ExecutionStepInfo newExecutionStepInfoForListElement(ExecutionStepInfo executionInfo, int index) {
         GraphQLList fieldType = (GraphQLList) executionInfo.getUnwrappedNonNullType();
         GraphQLOutputType typeInList = (GraphQLOutputType) fieldType.getWrappedType();
-        ExecutionPath indexedPath = executionInfo.getPath().segment(index);
+        ResultPath indexedPath = executionInfo.getPath().segment(index);
         return executionInfo.transform(builder -> builder
                 .parentInfo(executionInfo)
                 .type(typeInList)

@@ -5,7 +5,6 @@ import graphql.PublicApi;
 import graphql.language.SourceLocation;
 import graphql.util.LogKit;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The standard handling of data fetcher error involves placing a {@link ExceptionWhileDataFetching} error
@@ -20,7 +19,7 @@ public class SimpleDataFetcherExceptionHandler implements DataFetcherExceptionHa
     public DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
         Throwable exception = handlerParameters.getException();
         SourceLocation sourceLocation = handlerParameters.getSourceLocation();
-        ExecutionPath path = handlerParameters.getPath();
+        ResultPath path = handlerParameters.getPath();
 
         ExceptionWhileDataFetching error = new ExceptionWhileDataFetching(path, exception, sourceLocation);
         logNotSafe.warn(error.getMessage(), exception);

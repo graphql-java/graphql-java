@@ -1,23 +1,27 @@
 package graphql.execution.nextgen;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Assert;
 import graphql.ExceptionWhileDataFetching;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.collect.ImmutableKit;
 import graphql.execution.AbsoluteGraphQLError;
 import graphql.execution.Async;
 import graphql.execution.DataFetcherResult;
 import graphql.execution.DefaultValueUnboxer;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
-import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.FetchedValue;
 import graphql.execution.MergedField;
+import graphql.execution.ResultPath;
 import graphql.execution.ValuesResolver;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.language.Field;
+import graphql.normalized.NormalizedField;
+import graphql.normalized.NormalizedQueryTree;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingFieldSelectionSet;
@@ -39,8 +43,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
+import static graphql.collect.ImmutableKit.map;
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 import static java.util.Collections.singletonList;
 
@@ -117,12 +121,15 @@ public class ValueFetcher {
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         GraphQLFieldsContainer parentType = getFieldsContainer(executionInfo);
 
-        Supplier<Map<String, Object>> argumentValues = FpKit.memoize(() -> valuesResolver.getArgumentValues(codeRegistry, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables()));
+        Supplier<Map<String, Object>> argumentValues = FpKit.intraThreadMemoize(() -> valuesResolver.getArgumentValues(codeRegistry, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables()));
 
         QueryDirectivesImpl queryDirectives = new QueryDirectivesImpl(sameFields, executionContext.getGraphQLSchema(), executionContext.getVariables());
 
         GraphQLOutputType fieldType = fieldDef.getType();
-        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, sameFields);
+
+        Supplier<NormalizedQueryTree> normalizedQuery = executionContext.getNormalizedQueryTree();
+        Supplier<NormalizedField> normalisedField = () -> normalizedQuery.get().getNormalizedField(sameFields, executionInfo.getObjectType(), executionInfo.getPath());
+        DataFetchingFieldSelectionSet selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(fieldType, normalisedField);
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(source)
@@ -133,12 +140,12 @@ public class ValueFetcher {
                 .fieldType(fieldType)
                 .executionStepInfo(executionInfo)
                 .parentType(parentType)
-                .selectionSet(fieldCollector)
+                .selectionSet(selectionSet)
                 .queryDirectives(queryDirectives)
                 .build();
 
         ExecutionId executionId = executionContext.getExecutionId();
-        ExecutionPath path = executionInfo.getPath();
+        ResultPath path = executionInfo.getPath();
         return callDataFetcher(codeRegistry, parentType, fieldDef, environment, executionId, path)
                 .thenApply(rawFetchedValue -> FetchedValue.newFetchedValue()
                         .fetchedValue(rawFetchedValue)
@@ -149,7 +156,7 @@ public class ValueFetcher {
                 .thenApply(this::unboxPossibleOptional);
     }
 
-    private FetchedValue handleExceptionWhileFetching(Field field, ExecutionPath path, Throwable exception) {
+    private FetchedValue handleExceptionWhileFetching(Field field, ResultPath path, Throwable exception) {
         ExceptionWhileDataFetching exceptionWhileDataFetching = new ExceptionWhileDataFetching(path, exception, field.getSourceLocation());
         return FetchedValue.newFetchedValue().errors(singletonList(exceptionWhileDataFetching)).build();
     }
@@ -160,7 +167,7 @@ public class ValueFetcher {
         );
     }
 
-    private CompletableFuture<Object> callDataFetcher(GraphQLCodeRegistry codeRegistry, GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment, ExecutionId executionId, ExecutionPath path) {
+    private CompletableFuture<Object> callDataFetcher(GraphQLCodeRegistry codeRegistry, GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment, ExecutionId executionId, ResultPath path) {
         CompletableFuture<Object> result = new CompletableFuture<>();
         try {
             DataFetcher dataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);
@@ -201,21 +208,17 @@ public class ValueFetcher {
         cf.complete(fetchedValue);
     }
 
-    private FetchedValue unboxPossibleDataFetcherResult(MergedField sameField, ExecutionPath executionPath, FetchedValue result, Object localContext) {
+    private FetchedValue unboxPossibleDataFetcherResult(MergedField sameField, ResultPath resultPath, FetchedValue result, Object localContext) {
         if (result.getFetchedValue() instanceof DataFetcherResult) {
 
             List<GraphQLError> addErrors;
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result.getFetchedValue();
             if (dataFetcherResult.isMapRelativeErrors()) {
-                addErrors = dataFetcherResult.getErrors().stream()
-                        .map(relError -> new AbsoluteGraphQLError(sameField, executionPath, relError))
-                        .collect(Collectors.toList());
+                addErrors = map(dataFetcherResult.getErrors(), relError -> new AbsoluteGraphQLError(sameField, resultPath, relError));
             } else {
-                addErrors = new ArrayList<>(dataFetcherResult.getErrors());
+                addErrors = ImmutableList.copyOf(dataFetcherResult.getErrors());
             }
-            List<GraphQLError> newErrors;
-            newErrors = new ArrayList<>(result.getErrors());
-            newErrors.addAll(addErrors);
+            List<GraphQLError> newErrors = ImmutableKit.concatLists(result.getErrors(), addErrors);
 
             Object newLocalContext = dataFetcherResult.getLocalContext();
             if (newLocalContext == null) {

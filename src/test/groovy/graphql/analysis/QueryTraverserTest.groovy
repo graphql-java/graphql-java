@@ -1220,10 +1220,10 @@ class QueryTraverserTest extends Specification {
         queryTraversal."$visitFn"(visitor)
 
         then:
-        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "foo" && it.fieldDefinition.type == list(nonNull(catOrDog)) && it.parentType.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "foo" && list(nonNull(catOrDog)).isEqualTo(it.fieldDefinition.type) && it.parentType.name == "Query" })
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "catName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Cat" && it.fieldsContainer.name == "Cat" })
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "dogName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Dog" && it.fieldsContainer.name == "Dog" })
-        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "id" && it.fieldDefinition.type.name == "String" && it.parentType == nonNull(list(nonNull(bar))) && it.fieldsContainer.name == "Bar" })
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "id" && it.fieldDefinition.type.name == "String" && nonNull(list(nonNull(bar))).isEqualTo(it.parentType) && it.fieldsContainer.name == "Bar" })
 
         where:
         order       | visitFn
@@ -1407,9 +1407,9 @@ class QueryTraverserTest extends Specification {
             """)
         QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         QueryVisitorFieldEnvironment env
-        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
-            env = it
-        })
+        1 * visitor.visitField(_) >> { args ->
+            env = args[0]
+        }
         when:
         queryTraversal.visitPreOrder(visitor)
         env.typeNameIntrospectionField
@@ -1709,5 +1709,43 @@ class QueryTraverserTest extends Specification {
         0 * visitor.visitArgument(_)
     }
 
+    def "conditional nodes via variables are defaulted correctly and visited correctly"() {
 
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery('''
+            query test($var : Boolean = true)  {
+                bar @include(if:$var)
+            }
+            ''')
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
+
+        when: "we have an enabled variable conditional node"
+        queryTraversal.visitPreOrder(visitor)
+
+        then: "it should be visited"
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.fieldDefinition.name == "bar"
+        })
+
+        when: "we have an enabled variable conditional node"
+        query = createQuery('''
+            query test($var : Boolean = false)  {
+                bar @include(if:$var)
+            }
+            ''')
+        queryTraversal = createQueryTraversal(query, schema)
+        queryTraversal.visitPreOrder(visitor)
+        then: "it should not be visited"
+        0 * visitor.visitField(_)
+    }
 }

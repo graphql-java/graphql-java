@@ -663,6 +663,28 @@ type Query {
 '''
     }
 
+    def "arrayIndexOutOfBoundsException should not occur if a field description of only a newline is passed"() {
+        given:
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
+                .name("field")
+                .description("\n")
+                .type(GraphQLString)
+                .build()
+
+        def queryType = new MyTestGraphQLObjectType("Query", "test", Arrays.asList(fieldDefinition))
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+
+        when:
+        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+
+        then:
+        result == '''"test"
+type Query {
+  field: String
+}
+'''
+    }
+
     def "schema will be sorted"() {
         def schema = TestUtil.schema("""
             type Query {
@@ -1761,7 +1783,7 @@ type Query {
             type PrintMeQuery {
                 field : PrintMeType
                 fieldPrintMe : SomeType
-                fieldPrintMeWithArgs(arg1 : String, arg2PrintMe : String @deprecated @directivePrintMe) : SomeType @someOtherDirective
+                fieldPrintMeWithArgs(arg1 : String, arg2PrintMe : String @directivePrintMe) : SomeType @someOtherDirective
             }
             
             type PrintMeType {

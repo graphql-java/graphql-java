@@ -138,7 +138,6 @@ public class RuntimeWiring {
          * Adds a wiring factory into the runtime wiring
          *
          * @param wiringFactory the wiring factory to add
-         *
          * @return this outer builder
          */
         public Builder wiringFactory(WiringFactory wiringFactory) {
@@ -151,7 +150,6 @@ public class RuntimeWiring {
          * This allows you to seed in your own {@link graphql.schema.GraphQLCodeRegistry} instance
          *
          * @param codeRegistry the code registry to use
-         *
          * @return this outer builder
          */
         public Builder codeRegistry(GraphQLCodeRegistry codeRegistry) {
@@ -163,7 +161,6 @@ public class RuntimeWiring {
          * This allows you to seed in your own {@link graphql.schema.GraphQLCodeRegistry} instance
          *
          * @param codeRegistry the code registry to use
-         *
          * @return this outer builder
          */
         public Builder codeRegistry(GraphQLCodeRegistry.Builder codeRegistry) {
@@ -175,7 +172,6 @@ public class RuntimeWiring {
          * This allows you to add in new custom Scalar implementations beyond the standard set.
          *
          * @param scalarType the new scalar implementation
-         *
          * @return the runtime wiring builder
          */
         public Builder scalar(GraphQLScalarType scalarType) {
@@ -187,7 +183,6 @@ public class RuntimeWiring {
          * This allows you to add a field visibility that will be associated with the schema
          *
          * @param fieldVisibility the new field visibility
-         *
          * @return the runtime wiring builder
          */
         public Builder fieldVisibility(GraphqlFieldVisibility fieldVisibility) {
@@ -199,7 +194,6 @@ public class RuntimeWiring {
          * This allows you to add a new type wiring via a builder
          *
          * @param builder the type wiring builder to use
-         *
          * @return this outer builder
          */
         public Builder type(TypeRuntimeWiring.Builder builder) {
@@ -211,7 +205,6 @@ public class RuntimeWiring {
          *
          * @param typeName        the name of the type to wire
          * @param builderFunction a function that will be given the builder to use
-         *
          * @return the runtime wiring builder
          */
         public Builder type(String typeName, UnaryOperator<TypeRuntimeWiring.Builder> builderFunction) {
@@ -223,7 +216,6 @@ public class RuntimeWiring {
          * This adds a type wiring
          *
          * @param typeRuntimeWiring the new type wiring
-         *
          * @return the runtime wiring builder
          */
         public Builder type(TypeRuntimeWiring typeRuntimeWiring) {
@@ -257,9 +249,7 @@ public class RuntimeWiring {
          *
          * @param directiveName         the name of the directive to wire
          * @param schemaDirectiveWiring the runtime behaviour of this wiring
-         *
          * @return the runtime wiring builder
-         *
          * @see #directiveWiring(SchemaDirectiveWiring)
          * @see graphql.schema.idl.SchemaDirectiveWiring
          * @see graphql.schema.idl.WiringFactory#providesSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment)
@@ -277,9 +267,7 @@ public class RuntimeWiring {
          * in the schema even if it has zero directives.
          *
          * @param schemaDirectiveWiring the runtime behaviour of this wiring
-         *
          * @return the runtime wiring builder
-         *
          * @see #directive(String, SchemaDirectiveWiring)
          * @see graphql.schema.idl.SchemaDirectiveWiring
          * @see graphql.schema.idl.WiringFactory#providesSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment)
@@ -294,6 +282,7 @@ public class RuntimeWiring {
          * which will tell you what type of objects you are to sort when
          * it asks for a comparator.
          *
+         * @param comparatorRegistry your own comparator registry
          * @return the runtime wiring builder
          */
         public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
@@ -305,7 +294,6 @@ public class RuntimeWiring {
          * Adds a schema transformer into the mix
          *
          * @param schemaGeneratorPostProcessing the non null schema transformer to add
-         *
          * @return the runtime wiring builder
          */
         public Builder transformer(SchemaGeneratorPostProcessing schemaGeneratorPostProcessing) {

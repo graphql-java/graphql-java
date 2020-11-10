@@ -1,6 +1,7 @@
 package graphql.parser;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.language.Argument;
@@ -60,10 +61,10 @@ import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
-import graphql.util.FpKit;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -72,9 +73,10 @@ import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.map;
 import static graphql.parser.StringValueParsing.parseSingleQuotedString;
 import static graphql.parser.StringValueParsing.parseTripleQuotedString;
-import static java.util.stream.Collectors.toList;
 
 @Internal
 public class GraphqlAntlrToLanguage {
@@ -96,8 +98,7 @@ public class GraphqlAntlrToLanguage {
     public Document createDocument(GraphqlParser.DocumentContext ctx) {
         Document.Builder document = Document.newDocument();
         addCommonData(document, ctx);
-        document.definitions(ctx.definition().stream().map(this::createDefinition)
-                .collect(toList()));
+        document.definitions(map(ctx.definition(), this::createDefinition));
         return document.build();
     }
 
@@ -151,12 +152,14 @@ public class GraphqlAntlrToLanguage {
         fragmentSpread.directives(createDirectives(ctx.directives()));
         return fragmentSpread.build();
     }
+
     protected List<VariableDefinition> createVariableDefinitions(GraphqlParser.VariableDefinitionsContext ctx) {
         if (ctx == null) {
-            return new ArrayList<>();
+            return emptyList();
         }
-        return ctx.variableDefinition().stream().map(this::createVariableDefinition).collect(toList());
+        return map(ctx.variableDefinition(), this::createVariableDefinition);
     }
+
     protected VariableDefinition createVariableDefinition(GraphqlParser.VariableDefinitionContext ctx) {
         VariableDefinition.Builder variableDefinition = VariableDefinition.newVariableDefinition();
         addCommonData(variableDefinition, ctx);
@@ -188,7 +191,7 @@ public class GraphqlAntlrToLanguage {
         }
         SelectionSet.Builder builder = SelectionSet.newSelectionSet();
         addCommonData(builder, ctx);
-        List<Selection> selections = ctx.selection().stream().map(selectionContext -> {
+        List<Selection> selections = map(ctx.selection(), selectionContext -> {
             if (selectionContext.field() != null) {
                 return createField(selectionContext.field());
             }
@@ -200,7 +203,7 @@ public class GraphqlAntlrToLanguage {
             }
             return (Selection) Assert.assertShouldNeverHappen();
 
-        }).collect(toList());
+        });
         builder.selections(selections);
         return builder.build();
     }
@@ -353,17 +356,17 @@ public class GraphqlAntlrToLanguage {
 
     protected List<Argument> createArguments(GraphqlParser.ArgumentsContext ctx) {
         if (ctx == null) {
-            return new ArrayList<>();
+            return emptyList();
         }
-        return ctx.argument().stream().map(this::createArgument).collect(toList());
+        return map(ctx.argument(), this::createArgument);
     }
 
 
     protected List<Directive> createDirectives(GraphqlParser.DirectivesContext ctx) {
         if (ctx == null) {
-            return new ArrayList<>();
+            return emptyList();
         }
-        return ctx.directive().stream().map(this::createDirective).collect(toList());
+        return map(ctx.directive(), this::createDirective);
     }
 
     protected Directive createDirective(GraphqlParser.DirectiveContext ctx) {
@@ -379,8 +382,7 @@ public class GraphqlAntlrToLanguage {
         addCommonData(def, ctx);
         def.directives(createDirectives(ctx.directives()));
         def.description(newDescription(ctx.description()));
-        def.operationTypeDefinitions(ctx.operationTypeDefinition().stream()
-                .map(this::createOperationTypeDefinition).collect(toList()));
+        def.operationTypeDefinitions(map(ctx.operationTypeDefinition(), this::createOperationTypeDefinition));
         return def.build();
     }
 
@@ -395,8 +397,7 @@ public class GraphqlAntlrToLanguage {
         }
         def.directives(directives);
 
-        List<OperationTypeDefinition> operationTypeDefs = ctx.operationTypeDefinition().stream()
-                .map(this::createOperationTypeDefinition).collect(toList());
+        List<OperationTypeDefinition> operationTypeDefs = map(ctx.operationTypeDefinition(), this::createOperationTypeDefinition);
         def.operationTypeDefinitions(operationTypeDefs);
         return def.build();
     }
@@ -458,16 +459,16 @@ public class GraphqlAntlrToLanguage {
 
     protected List<FieldDefinition> createFieldDefinitions(GraphqlParser.FieldsDefinitionContext ctx) {
         if (ctx == null) {
-            return new ArrayList<>();
+            return emptyList();
         }
-        return ctx.fieldDefinition().stream().map(this::createFieldDefinition).collect(toList());
+        return map(ctx.fieldDefinition(), this::createFieldDefinition);
     }
 
     protected List<FieldDefinition> createFieldDefinitions(GraphqlParser.ExtensionFieldsDefinitionContext ctx) {
         if (ctx == null) {
-            return new ArrayList<>();
+            return emptyList();
         }
-        return ctx.fieldDefinition().stream().map(this::createFieldDefinition).collect(toList());
+        return map(ctx.fieldDefinition(), this::createFieldDefinition);
     }
 
 
@@ -485,8 +486,7 @@ public class GraphqlAntlrToLanguage {
     }
 
     protected List<InputValueDefinition> createInputValueDefinitions(List<GraphqlParser.InputValueDefinitionContext> defs) {
-        return defs.stream().map(this::createInputValueDefinition).collect(toList());
-
+        return map(defs, this::createInputValueDefinition);
     }
 
     protected InputValueDefinition createInputValueDefinition(GraphqlParser.InputValueDefinitionContext ctx) {
@@ -571,7 +571,7 @@ public class GraphqlAntlrToLanguage {
         def.directives(createDirectives(ctx.directives()));
         if (ctx.enumValueDefinitions() != null) {
             def.enumValueDefinitions(
-                    ctx.enumValueDefinitions().enumValueDefinition().stream().map(this::createEnumValueDefinition).collect(toList()));
+                    map(ctx.enumValueDefinitions().enumValueDefinition(), this::createEnumValueDefinition));
         }
         return def.build();
     }
@@ -583,7 +583,7 @@ public class GraphqlAntlrToLanguage {
         def.directives(createDirectives(ctx.directives()));
         if (ctx.extensionEnumValueDefinitions() != null) {
             def.enumValueDefinitions(
-                    ctx.extensionEnumValueDefinitions().enumValueDefinition().stream().map(this::createEnumValueDefinition).collect(toList()));
+                    map(ctx.extensionEnumValueDefinitions().enumValueDefinition(), this::createEnumValueDefinition));
         }
         return def.build();
     }
@@ -662,8 +662,8 @@ public class GraphqlAntlrToLanguage {
             NullValue.Builder nullValue = NullValue.newNullValue();
             addCommonData(nullValue, ctx);
             return nullValue.build();
-        } else if (ctx.stringValue() != null) {
-            StringValue.Builder stringValue = StringValue.newStringValue().value(quotedString(ctx.stringValue()));
+        } else if (ctx.StringValue() != null) {
+            StringValue.Builder stringValue = StringValue.newStringValue().value(quotedString(ctx.StringValue()));
             addCommonData(stringValue, ctx);
             return stringValue.build();
         } else if (ctx.enumValue() != null) {
@@ -717,8 +717,8 @@ public class GraphqlAntlrToLanguage {
             NullValue.Builder nullValue = NullValue.newNullValue();
             addCommonData(nullValue, ctx);
             return nullValue.build();
-        } else if (ctx.stringValue() != null) {
-            StringValue.Builder stringValue = StringValue.newStringValue().value(quotedString(ctx.stringValue()));
+        } else if (ctx.StringValue() != null) {
+            StringValue.Builder stringValue = StringValue.newStringValue().value(quotedString(ctx.StringValue()));
             addCommonData(stringValue, ctx);
             return stringValue.build();
         } else if (ctx.enumValue() != null) {
@@ -750,9 +750,9 @@ public class GraphqlAntlrToLanguage {
         return assertShouldNeverHappen();
     }
 
-    static String quotedString(GraphqlParser.StringValueContext ctx) {
-        boolean multiLine = ctx.TripleQuotedStringValue() != null;
-        String strText = ctx.getText();
+    static String quotedString(TerminalNode terminalNode) {
+        boolean multiLine = terminalNode.getText().startsWith("\"\"\"");
+        String strText = terminalNode.getText();
         if (multiLine) {
             return parseTripleQuotedString(strText);
         } else {
@@ -787,10 +787,7 @@ public class GraphqlAntlrToLanguage {
         if (tokens == null) {
             return Collections.emptyList();
         }
-        return tokens
-                .stream()
-                .map(this::createIgnoredChar)
-                .collect(toList());
+        return map(tokens, this::createIgnoredChar);
 
     }
 
@@ -823,12 +820,12 @@ public class GraphqlAntlrToLanguage {
         if (descriptionCtx == null) {
             return null;
         }
-        GraphqlParser.StringValueContext stringValueCtx = descriptionCtx.stringValue();
-        if (stringValueCtx == null) {
+        TerminalNode terminalNode = descriptionCtx.StringValue();
+        if (terminalNode == null) {
             return null;
         }
-        boolean multiLine = stringValueCtx.TripleQuotedStringValue() != null;
-        String content = stringValueCtx.getText();
+        String content = terminalNode.getText();
+        boolean multiLine = content.startsWith("\"\"\"");
         if (multiLine) {
             content = parseTripleQuotedString(content);
         } else {
@@ -876,14 +873,14 @@ public class GraphqlAntlrToLanguage {
             int line = sourceAndLine.getLine() + 1;
             comments.add(new Comment(text, new SourceLocation(line, column, sourceAndLine.getSourceName())));
         }
-        return comments;
+        return ImmutableList.copyOf(comments);
     }
 
 
     private List<Type> getImplementz(GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext) {
         List<Type> implementz = new ArrayList<>();
         while (implementsInterfacesContext != null) {
-            List<TypeName> typeNames = FpKit.map(implementsInterfacesContext.typeName(), this::createTypeName);
+            List<TypeName> typeNames = map(implementsInterfacesContext.typeName(), this::createTypeName);
 
             implementz.addAll(0, typeNames);
             implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();

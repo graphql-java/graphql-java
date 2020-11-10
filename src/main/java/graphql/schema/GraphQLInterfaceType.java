@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import com.google.common.collect.ImmutableList;
 import graphql.AssertException;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -9,7 +10,6 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,7 +25,6 @@ import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.unmodifiableList;
 
 /**
  * In graphql, an interface is an abstract type that defines the set of fields that a type must include to
@@ -33,7 +32,6 @@ import static java.util.Collections.unmodifiableList;
  * <p>
  * At runtime a {@link graphql.schema.TypeResolver} is used to take an interface object value and decide what {@link graphql.schema.GraphQLObjectType}
  * represents this interface type.
- * <p>
  * <p>
  * See http://graphql.org/learn/schema/#interfaces for more details on the concept.
  */
@@ -45,12 +43,12 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
     private final TypeResolver typeResolver;
     private final InterfaceTypeDefinition definition;
-    private final List<InterfaceTypeExtensionDefinition> extensionDefinitions;
-    private final List<GraphQLDirective> directives;
+    private final ImmutableList<InterfaceTypeExtensionDefinition> extensionDefinitions;
+    private final ImmutableList<GraphQLDirective> directives;
 
-    private final List<GraphQLNamedOutputType> originalInterfaces;
+    private final ImmutableList<GraphQLNamedOutputType> originalInterfaces;
     private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
-    private List<GraphQLNamedOutputType> replacedInterfaces;
+    private ImmutableList<GraphQLNamedOutputType> replacedInterfaces;
 
 
     public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
@@ -107,9 +105,9 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
         this.typeResolver = typeResolver;
         this.definition = definition;
         this.interfaceComparator = interfaceComparator;
-        this.originalInterfaces = sortTypes(interfaceComparator, interfaces);
-        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
-        this.directives = directives;
+        this.originalInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
+        this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
+        this.directives = ImmutableList.copyOf(directives);
         buildDefinitionMap(fieldDefinitions);
     }
 
@@ -131,7 +129,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
     @Override
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
-        return new ArrayList<>(fieldDefinitionsByName.values());
+        return ImmutableList.copyOf(fieldDefinitionsByName.values());
     }
 
     @Override
@@ -219,13 +217,29 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     @Override
     public List<GraphQLNamedOutputType> getInterfaces() {
         if (replacedInterfaces != null) {
-            return Collections.unmodifiableList(replacedInterfaces);
+            return ImmutableList.copyOf(replacedInterfaces);
         }
-        return unmodifiableList(originalInterfaces);
+        return ImmutableList.copyOf(originalInterfaces);
     }
 
     void replaceInterfaces(List<GraphQLNamedOutputType> interfaces) {
-        this.replacedInterfaces = sortTypes(interfaceComparator, interfaces);
+        this.replacedInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return super.hashCode();
     }
 
 
