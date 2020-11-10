@@ -67,21 +67,12 @@ public class ValuesResolver {
                 }
             } else {
                 Object value = variableValues.get(variableName);
-                Object coercedValue = getVariableValue(fieldVisibility, variableDefinition, variableType, value);
+                Object coercedValue = coerceValue(fieldVisibility, variableDefinition, variableDefinition.getName(), variableType, value);
                 coercedValues.put(variableName, coercedValue);
             }
         }
 
         return coercedValues;
-    }
-
-    private Object getVariableValue(GraphqlFieldVisibility fieldVisibility, VariableDefinition variableDefinition, GraphQLType variableType, Object value) {
-
-        if (value == null && variableDefinition.getDefaultValue() != null) {
-            return coerceValueAst(fieldVisibility, variableType, variableDefinition.getDefaultValue(), null);
-        }
-
-        return coerceValue(fieldVisibility, variableDefinition, variableDefinition.getName(), variableType, value);
     }
 
     public Map<String, Object> getArgumentValues(List<GraphQLArgument> argumentTypes, List<Argument> arguments, Map<String, Object> variables) {
