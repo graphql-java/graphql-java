@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -14,14 +15,15 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefinition> implements SDLDefinition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
     private final String name;
-    private final List<InputValueDefinition> inputValueDefinitions;
-    private final List<DirectiveLocation> directiveLocations;
+    private final ImmutableList<InputValueDefinition> inputValueDefinitions;
+    private final ImmutableList<DirectiveLocation> directiveLocations;
 
     public static final String CHILD_INPUT_VALUE_DEFINITIONS = "inputValueDefinitions";
     public static final String CHILD_DIRECTIVE_LOCATION = "directiveLocation";
@@ -37,8 +39,8 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
                                   Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
-        this.inputValueDefinitions = inputValueDefinitions;
-        this.directiveLocations = directiveLocations;
+        this.inputValueDefinitions = ImmutableList.copyOf(inputValueDefinitions);
+        this.directiveLocations = ImmutableList.copyOf(directiveLocations);
     }
 
     /**
@@ -47,7 +49,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
      * @param name of the directive definition
      */
     public DirectiveDefinition(String name) {
-        this(name, null, new ArrayList<>(), new ArrayList<>(), null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, null, emptyList(), emptyList(), null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -56,11 +58,11 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
-        return new ArrayList<>(inputValueDefinitions);
+        return inputValueDefinitions;
     }
 
     public List<DirectiveLocation> getDirectiveLocations() {
-        return new ArrayList<>(directiveLocations);
+        return directiveLocations;
     }
 
     @Override

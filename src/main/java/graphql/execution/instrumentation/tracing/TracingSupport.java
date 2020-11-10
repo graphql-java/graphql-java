@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation.tracing;
 
+import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -7,7 +8,6 @@ import graphql.schema.DataFetchingEnvironment;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -145,7 +145,7 @@ public class TracingSupport implements InstrumentationState {
 
     private Map<String, Object> executionData() {
         Map<String, Object> map = new LinkedHashMap<>();
-        List<Map<String, Object>> list = new ArrayList<>(fieldData);
+        List<Map<String, Object>> list = ImmutableList.copyOf(fieldData);
         map.put("resolvers", list);
         return map;
     }

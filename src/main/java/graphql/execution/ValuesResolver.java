@@ -28,9 +28,9 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.collect.ImmutableKit.map;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
@@ -48,7 +48,6 @@ public class ValuesResolver {
      * @param schema              the schema
      * @param variableDefinitions the variable definitions
      * @param variableValues      the supplied variables
-     *
      * @return coerced variable values as a map
      */
     public Map<String, Object> coerceVariableValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> variableValues) {
@@ -68,21 +67,12 @@ public class ValuesResolver {
                 }
             } else {
                 Object value = variableValues.get(variableName);
-                Object coercedValue = getVariableValue(fieldVisibility, variableDefinition, variableType, value);
+                Object coercedValue = coerceValue(fieldVisibility, variableDefinition, variableDefinition.getName(), variableType, value);
                 coercedValues.put(variableName, coercedValue);
             }
         }
 
         return coercedValues;
-    }
-
-    private Object getVariableValue(GraphqlFieldVisibility fieldVisibility, VariableDefinition variableDefinition, GraphQLType variableType, Object value) {
-
-        if (value == null && variableDefinition.getDefaultValue() != null) {
-            return coerceValueAst(fieldVisibility, variableType, variableDefinition.getDefaultValue(), null);
-        }
-
-        return coerceValue(fieldVisibility, variableDefinition, variableDefinition.getName(), variableType, value);
     }
 
     public Map<String, Object> getArgumentValues(List<GraphQLArgument> argumentTypes, List<Argument> arguments, Map<String, Object> variables) {
@@ -193,7 +183,7 @@ public class ValuesResolver {
     private Object coerceValueForInputObjectType(GraphqlFieldVisibility fieldVisibility, VariableDefinition variableDefinition, GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
         Map<String, Object> result = new LinkedHashMap<>();
         List<GraphQLInputObjectField> fields = fieldVisibility.getFieldDefinitions(inputObjectType);
-        List<String> fieldNames = fields.stream().map(GraphQLInputObjectField::getName).collect(Collectors.toList());
+        List<String> fieldNames = map(fields, GraphQLInputObjectField::getName);
         for (String inputFieldName : input.keySet()) {
             if (!fieldNames.contains(inputFieldName)) {
                 throw new InputMapDefinesTooManyFieldsException(inputObjectType, inputFieldName);

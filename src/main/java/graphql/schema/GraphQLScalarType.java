@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.ScalarTypeDefinition;
@@ -8,8 +9,6 @@ import graphql.language.ScalarTypeExtensionDefinition;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +42,8 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
     private final String description;
     private final Coercing coercing;
     private final ScalarTypeDefinition definition;
-    private final List<ScalarTypeExtensionDefinition> extensionDefinitions;
-    private final List<GraphQLDirective> directives;
+    private final ImmutableList<ScalarTypeExtensionDefinition> extensionDefinitions;
+    private final ImmutableList<GraphQLDirective> directives;
     private final String specifiedByUrl;
 
     public static final String CHILD_DIRECTIVES = "directives";
@@ -93,8 +92,8 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         this.description = description;
         this.coercing = coercing;
         this.definition = definition;
-        this.directives = directives;
-        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
+        this.directives = ImmutableList.copyOf(directives);
+        this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
         this.specifiedByUrl = specifiedByUrl;
     }
 
@@ -126,7 +125,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     @Override
@@ -159,7 +158,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
     @Override
     public List<GraphQLSchemaElement> getChildren() {
-        return new ArrayList<>(directives);
+        return ImmutableList.copyOf(directives);
     }
 
     @Override

@@ -18,7 +18,7 @@ public class DirectiveInfo {
     /**
      * A set of directives which provided by graphql specification
      */
-    public static final Set<GraphQLDirective> GRAPHQL_SPECIFICATION_DIRECTIVES = new LinkedHashSet();
+    public static final Set<GraphQLDirective> GRAPHQL_SPECIFICATION_DIRECTIVES = new LinkedHashSet<>();
 
     /**
      * A map from directive name to directive which provided by specification

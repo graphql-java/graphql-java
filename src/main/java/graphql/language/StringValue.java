@@ -7,13 +7,14 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
 
@@ -34,7 +35,7 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
      * @param value of the String
      */
     public StringValue(String value) {
-        this(value, null, new ArrayList<>(), IgnoredChars.EMPTY, Collections.emptyMap());
+        this(value, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public String getValue() {
@@ -43,8 +44,7 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
-        return result;
+        return emptyList();
     }
 
     @Override

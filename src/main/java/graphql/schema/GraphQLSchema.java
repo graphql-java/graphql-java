@@ -1,6 +1,9 @@
 package graphql.schema;
 
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import graphql.Directives;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -19,13 +22,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.DirectivesUtil.directivesByName;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.map;
+import static graphql.collect.ImmutableKit.nonNullCopyOf;
 import static graphql.schema.GraphqlTypeComparators.byNameAsc;
 import static graphql.schema.GraphqlTypeComparators.sortTypes;
 import static java.util.Arrays.asList;
@@ -43,16 +48,17 @@ public class GraphQLSchema {
     private final GraphQLObjectType queryType;
     private final GraphQLObjectType mutationType;
     private final GraphQLObjectType subscriptionType;
-    private final Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
-    private final Set<GraphQLDirective> directives = new LinkedHashSet<>();
-    private final Map<String, GraphQLDirective> schemaDirectives = new LinkedHashMap<>();
+    private final ImmutableSet<GraphQLType> additionalTypes;
+    private final ImmutableSet<GraphQLDirective> directives;
+    private final ImmutableMap<String, GraphQLDirective> schemaDirectives;
     private final SchemaDefinition definition;
-    private final List<SchemaExtensionDefinition> extensionDefinitions;
+    private final ImmutableList<SchemaExtensionDefinition> extensionDefinitions;
 
     private final GraphQLCodeRegistry codeRegistry;
 
-    private final Map<String, GraphQLNamedType> typeMap;
-    private final Map<String, List<GraphQLObjectType>> byInterface;
+    private final ImmutableMap<String, GraphQLNamedType> typeMap;
+    private final ImmutableMap<String, ImmutableList<GraphQLObjectType>> interfaceNameToObjectTypes;
+    private final ImmutableMap<String, ImmutableList<String>> interfaceNameToObjectTypeNames;
 
     private final String description;
 
@@ -102,36 +108,57 @@ public class GraphQLSchema {
         this.queryType = builder.queryType;
         this.mutationType = builder.mutationType;
         this.subscriptionType = builder.subscriptionType;
-        this.additionalTypes.addAll(builder.additionalTypes);
-        this.directives.addAll(builder.additionalDirectives);
-        this.schemaDirectives.putAll(builder.schemaDirectives);
+        this.additionalTypes = ImmutableSet.copyOf(builder.additionalTypes);
+        this.directives = ImmutableSet.copyOf(builder.additionalDirectives);
+        this.schemaDirectives = ImmutableMap.copyOf(builder.schemaDirectives);
         this.definition = builder.definition;
-        this.extensionDefinitions = builder.extensionDefinitions == null ? Collections.emptyList() : builder.extensionDefinitions;
+        this.extensionDefinitions = nonNullCopyOf(builder.extensionDefinitions);
         this.codeRegistry = builder.codeRegistry;
         // sorted by type name
         SchemaUtil schemaUtil = new SchemaUtil();
-        this.typeMap = new TreeMap<>(schemaUtil.allTypes(this, additionalTypes, afterTransform));
-        this.byInterface = new TreeMap<>(schemaUtil.groupImplementations(this));
+        this.typeMap = ImmutableMap.copyOf(schemaUtil.allTypes(this, additionalTypes, afterTransform));
+        this.interfaceNameToObjectTypes = buildInterfacesToObjectTypes(schemaUtil.groupImplementations(this));
+        this.interfaceNameToObjectTypeNames = buildInterfacesToObjectName(interfaceNameToObjectTypes);
         this.description = builder.description;
     }
 
     // This can be removed once we no longer extract legacy code from types such as data fetchers but for now
     // we need it to make an efficient copy that does not walk the types twice
+
     @Internal
     private GraphQLSchema(GraphQLSchema otherSchema, GraphQLCodeRegistry codeRegistry) {
         this.queryType = otherSchema.queryType;
         this.mutationType = otherSchema.mutationType;
         this.subscriptionType = otherSchema.subscriptionType;
-        this.additionalTypes.addAll(otherSchema.additionalTypes);
-        this.directives.addAll(otherSchema.directives);
-        this.schemaDirectives.putAll(otherSchema.schemaDirectives);
+        this.additionalTypes = otherSchema.additionalTypes;
+        this.directives = otherSchema.directives;
+        this.schemaDirectives = otherSchema.schemaDirectives;
         this.definition = otherSchema.definition;
-        this.extensionDefinitions = otherSchema.extensionDefinitions == null ? Collections.emptyList() : otherSchema.extensionDefinitions;
+        this.extensionDefinitions = nonNullCopyOf(otherSchema.extensionDefinitions);
         this.codeRegistry = codeRegistry;
 
         this.typeMap = otherSchema.typeMap;
-        this.byInterface = otherSchema.byInterface;
+        this.interfaceNameToObjectTypes = otherSchema.interfaceNameToObjectTypes;
+        this.interfaceNameToObjectTypeNames = otherSchema.interfaceNameToObjectTypeNames;
         this.description = otherSchema.description;
+    }
+
+    private ImmutableMap<String, ImmutableList<GraphQLObjectType>> buildInterfacesToObjectTypes(Map<String, List<GraphQLObjectType>> groupImplementations) {
+        ImmutableMap.Builder<String, ImmutableList<GraphQLObjectType>> map = ImmutableMap.builder();
+        for (Map.Entry<String, List<GraphQLObjectType>> e : groupImplementations.entrySet()) {
+            ImmutableList<GraphQLObjectType> sortedObjectTypes = ImmutableList.copyOf(sortTypes(byNameAsc(), e.getValue()));
+            map.put(e.getKey(), sortedObjectTypes);
+        }
+        return map.build();
+    }
+
+    private ImmutableMap<String, ImmutableList<String>> buildInterfacesToObjectName(ImmutableMap<String, ImmutableList<GraphQLObjectType>> byInterface) {
+        ImmutableMap.Builder<String, ImmutableList<String>> map = ImmutableMap.builder();
+        for (Map.Entry<String, ImmutableList<GraphQLObjectType>> e : byInterface.entrySet()) {
+            ImmutableList<String> objectTypeNames = map(e.getValue(), GraphQLObjectType::getName);
+            map.put(e.getKey(), objectTypeNames);
+        }
+        return map.build();
     }
 
 
@@ -164,7 +191,7 @@ public class GraphQLSchema {
     }
 
     public Map<String, GraphQLNamedType> getTypeMap() {
-        return Collections.unmodifiableMap(typeMap);
+        return typeMap;
     }
 
     public List<GraphQLNamedType> getAllTypesAsList() {
@@ -179,10 +206,7 @@ public class GraphQLSchema {
      * @return list of types implementing provided interface
      */
     public List<GraphQLObjectType> getImplementations(GraphQLInterfaceType type) {
-        List<GraphQLObjectType> implementations = byInterface.get(type.getName());
-        return (implementations == null)
-                ? Collections.emptyList()
-                : Collections.unmodifiableList(sortTypes(byNameAsc(), implementations));
+        return interfaceNameToObjectTypes.getOrDefault(type.getName(), emptyList());
     }
 
     /**
@@ -197,15 +221,11 @@ public class GraphQLSchema {
      */
     public boolean isPossibleType(GraphQLNamedType abstractType, GraphQLObjectType concreteType) {
         if (abstractType instanceof GraphQLInterfaceType) {
-            return getImplementations((GraphQLInterfaceType) abstractType).stream()
-                    .map(GraphQLObjectType::getName)
-                    .anyMatch(name -> concreteType.getName().equals(name));
+            ImmutableList<String> objectNames = this.interfaceNameToObjectTypeNames.getOrDefault(abstractType.getName(), emptyList());
+            return objectNames.contains(concreteType.getName());
         } else if (abstractType instanceof GraphQLUnionType) {
-            return ((GraphQLUnionType) abstractType).getTypes().stream()
-                    .map(GraphQLNamedType::getName)
-                    .anyMatch(name -> concreteType.getName().equals(name));
+            return ((GraphQLUnionType) abstractType).isPossibleType(concreteType);
         }
-
         return assertShouldNeverHappen("Unsupported abstract type %s. Abstract types supported are Union and Interface.", abstractType.getName());
     }
 
@@ -237,7 +257,7 @@ public class GraphQLSchema {
      * @return a list of directives
      */
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return ImmutableList.copyOf(directives);
     }
 
     /**
@@ -301,7 +321,7 @@ public class GraphQLSchema {
     }
 
     public List<SchemaExtensionDefinition> getExtensionDefinitions() {
-        return new ArrayList<>(extensionDefinitions);
+        return extensionDefinitions;
     }
 
     public boolean isSupportingMutations() {
