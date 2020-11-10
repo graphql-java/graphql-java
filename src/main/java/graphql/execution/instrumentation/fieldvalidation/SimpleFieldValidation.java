@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation.fieldvalidation;
 
+import com.google.common.collect.ImmutableList;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.execution.ResultPath;
@@ -50,6 +51,6 @@ public class SimpleFieldValidation implements FieldValidation {
                 }
             }
         }
-        return errors;
+        return ImmutableList.copyOf(errors);
     }
 }

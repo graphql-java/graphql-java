@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -39,8 +40,8 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
     private final GraphQLOutputType originalType;
     private final DataFetcherFactory dataFetcherFactory;
     private final String deprecationReason;
-    private final List<GraphQLArgument> arguments;
-    private final List<GraphQLDirective> directives;
+    private final ImmutableList<GraphQLArgument> arguments;
+    private final ImmutableList<GraphQLDirective> directives;
     private final FieldDefinition definition;
 
     private GraphQLOutputType replacedType;
@@ -57,6 +58,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
      * @param dataFetcher       the field data fetcher
      * @param arguments         the field arguments
      * @param deprecationReason the deprecation reason
+     *
      * @deprecated use the {@link #newFieldDefinition()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -74,6 +76,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
      * @param deprecationReason  the deprecation reason
      * @param directives         the directives on this type element
      * @param definition         the AST definition
+     *
      * @deprecated use the {@link #newFieldDefinition()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -87,8 +90,8 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         this.description = description;
         this.originalType = type;
         this.dataFetcherFactory = dataFetcherFactory;
-        this.arguments = Collections.unmodifiableList(arguments);
-        this.directives = directives;
+        this.arguments = ImmutableList.copyOf(arguments);
+        this.directives = ImmutableList.copyOf(directives);
         this.deprecationReason = deprecationReason;
         this.definition = definition;
     }
@@ -125,7 +128,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     public List<GraphQLArgument> getArguments() {
@@ -166,6 +169,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new field based on calling build on that builder
      */
     public GraphQLFieldDefinition transform(Consumer<Builder> builderConsumer) {
@@ -302,7 +306,9 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * Sets the {@link graphql.schema.DataFetcher} to use with this field.
          *
          * @param dataFetcher the data fetcher to use
+         *
          * @return this builder
+         *
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
         @Deprecated
@@ -316,7 +322,9 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * Sets the {@link graphql.schema.DataFetcherFactory} to use with this field.
          *
          * @param dataFetcherFactory the data fetcher factory
+         *
          * @return this builder
+         *
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
         @Deprecated
@@ -330,7 +338,9 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * This will cause the data fetcher of this field to always return the supplied value
          *
          * @param value the value to always return
+         *
          * @return this builder
+         *
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
         @Deprecated
@@ -355,6 +365,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * </pre>
          *
          * @param builderFunction a supplier for the builder impl
+         *
          * @return this
          */
         public Builder argument(UnaryOperator<GraphQLArgument.Builder> builderFunction) {
@@ -368,6 +379,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * from within
          *
          * @param builder an un-built/incomplete GraphQLArgument
+         *
          * @return this
          */
         public Builder argument(GraphQLArgument.Builder builder) {
@@ -379,7 +391,9 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * This adds the list of arguments to the field.
          *
          * @param arguments the arguments to add
+         *
          * @return this
+         *
          * @deprecated This is a badly named method and is replaced by {@link #arguments(java.util.List)}
          */
         @Deprecated
@@ -391,6 +405,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * This adds the list of arguments to the field.
          *
          * @param arguments the arguments to add
+         *
          * @return this
          */
         public Builder arguments(List<GraphQLArgument> arguments) {

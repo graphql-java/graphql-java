@@ -23,9 +23,9 @@ import graphql.language.InterfaceTypeDefinition;
 import graphql.language.InterfaceTypeExtensionDefinition;
 import graphql.language.Node;
 import graphql.language.NullValue;
+import graphql.language.ObjectField;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
-import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
 import graphql.language.OperationTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
@@ -82,10 +82,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.collect.ImmutableKit.map;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
@@ -106,7 +106,6 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 @Internal
@@ -287,8 +286,7 @@ public class SchemaGeneratorHelper {
 
     Object buildArrayValue(GraphQLType requiredType, ArrayValue arrayValue) {
         GraphQLType wrappedType = unwrapOne(requiredType);
-        Object result = arrayValue.getValues().stream()
-                .map(item -> buildValue(item, wrappedType)).collect(toList());
+        Object result = map(arrayValue.getValues(), item -> buildValue(item, wrappedType));
         return result;
     }
 
@@ -378,9 +376,7 @@ public class SchemaGeneratorHelper {
         });
         builder.repeatable(graphQLDirective.isRepeatable());
 
-        List<GraphQLArgument> arguments = directive.getArguments().stream()
-                .map(arg -> buildDirectiveArgument(arg, graphQLDirective))
-                .collect(toList());
+        List<GraphQLArgument> arguments = map(directive.getArguments(), arg -> buildDirectiveArgument(arg, graphQLDirective));
 
         arguments = transferMissingArguments(arguments, graphQLDirective);
         arguments.forEach(builder::argument);
@@ -439,17 +435,15 @@ public class SchemaGeneratorHelper {
         List<DirectiveLocation> locations = buildLocations(directiveDefinition);
         locations.forEach(builder::validLocations);
 
-        List<GraphQLArgument> arguments = directiveDefinition.getInputValueDefinitions().stream()
-                .map(arg -> buildDirectiveArgumentFromDefinition(arg, inputTypeFactory))
-                .collect(toList());
+        List<GraphQLArgument> arguments = map(directiveDefinition.getInputValueDefinitions(),
+                arg -> buildDirectiveArgumentFromDefinition(arg, inputTypeFactory));
         arguments.forEach(builder::argument);
         return builder.build();
     }
 
     private List<DirectiveLocation> buildLocations(DirectiveDefinition directiveDefinition) {
-        return directiveDefinition.getDirectiveLocations().stream()
-                .map(dl -> DirectiveLocation.valueOf(dl.getName().toUpperCase()))
-                .collect(toList());
+        return map(directiveDefinition.getDirectiveLocations(),
+                dl -> DirectiveLocation.valueOf(dl.getName().toUpperCase()));
     }
 
     private GraphQLArgument buildDirectiveArgumentFromDefinition(InputValueDefinition arg, Function<Type, GraphQLInputType> inputTypeFactory) {
@@ -1227,9 +1221,8 @@ public class SchemaGeneratorHelper {
     }
 
     private List<Directive> directivesOf(List<? extends TypeDefinition> typeDefinitions) {
-        Stream<Directive> directiveStream = typeDefinitions.stream()
+        return typeDefinitions.stream()
                 .map(TypeDefinition::getDirectives).filter(Objects::nonNull)
-                .flatMap(List::stream);
-        return directiveStream.collect(Collectors.toList());
+                .<Directive>flatMap(List::stream).collect(Collectors.toList());
     }
 }

@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.DirectivesUtil;
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.ScalarTypeDefinition;
@@ -11,6 +12,7 @@ import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -41,8 +43,8 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
     private final String description;
     private final Coercing coercing;
     private final ScalarTypeDefinition definition;
-    private final List<ScalarTypeExtensionDefinition> extensionDefinitions;
-    private final List<GraphQLDirective> directives;
+    private final ImmutableList<ScalarTypeExtensionDefinition> extensionDefinitions;
+    private final ImmutableList<GraphQLDirective> directives;
     private final String specifiedByUrl;
 
     public static final String CHILD_DIRECTIVES = "directives";
@@ -52,6 +54,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
      * @param name        the name
      * @param description the description
      * @param coercing    the coercing function
+     *
      * @deprecated use the {@link #newScalar()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -66,6 +69,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
      * @param coercing    the coercing function
      * @param directives  the directives on this type element
      * @param definition  the AST definition
+     *
      * @deprecated use the {@link #newScalar()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -89,8 +93,8 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         this.description = description;
         this.coercing = coercing;
         this.definition = definition;
-        this.directives = directives;
-        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
+        this.directives = ImmutableList.copyOf(directives);
+        this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
         this.specifiedByUrl = specifiedByUrl;
     }
 
@@ -122,7 +126,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     @Override
@@ -139,6 +143,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new object based on calling build on that builder
      */
     public GraphQLScalarType transform(Consumer<Builder> builderConsumer) {
@@ -154,7 +159,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
     @Override
     public List<GraphQLSchemaElement> getChildren() {
-        return new ArrayList<>(directives);
+        return ImmutableList.copyOf(directives);
     }
 
     @Override
@@ -282,6 +287,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
         /**
          * This is used to clear all the directives in the builder so far.
+         *
          * @return this builder
          */
         public Builder clearDirectives() {

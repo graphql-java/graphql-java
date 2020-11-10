@@ -55,9 +55,14 @@ class GraphQLUnionTypeTest extends Specification {
         startingUnion.getDescription() == "StartingDescription"
         startingUnion.getTypes().size() == 2
 
+        startingUnion.isPossibleType(objType2)
+        !startingUnion.isPossibleType(objType3)
+
         transformedUnion.getName() == "NewName"
         transformedUnion.getDescription() == "NewDescription"
         transformedUnion.getTypes().size() == 1
+        !transformedUnion.isPossibleType(objType2)
+        transformedUnion.isPossibleType(objType3)
     }
 
 }

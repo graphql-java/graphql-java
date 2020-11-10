@@ -3,7 +3,6 @@ package graphql;
 
 import graphql.language.Description;
 import graphql.language.DirectiveDefinition;
-import graphql.language.InputValueDefinition;
 import graphql.language.StringValue;
 import graphql.schema.GraphQLDirective;
 
@@ -16,7 +15,7 @@ import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_SPR
 import static graphql.introspection.Introspection.DirectiveLocation.INLINE_FRAGMENT;
 import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
 import static graphql.language.DirectiveLocation.newDirectiveLocation;
-import static graphql.language.InputValueDefinition.*;
+import static graphql.language.InputValueDefinition.newInputValueDefinition;
 import static graphql.language.NonNullType.newNonNullType;
 import static graphql.language.TypeName.newTypeName;
 import static graphql.schema.GraphQLArgument.newArgument;
@@ -63,6 +62,7 @@ public class Directives {
                                 .build())
                 .build();
     }
+
     public static final GraphQLDirective IncludeDirective = GraphQLDirective.newDirective()
             .name("include")
             .description("Directs the executor to include this field or fragment only when the `if` argument is true")

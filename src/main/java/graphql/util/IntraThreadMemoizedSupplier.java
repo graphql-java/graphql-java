@@ -6,8 +6,14 @@ import java.util.function.Supplier;
 
 import static graphql.Assert.assertNotNull;
 
+/**
+ * This memoizing supplier does NOT use synchronised double locking to set its value
+ * so on multiple threads it MAY call the delegate again to get a value.
+ *
+ * @param <T> for two
+ */
 @Internal
-class MemoizedSupplier<T> implements Supplier<T> {
+class IntraThreadMemoizedSupplier<T> implements Supplier<T> {
     private final static Object SENTINEL = new Object() {
     };
 
@@ -15,7 +21,7 @@ class MemoizedSupplier<T> implements Supplier<T> {
     private T value = (T) SENTINEL;
     private final Supplier<T> delegate;
 
-    MemoizedSupplier(Supplier<T> delegate) {
+    IntraThreadMemoizedSupplier(Supplier<T> delegate) {
         this.delegate = assertNotNull(delegate);
     }
 

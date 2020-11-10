@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.Directive;
@@ -26,7 +27,7 @@ import graphql.language.VariableReference;
 @Internal
 public class RulesVisitor implements DocumentVisitor {
 
-    private final List<AbstractRule> rules = new ArrayList<>();
+    private final ImmutableList<AbstractRule> rules;
     private final ValidationContext validationContext;
     private boolean subVisitor;
     private final List<AbstractRule> rulesVisitingFragmentSpreads = new ArrayList<>();
@@ -40,7 +41,7 @@ public class RulesVisitor implements DocumentVisitor {
     public RulesVisitor(ValidationContext validationContext, List<AbstractRule> rules, boolean subVisitor) {
         this.validationContext = validationContext;
         this.subVisitor = subVisitor;
-        this.rules.addAll(rules);
+        this.rules = ImmutableList.copyOf(rules);
         this.subVisitor = subVisitor;
         findRulesVisitingFragmentSpreads();
     }

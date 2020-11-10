@@ -214,9 +214,7 @@ public interface TraverserContext<T> {
     Phase getPhase();
 
     /**
-     * If the traversing happens in parallel (multi threaded) or not.
-     *
-     * @return
+     * @return true if the traversing happens in parallel (multi threaded) or not.
      */
     boolean isParallel();
 

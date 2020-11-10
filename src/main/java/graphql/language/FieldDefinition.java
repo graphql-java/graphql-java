@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -14,15 +15,16 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> implements DirectivesContainer<FieldDefinition>, NamedNode<FieldDefinition> {
     private final String name;
     private final Type type;
-    private final List<InputValueDefinition> inputValueDefinitions;
-    private final List<Directive> directives;
+    private final ImmutableList<InputValueDefinition> inputValueDefinitions;
+    private final ImmutableList<Directive> directives;
 
     public static final String CHILD_TYPE = "type";
     public static final String CHILD_INPUT_VALUE_DEFINITION = "inputValueDefinition";
@@ -41,13 +43,13 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
         this.type = type;
-        this.inputValueDefinitions = inputValueDefinitions;
-        this.directives = directives;
+        this.inputValueDefinitions = ImmutableList.copyOf(inputValueDefinitions);
+        this.directives = ImmutableList.copyOf(directives);
     }
 
     public FieldDefinition(String name,
                            Type type) {
-        this(name, type, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, type, emptyList(), emptyList(), null, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public Type getType() {
@@ -60,12 +62,12 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
-        return new ArrayList<>(inputValueDefinitions);
+        return inputValueDefinitions;
     }
 
     @Override
     public List<Directive> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     @Override

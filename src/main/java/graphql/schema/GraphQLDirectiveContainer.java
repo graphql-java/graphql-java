@@ -1,6 +1,8 @@
 package graphql.schema;
 
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import graphql.PublicApi;
 
 import java.util.List;
@@ -49,7 +51,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @return a map of all directives by directive name
      */
     default Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
-        return allDirectivesByName(getDirectives());
+        return ImmutableMap.copyOf(allDirectivesByName(getDirectives()));
     }
 
     /**
@@ -57,6 +59,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * the directive is a repeatable directive that has more then one instance.
      *
      * @param directiveName the name of the directive to retrieve
+     *
      * @return the directive or null if there is not one with that name
      */
     default GraphQLDirective getDirective(String directiveName) {
@@ -67,6 +70,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * Returns all of the directives with the provided name, including repeatable and non repeatable directives.
      *
      * @param directiveName the name of the directives to retrieve
+     *
      * @return the directives or empty list if there is not one with that name
      */
     default List<GraphQLDirective> getDirectives(String directiveName) {

@@ -1,5 +1,6 @@
 package graphql.language;
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.execution.UnknownOperationException;
 import graphql.util.FpKit;
@@ -28,7 +29,7 @@ public class NodeUtil {
         return true;
     }
 
-    public static Map<String, List<Directive>> allDirectivesByName(List<Directive> directives) {
+    public static Map<String, ImmutableList<Directive>> allDirectivesByName(List<Directive> directives) {
         return FpKit.groupingBy(directives, Directive::getName);
     }
 

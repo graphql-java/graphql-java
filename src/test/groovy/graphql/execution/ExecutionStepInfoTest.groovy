@@ -229,7 +229,7 @@ class ExecutionStepInfoTest extends Specification {
         def transformed = executionStepInfo.transform({ builder -> builder })
 
         then:
-        transformed.getFieldContainer() == executionStepInfo.getFieldContainer()
+        transformed.getObjectType() == executionStepInfo.getObjectType()
     }
 
     def "step info for list of lists of abstract type"() {

@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableMap;
 import graphql.PublicApi;
 
 import java.util.List;
@@ -34,7 +35,7 @@ public interface DirectivesContainer<T extends DirectivesContainer> extends Node
      * @return a map of all directives by directive name
      */
     default Map<String, List<Directive>> getDirectivesByName() {
-        return allDirectivesByName(getDirectives());
+        return ImmutableMap.copyOf(allDirectivesByName(getDirectives()));
     }
 
     /**

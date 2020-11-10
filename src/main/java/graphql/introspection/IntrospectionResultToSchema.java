@@ -29,18 +29,17 @@ import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
 import graphql.schema.idl.ScalarInfo;
-import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
+import static graphql.collect.ImmutableKit.map;
 import static graphql.schema.idl.DirectiveInfo.isGraphqlSpecifiedDirective;
 
 @SuppressWarnings("unchecked")
@@ -51,7 +50,6 @@ public class IntrospectionResultToSchema {
      * Returns a IDL Document that represents the schema as defined by the introspection execution result
      *
      * @param introspectionResult the result of an introspection query on a schema
-     *
      * @return a IDL Document of the schema
      */
     public Document createSchemaDefinition(ExecutionResult introspectionResult) {
@@ -68,7 +66,6 @@ public class IntrospectionResultToSchema {
      * Returns a IDL Document that represents the schema as defined by the introspection result map
      *
      * @param introspectionResult the result of an introspection query on a schema
-     *
      * @return a IDL Document of the schema
      */
     @SuppressWarnings("unchecked")
@@ -130,7 +127,7 @@ public class IntrospectionResultToSchema {
 
     private DirectiveDefinition createDirective(Map<String, Object> input) {
         String directiveName = (String) input.get("name");
-        if(isGraphqlSpecifiedDirective(directiveName)){
+        if (isGraphqlSpecifiedDirective(directiveName)) {
             return null;
         }
 
@@ -243,7 +240,7 @@ public class IntrospectionResultToSchema {
         interfaceTypeDefinition.description(toDescription(input));
         if (input.containsKey("interfaces") && input.get("interfaces") != null) {
             interfaceTypeDefinition.implementz(
-                    FpKit.map(
+                    map(
                             (List<Map<String, Object>>) input.get("interfaces"),
                             this::createTypeIndirection
                     )
@@ -279,9 +276,7 @@ public class IntrospectionResultToSchema {
         objectTypeDefinition.description(toDescription(input));
         if (input.containsKey("interfaces")) {
             objectTypeDefinition.implementz(
-                    ((List<Map<String, Object>>) input.get("interfaces")).stream()
-                            .map(this::createTypeIndirection)
-                            .collect(Collectors.toList())
+                    map((List<Map<String, Object>>) input.get("interfaces"), this::createTypeIndirection)
             );
         }
         List<Map<String, Object>> fields = (List<Map<String, Object>>) input.get("fields");

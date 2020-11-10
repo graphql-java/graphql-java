@@ -13,7 +13,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.stream.Collectors.toList;
+import static graphql.collect.ImmutableKit.map;
 
 @Internal
 public class ResultNodesCreator {
@@ -60,11 +60,7 @@ public class ResultNodesCreator {
     }
 
     private ExecutionResultNode createListResultNode(FetchedValueAnalysis fetchedValueAnalysis) {
-        List<ExecutionResultNode> executionResultNodes = fetchedValueAnalysis
-                .getChildren()
-                .stream()
-                .map(this::createResultNode)
-                .collect(toList());
+        List<ExecutionResultNode> executionResultNodes = map(fetchedValueAnalysis.getChildren(), this::createResultNode);
         return new ListExecutionResultNode(fetchedValueAnalysis.getExecutionStepInfo(), createResolvedValue(fetchedValueAnalysis), executionResultNodes);
     }
 }

@@ -1,5 +1,6 @@
 package graphql.language;
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 
@@ -8,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
@@ -45,7 +45,7 @@ public class NodeParentTree<T extends Node> {
         return copy.stream()
                 .filter(node1 -> node1 instanceof NamedNode)
                 .map(node1 -> ((NamedNode) node1).getName())
-                .collect(Collectors.toList());
+                .collect(ImmutableList.toImmutableList());
     }
 
 

@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -44,7 +45,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     private final Object value;
     private final Object defaultValue;
     private final InputValueDefinition definition;
-    private final List<GraphQLDirective> directives;
+    private final ImmutableList<GraphQLDirective> directives;
 
     private GraphQLInputType replacedType;
 
@@ -99,7 +100,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         this.defaultValue = defaultValue;
         this.value = value;
         this.definition = definition;
-        this.directives = directives;
+        this.directives = ImmutableList.copyOf(directives);
     }
 
 
@@ -151,7 +152,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
 

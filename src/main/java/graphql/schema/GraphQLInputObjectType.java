@@ -2,15 +2,17 @@ package graphql.schema;
 
 import graphql.AssertException;
 import graphql.DirectivesUtil;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputObjectTypeDefinition;
 import graphql.language.InputObjectTypeExtensionDefinition;
+import graphql.util.FpKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +20,8 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.Assert.assertTrue;
 import static graphql.Assert.assertValidName;
 import static graphql.util.FpKit.getByName;
 import static java.util.Collections.emptyList;
@@ -25,7 +29,7 @@ import static java.util.Collections.emptyList;
 /**
  * graphql clearly delineates between the types of objects that represent the output of a query and input objects that
  * can be fed into a graphql mutation.  You can define objects as input to graphql via this class
- *
+ * <p>
  * See http://graphql.org/learn/schema/#input-types for more details on the concept
  */
 @PublicApi
@@ -33,10 +37,10 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
     private final String name;
     private final String description;
-    private final Map<String, GraphQLInputObjectField> fieldMap = new LinkedHashMap<>();
+    private final ImmutableMap<String, GraphQLInputObjectField> fieldMap;
     private final InputObjectTypeDefinition definition;
-    private final List<InputObjectTypeExtensionDefinition> extensionDefinitions;
-    private final List<GraphQLDirective> directives;
+    private final ImmutableList<InputObjectTypeExtensionDefinition> extensionDefinitions;
+    private final ImmutableList<GraphQLDirective> directives;
 
     public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
     public static final String CHILD_DIRECTIVES = "directives";
@@ -77,19 +81,14 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         this.name = name;
         this.description = description;
         this.definition = definition;
-        this.extensionDefinitions = Collections.unmodifiableList(new ArrayList<>(extensionDefinitions));
-        this.directives = directives;
-        buildMap(fields);
+        this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
+        this.directives = ImmutableList.copyOf(directives);
+        this.fieldMap = buildDefinitionMap(fields);
     }
 
-    private void buildMap(List<GraphQLInputObjectField> fields) {
-        for (GraphQLInputObjectField field : fields) {
-            String name = field.getName();
-            if (fieldMap.containsKey(name)) {
-                throw new AssertException("field " + name + " redefined");
-            }
-            fieldMap.put(name, field);
-        }
+    private ImmutableMap<String, GraphQLInputObjectField> buildDefinitionMap(List<GraphQLInputObjectField> fieldDefinitions) {
+        return ImmutableMap.copyOf(FpKit.getByName(fieldDefinitions, GraphQLInputObjectField::getName,
+                (fld1, fld2) -> assertShouldNeverHappen("Duplicated definition for field '%s' in type '%s'", fld1.getName(), this.name)));
     }
 
     @Override
@@ -102,7 +101,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     }
 
     public List<GraphQLInputObjectField> getFields() {
-        return new ArrayList<>(fieldMap.values());
+        return getFieldDefinitions();
     }
 
     public GraphQLInputObjectField getField(String name) {
@@ -111,7 +110,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     @Override
@@ -121,7 +120,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
     @Override
     public List<GraphQLInputObjectField> getFieldDefinitions() {
-        return new ArrayList<>(fieldMap.values());
+        return ImmutableList.copyOf(fieldMap.values());
     }
 
     public InputObjectTypeDefinition getDefinition() {
@@ -226,7 +225,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
             this.definition = existing.getDefinition();
             this.extensionDefinitions = existing.getExtensionDefinitions();
             this.fields.putAll(getByName(existing.getFields(), GraphQLInputObjectField::getName));
-            DirectivesUtil.enforceAddAll(this.directives,existing.getDirectives());
+            DirectivesUtil.enforceAddAll(this.directives, existing.getDirectives());
         }
 
         @Override
@@ -302,7 +301,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
         public Builder replaceFields(List<GraphQLInputObjectField> fields) {
             this.fields.clear();
-             fields.forEach(this::field);
+            fields.forEach(this::field);
             return this;
         }
 

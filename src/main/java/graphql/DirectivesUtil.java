@@ -1,5 +1,6 @@
 package graphql;
 
+import com.google.common.collect.ImmutableList;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.util.FpKit;
@@ -10,7 +11,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
-import static java.util.Collections.emptyList;
+import static graphql.collect.ImmutableKit.emptyList;
 
 @Internal
 public class DirectivesUtil {
@@ -24,7 +25,7 @@ public class DirectivesUtil {
         return FpKit.getByName(singletonDirectives, GraphQLDirective::getName);
     }
 
-    public static Map<String, List<GraphQLDirective>> allDirectivesByName(List<GraphQLDirective> directives) {
+    public static Map<String, ImmutableList<GraphQLDirective>> allDirectivesByName(List<GraphQLDirective> directives) {
         return FpKit.groupingBy(directives, GraphQLDirective::getName);
     }
 
@@ -47,7 +48,6 @@ public class DirectivesUtil {
     }
 
 
-
     public static boolean isAllNonRepeatable(List<GraphQLDirective> directives) {
         if (directives == null || directives.isEmpty()) {
             return false;
@@ -65,8 +65,8 @@ public class DirectivesUtil {
         assertNotNull(newDirective, () -> "directive can't be null");
 
         // check whether the newDirective is repeatable in advance, to avoid needless operations
-        if(newDirective.isNonRepeatable()){
-            Map<String, List<GraphQLDirective>> map = allDirectivesByName(targetList);
+        if (newDirective.isNonRepeatable()) {
+            Map<String, ImmutableList<GraphQLDirective>> map = allDirectivesByName(targetList);
             assertNonRepeatable(newDirective, map);
         }
         targetList.add(newDirective);
@@ -76,7 +76,7 @@ public class DirectivesUtil {
     public static List<GraphQLDirective> enforceAddAll(List<GraphQLDirective> targetList, List<GraphQLDirective> newDirectives) {
         assertNotNull(targetList, () -> "directive list can't be null");
         assertNotNull(newDirectives, () -> "directive list can't be null");
-        Map<String, List<GraphQLDirective>> map = allDirectivesByName(targetList);
+        Map<String, ImmutableList<GraphQLDirective>> map = allDirectivesByName(targetList);
         for (GraphQLDirective newDirective : newDirectives) {
             assertNonRepeatable(newDirective, map);
             targetList.add(newDirective);
@@ -84,7 +84,7 @@ public class DirectivesUtil {
         return targetList;
     }
 
-    private static void assertNonRepeatable(GraphQLDirective directive, Map<String, List<GraphQLDirective>> mapOfDirectives) {
+    private static void assertNonRepeatable(GraphQLDirective directive, Map<String, ImmutableList<GraphQLDirective>> mapOfDirectives) {
         if (directive.isNonRepeatable()) {
             List<GraphQLDirective> currentDirectives = mapOfDirectives.getOrDefault(directive.getName(), emptyList());
             int currentSize = currentDirectives.size();

@@ -1,6 +1,5 @@
 package graphql.schema.idl;
 
-import graphql.Directives;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.introspection.Introspection.DirectiveLocation;

@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -30,7 +31,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
     private final String description;
     private final Object value;
     private final String deprecationReason;
-    private final List<GraphQLDirective> directives;
+    private final ImmutableList<GraphQLDirective> directives;
     private final EnumValueDefinition definition;
 
     public static final String CHILD_DIRECTIVES = "directives";
@@ -82,7 +83,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
         this.description = description;
         this.value = value;
         this.deprecationReason = deprecationReason;
-        this.directives = directives;
+        this.directives = ImmutableList.copyOf(directives);
         this.definition = definition;
     }
 
@@ -109,7 +110,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     public EnumValueDefinition getDefinition() {
@@ -136,7 +137,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
 
     @Override
     public List<GraphQLSchemaElement> getChildren() {
-        return new ArrayList<>(directives);
+        return ImmutableList.copyOf(directives);
     }
 
     @Override

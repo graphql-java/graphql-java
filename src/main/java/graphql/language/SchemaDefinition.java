@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -18,8 +19,8 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 @PublicApi
 public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> implements SDLDefinition<SchemaDefinition>, DirectivesContainer<SchemaDefinition> {
 
-    private final List<Directive> directives;
-    private final List<OperationTypeDefinition> operationTypeDefinitions;
+    private final ImmutableList<Directive> directives;
+    private final ImmutableList<OperationTypeDefinition> operationTypeDefinitions;
 
     public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_OPERATION_TYPE_DEFINITIONS = "operationTypeDefinitions";
@@ -34,16 +35,16 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
                                Map<String, String> additionalData,
                                Description description) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
-        this.directives = directives;
-        this.operationTypeDefinitions = operationTypeDefinitions;
+        this.directives = ImmutableList.copyOf(directives);
+        this.operationTypeDefinitions = ImmutableList.copyOf(operationTypeDefinitions);
     }
 
     public List<Directive> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     public List<OperationTypeDefinition> getOperationTypeDefinitions() {
-        return new ArrayList<>(operationTypeDefinitions);
+        return operationTypeDefinitions;
     }
 
     public Description getDescription() {

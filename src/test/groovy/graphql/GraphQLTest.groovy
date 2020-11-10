@@ -3,6 +3,7 @@ package graphql
 import graphql.analysis.MaxQueryComplexityInstrumentation
 import graphql.analysis.MaxQueryDepthInstrumentation
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.DataFetcherExceptionHandler
 import graphql.execution.DataFetcherResult
 import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionId
@@ -266,7 +267,7 @@ class GraphQLTest extends Specification {
                 .build()
 
         when:
-        def result = new GraphQL(schema).execute("mutation { doesNotExist }")
+        def result = GraphQL.newGraphQL(schema).build().execute("mutation { doesNotExist }")
 
         then:
         result.errors.size() == 1
@@ -283,7 +284,7 @@ class GraphQLTest extends Specification {
                 .build()
 
         when:
-        def result = new GraphQL(schema).execute("subscription { doesNotExist }")
+        def result = GraphQL.newGraphQL(schema).build().execute("subscription { doesNotExist }")
 
         then:
         result.errors.size() == 1
@@ -1169,5 +1170,23 @@ many lines''']
         def er = graphQL.execute("{f}")
         then:
         er.data["f"] == "hi"
+    }
+
+    def "can set default fetcher exception handler"() {
+        def sdl = 'type Query { f : String } '
+
+        DataFetcher df = { env ->
+            throw new RuntimeException("BANG!")
+        }
+        def capturedMsg = null
+        def exceptionHandler = { params ->
+            capturedMsg = params.exception.getMessage()
+        } as DataFetcherExceptionHandler
+        def schema = TestUtil.schema(sdl, [Query: [f: df]])
+        def graphQL = GraphQL.newGraphQL(schema).defaultDataFetcherExceptionHandler(exceptionHandler).build()
+        when:
+        graphQL.execute("{f}")
+        then:
+        capturedMsg == "BANG!"
     }
 }

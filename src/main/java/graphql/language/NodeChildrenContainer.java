@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
 
 /**
  * Container of children of a {@link Node}.
@@ -23,11 +24,11 @@ public class NodeChildrenContainer {
     }
 
     public <T extends Node> List<T> getChildren(String key) {
-        return (List<T>) children.getOrDefault(key, new ArrayList<>());
+        return (List<T>) children.getOrDefault(key, emptyList());
     }
 
     public <T extends Node> T getChildOrNull(String key) {
-        List<? extends Node> result = children.getOrDefault(key, new ArrayList<>());
+        List<? extends Node> result = children.getOrDefault(key, emptyList());
         if (result.size() > 1) {
             throw new IllegalStateException("children " + key + " is not a single value");
         }

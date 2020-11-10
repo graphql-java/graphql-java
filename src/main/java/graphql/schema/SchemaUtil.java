@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
 import graphql.introspection.Introspection;
 
@@ -9,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 @Internal
 public class SchemaUtil {
@@ -16,7 +18,7 @@ public class SchemaUtil {
     private static final SchemaTraverser TRAVERSER = new SchemaTraverser();
 
 
-    Map<String, GraphQLNamedType> allTypes(final GraphQLSchema schema, final Set<GraphQLType> additionalTypes, boolean afterTransform) {
+    ImmutableMap<String, GraphQLNamedType> allTypes(final GraphQLSchema schema, final Set<GraphQLType> additionalTypes, boolean afterTransform) {
         List<GraphQLSchemaElement> roots = new ArrayList<>();
         roots.add(schema.getQueryType());
 
@@ -46,7 +48,8 @@ public class SchemaUtil {
             traverser = new SchemaTraverser();
         }
         traverser.depthFirst(visitor, roots);
-        return visitor.getResult();
+        Map<String, GraphQLNamedType> result = visitor.getResult();
+        return ImmutableMap.copyOf(new TreeMap<>(result));
     }
 
 
@@ -62,14 +65,14 @@ public class SchemaUtil {
         Map<String, List<GraphQLObjectType>> result = new LinkedHashMap<>();
         for (GraphQLType type : schema.getAllTypesAsList()) {
             if (type instanceof GraphQLObjectType) {
-                for (GraphQLNamedOutputType interfaceType : ((GraphQLObjectType) type).getInterfaces()) {
+                List<GraphQLNamedOutputType> interfaces = ((GraphQLObjectType) type).getInterfaces();
+                for (GraphQLNamedOutputType interfaceType : interfaces) {
                     List<GraphQLObjectType> myGroup = result.computeIfAbsent(interfaceType.getName(), k -> new ArrayList<>());
                     myGroup.add((GraphQLObjectType) type);
                 }
             }
         }
-
-        return result;
+        return ImmutableMap.copyOf(new TreeMap<>(result));
     }
 
     /**
