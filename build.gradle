@@ -27,6 +27,12 @@ def getDevelopmentVersion() {
     version
 }
 
+if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
+    def msg = String.format("This build must be run with java 1.8 - you are running %s - gradle finds the JDK via JAVA_HOME=%s",
+            JavaVersion.current(), System.getenv("JAVA_HOME"))
+    throw new GradleException(msg)
+}
+
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
