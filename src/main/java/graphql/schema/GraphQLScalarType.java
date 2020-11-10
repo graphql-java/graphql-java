@@ -9,7 +9,6 @@ import graphql.language.ScalarTypeExtensionDefinition;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -289,6 +288,8 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
         /**
          * This is used to clear all the directives in the builder so far.
+         *
+         * @return this builder
          */
         public Builder clearDirectives() {
             directives.clear();

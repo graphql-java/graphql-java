@@ -2,7 +2,6 @@ package graphql
 
 import graphql.execution.MergedField
 import graphql.execution.MergedSelectionSet
-import graphql.introspection.Introspection.DirectiveLocation
 import graphql.language.Document
 import graphql.language.Field
 import graphql.language.ObjectTypeDefinition
@@ -193,7 +192,7 @@ class TestUtil {
     }
 
     static GraphQLDirective mockDirective(String name) {
-        new GraphQLDirective(name, name, EnumSet.noneOf(DirectiveLocation.class), Collections.emptyList())
+        newDirective().name(name).description(name).build()
     }
 
     static TypeRuntimeWiring mockTypeRuntimeWiring(String typeName, boolean withResolver) {

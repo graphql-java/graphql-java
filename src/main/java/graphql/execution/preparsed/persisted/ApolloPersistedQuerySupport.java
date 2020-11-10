@@ -16,7 +16,6 @@ import java.util.Optional;
  * See <a href="https://www.apollographql.com/docs/apollo-server/performance/apq/">Apollo Persisted Queries</a>
  * <p>
  * The Apollo client sends a hash of the persisted query in the input extensions in the following form
- * <p>
  * <pre>
  *     {
  *      "extensions":{
