@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import graphql.Assert;
 import graphql.Internal;
 import graphql.VisibleForTesting;
 import graphql.language.Directive;
@@ -36,7 +37,9 @@ public class ConditionalNodes {
         Directive directive = getDirectiveByName(directives, directiveName);
         if (directive != null) {
             Map<String, Object> argumentValues = valuesResolver.getArgumentValues(SkipDirective.getArguments(), directive.getArguments(), variables);
-            return (Boolean) argumentValues.get("if");
+            Object flag = argumentValues.get("if");
+            Assert.assertTrue(flag instanceof Boolean, () -> String.format("The '%s' directive MUST have a value for the 'if' argument", directiveName));
+            return (Boolean) flag;
         }
 
         return defaultValue;

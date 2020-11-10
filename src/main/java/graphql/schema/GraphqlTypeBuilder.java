@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 
 import java.util.Comparator;
@@ -37,7 +38,7 @@ public abstract class GraphqlTypeBuilder {
 
     <T extends GraphQLSchemaElement> List<T> sort(List<T> types, Class<? extends GraphQLSchemaElement> parentType, Class<? extends GraphQLSchemaElement> elementType) {
         Comparator<? super GraphQLSchemaElement> comparator = getComparatorImpl(comparatorRegistry, parentType, elementType);
-        return GraphqlTypeComparators.sortTypes(comparator, types);
+        return ImmutableList.copyOf(GraphqlTypeComparators.sortTypes(comparator, types));
     }
 
     Comparator<? super GraphQLSchemaElement> getComparator(Class<? extends GraphQLSchemaElement> parentType, Class<? extends GraphQLNamedSchemaElement> elementType) {

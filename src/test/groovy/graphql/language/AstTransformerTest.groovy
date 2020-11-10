@@ -206,7 +206,7 @@ class AstTransformerTest extends Specification {
             @Override
             TraversalControl visitSelectionSet(SelectionSet node, TraverserContext<Node> context) {
                 if (node.getChildren().isEmpty()) return TraversalControl.CONTINUE;
-                def selections = node.getSelections()
+                def selections = new ArrayList<>(node.getSelections())
                 Collections.sort(selections, { o1, o2 -> (o1.name <=> o2.name) })
                 Node changed = node.transform({ builder -> builder.selections(selections) })
                 return changeNode(context, changed)
@@ -231,7 +231,7 @@ class AstTransformerTest extends Specification {
             @Override
             TraversalControl visitSelectionSet(SelectionSet node, TraverserContext<Node> context) {
                 if (node.getChildren().isEmpty()) return TraversalControl.CONTINUE;
-                def selections = node.getSelections()
+                def selections = new ArrayList<>(node.getSelections())
                 Collections.sort(selections, { o1, o2 -> (o1.name <=> o2.name) })
                 Node changed = node.transform({ builder -> builder.selections(selections) })
                 return changeNode(context, changed)
@@ -548,7 +548,7 @@ class AstTransformerTest extends Specification {
 
             @Override
             TraversalControl visitDocument(Document node, TraverserContext<Node> context) {
-                def children = node.getChildren()
+                def children = new ArrayList<>(node.getChildren())
                 children.remove(0)
                 def newNode = node.transform({ builder -> builder.definitions(children) })
                 changeNode(context, newNode)

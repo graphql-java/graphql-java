@@ -11,7 +11,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
-import static java.util.Collections.emptyMap;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 
 @PublicApi
 public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
@@ -36,7 +37,7 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
      * @param name of the object type extension
      */
     public ObjectTypeExtensionDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, emptyList(), emptyList(), emptyList(), null, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override

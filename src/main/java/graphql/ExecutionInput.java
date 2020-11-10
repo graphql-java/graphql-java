@@ -236,6 +236,7 @@ public class ExecutionInput {
         /**
          * Sets initial localContext in root data fetchers
          *
+         * @param localContext the local context to use
          * @return this builder
          */
         public Builder localContext(Object localContext) {

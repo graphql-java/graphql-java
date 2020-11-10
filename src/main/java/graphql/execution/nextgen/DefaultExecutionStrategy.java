@@ -15,9 +15,9 @@ import graphql.util.NodeZipper;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static graphql.collect.ImmutableKit.map;
 import static graphql.execution.Async.each;
 import static graphql.execution.Async.mapCompose;
-import static graphql.util.FpKit.map;
 
 @Internal
 public class DefaultExecutionStrategy implements ExecutionStrategy {

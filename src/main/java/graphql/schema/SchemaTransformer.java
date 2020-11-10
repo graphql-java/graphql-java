@@ -111,9 +111,8 @@ public class SchemaTransformer {
     /**
      * Transforms a GraphQLSchema and returns a new GraphQLSchema object.
      *
-     * @param schema
-     * @param visitor
-     *
+     * @param schema  the schema to transform
+     * @param visitor the visitor call back
      * @return a new GraphQLSchema instance.
      */
     public static GraphQLSchema transformSchema(GraphQLSchema schema, GraphQLTypeVisitor visitor) {

@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -24,7 +25,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
     private final String name;
     private final TypeName typeCondition;
-    private final List<Directive> directives;
+    private final ImmutableList<Directive> directives;
     private final SelectionSet selectionSet;
 
     public static final String CHILD_TYPE_CONDITION = "typeCondition";
@@ -43,7 +44,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.typeCondition = typeCondition;
-        this.directives = directives;
+        this.directives = ImmutableList.copyOf(directives);
         this.selectionSet = selectionSet;
     }
 
@@ -59,7 +60,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
     @Override
     public List<Directive> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
 

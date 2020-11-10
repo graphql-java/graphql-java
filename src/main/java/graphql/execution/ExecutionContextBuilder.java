@@ -1,11 +1,14 @@
 package graphql.execution;
 
-import graphql.ExecutionInput;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import graphql.ExecutionInput;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
+import graphql.collect.ImmutableKit;
+import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -14,13 +17,11 @@ import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 import org.dataloader.DataLoaderRegistry;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
 
 @PublicApi
 public class ExecutionContextBuilder {
@@ -36,12 +37,12 @@ public class ExecutionContextBuilder {
     Object root;
     Document document;
     OperationDefinition operationDefinition;
-    Map<String, Object> variables = new LinkedHashMap<>();
-    Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
+    ImmutableMapWithNullValues<String, Object> variables = ImmutableMapWithNullValues.emptyMap();
+    ImmutableMap<String, FragmentDefinition> fragmentsByName = ImmutableKit.emptyMap();
     DataLoaderRegistry dataLoaderRegistry;
     CacheControl cacheControl;
     Locale locale;
-    List<GraphQLError> errors = new ArrayList<>();
+    ImmutableList<GraphQLError> errors = emptyList();
     ValueUnboxer valueUnboxer;
     Object localContext;
     ExecutionInput executionInput;
@@ -57,6 +58,7 @@ public class ExecutionContextBuilder {
      * Creates a new builder based on a previous execution context
      *
      * @param other the previous execution to clone
+     *
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
      */
     public static ExecutionContextBuilder newExecutionContextBuilder(ExecutionContext other) {
@@ -81,12 +83,12 @@ public class ExecutionContextBuilder {
         root = other.getRoot();
         document = other.getDocument();
         operationDefinition = other.getOperationDefinition();
-        variables = new LinkedHashMap<>(other.getVariables());
-        fragmentsByName = new LinkedHashMap<>(other.getFragmentsByName());
+        variables = ImmutableMapWithNullValues.copyOf(other.getVariables());
+        fragmentsByName = ImmutableMap.copyOf(other.getFragmentsByName());
         dataLoaderRegistry = other.getDataLoaderRegistry();
         cacheControl = other.getCacheControl();
         locale = other.getLocale();
-        errors = new ArrayList<>(other.getErrors());
+        errors = ImmutableList.copyOf(other.getErrors());
         valueUnboxer = other.getValueUnboxer();
         executionInput = other.getExecutionInput();
     }
@@ -142,12 +144,12 @@ public class ExecutionContextBuilder {
     }
 
     public ExecutionContextBuilder variables(Map<String, Object> variables) {
-        this.variables = variables;
+        this.variables = ImmutableMapWithNullValues.copyOf(variables);
         return this;
     }
 
     public ExecutionContextBuilder fragmentsByName(Map<String, FragmentDefinition> fragmentsByName) {
-        this.fragmentsByName = fragmentsByName;
+        this.fragmentsByName = ImmutableMap.copyOf(fragmentsByName);
         return this;
     }
 
@@ -187,7 +189,7 @@ public class ExecutionContextBuilder {
     }
 
     public ExecutionContextBuilder resetErrors() {
-        this.errors.clear();
+        this.errors = emptyList();
         return this;
     }
 

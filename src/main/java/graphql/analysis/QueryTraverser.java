@@ -1,6 +1,7 @@
 package graphql.analysis;
 
 import graphql.PublicApi;
+import graphql.execution.ValuesResolver;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
@@ -8,6 +9,7 @@ import graphql.language.Node;
 import graphql.language.NodeTraverser;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
+import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
@@ -50,11 +52,16 @@ public class QueryTraverser {
                            Map<String, Object> variables) {
         assertNotNull(document, () -> "document  can't be null");
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operation);
+        List<VariableDefinition> variableDefinitions = getOperationResult.operationDefinition.getVariableDefinitions();
         this.schema = assertNotNull(schema, () -> "schema can't be null");
-        this.variables = assertNotNull(variables, () -> "variables can't be null");
         this.fragmentsByName = getOperationResult.fragmentsByName;
         this.roots = singletonList(getOperationResult.operationDefinition);
         this.rootParentType = getRootTypeFromOperation(getOperationResult.operationDefinition);
+        this.variables = coerceVariables(assertNotNull(variables, () -> "variables can't be null"), variableDefinitions);
+    }
+
+    private Map<String, Object> coerceVariables(Map<String, Object> rawVariables, List<VariableDefinition> variableDefinitions) {
+        return new ValuesResolver().coerceVariableValues(schema, variableDefinitions, rawVariables);
     }
 
     private QueryTraverser(GraphQLSchema schema,

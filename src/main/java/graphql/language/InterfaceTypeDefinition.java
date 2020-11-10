@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -14,16 +15,17 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceTypeDefinition> implements ImplementingTypeDefinition<InterfaceTypeDefinition>, DirectivesContainer<InterfaceTypeDefinition>, NamedNode<InterfaceTypeDefinition> {
 
     private final String name;
-    private final List<Type> implementz;
-    private final List<FieldDefinition> definitions;
-    private final List<Directive> directives;
+    private final ImmutableList<Type> implementz;
+    private final ImmutableList<FieldDefinition> definitions;
+    private final ImmutableList<Directive> directives;
 
     public static final String CHILD_IMPLEMENTZ = "implementz";
     public static final String CHILD_DEFINITIONS = "definitions";
@@ -41,9 +43,9 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
                                       Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
-        this.implementz = implementz;
-        this.definitions = definitions;
-        this.directives = directives;
+        this.implementz = ImmutableList.copyOf(implementz);
+        this.definitions = ImmutableList.copyOf(definitions);
+        this.directives = ImmutableList.copyOf(directives);
     }
 
     /**
@@ -52,22 +54,22 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
      * @param name of the interface
      */
     public InterfaceTypeDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, emptyList(), emptyList(), emptyList(), null, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
     public List<Type> getImplements() {
-        return new ArrayList<>(implementz);
+        return implementz;
     }
 
     @Override
     public List<FieldDefinition> getFieldDefinitions() {
-        return new ArrayList<>(definitions);
+        return definitions;
     }
 
     @Override
     public List<Directive> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives;
     }
 
     @Override

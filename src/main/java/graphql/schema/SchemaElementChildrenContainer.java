@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
 
 @PublicApi
 public class SchemaElementChildrenContainer {
@@ -21,7 +22,7 @@ public class SchemaElementChildrenContainer {
     }
 
     public <T extends GraphQLSchemaElement> List<T> getChildren(String key) {
-        return (List<T>) children.getOrDefault(key, new ArrayList<>());
+        return (List<T>) children.getOrDefault(key, emptyList());
     }
 
     public <T extends GraphQLSchemaElement> T getChildOrNull(String key) {

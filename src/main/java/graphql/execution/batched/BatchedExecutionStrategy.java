@@ -24,6 +24,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
+import graphql.normalized.NormalizedField;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingFieldSelectionSet;
@@ -52,6 +53,7 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
@@ -248,8 +250,10 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
         QueryDirectivesImpl queryDirectives = new QueryDirectivesImpl(fields, executionContext.getGraphQLSchema(), executionContext.getVariables());
 
+        Supplier<NormalizedField> normalizedFieldSupplier = getNormalizedField(executionContext, parameters, parameters::getExecutionStepInfo);
+
         GraphQLOutputType fieldType = fieldDef.getType();
-        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, fields);
+        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(fieldType, normalizedFieldSupplier);
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(node.getSources())

@@ -25,7 +25,6 @@ import graphql.schema.GraphQLUnionType;
  * <li>{@link graphql.schema.idl.RuntimeWiring.Builder#directiveWiring(SchemaDirectiveWiring)} which work against all directives are called next</li>
  * <li>{@link graphql.schema.idl.WiringFactory#providesSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment)} which work against all directives are called last</li>
  * </ol>
- * <p>
  */
 @PublicApi
 public interface SchemaDirectiveWiring {

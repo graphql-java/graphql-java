@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import com.google.common.collect.ImmutableList;
 import graphql.ErrorClassification;
 import graphql.GraphQLError;
 import graphql.Internal;
@@ -12,7 +13,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 
@@ -88,7 +88,6 @@ public class AbsoluteGraphQLError implements GraphQLError {
      * Relative path is empty -> Absolute paths is path up to the field.
      * Relative path is not empty -> Absolute paths [base Path, relative Path]
      *
-     *
      * @return List of paths from the root.
      */
     private List<Object> createAbsolutePath(ResultPath resultPath,
@@ -100,7 +99,7 @@ public class AbsoluteGraphQLError implements GraphQLError {
                     path.addAll(relativeError.getPath());
                     return path;
                 })
-                .map(Collections::unmodifiableList)
+                .map(l -> (List<Object>) ImmutableList.copyOf(l))
                 .orElse(resultPath.toList());
     }
 
@@ -137,8 +136,7 @@ public class AbsoluteGraphQLError implements GraphQLError {
                                                 base.getLine() + l.getLine(),
                                                 base.getColumn() + l.getColumn()))
                                         .orElse(null))
-                        .collect(Collectors.toList()))
-                .map(Collections::unmodifiableList)
+                        .collect(ImmutableList.toImmutableList()))
                 .orElse(null);
     }
 }

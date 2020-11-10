@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
-import static java.util.stream.Collectors.toList;
+import static graphql.collect.ImmutableKit.map;
 
 /**
  * This contains the helper code that allows {@link graphql.schema.idl.SchemaDirectiveWiring} implementations
@@ -123,7 +123,7 @@ public class SchemaGeneratorDirectiveHelper {
     }
 
     private List<GraphQLArgument> wireArguments(GraphQLFieldDefinition fieldDefinition, GraphQLFieldsContainer fieldsContainer, NamedNode<?> fieldsContainerNode, Parameters params, GraphQLFieldDefinition field) {
-        return field.getArguments().stream().map(argument -> {
+        return map(field.getArguments(), argument -> {
 
             NodeParentTree<NamedNode<?>> nodeParentTree = buildAstTree(fieldsContainerNode, field.getDefinition(), argument.getDefinition());
             GraphqlElementParentTree elementParentTree = buildRuntimeTree(fieldsContainer, field, argument);
@@ -131,11 +131,11 @@ public class SchemaGeneratorDirectiveHelper {
             Parameters argParams = params.newParams(fieldDefinition, fieldsContainer, nodeParentTree, elementParentTree);
 
             return onArgument(argument, argParams);
-        }).collect(toList());
+        });
     }
 
     private List<GraphQLFieldDefinition> wireFields(GraphQLFieldsContainer fieldsContainer, NamedNode<?> fieldsContainerNode, Parameters params) {
-        return fieldsContainer.getFieldDefinitions().stream().map(fieldDefinition -> {
+        return map(fieldsContainer.getFieldDefinitions(), fieldDefinition -> {
 
             // and for each argument in the fieldDefinition run the wiring for them - and note that they can change
             List<GraphQLArgument> startingArgs = fieldDefinition.getArguments();
@@ -152,7 +152,7 @@ public class SchemaGeneratorDirectiveHelper {
 
             // now for each fieldDefinition run the new wiring and capture the results
             return onField(fieldDefinition, fieldParams);
-        }).collect(toList());
+        });
     }
 
 
@@ -192,7 +192,7 @@ public class SchemaGeneratorDirectiveHelper {
     public GraphQLEnumType onEnum(final GraphQLEnumType enumType, Parameters params) {
 
         List<GraphQLEnumValueDefinition> startingEnumValues = enumType.getValues();
-        List<GraphQLEnumValueDefinition> newEnumValues = startingEnumValues.stream().map(enumValueDefinition -> {
+        List<GraphQLEnumValueDefinition> newEnumValues = map(startingEnumValues, enumValueDefinition -> {
 
             NodeParentTree<NamedNode<?>> nodeParentTree = buildAstTree(enumType.getDefinition(), enumValueDefinition.getDefinition());
             GraphqlElementParentTree elementParentTree = buildRuntimeTree(enumType, enumValueDefinition);
@@ -200,7 +200,7 @@ public class SchemaGeneratorDirectiveHelper {
 
             // now for each field run the new wiring and capture the results
             return onEnumValue(enumValueDefinition, fieldParams);
-        }).collect(toList());
+        });
 
         GraphQLEnumType newEnumType = enumType;
         if (isNotTheSameObjects(startingEnumValues, newEnumValues)) {
@@ -217,7 +217,7 @@ public class SchemaGeneratorDirectiveHelper {
 
     public GraphQLInputObjectType onInputObjectType(GraphQLInputObjectType inputObjectType, Parameters params) {
         List<GraphQLInputObjectField> startingFields = inputObjectType.getFieldDefinitions();
-        List<GraphQLInputObjectField> newFields = startingFields.stream().map(inputField -> {
+        List<GraphQLInputObjectField> newFields = map(startingFields, inputField -> {
 
             NodeParentTree<NamedNode<?>> nodeParentTree = buildAstTree(inputObjectType.getDefinition(), inputField.getDefinition());
             GraphqlElementParentTree elementParentTree = buildRuntimeTree(inputObjectType, inputField);
@@ -225,7 +225,7 @@ public class SchemaGeneratorDirectiveHelper {
 
             // now for each field run the new wiring and capture the results
             return onInputObjectField(inputField, fieldParams);
-        }).collect(toList());
+        });
         GraphQLInputObjectType newInputObjectType = inputObjectType;
         if (isNotTheSameObjects(startingFields, newFields)) {
             newInputObjectType = inputObjectType.transform(builder -> builder.clearFields().fields(newFields));
