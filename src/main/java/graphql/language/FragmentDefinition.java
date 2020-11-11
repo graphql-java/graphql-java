@@ -4,6 +4,7 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -15,6 +16,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 /**
@@ -149,10 +151,11 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
+
         private String name;
         private TypeName typeCondition;
-        private List<Directive> directives = new ArrayList<>();
+        private ImmutableList<Directive> directives = emptyList();
         private SelectionSet selectionSet;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
@@ -162,10 +165,10 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
         private Builder(FragmentDefinition existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
             this.typeCondition = existing.getTypeCondition();
-            this.directives = existing.getDirectives();
+            this.directives = ImmutableList.copyOf(existing.getDirectives());
             this.selectionSet = existing.getSelectionSet();
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
@@ -178,7 +181,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 
@@ -194,7 +197,12 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
         @Override
         public Builder directives(List<Directive> directives) {
-            this.directives = directives;
+            this.directives = ImmutableList.copyOf(directives);
+            return this;
+        }
+
+        public Builder directive(Directive directive) {
+            this.directives = ImmutableKit.addToList(directives, directive);
             return this;
         }
 

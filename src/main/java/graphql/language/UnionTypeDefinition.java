@@ -4,6 +4,7 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -153,11 +154,11 @@ public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefiniti
 
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private String name;
         private Description description;
-        private List<Directive> directives = new ArrayList<>();
-        private List<Type> memberTypes = new ArrayList<>();
+        private ImmutableList<Directive> directives = emptyList();
+        private ImmutableList<Type> memberTypes = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -166,11 +167,11 @@ public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefiniti
 
         private Builder(UnionTypeDefinition existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
             this.description = existing.getDescription();
-            this.directives = existing.getDirectives();
-            this.memberTypes = existing.getMemberTypes();
+            this.directives = ImmutableList.copyOf(existing.getDirectives());
+            this.memberTypes = ImmutableList.copyOf(existing.getMemberTypes());
             this.ignoredChars = existing.getIgnoredChars();
         }
 
@@ -180,7 +181,7 @@ public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefiniti
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 
@@ -196,22 +197,22 @@ public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefiniti
 
         @Override
         public Builder directives(List<Directive> directives) {
-            this.directives = directives;
+            this.directives = ImmutableList.copyOf(directives);
             return this;
         }
 
         public Builder directive(Directive directive) {
-            this.directives.add(directive);
+            this.directives = ImmutableKit.addToList(directives, directive);
             return this;
         }
 
         public Builder memberTypes(List<Type> memberTypes) {
-            this.memberTypes = memberTypes;
+            this.memberTypes = ImmutableList.copyOf(memberTypes);
             return this;
         }
 
         public Builder memberType(Type memberType) {
-            this.memberTypes.add(memberType);
+            this.memberTypes = ImmutableKit.addToList(memberTypes, memberType);
             return this;
         }
 

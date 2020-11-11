@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -109,7 +110,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, 
     public static final class Builder implements NodeBuilder {
         private String name;
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -118,7 +119,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, 
 
         private Builder(TypeName existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
@@ -135,7 +136,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, 
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 

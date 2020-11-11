@@ -1,15 +1,17 @@
 package graphql.language;
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
 
 @PublicApi
 public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
@@ -70,12 +72,12 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
 
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private String name;
         private Description description;
-        private List<Type> implementz = new ArrayList<>();
-        private List<FieldDefinition> definitions = new ArrayList<>();
-        private List<Directive> directives = new ArrayList<>();
+        private ImmutableList<Type> implementz = emptyList();
+        private ImmutableList<FieldDefinition> definitions = emptyList();
+        private ImmutableList<Directive> directives = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -84,12 +86,12 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
 
         private Builder(InterfaceTypeExtensionDefinition existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
             this.description = existing.getDescription();
-            this.directives = existing.getDirectives();
-            this.implementz = existing.getImplements();
-            this.definitions = existing.getFieldDefinitions();
+            this.directives = ImmutableList.copyOf(existing.getDirectives());
+            this.implementz = ImmutableList.copyOf(existing.getImplements());
+            this.definitions = ImmutableList.copyOf(existing.getFieldDefinitions());
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
@@ -100,7 +102,7 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 
@@ -115,23 +117,33 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
         }
 
         public Builder implementz(List<Type> implementz) {
-            this.implementz = implementz;
+            this.implementz = ImmutableList.copyOf(implementz);
             return this;
         }
 
         public Builder implementz(Type implementz) {
-            this.implementz.add(implementz);
+            this.implementz = ImmutableKit.addToList(this.implementz, implementz);
             return this;
         }
 
         public Builder definitions(List<FieldDefinition> definitions) {
-            this.definitions = definitions;
+            this.definitions = ImmutableList.copyOf(definitions);
+            return this;
+        }
+
+        public Builder definition(FieldDefinition definition) {
+            this.definitions = ImmutableKit.addToList(definitions, definition);
             return this;
         }
 
         @Override
         public Builder directives(List<Directive> directives) {
-            this.directives = directives;
+            this.directives = ImmutableList.copyOf(directives);
+            return this;
+        }
+
+        public Builder directive(Directive directive) {
+            this.directives = ImmutableKit.addToList(directives, directive);
             return this;
         }
 

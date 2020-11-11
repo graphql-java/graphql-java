@@ -1,15 +1,17 @@
 package graphql.language;
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
 
 @PublicApi
 public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinition {
@@ -67,11 +69,11 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
 
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private String name;
         private Description description;
-        private List<Directive> directives = new ArrayList<>();
-        private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
+        private ImmutableList<Directive> directives = emptyList();
+        private ImmutableList<InputValueDefinition> inputValueDefinitions = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -80,11 +82,11 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
 
         private Builder(InputObjectTypeDefinition existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
             this.description = existing.getDescription();
-            this.directives = existing.getDirectives();
-            this.inputValueDefinitions = existing.getInputValueDefinitions();
+            this.directives = ImmutableList.copyOf(existing.getDirectives());
+            this.inputValueDefinitions = ImmutableList.copyOf(existing.getInputValueDefinitions());
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
@@ -96,7 +98,7 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 
@@ -112,12 +114,23 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
 
         @Override
         public Builder directives(List<Directive> directives) {
-            this.directives = directives;
+            this.directives = ImmutableList.copyOf(directives);
             return this;
         }
 
+        public Builder directive(Directive directive) {
+            this.directives = ImmutableKit.addToList(directives, directive);
+            return this;
+        }
+
+
         public Builder inputValueDefinitions(List<InputValueDefinition> inputValueDefinitions) {
-            this.inputValueDefinitions = inputValueDefinitions;
+            this.inputValueDefinitions = ImmutableList.copyOf(inputValueDefinitions);
+            return this;
+        }
+
+        public Builder inputValueDefinition(InputValueDefinition inputValueDefinition) {
+            this.inputValueDefinitions = ImmutableKit.addToList(inputValueDefinitions, inputValueDefinition);
             return this;
         }
 

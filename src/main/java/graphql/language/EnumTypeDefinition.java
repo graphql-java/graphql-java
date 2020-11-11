@@ -141,11 +141,11 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
 
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private String name;
         private Description description;
-        private List<EnumValueDefinition> enumValueDefinitions = new ArrayList<>();
-        private List<Directive> directives = new ArrayList<>();
+        private ImmutableList<EnumValueDefinition> enumValueDefinitions = emptyList();
+        private ImmutableList<Directive> directives = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -154,11 +154,11 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
 
         private Builder(EnumTypeDefinition existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
             this.description = existing.getDescription();
-            this.directives = existing.getDirectives();
-            this.enumValueDefinitions = existing.getEnumValueDefinitions();
+            this.directives = ImmutableList.copyOf(existing.getDirectives());
+            this.enumValueDefinitions = ImmutableList.copyOf(existing.getEnumValueDefinitions());
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
@@ -169,7 +169,7 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 
@@ -184,23 +184,23 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
         }
 
         public Builder enumValueDefinitions(List<EnumValueDefinition> enumValueDefinitions) {
-            this.enumValueDefinitions = enumValueDefinitions;
+            this.enumValueDefinitions = ImmutableList.copyOf(enumValueDefinitions);
             return this;
         }
 
         public Builder enumValueDefinition(EnumValueDefinition enumValueDefinition) {
-            this.enumValueDefinitions.add(enumValueDefinition);
+            this.enumValueDefinitions = ImmutableKit.addToList(enumValueDefinitions, enumValueDefinition);
             return this;
         }
 
         @Override
         public Builder directives(List<Directive> directives) {
-            this.directives = directives;
+            this.directives = ImmutableList.copyOf(directives);
             return this;
         }
 
         public Builder directive(Directive directive) {
-            this.directives.add(directive);
+            this.directives = ImmutableKit.addToList(directives, directive);
             return this;
         }
 

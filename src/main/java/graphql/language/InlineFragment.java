@@ -4,6 +4,7 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -163,9 +164,9 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
 
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private TypeName typeCondition;
-        private List<Directive> directives = new ArrayList<>();
+        private ImmutableList<Directive> directives = emptyList();
         private SelectionSet selectionSet;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
@@ -176,9 +177,9 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
 
         private Builder(InlineFragment existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.typeCondition = existing.getTypeCondition();
-            this.directives = existing.getDirectives();
+            this.directives = ImmutableList.copyOf(existing.getDirectives());
             this.selectionSet = existing.getSelectionSet();
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
@@ -191,7 +192,7 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 
@@ -202,9 +203,15 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
 
         @Override
         public Builder directives(List<Directive> directives) {
-            this.directives = directives;
+            this.directives = ImmutableList.copyOf(directives);
             return this;
         }
+
+        public Builder directive(Directive directive) {
+            this.directives = ImmutableKit.addToList(directives, directive);
+            return this;
+        }
+
 
         public Builder selectionSet(SelectionSet selectionSet) {
             this.selectionSet = selectionSet;

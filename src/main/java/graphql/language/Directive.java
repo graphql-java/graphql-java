@@ -4,10 +4,10 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,11 +15,11 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.argumentsByName;
 import static graphql.language.NodeUtil.getArgumentByName;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class Directive extends AbstractNode<Directive> implements NamedNode<Directive> {
@@ -138,9 +138,9 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
 
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private String name;
-        private List<Argument> arguments = new ArrayList<>();
+        private ImmutableList<Argument> arguments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -149,9 +149,9 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
 
         private Builder(Directive existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
-            this.arguments = existing.getArguments();
+            this.arguments = ImmutableList.copyOf(existing.getArguments());
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
@@ -163,7 +163,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 
@@ -173,7 +173,12 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
         }
 
         public Builder arguments(List<Argument> arguments) {
-            this.arguments = arguments;
+            this.arguments = ImmutableList.copyOf(arguments);
+            return this;
+        }
+
+        public Builder argument(Argument argument) {
+            this.arguments = ImmutableKit.addToList(arguments,argument);
             return this;
         }
 

@@ -4,10 +4,10 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -118,9 +118,9 @@ public class Document extends AbstractNode<Document> {
     }
 
     public static final class Builder implements NodeBuilder {
-        private List<Definition> definitions = new ArrayList<>();
+        private ImmutableList<Definition> definitions = emptyList();
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -129,19 +129,19 @@ public class Document extends AbstractNode<Document> {
 
         private Builder(Document existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
-            this.definitions = existing.getDefinitions();
+            this.comments = ImmutableList.copyOf(existing.getComments());
+            this.definitions = ImmutableList.copyOf(existing.getDefinitions());
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
         public Builder definitions(List<Definition> definitions) {
-            this.definitions = definitions;
+            this.definitions = ImmutableList.copyOf(definitions);
             return this;
         }
 
         public Builder definition(Definition definition) {
-            this.definitions.add(definition);
+            this.definitions = ImmutableKit.addToList(definitions,definition);
             return this;
         }
 
@@ -151,7 +151,7 @@ public class Document extends AbstractNode<Document> {
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 

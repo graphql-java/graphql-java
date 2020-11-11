@@ -4,6 +4,7 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -168,11 +169,11 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
 
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private String name;
         private Operation operation;
-        private List<VariableDefinition> variableDefinitions = new ArrayList<>();
-        private List<Directive> directives = new ArrayList<>();
+        private ImmutableList<VariableDefinition> variableDefinitions = emptyList();
+        private ImmutableList<Directive> directives = emptyList();
         private SelectionSet selectionSet;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
@@ -182,11 +183,11 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
 
         private Builder(OperationDefinition existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
             this.operation = existing.getOperation();
-            this.variableDefinitions = existing.getVariableDefinitions();
-            this.directives = existing.getDirectives();
+            this.variableDefinitions = ImmutableList.copyOf(existing.getVariableDefinitions());
+            this.directives = ImmutableList.copyOf(existing.getDirectives());
             this.selectionSet = existing.getSelectionSet();
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
@@ -199,7 +200,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 
@@ -214,16 +215,25 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         }
 
         public Builder variableDefinitions(List<VariableDefinition> variableDefinitions) {
-            this.variableDefinitions = variableDefinitions;
+            this.variableDefinitions = ImmutableList.copyOf(variableDefinitions);
+            return this;
+        }
+
+        public Builder variableDefinition(VariableDefinition variableDefinition) {
+            this.variableDefinitions = ImmutableKit.addToList(variableDefinitions, variableDefinition);
             return this;
         }
 
         @Override
         public Builder directives(List<Directive> directives) {
-            this.directives = directives;
+            this.directives = ImmutableList.copyOf(directives);
             return this;
         }
 
+        public Builder directive(Directive directive) {
+            this.directives = ImmutableKit.addToList(directives, directive);
+            return this;
+        }
         public Builder selectionSet(SelectionSet selectionSet) {
             this.selectionSet = selectionSet;
             return this;

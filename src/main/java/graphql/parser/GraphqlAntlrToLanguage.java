@@ -4,6 +4,7 @@ package graphql.parser;
 import com.google.common.collect.ImmutableList;
 import graphql.Assert;
 import graphql.Internal;
+import graphql.collect.ImmutableKit;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.BooleanValue;
@@ -852,12 +853,12 @@ public class GraphqlAntlrToLanguage {
                 return getCommentOnChannel(refChannel);
             }
         }
-        return Collections.emptyList();
+        return ImmutableKit.emptyList();
     }
 
 
     protected List<Comment> getCommentOnChannel(List<Token> refChannel) {
-        List<Comment> comments = new ArrayList<>();
+        ImmutableList.Builder<Comment> comments = ImmutableList.builder();
         for (Token refTok : refChannel) {
             String text = refTok.getText();
             // we strip the leading hash # character but we don't trim because we don't
@@ -873,7 +874,7 @@ public class GraphqlAntlrToLanguage {
             int line = sourceAndLine.getLine() + 1;
             comments.add(new Comment(text, new SourceLocation(line, column, sourceAndLine.getSourceName())));
         }
-        return ImmutableList.copyOf(comments);
+        return comments.build();
     }
 
 

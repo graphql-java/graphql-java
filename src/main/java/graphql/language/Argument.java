@@ -7,7 +7,6 @@ import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,10 +21,9 @@ import static java.util.Collections.emptyMap;
 @PublicApi
 public class Argument extends AbstractNode<Argument> implements NamedNode<Argument> {
 
+    public static final String CHILD_VALUE = "value";
     private final String name;
     private final Value value;
-
-    public static final String CHILD_VALUE = "value";
 
     @Internal
     protected Argument(String name, Value value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
@@ -42,6 +40,14 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
      */
     public Argument(String name, Value value) {
         this(name, value, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
+    }
+
+    public static Builder newArgument() {
+        return new Builder();
+    }
+
+    public static Builder newArgument(String name, Value value) {
+        return new Builder().name(name).value(value);
     }
 
     @Override
@@ -105,14 +111,6 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
         return visitor.visitArgument(this, context);
     }
 
-    public static Builder newArgument() {
-        return new Builder();
-    }
-
-    public static Builder newArgument(String name, Value value) {
-        return new Builder().name(name).value(value);
-    }
-
     public Argument transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
@@ -121,7 +119,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
 
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private String name;
         private Value value;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
@@ -132,7 +130,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
 
         private Builder(Argument existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
             this.value = existing.getValue();
             this.ignoredChars = existing.getIgnoredChars();
@@ -155,7 +153,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 
