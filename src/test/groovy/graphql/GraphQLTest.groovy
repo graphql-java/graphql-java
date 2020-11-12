@@ -133,6 +133,12 @@ class GraphQLTest extends Specification {
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("RootQueryType")
+                        .field(newFieldDefinition()
+                                .name("field")
+                                .type(GraphQLString)
+                                .argument(newArgument()
+                                        .name("arg")
+                                        .type(GraphQLNonNull.nonNull(GraphQLString))))
                         .build()
         ).build()
 
@@ -150,6 +156,12 @@ class GraphQLTest extends Specification {
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("RootQueryType")
+                        .field(newFieldDefinition()
+                                .name("field")
+                                .type(GraphQLString)
+                                .argument(newArgument()
+                                        .name("arg")
+                                        .type(GraphQLNonNull.nonNull(GraphQLString))))
                         .build()
         ).build()
 
@@ -262,6 +274,12 @@ class GraphQLTest extends Specification {
 
         GraphQLSchema schema = newSchema().query(
                 newObject()
+                        .field(newFieldDefinition()
+                                .name("field")
+                                .type(GraphQLString)
+                                .argument(newArgument()
+                                        .name("arg")
+                                        .type(GraphQLNonNull.nonNull(GraphQLString))))
                         .name("Query")
         )
                 .build()
@@ -280,6 +298,12 @@ class GraphQLTest extends Specification {
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("Query")
+                        .field(newFieldDefinition()
+                                .name("field")
+                                .type(GraphQLString)
+                                .argument(newArgument()
+                                        .name("arg")
+                                        .type(GraphQLNonNull.nonNull(GraphQLString))))
         )
                 .build()
 

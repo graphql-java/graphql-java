@@ -104,7 +104,9 @@ public interface DataFetchingFieldSelectionSet {
      * match an invoice field with child fields that start with 'customer'.
      *
      * @param fieldGlobPattern the glob pattern to match fields against
+     *
      * @return true if the selection set contains these fields
+     *
      * @see java.nio.file.FileSystem#getPathMatcher(String)
      */
     boolean contains(String fieldGlobPattern);
@@ -118,7 +120,9 @@ public interface DataFetchingFieldSelectionSet {
      *
      * @param fieldGlobPattern  the glob pattern to match fields against
      * @param fieldGlobPatterns optionally more glob pattern to match fields against
+     *
      * @return true if the selection set contains any of these these fields
+     *
      * @see java.nio.file.FileSystem#getPathMatcher(String)
      */
     boolean containsAnyOf(String fieldGlobPattern, String... fieldGlobPatterns);
@@ -132,7 +136,9 @@ public interface DataFetchingFieldSelectionSet {
      *
      * @param fieldGlobPattern  the glob pattern to match fields against
      * @param fieldGlobPatterns optionally more glob pattern to match fields against
+     *
      * @return true if the selection set contains all of these these fields
+     *
      * @see java.nio.file.FileSystem#getPathMatcher(String)
      */
     boolean containsAllOf(String fieldGlobPattern, String... fieldGlobPatterns);
@@ -167,6 +173,7 @@ public interface DataFetchingFieldSelectionSet {
      *
      * @param fieldGlobPattern  the glob pattern to match fields against
      * @param fieldGlobPatterns optionally more glob pattern to match fields against
+     *
      * @return a list of selected fields or empty list if none match
      */
     List<SelectedField> getFields(String fieldGlobPattern, String... fieldGlobPatterns);
@@ -186,6 +193,9 @@ public interface DataFetchingFieldSelectionSet {
      * may lead to a field being asked for multiple times (with differing arguments) if field aliases are used.  This method
      * helps you get all possible field invocations grouped by their result key.  The arguments are guaranteed to be the same if
      * the result key is the same, otherwise the query would not have validated correctly.
+     *
+     * @param fieldGlobPattern  the glob pattern to match fields against
+     * @param fieldGlobPatterns optionally more glob pattern to match fields against
      *
      * @return a map of selected fields grouped by result key or an empty map if none match
      */

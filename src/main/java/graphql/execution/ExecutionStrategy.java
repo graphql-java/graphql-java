@@ -211,13 +211,6 @@ public abstract class ExecutionStrategy {
         return result;
     }
 
-    protected CompletableFuture<FieldValueInfo> resolveFieldWithInfoToNull(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        FetchedValue fetchedValue = FetchedValue.newFetchedValue().build();
-        FieldValueInfo fieldValueInfo = completeField(executionContext, parameters, fetchedValue);
-        return CompletableFuture.completedFuture(fieldValueInfo);
-    }
-
-
     /**
      * Called to fetch a value for a field from the {@link DataFetcher} associated with the field
      * {@link GraphQLFieldDefinition}.
@@ -308,14 +301,9 @@ public abstract class ExecutionStrategy {
                                                 Object result) {
 
         if (result instanceof DataFetcherResult) {
-            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult<?>) result;
-            if (dataFetcherResult.isMapRelativeErrors()) {
-                dataFetcherResult.getErrors().stream()
-                        .map(relError -> new AbsoluteGraphQLError(parameters, relError))
-                        .forEach(executionContext::addError);
-            } else {
-                dataFetcherResult.getErrors().forEach(executionContext::addError);
-            }
+            //noinspection unchecked
+            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result;
+            dataFetcherResult.getErrors().forEach(executionContext::addError);
 
             Object localContext = dataFetcherResult.getLocalContext();
             if (localContext == null) {

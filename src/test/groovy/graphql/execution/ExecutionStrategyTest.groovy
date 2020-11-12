@@ -1,9 +1,9 @@
 package graphql.execution
 
 import graphql.Assert
-import graphql.DataFetchingErrorGraphQLError
 import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionResult
+import graphql.GraphqlErrorBuilder
 import graphql.Scalars
 import graphql.SerializationError
 import graphql.StarWarsSchema
@@ -759,16 +759,15 @@ class ExecutionStrategyTest extends Specification {
         when:
         def fetchedValue = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters,
                 DataFetcherResult.newResult().data(executionData)
-                        .mapRelativeErrors(true)
-                        .error(new DataFetchingErrorGraphQLError("bad foo", ["child", "foo"]))
+                        .error(GraphqlErrorBuilder.newError().message("bad foo").path(["child", "foo"]).build())
                         .build()
         )
 
         then:
         fetchedValue.getFetchedValue() == executionData
-        executionContext.getErrors()[0].locations == [new SourceLocation(7, 20)]
+//        executionContext.getErrors()[0].locations == [new SourceLocation(7, 20)]
         executionContext.getErrors()[0].message == "bad foo"
-        executionContext.getErrors()[0].path == ["parent", "child", "foo"]
+        executionContext.getErrors()[0].path == [ "child", "foo"]
     }
 
     def "#1558 forward localContext on nonBoxed return from DataFetcher"() {
@@ -813,11 +812,11 @@ class ExecutionStrategyTest extends Specification {
         when:
         def fetchedValue = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters,
                 DataFetcherResult.newResult().data(executionData)
-                        .error(new DataFetchingErrorGraphQLError("bad foo"))
+                        .error(GraphqlErrorBuilder.newError().message("bad foo").build())
                         .build())
         then:
         fetchedValue.getFetchedValue() == executionData
-        executionContext.getErrors()[0].locations == null
+        executionContext.getErrors()[0].locations == []
         executionContext.getErrors()[0].message == "bad foo"
         executionContext.getErrors()[0].path == null
     }

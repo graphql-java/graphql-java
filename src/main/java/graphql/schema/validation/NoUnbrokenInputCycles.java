@@ -8,6 +8,7 @@ import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 
 import java.util.ArrayList;
@@ -28,6 +29,10 @@ public class NoUnbrokenInputCycles implements SchemaValidationRule {
 
     @Override
     public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
+    }
+
+    @Override
+    public void check(GraphQLSchema graphQLSchema, SchemaValidationErrorCollector validationErrorCollector) {
     }
 
     @Override

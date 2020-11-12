@@ -9,6 +9,7 @@ import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.util.FpKit;
@@ -49,6 +50,10 @@ public class TypesImplementInterfaces implements SchemaValidationRule {
         if (type instanceof GraphQLImplementingType) {
             check((GraphQLImplementingType) type, validationErrorCollector);
         }
+    }
+
+    @Override
+    public void check(GraphQLSchema graphQLSchema, SchemaValidationErrorCollector validationErrorCollector) {
     }
 
     private void check(GraphQLImplementingType implementingType, SchemaValidationErrorCollector validationErrorCollector) {
