@@ -885,6 +885,7 @@ type Query {
             directive @inputFieldDirective on INPUT_FIELD_DEFINITION
             directive @interfaceTypeDirective on INTERFACE
             directive @scalarDirective on SCALAR
+            directive @repeatableDirective repeatable on SCALAR
             
             interface SomeInterface @interfaceTypeDirective {
                 fieldA : String @interfaceFieldDirective
@@ -913,7 +914,7 @@ type Query {
                 SOME_ENUM_VALUE @enumValueDirective
             }
             
-            scalar SomeScalar @scalarDirective
+            scalar SomeScalar @scalarDirective @repeatableDirective @repeatableDirective
             
             input SomeInput @inputTypeDirective {
                 fieldA : String @inputFieldDirective
@@ -984,6 +985,8 @@ directive @interfaceTypeDirective on INTERFACE
 
 directive @scalarDirective on SCALAR
 
+directive @repeatableDirective repeatable on SCALAR
+
 "Marks the field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
@@ -1023,7 +1026,7 @@ enum SomeEnum @enumTypeDirective {
   SOME_ENUM_VALUE @enumValueDirective
 }
 
-scalar SomeScalar @scalarDirective
+scalar SomeScalar @repeatableDirective @repeatableDirective @scalarDirective
 
 input SomeInput @inputTypeDirective {
   fieldA: String @inputFieldDirective

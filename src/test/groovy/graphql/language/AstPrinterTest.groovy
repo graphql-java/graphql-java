@@ -280,7 +280,7 @@ query HeroNameAndFriends($episode: Episode) {
         def query = '''
 query Hero($episode: Episode, $withFriends: Boolean!) {
   hero ( episode: $episode) {
-    name
+    name @repeatable @repeatable
     friends @include (if : $withFriends) {
       name
     }
@@ -293,7 +293,7 @@ query Hero($episode: Episode, $withFriends: Boolean!) {
         expect:
         output == '''query Hero($episode: Episode, $withFriends: Boolean!) {
   hero(episode: $episode) {
-    name
+    name @repeatable @repeatable
     friends @include(if: $withFriends) {
       name
     }
