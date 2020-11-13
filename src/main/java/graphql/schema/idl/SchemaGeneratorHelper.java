@@ -157,10 +157,6 @@ public class SchemaGeneratorHelper {
             typeStack.pop();
         }
 
-        SchemaGeneratorDirectiveHelper.Parameters mkBehaviourParams() {
-            return new SchemaGeneratorDirectiveHelper.Parameters(typeRegistry, wiring, directiveBehaviourContext, codeRegistry);
-        }
-
         GraphQLOutputType hasOutputType(TypeDefinition typeDefinition) {
             return outputGTypes.get(typeDefinition.getName());
         }
@@ -213,8 +209,6 @@ public class SchemaGeneratorHelper {
     static final String NO_LONGER_SUPPORTED = "No longer supported";
     static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
     static final DirectiveDefinition SPECIFIED_BY_DIRECTIVE_DEFINITION;
-
-    private final SchemaGeneratorDirectiveHelper generatorDirectiveHelper = new SchemaGeneratorDirectiveHelper();
 
     static {
         DEPRECATED_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
@@ -509,9 +503,7 @@ public class SchemaGeneratorHelper {
             }
         }));
 
-        GraphQLInputObjectType inputObjectType = builder.build();
-        inputObjectType = generatorDirectiveHelper.onInputObjectType(inputObjectType, buildCtx.mkBehaviourParams());
-        return inputObjectType;
+        return builder.build();
     }
 
     private GraphQLInputObjectField buildInputField(BuildContext buildCtx, InputValueDefinition fieldDef) {
@@ -574,9 +566,7 @@ public class SchemaGeneratorHelper {
                         buildCtx.getComparatorRegistry())
         );
 
-        GraphQLEnumType enumType = builder.build();
-        enumType = generatorDirectiveHelper.onEnum(enumType, buildCtx.mkBehaviourParams());
-        return enumType;
+        return builder.build();
     }
 
     private GraphQLEnumValueDefinition buildEnumValue(BuildContext buildCtx,
@@ -640,7 +630,6 @@ public class SchemaGeneratorHelper {
                             buildCtx.getDirectives(),
                             buildCtx.getComparatorRegistry())
                     ));
-            scalar = generatorDirectiveHelper.onScalar(scalar, buildCtx.mkBehaviourParams());
         }
         return scalar;
     }
@@ -801,8 +790,6 @@ public class SchemaGeneratorHelper {
             TypeResolver typeResolver = getTypeResolverForInterface(buildCtx, typeDefinition);
             buildCtx.getCodeRegistry().typeResolver(interfaceType, typeResolver);
         }
-
-        interfaceType = generatorDirectiveHelper.onInterface(interfaceType, buildCtx.mkBehaviourParams());
         return interfaceType;
     }
 
@@ -838,9 +825,7 @@ public class SchemaGeneratorHelper {
 
         buildObjectTypeInterfaces(buildCtx, typeDefinition, builder, extensions);
 
-        GraphQLObjectType objectType = builder.build();
-        objectType = generatorDirectiveHelper.onObject(objectType, buildCtx.mkBehaviourParams());
-        return objectType;
+        return builder.build();
     }
 
     private void buildObjectTypeInterfaces(BuildContext buildCtx,
@@ -916,7 +901,6 @@ public class SchemaGeneratorHelper {
             TypeResolver typeResolver = getTypeResolverForUnion(buildCtx, typeDefinition);
             buildCtx.getCodeRegistry().typeResolver(unionType, typeResolver);
         }
-        unionType = generatorDirectiveHelper.onUnion(unionType, buildCtx.mkBehaviourParams());
         return unionType;
     }
 

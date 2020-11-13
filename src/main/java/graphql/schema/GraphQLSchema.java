@@ -482,6 +482,13 @@ public class GraphQLSchema {
             return this;
         }
 
+        public Builder withSchemaDirectives(Collection<? extends GraphQLDirective> directives) {
+            for (GraphQLDirective directive : directives) {
+                withSchemaDirective(directive);
+            }
+            return this;
+        }
+
         public Builder withSchemaDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
             schemaDirectives.put(directive.getName(), directive);

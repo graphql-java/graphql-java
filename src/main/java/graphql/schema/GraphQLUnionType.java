@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.Assert;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -292,10 +293,16 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
             return this;
         }
 
-        public Builder replacePossibleTypes(List<GraphQLObjectType> types) {
+        public Builder replacePossibleTypes(List<? extends GraphQLNamedOutputType> types) {
             this.types.clear();
-            for (GraphQLObjectType graphQLType : types) {
-                possibleType(graphQLType);
+            for (GraphQLSchemaElement schemaElement : types) {
+                if (schemaElement instanceof GraphQLTypeReference) {
+                    possibleType((GraphQLTypeReference) schemaElement);
+                } else if (schemaElement instanceof GraphQLObjectType) {
+                    possibleType((GraphQLObjectType) schemaElement);
+                } else {
+                    Assert.assertShouldNeverHappen("Unexpected type " + (schemaElement != null ? schemaElement.getClass() : "null"));
+                }
             }
             return this;
         }
