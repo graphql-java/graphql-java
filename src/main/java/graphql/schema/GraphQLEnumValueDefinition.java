@@ -11,6 +11,7 @@ import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -31,7 +32,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
     private final String description;
     private final Object value;
     private final String deprecationReason;
-    private final ImmutableList<GraphQLDirective> directives;
+    private final DirectivesUtil.DirectivesHolder directives;
     private final EnumValueDefinition definition;
 
     public static final String CHILD_DIRECTIVES = "directives";
@@ -40,6 +41,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
      * @param name        the name
      * @param description the description
      * @param value       the value
+     *
      * @deprecated use the {@link #newEnumValueDefinition()}   builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -53,6 +55,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
      * @param description       the description
      * @param value             the value
      * @param deprecationReason the deprecation reasons
+     *
      * @deprecated use the {@link #newEnumValueDefinition()}   builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -67,6 +70,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
      * @param value             the value
      * @param deprecationReason the deprecation reasons
      * @param directives        the directives on this type element
+     *
      * @deprecated use the {@link #newEnumValueDefinition()}   builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -83,7 +87,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
         this.description = description;
         this.value = value;
         this.deprecationReason = deprecationReason;
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = new DirectivesUtil.DirectivesHolder(directives);
         this.definition = definition;
     }
 
@@ -110,7 +114,22 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, GraphQLDirective> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
+        return directives.getAllDirectivesByName();
+    }
+
+    @Override
+    public GraphQLDirective getDirective(String directiveName) {
+        return directives.getDirective(directiveName);
     }
 
     public EnumValueDefinition getDefinition() {
@@ -122,6 +141,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new field based on calling build on that builder
      */
     public GraphQLEnumValueDefinition transform(Consumer<Builder> builderConsumer) {
@@ -137,13 +157,13 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
 
     @Override
     public List<GraphQLSchemaElement> getChildren() {
-        return ImmutableList.copyOf(directives);
+        return ImmutableList.copyOf(directives.getDirectives());
     }
 
     @Override
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .build();
     }
 

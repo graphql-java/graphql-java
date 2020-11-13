@@ -42,8 +42,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
     private final TypeResolver typeResolver;
     private final UnionTypeDefinition definition;
     private final ImmutableList<UnionTypeExtensionDefinition> extensionDefinitions;
-
-    private final ImmutableList<GraphQLDirective> directives;
+    private final DirectivesUtil.DirectivesHolder directives;
 
     private ImmutableList<GraphQLNamedOutputType> replacedTypes;
 
@@ -93,7 +92,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         this.typeResolver = typeResolver;
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = new DirectivesUtil.DirectivesHolder(directives);
     }
 
     void replaceTypes(List<GraphQLNamedOutputType> types) {
@@ -147,7 +146,22 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, GraphQLDirective> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
+        return directives.getAllDirectivesByName();
+    }
+
+    @Override
+    public GraphQLDirective getDirective(String directiveName) {
+        return directives.getDirective(directiveName);
     }
 
     /**
@@ -172,7 +186,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
     @Override
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>(getTypes());
-        children.addAll(directives);
+        children.addAll(directives.getDirectives());
         return children;
     }
 
@@ -180,7 +194,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return newSchemaElementChildrenContainer()
                 .children(CHILD_TYPES, originalTypes)
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .build();
     }
 

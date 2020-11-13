@@ -1,7 +1,6 @@
 package graphql.schema;
 
 
-import com.google.common.collect.ImmutableList;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -12,6 +11,7 @@ import graphql.util.TraverserContext;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -45,7 +45,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     private final Object value;
     private final Object defaultValue;
     private final InputValueDefinition definition;
-    private final ImmutableList<GraphQLDirective> directives;
+    private final DirectivesUtil.DirectivesHolder directives;
 
     private GraphQLInputType replacedType;
 
@@ -60,6 +60,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * @param description  the arg description
      * @param type         the arg type
      * @param defaultValue the default value
+     *
      * @deprecated use the {@link #newArgument()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -71,6 +72,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     /**
      * @param name the arg name
      * @param type the arg type
+     *
      * @deprecated use the {@link #newArgument()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
@@ -85,6 +87,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * @param type         the arg type
      * @param defaultValue the default value
      * @param definition   the AST definition
+     *
      * @deprecated use the {@link #newArgument()} builder pattern instead, as this constructor will be made private in a future version.
      */
     public GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, InputValueDefinition definition) {
@@ -100,7 +103,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         this.defaultValue = defaultValue;
         this.value = value;
         this.definition = definition;
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = new DirectivesUtil.DirectivesHolder(directives);
     }
 
 
@@ -152,15 +155,29 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives;
+        return directives.getDirectives();
     }
 
+    @Override
+    public Map<String, GraphQLDirective> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
+        return directives.getAllDirectivesByName();
+    }
+
+    @Override
+    public GraphQLDirective getDirective(String directiveName) {
+        return directives.getDirective(directiveName);
+    }
 
     @Override
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>();
         children.add(getType());
-        children.addAll(directives);
+        children.addAll(directives.getDirectives());
         return children;
     }
 
@@ -168,7 +185,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     @Override
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .child(CHILD_TYPE, originalType)
                 .build();
     }
@@ -202,6 +219,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new field based on calling build on that builder
      */
     public GraphQLArgument transform(Consumer<Builder> builderConsumer) {
@@ -251,7 +269,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
             this.defaultValue = existing.defaultValue;
             this.description = existing.getDescription();
             this.definition = existing.getDefinition();
-            DirectivesUtil.enforceAddAll(this.directives,existing.getDirectives());
+            DirectivesUtil.enforceAddAll(this.directives, existing.getDirectives());
         }
 
         @Override

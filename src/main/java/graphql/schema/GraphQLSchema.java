@@ -51,8 +51,8 @@ public class GraphQLSchema {
     private final GraphQLObjectType mutationType;
     private final GraphQLObjectType subscriptionType;
     private final ImmutableSet<GraphQLType> additionalTypes;
-    private final ImmutableSet<GraphQLDirective> directives;
-    private final ImmutableList<GraphQLDirective> schemaDirectives;
+    private final DirectivesUtil.DirectivesHolder directives;
+    private final DirectivesUtil.DirectivesHolder schemaDirectives;
     private final SchemaDefinition definition;
     private final ImmutableList<SchemaExtensionDefinition> extensionDefinitions;
 
@@ -114,8 +114,8 @@ public class GraphQLSchema {
         this.mutationType = builder.mutationType;
         this.subscriptionType = builder.subscriptionType;
         this.additionalTypes = ImmutableSet.copyOf(builder.additionalTypes);
-        this.directives = ImmutableSet.copyOf(builder.additionalDirectives);
-        this.schemaDirectives = ImmutableList.copyOf(builder.schemaDirectives);
+        this.directives = new DirectivesUtil.DirectivesHolder(builder.additionalDirectives);
+        this.schemaDirectives = new DirectivesUtil.DirectivesHolder(builder.schemaDirectives);
         this.definition = builder.definition;
         this.extensionDefinitions = nonNullCopyOf(builder.extensionDefinitions);
         this.codeRegistry = builder.codeRegistry;
@@ -267,14 +267,14 @@ public class GraphQLSchema {
      * @return a list of directives
      */
     public List<GraphQLDirective> getDirectives() {
-        return ImmutableList.copyOf(directives);
+        return directives.getDirectives();
     }
 
     /**
      * @return a a map of non repeatable directives by directive name
      */
     public Map<String, GraphQLDirective> getDirectivesByName() {
-        return nonRepeatableDirectivesByName(getDirectives());
+        return directives.getDirectivesByName();
     }
 
     /**
@@ -284,7 +284,7 @@ public class GraphQLSchema {
      * @return a map of all directives by directive name
      */
     public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
-        return ImmutableMap.copyOf(allDirectivesByName(getDirectives()));
+        return directives.getAllDirectivesByName();
     }
 
     /**
@@ -295,7 +295,7 @@ public class GraphQLSchema {
      * @return the directive or null if there is not one with that name
      */
     public GraphQLDirective getDirective(String directiveName) {
-        return nonRepeatedDirectiveByNameWithAssert(getAllDirectivesByName(), directiveName);
+        return directives.getDirective(directiveName);
     }
 
     /**
@@ -306,7 +306,7 @@ public class GraphQLSchema {
      * @return the directive or empty list if there is not one with that name
      */
     public List<GraphQLDirective> getDirectives(String directiveName) {
-        return getAllDirectivesByName().getOrDefault(directiveName, emptyList());
+        return directives.getDirectives(directiveName);
     }
 
     /**
@@ -330,7 +330,7 @@ public class GraphQLSchema {
      * @return a list of directives
      */
     public List<GraphQLDirective> getSchemaDirectives() {
-        return schemaDirectives;
+        return schemaDirectives.getDirectives();
     }
 
     /**
@@ -342,7 +342,7 @@ public class GraphQLSchema {
      * @return a list of directives
      */
     public Map<String, GraphQLDirective> getSchemaDirectiveByName() {
-        return nonRepeatableDirectivesByName(getSchemaDirectives());
+        return schemaDirectives.getDirectivesByName();
     }
 
     /**
@@ -352,7 +352,7 @@ public class GraphQLSchema {
      * @return a map of all schema directives by directive name
      */
     public Map<String, List<GraphQLDirective>> getAllSchemaDirectivesByName() {
-        return ImmutableMap.copyOf(allDirectivesByName(getSchemaDirectives()));
+        return schemaDirectives.getAllDirectivesByName();
     }
 
     /**
@@ -366,11 +366,11 @@ public class GraphQLSchema {
      * @return a named directive
      */
     public GraphQLDirective getSchemaDirective(String directiveName) {
-        return DirectivesUtil.nonRepeatedDirectiveByNameWithAssert(getAllDirectivesByName(), directiveName);
+        return schemaDirectives.getDirective(directiveName);
     }
 
     public List<GraphQLDirective> getSchemaDirectives(String directiveName) {
-        return getAllDirectivesByName().getOrDefault(directiveName, emptyList());
+        return schemaDirectives.getDirectives(directiveName);
     }
 
     public SchemaDefinition getDefinition() {
@@ -430,7 +430,7 @@ public class GraphQLSchema {
                 .codeRegistry(existingSchema.getCodeRegistry())
                 .clearAdditionalTypes()
                 .clearDirectives()
-                .additionalDirectives(existingSchema.directives)
+                .additionalDirectives(new LinkedHashSet<>(existingSchema.getDirectives()))
                 .clearSchemaDirectives()
                 .withSchemaDirectives(schemaDirectivesArray(existingSchema))
                 .additionalTypes(existingSchema.additionalTypes)
@@ -438,7 +438,7 @@ public class GraphQLSchema {
     }
 
     private static GraphQLDirective[] schemaDirectivesArray(GraphQLSchema existingSchema) {
-        return existingSchema.schemaDirectives.toArray(new GraphQLDirective[0]);
+        return existingSchema.schemaDirectives.getDirectives().toArray(new GraphQLDirective[0]);
     }
 
     public static class Builder {

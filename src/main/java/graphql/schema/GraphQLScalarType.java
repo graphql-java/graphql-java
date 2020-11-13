@@ -1,8 +1,8 @@
 package graphql.schema;
 
 
-import graphql.DirectivesUtil;
 import com.google.common.collect.ImmutableList;
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.ScalarTypeDefinition;
@@ -11,9 +11,8 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -44,7 +43,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
     private final Coercing coercing;
     private final ScalarTypeDefinition definition;
     private final ImmutableList<ScalarTypeExtensionDefinition> extensionDefinitions;
-    private final ImmutableList<GraphQLDirective> directives;
+    private final DirectivesUtil.DirectivesHolder directives;
     private final String specifiedByUrl;
 
     public static final String CHILD_DIRECTIVES = "directives";
@@ -93,7 +92,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         this.description = description;
         this.coercing = coercing;
         this.definition = definition;
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = new DirectivesUtil.DirectivesHolder(directives);
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
         this.specifiedByUrl = specifiedByUrl;
     }
@@ -126,7 +125,22 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, GraphQLDirective> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
+        return directives.getAllDirectivesByName();
+    }
+
+    @Override
+    public GraphQLDirective getDirective(String directiveName) {
+        return directives.getDirective(directiveName);
     }
 
     @Override
@@ -159,13 +173,13 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
     @Override
     public List<GraphQLSchemaElement> getChildren() {
-        return ImmutableList.copyOf(directives);
+        return ImmutableList.copyOf(directives.getDirectives());
     }
 
     @Override
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return newSchemaElementChildrenContainer()
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .build();
     }
 

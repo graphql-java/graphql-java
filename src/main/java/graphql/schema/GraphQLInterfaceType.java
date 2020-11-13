@@ -45,7 +45,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     private final TypeResolver typeResolver;
     private final InterfaceTypeDefinition definition;
     private final ImmutableList<InterfaceTypeExtensionDefinition> extensionDefinitions;
-    private final ImmutableList<GraphQLDirective> directives;
+    private final DirectivesUtil.DirectivesHolder directives;
 
     private final ImmutableList<GraphQLNamedOutputType> originalInterfaces;
     private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
@@ -108,7 +108,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
         this.interfaceComparator = interfaceComparator;
         this.originalInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = new DirectivesUtil.DirectivesHolder(directives);
         buildDefinitionMap(fieldDefinitions);
     }
 
@@ -157,7 +157,22 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, GraphQLDirective> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
+        return directives.getAllDirectivesByName();
+    }
+
+    @Override
+    public GraphQLDirective getDirective(String directiveName) {
+        return directives.getDirective(directiveName);
     }
 
     @Override
@@ -192,7 +207,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     @Override
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>(fieldDefinitionsByName.values());
-        children.addAll(directives);
+        children.addAll(directives.getDirectives());
         children.addAll(getInterfaces());
         return children;
     }
@@ -201,7 +216,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
                 .children(CHILD_FIELD_DEFINITIONS, fieldDefinitionsByName.values())
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .children(CHILD_INTERFACES, originalInterfaces)
                 .build();
     }

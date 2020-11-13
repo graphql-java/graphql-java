@@ -47,7 +47,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
     private final ImmutableMap<String, GraphQLFieldDefinition> fieldDefinitionsByName;
     private final ImmutableList<GraphQLNamedOutputType> originalInterfaces;
-    private final ImmutableList<GraphQLDirective> directives;
+    private final DirectivesUtil.DirectivesHolder directives;
     private final ObjectTypeDefinition definition;
     private final ImmutableList<ObjectTypeExtensionDefinition> extensionDefinitions;
 
@@ -108,7 +108,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         this.originalInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directives = ImmutableList.copyOf(assertNotNull(directives));
+        this.directives = new DirectivesUtil.DirectivesHolder(assertNotNull(directives));
         this.fieldDefinitionsByName = buildDefinitionMap(fieldDefinitions);
     }
 
@@ -123,7 +123,22 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, GraphQLDirective> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
+        return directives.getAllDirectivesByName();
+    }
+
+    @Override
+    public GraphQLDirective getDirective(String directiveName) {
+        return directives.getDirective(directiveName);
     }
 
     @Override
@@ -196,7 +211,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>(fieldDefinitionsByName.values());
         children.addAll(getInterfaces());
-        children.addAll(directives);
+        children.addAll(directives.getDirectives());
         return children;
     }
 
@@ -204,7 +219,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
                 .children(CHILD_FIELD_DEFINITIONS, fieldDefinitionsByName.values())
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .children(CHILD_INTERFACES, originalInterfaces)
                 .build();
     }

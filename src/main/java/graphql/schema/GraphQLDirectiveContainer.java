@@ -40,9 +40,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      *
      * @return a map of non repeatable directives by directive name.
      */
-    default Map<String, GraphQLDirective> getDirectivesByName() {
-        return nonRepeatableDirectivesByName(getDirectives());
-    }
+    Map<String, GraphQLDirective> getDirectivesByName();
 
     /**
      * This will return a Map of the all directives that are associated with a {@link graphql.schema.GraphQLNamedSchemaElement}, including both
@@ -50,9 +48,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      *
      * @return a map of all directives by directive name
      */
-    default Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
-        return ImmutableMap.copyOf(allDirectivesByName(getDirectives()));
-    }
+    Map<String, List<GraphQLDirective>> getAllDirectivesByName();
 
     /**
      * Returns a non repeatable directive with the provided name.  This will throw a {@link graphql.AssertException} if
@@ -62,9 +58,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      *
      * @return the directive or null if there is not one with that name
      */
-    default GraphQLDirective getDirective(String directiveName) {
-        return nonRepeatedDirectiveByNameWithAssert(getAllDirectivesByName(), directiveName);
-    }
+    GraphQLDirective getDirective(String directiveName);
 
     /**
      * Returns all of the directives with the provided name, including repeatable and non repeatable directives.

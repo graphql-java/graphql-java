@@ -36,7 +36,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
     private final GraphQLInputType originalType;
     private final Object defaultValue;
     private final InputValueDefinition definition;
-    private final ImmutableList<GraphQLDirective> directives;
+    private final DirectivesUtil.DirectivesHolder directives;
 
     private GraphQLInputType replacedType;
 
@@ -90,7 +90,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         this.originalType = type;
         this.defaultValue = defaultValue;
         this.description = description;
-        this.directives =ImmutableList.copyOf(directives);
+        this.directives = new DirectivesUtil.DirectivesHolder(directives);
         this.definition = definition;
     }
 
@@ -121,7 +121,22 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, GraphQLDirective> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
+        return directives.getAllDirectivesByName();
+    }
+
+    @Override
+    public GraphQLDirective getDirective(String directiveName) {
+        return directives.getDirective(directiveName);
     }
 
     /**
@@ -147,14 +162,14 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>();
         children.add(getType());
-        children.addAll(directives);
+        children.addAll(directives.getDirectives());
         return children;
     }
 
     @Override
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .child(CHILD_TYPE, originalType)
                 .build();
     }

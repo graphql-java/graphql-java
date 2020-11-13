@@ -43,7 +43,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     private final ImmutableMap<String, GraphQLEnumValueDefinition> valueDefinitionMap;
     private final EnumTypeDefinition definition;
     private final ImmutableList<EnumTypeExtensionDefinition> extensionDefinitions;
-    private final ImmutableList<GraphQLDirective> directives;
+    private final DirectivesUtil.DirectivesHolder directives;
 
     public static final String CHILD_VALUES = "values";
     public static final String CHILD_DIRECTIVES = "directives";
@@ -85,7 +85,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         this.description = description;
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = new DirectivesUtil.DirectivesHolder(directives);
         this.valueDefinitionMap = buildMap(values);
     }
 
@@ -189,7 +189,22 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, GraphQLDirective> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
+        return directives.getAllDirectivesByName();
+    }
+
+    @Override
+    public GraphQLDirective getDirective(String directiveName) {
+        return directives.getDirective(directiveName);
     }
 
     /**
@@ -214,7 +229,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     @Override
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>(valueDefinitionMap.values());
-        children.addAll(directives);
+        children.addAll(directives.getDirectives());
         return children;
     }
 
@@ -222,7 +237,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
                 .children(CHILD_VALUES, valueDefinitionMap.values())
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .build();
     }
 
