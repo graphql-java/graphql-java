@@ -100,7 +100,13 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             input InputType @inputDirective(target : "InputType") {
                 inputField1 : String @inputFieldDirective(target : "inputField1")
                 inputField2 : String @inputFieldDirective(target : "inputField2")
+                circularInputField : IndirectType @inputFieldDirective(target : "circularInputField")
             }
+            
+            input IndirectType {
+                indirectInputField1 : InputType @inputFieldDirective(target : "indirectInputField1")
+            }
+                
             
             enum EnumType @enumDirective(target:"EnumType") {
                 enumVal1 @enumValueDirective(target : "enumVal1")
@@ -232,6 +238,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         targetList.contains("InputType")
         targetList.contains("inputField1")
         targetList.contains("inputField2")
+        targetList.contains("circularInputField")
+        targetList.contains("indirectInputField1")
 
         targetList.contains("EnumType")
         targetList.contains("enumVal1")
@@ -365,10 +373,10 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
         def input = ExecutionInput.newExecutionInput()
                 .root(
-                [
-                        lowerCaseValue: "lowercasevalue",
-                        upperCaseValue: "UPPERCASEVALUE",
-                ])
+                        [
+                                lowerCaseValue: "lowercasevalue",
+                                upperCaseValue: "UPPERCASEVALUE",
+                        ])
                 .query("""
                    query {
                     lowerCaseValue
@@ -881,6 +889,58 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         // two args on field1 so wrapped twice plus one object callback for two fields
         er.data["field1"] == "data+arg1+arg2+field1"
         er.data["field2"] == "data+field2"
+    }
+
+    def "can change elements and rebuild the schema"() {
+
+        def sdl = '''
+            type Query {
+                field(arg : Int) : String 
+            }
+            
+        '''
+
+        SchemaDirectiveWiring generalWiring = new SchemaDirectiveWiring() {
+
+            @Override
+            GraphQLArgument onArgument(SchemaDirectiveWiringEnvironment<GraphQLArgument> env) {
+                def argument = env.getElement()
+                return argument.transform({ builder -> builder.name(reverse(argument.getName())) })
+            }
+
+            @Override
+            GraphQLObjectType onObject(SchemaDirectiveWiringEnvironment<GraphQLObjectType> env) {
+                def obj = env.getElement()
+                return obj.transform({ builder -> builder.name(reverse(obj.getName())) })
+            }
+
+            @Override
+            GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
+                def field = env.getElement()
+                return field.transform({ builder -> builder.name(reverse(field.getName())) })
+            }
+        }
+
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .directiveWiring(generalWiring)
+                .build()
+
+        when:
+        def schema = schema(sdl, runtimeWiring)
+
+        then:
+        def queryType = schema.getObjectType("yreuQ")
+        queryType != null
+
+        def fld = queryType.getFieldDefinition("dleif")
+        fld != null
+
+        def arg = fld.getArgument("gra")
+        arg != null
+    }
+
+    def reverse(String s) {
+        new StringBuilder(s).reverse().toString()
     }
 
 }

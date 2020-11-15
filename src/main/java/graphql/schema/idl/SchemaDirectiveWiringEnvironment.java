@@ -71,7 +71,7 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      *
      * @return hierarchical graphql language node information
      */
-    NodeParentTree<NamedNode> getNodeParentTree();
+    NodeParentTree<NamedNode<?>> getNodeParentTree();
 
     /**
      * The type hierarchy depends on the element in question.  For example {@link graphql.schema.GraphQLObjectType} elements
@@ -114,7 +114,7 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      *
      * @throws graphql.AssertException if there is not field in context at the time of the directive wiring callback
      */
-    DataFetcher getFieldDataFetcher();
+    DataFetcher<?> getFieldDataFetcher();
 
     /**
      * This is a shortcut method to set a new data fetcher in the underlying {@link graphql.schema.GraphQLCodeRegistry}
@@ -129,6 +129,6 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      *
      * @throws graphql.AssertException if there is not field in context at the time of the directive wiring callback
      */
-    GraphQLFieldDefinition setFieldDataFetcher(DataFetcher newDataFetcher);
+    GraphQLFieldDefinition setFieldDataFetcher(DataFetcher<?> newDataFetcher);
 
 }

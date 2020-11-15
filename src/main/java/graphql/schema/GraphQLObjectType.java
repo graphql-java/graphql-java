@@ -4,6 +4,8 @@ import graphql.AssertException;
 import graphql.DirectivesUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.Assert;
+import graphql.AssertException;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.ObjectTypeDefinition;
@@ -380,11 +382,15 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
             return this;
         }
 
-        public Builder replaceInterfaces(List<GraphQLInterfaceType> interfaces) {
+        public Builder replaceInterfaces(List<? extends GraphQLNamedOutputType> interfaces) {
             assertNotNull(interfaces, () -> "interfaces can't be null");
             this.interfaces.clear();
-            for (GraphQLInterfaceType interfaceType : interfaces) {
-                this.interfaces.put(interfaceType.getName(), interfaceType);
+            for (GraphQLNamedOutputType schemaElement : interfaces) {
+                if (schemaElement instanceof GraphQLInterfaceType || schemaElement instanceof GraphQLTypeReference) {
+                    this.interfaces.put(schemaElement.getName(), schemaElement);
+                } else {
+                    Assert.assertShouldNeverHappen("Unexpected type " + (schemaElement != null ? schemaElement.getClass() : "null"));
+                }
             }
             return this;
         }
@@ -427,6 +433,8 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         }
 
         public Builder withDirectives(GraphQLDirective... directives) {
+            assertNotNull(directives, () -> "directives can't be null");
+            this.directives.clear();
             for (GraphQLDirective directive : directives) {
                 withDirective(directive);
             }

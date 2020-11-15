@@ -32,13 +32,14 @@ import static graphql.collect.ImmutableKit.map;
  * This contains the helper code that allows {@link graphql.schema.idl.SchemaDirectiveWiring} implementations
  * to be invoked during schema generation.
  */
+@SuppressWarnings("DuplicatedCode")
 @Internal
 public class SchemaGeneratorDirectiveHelper {
 
     static class Parameters {
         private final TypeDefinitionRegistry typeRegistry;
         private final RuntimeWiring runtimeWiring;
-        private final NodeParentTree<NamedNode> nodeParentTree;
+        private final NodeParentTree<NamedNode<?>> nodeParentTree;
         private final Map<String, Object> context;
         private final GraphQLCodeRegistry.Builder codeRegistry;
         private final GraphqlElementParentTree elementParentTree;
@@ -49,7 +50,7 @@ public class SchemaGeneratorDirectiveHelper {
             this(typeRegistry, runtimeWiring, context, codeRegistry, null, null, null, null);
         }
 
-        Parameters(TypeDefinitionRegistry typeRegistry, RuntimeWiring runtimeWiring, Map<String, Object> context, GraphQLCodeRegistry.Builder codeRegistry, NodeParentTree<NamedNode> nodeParentTree, GraphqlElementParentTree elementParentTree, GraphQLFieldsContainer fieldsContainer, GraphQLFieldDefinition fieldDefinition) {
+        Parameters(TypeDefinitionRegistry typeRegistry, RuntimeWiring runtimeWiring, Map<String, Object> context, GraphQLCodeRegistry.Builder codeRegistry, NodeParentTree<NamedNode<?>> nodeParentTree, GraphqlElementParentTree elementParentTree, GraphQLFieldsContainer fieldsContainer, GraphQLFieldDefinition fieldDefinition) {
             this.typeRegistry = typeRegistry;
             this.runtimeWiring = runtimeWiring;
             this.nodeParentTree = nodeParentTree;
@@ -68,7 +69,7 @@ public class SchemaGeneratorDirectiveHelper {
             return runtimeWiring;
         }
 
-        public NodeParentTree<NamedNode> getNodeParentTree() {
+        public NodeParentTree<NamedNode<?>> getNodeParentTree() {
             return nodeParentTree;
         }
 
@@ -92,22 +93,22 @@ public class SchemaGeneratorDirectiveHelper {
             return fieldDefinition;
         }
 
-        public Parameters newParams(GraphQLFieldsContainer fieldsContainer, NodeParentTree<NamedNode> nodeParentTree, GraphqlElementParentTree elementParentTree) {
+        public Parameters newParams(GraphQLFieldsContainer fieldsContainer, NodeParentTree<NamedNode<?>> nodeParentTree, GraphqlElementParentTree elementParentTree) {
             return new Parameters(this.typeRegistry, this.runtimeWiring, this.context, this.codeRegistry, nodeParentTree, elementParentTree, fieldsContainer, fieldDefinition);
         }
 
-        public Parameters newParams(GraphQLFieldDefinition fieldDefinition, GraphQLFieldsContainer fieldsContainer, NodeParentTree<NamedNode> nodeParentTree, GraphqlElementParentTree elementParentTree) {
+        public Parameters newParams(GraphQLFieldDefinition fieldDefinition, GraphQLFieldsContainer fieldsContainer, NodeParentTree<NamedNode<?>> nodeParentTree, GraphqlElementParentTree elementParentTree) {
             return new Parameters(this.typeRegistry, this.runtimeWiring, this.context, this.codeRegistry, nodeParentTree, elementParentTree, fieldsContainer, fieldDefinition);
         }
 
-        public Parameters newParams(NodeParentTree<NamedNode> nodeParentTree, GraphqlElementParentTree elementParentTree) {
+        public Parameters newParams(NodeParentTree<NamedNode<?>> nodeParentTree, GraphqlElementParentTree elementParentTree) {
             return new Parameters(this.typeRegistry, this.runtimeWiring, this.context, this.codeRegistry, nodeParentTree, elementParentTree, this.fieldsContainer, fieldDefinition);
         }
     }
 
-    private NodeParentTree<NamedNode> buildAstTree(NamedNode... nodes) {
-        Deque<NamedNode> nodeStack = new ArrayDeque<>();
-        for (NamedNode node : nodes) {
+    private NodeParentTree<NamedNode<?>> buildAstTree(NamedNode<?>... nodes) {
+        Deque<NamedNode<?>> nodeStack = new ArrayDeque<>();
+        for (NamedNode<?> node : nodes) {
             nodeStack.push(node);
         }
         return new NodeParentTree<>(nodeStack);
@@ -121,10 +122,10 @@ public class SchemaGeneratorDirectiveHelper {
         return new GraphqlElementParentTree(nodeStack);
     }
 
-    private List<GraphQLArgument> wireArguments(GraphQLFieldDefinition fieldDefinition, GraphQLFieldsContainer fieldsContainer, NamedNode fieldsContainerNode, Parameters params, GraphQLFieldDefinition field) {
+    private List<GraphQLArgument> wireArguments(GraphQLFieldDefinition fieldDefinition, GraphQLFieldsContainer fieldsContainer, NamedNode<?> fieldsContainerNode, Parameters params, GraphQLFieldDefinition field) {
         return map(field.getArguments(), argument -> {
 
-            NodeParentTree<NamedNode> nodeParentTree = buildAstTree(fieldsContainerNode, field.getDefinition(), argument.getDefinition());
+            NodeParentTree<NamedNode<?>> nodeParentTree = buildAstTree(fieldsContainerNode, field.getDefinition(), argument.getDefinition());
             GraphqlElementParentTree elementParentTree = buildRuntimeTree(fieldsContainer, field, argument);
 
             Parameters argParams = params.newParams(fieldDefinition, fieldsContainer, nodeParentTree, elementParentTree);
@@ -133,16 +134,19 @@ public class SchemaGeneratorDirectiveHelper {
         });
     }
 
-    private List<GraphQLFieldDefinition> wireFields(GraphQLFieldsContainer fieldsContainer, NamedNode fieldsContainerNode, Parameters params) {
+    private List<GraphQLFieldDefinition> wireFields(GraphQLFieldsContainer fieldsContainer, NamedNode<?> fieldsContainerNode, Parameters params) {
         return map(fieldsContainer.getFieldDefinitions(), fieldDefinition -> {
 
             // and for each argument in the fieldDefinition run the wiring for them - and note that they can change
+            List<GraphQLArgument> startingArgs = fieldDefinition.getArguments();
             List<GraphQLArgument> newArgs = wireArguments(fieldDefinition, fieldsContainer, fieldsContainerNode, params, fieldDefinition);
 
-            // they may have changed the arguments to the fieldDefinition so reflect that
-            fieldDefinition = fieldDefinition.transform(builder -> builder.clearArguments().arguments(newArgs));
+            if (isNotTheSameObjects(startingArgs, newArgs)) {
+                // they may have changed the arguments to the fieldDefinition so reflect that
+                fieldDefinition = fieldDefinition.transform(builder -> builder.clearArguments().arguments(newArgs));
+            }
 
-            NodeParentTree<NamedNode> nodeParentTree = buildAstTree(fieldsContainerNode, fieldDefinition.getDefinition());
+            NodeParentTree<NamedNode<?>> nodeParentTree = buildAstTree(fieldsContainerNode, fieldDefinition.getDefinition());
             GraphqlElementParentTree elementParentTree = buildRuntimeTree(fieldsContainer, fieldDefinition);
             Parameters fieldParams = params.newParams(fieldDefinition, fieldsContainer, nodeParentTree, elementParentTree);
 
@@ -152,12 +156,15 @@ public class SchemaGeneratorDirectiveHelper {
     }
 
 
-    public GraphQLObjectType onObject(final GraphQLObjectType objectType, Parameters params) {
+    public GraphQLObjectType onObject(GraphQLObjectType objectType, Parameters params) {
+        List<GraphQLFieldDefinition> startingFields = objectType.getFieldDefinitions();
         List<GraphQLFieldDefinition> newFields = wireFields(objectType, objectType.getDefinition(), params);
 
-        GraphQLObjectType newObjectType = objectType.transform(builder -> builder.clearFields().fields(newFields));
-
-        NodeParentTree<NamedNode> nodeParentTree = buildAstTree(newObjectType.getDefinition());
+        GraphQLObjectType newObjectType = objectType;
+        if (isNotTheSameObjects(startingFields, newFields)) {
+            newObjectType = objectType.transform(builder -> builder.clearFields().fields(newFields));
+        }
+        NodeParentTree<NamedNode<?>> nodeParentTree = buildAstTree(newObjectType.getDefinition());
         GraphqlElementParentTree elementParentTree = buildRuntimeTree(newObjectType);
         Parameters newParams = params.newParams(newObjectType, nodeParentTree, elementParentTree);
 
@@ -166,11 +173,15 @@ public class SchemaGeneratorDirectiveHelper {
     }
 
     public GraphQLInterfaceType onInterface(GraphQLInterfaceType interfaceType, Parameters params) {
+        List<GraphQLFieldDefinition> startingFields = interfaceType.getFieldDefinitions();
         List<GraphQLFieldDefinition> newFields = wireFields(interfaceType, interfaceType.getDefinition(), params);
 
-        GraphQLInterfaceType newInterfaceType = interfaceType.transform(builder -> builder.clearFields().fields(newFields));
+        GraphQLInterfaceType newInterfaceType = interfaceType;
+        if (isNotTheSameObjects(startingFields, newFields)) {
+            newInterfaceType = interfaceType.transform(builder -> builder.clearFields().fields(newFields));
+        }
 
-        NodeParentTree<NamedNode> nodeParentTree = buildAstTree(newInterfaceType.getDefinition());
+        NodeParentTree<NamedNode<?>> nodeParentTree = buildAstTree(newInterfaceType.getDefinition());
         GraphqlElementParentTree elementParentTree = buildRuntimeTree(newInterfaceType);
         Parameters newParams = params.newParams(newInterfaceType, nodeParentTree, elementParentTree);
 
@@ -178,11 +189,12 @@ public class SchemaGeneratorDirectiveHelper {
                 (outputElement, directives, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directives, registeredDirective, newParams), SchemaDirectiveWiring::onInterface);
     }
 
-    public GraphQLEnumType onEnum(GraphQLEnumType enumType, Parameters params) {
+    public GraphQLEnumType onEnum(final GraphQLEnumType enumType, Parameters params) {
 
-        List<GraphQLEnumValueDefinition> newEnums = map(enumType.getValues(), enumValueDefinition -> {
+        List<GraphQLEnumValueDefinition> startingEnumValues = enumType.getValues();
+        List<GraphQLEnumValueDefinition> newEnumValues = map(startingEnumValues, enumValueDefinition -> {
 
-            NodeParentTree<NamedNode> nodeParentTree = buildAstTree(enumType.getDefinition(), enumValueDefinition.getDefinition());
+            NodeParentTree<NamedNode<?>> nodeParentTree = buildAstTree(enumType.getDefinition(), enumValueDefinition.getDefinition());
             GraphqlElementParentTree elementParentTree = buildRuntimeTree(enumType, enumValueDefinition);
             Parameters fieldParams = params.newParams(nodeParentTree, elementParentTree);
 
@@ -190,9 +202,12 @@ public class SchemaGeneratorDirectiveHelper {
             return onEnumValue(enumValueDefinition, fieldParams);
         });
 
-        GraphQLEnumType newEnumType = enumType.transform(builder -> builder.clearValues().values(newEnums));
+        GraphQLEnumType newEnumType = enumType;
+        if (isNotTheSameObjects(startingEnumValues, newEnumValues)) {
+            newEnumType = enumType.transform(builder -> builder.clearValues().values(newEnumValues));
+        }
 
-        NodeParentTree<NamedNode> nodeParentTree = buildAstTree(newEnumType.getDefinition());
+        NodeParentTree<NamedNode<?>> nodeParentTree = buildAstTree(newEnumType.getDefinition());
         GraphqlElementParentTree elementParentTree = buildRuntimeTree(newEnumType);
         Parameters newParams = params.newParams(nodeParentTree, elementParentTree);
 
@@ -201,19 +216,22 @@ public class SchemaGeneratorDirectiveHelper {
     }
 
     public GraphQLInputObjectType onInputObjectType(GraphQLInputObjectType inputObjectType, Parameters params) {
-        List<GraphQLInputObjectField> newFields = map(inputObjectType.getFieldDefinitions(), inputField -> {
+        List<GraphQLInputObjectField> startingFields = inputObjectType.getFieldDefinitions();
+        List<GraphQLInputObjectField> newFields = map(startingFields, inputField -> {
 
-            NodeParentTree<NamedNode> nodeParentTree = buildAstTree(inputObjectType.getDefinition(), inputField.getDefinition());
+            NodeParentTree<NamedNode<?>> nodeParentTree = buildAstTree(inputObjectType.getDefinition(), inputField.getDefinition());
             GraphqlElementParentTree elementParentTree = buildRuntimeTree(inputObjectType, inputField);
             Parameters fieldParams = params.newParams(nodeParentTree, elementParentTree);
 
             // now for each field run the new wiring and capture the results
             return onInputObjectField(inputField, fieldParams);
         });
+        GraphQLInputObjectType newInputObjectType = inputObjectType;
+        if (isNotTheSameObjects(startingFields, newFields)) {
+            newInputObjectType = inputObjectType.transform(builder -> builder.clearFields().fields(newFields));
+        }
 
-        GraphQLInputObjectType newInputObjectType = inputObjectType.transform(builder -> builder.clearFields().fields(newFields));
-
-        NodeParentTree<NamedNode> nodeParentTree = buildAstTree(newInputObjectType.getDefinition());
+        NodeParentTree<NamedNode<?>> nodeParentTree = buildAstTree(newInputObjectType.getDefinition());
         GraphqlElementParentTree elementParentTree = buildRuntimeTree(newInputObjectType);
         Parameters newParams = params.newParams(nodeParentTree, elementParentTree);
 
@@ -223,7 +241,7 @@ public class SchemaGeneratorDirectiveHelper {
 
 
     public GraphQLUnionType onUnion(GraphQLUnionType element, Parameters params) {
-        NodeParentTree<NamedNode> nodeParentTree = buildAstTree(element.getDefinition());
+        NodeParentTree<NamedNode<?>> nodeParentTree = buildAstTree(element.getDefinition());
         GraphqlElementParentTree elementParentTree = buildRuntimeTree(element);
         Parameters newParams = params.newParams(nodeParentTree, elementParentTree);
 
@@ -232,7 +250,7 @@ public class SchemaGeneratorDirectiveHelper {
     }
 
     public GraphQLScalarType onScalar(GraphQLScalarType element, Parameters params) {
-        NodeParentTree<NamedNode> nodeParentTree = buildAstTree(element.getDefinition());
+        NodeParentTree<NamedNode<?>> nodeParentTree = buildAstTree(element.getDefinition());
         GraphqlElementParentTree elementParentTree = buildRuntimeTree(element);
         Parameters newParams = params.newParams(nodeParentTree, elementParentTree);
 
@@ -319,4 +337,23 @@ public class SchemaGeneratorDirectiveHelper {
         assertNotNull(newElement, () -> "The SchemaDirectiveWiring MUST return a non null return value for element '" + element.getName() + "'");
         return newElement;
     }
+
+    private <T> boolean isNotTheSameObjects(List<T> starting, List<T> ending) {
+        if (starting == ending) {
+            return false;
+        }
+        if (ending.size() != starting.size()) {
+            return true;
+        }
+        for (int i = 0; i < starting.size(); i++) {
+            T startObj = starting.get(i);
+            T endObj = ending.get(i);
+            // object equality
+            if (!(startObj == endObj)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

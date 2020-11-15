@@ -335,6 +335,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         }
 
         public Builder withDirectives(GraphQLDirective... directives) {
+            this.directives.clear();
             for (GraphQLDirective directive : directives) {
                 withDirective(directive);
             }

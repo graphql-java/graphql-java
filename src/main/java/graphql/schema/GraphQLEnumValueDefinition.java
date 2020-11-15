@@ -252,6 +252,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
 
         public Builder withDirectives(GraphQLDirective... directives) {
             assertNotNull(directives, () -> "directives can't be null");
+            this.directives.clear();
             for (GraphQLDirective directive : directives) {
                 withDirective(directive);
             }

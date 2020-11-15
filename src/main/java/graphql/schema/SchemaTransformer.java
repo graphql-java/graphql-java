@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static graphql.Assert.assertNotEmpty;
+import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.schema.GraphQLSchemaElementAdapter.SCHEMA_ELEMENT_ADAPTER;
 import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChildrenContainer;
@@ -44,6 +45,7 @@ public class SchemaTransformer {
         static final String SUBSCRIPTION = "subscription";
         static final String ADD_TYPES = "addTypes";
         static final String DIRECTIVES = "directives";
+        static final String SCHEMA_DIRECTIVES = "schemaDirectives";
         static final String INTROSPECTION = "introspection";
         GraphQLSchema schema;
 
@@ -52,6 +54,7 @@ public class SchemaTransformer {
         GraphQLObjectType subscription;
         Set<GraphQLType> additionalTypes;
         Set<GraphQLDirective> directives;
+        Set<GraphQLDirective> schemaDirectives;
 
         DummyRoot(GraphQLSchema schema) {
             this.schema = schema;
@@ -59,6 +62,7 @@ public class SchemaTransformer {
             mutation = schema.isSupportingMutations() ? schema.getMutationType() : null;
             subscription = schema.isSupportingSubscriptions() ? schema.getSubscriptionType() : null;
             additionalTypes = schema.getAdditionalTypes();
+            schemaDirectives = new LinkedHashSet<>(schema.getSchemaDirectives());
             directives = new LinkedHashSet<>(schema.getDirectives());
         }
 
@@ -80,6 +84,7 @@ public class SchemaTransformer {
             }
             builder.children(ADD_TYPES, additionalTypes);
             builder.children(DIRECTIVES, directives);
+            builder.children(SCHEMA_DIRECTIVES, schemaDirectives);
             builder.child(INTROSPECTION, Introspection.__Schema);
             return builder.build();
         }
@@ -92,6 +97,7 @@ public class SchemaTransformer {
             subscription = newChildren.getChildOrNull(SUBSCRIPTION);
             additionalTypes = new LinkedHashSet<>(newChildren.getChildren(ADD_TYPES));
             directives = new LinkedHashSet<>(newChildren.getChildren(DIRECTIVES));
+            schemaDirectives = new LinkedHashSet<>(newChildren.getChildren(SCHEMA_DIRECTIVES));
             return this;
         }
 
@@ -140,7 +146,7 @@ public class SchemaTransformer {
 
                 int zippersBefore = zippers.size();
                 TraversalControl result = context.thisNode().accept(context, visitor);
-                // detection if the node was changed: TODO make it better: doesn't work for parallel
+                // detection if the node was changed
                 if (zippersBefore + 1 == zippers.size()) {
                     nodeZipper = zippers.get(zippers.size() - 1);
                 }
@@ -171,7 +177,9 @@ public class SchemaTransformer {
                 NodeZipper<GraphQLSchemaElement> zipper = zipperByOriginalNode.get(context.thisNode());
                 breadcrumbsByZipper.get(zipper).add(context.getBreadcrumbs());
                 visitor.visitBackRef(context);
-                reverseDependencies.get(zipper.getCurNode()).add(context.getParentNode());
+                List<GraphQLSchemaElement> reverseDependenciesForCurNode = reverseDependencies.get(zipper.getCurNode());
+                assertNotNull(reverseDependenciesForCurNode);
+                reverseDependenciesForCurNode.add(context.getParentNode());
                 return TraversalControl.CONTINUE;
             }
         };
@@ -193,7 +201,9 @@ public class SchemaTransformer {
                 .subscription(dummyRoot.subscription)
                 .additionalTypes(dummyRoot.additionalTypes)
                 .additionalDirectives(dummyRoot.directives)
+                .withSchemaDirectives(dummyRoot.schemaDirectives)
                 .codeRegistry(builder.build())
+                .description(schema.getDescription())
                 .buildImpl(true);
         return newSchema;
     }
@@ -288,13 +298,13 @@ public class SchemaTransformer {
 
             // update curZippers
             NodeZipper<GraphQLSchemaElement> curZipperForElement = nodeToZipper.get(element);
-            Assert.assertNotNull(curZipperForElement, () -> format("curZipperForElement is null for parentNode %s", element));
+            assertNotNull(curZipperForElement, () -> format("curZipperForElement is null for parentNode %s", element));
             curZippers.remove(curZipperForElement);
             curZippers.add(newZipper);
 
             // update breadcrumbsByZipper to use the newZipper
             List<List<Breadcrumb<GraphQLSchemaElement>>> breadcrumbsForOriginalParent = breadcrumbsByZipper.get(curZipperForElement);
-            Assert.assertNotNull(breadcrumbsForOriginalParent, () -> format("No breadcrumbs found for zipper %s", curZipperForElement));
+            assertNotNull(breadcrumbsForOriginalParent, () -> format("No breadcrumbs found for zipper %s", curZipperForElement));
             breadcrumbsByZipper.remove(curZipperForElement);
             breadcrumbsByZipper.put(newZipper, breadcrumbsForOriginalParent);
 
