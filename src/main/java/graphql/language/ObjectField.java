@@ -8,13 +8,13 @@ import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
@@ -39,7 +39,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
      * @param value of the field
      */
     public ObjectField(String name, Value value) {
-        this(name, value, null, ImmutableKit.emptyList(), IgnoredChars.EMPTY, ImmutableKit.emptyMap());
+        this(name, value, null, emptyList(), IgnoredChars.EMPTY, ImmutableKit.emptyMap());
     }
 
     @Override
@@ -116,7 +116,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private String name;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private Value value;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
@@ -127,7 +127,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
 
         private Builder(ObjectField existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
             this.value = existing.getValue();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
@@ -145,7 +145,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 

@@ -2,13 +2,14 @@ package graphql.collect;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import graphql.Assert;
 import graphql.Internal;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+
+import static graphql.Assert.assertNotNull;
 
 @Internal
 public final class ImmutableKit {
@@ -40,7 +41,7 @@ public final class ImmutableKit {
      */
 
     public static <K, V> ImmutableMap<K, ImmutableList<V>> toImmutableMapOfLists(Map<K, List<V>> startingMap) {
-        Assert.assertNotNull(startingMap);
+        assertNotNull(startingMap);
         ImmutableMap.Builder<K, ImmutableList<V>> map = ImmutableMap.builder();
         for (Map.Entry<K, List<V>> e : startingMap.entrySet()) {
             ImmutableList<V> value = ImmutableList.copyOf(startingMap.getOrDefault(e.getKey(), emptyList()));
@@ -66,22 +67,46 @@ public final class ImmutableKit {
      * This is more efficient than `c.stream().map().collect()` because it does not create the intermediate objects needed
      * for the flexible style.  Benchmarking has shown this to outperform `stream()`.
      *
-     * @param collection the collection to map
-     * @param mapper     the mapper function
-     * @param <T>        for two
-     * @param <R>        for result
+     * @param iterable the iterable to map
+     * @param mapper   the mapper function
+     * @param <T>      for two
+     * @param <R>      for result
      *
      * @return a map immutable list of results
      */
-    public static <T, R> ImmutableList<R> map(Collection<T> collection, Function<? super T, ? extends R> mapper) {
-        Assert.assertNotNull(collection);
-        Assert.assertNotNull(mapper);
+    public static <T, R> ImmutableList<R> map(Iterable<? extends T> iterable, Function<? super T, ? extends R> mapper) {
+        assertNotNull(iterable);
+        assertNotNull(mapper);
         @SuppressWarnings("RedundantTypeArguments")
         ImmutableList.Builder<R> builder = ImmutableList.<R>builder();
-        for (T t : collection) {
+        for (T t : iterable) {
             R r = mapper.apply(t);
             builder.add(r);
         }
         return builder.build();
     }
+
+    /**
+     * This constructs a new Immutable list from an existing collection and adds a new element to it.
+     *
+     * @param existing    the existing collection
+     * @param newValue    the new value to add
+     * @param extraValues more values to add
+     * @param <T>         for two
+     *
+     * @return an Immutable list with the extra effort.
+     */
+    public static <T> ImmutableList<T> addToList(Collection<? extends T> existing, T newValue, T... extraValues) {
+        assertNotNull(existing);
+        assertNotNull(newValue);
+        int expectedSize = existing.size() + 1 + extraValues.length;
+        ImmutableList.Builder<T> newList = ImmutableList.builderWithExpectedSize(expectedSize);
+        newList.addAll(existing);
+        newList.add(newValue);
+        for (T extraValue : extraValues) {
+            newList.add(extraValue);
+        }
+        return newList.build();
+    }
+
 }

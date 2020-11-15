@@ -1,13 +1,13 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -108,7 +108,7 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private BigDecimal value;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -117,7 +117,7 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
 
         private Builder(FloatValue existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.value = existing.getValue();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
@@ -134,7 +134,7 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 

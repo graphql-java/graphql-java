@@ -4,10 +4,10 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -124,9 +124,9 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
 
     public static final class Builder implements NodeBuilder {
 
-        private List<Selection> selections = new ArrayList<>();
+        private ImmutableList<Selection> selections = emptyList();
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -135,19 +135,19 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
 
         private Builder(SelectionSet existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
-            this.selections = new ArrayList<>(existing.getSelections());
+            this.comments = ImmutableList.copyOf(existing.getComments());
+            this.selections = ImmutableList.copyOf(existing.getSelections());
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
         public Builder selections(Collection<? extends Selection> selections) {
-            this.selections = new ArrayList<>(selections);
+            this.selections = ImmutableList.copyOf(selections);
             return this;
         }
 
         public Builder selection(Selection selection) {
-            this.selections.add(selection);
+            this.selections = ImmutableKit.addToList(selections, selection);
             return this;
         }
 
@@ -157,7 +157,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 

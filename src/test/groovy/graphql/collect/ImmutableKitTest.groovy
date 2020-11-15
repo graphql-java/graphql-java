@@ -28,4 +28,18 @@ class ImmutableKitTest extends Specification {
         outputList == ["kciuq", "nworb", "xof"]
         outputList instanceof ImmutableList
     }
+
+    def "can add to lists"() {
+        def list = ["a"]
+
+        when:
+        list = ImmutableKit.addToList(list, "b")
+        then:
+        list == ["a", "b"]
+
+        when:
+        list = ImmutableKit.addToList(list, "c", "d", "e")
+        then:
+        list == ["a", "b", "c", "d", "e"]
+    }
 }

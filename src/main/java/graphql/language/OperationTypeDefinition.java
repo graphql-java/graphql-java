@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -117,7 +118,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
 
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private String name;
         private TypeName typeName;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
@@ -129,7 +130,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
 
         private Builder(OperationTypeDefinition existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
             this.typeName = existing.getTypeName();
             this.ignoredChars = existing.getIgnoredChars();
@@ -143,7 +144,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 

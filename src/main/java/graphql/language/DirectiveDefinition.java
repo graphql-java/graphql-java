@@ -4,6 +4,7 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -155,12 +156,12 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
 
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private String name;
         private boolean repeatable = false;
         private Description description;
-        private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
-        private List<DirectiveLocation> directiveLocations = new ArrayList<>();
+        private ImmutableList<InputValueDefinition> inputValueDefinitions = emptyList();
+        private ImmutableList<DirectiveLocation> directiveLocations = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -169,12 +170,12 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
 
         private Builder(DirectiveDefinition existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
             this.repeatable = existing.isRepeatable();
             this.description = existing.getDescription();
-            this.inputValueDefinitions = existing.getInputValueDefinitions();
-            this.directiveLocations = existing.getDirectiveLocations();
+            this.inputValueDefinitions = ImmutableList.copyOf(existing.getInputValueDefinitions());
+            this.directiveLocations = ImmutableList.copyOf(existing.getDirectiveLocations());
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
@@ -185,7 +186,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 
@@ -205,22 +206,23 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
         }
 
         public Builder inputValueDefinitions(List<InputValueDefinition> inputValueDefinitions) {
-            this.inputValueDefinitions = inputValueDefinitions;
+            this.inputValueDefinitions = ImmutableList.copyOf(inputValueDefinitions);
             return this;
         }
 
         public Builder inputValueDefinition(InputValueDefinition inputValueDefinition) {
-            this.inputValueDefinitions.add(inputValueDefinition);
+            this.inputValueDefinitions = ImmutableKit.addToList(inputValueDefinitions, inputValueDefinition);
             return this;
         }
 
+
         public Builder directiveLocations(List<DirectiveLocation> directiveLocations) {
-            this.directiveLocations = directiveLocations;
+            this.directiveLocations = ImmutableList.copyOf(directiveLocations);
             return this;
         }
 
         public Builder directiveLocation(DirectiveLocation directiveLocation) {
-            this.directiveLocations.add(directiveLocation);
+            this.directiveLocations = ImmutableKit.addToList(directiveLocations, directiveLocation);
             return this;
         }
 

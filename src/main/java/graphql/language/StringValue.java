@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
@@ -107,7 +108,7 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private String value;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -116,7 +117,7 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
 
         private Builder(StringValue existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.value = existing.getValue();
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
@@ -134,7 +135,7 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 
@@ -155,8 +156,7 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
 
 
         public StringValue build() {
-            StringValue stringValue = new StringValue(value, sourceLocation, comments, ignoredChars, additionalData);
-            return stringValue;
+            return new StringValue(value, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

@@ -4,10 +4,10 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,9 +21,8 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 @PublicApi
 public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayValue> {
 
-    private final ImmutableList<Value> values;
-
     public static final String CHILD_VALUES = "values";
+    private final ImmutableList<Value> values;
 
     @Internal
     protected ArrayValue(List<Value> values, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
@@ -38,6 +37,10 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
      */
     public ArrayValue(List<Value> values) {
         this(values, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
+    }
+
+    public static Builder newArrayValue() {
+        return new Builder();
     }
 
     public List<Value> getValues() {
@@ -92,10 +95,6 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
         return visitor.visitArrayValue(this, context);
     }
 
-    public static Builder newArrayValue() {
-        return new Builder();
-    }
-
     public ArrayValue transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
@@ -104,8 +103,8 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
 
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
-        private List<Value> values = new ArrayList<>();
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Value> values = emptyList();
+        private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -114,8 +113,8 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
 
         private Builder(ArrayValue existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
-            this.values = existing.getValues();
+            this.comments = ImmutableList.copyOf(existing.getComments());
+            this.values = ImmutableList.copyOf(existing.getValues());
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
@@ -126,17 +125,17 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
         }
 
         public Builder values(List<Value> values) {
-            this.values = values;
+            this.values = ImmutableList.copyOf(values);
             return this;
         }
 
         public Builder value(Value value) {
-            this.values.add(value);
+            this.values = ImmutableKit.addToList(this.values, value);
             return this;
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 

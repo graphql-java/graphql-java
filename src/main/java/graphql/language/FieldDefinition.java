@@ -4,6 +4,7 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -152,11 +153,11 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private String name;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private Type type;
         private Description description;
-        private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
-        private List<Directive> directives = new ArrayList<>();
+        private ImmutableList<InputValueDefinition> inputValueDefinitions = emptyList();
+        private ImmutableList<Directive> directives = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -166,11 +167,11 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
         private Builder(FieldDefinition existing) {
             this.sourceLocation = existing.getSourceLocation();
             this.name = existing.getName();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.type = existing.getType();
             this.description = existing.getDescription();
-            this.inputValueDefinitions = existing.getInputValueDefinitions();
-            this.directives = existing.getDirectives();
+            this.inputValueDefinitions = ImmutableList.copyOf(existing.getInputValueDefinitions());
+            this.directives = ImmutableList.copyOf(existing.getDirectives());
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
@@ -187,7 +188,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 
@@ -202,23 +203,24 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
         }
 
         public Builder inputValueDefinitions(List<InputValueDefinition> inputValueDefinitions) {
-            this.inputValueDefinitions = inputValueDefinitions;
+            this.inputValueDefinitions = ImmutableList.copyOf(inputValueDefinitions);
             return this;
         }
 
-        public Builder inputValueDefinition(InputValueDefinition inputValueDefinitions) {
-            this.inputValueDefinitions.add(inputValueDefinitions);
+        public Builder inputValueDefinition(InputValueDefinition inputValueDefinition) {
+            this.inputValueDefinitions = ImmutableKit.addToList(inputValueDefinitions, inputValueDefinition);
             return this;
         }
+
 
         @Override
         public Builder directives(List<Directive> directives) {
-            this.directives = directives;
+            this.directives = ImmutableList.copyOf(directives);
             return this;
         }
 
         public Builder directive(Directive directive) {
-            this.directives.add(directive);
+            this.directives = ImmutableKit.addToList(directives, directive);
             return this;
         }
 

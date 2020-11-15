@@ -110,7 +110,7 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private Type type;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -119,7 +119,7 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
 
         private Builder(NonNullType existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.type = existing.getType();
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
@@ -150,7 +150,7 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 
