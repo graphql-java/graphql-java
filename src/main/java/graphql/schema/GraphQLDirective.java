@@ -22,14 +22,14 @@ import static graphql.util.FpKit.getByName;
 
 /**
  * A directive can be used to modify the behavior of a graphql field or type.
- *
+ * <p>
  * See http://graphql.org/learn/queries/#directives for more details on the concept.
  */
-@SuppressWarnings("DeprecatedIsStillUsed") // because the graphql spec still has some of these deprecated fields
 @PublicApi
 public class GraphQLDirective implements GraphQLNamedSchemaElement {
 
     private final String name;
+    private final boolean repeatable;
     private final String description;
     private final EnumSet<DirectiveLocation> locations;
     private final ImmutableList<GraphQLArgument> arguments;
@@ -40,6 +40,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
 
     private GraphQLDirective(String name,
                              String description,
+                             boolean repeatable,
                              EnumSet<DirectiveLocation> locations,
                              List<GraphQLArgument> arguments,
                              DirectiveDefinition definition) {
@@ -47,6 +48,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         assertNotNull(arguments, () -> "arguments can't be null");
         this.name = name;
         this.description = description;
+        this.repeatable = repeatable;
         this.locations = locations;
         this.arguments = ImmutableList.copyOf(arguments);
         this.definition = definition;
@@ -55,6 +57,14 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
     @Override
     public String getName() {
         return name;
+    }
+
+    public boolean isRepeatable() {
+        return repeatable;
+    }
+
+    public boolean isNonRepeatable() {
+        return !repeatable;
     }
 
     public List<GraphQLArgument> getArguments() {
@@ -86,6 +96,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
     public String toString() {
         return "GraphQLDirective{" +
                 "name='" + name + '\'' +
+                "repeatable='" + repeatable + '\'' +
                 ", arguments=" + arguments +
                 ", locations=" + locations +
                 '}';
@@ -159,14 +170,15 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         private EnumSet<DirectiveLocation> locations = EnumSet.noneOf(DirectiveLocation.class);
         private final Map<String, GraphQLArgument> arguments = new LinkedHashMap<>();
         private DirectiveDefinition definition;
+        private boolean repeatable = false;
 
         public Builder() {
         }
 
-        @SuppressWarnings("deprecation")
         public Builder(GraphQLDirective existing) {
             this.name = existing.getName();
             this.description = existing.getDescription();
+            this.repeatable = existing.isRepeatable();
             this.locations = existing.validLocations();
             this.arguments.putAll(getByName(existing.getArguments(), GraphQLArgument::getName));
         }
@@ -180,6 +192,11 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         @Override
         public Builder description(String description) {
             super.description(description);
+            return this;
+        }
+
+        public Builder repeatable(boolean repeatable) {
+            this.repeatable = repeatable;
             return this;
         }
 
@@ -270,6 +287,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
             return new GraphQLDirective(
                     name,
                     description,
+                    repeatable,
                     locations,
                     sort(arguments, GraphQLDirective.class, GraphQLArgument.class),
                     definition);

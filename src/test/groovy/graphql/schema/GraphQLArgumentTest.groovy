@@ -21,7 +21,6 @@ class GraphQLArgumentTest extends Specification {
                     .name("A2")
                     .description("A2_description")
                     .type(GraphQLString)
-                    .withDirective(newDirective().name("directive1"))
                     .withDirective(newDirective().name("directive3"))
                     .value("VALUE")
                     .defaultValue("DEFAULT")
@@ -95,9 +94,10 @@ class GraphQLArgumentTest extends Specification {
 
         when:
         argument = builder
-                .withDirective(newDirective().name("directive1"))
-                .withDirective(newDirective().name("directive2")) // overwrite
-                .withDirective(newDirective().name("directive3")) // overwrite
+                .replaceDirectives([
+                        newDirective().name("directive1").build(),
+                        newDirective().name("directive2").build(),
+                        newDirective().name("directive3").build()]) // overwrite
                 .build()
 
         then:

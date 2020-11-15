@@ -1,5 +1,7 @@
 package graphql.schema
 
+import graphql.AssertException
+import graphql.TestUtil
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
@@ -47,5 +49,153 @@ class GraphQLDirectiveTest extends Specification {
         transformedDirective.getArgument("argStr").type == GraphQLString
         transformedDirective.getArgument("argInt").type == GraphQLBoolean // swapped
         transformedDirective.getArgument("argIntAdded").type == GraphQLInt
+    }
+
+    def "integration test of directives on elements"() {
+        def sdl = """
+            directive @d1(arg : String) on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION |  ARGUMENT_DEFINITION | INTERFACE | UNION |
+                                ENUM | ENUM_VALUE |  INPUT_OBJECT | INPUT_FIELD_DEFINITION
+
+            directive @dr(arg : String) repeatable on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION |  ARGUMENT_DEFINITION | INTERFACE | UNION |
+                                ENUM | ENUM_VALUE |  INPUT_OBJECT | INPUT_FIELD_DEFINITION
+
+            
+            schema @d1 @dr(arg : "a1") @dr(arg : "a2")   {
+                query : Query
+            }
+            
+            type Query @d1 @dr(arg : "a1") @dr(arg : "a2") {
+                field(arg : String @d1 @dr(arg : "a1") @dr(arg : "a2") )  : String @d1 @dr(arg : "a1") @dr(arg : "a2")
+            }
+            
+            input Input @d1 @dr(arg : "a1") @dr(arg : "a2") {
+                inputField : String @d1 @dr(arg : "a1") @dr(arg : "a2")
+            }
+            
+ 
+            interface InterfaceType @d1 @dr(arg : "a1") @dr(arg : "a2") {
+                interfaceField : String @d1 @dr(arg : "a1") @dr(arg : "a2")
+            }
+            
+            type A { a : String }
+            
+            type B { b : String } 
+            
+            union UnionType @d1 @dr(arg : "a1") @dr(arg : "a2") = A | B
+            
+            scalar ScalarType @d1 @dr(arg : "a1") @dr(arg : "a2")
+            
+            enum EnumType @d1 @dr(arg : "a1") @dr(arg : "a2") {
+                EnumVal @d1 @dr(arg : "a1") @dr(arg : "a2")
+            }
+        """
+
+        when:
+        def schema = TestUtil.schema(sdl)
+        then:
+        schema.getSchemaDirective("d1").name == "d1"
+        schema.getSchemaDirectiveByName().keySet() == ["d1"] as Set
+
+        schema.getAllSchemaDirectivesByName().keySet() == ["d1", "dr"] as Set
+        schema.getAllSchemaDirectivesByName()["d1"].size() == 1
+        schema.getAllSchemaDirectivesByName()["dr"].size() == 2
+        schema.getAllSchemaDirectivesByName()["dr"].collect({ it.getArgument("arg").value }) == ["a1", "a2"]
+
+        when:
+        schema.getSchemaDirective("dr")
+        then:
+        thrown(AssertException)
+
+
+        when:
+        def queryType = schema.getObjectType("Query")
+
+        then:
+        assertDirectiveContainer(queryType)
+
+        when:
+        def fieldDef = queryType.getFieldDefinition("field")
+
+        then:
+        assertDirectiveContainer(fieldDef)
+
+        when:
+        def arg = fieldDef.getArgument("arg")
+
+        then:
+        assertDirectiveContainer(arg)
+
+        when:
+        def inputType = schema.getType("Input") as GraphQLInputObjectType
+
+        then:
+        assertDirectiveContainer(inputType)
+
+        when:
+        def inputField = inputType.getField("inputField")
+
+        then:
+        assertDirectiveContainer(inputField)
+
+
+        when:
+        def enumType = schema.getType("EnumType") as GraphQLEnumType
+
+        then:
+        assertDirectiveContainer(enumType)
+
+        when:
+        def enumVal = enumType.getValue("EnumVal")
+
+        then:
+        assertDirectiveContainer(enumVal)
+
+        when:
+        def interfaceType = schema.getType("InterfaceType") as GraphQLInterfaceType
+
+        then:
+        assertDirectiveContainer(interfaceType)
+
+        when:
+        def interfaceField = interfaceType.getFieldDefinition("interfaceField")
+
+        then:
+        assertDirectiveContainer(interfaceField)
+
+        when:
+        def unionType = schema.getType("UnionType") as GraphQLUnionType
+
+        then:
+        assertDirectiveContainer(unionType)
+
+
+        when:
+        def scalarType = schema.getType("ScalarType") as GraphQLScalarType
+
+        then:
+        assertDirectiveContainer(scalarType)
+
+    }
+
+    static boolean assertDirectiveContainer(GraphQLDirectiveContainer container) {
+        assert container.getDirectives().collect({ it.name }) == ["d1", "dr", "dr"]
+        assert container.getDirective("d1").name == "d1"
+        assert container.getDirectivesByName().keySet() == ["d1"] as Set
+
+        assert container.getAllDirectivesByName().keySet() == ["d1", "dr"] as Set
+        assert container.getAllDirectivesByName()["d1"].size() == 1
+        assert container.getAllDirectivesByName()["dr"].size() == 2
+
+        assert container.getDirectives("d1").size() == 1
+        assert container.getDirectives("dr").size() == 2
+        assert container.getDirectives("dr").collect({ it.getArgument("arg").value }) == ["a1", "a2"]
+
+        try {
+            container.getDirective("dr")
+            assert false, "expecting an AssertException"
+        } catch (AssertException ignored) {
+        }
+
+        return true
     }
 }

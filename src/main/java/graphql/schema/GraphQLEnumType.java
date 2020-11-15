@@ -1,6 +1,8 @@
 package graphql.schema;
 
 
+import graphql.AssertException;
+import graphql.DirectivesUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
@@ -41,7 +43,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     private final ImmutableMap<String, GraphQLEnumValueDefinition> valueDefinitionMap;
     private final EnumTypeDefinition definition;
     private final ImmutableList<EnumTypeExtensionDefinition> extensionDefinitions;
-    private final ImmutableList<GraphQLDirective> directives;
+    private final DirectivesUtil.DirectivesHolder directives;
 
     public static final String CHILD_VALUES = "values";
     public static final String CHILD_DIRECTIVES = "directives";
@@ -83,7 +85,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         this.description = description;
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = new DirectivesUtil.DirectivesHolder(directives);
         this.valueDefinitionMap = buildMap(values);
     }
 
@@ -115,7 +117,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(enumValue.getName());
         if (enumValueDefinition == null) {
             throw new CoercingParseLiteralException(
-                    "Expected enum literal value not in allowable values -  '" + String.valueOf(input) + "'."
+                    "Expected enum literal value not in allowable values -  '" + input + "'."
             );
         }
         return enumValueDefinition.getValue();
@@ -187,7 +189,22 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, GraphQLDirective> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
+        return directives.getAllDirectivesByName();
+    }
+
+    @Override
+    public GraphQLDirective getDirective(String directiveName) {
+        return directives.getDirective(directiveName);
     }
 
     /**
@@ -212,7 +229,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     @Override
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>(valueDefinitionMap.values());
-        children.addAll(directives);
+        children.addAll(directives.getDirectives());
         return children;
     }
 
@@ -220,7 +237,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
                 .children(CHILD_VALUES, valueDefinitionMap.values())
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .build();
     }
 
@@ -262,7 +279,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         private EnumTypeDefinition definition;
         private List<EnumTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLEnumValueDefinition> values = new LinkedHashMap<>();
-        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder() {
         }
@@ -273,7 +290,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
             this.definition = existing.getDefinition();
             this.extensionDefinitions = existing.getExtensionDefinitions();
             this.values.putAll(getByName(existing.getValues(), GraphQLEnumValueDefinition::getName));
-            this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+            DirectivesUtil.enforceAddAll(this.directives,existing.getDirectives());
         }
 
         @Override
@@ -361,6 +378,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
 
         public Builder withDirectives(GraphQLDirective... directives) {
             assertNotNull(directives, () -> "directives can't be null");
+            this.directives.clear();
             for (GraphQLDirective directive : directives) {
                 withDirective(directive);
             }
@@ -369,16 +387,14 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            directives.put(directive.getName(), directive);
+            DirectivesUtil.enforceAdd(this.directives, directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                this.directives.put(directive.getName(), directive);
-            }
+            DirectivesUtil.enforceAddAll(this.directives, directives);
             return this;
         }
 

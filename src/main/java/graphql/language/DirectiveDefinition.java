@@ -22,6 +22,7 @@ import static java.util.Collections.emptyMap;
 @PublicApi
 public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefinition> implements SDLDefinition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
     private final String name;
+    private final boolean repeatable;
     private final ImmutableList<InputValueDefinition> inputValueDefinitions;
     private final ImmutableList<DirectiveLocation> directiveLocations;
 
@@ -30,6 +31,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
 
     @Internal
     protected DirectiveDefinition(String name,
+                                  boolean repeatable,
                                   Description description,
                                   List<InputValueDefinition> inputValueDefinitions,
                                   List<DirectiveLocation> directiveLocations,
@@ -39,6 +41,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
                                   Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
+        this.repeatable = repeatable;
         this.inputValueDefinitions = ImmutableList.copyOf(inputValueDefinitions);
         this.directiveLocations = ImmutableList.copyOf(directiveLocations);
     }
@@ -49,12 +52,22 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
      * @param name of the directive definition
      */
     public DirectiveDefinition(String name) {
-        this(name, null, emptyList(), emptyList(), null, emptyList(), IgnoredChars.EMPTY, emptyMap());
+        this(name, false, null, emptyList(), emptyList(), null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
     public String getName() {
         return name;
+    }
+
+    /**
+     * An AST node can have multiple directives associated with it IF the directive definition allows
+     * repeatable directives.
+     *
+     * @return true if this directive definition allows repeatable directives
+     */
+    public boolean isRepeatable() {
+        return repeatable;
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
@@ -106,6 +119,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
     @Override
     public DirectiveDefinition deepCopy() {
         return new DirectiveDefinition(name,
+                repeatable,
                 description,
                 deepCopy(inputValueDefinitions),
                 deepCopy(directiveLocations),
@@ -143,6 +157,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private String name;
+        private boolean repeatable = false;
         private Description description;
         private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
         private List<DirectiveLocation> directiveLocations = new ArrayList<>();
@@ -156,6 +171,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.name = existing.getName();
+            this.repeatable = existing.isRepeatable();
             this.description = existing.getDescription();
             this.inputValueDefinitions = existing.getInputValueDefinitions();
             this.directiveLocations = existing.getDirectiveLocations();
@@ -175,6 +191,11 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
 
         public Builder name(String name) {
             this.name = name;
+            return this;
+        }
+
+        public Builder repeatable(boolean repeatable) {
+            this.repeatable = repeatable;
             return this;
         }
 
@@ -220,7 +241,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
 
 
         public DirectiveDefinition build() {
-            return new DirectiveDefinition(name, description, inputValueDefinitions, directiveLocations, sourceLocation, comments, ignoredChars, additionalData);
+            return new DirectiveDefinition(name, repeatable, description, inputValueDefinitions, directiveLocations, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

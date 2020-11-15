@@ -188,7 +188,7 @@ class SchemaTypeDirectivesChecker {
             directiveDefinition.getInputValueDefinitions().forEach(inputValueDefinition -> {
                 assertTypeName(inputValueDefinition, errors);
                 assertExistAndIsInputType(inputValueDefinition, errors);
-                if (inputValueDefinition.getDirective(directiveDefinition.getName()) != null) {
+                if (inputValueDefinition.hasDirective(directiveDefinition.getName())) {
                     errors.add(new DirectiveIllegalReferenceError(directiveDefinition, inputValueDefinition));
                 }
             });

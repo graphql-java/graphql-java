@@ -625,6 +625,9 @@ public class GraphqlAntlrToLanguage {
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
         def.description(newDescription(ctx.description()));
+
+        def.repeatable(ctx.REPEATABLE() != null);
+
         GraphqlParser.DirectiveLocationsContext directiveLocationsContext = ctx.directiveLocations();
         List<DirectiveLocation> directiveLocations = new ArrayList<>();
         while (directiveLocationsContext != null) {

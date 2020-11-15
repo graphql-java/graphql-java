@@ -10,20 +10,17 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
-import static graphql.util.FpKit.getByName;
-import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
 
 /**
  * A graphql enumeration type has a limited set of values and this defines one of those unique values
- *
+ * <p>
  * See http://graphql.org/learn/schema/#enumeration-types for more details
  *
  * @see graphql.schema.GraphQLEnumType
@@ -35,7 +32,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
     private final String description;
     private final Object value;
     private final String deprecationReason;
-    private final ImmutableList<GraphQLDirective> directives;
+    private final DirectivesUtil.DirectivesHolder directives;
     private final EnumValueDefinition definition;
 
     public static final String CHILD_DIRECTIVES = "directives";
@@ -90,7 +87,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
         this.description = description;
         this.value = value;
         this.deprecationReason = deprecationReason;
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = new DirectivesUtil.DirectivesHolder(directives);
         this.definition = definition;
     }
 
@@ -117,17 +114,22 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives;
+        return directives.getDirectives();
     }
 
     @Override
     public Map<String, GraphQLDirective> getDirectivesByName() {
-        return DirectivesUtil.directivesByName(directives);
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
+        return directives.getAllDirectivesByName();
     }
 
     @Override
     public GraphQLDirective getDirective(String directiveName) {
-        return DirectivesUtil.directiveByName(directives, directiveName).orElse(null);
+        return directives.getDirective(directiveName);
     }
 
     public EnumValueDefinition getDefinition() {
@@ -155,13 +157,13 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
 
     @Override
     public List<GraphQLSchemaElement> getChildren() {
-        return ImmutableList.copyOf(directives);
+        return ImmutableList.copyOf(directives.getDirectives());
     }
 
     @Override
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .build();
     }
 
@@ -202,7 +204,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
         private Object value;
         private String deprecationReason;
         private EnumValueDefinition definition;
-        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder() {
         }
@@ -212,7 +214,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
             this.description = existing.getDescription();
             this.value = existing.getValue();
             this.deprecationReason = existing.getDeprecationReason();
-            this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+            DirectivesUtil.enforceAddAll(this.directives, existing.getDirectives());
         }
 
         @Override
@@ -250,6 +252,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
 
         public Builder withDirectives(GraphQLDirective... directives) {
             assertNotNull(directives, () -> "directives can't be null");
+            this.directives.clear();
             for (GraphQLDirective directive : directives) {
                 withDirective(directive);
             }
@@ -258,16 +261,14 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            directives.put(directive.getName(), directive);
+            DirectivesUtil.enforceAdd(this.directives, directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                this.directives.put(directive.getName(), directive);
-            }
+            DirectivesUtil.enforceAddAll(this.directives, directives);
             return this;
         }
 
@@ -286,7 +287,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
         }
 
         public GraphQLEnumValueDefinition build() {
-            return new GraphQLEnumValueDefinition(name, description, value, deprecationReason, valuesToList(directives), definition);
+            return new GraphQLEnumValueDefinition(name, description, value, deprecationReason, directives, definition);
         }
     }
 }

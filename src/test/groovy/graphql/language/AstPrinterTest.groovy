@@ -280,7 +280,7 @@ query HeroNameAndFriends($episode: Episode) {
         def query = '''
 query Hero($episode: Episode, $withFriends: Boolean!) {
   hero ( episode: $episode) {
-    name
+    name @repeatable @repeatable
     friends @include (if : $withFriends) {
       name
     }
@@ -293,7 +293,7 @@ query Hero($episode: Episode, $withFriends: Boolean!) {
         expect:
         output == '''query Hero($episode: Episode, $withFriends: Boolean!) {
   hero(episode: $episode) {
-    name
+    name @repeatable @repeatable
     friends @include(if: $withFriends) {
       name
     }
@@ -560,10 +560,8 @@ extend input Input @directive {
 
     def 'StringValue is converted to valid Strings'() {
 
-        AstPrinter astPrinter = new AstPrinter(true)
-
         when:
-        def result = astPrinter.value(new StringValue(strValue))
+        def result = AstPrinter.printAstCompact(new StringValue(strValue))
 
         then:
         result == expected
@@ -577,7 +575,6 @@ extend input Input @directive {
 
     def 'Interfaces implementing interfaces'() {
         given:
-        AstPrinter astPrinter = new AstPrinter(true)
         def interfaceType = InterfaceTypeDefinition
                 .newInterfaceTypeDefinition()
                 .name("Resource")
@@ -587,7 +584,7 @@ extend input Input @directive {
 
 
         when:
-        def result = astPrinter.printAst(interfaceType)
+        def result = AstPrinter.printAstCompact(interfaceType)
 
         then:
         result == "interface Resource implements Node & Extra {}"
@@ -596,7 +593,6 @@ extend input Input @directive {
 
     def 'Interfaces implementing interfaces in extension'() {
         given:
-        AstPrinter astPrinter = new AstPrinter(true)
         def interfaceType = InterfaceTypeExtensionDefinition
                 .newInterfaceTypeExtensionDefinition()
                 .name("Resource")
@@ -605,11 +601,41 @@ extend input Input @directive {
                 .build()
 
         when:
-        def result = astPrinter.printAst(interfaceType)
+        def result = AstPrinter.printAstCompact(interfaceType)
 
         then:
         result == "extend interface Resource implements Node & Extra {}"
 
     }
 
+    def "directive definitions can be printed"() {
+
+        given:
+        def directiveDef1 = DirectiveDefinition.newDirectiveDefinition()
+                .name("d1")
+                .repeatable(true)
+                .directiveLocation(DirectiveLocation.newDirectiveLocation().name("FIELD").build())
+                .directiveLocation(DirectiveLocation.newDirectiveLocation().name("OBJECT").build())
+                .build()
+
+        def directiveDef2 = DirectiveDefinition.newDirectiveDefinition()
+                .name("d2")
+                .repeatable(false)
+                .directiveLocation(DirectiveLocation.newDirectiveLocation().name("FIELD").build())
+                .directiveLocation(DirectiveLocation.newDirectiveLocation().name("ENUM").build())
+                .build()
+
+        when:
+        def result = AstPrinter.printAstCompact(directiveDef1)
+
+        then:
+        result == "directive @d1 repeatable on FIELD | OBJECT"
+
+        when:
+        result = AstPrinter.printAstCompact(directiveDef2)
+
+        then:
+        result == "directive @d2 on FIELD | ENUM"
+
+    }
 }

@@ -963,7 +963,7 @@ class SchemaTypeCheckerTest extends Specification {
         result.size() == 7
     }
 
-    def "test that directives are valid"() {
+    def "test that non repeatable directives are validated"() {
 
         def spec = """                        
             directive @directiveA on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION

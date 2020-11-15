@@ -39,7 +39,7 @@ import spock.lang.Specification
 
 import java.util.stream.Collectors
 
-class IDLParserTest extends Specification {
+class SDLParserTest extends Specification {
 
     boolean isEqual(Node node1, Node node2) {
         return new AstComparator().isEqual(node1, node2)
@@ -351,7 +351,7 @@ withArgs(arg1:[Number]=[1] arg2:String @secondArg(cool:true)): Function
         isEqual(document.definitions[0], schema.build())
     }
 
-    def "directive schema"() {
+    def "directive definition schema"() {
         given:
         def input = """
 directive @DirectiveName(arg1:String arg2:Int=23) on FIELD | QUERY
@@ -363,6 +363,29 @@ directive @DirectiveName(arg1:String arg2:Int=23) on FIELD | QUERY
         schema.inputValueDefinition(new InputValueDefinition("arg2", new TypeName("Int"), new IntValue(23)))
         schema.directiveLocation(new DirectiveLocation("FIELD"))
         schema.directiveLocation(new DirectiveLocation("QUERY"))
+        schema.repeatable(false)
+
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions.size() == 1
+        isEqual(document.definitions[0], schema.build())
+    }
+
+    def "repeatable directive definition schema"() {
+        given:
+        def input = """
+directive @DirectiveName(arg1:String arg2:Int=23) repeatable on FIELD | QUERY
+"""
+
+        and: "expected schema"
+        def schema = DirectiveDefinition.newDirectiveDefinition().name("DirectiveName")
+        schema.inputValueDefinition(new InputValueDefinition("arg1", new TypeName("String")))
+        schema.inputValueDefinition(new InputValueDefinition("arg2", new TypeName("Int"), new IntValue(23)))
+        schema.directiveLocation(new DirectiveLocation("FIELD"))
+        schema.directiveLocation(new DirectiveLocation("QUERY"))
+        schema.repeatable(true)
 
         when:
         def document = new Parser().parseDocument(input)
@@ -378,8 +401,6 @@ directive @DirectiveName(arg1:String arg2:Int=23) on FIELD | QUERY
     }
 
     def "comment support on definitions"() {
-
-
         given:
         def input = """
 

@@ -23,7 +23,6 @@ class GraphQLInputObjectFieldTest extends Specification {
         def transformedField = startingField.transform({ builder ->
             builder.name("F2")
                     .type(GraphQLInt)
-                    .withDirective(newDirective().name("directive1"))
                     .withDirective(newDirective().name("directive3"))
 
         })

@@ -1199,8 +1199,6 @@ class SchemaGeneratorTest extends Specification {
                 field2 : String @fieldDirective2
             }
 
-            extend type Query @directive2
-            
             extend type Query @directive3
             
             extend type Query @directiveWithArgs(strArg : "String", intArg : 1, boolArg : true, floatArg : 1.1, nullArg : null)
@@ -2015,7 +2013,7 @@ class SchemaGeneratorTest extends Specification {
         directiveNames.contains("sd3")
 
         when:
-        directivesMap = schema.getDirectiveByName()
+        directivesMap = schema.getDirectivesByName()
 
         then:
         directivesMap.size() == 7 // built in ones

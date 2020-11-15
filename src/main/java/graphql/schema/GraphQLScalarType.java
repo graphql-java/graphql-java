@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import com.google.common.collect.ImmutableList;
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.ScalarTypeDefinition;
@@ -9,7 +10,7 @@ import graphql.language.ScalarTypeExtensionDefinition;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -17,7 +18,6 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChildrenContainer;
-import static graphql.util.FpKit.getByName;
 import static java.util.Collections.emptyList;
 
 /**
@@ -27,10 +27,10 @@ import static java.util.Collections.emptyList;
  * GraphQL provides a number of built‐in scalars, but type systems can add additional scalars with semantic meaning,
  * for example, a GraphQL system could define a scalar called Time which, while serialized as a string, promises to
  * conform to ISO‐8601. When querying a field of type Time, you can then rely on the ability to parse the result with an ISO‐8601 parser and use a client‐specific primitive for time.
- *
+ * <p>
  * From the spec : http://facebook.github.io/graphql/#sec-Scalars
  * </blockquote>
- *
+ * <p>
  * graphql-java ships with a set of predefined scalar types via {@link graphql.Scalars}
  *
  * @see graphql.Scalars
@@ -43,7 +43,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
     private final Coercing coercing;
     private final ScalarTypeDefinition definition;
     private final ImmutableList<ScalarTypeExtensionDefinition> extensionDefinitions;
-    private final ImmutableList<GraphQLDirective> directives;
+    private final DirectivesUtil.DirectivesHolder directives;
     private final String specifiedByUrl;
 
     public static final String CHILD_DIRECTIVES = "directives";
@@ -92,7 +92,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         this.description = description;
         this.coercing = coercing;
         this.definition = definition;
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = new DirectivesUtil.DirectivesHolder(directives);
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
         this.specifiedByUrl = specifiedByUrl;
     }
@@ -125,7 +125,22 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, GraphQLDirective> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
+        return directives.getAllDirectivesByName();
+    }
+
+    @Override
+    public GraphQLDirective getDirective(String directiveName) {
+        return directives.getDirective(directiveName);
     }
 
     @Override
@@ -158,13 +173,13 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
     @Override
     public List<GraphQLSchemaElement> getChildren() {
-        return ImmutableList.copyOf(directives);
+        return ImmutableList.copyOf(directives.getDirectives());
     }
 
     @Override
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return newSchemaElementChildrenContainer()
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .build();
     }
 
@@ -206,7 +221,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         private Coercing coercing;
         private ScalarTypeDefinition definition;
         private List<ScalarTypeExtensionDefinition> extensionDefinitions = emptyList();
-        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
         private String specifiedByUrl;
 
         public Builder() {
@@ -218,8 +233,8 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
             coercing = existing.getCoercing();
             definition = existing.getDefinition();
             extensionDefinitions = existing.getExtensionDefinitions();
-            directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
             specifiedByUrl = existing.getSpecifiedByUrl();
+            DirectivesUtil.enforceAddAll(this.directives, existing.getDirectives());
         }
 
         @Override
@@ -261,6 +276,8 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         }
 
         public Builder withDirectives(GraphQLDirective... directives) {
+            assertNotNull(directives, () -> "directives can't be null");
+            this.directives.clear();
             for (GraphQLDirective directive : directives) {
                 withDirective(directive);
             }
@@ -269,16 +286,14 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            directives.put(directive.getName(), directive);
+            DirectivesUtil.enforceAdd(this.directives, directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                this.directives.put(directive.getName(), directive);
-            }
+            DirectivesUtil.enforceAddAll(this.directives, directives);
             return this;
         }
 

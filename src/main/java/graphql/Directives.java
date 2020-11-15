@@ -62,6 +62,7 @@ public class Directives {
                                 .build())
                 .build();
     }
+
     public static final GraphQLDirective IncludeDirective = GraphQLDirective.newDirective()
             .name("include")
             .description("Directs the executor to include this field or fragment only when the `if` argument is true")

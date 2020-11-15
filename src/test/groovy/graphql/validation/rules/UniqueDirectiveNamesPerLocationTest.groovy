@@ -141,7 +141,7 @@ class UniqueDirectiveNamesPerLocationTest extends Specification {
         assert error.locations[0].line == line
         assert error.locations[0].column == column
         assert error.validationErrorType == ValidationErrorType.DuplicateDirectiveName
-        def expectedMsg = "Directives must be uniquely named within a location. The directive '${name}' used on a '${type}' is not unique."
+        def expectedMsg = "Non repeatable directives must be uniquely named within a location. The directive '${name}' used on a '${type}' is not unique."
         assert error.message.contains(expectedMsg)
         true
     }

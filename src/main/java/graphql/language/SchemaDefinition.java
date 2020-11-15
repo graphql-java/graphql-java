@@ -15,11 +15,9 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static graphql.language.NodeUtil.directiveByName;
-import static graphql.language.NodeUtil.directivesByName;
 
 @PublicApi
-public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> implements SDLDefinition<SchemaDefinition> {
+public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> implements SDLDefinition<SchemaDefinition>, DirectivesContainer<SchemaDefinition> {
 
     private final ImmutableList<Directive> directives;
     private final ImmutableList<OperationTypeDefinition> operationTypeDefinitions;
@@ -44,15 +42,6 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
     public List<Directive> getDirectives() {
         return directives;
     }
-
-    public Map<String, Directive> getDirectivesByName() {
-        return directivesByName(directives);
-    }
-
-    public Directive getDirective(String directiveName) {
-        return directiveByName(directives, directiveName).orElse(null);
-    }
-
 
     public List<OperationTypeDefinition> getOperationTypeDefinitions() {
         return operationTypeDefinitions;
@@ -126,7 +115,7 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
         return new Builder();
     }
 
-    public static final class Builder implements NodeDirectivesBuilder {
+    public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
@@ -164,7 +153,6 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
             return this;
         }
 
-        @Override
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;

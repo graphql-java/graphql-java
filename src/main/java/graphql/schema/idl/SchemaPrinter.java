@@ -880,6 +880,10 @@ public class SchemaPrinter {
 
         sb.append(argsString(GraphQLDirective.class, args));
 
+        if (directive.isRepeatable()) {
+            sb.append(" repeatable");
+        }
+
         sb.append(" on ");
 
         String locations = directive.validLocations().stream().map(Enum::name).collect(Collectors.joining(" | "));

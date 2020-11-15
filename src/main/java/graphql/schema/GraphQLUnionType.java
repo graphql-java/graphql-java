@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.Assert;
+import graphql.DirectivesUtil;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -42,8 +43,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
     private final TypeResolver typeResolver;
     private final UnionTypeDefinition definition;
     private final ImmutableList<UnionTypeExtensionDefinition> extensionDefinitions;
-
-    private final ImmutableList<GraphQLDirective> directives;
+    private final DirectivesUtil.DirectivesHolder directives;
 
     private ImmutableList<GraphQLNamedOutputType> replacedTypes;
 
@@ -93,7 +93,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         this.typeResolver = typeResolver;
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = new DirectivesUtil.DirectivesHolder(directives);
     }
 
     void replaceTypes(List<GraphQLNamedOutputType> types) {
@@ -147,7 +147,22 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, GraphQLDirective> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
+        return directives.getAllDirectivesByName();
+    }
+
+    @Override
+    public GraphQLDirective getDirective(String directiveName) {
+        return directives.getDirective(directiveName);
     }
 
     /**
@@ -172,7 +187,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
     @Override
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>(getTypes());
-        children.addAll(directives);
+        children.addAll(directives.getDirectives());
         return children;
     }
 
@@ -180,7 +195,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return newSchemaElementChildrenContainer()
                 .children(CHILD_TYPES, originalTypes)
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .build();
     }
 
@@ -224,7 +239,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         private List<UnionTypeExtensionDefinition> extensionDefinitions = emptyList();
 
         private final Map<String, GraphQLNamedOutputType> types = new LinkedHashMap<>();
-        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder() {
         }
@@ -236,7 +251,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
             this.definition = existing.getDefinition();
             this.extensionDefinitions = existing.getExtensionDefinitions();
             this.types.putAll(getByName(existing.originalTypes, GraphQLNamedType::getName));
-            this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+            DirectivesUtil.enforceAddAll(this.directives,existing.getDirectives());
         }
 
         @Override
@@ -329,6 +344,8 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         }
 
         public Builder withDirectives(GraphQLDirective... directives) {
+            assertNotNull(directives, () -> "directives can't be null");
+            this.directives.clear();
             for (GraphQLDirective directive : directives) {
                 withDirective(directive);
             }
@@ -338,15 +355,13 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                this.directives.put(directive.getName(), directive);
-            }
+            DirectivesUtil.enforceAddAll(this.directives, directives);
             return this;
         }
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            directives.put(directive.getName(), directive);
+            DirectivesUtil.enforceAdd(this.directives, directive);
             return this;
         }
 

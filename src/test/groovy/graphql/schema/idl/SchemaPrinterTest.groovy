@@ -870,7 +870,7 @@ type Query {
         return """
             directive @interfaceFieldDirective on FIELD_DEFINITION
             directive @unionTypeDirective on UNION
-            directive @query1 on OBJECT
+            directive @query1 repeatable on OBJECT
             directive @query2(arg1: String) on OBJECT
             directive @fieldDirective1 on FIELD_DEFINITION
             directive @fieldDirective2(argStr: String, argInt: Int, argFloat: Float, argBool: Boolean) on FIELD_DEFINITION
@@ -885,6 +885,7 @@ type Query {
             directive @inputFieldDirective on INPUT_FIELD_DEFINITION
             directive @interfaceTypeDirective on INTERFACE
             directive @scalarDirective on SCALAR
+            directive @repeatableDirective repeatable on SCALAR
             
             interface SomeInterface @interfaceTypeDirective {
                 fieldA : String @interfaceFieldDirective
@@ -913,7 +914,7 @@ type Query {
                 SOME_ENUM_VALUE @enumValueDirective
             }
             
-            scalar SomeScalar @scalarDirective
+            scalar SomeScalar @scalarDirective @repeatableDirective @repeatableDirective
             
             input SomeInput @inputTypeDirective {
                 fieldA : String @inputFieldDirective
@@ -954,7 +955,7 @@ directive @interfaceFieldDirective on FIELD_DEFINITION
 
 directive @unionTypeDirective on UNION
 
-directive @query1 on OBJECT
+directive @query1 repeatable on OBJECT
 
 directive @query2(arg1: String) on OBJECT
 
@@ -983,6 +984,8 @@ directive @inputFieldDirective on INPUT_FIELD_DEFINITION
 directive @interfaceTypeDirective on INTERFACE
 
 directive @scalarDirective on SCALAR
+
+directive @repeatableDirective repeatable on SCALAR
 
 "Marks the field or enum value as deprecated"
 directive @deprecated(
@@ -1023,7 +1026,7 @@ enum SomeEnum @enumTypeDirective {
   SOME_ENUM_VALUE @enumValueDirective
 }
 
-scalar SomeScalar @scalarDirective
+scalar SomeScalar @repeatableDirective @repeatableDirective @scalarDirective
 
 input SomeInput @inputTypeDirective {
   fieldA: String @inputFieldDirective

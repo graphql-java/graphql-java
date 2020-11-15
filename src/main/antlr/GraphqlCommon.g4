@@ -29,7 +29,7 @@ arguments : '(' argument+ ')';
 
 argument : name ':' valueWithVariable;
 
-baseName: NAME | FRAGMENT | QUERY | MUTATION | SUBSCRIPTION | SCHEMA | SCALAR | TYPE | INTERFACE | IMPLEMENTS | ENUM | UNION | INPUT | EXTEND | DIRECTIVE;
+baseName: NAME | FRAGMENT | QUERY | MUTATION | SUBSCRIPTION | SCHEMA | SCALAR | TYPE | INTERFACE | IMPLEMENTS | ENUM | UNION | INPUT | EXTEND | DIRECTIVE | REPEATABLE;
 fragmentName: baseName | BooleanValue | NullValue;
 enumValueName: baseName | ON_KEYWORD;
 
@@ -88,6 +88,7 @@ INPUT: 'input';
 EXTEND: 'extend';
 DIRECTIVE: 'directive';
 ON_KEYWORD: 'on';
+REPEATABLE: 'repeatable';
 NAME: [_A-Za-z][_0-9A-Za-z]*;
 
 

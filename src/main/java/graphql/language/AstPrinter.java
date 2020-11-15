@@ -103,7 +103,8 @@ public class AstPrinter {
             out.printf("%s", description(node));
             String arguments = wrap("(", join(node.getInputValueDefinitions(), argSep), ")");
             String locations = join(node.getDirectiveLocations(), " | ");
-            out.printf("directive @%s%s on %s", node.getName(), arguments, locations);
+            String repeatable = node.isRepeatable() ? "repeatable " : "";
+            out.printf("directive @%s%s %son %s", node.getName(), arguments, repeatable, locations);
         };
     }
 

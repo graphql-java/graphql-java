@@ -17,8 +17,6 @@ import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static graphql.language.NodeUtil.directiveByName;
-import static graphql.language.NodeUtil.directivesByName;
 
 @PublicApi
 public class InlineFragment extends AbstractNode<InlineFragment> implements Selection<InlineFragment>, SelectionSetContainer<InlineFragment>, DirectivesContainer<InlineFragment> {
@@ -71,14 +69,6 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         return directives;
     }
 
-    public Map<String, Directive> getDirectivesByName() {
-        return directivesByName(directives);
-    }
-
-    public Directive getDirective(String directiveName) {
-        return directiveByName(directives, directiveName).orElse(null);
-    }
-
     @Override
     public SelectionSet getSelectionSet() {
         return selectionSet;
@@ -118,11 +108,7 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        return true;
+        return o != null && getClass() == o.getClass();
     }
 
     @Override

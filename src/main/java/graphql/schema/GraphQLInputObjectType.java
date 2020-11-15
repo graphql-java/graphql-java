@@ -1,5 +1,7 @@
 package graphql.schema;
 
+import graphql.AssertException;
+import graphql.DirectivesUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
@@ -38,7 +40,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     private final ImmutableMap<String, GraphQLInputObjectField> fieldMap;
     private final InputObjectTypeDefinition definition;
     private final ImmutableList<InputObjectTypeExtensionDefinition> extensionDefinitions;
-    private final ImmutableList<GraphQLDirective> directives;
+    private final DirectivesUtil.DirectivesHolder directives;
 
     public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
     public static final String CHILD_DIRECTIVES = "directives";
@@ -80,7 +82,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         this.description = description;
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = new DirectivesUtil.DirectivesHolder(directives);
         this.fieldMap = buildDefinitionMap(fields);
     }
 
@@ -108,7 +110,22 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, GraphQLDirective> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
+        return directives.getAllDirectivesByName();
+    }
+
+    @Override
+    public GraphQLDirective getDirective(String directiveName) {
+        return directives.getDirective(directiveName);
     }
 
     @Override
@@ -151,7 +168,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     @Override
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>(fieldMap.values());
-        children.addAll(directives);
+        children.addAll(directives.getDirectives());
         return children;
     }
 
@@ -159,7 +176,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
                 .children(CHILD_FIELD_DEFINITIONS, fieldMap.values())
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .build();
     }
 
@@ -212,7 +229,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         private InputObjectTypeDefinition definition;
         private List<InputObjectTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLInputObjectField> fields = new LinkedHashMap<>();
-        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder() {
         }
@@ -223,7 +240,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
             this.definition = existing.getDefinition();
             this.extensionDefinitions = existing.getExtensionDefinitions();
             this.fields.putAll(getByName(existing.getFields(), GraphQLInputObjectField::getName));
-            this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+            DirectivesUtil.enforceAddAll(this.directives, existing.getDirectives());
         }
 
         @Override
@@ -299,7 +316,6 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
         public Builder replaceFields(List<GraphQLInputObjectField> fields) {
             this.fields.clear();
-            ;
             fields.forEach(this::field);
             return this;
         }
@@ -319,6 +335,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         }
 
         public Builder withDirectives(GraphQLDirective... directives) {
+            this.directives.clear();
             for (GraphQLDirective directive : directives) {
                 withDirective(directive);
             }
@@ -327,16 +344,14 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            directives.put(directive.getName(), directive);
+            DirectivesUtil.enforceAdd(this.directives, directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                this.directives.put(directive.getName(), directive);
-            }
+            DirectivesUtil.enforceAddAll(this.directives, directives);
             return this;
         }
 

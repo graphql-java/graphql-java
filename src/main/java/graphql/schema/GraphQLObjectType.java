@@ -1,5 +1,7 @@
 package graphql.schema;
 
+import graphql.AssertException;
+import graphql.DirectivesUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.Assert;
@@ -47,7 +49,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
     private final ImmutableMap<String, GraphQLFieldDefinition> fieldDefinitionsByName;
     private final ImmutableList<GraphQLNamedOutputType> originalInterfaces;
-    private final ImmutableList<GraphQLDirective> directives;
+    private final DirectivesUtil.DirectivesHolder directives;
     private final ObjectTypeDefinition definition;
     private final ImmutableList<ObjectTypeExtensionDefinition> extensionDefinitions;
 
@@ -108,7 +110,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         this.originalInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directives = ImmutableList.copyOf(assertNotNull(directives));
+        this.directives = new DirectivesUtil.DirectivesHolder(assertNotNull(directives));
         this.fieldDefinitionsByName = buildDefinitionMap(fieldDefinitions);
     }
 
@@ -123,7 +125,22 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, GraphQLDirective> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
+        return directives.getAllDirectivesByName();
+    }
+
+    @Override
+    public GraphQLDirective getDirective(String directiveName) {
+        return directives.getDirective(directiveName);
     }
 
     @Override
@@ -196,7 +213,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>(fieldDefinitionsByName.values());
         children.addAll(getInterfaces());
-        children.addAll(directives);
+        children.addAll(directives.getDirectives());
         return children;
     }
 
@@ -204,7 +221,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
                 .children(CHILD_FIELD_DEFINITIONS, fieldDefinitionsByName.values())
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .children(CHILD_INTERFACES, originalInterfaces)
                 .build();
     }
@@ -250,7 +267,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         private List<ObjectTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLFieldDefinition> fields = new LinkedHashMap<>();
         private final Map<String, GraphQLNamedOutputType> interfaces = new LinkedHashMap<>();
-        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder() {
         }
@@ -262,7 +279,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
             extensionDefinitions = existing.getExtensionDefinitions();
             fields.putAll(getByName(existing.getFieldDefinitions(), GraphQLFieldDefinition::getName));
             interfaces.putAll(getByName(existing.originalInterfaces, GraphQLNamedType::getName));
-            directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+            DirectivesUtil.enforceAddAll(this.directives, existing.getDirectives());
         }
 
         @Override
@@ -391,15 +408,6 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
             return this;
         }
 
-        public Builder replaceDirectives(List<GraphQLDirective> directives) {
-            assertNotNull(directives, () -> "directive can't be null");
-            this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                this.directives.put(directive.getName(), directive);
-            }
-            return this;
-        }
-
         public Builder withInterfaces(GraphQLTypeReference... references) {
             for (GraphQLTypeReference reference : references) {
                 withInterface(reference);
@@ -417,8 +425,16 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
             return this;
         }
 
+        public Builder replaceDirectives(List<GraphQLDirective> directives) {
+            assertNotNull(directives, () -> "directive can't be null");
+            this.directives.clear();
+            DirectivesUtil.enforceAddAll(this.directives, directives);
+            return this;
+        }
 
         public Builder withDirectives(GraphQLDirective... directives) {
+            assertNotNull(directives, () -> "directives can't be null");
+            this.directives.clear();
             for (GraphQLDirective directive : directives) {
                 withDirective(directive);
             }
@@ -427,7 +443,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            directives.put(directive.getName(), directive);
+            DirectivesUtil.enforceAdd(this.directives, directive);
             return this;
         }
 
