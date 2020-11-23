@@ -96,6 +96,8 @@ shadowJar {
     relocate('com.google.common', 'graphql.com.google.common') {
         include 'com.google.common.collect.*'
         include 'com.google.common.base.*'
+        include 'com.google.common.math.*'
+        include 'com.google.common.primitives.*'
     }
     dependencies {
         include(dependency('com.google.guava:guava:30.0-jre'))
