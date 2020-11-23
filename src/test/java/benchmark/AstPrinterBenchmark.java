@@ -1,7 +1,6 @@
 package benchmark;
 
 import graphql.language.AstPrinter;
-import graphql.language.AstPrinterV2;
 import graphql.language.Document;
 import graphql.parser.Parser;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -231,25 +230,7 @@ public class AstPrinterBenchmark {
         printAst(blackhole);
     }
 
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.SECONDS)
-    public void benchMarkAstPrinterV2Throughput(Blackhole blackhole) {
-        printAstV2(blackhole);
-    }
-
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void benchMarkAstPrinterV2AvgTime(Blackhole blackhole) {
-        printAstV2(blackhole);
-    }
-
     public static void printAst(Blackhole blackhole) {
         blackhole.consume(AstPrinter.printAst(document));
-    }
-
-    public static void printAstV2(Blackhole blackhole) {
-        blackhole.consume(AstPrinterV2.printAst(document));
     }
 }
