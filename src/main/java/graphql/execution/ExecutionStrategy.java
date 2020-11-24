@@ -41,8 +41,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 import static graphql.execution.Async.exceptionallyCompletedFuture;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
@@ -213,7 +218,6 @@ public abstract class ExecutionStrategy {
         FieldValueInfo fieldValueInfo = completeField(executionContext, parameters, fetchedValue);
         return CompletableFuture.completedFuture(fieldValueInfo);
     }
-
 
     /**
      * Called to fetch a value for a field from the {@link DataFetcher} associated with the field
@@ -395,7 +399,6 @@ public abstract class ExecutionStrategy {
         return fieldValueInfo;
     }
 
-
     /**
      * Called to complete a value for a field based on the type of the field.
      * <p>
@@ -512,29 +515,29 @@ public abstract class ExecutionStrategy {
         );
 
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>();
-        int index = 0;
-        for (Object item : values) {
-            ExecutionPath indexedPath = parameters.getPath().segment(index);
+        final SortedSet<Integer> indexes = getIndexes(getSizeIndexes(iterableValues));
+        StreamSupport.stream(iterableValues.spliterator(), true)
+                .forEach(item -> {
+                    int index = getNextIndex(indexes);
+                    ExecutionPath indexedPath = parameters.getPath().segment(index);
 
-            ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, index);
+                    ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, index);
 
-            NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, stepInfoForListElement);
+                    NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, stepInfoForListElement);
 
-            int finalIndex = index;
-            FetchedValue value = unboxPossibleDataFetcherResult(executionContext, parameters, item);
+                    FetchedValue value = unboxPossibleDataFetcherResult(executionContext, parameters, item);
 
-            ExecutionStrategyParameters newParameters = parameters.transform(builder ->
-                    builder.executionStepInfo(stepInfoForListElement)
-                            .nonNullFieldValidator(nonNullableFieldValidator)
-                            .listSize(values.size())
-                            .localContext(value.getLocalContext())
-                            .currentListIndex(finalIndex)
-                            .path(indexedPath)
-                            .source(value.getFetchedValue())
-            );
-            fieldValueInfos.add(completeValue(executionContext, newParameters));
-            index++;
-        }
+                    ExecutionStrategyParameters newParameters = parameters.transform(builder ->
+                            builder.executionStepInfo(stepInfoForListElement)
+                                    .nonNullFieldValidator(nonNullableFieldValidator)
+                                    .listSize(values.size())
+                                    .localContext(value.getLocalContext())
+                                    .currentListIndex(index)
+                                    .path(indexedPath)
+                                    .source(value.getFetchedValue())
+                    );
+                    fieldValueInfos.add(completeValue(executionContext, newParameters));
+                });
 
         CompletableFuture<List<ExecutionResult>> resultsFuture = Async.each(fieldValueInfos, (item, i) -> item.getFieldValue());
 
@@ -560,6 +563,31 @@ public abstract class ExecutionStrategy {
                 .fieldValue(overallResult)
                 .fieldValueInfos(fieldValueInfos)
                 .build();
+    }
+
+    private int getSizeIndexes(final Iterable<Object> data) {
+        if (data instanceof Collection) {
+            return ((Collection<?>) data).size();
+        }
+        int counter = 0;
+        for (final Object d : data) {
+            counter++;
+        }
+        return counter;
+    }
+
+    private SortedSet<Integer> getIndexes(final int size) {
+        return Collections.synchronizedSortedSet(
+                IntStream.range(0, size)
+                        .boxed()
+                        .collect(Collectors.toCollection(TreeSet::new))
+        );
+    }
+
+    private Integer getNextIndex(final SortedSet<Integer> indexes) {
+        final Integer index = indexes.first();
+        indexes.remove(index);
+        return index;
     }
 
     /**
@@ -667,7 +695,6 @@ public abstract class ExecutionStrategy {
         return null;
     }
 
-
     /**
      * Converts an object that is known to should be an Iterable into one
      *
@@ -686,7 +713,6 @@ public abstract class ExecutionStrategy {
         return resolvedType.resolveType(executionContext, parameters.getField(), parameters.getSource(), parameters.getArguments(), fieldType);
     }
 
-
     protected Iterable<Object> toIterable(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
         if (result.getClass().isArray() || result instanceof Iterable) {
             return toIterable(result);
@@ -703,7 +729,6 @@ public abstract class ExecutionStrategy {
 
         parameters.deferredErrorSupport().onError(error);
     }
-
 
     /**
      * Called to discover the field definition give the current parameters and the AST {@link Field}
@@ -782,7 +807,6 @@ public abstract class ExecutionStrategy {
         }
         return executionResult;
     }
-
 
     /**
      * Builds the type info hierarchy for the current field
