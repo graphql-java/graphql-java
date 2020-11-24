@@ -108,7 +108,7 @@ shadowJar {
     from "src/main/antlr/GraphqlSDL.g4"
     from "src/main/antlr/GraphqlCommon.g4"
     manifest {
-        attributes('Automatic-Module-Name': 'com.graphql-java')
+        attributes('Automatic-Module-Name': 'com.graphqljava')
     }
 }
 
