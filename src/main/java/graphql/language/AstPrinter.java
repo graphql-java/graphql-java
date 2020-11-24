@@ -3,7 +3,7 @@ package graphql.language;
 import graphql.AssertException;
 import graphql.PublicApi;
 
-import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -626,9 +626,10 @@ public class AstPrinter {
      * @param writer the place to put the output
      * @param node   the AST node to print
      */
-    public static void printAst(Writer writer, Node node) throws IOException {
+    public static void printAst(Writer writer, Node node) {
         String ast = printAst(node);
-        writer.write(ast);
+        PrintWriter printer = new PrintWriter(writer);
+        printer.write(ast);
     }
 
     /**
