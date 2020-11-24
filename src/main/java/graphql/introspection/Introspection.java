@@ -474,6 +474,10 @@ public class Introspection {
         });
         register(__Directive, "name", nameDataFetcher);
         register(__Directive, "description", descriptionDataFetcher);
+        register(__Directive, "isRepeatable", environment -> {
+            GraphQLDirective directive = environment.getSource();
+            return directive.isRepeatable();
+        });
     }
 
     public static final GraphQLObjectType __Schema = newObject()

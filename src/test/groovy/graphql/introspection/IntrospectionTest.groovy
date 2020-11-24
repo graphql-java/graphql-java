@@ -81,4 +81,26 @@ class IntrospectionTest extends Specification {
         data == [__schema: [description: "This is my schema"]]
 
     }
+
+    def "introspection for repeatable directive info"() {
+        def spec = '''
+            directive @repeatableDirective(arg: String) repeatable on FIELD
+             
+            type Query {
+               namedField: String
+            }
+        '''
+
+        when:
+        def graphQL = TestUtil.graphQL(spec).build()
+        def executionResult = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        executionResult.errors.isEmpty()
+
+        def directives = executionResult.data.getAt("__schema").getAt("directives") as List
+        def geoPolygonType = directives.find { it['name'] == 'repeatableDirective' }
+        geoPolygonType["isRepeatable"] == true
+    }
+
 }
