@@ -21,6 +21,7 @@ public interface IntrospectionQuery {
             "        args {\n" +
             "          ...InputValue\n" +
             "        }\n" +
+            "        isRepeatable\n" +
             "      }\n" +
             "    }\n" +
             "  }\n" +
