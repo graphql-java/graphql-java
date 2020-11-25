@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.stream.Collectors;
 
 import static graphql.execution.Async.exceptionallyCompletedFuture;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
@@ -213,7 +214,6 @@ public abstract class ExecutionStrategy {
         FieldValueInfo fieldValueInfo = completeField(executionContext, parameters, fetchedValue);
         return CompletableFuture.completedFuture(fieldValueInfo);
     }
-
 
     /**
      * Called to fetch a value for a field from the {@link DataFetcher} associated with the field
@@ -395,7 +395,6 @@ public abstract class ExecutionStrategy {
         return fieldValueInfo;
     }
 
-
     /**
      * Called to complete a value for a field based on the type of the field.
      * <p>
@@ -511,7 +510,7 @@ public abstract class ExecutionStrategy {
                 instrumentationParams
         );
 
-        List<FieldValueInfo> fieldValueInfos = new ArrayList<>();
+        List<CompletableFuture<FieldValueInfo>> fieldValueInfos = new ArrayList<>();
         int index = 0;
         for (Object item : values) {
             ExecutionPath indexedPath = parameters.getPath().segment(index);
@@ -532,11 +531,11 @@ public abstract class ExecutionStrategy {
                             .path(indexedPath)
                             .source(value.getFetchedValue())
             );
-            fieldValueInfos.add(completeValue(executionContext, newParameters));
+            fieldValueInfos.add(CompletableFuture.supplyAsync(() -> completeValue(executionContext, newParameters)));
             index++;
         }
 
-        CompletableFuture<List<ExecutionResult>> resultsFuture = Async.each(fieldValueInfos, (item, i) -> item.getFieldValue());
+        CompletableFuture<List<ExecutionResult>> resultsFuture = getExecutionResults(fieldValueInfos);
 
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
         completeListCtx.onDispatched(overallResult);
@@ -558,8 +557,26 @@ public abstract class ExecutionStrategy {
 
         return FieldValueInfo.newFieldValueInfo(LIST)
                 .fieldValue(overallResult)
-                .fieldValueInfos(fieldValueInfos)
+                .fieldValueInfos(combineFutures(fieldValueInfos))
                 .build();
+    }
+
+    private <T> List<T> combineFutures(final List<CompletableFuture<T>> futures) {
+        return futures
+                .stream()
+                .map(CompletableFuture::join)
+                .collect(Collectors.toList());
+    }
+
+    private CompletableFuture<List<ExecutionResult>> getExecutionResults(
+            final List<CompletableFuture<FieldValueInfo>> fieldValueInfos) {
+        return CompletableFuture.supplyAsync(() ->
+                combineFutures(fieldValueInfos)
+                        .stream()
+                        .map(FieldValueInfo::getFieldValue)
+                        .map(CompletableFuture::join)
+                        .collect(Collectors.toList())
+        );
     }
 
     /**
@@ -667,7 +684,6 @@ public abstract class ExecutionStrategy {
         return null;
     }
 
-
     /**
      * Converts an object that is known to should be an Iterable into one
      *
@@ -686,7 +702,6 @@ public abstract class ExecutionStrategy {
         return resolvedType.resolveType(executionContext, parameters.getField(), parameters.getSource(), parameters.getArguments(), fieldType);
     }
 
-
     protected Iterable<Object> toIterable(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
         if (result.getClass().isArray() || result instanceof Iterable) {
             return toIterable(result);
@@ -703,7 +718,6 @@ public abstract class ExecutionStrategy {
 
         parameters.deferredErrorSupport().onError(error);
     }
-
 
     /**
      * Called to discover the field definition give the current parameters and the AST {@link Field}
@@ -782,7 +796,6 @@ public abstract class ExecutionStrategy {
         }
         return executionResult;
     }
-
 
     /**
      * Builds the type info hierarchy for the current field
