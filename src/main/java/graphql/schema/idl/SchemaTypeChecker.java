@@ -42,6 +42,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static graphql.DirectivesUtil.nonRepeatableDirectivesOnly;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
 import static java.util.stream.Collectors.toList;
 
@@ -199,15 +200,6 @@ public class SchemaTypeChecker {
         // input types
         List<InputObjectTypeDefinition> inputTypes = filterTo(typesMap, InputObjectTypeDefinition.class);
         inputTypes.forEach(inputType -> checkInputValues(errors, inputType, inputType.getInputValueDefinitions(), INPUT_FIELD_DEFINITION, directiveDefinitionMap));
-    }
-
-
-    private List<Directive> nonRepeatableDirectivesOnly(Map<String, DirectiveDefinition> directiveDefinitionMap, List<Directive> directives) {
-        return directives.stream().filter(directive -> {
-            String directiveName = directive.getName();
-            DirectiveDefinition directiveDefinition = directiveDefinitionMap.get(directiveName);
-            return directiveDefinition == null || !directiveDefinition.isRepeatable();
-        }).collect(toList());
     }
 
     private void checkObjTypeFields(List<GraphQLError> errors, ObjectTypeDefinition typeDefinition, List<FieldDefinition> fieldDefinitions, Map<String, DirectiveDefinition> directiveDefinitionMap) {

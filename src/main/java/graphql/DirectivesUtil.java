@@ -2,6 +2,8 @@ package graphql;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.language.Directive;
+import graphql.language.DirectiveDefinition;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.util.FpKit;
@@ -14,6 +16,7 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
+import static java.util.stream.Collectors.toList;
 
 @Internal
 public class DirectivesUtil {
@@ -148,5 +151,13 @@ public class DirectivesUtil {
         public List<GraphQLDirective> getDirectives(String directiveName) {
             return allDirectivesByName.getOrDefault(directiveName, emptyList());
         }
+    }
+
+    public static List<Directive> nonRepeatableDirectivesOnly(Map<String, DirectiveDefinition> directiveDefinitionMap, List<Directive> directives) {
+        return directives.stream().filter(directive -> {
+            String directiveName = directive.getName();
+            DirectiveDefinition directiveDefinition = directiveDefinitionMap.get(directiveName);
+            return directiveDefinition == null || !directiveDefinition.isRepeatable();
+        }).collect(toList());
     }
 }
