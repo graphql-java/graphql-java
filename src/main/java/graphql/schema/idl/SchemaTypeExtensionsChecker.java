@@ -4,6 +4,7 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.Directive;
+import graphql.language.DirectiveDefinition;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValueDefinition;
 import graphql.language.FieldDefinition;
@@ -32,6 +33,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static graphql.DirectivesUtil.nonRepeatableDirectivesOnly;
 import static graphql.schema.idl.SchemaTypeChecker.checkNamedUniqueness;
 import static graphql.util.FpKit.mergeFirst;
 
@@ -43,12 +45,13 @@ import static graphql.util.FpKit.mergeFirst;
 class SchemaTypeExtensionsChecker {
 
     void checkTypeExtensions(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
-        checkObjectTypeExtensions(errors, typeRegistry);
-        checkInterfaceTypeExtensions(errors, typeRegistry);
+        Map<String, DirectiveDefinition> directiveDefinitionMap = typeRegistry.getDirectiveDefinitions();
+        checkObjectTypeExtensions(errors, typeRegistry,directiveDefinitionMap);
+        checkInterfaceTypeExtensions(errors, typeRegistry,directiveDefinitionMap);
         checkUnionTypeExtensions(errors, typeRegistry);
         checkEnumTypeExtensions(errors, typeRegistry);
         checkScalarTypeExtensions(errors, typeRegistry);
-        checkInputObjectTypeExtensions(errors, typeRegistry);
+        checkInputObjectTypeExtensions(errors, typeRegistry,directiveDefinitionMap);
     }
 
 
@@ -62,7 +65,7 @@ class SchemaTypeExtensionsChecker {
      * Any interfaces provided must not be already implemented by the original Object type.
      * The resulting extended object type must be a super-set of all interfaces it implements.
      */
-    private void checkObjectTypeExtensions(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
+    private void checkObjectTypeExtensions(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry,Map<String, DirectiveDefinition> directiveDefinitionMap) {
         typeRegistry.objectTypeExtensions()
                 .forEach((name, extensions) -> {
                             checkTypeExtensionHasCorrespondingType(errors, typeRegistry, name, extensions, ObjectTypeDefinition.class);
@@ -79,7 +82,7 @@ class SchemaTypeExtensionsChecker {
                                         (namedField, inputValueDefinition) -> new NonUniqueArgumentError(extension, fld, name)));
 
                                 // directive checks
-                                extension.getFieldDefinitions().forEach(fld -> checkNamedUniqueness(errors, fld.getDirectives(), Directive::getName,
+                                extension.getFieldDefinitions().forEach(fld -> checkNamedUniqueness(errors, nonRepeatableDirectivesOnly(directiveDefinitionMap, fld.getDirectives()), Directive::getName,
                                         (directiveName, directive) -> new NonUniqueDirectiveError(extension, fld, directiveName)));
 
                                 fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive ->
@@ -101,7 +104,6 @@ class SchemaTypeExtensionsChecker {
                 );
     }
 
-
     /*
      * Interface type extensions have the potential to be invalid if incorrectly defined.
      *
@@ -111,7 +113,7 @@ class SchemaTypeExtensionsChecker {
      * Any Object type which implemented the original Interface type must also be a super-set of the fields of the Interface type extension (which may be due to Object type extension).
      * Any directives provided must not already apply to the original Interface type.
      */
-    private void checkInterfaceTypeExtensions(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
+    private void checkInterfaceTypeExtensions(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry,Map<String, DirectiveDefinition> directiveDefinitionMap) {
         typeRegistry.interfaceTypeExtensions()
                 .forEach((name, extensions) -> {
                     checkTypeExtensionHasCorrespondingType(errors, typeRegistry, name, extensions, InterfaceTypeDefinition.class);
@@ -128,7 +130,7 @@ class SchemaTypeExtensionsChecker {
                                 (namedField, inputValueDefinition) -> new NonUniqueArgumentError(extension, fld, name)));
 
                         // directive checks
-                        extension.getFieldDefinitions().forEach(fld -> checkNamedUniqueness(errors, fld.getDirectives(), Directive::getName,
+                        extension.getFieldDefinitions().forEach(fld -> checkNamedUniqueness(errors, nonRepeatableDirectivesOnly(directiveDefinitionMap,fld.getDirectives()), Directive::getName,
                                 (directiveName, directive) -> new NonUniqueDirectiveError(extension, fld, directiveName)));
 
                         fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive ->
@@ -242,7 +244,7 @@ class SchemaTypeExtensionsChecker {
      * All fields of an Input Object type extension must not already be a field of the original Input Object.
      * Any directives provided must not already apply to the original Input Object type.
      */
-    private void checkInputObjectTypeExtensions(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
+    private void checkInputObjectTypeExtensions(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry,Map<String, DirectiveDefinition> directiveDefinitionMap) {
         typeRegistry.inputObjectTypeExtensions()
                 .forEach((name, extensions) -> {
                     checkTypeExtensionHasCorrespondingType(errors, typeRegistry, name, extensions, InputObjectTypeDefinition.class);
@@ -255,7 +257,7 @@ class SchemaTypeExtensionsChecker {
                                 (namedField, fieldDef) -> new NonUniqueNameError(extension, fieldDef));
 
                         // directive checks
-                        inputValueDefinitions.forEach(fld -> checkNamedUniqueness(errors, fld.getDirectives(), Directive::getName,
+                        inputValueDefinitions.forEach(fld -> checkNamedUniqueness(errors, nonRepeatableDirectivesOnly(directiveDefinitionMap, fld.getDirectives()), Directive::getName,
                                 (directiveName, directive) -> new NonUniqueDirectiveError(extension, fld, directiveName)));
 
                         inputValueDefinitions.forEach(fld -> fld.getDirectives().forEach(directive ->
