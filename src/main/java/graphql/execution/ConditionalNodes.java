@@ -4,19 +4,16 @@ import graphql.Assert;
 import graphql.Internal;
 import graphql.VisibleForTesting;
 import graphql.language.Directive;
-import graphql.language.NodeUtil;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static graphql.Directives.IncludeDirective;
 import static graphql.Directives.SkipDirective;
-import static graphql.collect.ImmutableKit.emptyList;
-
 
 @Internal
 public class ConditionalNodes {
-
 
     @VisibleForTesting
     ValuesResolver valuesResolver = new ValuesResolver();
@@ -28,10 +25,9 @@ public class ConditionalNodes {
     }
 
     private boolean getDirectiveResult(Map<String, Object> variables, List<Directive> directives, String directiveName, boolean defaultValue) {
-        List<Directive> foundDirectives = getDirectiveByName(directives, directiveName);
-        if (!foundDirectives.isEmpty()) {
-            Directive directive = foundDirectives.get(0);
-            Map<String, Object> argumentValues = valuesResolver.getArgumentValues(SkipDirective.getArguments(), directive.getArguments(), variables);
+        Directive foundDirective = findDirectiveByName(directives, directiveName);
+        if (foundDirective != null) {
+            Map<String, Object> argumentValues = valuesResolver.getArgumentValues(SkipDirective.getArguments(), foundDirective.getArguments(), variables);
             Object flag = argumentValues.get("if");
             Assert.assertTrue(flag instanceof Boolean, () -> String.format("The '%s' directive MUST have a value for the 'if' argument", directiveName));
             return (Boolean) flag;
@@ -39,8 +35,13 @@ public class ConditionalNodes {
         return defaultValue;
     }
 
-    private List<Directive> getDirectiveByName(List<Directive> directives, String name) {
-        return NodeUtil.allDirectivesByName(directives).getOrDefault(name, emptyList());
+    private Directive findDirectiveByName(List<Directive> directives, String name) {
+        for (Directive directive : directives) {
+            if (Objects.equals(directive.getName(), name)) {
+                return directive;
+            }
+        }
+        return null;
     }
 
 }
