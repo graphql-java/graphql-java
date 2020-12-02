@@ -5,8 +5,6 @@ import graphql.PublicApi;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.Assert.assertNotNull;
-
 @PublicApi
 public interface NodeBuilder {
 

@@ -50,7 +50,7 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
         return ignoredChars;
     }
 
-
+    @Override
     public Map<String, String> getAdditionalData() {
         return additionalData;
     }

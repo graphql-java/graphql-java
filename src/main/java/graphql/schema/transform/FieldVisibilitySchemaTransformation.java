@@ -82,7 +82,7 @@ public class FieldVisibilitySchemaTransformation {
     private static class TypeObservingVisitor extends GraphQLTypeVisitorStub {
 
         private final Set<GraphQLType> observedTypes;
-        private GraphQLSchema graphQLSchema;
+        private final GraphQLSchema graphQLSchema;
 
 
         private TypeObservingVisitor(Set<GraphQLType> observedTypes, GraphQLSchema graphQLSchema) {

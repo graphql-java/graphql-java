@@ -1,6 +1,5 @@
 package graphql.schema;
 
-import graphql.AssertException;
 import graphql.DirectivesUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -21,7 +20,6 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
-import static graphql.Assert.assertTrue;
 import static graphql.Assert.assertValidName;
 import static graphql.util.FpKit.getByName;
 import static java.util.Collections.emptyList;

@@ -202,7 +202,7 @@ public class GraphqlAntlrToLanguage {
             if (selectionContext.inlineFragment() != null) {
                 return createInlineFragment(selectionContext.inlineFragment());
             }
-            return (Selection) Assert.assertShouldNeverHappen();
+            return Assert.assertShouldNeverHappen();
 
         });
         builder.selections(selections);

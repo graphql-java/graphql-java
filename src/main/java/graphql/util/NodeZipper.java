@@ -59,27 +59,27 @@ public class NodeZipper<T> {
     }
 
     public static <T> NodeZipper<T> rootZipper(T rootNode, NodeAdapter<T> nodeAdapter) {
-        return new NodeZipper<T>(rootNode, new ArrayList<>(), nodeAdapter);
+        return new NodeZipper<>(rootNode, new ArrayList<>(), nodeAdapter);
     }
 
     public NodeZipper<T> modifyNode(Function<T, T> transform) {
-        return new NodeZipper<T>(transform.apply(curNode), breadcrumbs, nodeAdapter, this.modificationType);
+        return new NodeZipper<>(transform.apply(curNode), breadcrumbs, nodeAdapter, this.modificationType);
     }
 
     public NodeZipper<T> deleteNode() {
-        return new NodeZipper<T>(this.curNode, breadcrumbs, nodeAdapter, ModificationType.DELETE);
+        return new NodeZipper<>(this.curNode, breadcrumbs, nodeAdapter, ModificationType.DELETE);
     }
 
     public NodeZipper<T> insertAfter(T toInsertAfter) {
-        return new NodeZipper<T>(toInsertAfter, breadcrumbs, nodeAdapter, ModificationType.INSERT_AFTER);
+        return new NodeZipper<>(toInsertAfter, breadcrumbs, nodeAdapter, ModificationType.INSERT_AFTER);
     }
 
     public NodeZipper<T> insertBefore(T toInsertBefore) {
-        return new NodeZipper<T>(toInsertBefore, breadcrumbs, nodeAdapter, ModificationType.INSERT_BEFORE);
+        return new NodeZipper<>(toInsertBefore, breadcrumbs, nodeAdapter, ModificationType.INSERT_BEFORE);
     }
 
     public NodeZipper<T> withNewNode(T newNode) {
-        return new NodeZipper<T>(newNode, breadcrumbs, nodeAdapter, this.modificationType);
+        return new NodeZipper<>(newNode, breadcrumbs, nodeAdapter, this.modificationType);
     }
 
     public NodeZipper<T> moveUp() {

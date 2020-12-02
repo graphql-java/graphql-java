@@ -60,7 +60,7 @@ public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {
         return CONTINUE;
     }
 
-    private class TypeRefResolvingVisitor extends GraphQLTypeVisitorStub {
+    private static class TypeRefResolvingVisitor extends GraphQLTypeVisitorStub {
         protected final GraphQLType resolvedType;
 
         TypeRefResolvingVisitor(GraphQLType resolvedType) {

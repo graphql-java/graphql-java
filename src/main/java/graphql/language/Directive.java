@@ -19,7 +19,6 @@ import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.argumentsByName;
-import static graphql.language.NodeUtil.getArgumentByName;
 
 @PublicApi
 public class Directive extends AbstractNode<Directive> implements NamedNode<Directive> {

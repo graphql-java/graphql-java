@@ -57,7 +57,6 @@ public class FieldValueInfo {
                 '}';
     }
 
-    @SuppressWarnings("unused")
     public static class Builder {
         private CompleteValueType completeValueType;
         private CompletableFuture<ExecutionResult> executionResultFuture;

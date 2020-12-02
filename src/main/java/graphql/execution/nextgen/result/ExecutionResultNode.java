@@ -9,7 +9,6 @@ import graphql.execution.MergedField;
 import graphql.execution.NonNullableFieldWasNullException;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 

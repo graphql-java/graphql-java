@@ -321,7 +321,7 @@ public class SchemaGeneratorHelper {
         if (lines.size() == 0) {
             return null;
         }
-        return lines.stream().collect(joining("\n"));
+        return String.join("\n", lines);
     }
 
     String buildDeprecationReason(List<Directive> directives) {
@@ -955,7 +955,7 @@ public class SchemaGeneratorHelper {
 
         buildCtx.putOutputType((GraphQLNamedOutputType) outputType);
         buildCtx.pop();
-        return (T) typeInfo.decorate(outputType);
+        return typeInfo.decorate(outputType);
     }
 
     GraphQLFieldDefinition buildField(BuildContext buildCtx, TypeDefinition parentType, FieldDefinition fieldDef) {

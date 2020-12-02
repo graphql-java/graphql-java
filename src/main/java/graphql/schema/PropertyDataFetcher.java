@@ -128,7 +128,6 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      * caching may interfere with this.  So you can call this method to clear the cache.  A JRebel plugin could
      * be developed to do just that.
      */
-    @SuppressWarnings("unused")
     public static void clearReflectionCache() {
         PropertyDataFetcherHelper.clearReflectionCache();
     }

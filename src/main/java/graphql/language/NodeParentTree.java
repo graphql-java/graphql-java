@@ -35,7 +35,7 @@ public class NodeParentTree<T extends Node> {
         path = mkPath(copy);
         node = copy.pop();
         if (!copy.isEmpty()) {
-            parent = new NodeParentTree<T>(copy);
+            parent = new NodeParentTree<>(copy);
         } else {
             parent = null;
         }

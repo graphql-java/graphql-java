@@ -81,13 +81,13 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
         CompletableFuture<List<List<NodeZipper<ExecutionResultNode>>>> listListCF = Async.flatMap(unresolvedNodes,
                 executionResultMultiZipper -> fetchAndAnalyze(executionContext, executionResultMultiZipper.getZippers()));
 
-        return flatList(listListCF).thenApply(zippers -> new NodeMultiZipper<ExecutionResultNode>(commonRoot, zippers, RESULT_NODE_ADAPTER));
+        return flatList(listListCF).thenApply(zippers -> new NodeMultiZipper<>(commonRoot, zippers, RESULT_NODE_ADAPTER));
     }
 
     private List<NodeMultiZipper<ExecutionResultNode>> groupNodesIntoBatches(NodeMultiZipper<ExecutionResultNode> unresolvedZipper) {
         Map<MergedField, ImmutableList<NodeZipper<ExecutionResultNode>>> zipperBySubSelection = FpKit.groupingBy(unresolvedZipper.getZippers(),
                 (executionResultZipper -> executionResultZipper.getCurNode().getMergedField()));
-        return mapEntries(zipperBySubSelection, (key, value) -> new NodeMultiZipper<ExecutionResultNode>(unresolvedZipper.getCommonRoot(), value, RESULT_NODE_ADAPTER));
+        return mapEntries(zipperBySubSelection, (key, value) -> new NodeMultiZipper<>(unresolvedZipper.getCommonRoot(), value, RESULT_NODE_ADAPTER));
     }
 
     private CompletableFuture<List<NodeZipper<ExecutionResultNode>>> fetchAndAnalyze(ExecutionContext executionContext, List<NodeZipper<ExecutionResultNode>> unresolvedNodes) {

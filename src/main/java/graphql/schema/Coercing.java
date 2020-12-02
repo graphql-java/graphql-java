@@ -87,10 +87,8 @@ public interface Coercing<I, O> {
      *
      * @throws graphql.schema.CoercingParseLiteralException if input literal can't be parsed
      */
-    @SuppressWarnings("unused")
     default I parseLiteral(Object input, Map<String, Object> variables) throws CoercingParseLiteralException {
         return parseLiteral(input);
     }
 
-    ;
 }

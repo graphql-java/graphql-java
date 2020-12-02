@@ -119,7 +119,6 @@ public class SchemaDiff {
      *
      * @return the number of API breaking changes
      */
-    @SuppressWarnings("unchecked")
     public int diffSchema(DiffSet diffSet, DifferenceReporter reporter) {
 
         CountingReporter countingReporter = new CountingReporter(reporter);

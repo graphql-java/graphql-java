@@ -10,10 +10,8 @@ import graphql.language.UnionTypeDefinition;
 import graphql.language.UnionTypeExtensionDefinition;
 import graphql.schema.idl.errors.UnionTypeError;
 
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -34,13 +32,6 @@ import static java.lang.String.format;
  */
 @Internal
 class UnionTypesChecker {
-    private static final Map<Class<? extends UnionTypeDefinition>, String> TYPE_OF_MAP = new HashMap<>();
-
-    static {
-        TYPE_OF_MAP.put(UnionTypeDefinition.class, "union");
-        TYPE_OF_MAP.put(UnionTypeExtensionDefinition.class, "union extension");
-    }
-
 
     void checkUnionType(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
         List<UnionTypeDefinition> unionTypes = typeRegistry.getTypes(UnionTypeDefinition.class);

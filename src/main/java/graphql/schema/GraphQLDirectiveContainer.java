@@ -1,16 +1,11 @@
 package graphql.schema;
 
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import graphql.PublicApi;
 
 import java.util.List;
 import java.util.Map;
 
-import static graphql.DirectivesUtil.allDirectivesByName;
-import static graphql.DirectivesUtil.nonRepeatableDirectivesByName;
-import static graphql.DirectivesUtil.nonRepeatedDirectiveByNameWithAssert;
 import static java.util.Collections.emptyList;
 
 /**

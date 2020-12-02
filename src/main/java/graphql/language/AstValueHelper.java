@@ -2,7 +2,6 @@ package graphql.language;
 
 import graphql.Assert;
 import graphql.AssertException;
-import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.Scalars;
 import graphql.parser.Parser;
@@ -47,7 +46,7 @@ public class AstValueHelper {
      *
      * @param value - the java value to be converted into graphql ast
      * @param type  the graphql type of the object
-     * @return a grapql language ast {@link Value}
+     * @return a graphql language ast {@link Value}
      */
     public static Value<?> astFromValue(Object value, GraphQLType type) {
         if (value == null) {

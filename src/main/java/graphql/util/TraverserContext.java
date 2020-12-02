@@ -120,7 +120,7 @@ public interface TraverserContext<T> {
      * Obtains all visited nodes and values received by the {@link TraverserVisitor#enter(graphql.util.TraverserContext) }
      * method
      *
-     * @return a map containg all nodes visited and values passed when visiting nodes for the first time
+     * @return a map containing all nodes visited and values passed when visiting nodes for the first time
      */
     Set<T> visitedNodes();
 
@@ -148,7 +148,7 @@ public interface TraverserContext<T> {
     /**
      * Stores a variable in the context
      *
-     * @param <S>   type of a varable
+     * @param <S>   type of a variable
      * @param key   key to create bindings for the variable
      * @param value value of variable
      *

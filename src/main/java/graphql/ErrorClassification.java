@@ -19,7 +19,6 @@ public interface ErrorClassification {
      *
      * @return an object representation of this error classification
      */
-    @SuppressWarnings("unused")
     default Object toSpecification(GraphQLError error) {
         return String.valueOf(this);
     }

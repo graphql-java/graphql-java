@@ -17,6 +17,8 @@ import static graphql.Assert.assertTrue;
 import static graphql.schema.GraphQLTypeUtil.isList;
 
 /**
+ * An ExecutionStepInfo represent either a field or a list element inside a list of objects/interfaces/unions.
+ *
  * As the graphql query executes, it forms a hierarchy from parent fields (and their type) to their child fields (and their type)
  * until a scalar type is encountered; this class captures that execution type information.
  * <p>
@@ -25,14 +27,6 @@ import static graphql.schema.GraphQLTypeUtil.isList;
  */
 @PublicApi
 public class ExecutionStepInfo {
-
-    /**
-     * An ExecutionStepInfo represent either a field or a list element inside a list of objects/interfaces/unions.
-     *
-     * A StepInfo never represent a Scalar/Enum inside a list (e.g. [String]) because GraphQL execution doesn't descend down
-     * scalar/enums lists.
-     *
-     */
 
     /**
      * If this StepInfo represent a field the type is equal to fieldDefinition.getType()

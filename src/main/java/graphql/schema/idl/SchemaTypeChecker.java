@@ -322,7 +322,7 @@ public class SchemaTypeChecker {
 
     private void checkTypeResolversArePresent(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
 
-        Predicate<InterfaceTypeDefinition> noDynamicResolverForInterface = interaceTypeDef -> !wiring.getWiringFactory().providesTypeResolver(new InterfaceWiringEnvironment(typeRegistry, interaceTypeDef));
+        Predicate<InterfaceTypeDefinition> noDynamicResolverForInterface = interfaceTypeDefinition -> !wiring.getWiringFactory().providesTypeResolver(new InterfaceWiringEnvironment(typeRegistry, interfaceTypeDefinition));
         Predicate<UnionTypeDefinition> noDynamicResolverForUnion = unionTypeDef -> !wiring.getWiringFactory().providesTypeResolver(new UnionWiringEnvironment(typeRegistry, unionTypeDef));
 
         Predicate<TypeDefinition> noTypeResolver = typeDefinition -> !wiring.getTypeResolvers().containsKey(typeDefinition.getName());
