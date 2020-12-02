@@ -4,14 +4,14 @@ import graphql.Assert;
 import graphql.Internal;
 import graphql.VisibleForTesting;
 import graphql.language.Directive;
-import graphql.language.NodeUtil;
+import graphql.util.FpKit;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static graphql.Directives.IncludeDirective;
 import static graphql.Directives.SkipDirective;
-import static graphql.collect.ImmutableKit.emptyList;
 
 
 @Internal
@@ -40,7 +40,7 @@ public class ConditionalNodes {
     }
 
     private List<Directive> getDirectiveByName(List<Directive> directives, String name) {
-        return NodeUtil.allDirectivesByName(directives).getOrDefault(name, emptyList());
+        return FpKit.filterList(directives, directive -> Objects.equals(directive.getName(), name));
     }
 
 }

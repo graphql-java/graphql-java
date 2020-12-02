@@ -256,7 +256,7 @@ public class FpKit {
         return list
                 .stream()
                 .filter(filter)
-                .collect(Collectors.toList());
+                .collect(ImmutableList.toImmutableList());
     }
 
     /**
