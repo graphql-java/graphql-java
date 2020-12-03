@@ -4,10 +4,10 @@ import graphql.Assert;
 import graphql.Internal;
 import graphql.VisibleForTesting;
 import graphql.language.Directive;
+import graphql.language.NodeUtil;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static graphql.Directives.IncludeDirective;
 import static graphql.Directives.SkipDirective;
@@ -25,7 +25,7 @@ public class ConditionalNodes {
     }
 
     private boolean getDirectiveResult(Map<String, Object> variables, List<Directive> directives, String directiveName, boolean defaultValue) {
-        Directive foundDirective = findDirectiveByName(directives, directiveName);
+        Directive foundDirective = NodeUtil.findNodeByName(directives, directiveName);
         if (foundDirective != null) {
             Map<String, Object> argumentValues = valuesResolver.getArgumentValues(SkipDirective.getArguments(), foundDirective.getArguments(), variables);
             Object flag = argumentValues.get("if");
@@ -33,15 +33,6 @@ public class ConditionalNodes {
             return (Boolean) flag;
         }
         return defaultValue;
-    }
-
-    private Directive findDirectiveByName(List<Directive> directives, String name) {
-        for (Directive directive : directives) {
-            if (Objects.equals(directive.getName(), name)) {
-                return directive;
-            }
-        }
-        return null;
     }
 
 }
