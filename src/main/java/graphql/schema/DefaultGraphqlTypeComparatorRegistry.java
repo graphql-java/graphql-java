@@ -16,7 +16,16 @@ import static graphql.schema.GraphqlTypeComparatorEnvironment.newEnvironment;
 @PublicApi
 public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparatorRegistry {
 
-    public static final Comparator<GraphQLSchemaElement> DEFAULT_COMPARATOR = Comparator.comparing(graphQLSchemaElement -> ((GraphQLNamedSchemaElement) graphQLSchemaElement).getName());
+    public static final Comparator<GraphQLSchemaElement> DEFAULT_COMPARATOR;
+    static {
+        DEFAULT_COMPARATOR = Comparator.comparing(element -> {
+            if (element instanceof GraphQLNamedSchemaElement) {
+                return ((GraphQLNamedSchemaElement) element).getName();
+            } else {
+                return element.toString();
+            }
+        });
+    }
 
     private Map<GraphqlTypeComparatorEnvironment, Comparator<?>> registry = new HashMap<>();
 

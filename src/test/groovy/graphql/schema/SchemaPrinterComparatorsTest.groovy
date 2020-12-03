@@ -4,6 +4,8 @@ import graphql.TestUtil
 import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
+import java.util.stream.Collectors
+
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.TestUtil.*
@@ -769,5 +771,46 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 scalar TestScalar @a() @bb()
 
 '''
+    }
+
+    def " sort GraphQLSchemaElement by name or toString()"() {
+        given:
+        def coercing = new Coercing() {
+            @Override
+            Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
+                return null
+            }
+
+            @Override
+            Object parseValue(Object input) throws CoercingParseValueException {
+                return null
+            }
+
+            @Override
+            Object parseLiteral(Object input) throws CoercingParseLiteralException {
+                return null
+            }
+        }
+
+        def a = GraphQLScalarType.newScalar()
+                .name("a")
+                .coercing(coercing)
+                .build()
+        def b = GraphQLScalarType.newScalar()
+                .name("b")
+                .coercing(coercing)
+                .build()
+
+        def nonNullA = GraphQLNonNull.nonNull(a)
+        def nonNullB = GraphQLNonNull.nonNull(b)
+        def list = [nonNullB, nonNullA]
+
+        when:
+        def sortedList = list.stream().sorted(
+                DefaultGraphqlTypeComparatorRegistry.DEFAULT_COMPARATOR).collect(Collectors.toList()
+        )
+
+        then:
+        sortedList == [nonNullA, nonNullB]
     }
 }
