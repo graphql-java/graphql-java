@@ -9,6 +9,7 @@ import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
 import graphql.normalized.FieldCollectorNormalizedQuery.CollectFieldResult;
 import graphql.schema.FieldCoordinates;
+import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
 import java.util.ArrayList;
@@ -52,7 +53,18 @@ public class NormalizedQueryTreeFactory {
                 .variables(variables)
                 .build();
 
-        CollectFieldResult topLevelFields = fieldCollector.collectFromOperation(parameters, operationDefinition, graphQLSchema.getQueryType());
+        GraphQLObjectType rootType;
+        if (operationDefinition.getOperation() == OperationDefinition.Operation.QUERY) {
+            rootType = graphQLSchema.getQueryType();
+        } else if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
+            rootType = graphQLSchema.getMutationType();
+        } else if (operationDefinition.getOperation() == OperationDefinition.Operation.SUBSCRIPTION) {
+            rootType = graphQLSchema.getSubscriptionType();
+        } else {
+            throw new IllegalStateException("Operation type is not valid.");
+        }
+
+        CollectFieldResult topLevelFields = fieldCollector.collectFromOperation(parameters, operationDefinition, rootType);
 
         Map<Field, List<NormalizedField>> fieldToNormalizedField = new LinkedHashMap<>();
         Map<NormalizedField, MergedField> normalizedFieldToMergedField = new LinkedHashMap<>();
