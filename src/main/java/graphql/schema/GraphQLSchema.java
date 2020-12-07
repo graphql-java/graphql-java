@@ -404,7 +404,7 @@ public class GraphQLSchema {
     public GraphQLSchema transform(Consumer<Builder> builderConsumer) {
         Builder builder = newSchema(this);
         builderConsumer.accept(builder);
-        return builder.build();
+        return builder.buildImpl(true);
     }
 
     /**
