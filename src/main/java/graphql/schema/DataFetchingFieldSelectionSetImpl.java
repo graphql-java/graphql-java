@@ -186,6 +186,9 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         if (computedValues) {
             return;
         }
+        // this supplier is a once only thread synced call - so do it outside this lock
+        // if only to have only 1 lock in action at a time
+        NormalizedField currentNormalisedField = normalizedFieldSupplier.get();
         synchronized (this) {
             if (computedValues) {
                 return;
@@ -193,7 +196,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
             flattenedFieldsForGlobSearching = new LinkedHashSet<>();
             normalisedSelectionSetFields = new LinkedHashMap<>();
             immediateFields = new ArrayList<>();
-            traverseSubSelectedFields(normalizedFieldSupplier.get(), "", "", true);
+            traverseSubSelectedFields(currentNormalisedField, "", "", true);
             computedValues = true;
         }
     }
