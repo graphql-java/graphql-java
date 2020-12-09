@@ -210,4 +210,94 @@ input InputObject1 {
 
 
     }
+
+    def "query with aliases"() {
+        given:
+        def schema = TestUtil.schema("""
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            bar1: String
+            bar2: ID
+        }
+        """)
+        def query = "{myAlias: foo { anotherOne: bar2}}"
+
+        when:
+        def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
+        def newQuery = result.queries[0]
+
+        then:
+        newQuery == "query {alias1:field1 {alias2:field3}}"
+    }
+
+    def "complex schema"() {
+        given:
+        def schema = TestUtil.schema("""
+        type Query {
+            pets: Pet
+            allPets: AllPets
+        }
+        enum PetKind {
+            FRIENDLY
+            NOT_FRIENDLY
+        }
+        
+        interface Pet {
+            name: String
+            petKind: PetKind
+        }
+        type Dog implements Pet {
+            name: String 
+            dogField: String
+            petKind: PetKind
+        } 
+        type Cat implements Pet {
+            name: String 
+            catField: String
+            petKind: PetKind
+        }
+        union AllPets = Dog | Cat
+        """)
+
+        when:
+        def result = Anonymizer.anonymizeSchema(schema)
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectiveDefinitions(false)).print(result)
+
+        then:
+        newSchema == """schema {
+  query: Object1
+}
+
+interface Interface1 {
+  field2: String
+  field3: Enum1
+}
+
+union Union1 = Object2 | Object3
+
+type Object1 {
+  field1: Interface1
+  field4: Union1
+}
+
+type Object2 implements Interface1 {
+  field2: String
+  field3: Enum1
+  field5: String
+}
+
+type Object3 implements Interface1 {
+  field2: String
+  field3: Enum1
+  field6: String
+}
+
+enum Enum1 {
+  EnumValue1
+  EnumValue2
+}
+"""
+    }
 }

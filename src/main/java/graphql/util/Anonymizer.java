@@ -1,6 +1,5 @@
 package graphql.util;
 
-import graphql.Assert;
 import graphql.AssertException;
 import graphql.analysis.QueryTraverser;
 import graphql.analysis.QueryVisitor;
@@ -30,13 +29,16 @@ import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLImplementingType;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
@@ -46,6 +48,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.SchemaTransformer;
+import graphql.schema.TypeResolver;
 import graphql.schema.idl.DirectiveInfo;
 import graphql.schema.idl.ScalarInfo;
 
@@ -57,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.util.TreeTransformerUtil.changeNode;
 
 public class Anonymizer {
@@ -79,11 +83,16 @@ public class Anonymizer {
         }
     }
 
+    public static GraphQLSchema anonymizeSchema(GraphQLSchema schema) {
+        return anonymizeSchemaAndQueries(schema, Collections.emptyList(), Collections.emptyMap()).schema;
+    }
+
     public static AnonymizeResult anonymizeSchemaAndQueries(GraphQLSchema schema, List<String> queries) {
         return anonymizeSchemaAndQueries(schema, queries, Collections.emptyMap());
     }
 
     public static AnonymizeResult anonymizeSchemaAndQueries(GraphQLSchema schema, List<String> queries, Map<String, Object> variables) {
+        assertNotNull(queries, () -> "queries can't be null");
 
         AtomicInteger objectCounter = new AtomicInteger(1);
         AtomicInteger inputObjectCounter = new AtomicInteger(1);
@@ -98,6 +107,7 @@ public class Anonymizer {
         AtomicInteger enumValueCounter = new AtomicInteger(1);
         AtomicInteger defaultStringValueCounter = new AtomicInteger(1);
         AtomicInteger defaultIntValueCounter = new AtomicInteger(1);
+
         Map<GraphQLNamedSchemaElement, String> newNameMap = new LinkedHashMap<>();
 
         SchemaTransformer schemaTransformer = new SchemaTransformer();
@@ -122,6 +132,9 @@ public class Anonymizer {
                 GraphQLInterfaceType newElement = graphQLInterfaceType.transform(builder -> {
                     builder.name(newName);
                 });
+                GraphQLCodeRegistry.Builder codeRegistry = assertNotNull(context.getVarFromParents(GraphQLCodeRegistry.Builder.class));
+                TypeResolver typeResolver = codeRegistry.getTypeResolver(graphQLInterfaceType);
+                codeRegistry.typeResolver(newName, typeResolver);
                 return changeNode(context, newElement);
             }
 
@@ -150,7 +163,29 @@ public class Anonymizer {
 
             @Override
             public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition graphQLFieldDefinition, TraverserContext<GraphQLSchemaElement> context) {
-                String newName = "field" + fieldCounter.getAndIncrement();
+                String curName = graphQLFieldDefinition.getName();
+                GraphQLImplementingType parentNode = (GraphQLImplementingType) context.getParentNode();
+                List<GraphQLNamedOutputType> interfaces = parentNode.getInterfaces();
+                List<GraphQLFieldDefinition> matchingInterfaceFieldDefinitions = new ArrayList<>();
+                for (GraphQLNamedOutputType iface : interfaces) {
+                    GraphQLInterfaceType interfaceType = (GraphQLInterfaceType) iface;
+                    if (interfaceType.getFieldDefinition(curName) != null) {
+                        matchingInterfaceFieldDefinitions.add(interfaceType.getFieldDefinition(curName));
+                    }
+                }
+                String newName;
+                if (matchingInterfaceFieldDefinitions.size() == 0) {
+                    newName = "field" + fieldCounter.getAndIncrement();
+                } else {
+                    if (newNameMap.containsKey(matchingInterfaceFieldDefinitions.get(0))) {
+                        newName = newNameMap.get(matchingInterfaceFieldDefinitions.get(0));
+                    } else {
+                        newName = "field" + fieldCounter.getAndIncrement();
+                        for (GraphQLFieldDefinition fieldDefinition : matchingInterfaceFieldDefinitions) {
+                            newNameMap.put(fieldDefinition, newName);
+                        }
+                    }
+                }
                 newNameMap.put(graphQLFieldDefinition, newName);
                 GraphQLFieldDefinition newElement = graphQLFieldDefinition.transform(builder -> {
                     builder.name(newName);
@@ -241,6 +276,9 @@ public class Anonymizer {
                 GraphQLUnionType newElement = graphQLUnionType.transform(builder -> {
                     builder.name(newName);
                 });
+                GraphQLCodeRegistry.Builder codeRegistry = assertNotNull(context.getVarFromParents(GraphQLCodeRegistry.Builder.class));
+                TypeResolver typeResolver = codeRegistry.getTypeResolver(graphQLUnionType);
+                codeRegistry.typeResolver(newName, typeResolver);
                 return changeNode(context, newElement);
             }
         });
@@ -266,7 +304,7 @@ public class Anonymizer {
 
             @Override
             public void visitField(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
-                String newName = Assert.assertNotNull(newNames.get(queryVisitorFieldEnvironment.getFieldDefinition()));
+                String newName = assertNotNull(newNames.get(queryVisitorFieldEnvironment.getFieldDefinition()));
                 nodeToNewName.put(queryVisitorFieldEnvironment.getField(), newName);
             }
 
@@ -302,7 +340,7 @@ public class Anonymizer {
 
             @Override
             public TraversalControl visitArgument(QueryVisitorFieldArgumentEnvironment environment) {
-                String newName = Assert.assertNotNull(newNames.get(environment.getGraphQLArgument()));
+                String newName = assertNotNull(newNames.get(environment.getGraphQLArgument()));
                 nodeToNewName.put(environment.getArgument(), newName);
                 return TraversalControl.CONTINUE;
             }
@@ -311,6 +349,7 @@ public class Anonymizer {
         AtomicInteger stringValueCounter = new AtomicInteger(1);
         AtomicInteger intValueCounter = new AtomicInteger(1);
         AstTransformer astTransformer = new AstTransformer();
+        AtomicInteger aliasCounter = new AtomicInteger(1);
         Document newDocument = (Document) astTransformer.transform(document, new NodeVisitorStub() {
 
 
@@ -336,46 +375,51 @@ public class Anonymizer {
 
             @Override
             public TraversalControl visitField(Field node, TraverserContext<Node> context) {
-                String newName = Assert.assertNotNull(nodeToNewName.get(node));
-                return changeNode(context, node.transform(builder -> builder.name(newName)));
+                String newAlias = null;
+                if (node.getAlias() != null) {
+                    newAlias = "alias" + aliasCounter.getAndIncrement();
+                }
+                String newName = assertNotNull(nodeToNewName.get(node));
+                String finalNewAlias = newAlias;
+                return changeNode(context, node.transform(builder -> builder.name(newName).alias(finalNewAlias)));
             }
 
             @Override
             public TraversalControl visitVariableDefinition(VariableDefinition node, TraverserContext<Node> context) {
-                String newName = Assert.assertNotNull(variableNames.get(node.getName()));
+                String newName = assertNotNull(variableNames.get(node.getName()));
                 return changeNode(context, node.transform(builder -> builder.name(newName)));
             }
 
             @Override
             public TraversalControl visitVariableReference(VariableReference node, TraverserContext<Node> context) {
-                String newName = Assert.assertNotNull(variableNames.get(node.getName()));
+                String newName = assertNotNull(variableNames.get(node.getName()));
                 return changeNode(context, node.transform(builder -> builder.name(newName)));
             }
 
             @Override
             public TraversalControl visitFragmentDefinition(FragmentDefinition node, TraverserContext<Node> context) {
-                String newName = Assert.assertNotNull(nodeToNewName.get(node));
-                GraphQLType currentCondition = Assert.assertNotNull(schema.getType(node.getTypeCondition().getName()));
+                String newName = assertNotNull(nodeToNewName.get(node));
+                GraphQLType currentCondition = assertNotNull(schema.getType(node.getTypeCondition().getName()));
                 String newCondition = newNames.get(currentCondition);
                 return changeNode(context, node.transform(builder -> builder.name(newName).typeCondition(new TypeName(newCondition))));
             }
 
             @Override
             public TraversalControl visitInlineFragment(InlineFragment node, TraverserContext<Node> context) {
-                GraphQLType currentCondition = Assert.assertNotNull(schema.getType(node.getTypeCondition().getName()));
+                GraphQLType currentCondition = assertNotNull(schema.getType(node.getTypeCondition().getName()));
                 String newCondition = newNames.get(currentCondition);
                 return changeNode(context, node.transform(builder -> builder.typeCondition(new TypeName(newCondition))));
             }
 
             @Override
             public TraversalControl visitFragmentSpread(FragmentSpread node, TraverserContext<Node> context) {
-                String newName = Assert.assertNotNull(nodeToNewName.get(node));
+                String newName = assertNotNull(nodeToNewName.get(node));
                 return changeNode(context, node.transform(builder -> builder.name(newName)));
             }
 
             @Override
             public TraversalControl visitArgument(Argument node, TraverserContext<Node> context) {
-                String newName = Assert.assertNotNull(nodeToNewName.get(node));
+                String newName = assertNotNull(nodeToNewName.get(node));
                 return changeNode(context, node.transform(builder -> builder.name(newName)));
             }
         });
