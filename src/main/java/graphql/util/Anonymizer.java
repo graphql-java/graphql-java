@@ -20,9 +20,11 @@ import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
+import graphql.language.IntValue;
 import graphql.language.Node;
 import graphql.language.NodeVisitorStub;
 import graphql.language.OperationDefinition;
+import graphql.language.StringValue;
 import graphql.language.TypeName;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
@@ -47,6 +49,7 @@ import graphql.schema.SchemaTransformer;
 import graphql.schema.idl.DirectiveInfo;
 import graphql.schema.idl.ScalarInfo;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -93,6 +96,8 @@ public class Anonymizer {
         AtomicInteger unionCounter = new AtomicInteger(1);
         AtomicInteger enumCounter = new AtomicInteger(1);
         AtomicInteger enumValueCounter = new AtomicInteger(1);
+        AtomicInteger defaultStringValueCounter = new AtomicInteger(1);
+        AtomicInteger defaultIntValueCounter = new AtomicInteger(1);
         Map<GraphQLNamedSchemaElement, String> newNameMap = new LinkedHashMap<>();
 
         SchemaTransformer schemaTransformer = new SchemaTransformer();
@@ -168,10 +173,20 @@ public class Anonymizer {
 
             @Override
             public TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField graphQLInputObjectField, TraverserContext<GraphQLSchemaElement> context) {
-                String newName = "InputField" + inputObjectFieldCounter.getAndIncrement();
+                String newName = "inputField" + inputObjectFieldCounter.getAndIncrement();
                 newNameMap.put(graphQLInputObjectField, newName);
+
+                Object defaultValue = graphQLInputObjectField.getDefaultValue();
+                if (defaultValue instanceof String) {
+                    defaultValue = "defaultValue" + defaultStringValueCounter.getAndIncrement();
+                } else if (defaultValue instanceof Integer) {
+                    defaultValue = defaultIntValueCounter.getAndIncrement();
+                }
+
+                Object finalDefaultValue = defaultValue;
                 GraphQLInputObjectField newElement = graphQLInputObjectField.transform(builder -> {
                     builder.name(newName);
+                    builder.defaultValue(finalDefaultValue);
                 });
                 return changeNode(context, newElement);
             }
@@ -293,8 +308,22 @@ public class Anonymizer {
             }
         });
 
+        AtomicInteger stringValueCounter = new AtomicInteger(1);
+        AtomicInteger intValueCounter = new AtomicInteger(1);
         AstTransformer astTransformer = new AstTransformer();
         Document newDocument = (Document) astTransformer.transform(document, new NodeVisitorStub() {
+
+
+            @Override
+            public TraversalControl visitStringValue(StringValue node, TraverserContext<Node> context) {
+                return changeNode(context, node.transform(builder -> builder.value("stringValue" + stringValueCounter.getAndIncrement())));
+            }
+
+            @Override
+            public TraversalControl visitIntValue(IntValue node, TraverserContext<Node> context) {
+                return changeNode(context, node.transform(builder -> builder.value(BigInteger.valueOf(intValueCounter.getAndIncrement()))));
+            }
+
 
             @Override
             public TraversalControl visitOperationDefinition(OperationDefinition node, TraverserContext<Node> context) {

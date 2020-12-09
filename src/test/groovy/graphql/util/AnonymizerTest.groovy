@@ -110,7 +110,7 @@ type Object2 {
   field3: ID
 }
 """
-        newQuery == 'query {field1(argument1:"123",argument2:"456") {field2 field3}}'
+        newQuery == 'query {field1(argument1:"stringValue1",argument2:"stringValue2") {field2 field3}}'
 
     }
 
@@ -146,7 +146,7 @@ type Object2 {
   field3(argument4: ID): ID
 }
 """
-        newQuery == 'query operation($var1:ID) {field1(argument1:$var1,argument2:"456") {field2 field3(argument4:$var1)}}'
+        newQuery == 'query operation($var1:ID) {field1(argument1:$var1,argument2:"stringValue1") {field2 field3(argument4:$var1)}}'
 
 
     }
@@ -161,13 +161,53 @@ type Object2 {
         def query = 'query myOperation{foo} query myOtherQuery{foo}'
 
         when:
+        Anonymizer.anonymizeSchemaAndQueries(schema, [query])
+
+        then:
+        def assertException = thrown(AssertException)
+        assertException.getMessage().contains("Query must have exactly one operation")
+
+    }
+
+    def "replace values"() {
+        given:
+        def schema = TestUtil.schema("""
+
+        type Query {
+            foo(myInput: MyInput!): String
+        }
+        input MyInput {
+            foo1: Int
+            foo2: String = "myDefaultValue"
+            foo3: Int = 1234
+            foo4: Int = 4567 
+        }
+        """)
+        def query = '{foo(myInput: {foo1: 8923, foo2: "someValue" })}'
+
+        when:
         def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
         def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectiveDefinitions(false)).print(result.schema)
         def newQuery = result.queries[0]
 
         then:
-        def assertException = thrown(AssertException)
-        assertException.getMessage().contains("Query must have exactly one operation")
+        newSchema == """schema {
+  query: Object1
+}
+
+type Object1 {
+  field1(argument1: InputObject1!): String
+}
+
+input InputObject1 {
+  inputField1: Int
+  inputField2: String = "defaultValue1"
+  inputField3: Int = 1
+  inputField4: Int = 2
+}
+"""
+        newQuery == 'query {field1(argument1:{foo1:1,foo2:"stringValue1"})}'
+
 
     }
 }
