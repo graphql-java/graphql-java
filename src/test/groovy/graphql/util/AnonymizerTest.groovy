@@ -300,4 +300,89 @@ enum Enum1 {
 }
 """
     }
+
+    def "interface hierarchies"() {
+        given:
+        def schema = TestUtil.schema("""
+        type Query {
+            pets: Pet
+        }
+        
+        interface Pet {
+            name: String
+        }
+        interface GoodPet implements Pet {
+            name: String 
+            goodScore: Int
+        } 
+        type Cat implements GoodPet & Pet{
+            name: String 
+            goodScore: Int
+            catField: ID
+        }
+        
+        interface ProblematicPet implements Pet {
+            name: String 
+            problemField: Float
+       } 
+        interface AnotherInterface implements ProblematicPet & Pet {
+            name: String 
+            problemField: Float
+            otherField: Boolean 
+        }
+        type Dog implements AnotherInterface & ProblematicPet & Pet {
+            name: String 
+            problemField: Float
+            otherField: Boolean 
+            dogField: Int
+        }
+        """)
+
+        when:
+        def result = Anonymizer.anonymizeSchema(schema)
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectiveDefinitions(false)).print(result)
+
+        then:
+        newSchema == """schema {
+  query: Object3
+}
+
+interface Interface1 implements Interface2 {
+  field1: String
+  field2: Int
+}
+
+interface Interface2 {
+  field1: String
+}
+
+interface Interface3 implements Interface2 {
+  field1: String
+  field4: Float
+}
+
+interface Interface4 implements Interface2 & Interface3 {
+  field1: String
+  field4: Float
+  field5: Boolean
+}
+
+type Object1 implements Interface1 & Interface2 {
+  field1: String
+  field2: Int
+  field3: ID
+}
+
+type Object2 implements Interface2 & Interface3 & Interface4 {
+  field1: String
+  field4: Float
+  field5: Boolean
+  field6: Int
+}
+
+type Object3 {
+  field7: Interface2
+}
+"""
+    }
 }
