@@ -210,9 +210,9 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
     @Override
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .child(CHILD_TYPE, originalType)
                 .children(CHILD_ARGUMENTS, arguments)
                 .children(CHILD_DIRECTIVES, directives.getDirectives())
-                .child(CHILD_TYPE, originalType)
                 .build();
     }
 

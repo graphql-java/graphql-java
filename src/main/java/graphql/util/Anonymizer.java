@@ -1,22 +1,33 @@
 package graphql.util;
 
 import graphql.Assert;
-import graphql.Directives;
+import graphql.AssertException;
 import graphql.analysis.QueryTraverser;
 import graphql.analysis.QueryVisitor;
+import graphql.analysis.QueryVisitorFieldArgumentEnvironment;
+import graphql.analysis.QueryVisitorFieldArgumentInputValue;
+import graphql.analysis.QueryVisitorFieldArgumentValueEnvironment;
 import graphql.analysis.QueryVisitorFieldEnvironment;
 import graphql.analysis.QueryVisitorFragmentSpreadEnvironment;
 import graphql.analysis.QueryVisitorInlineFragmentEnvironment;
 import graphql.introspection.Introspection;
+import graphql.language.Argument;
 import graphql.language.AstPrinter;
 import graphql.language.AstTransformer;
+import graphql.language.Definition;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
+import graphql.language.InlineFragment;
+import graphql.language.IntValue;
 import graphql.language.Node;
 import graphql.language.NodeVisitorStub;
+import graphql.language.OperationDefinition;
+import graphql.language.StringValue;
 import graphql.language.TypeName;
+import graphql.language.VariableDefinition;
+import graphql.language.VariableReference;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
@@ -35,8 +46,10 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.SchemaTransformer;
+import graphql.schema.idl.DirectiveInfo;
 import graphql.schema.idl.ScalarInfo;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -83,6 +96,8 @@ public class Anonymizer {
         AtomicInteger unionCounter = new AtomicInteger(1);
         AtomicInteger enumCounter = new AtomicInteger(1);
         AtomicInteger enumValueCounter = new AtomicInteger(1);
+        AtomicInteger defaultStringValueCounter = new AtomicInteger(1);
+        AtomicInteger defaultIntValueCounter = new AtomicInteger(1);
         Map<GraphQLNamedSchemaElement, String> newNameMap = new LinkedHashMap<>();
 
         SchemaTransformer schemaTransformer = new SchemaTransformer();
@@ -145,7 +160,7 @@ public class Anonymizer {
 
             @Override
             public TraversalControl visitGraphQLDirective(GraphQLDirective graphQLDirective, TraverserContext<GraphQLSchemaElement> context) {
-                if (Directives.isBuiltInDirective(graphQLDirective)) {
+                if (DirectiveInfo.isGraphqlSpecifiedDirective(graphQLDirective)) {
                     return TraversalControl.ABORT;
                 }
                 String newName = "Directive" + directiveCounter.getAndIncrement();
@@ -158,10 +173,20 @@ public class Anonymizer {
 
             @Override
             public TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField graphQLInputObjectField, TraverserContext<GraphQLSchemaElement> context) {
-                String newName = "InputField" + inputObjectFieldCounter.getAndIncrement();
+                String newName = "inputField" + inputObjectFieldCounter.getAndIncrement();
                 newNameMap.put(graphQLInputObjectField, newName);
+
+                Object defaultValue = graphQLInputObjectField.getDefaultValue();
+                if (defaultValue instanceof String) {
+                    defaultValue = "defaultValue" + defaultStringValueCounter.getAndIncrement();
+                } else if (defaultValue instanceof Integer) {
+                    defaultValue = defaultIntValueCounter.getAndIncrement();
+                }
+
+                Object finalDefaultValue = defaultValue;
                 GraphQLInputObjectField newElement = graphQLInputObjectField.transform(builder -> {
                     builder.name(newName);
+                    builder.defaultValue(finalDefaultValue);
                 });
                 return changeNode(context, newElement);
             }
@@ -231,10 +256,14 @@ public class Anonymizer {
 
     private static String rewriteQuery(String query, GraphQLSchema schema, Map<GraphQLNamedSchemaElement, String> newNames, Map<String, Object> variables) {
         AtomicInteger fragmentCounter = new AtomicInteger(1);
+        AtomicInteger variableCounter = new AtomicInteger(1);
         Map<Node, String> nodeToNewName = new LinkedHashMap<>();
+        Map<String, String> variableNames = new LinkedHashMap<>();
         Document document = new Parser().parseDocument(query);
+        assertUniqueOperation(document);
         QueryTraverser queryTraverser = QueryTraverser.newQueryTraverser().document(document).schema(schema).variables(variables).build();
         queryTraverser.visitDepthFirst(new QueryVisitor() {
+
             @Override
             public void visitField(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
                 String newName = Assert.assertNotNull(newNames.get(queryVisitorFieldEnvironment.getFieldDefinition()));
@@ -243,7 +272,19 @@ public class Anonymizer {
 
             @Override
             public void visitInlineFragment(QueryVisitorInlineFragmentEnvironment queryVisitorInlineFragmentEnvironment) {
+            }
 
+            @Override
+            public TraversalControl visitArgumentValue(QueryVisitorFieldArgumentValueEnvironment environment) {
+                QueryVisitorFieldArgumentInputValue argumentInputValue = environment.getArgumentInputValue();
+                if (argumentInputValue.getValue() instanceof VariableReference) {
+                    String name = ((VariableReference) argumentInputValue.getValue()).getName();
+                    if (!variableNames.containsKey(name)) {
+                        String newName = "var" + variableCounter.getAndIncrement();
+                        variableNames.put(name, newName);
+                    }
+                }
+                return TraversalControl.CONTINUE;
             }
 
             @Override
@@ -259,14 +300,55 @@ public class Anonymizer {
                 nodeToNewName.put(queryVisitorFragmentSpreadEnvironment.getFragmentSpread(), newName);
             }
 
+            @Override
+            public TraversalControl visitArgument(QueryVisitorFieldArgumentEnvironment environment) {
+                String newName = Assert.assertNotNull(newNames.get(environment.getGraphQLArgument()));
+                nodeToNewName.put(environment.getArgument(), newName);
+                return TraversalControl.CONTINUE;
+            }
         });
 
+        AtomicInteger stringValueCounter = new AtomicInteger(1);
+        AtomicInteger intValueCounter = new AtomicInteger(1);
         AstTransformer astTransformer = new AstTransformer();
         Document newDocument = (Document) astTransformer.transform(document, new NodeVisitorStub() {
+
+
+            @Override
+            public TraversalControl visitStringValue(StringValue node, TraverserContext<Node> context) {
+                return changeNode(context, node.transform(builder -> builder.value("stringValue" + stringValueCounter.getAndIncrement())));
+            }
+
+            @Override
+            public TraversalControl visitIntValue(IntValue node, TraverserContext<Node> context) {
+                return changeNode(context, node.transform(builder -> builder.value(BigInteger.valueOf(intValueCounter.getAndIncrement()))));
+            }
+
+
+            @Override
+            public TraversalControl visitOperationDefinition(OperationDefinition node, TraverserContext<Node> context) {
+                if (node.getName() != null) {
+                    return changeNode(context, node.transform(builder -> builder.name("operation")));
+                } else {
+                    return TraversalControl.CONTINUE;
+                }
+            }
 
             @Override
             public TraversalControl visitField(Field node, TraverserContext<Node> context) {
                 String newName = Assert.assertNotNull(nodeToNewName.get(node));
+                return changeNode(context, node.transform(builder -> builder.name(newName)));
+            }
+
+            @Override
+            public TraversalControl visitVariableDefinition(VariableDefinition node, TraverserContext<Node> context) {
+                String newName = Assert.assertNotNull(variableNames.get(node.getName()));
+                return changeNode(context, node.transform(builder -> builder.name(newName)));
+            }
+
+            @Override
+            public TraversalControl visitVariableReference(VariableReference node, TraverserContext<Node> context) {
+                String newName = Assert.assertNotNull(variableNames.get(node.getName()));
                 return changeNode(context, node.transform(builder -> builder.name(newName)));
             }
 
@@ -279,13 +361,38 @@ public class Anonymizer {
             }
 
             @Override
+            public TraversalControl visitInlineFragment(InlineFragment node, TraverserContext<Node> context) {
+                GraphQLType currentCondition = Assert.assertNotNull(schema.getType(node.getTypeCondition().getName()));
+                String newCondition = newNames.get(currentCondition);
+                return changeNode(context, node.transform(builder -> builder.typeCondition(new TypeName(newCondition))));
+            }
+
+            @Override
             public TraversalControl visitFragmentSpread(FragmentSpread node, TraverserContext<Node> context) {
                 String newName = Assert.assertNotNull(nodeToNewName.get(node));
                 return changeNode(context, node.transform(builder -> builder.name(newName)));
             }
+
+            @Override
+            public TraversalControl visitArgument(Argument node, TraverserContext<Node> context) {
+                String newName = Assert.assertNotNull(nodeToNewName.get(node));
+                return changeNode(context, node.transform(builder -> builder.name(newName)));
+            }
         });
-        return AstPrinter.printAstCompact(newDocument)
-                ;
+        return AstPrinter.printAstCompact(newDocument);
+    }
+
+    private static void assertUniqueOperation(Document document) {
+        String operationName = null;
+        for (Definition definition : document.getDefinitions()) {
+            if (definition instanceof OperationDefinition) {
+                if (operationName != null) {
+                    throw new AssertException("Query must have exactly one operation");
+                }
+                OperationDefinition operationDefinition = (OperationDefinition) definition;
+                operationName = operationDefinition.getName();
+            }
+        }
     }
 
 }

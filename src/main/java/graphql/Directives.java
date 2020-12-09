@@ -119,12 +119,5 @@ public class Directives {
         return new Description(s, null, false);
     }
 
-    public static boolean isBuiltInDirective(GraphQLDirective graphQLDirective) {
-        //TODO: This should be working by just `==` but it doesn't: we create somehow new directives of the build ins
-        return SpecifiedByDirective.getName().equals(graphQLDirective.getName()) ||
-                DeprecatedDirective.getName().equals(graphQLDirective.getName()) ||
-                SkipDirective == graphQLDirective ||
-                IncludeDirective == graphQLDirective;
-    }
 
 }
