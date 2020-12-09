@@ -183,7 +183,7 @@ type Object2 {
             foo4: Int = 4567 
         }
         """)
-        def query = '{foo(myInput: {foo1: 8923, foo2: "someValue" })}'
+        def query = 'query myQuery($myVar: String = "someValue"){foo(myInput: {foo1: 8923, foo2: $myVar })}'
 
         when:
         def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
@@ -206,7 +206,7 @@ input InputObject1 {
   inputField4: Int = 2
 }
 """
-        newQuery == 'query {field1(argument1:{foo1:1,foo2:"stringValue1"})}'
+        newQuery == 'query operation($var1:String="stringValue1") {field1(argument1:{foo1:1,foo2:$var1})}'
 
 
     }
