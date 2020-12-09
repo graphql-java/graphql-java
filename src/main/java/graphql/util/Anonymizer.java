@@ -1,13 +1,14 @@
 package graphql.util;
 
 import graphql.Assert;
-import graphql.Directives;
 import graphql.analysis.QueryTraverser;
 import graphql.analysis.QueryVisitor;
+import graphql.analysis.QueryVisitorFieldArgumentEnvironment;
 import graphql.analysis.QueryVisitorFieldEnvironment;
 import graphql.analysis.QueryVisitorFragmentSpreadEnvironment;
 import graphql.analysis.QueryVisitorInlineFragmentEnvironment;
 import graphql.introspection.Introspection;
+import graphql.language.Argument;
 import graphql.language.AstPrinter;
 import graphql.language.AstTransformer;
 import graphql.language.Document;
@@ -35,6 +36,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.SchemaTransformer;
+import graphql.schema.idl.DirectiveInfo;
 import graphql.schema.idl.ScalarInfo;
 
 import java.util.ArrayList;
@@ -145,7 +147,7 @@ public class Anonymizer {
 
             @Override
             public TraversalControl visitGraphQLDirective(GraphQLDirective graphQLDirective, TraverserContext<GraphQLSchemaElement> context) {
-                if (Directives.isBuiltInDirective(graphQLDirective)) {
+                if (DirectiveInfo.isGraphqlSpecifiedDirective(graphQLDirective)) {
                     return TraversalControl.ABORT;
                 }
                 String newName = "Directive" + directiveCounter.getAndIncrement();
@@ -259,6 +261,12 @@ public class Anonymizer {
                 nodeToNewName.put(queryVisitorFragmentSpreadEnvironment.getFragmentSpread(), newName);
             }
 
+            @Override
+            public TraversalControl visitArgument(QueryVisitorFieldArgumentEnvironment environment) {
+                String newName = Assert.assertNotNull(newNames.get(environment.getGraphQLArgument()));
+                nodeToNewName.put(environment.getArgument(), newName);
+                return TraversalControl.CONTINUE;
+            }
         });
 
         AstTransformer astTransformer = new AstTransformer();
@@ -283,9 +291,14 @@ public class Anonymizer {
                 String newName = Assert.assertNotNull(nodeToNewName.get(node));
                 return changeNode(context, node.transform(builder -> builder.name(newName)));
             }
+
+            @Override
+            public TraversalControl visitArgument(Argument node, TraverserContext<Node> context) {
+                String newName = Assert.assertNotNull(nodeToNewName.get(node));
+                return changeNode(context, node.transform(builder -> builder.name(newName)));
+            }
         });
-        return AstPrinter.printAstCompact(newDocument)
-                ;
+        return AstPrinter.printAstCompact(newDocument);
     }
 
 }
