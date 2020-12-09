@@ -19,7 +19,6 @@ import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.argumentsByName;
-import static graphql.language.NodeUtil.getArgumentByName;
 
 @PublicApi
 public class Directive extends AbstractNode<Directive> implements NamedNode<Directive> {
@@ -65,7 +64,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     }
 
     public Argument getArgument(String argumentName) {
-        return NodeUtil.getArgumentByName(arguments, argumentName);
+        return NodeUtil.findNodeByName(arguments, argumentName);
     }
 
     @Override
