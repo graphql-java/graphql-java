@@ -175,6 +175,7 @@ type Object2 {
 
         type Query {
             foo(myInput: MyInput!): String
+            foo2(arg: String = "toBeReplaced"): String
         }
         input MyInput {
             foo1: Int
@@ -197,6 +198,7 @@ type Object2 {
 
 type Object1 {
   field1(argument1: InputObject1!): String
+  field2(argument2: String = "defaultValue2"): String
 }
 
 input InputObject1 {
