@@ -301,7 +301,7 @@ enum Enum1 {
 """
     }
 
-    def "interface hierarchies"() {
+    def "interface hierarchies with arguments"() {
         given:
         def schema = TestUtil.schema("""
         type Query {
@@ -312,26 +312,26 @@ enum Enum1 {
             name: String
         }
         interface GoodPet implements Pet {
-            name: String 
+            name(nameArg1: String): String 
             goodScore: Int
         } 
         type Cat implements GoodPet & Pet{
-            name: String 
+            name(nameArg1:String, nameArg2: ID): String 
             goodScore: Int
             catField: ID
         }
         
         interface ProblematicPet implements Pet {
-            name: String 
+            name(nameArg3:String): String 
             problemField: Float
        } 
         interface AnotherInterface implements ProblematicPet & Pet {
-            name: String 
+            name(nameArg3: String, nameArg4: Float): String 
             problemField: Float
             otherField: Boolean 
         }
         type Dog implements AnotherInterface & ProblematicPet & Pet {
-            name: String 
+            name(nameArg3: String, nameArg4: Float): String 
             problemField: Float
             otherField: Boolean 
             dogField: Int
@@ -348,7 +348,7 @@ enum Enum1 {
 }
 
 interface Interface1 implements Interface2 {
-  field1: String
+  field1(argument1: String): String
   field2: Int
 }
 
@@ -357,24 +357,24 @@ interface Interface2 {
 }
 
 interface Interface3 implements Interface2 {
-  field1: String
+  field1(argument3: String): String
   field4: Float
 }
 
 interface Interface4 implements Interface2 & Interface3 {
-  field1: String
+  field1(argument3: String, argument4: Float): String
   field4: Float
   field5: Boolean
 }
 
 type Object1 implements Interface1 & Interface2 {
-  field1: String
+  field1(argument1: String, argument2: ID): String
   field2: Int
   field3: ID
 }
 
 type Object2 implements Interface2 & Interface3 & Interface4 {
-  field1: String
+  field1(argument3: String, argument4: Float): String
   field4: Float
   field5: Boolean
   field6: Int
@@ -382,6 +382,44 @@ type Object2 implements Interface2 & Interface3 & Interface4 {
 
 type Object3 {
   field7: Interface2
+}
+"""
+    }
+
+    def "simple interface hierarchies with arguments"() {
+        given:
+        def schema = TestUtil.schema("""
+        type Query {
+            pets: Pet
+        }
+        
+        interface Pet {
+            name(nameArg: String): String
+        }
+        type Dog implements  Pet {
+            name(nameArg: String, otherOptionalArg: Float): String 
+        }
+        """)
+
+        when:
+        def result = Anonymizer.anonymizeSchema(schema)
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectiveDefinitions(false)).print(result)
+
+        then:
+        newSchema == """schema {
+  query: Object2
+}
+
+interface Interface1 {
+  field1(argument1: String): String
+}
+
+type Object1 implements Interface1 {
+  field1(argument1: String, argument2: Float): String
+}
+
+type Object2 {
+  field2: Interface1
 }
 """
     }
