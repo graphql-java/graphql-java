@@ -175,6 +175,7 @@ type Object2 {
 
         type Query {
             foo(myInput: MyInput!): String
+            foo2(arg: String = "toBeReplaced"): String
         }
         input MyInput {
             foo1: Int
@@ -197,6 +198,7 @@ type Object2 {
 
 type Object1 {
   field1(argument1: InputObject1!): String
+  field2(argument2: String = "defaultValue2"): String
 }
 
 input InputObject1 {
@@ -209,5 +211,242 @@ input InputObject1 {
         newQuery == 'query operation($var1:String="stringValue1") {field1(argument1:{foo1:1,foo2:$var1})}'
 
 
+    }
+
+    def "query with aliases"() {
+        given:
+        def schema = TestUtil.schema("""
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            bar1: String
+            bar2: ID
+        }
+        """)
+        def query = "{myAlias: foo { anotherOne: bar2}}"
+
+        when:
+        def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
+        def newQuery = result.queries[0]
+
+        then:
+        newQuery == "query {alias1:field1 {alias2:field3}}"
+    }
+
+    def "complex schema"() {
+        given:
+        def schema = TestUtil.schema("""
+        type Query {
+            pets: Pet
+            allPets: AllPets
+        }
+        enum PetKind {
+            FRIENDLY
+            NOT_FRIENDLY
+        }
+        
+        interface Pet {
+            name: String
+            petKind: PetKind
+        }
+        type Dog implements Pet {
+            name: String 
+            dogField: String
+            petKind: PetKind
+        } 
+        type Cat implements Pet {
+            name: String 
+            catField: String
+            petKind: PetKind
+        }
+        union AllPets = Dog | Cat
+        """)
+
+        when:
+        def result = Anonymizer.anonymizeSchema(schema)
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectiveDefinitions(false)).print(result)
+
+        then:
+        newSchema == """schema {
+  query: Object1
+}
+
+interface Interface1 {
+  field2: String
+  field3: Enum1
+}
+
+union Union1 = Object2 | Object3
+
+type Object1 {
+  field1: Interface1
+  field4: Union1
+}
+
+type Object2 implements Interface1 {
+  field2: String
+  field3: Enum1
+  field5: String
+}
+
+type Object3 implements Interface1 {
+  field2: String
+  field3: Enum1
+  field6: String
+}
+
+enum Enum1 {
+  EnumValue1
+  EnumValue2
+}
+"""
+    }
+
+    def "interface hierarchies with arguments"() {
+        given:
+        def schema = TestUtil.schema("""
+        type Query {
+            pets: Pet
+        }
+        
+        interface Pet {
+            name: String
+        }
+        interface GoodPet implements Pet {
+            name(nameArg1: String): String 
+            goodScore: Int
+        } 
+        type Cat implements GoodPet & Pet{
+            name(nameArg1:String, nameArg2: ID): String 
+            goodScore: Int
+            catField: ID
+        }
+        
+        interface ProblematicPet implements Pet {
+            name(nameArg3:String): String 
+            problemField: Float
+       } 
+        interface AnotherInterface implements ProblematicPet & Pet {
+            name(nameArg3: String, nameArg4: Float): String 
+            problemField: Float
+            otherField: Boolean 
+        }
+        type Dog implements AnotherInterface & ProblematicPet & Pet {
+            name(nameArg3: String, nameArg4: Float): String 
+            problemField: Float
+            otherField: Boolean 
+            dogField: Int
+        }
+        """)
+
+        when:
+        def result = Anonymizer.anonymizeSchema(schema)
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectiveDefinitions(false)).print(result)
+
+        then:
+        newSchema == """schema {
+  query: Object3
+}
+
+interface Interface1 implements Interface2 {
+  field1(argument1: String): String
+  field2: Int
+}
+
+interface Interface2 {
+  field1: String
+}
+
+interface Interface3 implements Interface2 {
+  field1(argument3: String): String
+  field4: Float
+}
+
+interface Interface4 implements Interface2 & Interface3 {
+  field1(argument3: String, argument4: Float): String
+  field4: Float
+  field5: Boolean
+}
+
+type Object1 implements Interface1 & Interface2 {
+  field1(argument1: String, argument2: ID): String
+  field2: Int
+  field3: ID
+}
+
+type Object2 implements Interface2 & Interface3 & Interface4 {
+  field1(argument3: String, argument4: Float): String
+  field4: Float
+  field5: Boolean
+  field6: Int
+}
+
+type Object3 {
+  field7: Interface2
+}
+"""
+    }
+
+    def "simple interface hierarchies with arguments"() {
+        given:
+        def schema = TestUtil.schema("""
+        type Query {
+            pets: Pet
+        }
+        
+        interface Pet {
+            name(nameArg: String): String
+        }
+        type Dog implements  Pet {
+            name(nameArg: String, otherOptionalArg: Float): String 
+        }
+        """)
+
+        when:
+        def result = Anonymizer.anonymizeSchema(schema)
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectiveDefinitions(false)).print(result)
+
+        then:
+        newSchema == """schema {
+  query: Object2
+}
+
+interface Interface1 {
+  field1(argument1: String): String
+}
+
+type Object1 implements Interface1 {
+  field1(argument1: String, argument2: Float): String
+}
+
+type Object2 {
+  field2: Interface1
+}
+"""
+    }
+
+    def "query with introspection typename"() {
+        given:
+        def schema = TestUtil.schema("""
+        type Query {
+            pets: Pet
+        }
+        interface Pet {
+            name:String
+        }
+        type Dog implements  Pet {
+            name:String
+        }
+        """)
+
+        def query = "{pets {__typename otherTypeName:__typename name}}"
+
+        when:
+        def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
+        def newQuery = result.queries[0]
+
+        then:
+        newQuery == "query {field2 {__typename alias1:__typename field1}}"
     }
 }
