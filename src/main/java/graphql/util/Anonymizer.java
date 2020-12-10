@@ -97,17 +97,6 @@ public class Anonymizer {
     public static AnonymizeResult anonymizeSchemaAndQueries(GraphQLSchema schema, List<String> queries, Map<String, Object> variables) {
         assertNotNull(queries, () -> "queries can't be null");
 
-        AtomicInteger objectCounter = new AtomicInteger(1);
-        AtomicInteger inputObjectCounter = new AtomicInteger(1);
-        AtomicInteger inputObjectFieldCounter = new AtomicInteger(1);
-        AtomicInteger fieldCounter = new AtomicInteger(1);
-        AtomicInteger scalarCounter = new AtomicInteger(1);
-        AtomicInteger directiveCounter = new AtomicInteger(1);
-        AtomicInteger argumentCounter = new AtomicInteger(1);
-        AtomicInteger interfaceCounter = new AtomicInteger(1);
-        AtomicInteger unionCounter = new AtomicInteger(1);
-        AtomicInteger enumCounter = new AtomicInteger(1);
-        AtomicInteger enumValueCounter = new AtomicInteger(1);
         AtomicInteger defaultStringValueCounter = new AtomicInteger(1);
         AtomicInteger defaultIntValueCounter = new AtomicInteger(1);
 
@@ -118,8 +107,9 @@ public class Anonymizer {
             @Override
             public TraversalControl visitGraphQLArgument(GraphQLArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
                 String newName = assertNotNull(newNameMap.get(graphQLArgument));
+                Object defaultValue = replaceDefaultValue(graphQLArgument.getDefaultValue(), defaultStringValueCounter, defaultIntValueCounter);
                 GraphQLArgument newElement = graphQLArgument.transform(builder -> {
-                    builder.name(newName);
+                    builder.name(newName).defaultValue(defaultValue);
                 });
                 return changeNode(context, newElement);
             }
@@ -186,11 +176,7 @@ public class Anonymizer {
                 String newName = assertNotNull(newNameMap.get(graphQLInputObjectField));
 
                 Object defaultValue = graphQLInputObjectField.getDefaultValue();
-                if (defaultValue instanceof String) {
-                    defaultValue = "defaultValue" + defaultStringValueCounter.getAndIncrement();
-                } else if (defaultValue instanceof Integer) {
-                    defaultValue = defaultIntValueCounter.getAndIncrement();
-                }
+                defaultValue = replaceDefaultValue(defaultValue, defaultStringValueCounter, defaultIntValueCounter);
 
                 Object finalDefaultValue = defaultValue;
                 GraphQLInputObjectField newElement = graphQLInputObjectField.transform(builder -> {
@@ -260,6 +246,15 @@ public class Anonymizer {
         }
         AnonymizeResult result = new AnonymizeResult(newSchema, newQueries);
         return result;
+    }
+
+    private static Object replaceDefaultValue(Object defaultValue, AtomicInteger defaultStringValueCounter, AtomicInteger defaultIntValueCounter) {
+        if (defaultValue instanceof String) {
+            defaultValue = "defaultValue" + defaultStringValueCounter.getAndIncrement();
+        } else if (defaultValue instanceof Integer) {
+            defaultValue = defaultIntValueCounter.getAndIncrement();
+        }
+        return defaultValue;
     }
 
     public static Map<GraphQLNamedSchemaElement, String> recordNewNames(GraphQLSchema schema) {
