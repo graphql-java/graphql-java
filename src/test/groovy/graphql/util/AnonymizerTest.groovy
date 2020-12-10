@@ -425,4 +425,28 @@ type Object2 {
 }
 """
     }
+
+    def "query with introspection typename"() {
+        given:
+        def schema = TestUtil.schema("""
+        type Query {
+            pets: Pet
+        }
+        interface Pet {
+            name:String
+        }
+        type Dog implements  Pet {
+            name:String
+        }
+        """)
+
+        def query = "{pets {__typename otherTypeName:__typename name}}"
+
+        when:
+        def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
+        def newQuery = result.queries[0]
+
+        then:
+        newQuery == "query {field2 {__typename alias1:__typename field1}}"
+    }
 }

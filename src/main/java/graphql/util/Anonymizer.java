@@ -458,6 +458,9 @@ public class Anonymizer {
 
             @Override
             public void visitField(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
+                if (queryVisitorFieldEnvironment.isTypeNameIntrospectionField()) {
+                    return;
+                }
                 String newName = assertNotNull(newNames.get(queryVisitorFieldEnvironment.getFieldDefinition()));
                 nodeToNewName.put(queryVisitorFieldEnvironment.getField(), newName);
             }
@@ -533,7 +536,12 @@ public class Anonymizer {
                 if (node.getAlias() != null) {
                     newAlias = "alias" + aliasCounter.getAndIncrement();
                 }
-                String newName = assertNotNull(nodeToNewName.get(node));
+                String newName;
+                if (node.getName().equals(Introspection.TypeNameMetaFieldDef.getName())) {
+                    newName = Introspection.TypeNameMetaFieldDef.getName();
+                } else {
+                    newName = assertNotNull(nodeToNewName.get(node));
+                }
                 String finalNewAlias = newAlias;
                 return changeNode(context, node.transform(builder -> builder.name(newName).alias(finalNewAlias)));
             }
