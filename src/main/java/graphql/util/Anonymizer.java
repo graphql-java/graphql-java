@@ -45,6 +45,7 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLTypeVisitor;
 import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.GraphQLUnionType;
@@ -104,6 +105,15 @@ public class Anonymizer {
 
         SchemaTransformer schemaTransformer = new SchemaTransformer();
         GraphQLSchema newSchema = schemaTransformer.transform(schema, new GraphQLTypeVisitorStub() {
+
+            @Override
+            public TraversalControl visitGraphQLTypeReference(GraphQLTypeReference graphQLTypeReference, TraverserContext<GraphQLSchemaElement> context) {
+                GraphQLNamedSchemaElement type = (GraphQLNamedSchemaElement) schema.getType(graphQLTypeReference.getName());
+                String newName = newNameMap.get(type);
+                GraphQLTypeReference newReference = GraphQLTypeReference.typeRef(newName);
+                return changeNode(context, newReference);
+            }
+
             @Override
             public TraversalControl visitGraphQLArgument(GraphQLArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
                 String newName = assertNotNull(newNameMap.get(graphQLArgument));
