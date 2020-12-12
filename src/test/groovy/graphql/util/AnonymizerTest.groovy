@@ -449,4 +449,40 @@ type Object2 {
         then:
         newQuery == "query {field2 {__typename alias1:__typename field1}}"
     }
+
+    def "handles cyclic types"() {
+        def schema = TestUtil.schema("""
+            type Query {
+                query: Foo
+            }
+            type Foo {
+                foo: [Bar]
+            }
+
+            type Bar {
+                bar: [Foo]
+            }
+        """)
+        when:
+        def result = Anonymizer.anonymizeSchema(schema)
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectiveDefinitions(false)).print(result)
+
+        then:
+        newSchema == """schema {
+  query: Object1
+}
+
+type Object1 {
+  field1: Object2
+}
+
+type Object2 {
+  field2: [Object3]
+}
+
+type Object3 {
+  field3: [Object2]
+}
+"""
+    }
 }
