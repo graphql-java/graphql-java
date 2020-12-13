@@ -485,4 +485,39 @@ type Object3 {
 }
 """
     }
+
+    def "descriptions are removed"() {
+        def schema = TestUtil.schema("""
+            "DOC"
+            type Query {
+                "DOC"
+                query(
+                "DOC"
+                arg: String): Foo
+            }
+            "DOC"
+            type Foo {
+                "DOC"
+                foo: String
+            }
+
+        """)
+        when:
+        def result = Anonymizer.anonymizeSchema(schema)
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectiveDefinitions(false)).print(result)
+
+        then:
+        newSchema == """schema {
+  query: Object1
+}
+
+type Object1 {
+  field1(argument1: String): Object2
+}
+
+type Object2 {
+  field2: String
+}
+"""
+    }
 }
