@@ -780,6 +780,15 @@ directiveArg: String = "default Value") on FIELD | FRAGMENT_SPREAD | INLINE_FRAG
                             "defaultValue": "\\"default Value\\""
                           }
                      ]
+                },
+                {
+                    "name": "repeatableDirective",
+                    "description": "repeatable directive",
+                    "locations": [
+                        "FIELD_DEFINITION"
+                    ],
+                    "args": [],
+                    "isRepeatable":true
                 }
             ]
          }"""
@@ -797,6 +806,9 @@ directiveArg: String = "default Value") on FIELD | FRAGMENT_SPREAD | INLINE_FRAG
 "customized directive"
 directive @customizedDirective("directive arg"
 directiveArg: String = "default Value") on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"repeatable directive"
+directive @repeatableDirective repeatable on FIELD_DEFINITION
 """
     }
 }
