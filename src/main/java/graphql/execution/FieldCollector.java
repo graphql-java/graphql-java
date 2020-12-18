@@ -103,7 +103,7 @@ public class FieldCollector {
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), field.getDirectives())) {
             return;
         }
-        String name = getFieldEntryKey(field);
+        String name = field.getResultKey();
         if (fields.containsKey(name)) {
             MergedField curFields = fields.get(name);
             fields.put(name, curFields.transform(builder -> builder.addField(field)));
@@ -111,15 +111,6 @@ public class FieldCollector {
             fields.put(name, MergedField.newMergedField(field).build());
         }
     }
-
-    private String getFieldEntryKey(Field field) {
-        if (field.getAlias() != null) {
-            return field.getAlias();
-        } else {
-            return field.getName();
-        }
-    }
-
 
     private boolean doesFragmentConditionMatch(FieldCollectorParameters parameters, InlineFragment inlineFragment) {
         if (inlineFragment.getTypeCondition() == null) {

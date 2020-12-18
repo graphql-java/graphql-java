@@ -117,7 +117,6 @@ public class FieldCollectorNormalizedQuery {
         return children;
     }
 
-
     private void collectFields(FieldCollectorNormalizedQueryParams parameters,
                                SelectionSet selectionSet,
                                List<String> visitedFragments,
@@ -193,7 +192,7 @@ public class FieldCollectorNormalizedQuery {
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), field.getDirectives())) {
             return;
         }
-        String name = getFieldEntryKey(field);
+        String name = field.getResultKey();
         result.computeIfAbsent(name, ignored -> new LinkedHashMap<>());
         Map<GraphQLObjectType, NormalizedField> existingFieldWTC = result.get(name);
 
@@ -230,15 +229,6 @@ public class FieldCollectorNormalizedQuery {
                 existingFieldWTC.put(objectType, newFieldWTC);
                 mergedFieldByNormalizedField.put(newFieldWTC, MergedField.newMergedField(field).build());
             }
-        }
-    }
-
-
-    private String getFieldEntryKey(Field field) {
-        if (field.getAlias() != null) {
-            return field.getAlias();
-        } else {
-            return field.getName();
         }
     }
 
