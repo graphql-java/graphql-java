@@ -821,6 +821,6 @@ public abstract class ExecutionStrategy {
     @Internal
     public static String mkNameForPath(List<Field> currentField) {
         Field field = currentField.get(0);
-        return field.getAlias() != null ? field.getAlias() : field.getName();
+        return field.getResultKey();
     }
 }
