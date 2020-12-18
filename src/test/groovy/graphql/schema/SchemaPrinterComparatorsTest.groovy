@@ -766,7 +766,7 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
         then:
         result == '''"TestScalar"
-scalar TestScalar @a() @bb()
+scalar TestScalar @a @bb
 
 '''
     }
