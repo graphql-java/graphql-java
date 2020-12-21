@@ -520,4 +520,25 @@ type Object2 {
 }
 """
     }
+
+    def "deprecated reasons are removed"() {
+        def schema = TestUtil.schema("""
+            type Query {
+                foo: String @deprecated(reason: "secret")
+            }
+        """)
+        when:
+        def result = Anonymizer.anonymizeSchema(schema)
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectiveDefinitions(false)).print(result)
+
+        then:
+        newSchema == """schema {
+  query: Object1
+}
+
+type Object1 {
+  field1: String @deprecated()
+}
+"""
+    }
 }
