@@ -1,6 +1,8 @@
 package graphql.util;
 
 import graphql.AssertException;
+import graphql.Directives;
+import graphql.Scalars;
 import graphql.analysis.QueryTraverser;
 import graphql.analysis.QueryVisitor;
 import graphql.analysis.QueryVisitorFieldArgumentEnvironment;
@@ -64,6 +66,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.util.TraversalControl.CONTINUE;
 import static graphql.util.TreeTransformerUtil.changeNode;
 
@@ -171,6 +174,16 @@ public class Anonymizer {
 
             @Override
             public TraversalControl visitGraphQLDirective(GraphQLDirective graphQLDirective, TraverserContext<GraphQLSchemaElement> context) {
+                if (Directives.DEPRECATED_DIRECTIVE_DEFINITION.getName().equals(graphQLDirective.getName())) {
+                    GraphQLArgument reason = newArgument().name("reason")
+                            .type(Scalars.GraphQLString)
+                            .value(null).build();
+                    GraphQLDirective newElement = graphQLDirective.transform(builder -> {
+                        builder.description(null).argument(reason);
+                    });
+                    changeNode(context, newElement);
+                    return TraversalControl.ABORT;
+                }
                 if (DirectiveInfo.isGraphqlSpecifiedDirective(graphQLDirective)) {
                     return TraversalControl.ABORT;
                 }
