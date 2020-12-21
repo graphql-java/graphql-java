@@ -5,6 +5,10 @@ import graphql.language.Directive
 import graphql.language.Field
 import graphql.language.OperationDefinition
 import graphql.language.StringValue
+import graphql.schema.idl.MockedWiringFactory
+import graphql.schema.idl.RuntimeWiring
+import graphql.schema.idl.SchemaGenerator
+import graphql.schema.idl.SchemaParser
 import graphql.validation.Validator
 import spock.lang.Specification
 
@@ -82,5 +86,41 @@ class RepeatableDirectivesTest extends Specification {
         ((StringValue) directives[1].getArgument("arg").getValue()).getValue() == "value2"
     }
 
+    def " ensure repeatable directive on extend type run correctly "() {
+        given:
+        def spec = '''
+            directive @key(dirArg:String!) repeatable on OBJECT
+            type Query{
+                field: String!  
+                pTypedField(fieldArg: String!): PType 
+            }
+            
+            type PType @key(dirArg:"a") @key(dirArg:"b") {
+                name: String 
+            }
+            
+            extend type PType @key(dirArg:"c") {
+                extendField: String 
+            }
+        '''
+
+        when:
+        SchemaParser parser = new SchemaParser();
+        def typeDefinitionRegistry = parser.parse(spec);
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .wiringFactory(new MockedWiringFactory())
+                .build();
+        def schemaGenerator = new SchemaGenerator();
+        def schema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
+        def pType = schema.getObjectType("PType")
+
+        then:
+        pType.getExtensionDefinitions().size() == 1
+        def extensionType = pType.getExtensionDefinitions().get(0)
+        extensionType.getDirectives().size() == 1
+        extensionType.getDirectives("key") != null
+        extensionType.getFieldDefinitions().size() == 1
+        extensionType.getFieldDefinitions().get(0).getName() == "extendField"
+    }
 
 }
