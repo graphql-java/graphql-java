@@ -29,4 +29,10 @@ take the time to read it.
 
 Copyright (c) 2015, Andreas Marek and [Contributors](https://github.com/graphql-java/graphql-java/graphs/contributors)
 
+### Supported by
+
+![YourKit](https://www.yourkit.com/images/yklogo.png)
+
+[YourKit](https://www.yourkit.com/) supports this project by providing the YourKit Java Profiler.
+
 
