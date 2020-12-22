@@ -197,6 +197,28 @@ class GraphQLCodeRegistryTest extends Specification {
         dataFetcher.get(null) == "hi"
     }
 
+    def "default DF is used when no data fetcher is specified"() {
+
+        def queryType = newObject().name("Query")
+                .field(newFieldDefinition().name("test").type(Scalars.GraphQLString))
+                .build()
+
+        DataFetcher customDF = { env -> "hi" }
+        DataFetcherFactory customDataFetcherFactory = { env -> customDF }
+
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().defaultDataFetcher(customDataFetcherFactory).build()
+
+        def schema = GraphQLSchema.newSchema().query(queryType).codeRegistry(codeRegistry).build()
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        when:
+        def er = graphQL.execute(ExecutionInput.newExecutionInput().query('''query { test }''').build())
+
+        then:
+        er.errors.isEmpty()
+        er.data == [test: "hi"]
+    }
+
     def "integration test that code registry gets asked for data fetchers"() {
 
         def queryType = newObject().name("Query")

@@ -83,7 +83,6 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
     @Deprecated
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcherFactory dataFetcherFactory, List<GraphQLArgument> arguments, String deprecationReason, List<GraphQLDirective> directives, FieldDefinition definition) {
         assertValidName(name);
-        assertNotNull(dataFetcherFactory, () -> "you have to provide a DataFetcher (or DataFetcherFactory)");
         assertNotNull(type, () -> "type can't be null");
         assertNotNull(arguments, () -> "arguments can't be null");
         this.name = name;
@@ -112,6 +111,9 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
 
     // to be removed in a future version when all code is in the code registry
     DataFetcher<?> getDataFetcher() {
+        if (dataFetcherFactory == null) {
+            return null;
+        }
         return dataFetcherFactory.get(newDataFetchingFactoryEnvironment()
                 .fieldDefinition(this)
                 .build());
@@ -492,9 +494,6 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         }
 
         public GraphQLFieldDefinition build() {
-            if (dataFetcherFactory == null) {
-                dataFetcherFactory = DataFetcherFactories.useDataFetcher(new PropertyDataFetcher<>(name));
-            }
             return new GraphQLFieldDefinition(
                     name,
                     description,

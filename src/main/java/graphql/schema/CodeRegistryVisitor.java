@@ -22,12 +22,12 @@ class CodeRegistryVisitor extends GraphQLTypeVisitorStub {
     @Override
     public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
         GraphQLFieldsContainer parentContainerType = (GraphQLFieldsContainer) context.getParentContext().thisNode();
-        DataFetcher dataFetcher = node.getDataFetcher();
-        if (dataFetcher == null) {
-            dataFetcher = new PropertyDataFetcher<>(node.getName());
+        DataFetcher<?> dataFetcher = node.getDataFetcher();
+        if (dataFetcher != null) {
+            FieldCoordinates coordinates = coordinates(parentContainerType, node);
+            codeRegistry.dataFetcherIfAbsent(coordinates, dataFetcher);
         }
-        FieldCoordinates coordinates = coordinates(parentContainerType, node);
-        codeRegistry.dataFetcherIfAbsent(coordinates, dataFetcher);
+        
         return CONTINUE;
     }
 
