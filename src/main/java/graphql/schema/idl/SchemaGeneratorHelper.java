@@ -243,7 +243,7 @@ public class SchemaGeneratorHelper {
         return new Description(s, null, false);
     }
 
-    Object buildValue(Value value, GraphQLType requiredType) {
+    Object buildValue(BuildContext buildCtx, Value value, GraphQLType requiredType) {
         if (value == null || value instanceof NullValue) {
             return null;
         }
@@ -257,16 +257,26 @@ public class SchemaGeneratorHelper {
             result = parseLiteral(value, (GraphQLScalarType) requiredType);
         } else if (requiredType instanceof GraphQLEnumType && value instanceof EnumValue) {
             result = ((EnumValue) value).getName();
+            final EnumValuesProvider enumValuesProvider =
+                    buildCtx.getWiring().getEnumValuesProviders().get(((GraphQLEnumType) requiredType).getName());
+            if (enumValuesProvider != null) {
+                result = enumValuesProvider.getValue((String) result);
+            }
         } else if (requiredType instanceof GraphQLEnumType && value instanceof StringValue) {
             result = ((StringValue) value).getValue();
+            final EnumValuesProvider enumValuesProvider =
+                    buildCtx.getWiring().getEnumValuesProviders().get(((GraphQLEnumType) requiredType).getName());
+            if (enumValuesProvider != null) {
+                result = enumValuesProvider.getValue((String) result);
+            }
         } else if (isList(requiredType)) {
             if (value instanceof ArrayValue) {
-                result = buildArrayValue(requiredType, (ArrayValue) value);
+                result = buildArrayValue(buildCtx, requiredType, (ArrayValue) value);
             } else {
-                result = buildArrayValue(requiredType, ArrayValue.newArrayValue().value(value).build());
+                result = buildArrayValue(buildCtx, requiredType, ArrayValue.newArrayValue().value(value).build());
             }
         } else if (value instanceof ObjectValue && requiredType instanceof GraphQLInputObjectType) {
-            result = buildObjectValue((ObjectValue) value, (GraphQLInputObjectType) requiredType);
+            result = buildObjectValue(buildCtx, (ObjectValue) value, (GraphQLInputObjectType) requiredType);
         } else {
             assertShouldNeverHappen(
                     "cannot build value of type %s from object class %s with instance %s", simplePrint(requiredType), value.getClass().getSimpleName(), String.valueOf(value));
@@ -278,18 +288,18 @@ public class SchemaGeneratorHelper {
         return requiredType.getCoercing().parseLiteral(value);
     }
 
-    Object buildArrayValue(GraphQLType requiredType, ArrayValue arrayValue) {
+    Object buildArrayValue(BuildContext buildCtx, GraphQLType requiredType, ArrayValue arrayValue) {
         GraphQLType wrappedType = unwrapOne(requiredType);
-        Object result = map(arrayValue.getValues(), item -> buildValue(item, wrappedType));
+        Object result = map(arrayValue.getValues(), item -> buildValue(buildCtx, item, wrappedType));
         return result;
     }
 
-    Object buildObjectValue(ObjectValue defaultValue, GraphQLInputObjectType objectType) {
+    Object buildObjectValue(BuildContext buildCtx, ObjectValue defaultValue, GraphQLInputObjectType objectType) {
         Map<String, Object> map = new LinkedHashMap<>();
         objectType.getFieldDefinitions().forEach(
                 f -> {
                     final Value<?> fieldValueFromDefaultObjectValue = getFieldValueFromObjectValue(defaultValue, f.getName());
-                    map.put(f.getName(), fieldValueFromDefaultObjectValue != null ? buildValue(fieldValueFromDefaultObjectValue, f.getType()) : f.getDefaultValue());
+                    map.put(f.getName(), fieldValueFromDefaultObjectValue != null ? buildValue(buildCtx, fieldValueFromDefaultObjectValue, f.getType()) : f.getDefaultValue());
                 }
         );
         return map;
@@ -366,11 +376,11 @@ public class SchemaGeneratorHelper {
 
         GraphQLDirective graphQLDirective = directiveDefOpt.orElseGet(() -> {
             Function<Type, GraphQLInputType> inputTypeFactory = inputType -> buildInputType(buildCtx, inputType);
-            return buildDirectiveFromDefinition(buildCtx.getTypeRegistry().getDirectiveDefinition(directive.getName()).get(), inputTypeFactory);
+            return buildDirectiveFromDefinition(buildCtx, buildCtx.getTypeRegistry().getDirectiveDefinition(directive.getName()).get(), inputTypeFactory);
         });
         builder.repeatable(graphQLDirective.isRepeatable());
 
-        List<GraphQLArgument> arguments = map(directive.getArguments(), arg -> buildDirectiveArgument(arg, graphQLDirective));
+        List<GraphQLArgument> arguments = map(directive.getArguments(), arg -> buildDirectiveArgument(buildCtx, arg, graphQLDirective));
 
         arguments = transferMissingArguments(arguments, graphQLDirective);
         arguments.forEach(builder::argument);
@@ -378,7 +388,7 @@ public class SchemaGeneratorHelper {
         return builder.build();
     }
 
-    private GraphQLArgument buildDirectiveArgument(Argument arg, GraphQLDirective directiveDefinition) {
+    private GraphQLArgument buildDirectiveArgument(BuildContext buildCtx, Argument arg, GraphQLDirective directiveDefinition) {
         GraphQLArgument directiveDefArgument = directiveDefinition.getArgument(arg.getName());
         GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
         builder.name(arg.getName());
@@ -389,7 +399,7 @@ public class SchemaGeneratorHelper {
         builder.type(inputType);
         builder.defaultValue(defaultValue);
 
-        Object value = buildValue(arg.getValue(), inputType);
+        Object value = buildValue(buildCtx, arg.getValue(), inputType);
         //
         // we put the default value in if the specified is null
         builder.value(value == null ? defaultValue : value);
@@ -417,7 +427,7 @@ public class SchemaGeneratorHelper {
         return argumentsOut;
     }
 
-    GraphQLDirective buildDirectiveFromDefinition(DirectiveDefinition directiveDefinition, Function<Type, GraphQLInputType> inputTypeFactory) {
+    GraphQLDirective buildDirectiveFromDefinition(BuildContext buildCtx, DirectiveDefinition directiveDefinition, Function<Type, GraphQLInputType> inputTypeFactory) {
 
         GraphQLDirective.Builder builder = GraphQLDirective.newDirective()
                 .name(directiveDefinition.getName())
@@ -430,7 +440,7 @@ public class SchemaGeneratorHelper {
         locations.forEach(builder::validLocations);
 
         List<GraphQLArgument> arguments = map(directiveDefinition.getInputValueDefinitions(),
-                arg -> buildDirectiveArgumentFromDefinition(arg, inputTypeFactory));
+                arg -> buildDirectiveArgumentFromDefinition(buildCtx, arg, inputTypeFactory));
         arguments.forEach(builder::argument);
         return builder.build();
     }
@@ -440,15 +450,15 @@ public class SchemaGeneratorHelper {
                 dl -> DirectiveLocation.valueOf(dl.getName().toUpperCase()));
     }
 
-    private GraphQLArgument buildDirectiveArgumentFromDefinition(InputValueDefinition arg, Function<Type, GraphQLInputType> inputTypeFactory) {
+    private GraphQLArgument buildDirectiveArgumentFromDefinition(BuildContext buildCtx, InputValueDefinition arg, Function<Type, GraphQLInputType> inputTypeFactory) {
         GraphQLArgument.Builder builder = GraphQLArgument.newArgument()
                 .name(arg.getName())
                 .definition(arg);
 
         GraphQLInputType inputType = inputTypeFactory.apply(arg.getType());
         builder.type(inputType);
-        builder.value(buildValue(arg.getDefaultValue(), inputType));
-        builder.defaultValue(buildValue(arg.getDefaultValue(), inputType));
+        builder.value(buildValue(buildCtx, arg.getDefaultValue(), inputType));
+        builder.defaultValue(buildValue(buildCtx, arg.getDefaultValue(), inputType));
         builder.description(buildDescription(arg, arg.getDescription()));
         return builder.build();
     }
@@ -531,7 +541,7 @@ public class SchemaGeneratorHelper {
         fieldBuilder.type(inputType);
         Value defaultValue = fieldDef.getDefaultValue();
         if (defaultValue != null) {
-            fieldBuilder.defaultValue(buildValue(defaultValue, inputType));
+            fieldBuilder.defaultValue(buildValue(buildCtx, defaultValue, inputType));
         }
 
         fieldBuilder.withDirectives(
@@ -1044,7 +1054,7 @@ public class SchemaGeneratorHelper {
         builder.type(inputType);
         Value defaultValue = valueDefinition.getDefaultValue();
         if (defaultValue != null) {
-            builder.defaultValue(buildValue(defaultValue, inputType));
+            builder.defaultValue(buildValue(buildCtx, defaultValue, inputType));
         }
 
         builder.withDirectives(
@@ -1180,7 +1190,7 @@ public class SchemaGeneratorHelper {
 
         for (DirectiveDefinition directiveDefinition : typeRegistry.getDirectiveDefinitions().values()) {
             Function<Type, GraphQLInputType> inputTypeFactory = inputType -> buildInputType(buildCtx, inputType);
-            GraphQLDirective directive = buildDirectiveFromDefinition(directiveDefinition, inputTypeFactory);
+            GraphQLDirective directive = buildDirectiveFromDefinition(buildCtx, directiveDefinition, inputTypeFactory);
             buildCtx.addDirectiveDefinition(directive);
             additionalDirectives.add(directive);
         }
