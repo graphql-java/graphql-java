@@ -1,24 +1,15 @@
 package graphql.schema.validation
 
 import graphql.TestUtil
-import graphql.schema.GraphQLNamedType
-import graphql.schema.GraphQLSchema
-import graphql.schema.GraphQLType
-import graphql.schema.GraphQLUnionType
+import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLTypeReference
 import graphql.schema.TypeResolverProxy
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
-import static graphql.Scalars.GraphQLBoolean
-import static graphql.Scalars.GraphQLBoolean
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
-import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
-import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
-import static graphql.schema.GraphQLObjectType.newObject
-import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLUnionType.newUnionType
-
 
 class TypeAndFieldRuleTest extends Specification {
 
@@ -158,5 +149,70 @@ class TypeAndFieldRuleTest extends Specification {
         then:
         InvalidSchemaException e = thrown(InvalidSchemaException)
         e.message == "invalid schema:\n\"__AB\" must not begin with \"__\", which is reserved by GraphQL introspection."
+    }
+
+    def "union member types must be object types"() {
+        def sdl = '''
+        type Query { dummy: String }
+        
+        type Object {
+            dummy: String
+        }
+        
+        interface Interface {
+            dummy: String
+        }
+        '''
+        when:
+        def graphQLSchema = TestUtil.schema(sdl)
+
+        // this is a little convoluted, since this rule is repeated in the schemaChecker
+        // we add the invalid union after schema creation so we can cover the validation from
+        // the TypeAndFieldRule.
+        def unionType = newUnionType().name("unionWithNonObjectTypes")
+                .possibleType(graphQLSchema.getObjectType("Object"))
+                .possibleType(GraphQLTypeReference.typeRef("Interface"))
+                .typeResolver(new TypeResolverProxy())
+                .build()
+
+        graphQLSchema.transform({ schema -> schema.additionalType(unionType) })
+
+        then:
+        InvalidSchemaException e = thrown(InvalidSchemaException)
+        !e.getErrors().isEmpty()
+        e.getErrors()[0].errorType == SchemaValidationErrorType.InvalidUnionMemberTypeError
+    }
+
+    def "union member types must be unique"() {
+        def sdl = '''
+        type Query { dummy: String }
+        
+        type Object {
+            dummy: String
+        }
+        '''
+        when:
+        def graphQLSchema = TestUtil.schema(sdl)
+
+        // Since this rule is repeated in the schemaChecker
+        // there is no way to effectively cover it after the schema has
+        // been constructed. We use a Stub here to register the same object type at two
+        // different names.
+        def stubObjectType = Stub(GraphQLObjectType) {
+            getName() >>> ["Other","Object"]
+        }
+
+        def unionType = newUnionType().name("unionWithNonObjectTypes")
+                .possibleType(graphQLSchema.getObjectType("Object"))
+                .possibleType(stubObjectType)
+                .typeResolver(new TypeResolverProxy())
+                .build()
+
+        graphQLSchema.transform({ schema -> schema.additionalType(unionType) })
+
+        then:
+        InvalidSchemaException e = thrown(InvalidSchemaException)
+        !e.getErrors().isEmpty()
+        e.getErrors()[0].errorType == SchemaValidationErrorType.RepetitiveElementError
     }
 }

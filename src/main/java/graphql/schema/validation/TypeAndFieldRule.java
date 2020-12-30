@@ -1,6 +1,5 @@
 package graphql.schema.validation;
 
-import graphql.language.TypeName;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
@@ -130,12 +129,12 @@ public class TypeAndFieldRule implements SchemaValidationRule {
             GraphQLNamedType graphQLNamedType = schemaTypeHolder.get(typeName);
             if (!(graphQLNamedType instanceof GraphQLObjectType)) {
                 SchemaValidationError validationError =
-                        new SchemaValidationError(SchemaValidationErrorType.InvalidUnionMemberTypeError, String.format("The member types of a Union type must all be Object base types. member type \"%s\" in Union \"%s\" is invalid.", ((TypeName) memberType).getName(), type.getName()));
+                        new SchemaValidationError(SchemaValidationErrorType.InvalidUnionMemberTypeError, String.format("The member types of a Union type must all be Object base types. member type \"%s\" in Union \"%s\" is invalid.", memberType.getName(), type.getName()));
                 errorCollector.addError(validationError);
             }
             if (typeNames.contains(typeName)) {
                 SchemaValidationError validationError =
-                        new SchemaValidationError(SchemaValidationErrorType.RepetitiveElementError, String.format("The member types of a Union type must be unique. member type \"%s\" in Union \"%s\" is not unique.", ((TypeName) memberType).getName(), type.getName()));
+                        new SchemaValidationError(SchemaValidationErrorType.RepetitiveElementError, String.format("The member types of a Union type must be unique. member type \"%s\" in Union \"%s\" is not unique.", memberType.getName(), type.getName()));
                 errorCollector.addError(validationError);
             }
             typeNames.add(typeName);
