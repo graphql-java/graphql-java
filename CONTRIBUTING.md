@@ -11,7 +11,7 @@ In order to achieve that we have a strong focus on maintainability and high test
 
 - We expect new or modified unit test for every change (written in [Spock](http://spockframework.org/)).
 
-- Your code should should be formatted with our IntelliJ [graphql-java-code-style](graphql-java-code-style.xml). 
+- Your code should be formatted with our IntelliJ [graphql-java-code-style](graphql-java-code-style.xml). 
 
 - We don't add a new dependency to graphql-java: dependency conflicts will make adaption of graphql-java harder for users, 
 therefore we avoid adding any new dependency.
