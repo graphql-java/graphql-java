@@ -3,7 +3,7 @@
 
 ## General principles
 
-- We prefer closer to zero dependencies. Dont bring in guava, apache-commons, spring-xxx, y or z however much some StringUtils method might be useful. Less dependencies makes graphql-java more applicable to everyone
+- We prefer closer to zero dependencies. Don't bring in guava, apache-commons, spring-xxx, y or z however much some StringUtils method might be useful. Fewer dependencies makes graphql-java more applicable to everyone
 
 - We prefer staying out of the HTTP stack. We are the low level engine of running graphql queries. Other concerns such as JSON and HTTP are handled better by other layers
 
@@ -28,9 +28,9 @@ We are aiming to not use Optional moving forward in order to be consistent overa
 ### Unit testing and dependencies
 All tests are written in [Spock](http://spockframework.org).
 
-Every new code has to have unit tests. 
+All new code has to have unit tests. 
 
-The general pattern is that every method of every class is by default non static and that every dependency is a instance field with package private visibility 
+The general pattern is that every method of every class is by default non static and that every dependency is an instance field with package private visibility 
 to allow for easy mocking in unit tests. The field should be annotated with `@VisibleForTesting`.
 
 Example:
@@ -66,7 +66,7 @@ Naming is a key element of readable source code.
 Every variable and method should have a clear name. Single char variable names are never ok, except for index iterations.
 
 ### Comments
-Public APIs should be documented via JavaDoc. The JavaDoc should describe how and why this class/method should be used. It should not the details of the implementation.
+Public APIs should be documented via JavaDoc. The JavaDoc should describe how and why this class/method should be used. It should not specify the details of the implementation.
 
 Internal APIs don't have JavaDoc and in general we avoid any form of comments when possible.
 
@@ -102,10 +102,10 @@ The default implementations for `Set` and `Map` should be the `LinkedHashSet` an
 because it offers stable iteration order.
 
 ### Stream API vs for, index loop etc
-Using the Stream API is ok in general, but it must kept simple. Stream maps inside 
+Using the Stream API is ok in general, but it must be kept simple. Stream maps inside 
 maps should be avoided and the inner logic should be refactored into a method.   
 
-It also ok to use the traditional for loop or other constructs: sometimes it is more readable than
+It is also ok to use the traditional for loop or other constructs: sometimes it is more readable than
 the modern Stream API. The Stream API is not a replacement for all other loops/iterations.
 
 
@@ -161,7 +161,7 @@ This is not ok:
                         .map(foo -> foo.getMyProp())
                         .collect(toList())
 ```
-It has a lambda in streams in streams. The inside stream should be extracted in a extra method and each
+It has a lambda in streams in streams. The inside stream should be extracted to an extra method and each
 method call should be on a new line:
 ```java
         return fooListOfList
@@ -171,7 +171,7 @@ method call should be on a new line:
 ```
 
 ### Every class its own file: avoid inner classes and interfaces
-Every class/interface should have its one file in general. 
+Every class/interface should have its own file in general. 
 Inner classes are almost never ok (especially public ones). Every class should have its own file to make it easier to read and explore the code.
 
 ### Use `graphql.Assert` instead of `Objects`
@@ -181,6 +181,4 @@ to be consistent.
 ### `FooEnvironment` method arguments for public API
 Don't use specific arguments for interface methods but rather a `FooEnvironment` argument. This ensures future
 backwards compatibility when new inputs are added.
-
-
 
