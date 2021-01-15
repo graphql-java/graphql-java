@@ -8,7 +8,7 @@ plugins {
     id 'maven-publish'
     id 'antlr'
     id "com.github.johnrengelman.shadow" version "6.1.0"
-    // id 'osgi' doesn't work anymore for gradle 6.6
+    id "biz.aQute.bnd.builder" version "5.1.2"
 }
 
 
