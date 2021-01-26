@@ -54,6 +54,7 @@ public class ExecutionContext {
     private final Locale locale;
     private final ValueUnboxer valueUnboxer;
     private final ExecutionInput executionInput;
+    private final Supplier<NormalizedQueryTree> queryTree;
 
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
@@ -76,6 +77,7 @@ public class ExecutionContext {
         this.errors.addAll(builder.errors);
         this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
+        queryTree = FpKit.interThreadMemoize(() -> NormalizedQueryTreeFactory.createNormalizedQuery(graphQLSchema, operationDefinition, fragmentsByName, variables));
     }
 
 
@@ -204,7 +206,7 @@ public class ExecutionContext {
     }
 
     public Supplier<NormalizedQueryTree> getNormalizedQueryTree() {
-        return FpKit.interThreadMemoize(() -> NormalizedQueryTreeFactory.createNormalizedQuery(graphQLSchema, operationDefinition, fragmentsByName, variables));
+        return queryTree;
     }
 
     /**
