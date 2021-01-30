@@ -4,8 +4,10 @@ import graphql.Assert;
 import graphql.Internal;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnmodifiedType;
+import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,7 +26,7 @@ public class NormalizedField {
     private final Map<String, Object> arguments;
     private final GraphQLObjectType objectType;
     private final GraphQLFieldDefinition fieldDefinition;
-    private final List<NormalizedField> children;
+    private final Map<String, Map<GraphQLObjectType, NormalizedField>> children;
     private final boolean isConditional;
     private final int level;
     private NormalizedField parent;
@@ -84,7 +86,7 @@ public class NormalizedField {
     }
 
 
-    public static Builder newQueryExecutionField() {
+    public static Builder newNormalizedField() {
         return new Builder();
     }
 
@@ -150,6 +152,14 @@ public class NormalizedField {
         return children;
     }
 
+    public NormalizedField getChild(String resultKey) {
+        return FpKit.findOneOrNull(children, child -> child.getResultKey().equals(resultKey));
+    }
+
+    public GraphQLOutputType getFieldType() {
+        return getFieldDefinition().getType();
+    }
+
     public int getLevel() {
         return level;
     }
@@ -186,6 +196,7 @@ public class NormalizedField {
         });
         return result;
     }
+
 
     public void traverseSubTree(Consumer<NormalizedField> consumer) {
         this.getChildren().forEach(child -> {

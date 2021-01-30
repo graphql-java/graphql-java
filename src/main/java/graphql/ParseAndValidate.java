@@ -23,12 +23,13 @@ public class ParseAndValidate {
      *
      * @param graphQLSchema  the schema to validate against
      * @param executionInput the execution input containing the query
+     *
      * @return a result object that indicates how this operation went
      */
     public static ParseAndValidateResult parseAndValidate(GraphQLSchema graphQLSchema, ExecutionInput executionInput) {
         ParseAndValidateResult result = parse(executionInput);
         if (!result.isFailure()) {
-            List<ValidationError> errors = validate(graphQLSchema, result.getDocument());
+            List<ValidationError> errors = validate(graphQLSchema, result.getDocument(), executionInput.getOperationName());
             return result.transform(builder -> builder.validationErrors(errors));
         }
         return result;
@@ -38,6 +39,7 @@ public class ParseAndValidate {
      * This can be called to parse (but not validate) a graphql query.
      *
      * @param executionInput the input containing the query
+     *
      * @return a result object that indicates how this operation went
      */
     public static ParseAndValidateResult parse(ExecutionInput executionInput) {

@@ -539,7 +539,7 @@ public class GraphQL {
         CompletableFuture<List<ValidationError>> cf = new CompletableFuture<>();
         validationCtx.onDispatched(cf);
 
-        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document);
+        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, executionInput.getOperationName());
 
         validationCtx.onCompleted(validationErrors, null);
         cf.complete(validationErrors);

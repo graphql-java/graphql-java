@@ -90,7 +90,7 @@ public class NormalizedQueryTreeFactory {
                                                    Map<NormalizedField, MergedField> normalizedFieldToMergedField,
                                                    Map<FieldCoordinates, List<NormalizedField>> coordinatesToNormalizedFields,
                                                    int curLevel) {
-        CollectFieldResult fieldsWithoutChildren = fieldCollector.collectFields(fieldCollectorNormalizedQueryParams, field, mergedField, curLevel + 1);
+        CollectFieldResult fieldsWithoutChildren = fieldCollector.collectFieldsFromMergedField(fieldCollectorNormalizedQueryParams, field, mergedField, curLevel + 1);
         List<NormalizedField> realChildren = new ArrayList<>();
         for (NormalizedField fieldWithoutChildren : fieldsWithoutChildren.getChildren()) {
             MergedField mergedFieldForChild = fieldsWithoutChildren.getMergedFieldByNormalized().get(fieldWithoutChildren);

@@ -45,7 +45,7 @@ class ParseAndValidateTest extends Specification {
         def result = ParseAndValidate.parse(input)
 
         when:
-        def errors = ParseAndValidate.validate(StarWarsSchema.starWarsSchema, result.getDocument())
+        def errors = ParseAndValidate.validate(StarWarsSchema.starWarsSchema, result.getDocument(), executionInput.getOperationName())
 
         then:
         errors.isEmpty()
@@ -57,7 +57,7 @@ class ParseAndValidateTest extends Specification {
         def result = ParseAndValidate.parse(input)
 
         when:
-        def errors = ParseAndValidate.validate(StarWarsSchema.starWarsSchema, result.getDocument())
+        def errors = ParseAndValidate.validate(StarWarsSchema.starWarsSchema, result.getDocument(), executionInput.getOperationName())
 
         then:
         !errors.isEmpty()

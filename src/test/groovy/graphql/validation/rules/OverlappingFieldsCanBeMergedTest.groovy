@@ -1,6 +1,6 @@
 package graphql.validation.rules
 
-import graphql.TestUtil
+
 import graphql.TypeResolutionEnvironment
 import graphql.language.Document
 import graphql.language.SourceLocation
@@ -16,6 +16,7 @@ import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.TestUtil.schema
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
@@ -544,7 +545,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
           componentInfoLocationUrl
         }
 """
-        def schema = TestUtil.schema("""
+        def schema = schema("""
     type Query {
       services(ids: [String!]): [Component!]
     }
@@ -576,7 +577,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
           componentInfoLocationUrl
         }
 """
-        def schema = TestUtil.schema("""
+        def schema = schema("""
     type Query {
       services(ids: [String!]): [[Component!]]
     }
@@ -608,7 +609,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
           componentInfoLocationUrl
         }
 """
-        def schema = TestUtil.schema("""
+        def schema = schema("""
     type Query {
       services(ids: [String!]): [Component!]
     }
@@ -626,5 +627,46 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
     }
 
+    def "two object parent types can diverge"() {
+        given:
+        def schema = schema(
+                """
+    type Query {
+      pet: Pet
+    }
+    union Pet = Dog | Cat
+    type Dog {
+        name: DogName
+    }
+    type DogName {
+        stringValue: String
+    }
+    type Cat {
+        name: CatName 
+    }  
+    type CatName {
+        value: String
+    }
+    """)
+        def query = """
+        {
+            pet {
+               ... on Dog {
+                name { stringValue}
+               }
+               ... on Cat {
+                name { value}
+               }
+            }
+        }
+        """
+        when:
+        traverse(query, schema)
+
+
+        then:
+        errorCollector.getErrors().size() == 0
+
+    }
 
 }

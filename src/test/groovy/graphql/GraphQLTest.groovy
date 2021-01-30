@@ -37,6 +37,7 @@ import static graphql.ExecutionInput.Builder
 import static graphql.ExecutionInput.newExecutionInput
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.TestUtil.schema
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
@@ -1171,7 +1172,7 @@ many lines''']
 
     def "specified url can be defined and queried via introspection"() {
         given:
-        GraphQLSchema schema = TestUtil.schema('type Query {foo: MyScalar} scalar MyScalar @specifiedBy(url:"myUrl")');
+        GraphQLSchema schema = schema('type Query {foo: MyScalar} scalar MyScalar @specifiedBy(url:"myUrl")');
 
         when:
         def result = GraphQL.newGraphQL(schema).build().execute('{__type(name: "MyScalar") {name specifiedByUrl}}').getData();
@@ -1188,7 +1189,7 @@ many lines''']
             def dfr = DataFetcherResult.newResult().data("hi").build()
             return CompletableFuture.supplyAsync({ -> dfr })
         }
-        def schema = TestUtil.schema(sdl, [Query: [f: df]])
+        def schema = schema(sdl, [Query: [f: df]])
         def graphQL = GraphQL.newGraphQL(schema).build()
         when:
         def er = graphQL.execute("{f}")
@@ -1206,11 +1207,23 @@ many lines''']
         def exceptionHandler = { params ->
             capturedMsg = params.exception.getMessage()
         } as DataFetcherExceptionHandler
-        def schema = TestUtil.schema(sdl, [Query: [f: df]])
+        def schema = schema(sdl, [Query: [f: df]])
         def graphQL = GraphQL.newGraphQL(schema).defaultDataFetcherExceptionHandler(exceptionHandler).build()
         when:
         graphQL.execute("{f}")
         then:
         capturedMsg == "BANG!"
+    }
+
+    def "invalid query"() {
+        given:
+        GraphQLSchema schema = schema('type Query{ foo:String}')
+
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute('{ foo }')
+
+        then:
+        result.errors.size() == 1
+
     }
 }
