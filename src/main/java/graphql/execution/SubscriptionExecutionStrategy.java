@@ -153,7 +153,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
     private String getRootFieldName(ExecutionStrategyParameters parameters) {
         Field rootField = parameters.getField().getSingleField();
-        return rootField.getAlias() != null ? rootField.getAlias() : rootField.getName();
+        return rootField.getResultKey();
     }
 
     private ExecutionStrategyParameters firstFieldOfSubscriptionSelection(ExecutionStrategyParameters parameters) {

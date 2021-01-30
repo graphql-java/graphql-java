@@ -321,7 +321,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
     private void collectFieldsForField(Map<String, List<FieldAndType>> fieldMap, GraphQLType parentType, Field field) {
-        String responseName = field.getAlias() != null ? field.getAlias() : field.getName();
+        String responseName = field.getResultKey();
         if (!fieldMap.containsKey(responseName)) {
             fieldMap.put(responseName, new ArrayList<>());
         }

@@ -62,15 +62,11 @@ public class MergedField {
 
     private final ImmutableList<Field> fields;
     private final Field singleField;
-    private final String name;
-    private final String resultKey;
 
     private MergedField(List<Field> fields) {
         assertNotEmpty(fields);
         this.fields = ImmutableList.copyOf(fields);
         this.singleField = fields.get(0);
-        this.name = singleField.getName();
-        this.resultKey = singleField.getAlias() != null ? singleField.getAlias() : name;
     }
 
     /**
@@ -81,7 +77,7 @@ public class MergedField {
      * @return the name of of the merged fields.
      */
     public String getName() {
-        return name;
+        return singleField.getName();
     }
 
     /**
@@ -91,7 +87,7 @@ public class MergedField {
      * @return the key for this MergedField.
      */
     public String getResultKey() {
-        return resultKey;
+        return singleField.getResultKey();
     }
 
     /**

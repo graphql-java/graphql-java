@@ -136,6 +136,10 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         return alias;
     }
 
+    public String getResultKey() {
+        return alias != null ? alias : name;
+    }
+
     public List<Argument> getArguments() {
         return arguments;
     }
