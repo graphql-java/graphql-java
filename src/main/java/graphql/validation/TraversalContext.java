@@ -300,7 +300,6 @@ public class TraversalContext implements DocumentVisitor {
         return argument;
     }
 
-
     private GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLType parentType, Field field) {
         if (schema.getQueryType().equals(parentType)) {
             if (field.getName().equals(SchemaMetaFieldDef.getName())) {

@@ -43,7 +43,8 @@ public class Validator {
         ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector();
         List<AbstractRule> rules = createRules(validationContext, validationErrorCollector);
         RulesVisitor rulesVisitor = new RulesVisitor(validationContext, rules);
-        MainValidationTraversal mainValidationTraversal = new MainValidationTraversal(schema, document, rulesVisitor);
+
+        MainValidationTraversal mainValidationTraversal = new MainValidationTraversal(schema, document, operationName, rulesVisitor, validationContext);
         mainValidationTraversal.checkDocument();
 
         return validationErrorCollector.getErrors();

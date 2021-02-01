@@ -1,16 +1,19 @@
 package graphql.normalized;
 
+import com.google.common.collect.ImmutableList;
 import graphql.Assert;
 import graphql.Internal;
+import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnmodifiedType;
-import graphql.util.FpKit;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -19,14 +22,16 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
+import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 
 @Internal
+// Mutable Children!
 public class NormalizedField {
     private final String alias;
     private final Map<String, Object> arguments;
     private final GraphQLObjectType objectType;
     private final GraphQLFieldDefinition fieldDefinition;
-    private final Map<String, Map<GraphQLObjectType, NormalizedField>> children;
+    private Map<String, Map<GraphQLObjectType, NormalizedField>> children;
     private final boolean isConditional;
     private final int level;
     private NormalizedField parent;
@@ -149,15 +154,40 @@ public class NormalizedField {
     }
 
     public List<NormalizedField> getChildren() {
+        ImmutableList.Builder<NormalizedField> builder = ImmutableList.builder();
+        for (String resultKey : children.keySet()) {
+            builder.addAll(children.get(resultKey).values());
+        }
+        return builder.build();
+    }
+
+    // returns mutable map
+    public Map<String, Map<GraphQLObjectType, NormalizedField>> getChildrenAsMap() {
         return children;
     }
 
-    public NormalizedField getChild(String resultKey) {
-        return FpKit.findOneOrNull(children, child -> child.getResultKey().equals(resultKey));
+    public Collection<NormalizedField> getChildrenForResultKey(String resultKey) {
+        if (children.containsKey(resultKey)) {
+            return children.get(resultKey).values();
+        }
+        return Collections.emptyList();
+    }
+
+    public void replaceChildren(Map<String, Map<GraphQLObjectType, NormalizedField>> newChildren) {
+        this.children = newChildren;
+        for (String resultKey : newChildren.keySet()) {
+            newChildren.get(resultKey).forEach((graphQLObjectType, normalizedField) -> {
+                normalizedField.replaceParent(this);
+            });
+        }
     }
 
     public GraphQLOutputType getFieldType() {
         return getFieldDefinition().getType();
+    }
+
+    public GraphQLCompositeType getUnwrappedFieldType() {
+        return (GraphQLCompositeType) unwrapAll(getFieldDefinition().getType());
     }
 
     public int getLevel() {
@@ -183,7 +213,7 @@ public class NormalizedField {
                 ", alias=" + alias +
                 ", level=" + level +
                 ", conditional=" + isConditional +
-                ", children=" + children.stream().map(NormalizedField::toString).collect(Collectors.joining("\n")) +
+                ", children=" + getChildren().stream().map(NormalizedField::toString).collect(Collectors.joining("\n")) +
                 '}';
     }
 
@@ -220,7 +250,7 @@ public class NormalizedField {
     public static class Builder {
         private GraphQLObjectType objectType;
         private GraphQLFieldDefinition fieldDefinition;
-        private List<NormalizedField> children = new ArrayList<>();
+        private Map<String, Map<GraphQLObjectType, NormalizedField>> children = new LinkedHashMap<>();
         private int level;
         private NormalizedField parent;
         private String alias;
@@ -235,7 +265,7 @@ public class NormalizedField {
             this.arguments = existing.arguments;
             this.objectType = existing.getObjectType();
             this.fieldDefinition = existing.getFieldDefinition();
-            this.children = existing.getChildren();
+            this.children = new LinkedHashMap<>(existing.getChildrenAsMap());
             this.level = existing.getLevel();
             this.parent = existing.getParent();
         }
@@ -262,10 +292,12 @@ public class NormalizedField {
             return this;
         }
 
-
         public Builder children(List<NormalizedField> children) {
             this.children.clear();
-            this.children.addAll(children);
+            for (NormalizedField child : children) {
+                this.children.computeIfAbsent(child.getResultKey(), ignored -> new LinkedHashMap<>());
+                this.children.get(child.getResultKey()).put(child.getObjectType(), child);
+            }
             return this;
         }
 
