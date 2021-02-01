@@ -1,6 +1,6 @@
 # GraphQL Java
 
-Join our spectrum chat: [Spectrum GraphQL Java](https://spectrum.chat/graphql-java)
+Discuss and ask questions in our Discussions: https://github.com/graphql-java/graphql-java/discussions
 
 This is a [GraphQL](https://github.com/graphql/graphql-spec) Java implementation.
  
