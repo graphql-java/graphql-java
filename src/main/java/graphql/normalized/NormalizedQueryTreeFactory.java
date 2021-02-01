@@ -1,8 +1,8 @@
 package graphql.normalized;
 
-import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.MergedField;
+import graphql.execution.nextgen.Common;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -54,23 +54,7 @@ public class NormalizedQueryTreeFactory {
                 .variables(variables)
                 .build();
 
-        GraphQLObjectType rootType;
-        switch (operationDefinition.getOperation()) {
-            case QUERY:
-                rootType = graphQLSchema.getQueryType();
-                break;
-            case MUTATION:
-                rootType = graphQLSchema.getMutationType();
-                break;
-            case SUBSCRIPTION:
-                rootType = graphQLSchema.getSubscriptionType();
-                break;
-            default:
-                Assert.assertShouldNeverHappen("%s is not a valid operation", operationDefinition.getOperation());
-                // unreachable due to assertion throw above
-                return null;
-        }
-
+        GraphQLObjectType rootType = Common.getOperationRootType(graphQLSchema, operationDefinition);
         CollectFieldResult topLevelFields = fieldCollector.collectFromOperation(parameters, operationDefinition, rootType);
 
         Map<Field, List<NormalizedField>> fieldToNormalizedField = new LinkedHashMap<>();
