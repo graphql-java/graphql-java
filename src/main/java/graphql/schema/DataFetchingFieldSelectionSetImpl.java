@@ -84,7 +84,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
     private final Supplier<NormalizedField> normalizedFieldSupplier;
 
-    private boolean computedValues;
+    private volatile boolean computedValues;
     private List<SelectedField> immediateFields;
     private Map<String, List<SelectedField>> normalisedSelectionSetFields;
     private Set<String> flattenedFieldsForGlobSearching;
