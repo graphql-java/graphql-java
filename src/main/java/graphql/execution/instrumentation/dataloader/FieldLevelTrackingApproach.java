@@ -183,7 +183,7 @@ public class FieldLevelTrackingApproach {
         ResultPath path = parameters.getEnvironment().getExecutionStepInfo().getPath();
         int level = path.getLevel();
 
-        return new InstrumentationContext<>() {
+        return new InstrumentationContext<Object>() {
 
             @Override
             public void onDispatched(CompletableFuture<Object> result) {
