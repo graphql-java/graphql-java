@@ -10,6 +10,7 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -29,9 +30,9 @@ public class PropertyFetchingImpl {
 
     private final AtomicBoolean USE_SET_ACCESSIBLE = new AtomicBoolean(true);
     private final AtomicBoolean USE_NEGATIVE_CACHE = new AtomicBoolean(true);
-    private final ConcurrentMap<String, CachedMethod> METHOD_CACHE = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, Field> FIELD_CACHE = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, String> NEGATIVE_CACHE = new ConcurrentHashMap<>();
+    private final ConcurrentMap<CacheKey, CachedMethod> METHOD_CACHE = new ConcurrentHashMap<>();
+    private final ConcurrentMap<CacheKey, Field> FIELD_CACHE = new ConcurrentHashMap<>();
+    private final ConcurrentMap<CacheKey, CacheKey> NEGATIVE_CACHE = new ConcurrentHashMap<>();
     private final Class<?> singleArgumentType;
 
     public PropertyFetchingImpl(Class<?> singleArgumentType) {
@@ -49,16 +50,12 @@ public class PropertyFetchingImpl {
 
     }
 
-    public Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType) {
-        return getPropertyValue(propertyName, object, graphQLType, null);
-    }
-
     public Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType, Object singleArgumentValue) {
         if (object instanceof Map) {
             return ((Map<?, ?>) object).get(propertyName);
         }
 
-        String cacheKey = mkKey(object, propertyName);
+        CacheKey cacheKey = mkCacheKey(object, propertyName);
         // lets try positive cache mechanisms first.  If we have seen the method or field before
         // then we invoke it directly without burning any cycles doing reflection.
         CachedMethod cachedMethod = METHOD_CACHE.get(cacheKey);
@@ -110,14 +107,14 @@ public class PropertyFetchingImpl {
         }
     }
 
-    private boolean isNegativelyCached(String key) {
+    private boolean isNegativelyCached(CacheKey key) {
         if (USE_NEGATIVE_CACHE.get()) {
             return NEGATIVE_CACHE.containsKey(key);
         }
         return false;
     }
 
-    private void putInNegativeCache(String key) {
+    private void putInNegativeCache(CacheKey key) {
         if (USE_NEGATIVE_CACHE.get()) {
             NEGATIVE_CACHE.put(key, key);
         }
@@ -153,7 +150,7 @@ public class PropertyFetchingImpl {
      * which have abstract public interfaces implemented by package-protected
      * (generated) subclasses.
      */
-    private Method findPubliclyAccessibleMethod(String cacheKey, Class<?> rootClass, String methodName, boolean dfeInUse) throws NoSuchMethodException {
+    private Method findPubliclyAccessibleMethod(CacheKey cacheKey, Class<?> rootClass, String methodName, boolean dfeInUse) throws NoSuchMethodException {
         Class<?> currentClass = rootClass;
         while (currentClass != null) {
             if (Modifier.isPublic(currentClass.getModifiers())) {
@@ -182,7 +179,7 @@ public class PropertyFetchingImpl {
         return rootClass.getMethod(methodName);
     }
 
-    private Method findViaSetAccessible(String cacheKey, Class<?> aClass, String methodName, boolean dfeInUse) throws NoSuchMethodException {
+    private Method findViaSetAccessible(CacheKey cacheKey, Class<?> aClass, String methodName, boolean dfeInUse) throws NoSuchMethodException {
         if (!USE_SET_ACCESSIBLE.get()) {
             throw new FastNoSuchMethodException(methodName);
         }
@@ -214,7 +211,7 @@ public class PropertyFetchingImpl {
         throw new FastNoSuchMethodException(methodName);
     }
 
-    private Object getPropertyViaFieldAccess(String cacheKey, Object object, String propertyName) throws FastNoSuchMethodException {
+    private Object getPropertyViaFieldAccess(CacheKey cacheKey, Object object, String propertyName) throws FastNoSuchMethodException {
         Class<?> aClass = object.getClass();
         try {
             Field field = aClass.getField(propertyName);
@@ -222,7 +219,7 @@ public class PropertyFetchingImpl {
             return field.get(object);
         } catch (NoSuchFieldException e) {
             if (!USE_SET_ACCESSIBLE.get()) {
-                throw new FastNoSuchMethodException(cacheKey);
+                throw new FastNoSuchMethodException(cacheKey.toString());
             }
             // if not public fields then try via setAccessible
             try {
@@ -231,7 +228,7 @@ public class PropertyFetchingImpl {
                 FIELD_CACHE.putIfAbsent(cacheKey, field);
                 return field.get(object);
             } catch (SecurityException | NoSuchFieldException ignored2) {
-                throw new FastNoSuchMethodException(cacheKey);
+                throw new FastNoSuchMethodException(cacheKey.toString());
             } catch (IllegalAccessException e1) {
                 throw new GraphQLException(e);
             }
@@ -288,13 +285,43 @@ public class PropertyFetchingImpl {
         return USE_NEGATIVE_CACHE.getAndSet(flag);
     }
 
-    private String mkKey(Object object, String propertyName) {
+    private CacheKey mkCacheKey(Object object, String propertyName) {
         Class<?> clazz = object.getClass();
         ClassLoader classLoader = clazz.getClassLoader();
-        if (classLoader != null) {
-            return classLoader.hashCode() + "__" + clazz.getName() + "__" + propertyName;
-        } else {
-            return clazz.getName() + "__" + propertyName;
+        return new CacheKey(classLoader, clazz.getName(), propertyName);
+    }
+
+    private static final class CacheKey {
+        private final ClassLoader classLoader;
+        private final String className;
+        private final String propertyName;
+
+        private CacheKey(ClassLoader classLoader, String className, String propertyName) {
+            this.classLoader = classLoader;
+            this.className = className;
+            this.propertyName = propertyName;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof CacheKey)) return false;
+            CacheKey cacheKey = (CacheKey) o;
+            return Objects.equals(classLoader, cacheKey.classLoader) && Objects.equals(className, cacheKey.className) && Objects.equals(propertyName, cacheKey.propertyName);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(classLoader, className, propertyName);
+        }
+
+        @Override
+        public String toString() {
+            return "CacheKey{" +
+                "classLoader=" + classLoader +
+                ", className='" + className + '\'' +
+                ", propertyName='" + propertyName + '\'' +
+                '}';
         }
     }
 
