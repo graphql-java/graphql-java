@@ -1,18 +1,22 @@
-name: Master Build
-# For master push: Builds and publishes the development version to bintray/maven
+name: Releases
+# Release builds
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'the version to be released'
+        required: true
+
 jobs:
   buildAndPublish:
     runs-on: ubuntu-latest
-    container: adoptopenjdk:8u282-b08-jdk-hotspot
+    container: 8u282-b08-jdk-hotspot
     env:
       BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
       BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
       MAVEN_CENTRAL_USER: ${{ secrets.MAVEN_CENTRAL_USER }}
       MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+      RELEASE_VERSION: ${{ github.event.inputs.version }}
 
     steps:
       - uses: actions/checkout@v1
