@@ -1,9 +1,10 @@
 # GraphQL Java
 
-Join our spectrum chat: [Spectrum GraphQL Java](https://spectrum.chat/graphql-java)
+Discuss and ask questions in our Discussions: https://github.com/graphql-java/graphql-java/discussions
 
 This is a [GraphQL](https://github.com/graphql/graphql-spec) Java implementation.
- 
+
+[NEW: GraphQL Java workshops are coming soon](https://www.graphql-java.com/workshops/) 
 
 [![Build Status](https://travis-ci.org/graphql-java/graphql-java.svg?branch=master)](https://travis-ci.org/graphql-java/graphql-java)
 [![Latest Release](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/)
@@ -28,5 +29,11 @@ take the time to read it.
 ### License
 
 Copyright (c) 2015, Andreas Marek and [Contributors](https://github.com/graphql-java/graphql-java/graphs/contributors)
+
+### Supported by
+
+![YourKit](https://www.yourkit.com/images/yklogo.png)
+
+[YourKit](https://www.yourkit.com/) supports this project by providing the YourKit Java Profiler.
 
 

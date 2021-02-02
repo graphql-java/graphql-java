@@ -9,6 +9,7 @@ import graphql.util.NodeLocation;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static graphql.util.FpKit.mergeFirst;
 
@@ -29,6 +30,15 @@ public class NodeUtil {
         return true;
     }
 
+    public static <T extends NamedNode<T>> T findNodeByName(List<T> namedNodes, String name) {
+        for (T namedNode : namedNodes) {
+            if (Objects.equals(namedNode.getName(), name)) {
+                return namedNode;
+            }
+        }
+        return null;
+    }
+
     public static Map<String, ImmutableList<Directive>> allDirectivesByName(List<Directive> directives) {
         return FpKit.groupingBy(directives, Directive::getName);
     }
@@ -36,16 +46,6 @@ public class NodeUtil {
     public static Map<String, Argument> argumentsByName(List<Argument> arguments) {
         return FpKit.getByName(arguments, Argument::getName, mergeFirst());
     }
-
-    public static Argument getArgumentByName(List<Argument> arguments, String name) {
-        for (Argument argument : arguments) {
-            if (argument.getName().equals(name)) {
-                return argument;
-            }
-        }
-        return null;
-    }
-
 
     public static class GetOperationResult {
         public OperationDefinition operationDefinition;

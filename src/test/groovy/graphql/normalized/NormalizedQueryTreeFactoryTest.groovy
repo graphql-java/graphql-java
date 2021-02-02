@@ -784,6 +784,98 @@ type Dog implements Animal{
 
     }
 
+    def "fragment is used multiple times with different parents"() {
+        String schema = """
+        type Query{ 
+            pet: Pet
+        }
+        interface Pet {
+            name: String
+        }
+        type Dog implements Pet {
+            name: String
+        }
+        type Cat implements Pet {
+            name: String
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = """
+        {
+            pet {
+                ... on Dog {
+                    ...F
+                }
+                ... on Cat {
+                    ...F
+                }
+            }
+        }
+        fragment F on Pet {
+            name
+        }
+        
+        
+        """
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
+        def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
+        def printedTree = printTree(tree)
+
+        expect:
+        printedTree == ['Query.pet: Pet (conditional: false)',
+                        'Dog.name: String (conditional: true)',
+                        'Cat.name: String (conditional: true)'];
+    }
+
+    def "same result key but different field"() {
+        String schema = """
+        type Query{ 
+            pet: Pet
+        }
+        interface Pet {
+            name: String
+        }
+        type Dog implements Pet {
+            name: String
+            otherField: String
+        }
+        type Cat implements Pet {
+            name: String
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = """
+        {
+            pet {
+                ... on Dog {
+                    name: otherField
+                }
+                ... on Cat {
+                    name
+                }
+            }
+        }
+        """
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
+        def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
+        def printedTree = printTree(tree)
+
+        expect:
+        printedTree == ['Query.pet: Pet (conditional: false)',
+                        'name: Dog.otherField: String (conditional: true)',
+                        'Cat.name: String (conditional: true)'];
+    }
+    
     def "normalized field to MergedField is build"() {
         given:
         def graphQLSchema = TestUtil.schema("""
@@ -853,6 +945,113 @@ type Dog implements Animal{
         coordinatesToNormalizedFields[coordinates("Foo", "subFoo")].size() == 2
     }
 
+    def "handles mutations"() {
+        String schema = """
+type Query{ 
+    animal: Animal
+}
+
+type Mutation {
+    createAnimal: Query
+}
+
+type Subscription {
+    subscribeToAnimal: Query
+}
+
+interface Animal {
+    name: String
+    friends: [Friend]
+}
+
+union Pet = Dog | Cat
+
+type Friend {
+    name: String
+    isBirdOwner: Boolean
+    isCatOwner: Boolean
+    pets: [Pet] 
+}
+
+type Bird implements Animal {
+   name: String 
+   friends: [Friend]
+}
+
+type Cat implements Animal{
+   name: String 
+   friends: [Friend]
+   breed: String 
+}
+
+type Dog implements Animal{
+   name: String 
+   breed: String
+   friends: [Friend]
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
+    
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String mutation = """
+        mutation TestMutation{
+            createAnimal {
+                animal {
+                   name
+                   otherName: name
+                   ... on Cat {
+                        name
+                        friends {
+                            ... on Friend {
+                                isCatOwner
+                            }
+                       } 
+                   }
+                   ... on Bird {
+                        friends {
+                            isBirdOwner
+                        }
+                        friends {
+                            name
+                        }
+                   }
+                   ... on Dog {
+                      name   
+                   }
+                }
+            }
+        }
+        """
+
+        assertValidQuery(graphQLSchema, mutation)
+
+        Document document = TestUtil.parseQuery(mutation)
+
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
+        def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
+        def printedTree = printTree(tree)
+
+        expect:
+        printedTree == ['Mutation.createAnimal: Query (conditional: false)',
+                        'Query.animal: Animal (conditional: false)',
+                        'Bird.name: String (conditional: true)',
+                        'Cat.name: String (conditional: true)',
+                        'Dog.name: String (conditional: true)',
+                        'otherName: Bird.name: String (conditional: true)',
+                        'otherName: Cat.name: String (conditional: true)',
+                        'otherName: Dog.name: String (conditional: true)',
+                        'Cat.friends: [Friend] (conditional: true)',
+                        'Friend.isCatOwner: Boolean (conditional: false)',
+                        'Bird.friends: [Friend] (conditional: true)',
+                        'Friend.isBirdOwner: Boolean (conditional: false)',
+                        'Friend.name: String (conditional: false)']
+    }
 
     private void assertValidQuery(GraphQLSchema graphQLSchema, String query) {
         GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build();

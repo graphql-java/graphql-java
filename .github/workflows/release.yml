@@ -1,0 +1,27 @@
+name: Manual Release Build
+# Release builds
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'the version to be released'
+        required: true
+
+jobs:
+  buildAndPublish:
+    runs-on: ubuntu-latest
+    env:
+      BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
+      BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
+      MAVEN_CENTRAL_USER: ${{ secrets.MAVEN_CENTRAL_USER }}
+      MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+      RELEASE_VERSION: ${{ github.event.inputs.version }}
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Set up JDK 1.8
+        uses: actions/setup-java@v1
+        with:
+          java-version: '8.0.282'
+      - name: build test and publish
+        run: ./gradlew assemble && ./gradlew check --info && ./gradlew bintrayUpload -x check --info

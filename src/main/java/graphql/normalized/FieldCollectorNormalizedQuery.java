@@ -76,7 +76,6 @@ public class FieldCollectorNormalizedQuery {
         // result key -> ObjectType -> NormalizedField
         Map<String, Map<GraphQLObjectType, NormalizedField>> subFields = new LinkedHashMap<>();
         Map<NormalizedField, MergedField> mergedFieldByNormalizedField = new LinkedHashMap<>();
-        List<String> visitedFragments = new ArrayList<>();
         Set<GraphQLObjectType> possibleObjects
                 = new LinkedHashSet<>(resolvePossibleObjects((GraphQLCompositeType) fieldType, parameters.getGraphQLSchema()));
         for (Field field : mergedField.getFields()) {
@@ -85,7 +84,6 @@ public class FieldCollectorNormalizedQuery {
             }
             this.collectFields(parameters,
                     field.getSelectionSet(),
-                    visitedFragments,
                     subFields,
                     mergedFieldByNormalizedField,
                     possibleObjects,
@@ -101,10 +99,9 @@ public class FieldCollectorNormalizedQuery {
                                                    GraphQLObjectType rootType) {
         Map<String, Map<GraphQLObjectType, NormalizedField>> subFields = new LinkedHashMap<>();
         Map<NormalizedField, MergedField> mergedFieldByNormalizedField = new LinkedHashMap<>();
-        List<String> visitedFragments = new ArrayList<>();
         Set<GraphQLObjectType> possibleObjects = new LinkedHashSet<>();
         possibleObjects.add(rootType);
-        this.collectFields(parameters, operationDefinition.getSelectionSet(), visitedFragments, subFields, mergedFieldByNormalizedField, possibleObjects, 1, null);
+        this.collectFields(parameters, operationDefinition.getSelectionSet(), subFields, mergedFieldByNormalizedField, possibleObjects, 1, null);
         List<NormalizedField> children = subFieldsToList(subFields);
         return new CollectFieldResult(children, mergedFieldByNormalizedField);
     }
@@ -117,10 +114,8 @@ public class FieldCollectorNormalizedQuery {
         return children;
     }
 
-
     private void collectFields(FieldCollectorNormalizedQueryParams parameters,
                                SelectionSet selectionSet,
-                               List<String> visitedFragments,
                                Map<String, Map<GraphQLObjectType, NormalizedField>> result,
                                Map<NormalizedField, MergedField> mergedFieldByNormalizedField,
                                Set<GraphQLObjectType> possibleObjects,
@@ -131,28 +126,23 @@ public class FieldCollectorNormalizedQuery {
             if (selection instanceof Field) {
                 collectField(parameters, result, mergedFieldByNormalizedField, (Field) selection, possibleObjects, level, parent);
             } else if (selection instanceof InlineFragment) {
-                collectInlineFragment(parameters, visitedFragments, result, mergedFieldByNormalizedField, (InlineFragment) selection, possibleObjects, level, parent);
+                collectInlineFragment(parameters, result, mergedFieldByNormalizedField, (InlineFragment) selection, possibleObjects, level, parent);
             } else if (selection instanceof FragmentSpread) {
-                collectFragmentSpread(parameters, visitedFragments, result, mergedFieldByNormalizedField, (FragmentSpread) selection, possibleObjects, level, parent);
+                collectFragmentSpread(parameters, result, mergedFieldByNormalizedField, (FragmentSpread) selection, possibleObjects, level, parent);
             }
         }
     }
 
     private void collectFragmentSpread(FieldCollectorNormalizedQueryParams parameters,
-                                       List<String> visitedFragments,
                                        Map<String, Map<GraphQLObjectType, NormalizedField>> result,
                                        Map<NormalizedField, MergedField> mergedFieldByNormalizedField,
                                        FragmentSpread fragmentSpread,
                                        Set<GraphQLObjectType> possibleObjects,
                                        int level,
                                        NormalizedField parent) {
-        if (visitedFragments.contains(fragmentSpread.getName())) {
-            return;
-        }
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), fragmentSpread.getDirectives())) {
             return;
         }
-        visitedFragments.add(fragmentSpread.getName());
         FragmentDefinition fragmentDefinition = assertNotNull(parameters.getFragmentsByName().get(fragmentSpread.getName()));
 
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), fragmentDefinition.getDirectives())) {
@@ -160,11 +150,10 @@ public class FieldCollectorNormalizedQuery {
         }
         GraphQLCompositeType newCondition = (GraphQLCompositeType) parameters.getGraphQLSchema().getType(fragmentDefinition.getTypeCondition().getName());
         Set<GraphQLObjectType> newConditions = narrowDownPossibleObjects(possibleObjects, newCondition, parameters.getGraphQLSchema());
-        collectFields(parameters, fragmentDefinition.getSelectionSet(), visitedFragments, result, mergedFieldByNormalizedField, newConditions, level, parent);
+        collectFields(parameters, fragmentDefinition.getSelectionSet(), result, mergedFieldByNormalizedField, newConditions, level, parent);
     }
 
     private void collectInlineFragment(FieldCollectorNormalizedQueryParams parameters,
-                                       List<String> visitedFragments,
                                        Map<String, Map<GraphQLObjectType, NormalizedField>> result,
                                        Map<NormalizedField, MergedField> mergedFieldByNormalizedField,
                                        InlineFragment inlineFragment,
@@ -180,7 +169,7 @@ public class FieldCollectorNormalizedQuery {
             newPossibleObjects = narrowDownPossibleObjects(possibleObjects, newCondition, parameters.getGraphQLSchema());
 
         }
-        collectFields(parameters, inlineFragment.getSelectionSet(), visitedFragments, result, mergedFieldByNormalizedField, newPossibleObjects, level, parent);
+        collectFields(parameters, inlineFragment.getSelectionSet(), result, mergedFieldByNormalizedField, newPossibleObjects, level, parent);
     }
 
     private void collectField(FieldCollectorNormalizedQueryParams parameters,
@@ -193,7 +182,7 @@ public class FieldCollectorNormalizedQuery {
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), field.getDirectives())) {
             return;
         }
-        String name = getFieldEntryKey(field);
+        String name = field.getResultKey();
         result.computeIfAbsent(name, ignored -> new LinkedHashMap<>());
         Map<GraphQLObjectType, NormalizedField> existingFieldWTC = result.get(name);
 
@@ -230,15 +219,6 @@ public class FieldCollectorNormalizedQuery {
                 existingFieldWTC.put(objectType, newFieldWTC);
                 mergedFieldByNormalizedField.put(newFieldWTC, MergedField.newMergedField(field).build());
             }
-        }
-    }
-
-
-    private String getFieldEntryKey(Field field) {
-        if (field.getAlias() != null) {
-            return field.getAlias();
-        } else {
-            return field.getName();
         }
     }
 

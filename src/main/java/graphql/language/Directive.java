@@ -64,7 +64,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     }
 
     public Argument getArgument(String argumentName) {
-        return NodeUtil.getArgumentByName(arguments, argumentName);
+        return NodeUtil.findNodeByName(arguments, argumentName);
     }
 
     @Override

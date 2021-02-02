@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableList;
 import graphql.GraphQLError;
 import graphql.Internal;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -15,10 +14,10 @@ public class FetchedValue {
     private final Object localContext;
     private final ImmutableList<GraphQLError> errors;
 
-    private FetchedValue(Object fetchedValue, Object rawFetchedValue, List<GraphQLError> errors, Object localContext) {
+    private FetchedValue(Object fetchedValue, Object rawFetchedValue, ImmutableList<GraphQLError> errors, Object localContext) {
         this.fetchedValue = fetchedValue;
         this.rawFetchedValue = rawFetchedValue;
-        this.errors = ImmutableList.copyOf(errors);
+        this.errors = errors;
         this.localContext = localContext;
     }
 
@@ -75,7 +74,7 @@ public class FetchedValue {
         private Object fetchedValue;
         private Object rawFetchedValue;
         private Object localContext;
-        private List<GraphQLError> errors = new ArrayList<>();
+        private ImmutableList<GraphQLError> errors = ImmutableList.of();
 
         public Builder fetchedValue(Object fetchedValue) {
             this.fetchedValue = fetchedValue;
@@ -93,7 +92,7 @@ public class FetchedValue {
         }
 
         public Builder errors(List<GraphQLError> errors) {
-            this.errors = errors;
+            this.errors = ImmutableList.copyOf(errors);
             return this;
         }
 
