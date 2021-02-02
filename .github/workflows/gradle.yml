@@ -21,4 +21,4 @@ jobs:
         with:
           java-version: 1.8
       - name: Build with Gradle
-        run: ./gradlew assemble && ./gradlew check --info && ./gradlew bintrayUpload -x check --info"
+        run: ./gradlew assemble && ./gradlew check --info && ./gradlew bintrayUpload -x check --info
