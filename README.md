@@ -3,7 +3,8 @@
 Discuss and ask questions in our Discussions: https://github.com/graphql-java/graphql-java/discussions
 
 This is a [GraphQL](https://github.com/graphql/graphql-spec) Java implementation.
- 
+
+[NEW: GraphQL Java workshops are coming soon](https://www.graphql-java.com/workshops/) 
 
 [![Build Status](https://travis-ci.org/graphql-java/graphql-java.svg?branch=master)](https://travis-ci.org/graphql-java/graphql-java)
 [![Latest Release](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/)
