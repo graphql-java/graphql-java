@@ -537,7 +537,7 @@ type Object2 {
 }
 
 type Object1 {
-  field1: String @deprecated()
+  field1: String @deprecated
 }
 """
     }
