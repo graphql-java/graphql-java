@@ -3,7 +3,7 @@ name: Pull Request Build
 on:
   push:
     branches:
-      - master
+      - '!master'
   pull_request:
     branches:
       - master
