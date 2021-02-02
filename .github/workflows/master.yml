@@ -7,7 +7,6 @@ on:
 jobs:
   buildAndPublish:
     runs-on: ubuntu-latest
-    container: adoptopenjdk:8u282-b08-jdk-hotspot
     env:
       BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
       BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
@@ -19,6 +18,6 @@ jobs:
       - name: Set up JDK 1.8
         uses: actions/setup-java@v1
         with:
-          java-version: 1.8
+          java-version: '8.0.282'
       - name: build test and publish
         run: ./gradlew assemble && ./gradlew check --info && ./gradlew bintrayUpload -x check --info
