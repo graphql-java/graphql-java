@@ -180,23 +180,26 @@ public class ValuesResolver {
 
     }
 
-    private Object coerceValueForInputObjectType(GraphqlFieldVisibility fieldVisibility, VariableDefinition variableDefinition, GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
+    private Object coerceValueForInputObjectType(GraphqlFieldVisibility fieldVisibility, VariableDefinition variableDefinition, GraphQLInputObjectType inputObjectType, Map<String, Object> inputMap) {
         Map<String, Object> result = new LinkedHashMap<>();
         List<GraphQLInputObjectField> fields = fieldVisibility.getFieldDefinitions(inputObjectType);
         List<String> fieldNames = map(fields, GraphQLInputObjectField::getName);
-        for (String inputFieldName : input.keySet()) {
+        for (String inputFieldName : inputMap.keySet()) {
             if (!fieldNames.contains(inputFieldName)) {
                 throw new InputMapDefinesTooManyFieldsException(inputObjectType, inputFieldName);
             }
         }
 
         for (GraphQLInputObjectField inputField : fields) {
-            if (input.containsKey(inputField.getName()) || alwaysHasValue(inputField)) {
-                Object value = coerceValue(fieldVisibility, variableDefinition,
+            if (inputMap.containsKey(inputField.getName()) || alwaysHasValue(inputField)) {
+                // getOrDefault will return a null value if its present in the map as null
+                // defaulting only applies if the key is missing - we want this
+                Object inputValue = inputMap.getOrDefault(inputField.getName(), inputField.getDefaultValue());
+                Object coerceValue = coerceValue(fieldVisibility, variableDefinition,
                         inputField.getName(),
                         inputField.getType(),
-                        input.get(inputField.getName()));
-                result.put(inputField.getName(), value == null ? inputField.getDefaultValue() : value);
+                        inputValue);
+                result.put(inputField.getName(), coerceValue == null ? inputField.getDefaultValue() : coerceValue);
             }
         }
         return result;
