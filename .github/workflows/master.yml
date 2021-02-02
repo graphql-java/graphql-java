@@ -7,7 +7,7 @@ on:
 jobs:
   buildAndPublish:
     runs-on: ubuntu-latest
-    container: openjdk:8u131-jdk
+    container: 8u282-b08-jdk-hotspot
     env:
       BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
       BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
@@ -20,5 +20,5 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
-      - name: Build with Gradle
+      - name: build test and publish
         run: ./gradlew assemble && ./gradlew check --info && ./gradlew bintrayUpload -x check --info
