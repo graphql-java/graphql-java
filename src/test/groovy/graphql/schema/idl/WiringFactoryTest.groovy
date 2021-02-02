@@ -335,7 +335,7 @@ class WiringFactoryTest extends Specification {
         //
         // no directive - plain name
         //
-        def fetcher2 = type.getFieldDefinition("name").getDataFetcher()
+        def fetcher2 = schema.getCodeRegistry().getDataFetcher(type, type.getFieldDefinition("name"))
         fetcher2 instanceof PropertyDataFetcher
 
         PropertyDataFetcher propertyDataFetcher2 = fetcher2 as PropertyDataFetcher
