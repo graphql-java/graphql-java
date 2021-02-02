@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     container: openjdk:8u131-jdk
     env:
-      BINTRAY_USER=${{ secrets.BINTRAY_USER }}
-      BINTRAY_API_KEY=${{ secrets.BINTRAY_API_KEY }}
-      MAVEN_CENTRAL_USER=${{ secrets.MAVEN_CENTRAL_USER }}
-      MAVEN_CENTRAL_PASSWORD=${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+      BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
+      BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
+      MAVEN_CENTRAL_USER: ${{ secrets.MAVEN_CENTRAL_USER }}
+      MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
 
     steps:
       - uses: actions/checkout@v1
