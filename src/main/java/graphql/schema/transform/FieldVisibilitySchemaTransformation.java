@@ -6,6 +6,7 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedSchemaElement;
+import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
@@ -52,7 +53,7 @@ public class FieldVisibilitySchemaTransformation {
     public final GraphQLSchema apply(GraphQLSchema schema) {
         Set<GraphQLType> observedBeforeTransform = new HashSet<>();
         Set<GraphQLType> observedAfterTransform = new HashSet<>();
-        Set<GraphQLType> removedTypes = new HashSet<>();
+        Set<GraphQLType> markedForRemovalTypes = new HashSet<>();
 
         // query, mutation, and subscription types should not be removed
         final Set<String> protectedTypeNames = getRootTypes(schema).stream()
@@ -65,18 +66,44 @@ public class FieldVisibilitySchemaTransformation {
 
         // remove fields
         GraphQLSchema interimSchema = transformSchema(schema,
-                new FieldRemovalVisitor(visibleFieldPredicate, removedTypes));
+                new FieldRemovalVisitor(visibleFieldPredicate, markedForRemovalTypes));
 
         new SchemaTraverser().depthFirst(new TypeObservingVisitor(observedAfterTransform, interimSchema), getRootTypes(interimSchema));
 
-        // remove types that are not used
-        GraphQLSchema finalSchema = transformSchema(interimSchema,
-                new TypeVisibilityVisitor(protectedTypeNames, observedBeforeTransform, observedAfterTransform,
-                        removedTypes));
+        // remove types that are not used after removing fields - (connected schema only)
+        GraphQLSchema connectedSchema = transformSchema(interimSchema,
+                new TypeVisibilityVisitor(protectedTypeNames, observedBeforeTransform, observedAfterTransform));
+
+        // ensure markedForRemovalTypes are not referenced by other schema elements, and delete from the schema
+        // the ones that aren't.
+        GraphQLSchema finalSchema = removeUnreferencedTypes(markedForRemovalTypes, connectedSchema);
 
         afterTransformationHook.run();
 
         return finalSchema;
+    }
+
+    private GraphQLSchema removeUnreferencedTypes(Set<GraphQLType> markedForRemovalTypes, GraphQLSchema connectedSchema) {
+        GraphQLSchema withoutAdditionalTypes = connectedSchema.transform(builder -> {
+            Set<GraphQLType> additionalTypes = new HashSet<>(connectedSchema.getAdditionalTypes());
+            additionalTypes.removeAll(markedForRemovalTypes);
+            builder.clearAdditionalTypes();
+            builder.additionalTypes(additionalTypes);
+        });
+
+        // remove from markedForRemovalTypes any type that might still be referenced by other schema elements
+        transformSchema(withoutAdditionalTypes, new AdditionalTypeVisibilityVisitor(markedForRemovalTypes));
+
+        // finally remove the types on the schema we are certain aren't referenced by any other node.
+        return transformSchema(connectedSchema, new GraphQLTypeVisitorStub() {
+            @Override
+            protected TraversalControl visitGraphQLType(GraphQLSchemaElement node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node instanceof GraphQLType && markedForRemovalTypes.contains(node)) {
+                    return deleteNode(context);
+                }
+                return super.visitGraphQLType(node, context);
+            }
+        });
     }
 
     private static class TypeObservingVisitor extends GraphQLTypeVisitorStub {
@@ -151,16 +178,13 @@ public class FieldVisibilitySchemaTransformation {
         private final Set<String> protectedTypeNames;
         private final Set<GraphQLType> observedBeforeTransform;
         private final Set<GraphQLType> observedAfterTransform;
-        private final Set<GraphQLType> removedTypes;
 
         private TypeVisibilityVisitor(Set<String> protectedTypeNames,
                                       Set<GraphQLType> observedTypes,
-                                      Set<GraphQLType> observedAfterTransform,
-                                      Set<GraphQLType> removedTypes) {
+                                      Set<GraphQLType> observedAfterTransform) {
             this.protectedTypeNames = protectedTypeNames;
             this.observedBeforeTransform = observedTypes;
             this.observedAfterTransform = observedAfterTransform;
-            this.removedTypes = removedTypes;
         }
 
         @Override
@@ -180,6 +204,30 @@ public class FieldVisibilitySchemaTransformation {
                             node instanceof GraphQLUnionType)) {
 
                 return deleteNode(context);
+            }
+
+            return TraversalControl.CONTINUE;
+        }
+    }
+
+    private static class AdditionalTypeVisibilityVisitor extends GraphQLTypeVisitorStub {
+
+        private final Set<GraphQLType> markedForRemovalTypes;
+
+        private AdditionalTypeVisibilityVisitor(Set<GraphQLType> markedForRemovalTypes) {
+            this.markedForRemovalTypes = markedForRemovalTypes;
+        }
+
+        @Override
+        public TraversalControl visitGraphQLType(GraphQLSchemaElement node,
+                                                 TraverserContext<GraphQLSchemaElement> context) {
+
+            if (node instanceof GraphQLNamedType) {
+                GraphQLNamedType namedType = (GraphQLNamedType) node;
+                // we encountered a node referencing one of the marked types, so it should not be removed.
+                if (markedForRemovalTypes.contains(node)) {
+                    markedForRemovalTypes.remove(namedType);
+                }
             }
 
             return TraversalControl.CONTINUE;

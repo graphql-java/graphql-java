@@ -73,6 +73,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -1149,29 +1150,71 @@ public class SchemaGeneratorHelper {
      * @return the additional types not referenced from the top level operations
      */
     Set<GraphQLType> buildAdditionalTypes(BuildContext buildCtx) {
-        Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
-        typeRegistry.types().values().forEach(typeDefinition -> {
-            TypeName typeName = TypeName.newTypeName().name(typeDefinition.getName()).build();
-            if (typeDefinition instanceof InputObjectTypeDefinition) {
-                if (buildCtx.hasInputType(typeDefinition) == null) {
-                    additionalTypes.add(buildInputType(buildCtx, typeName));
-                }
-            } else {
-                if (buildCtx.hasOutputType(typeDefinition) == null) {
-                    additionalTypes.add(buildOutputType(buildCtx, typeName));
-                }
-            }
-        });
-        typeRegistry.scalars().values().forEach(scalarTypeDefinition -> {
-            if (ScalarInfo.isGraphqlSpecifiedScalar(scalarTypeDefinition.getName())) {
-                return;
-            }
-            if (buildCtx.hasInputType(scalarTypeDefinition) == null && buildCtx.hasOutputType(scalarTypeDefinition) == null) {
-                additionalTypes.add(buildScalar(buildCtx, scalarTypeDefinition));
-            }
-        });
+
+        Set<String> detachedTypeNames = getDetachedTypeNames(buildCtx);
+
+        Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
+        // recursively record detached types on the ctx and add them to the additionalTypes set
+        typeRegistry.types().values().stream()
+                .filter(typeDefinition -> detachedTypeNames.contains(typeDefinition.getName()))
+                .forEach(typeDefinition -> {
+                    TypeName typeName = TypeName.newTypeName().name(typeDefinition.getName()).build();
+
+                    if (typeDefinition instanceof InputObjectTypeDefinition) {
+                        if (buildCtx.hasInputType(typeDefinition) == null) {
+                            buildCtx.putInputType((GraphQLNamedInputType) buildInputType(buildCtx, typeName));
+                        }
+                        additionalTypes.add(buildCtx.inputGTypes.get(typeDefinition.getName()));
+                    } else {
+                        if (buildCtx.hasOutputType(typeDefinition) == null) {
+                            buildCtx.putOutputType(buildOutputType(buildCtx, typeName));
+                        }
+                        additionalTypes.add(buildCtx.outputGTypes.get(typeDefinition.getName()));
+                    }
+                });
+
+        typeRegistry.scalars().values().stream()
+                .filter(typeDefinition -> detachedTypeNames.contains(typeDefinition.getName()))
+                .forEach(scalarTypeDefinition -> {
+                    if (ScalarInfo.isGraphqlSpecifiedScalar(scalarTypeDefinition.getName())) {
+                        return;
+                    }
+
+                    if (buildCtx.hasInputType(scalarTypeDefinition) == null && buildCtx.hasOutputType(scalarTypeDefinition) == null) {
+                        buildCtx.putOutputType(buildScalar(buildCtx, scalarTypeDefinition));
+                    }
+                    if (buildCtx.hasInputType(scalarTypeDefinition) != null) {
+                        additionalTypes.add(buildCtx.inputGTypes.get(scalarTypeDefinition.getName()));
+                    } else if (buildCtx.hasOutputType(scalarTypeDefinition) != null) {
+                        additionalTypes.add(buildCtx.outputGTypes.get(scalarTypeDefinition.getName()));
+                    }
+                });
+
         return additionalTypes;
+    }
+
+    /**
+     * Detached types (or additional types) are all types that
+     * are not connected to the root operations types.
+     *
+     * @param buildCtx buildCtx
+     * @return detached type names
+     */
+    private Set<String> getDetachedTypeNames(BuildContext buildCtx) {
+        TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
+        // connected types are all types that have a path that connects them back to the root operation types.
+        Set<String> connectedTypes = new HashSet<>(buildCtx.inputGTypes.keySet());
+        connectedTypes.addAll(buildCtx.outputGTypes.keySet());
+
+        Set<String> allTypeNames = new HashSet<>(typeRegistry.types().keySet());
+        Set<String> scalars = new HashSet<>(typeRegistry.scalars().keySet());
+        allTypeNames.addAll(scalars);
+
+        // detached types are all types minus the connected types.
+        Set<String> detachedTypeNames = new HashSet<>(allTypeNames);
+        detachedTypeNames.removeAll(connectedTypes);
+        return detachedTypeNames;
     }
 
     Set<GraphQLDirective> buildAdditionalDirectives(BuildContext buildCtx) {
