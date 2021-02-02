@@ -12,6 +12,7 @@ import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLList
+import graphql.schema.GraphQLNamedType
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
@@ -1146,6 +1147,103 @@ class SchemaGeneratorTest extends Specification {
         schema.getType("UnReferencedC") instanceof GraphQLInterfaceType
         schema.getType("UnReferencedD") instanceof GraphQLUnionType
     }
+
+    def "nested additional types should be part of the additional types, not the schema types"() {
+        def spec = """      
+            type Query {
+              fieldA : ReferencedA
+            }
+            
+            type ReferencedA {
+              field : String
+            }
+
+            type UnReferencedA {
+              field : UnReferencedNestedE
+            }
+            
+            input UnReferencedB {
+              field : UnReferencedNestedF
+            }
+            
+            type UnReferencedNestedE {
+                field: String
+                field2: UnReferencedScalarB
+            }
+            
+            input UnReferencedNestedF {
+                field: String
+            }
+            
+            interface UnReferencedC {
+                field : UnReferencedNestedE
+            }
+            
+            union UnReferencedD = ReferencedA  
+            
+            scalar UnReferencedScalarA 
+            
+            scalar UnReferencedScalarB
+        """
+
+        def schema = schema(spec)
+
+        expect: "all types to be registered"
+        schema.getType("ReferencedA") instanceof GraphQLObjectType
+        schema.getType("UnReferencedA") instanceof GraphQLObjectType
+        schema.getType("UnReferencedB") instanceof GraphQLInputObjectType
+        schema.getType("UnReferencedC") instanceof GraphQLInterfaceType
+        schema.getType("UnReferencedD") instanceof GraphQLUnionType
+        schema.getType("UnReferencedNestedE") instanceof GraphQLObjectType
+        schema.getType("UnReferencedNestedF") instanceof GraphQLInputObjectType
+
+
+        and: "unreferenced types should all be additional types"
+
+        def namedTypes = schema.getAdditionalTypes() as Set<GraphQLNamedType>
+        namedTypes.name.toSet() == ["UnReferencedA",
+                                    "UnReferencedB",
+                                    "UnReferencedC",
+                                    "UnReferencedD",
+                                    "UnReferencedNestedE",
+                                    "UnReferencedNestedF",
+                                    "UnReferencedScalarA",
+                                    "UnReferencedScalarB"].toSet()
+    }
+
+
+    def "nested additional types recursive"() {
+        def spec = """      
+            type Query {
+              fieldA : ReferencedA
+            }
+            
+            type ReferencedA {
+              field : String
+            }
+
+            type UnReferencedA {
+              field : UnReferencedNestedB
+            }
+
+            type UnReferencedNestedB {
+                field: UnReferencedNestedB
+            }
+        """
+
+        def schema = schema(spec)
+
+        expect: "all types to be registered"
+        schema.getType("ReferencedA") instanceof GraphQLObjectType
+        schema.getType("UnReferencedA") instanceof GraphQLObjectType
+        schema.getType("UnReferencedNestedB") instanceof GraphQLObjectType
+
+        and: "unreferenced types should all be additional types"
+
+        def namedTypes = schema.getAdditionalTypes() as Set<GraphQLNamedType>
+        namedTypes.name.toSet() == ["UnReferencedA", "UnReferencedNestedB"].toSet()
+    }
+
 
     def "scalar default value is parsed"() {
         def spec = """
