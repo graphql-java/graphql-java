@@ -12,9 +12,9 @@ public class FetchedValue {
     private final Object fetchedValue;
     private final Object rawFetchedValue;
     private final Object localContext;
-    private final List<GraphQLError> errors;
+    private final ImmutableList<GraphQLError> errors;
 
-    private FetchedValue(Object fetchedValue, Object rawFetchedValue, List<GraphQLError> errors, Object localContext) {
+    private FetchedValue(Object fetchedValue, Object rawFetchedValue, ImmutableList<GraphQLError> errors, Object localContext) {
         this.fetchedValue = fetchedValue;
         this.rawFetchedValue = rawFetchedValue;
         this.errors = errors;
@@ -74,7 +74,7 @@ public class FetchedValue {
         private Object fetchedValue;
         private Object rawFetchedValue;
         private Object localContext;
-        private List<GraphQLError> errors = ImmutableList.of();
+        private ImmutableList<GraphQLError> errors = ImmutableList.of();
 
         public Builder fetchedValue(Object fetchedValue) {
             this.fetchedValue = fetchedValue;
