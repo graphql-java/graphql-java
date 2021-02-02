@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
@@ -144,6 +145,7 @@ public class IntrospectionResultToSchema {
         List<Map<String, Object>> args = (List<Map<String, Object>>) input.get("args");
         List<InputValueDefinition> inputValueDefinitions = createInputValueDefinitions(args);
         directiveDefBuilder.inputValueDefinitions(inputValueDefinitions);
+        Optional.ofNullable((Boolean) input.get("isRepeatable")).ifPresent(value -> directiveDefBuilder.repeatable(value));
 
         return directiveDefBuilder.build();
     }
