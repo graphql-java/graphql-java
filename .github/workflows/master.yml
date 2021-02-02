@@ -1,4 +1,4 @@
-name: Master Build
+name: Master Build and Publish
 # For master push: Builds and publishes the development version to bintray/maven
 on:
   push:
