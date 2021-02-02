@@ -597,6 +597,7 @@ public class GraphQL {
         if (!containsDLInstrumentation) {
             instrumentationList.add(new DataLoaderDispatcherInstrumentation());
         }
+
         return new ChainedInstrumentation(instrumentationList);
     }
 }
