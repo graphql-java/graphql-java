@@ -50,11 +50,7 @@ public class FieldLevelTrackingApproach {
         }
 
         private FieldTracking provideFieldTracking(int level) {
-            FieldTracking fieldTracking = fieldTrackingPerLevel.get(level);
-            if (fieldTracking == null) {
-                fieldTracking = fieldTrackingPerLevel.computeIfAbsent(level, ignored -> new FieldTracking());
-            }
-            return fieldTracking;
+            return fieldTrackingPerLevel.computeIfAbsent(level, ignored -> new FieldTracking());
         }
 
         void increaseExpectedFetchCount(int level, int count) {
