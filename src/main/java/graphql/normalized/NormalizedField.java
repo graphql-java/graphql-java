@@ -32,10 +32,19 @@ public class NormalizedField {
     private final GraphQLObjectType objectType;
     private final GraphQLFieldDefinition fieldDefinition;
     private Map<String, Map<GraphQLObjectType, NormalizedField>> children;
+    private Map<String, ChildOverlappingState> childOverlappingState = new LinkedHashMap<>();
     private final boolean isConditional;
     private final int level;
     private NormalizedField parent;
 
+    public enum ChildOverlappingState {
+        // this means all have objects (or just one object) as ast parent and are the same field
+        UNDECIDED_OBJECTS,
+        // all ast are objects and are different fields, this means at least two objects
+        MUTUALLY_EXCLUSIVE_OBJECTS,
+        // all are the same field and at least on ast parent is an interface
+        SAME_FIELD
+    }
 
     private NormalizedField(Builder builder) {
         this.alias = builder.alias;
@@ -171,6 +180,14 @@ public class NormalizedField {
             return children.get(resultKey).values();
         }
         return Collections.emptyList();
+    }
+
+    public ChildOverlappingState getChildOverlappingState(String resultKey) {
+        return this.childOverlappingState.get(resultKey);
+    }
+
+    public void updateChildOverlappingState(String resultKey, ChildOverlappingState newState) {
+        childOverlappingState.put(resultKey, newState);
     }
 
     public void replaceChildren(Map<String, Map<GraphQLObjectType, NormalizedField>> newChildren) {

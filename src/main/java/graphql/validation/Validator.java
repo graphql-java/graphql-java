@@ -36,16 +36,14 @@ import java.util.List;
 @Internal
 public class Validator {
 
-    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document, String operationName) {
+    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document) {
         ValidationContext validationContext = new ValidationContext(schema, document);
 
 
         ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector();
         List<AbstractRule> rules = createRules(validationContext, validationErrorCollector);
-        RulesVisitor rulesVisitor = new RulesVisitor(validationContext, rules);
-
-        MainValidationTraversal mainValidationTraversal = new MainValidationTraversal(schema, document, operationName, rulesVisitor, validationContext);
-        mainValidationTraversal.checkDocument();
+        LanguageTraversal languageTraversal = new LanguageTraversal();
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, rules));
 
         return validationErrorCollector.getErrors();
     }

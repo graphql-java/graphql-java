@@ -1215,15 +1215,4 @@ many lines''']
         capturedMsg == "BANG!"
     }
 
-    def "invalid query"() {
-        given:
-        GraphQLSchema schema = schema('type Query{ foo:String}')
-
-        when:
-        def result = GraphQL.newGraphQL(schema).build().execute('{ foo }')
-
-        then:
-        result.errors.size() == 1
-
-    }
 }

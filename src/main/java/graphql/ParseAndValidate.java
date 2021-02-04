@@ -29,7 +29,7 @@ public class ParseAndValidate {
     public static ParseAndValidateResult parseAndValidate(GraphQLSchema graphQLSchema, ExecutionInput executionInput) {
         ParseAndValidateResult result = parse(executionInput);
         if (!result.isFailure()) {
-            List<ValidationError> errors = validate(graphQLSchema, result.getDocument(), executionInput.getOperationName());
+            List<ValidationError> errors = validate(graphQLSchema, result.getDocument());
             return result.transform(builder -> builder.validationErrors(errors));
         }
         return result;

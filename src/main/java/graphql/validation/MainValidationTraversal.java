@@ -99,7 +99,6 @@ public class MainValidationTraversal {
         rulesVisitor.enter(definition, path);
         path.add(definition);
         GraphQLObjectType rootType = getRootType(definition);
-        overlappingFields.visitOperationDefinition(definition, rootType);
         for (VariableDefinition variableDefinition : definition.getVariableDefinitions()) {
             visitVariableDefinition(variableDefinition);
         }

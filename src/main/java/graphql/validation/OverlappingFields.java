@@ -10,10 +10,12 @@ import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
+import graphql.language.OperationDefinition;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
 import graphql.language.Value;
 import graphql.normalized.NormalizedField;
+import graphql.normalized.NormalizedField.ChildOverlappingState;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
@@ -38,6 +40,9 @@ import static graphql.Assert.assertNotNull;
 import static graphql.introspection.Introspection.SchemaMetaFieldDef;
 import static graphql.introspection.Introspection.TypeMetaFieldDef;
 import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
+import static graphql.normalized.NormalizedField.ChildOverlappingState.MUTUALLY_EXCLUSIVE_OBJECTS;
+import static graphql.normalized.NormalizedField.ChildOverlappingState.SAME_FIELD;
+import static graphql.normalized.NormalizedField.ChildOverlappingState.UNDECIDED_OBJECTS;
 import static graphql.schema.GraphQLTypeUtil.isEnum;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
@@ -55,53 +60,22 @@ public class OverlappingFields {
 
     private Map<Field, List<NormalizedField>> fieldToNormalizedField = new LinkedHashMap<>();
     private Map<NormalizedField, MergedField> normalizedFieldToMergedField = new LinkedHashMap<>();
-    private Map<Field, GraphQLCompositeType> fieldToParentType = new LinkedHashMap<>();
+    private Map<Field, Boolean> astParentIsObject = new LinkedHashMap<>();
     private List<NormalizedField> topLevelFields = new ArrayList<>();
     private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
 
     private GraphQLSchema schema;
     private Document document;
+    private OperationDefinition operationDefinition;
     private ValidationContext validationContext;
 
 
-    public OverlappingFields(GraphQLSchema schema, Document document, ValidationContext validationContext) {
+    public OverlappingFields(GraphQLSchema schema, Document document, OperationDefinition operationDefinition, ValidationContext validationContext) {
         this.schema = schema;
         this.document = document;
+        this.operationDefinition = operationDefinition;
         this.validationContext = validationContext;
     }
-
-
-//    public void shallow(FieldCollectorNormalizedQueryParams parameters,
-//                                      NormalizedField normalizedField,
-//                                      MergedField mergedField,
-//                                      int level) {
-//        GraphQLUnmodifiedType fieldType = GraphQLTypeUtil.unwrapAll(normalizedField.getFieldDefinition().getType());
-//        // if not composite we don't have any selectionSet because it is a Scalar or enum
-//        if (!(fieldType instanceof GraphQLCompositeType)) {
-//            return new CollectFieldResult(Collections.emptyList(), Collections.emptyMap());
-//        }
-//
-//        // result key -> ObjectType -> NormalizedField
-//        Map<String, Map<GraphQLObjectType, NormalizedField>> subFields = new LinkedHashMap<>();
-//        Map<NormalizedField, MergedField> mergedFieldByNormalizedField = new LinkedHashMap<>();
-//        List<String> visitedFragments = new ArrayList<>();
-//        Set<GraphQLObjectType> possibleObjects
-//                = new LinkedHashSet<>(resolvePossibleObjects((GraphQLCompositeType) fieldType, parameters.getGraphQLSchema()));
-//        List<NormalizedField> children = subFieldsToList(subFields);
-//        return new CollectFieldResult(children, mergedFieldByNormalizedField);
-//    }
-//
-//    public void visitOperationDefinition(OperationDefinition operationDefinition,
-//                                         GraphQLObjectType rootType) {
-//        Map<String, Map<GraphQLObjectType, NormalizedField>> subFields = new LinkedHashMap<>();
-//        Map<NormalizedField, MergedField> mergedFieldByNormalizedField = new LinkedHashMap<>();
-//        List<String> visitedFragments = new ArrayList<>();
-//        Set<GraphQLObjectType> possibleObjects = new LinkedHashSet<>();
-//        possibleObjects.add(rootType);
-//        this.collectFields(parameters, operationDefinition.getSelectionSet(), visitedFragments, subFields, mergedFieldByNormalizedField, possibleObjects, 1, null);
-//        List<NormalizedField> children = subFieldsToList(subFields);
-//        return new CollectFieldResult(children, mergedFieldByNormalizedField);
-//    }
 
 
     public void visitField(Field field) {
@@ -116,14 +90,11 @@ public class OverlappingFields {
         List<NormalizedField> parentNormalizedFields = fieldToNormalizedField.get(field);
         if (parentNormalizedFields == null) {
             // this means this field a top level field
-//            NormalizedField topLevelField =
-//            Map<String, Map<GraphQLObjectType, NormalizedField>> result = new LinkedHashMap<>(parentNormalizedField.getChildrenAsMap());
-//            GraphQLUnmodifiedType fieldType = GraphQLTypeUtil.unwrapAll(parentNormalizedField.getFieldDefinition().getType());
-//            Set<GraphQLObjectType> possibleObjects
-//                    = new LinkedHashSet<>(resolvePossibleObjects((GraphQLCompositeType) fieldType));
-//
-//            visitSelectionSetImpl(field.getSelectionSet(), result, possibleObjects, 1, parentNormalizedField, parentType);
-//            parentNormalizedField.replaceChildren(result);
+            Map<String, Map<GraphQLObjectType, NormalizedField>> result = new LinkedHashMap<>();
+            Set<GraphQLObjectType> possibleObjects
+                    = new LinkedHashSet<>();
+            possibleObjects.add((GraphQLObjectType) parentType);
+            visitSelectionSetImpl(field.getSelectionSet(), result, possibleObjects, 1, null, parentType);
         } else {
             for (NormalizedField parentNormalizedField : parentNormalizedFields) {
                 int level = parentNormalizedField.getLevel() + 1;
@@ -163,7 +134,7 @@ public class OverlappingFields {
                                      Set<GraphQLObjectType> possibleObjects,
                                      int level,
                                      NormalizedField parentNormalizedField,
-                                     GraphQLCompositeType parentType) {
+                                     GraphQLCompositeType astParentType) {
         FragmentDefinition fragmentDefinition = fragmentsByName.get(fragmentSpread.getName());
         if (fragmentDefinition == null) {
             return;
@@ -182,10 +153,10 @@ public class OverlappingFields {
                                      Set<GraphQLObjectType> possibleObjects,
                                      int level,
                                      NormalizedField parentNormalizedField,
-                                     GraphQLCompositeType parentType) {
+                                     GraphQLCompositeType astParentType) {
         Set<GraphQLObjectType> newPossibleObjects = possibleObjects;
 
-        GraphQLCompositeType newParentType = parentType;
+        GraphQLCompositeType newParentType = astParentType;
         if (inlineFragment.getTypeCondition() != null) {
             GraphQLCompositeType newCondition = (GraphQLCompositeType) schema.getType(inlineFragment.getTypeCondition().getName());
             // error
@@ -202,7 +173,7 @@ public class OverlappingFields {
                             Map<String, Map<GraphQLObjectType, NormalizedField>> result,
                             Set<GraphQLObjectType> objectTypes,
                             int level,
-                            GraphQLCompositeType existingParentType,
+                            NormalizedField parentNormalizedField,
                             GraphQLCompositeType astParentType) {
         GraphQLFieldDefinition fieldDef = getFieldDef(astParentType, field);
         if (fieldDef == null) {
@@ -213,11 +184,16 @@ public class OverlappingFields {
         result.computeIfAbsent(resultKey, ignored -> new LinkedHashMap<>());
         Map<GraphQLObjectType, NormalizedField> objectTypeToNormalizedField = result.get(resultKey);
 
+        // if zero it means this is the first field for this resultKey
+        if (objectTypeToNormalizedField.size() == 0 && parentNormalizedField != null) {
+            ChildOverlappingState childOverlappingState = astParentType instanceof GraphQLObjectType ? UNDECIDED_OBJECTS : SAME_FIELD;
+            parentNormalizedField.updateChildOverlappingState(resultKey, childOverlappingState);
+        }
         for (GraphQLObjectType objectType : objectTypes) {
 
             if (objectTypeToNormalizedField.containsKey(objectType)) {
                 NormalizedField existingChild = objectTypeToNormalizedField.get(objectType);
-                Conflict conflict = checkIfFieldIsCompatible(field, parentType, fieldDef.getType(), existingChild, parentNormalizedField);
+                Conflict conflict = checkIfFieldIsCompatible(field, astParentType, fieldDef.getType(), existingChild, parentNormalizedField);
                 if (conflict != null) {
                     // save conflict errors
                 }
@@ -280,9 +256,10 @@ public class OverlappingFields {
     }
 
     private Conflict checkIfFieldIsCompatible(Field field,
-                                              GraphQLCompositeType astParenType,
+                                              GraphQLCompositeType astParentType,
                                               GraphQLOutputType fieldType,
-                                              NormalizedField existingNormalizedField) {
+                                              NormalizedField existingNormalizedField,
+                                              NormalizedField parentNormalizedField) {
         // normally checks two different fields using they type of the field, the parent types of the field
         //
         String resultKey = field.getResultKey();
@@ -305,36 +282,45 @@ public class OverlappingFields {
         if (checkScalarAndEnumConflict(typeA, typeB)) {
             return mkNotSameTypeError(resultKey, fieldA, fieldB, typeA, typeB);
         }
-
-        // the rest of the checks are only needed if both fields need to be
-        // exactly the same: same field name with same arguments
-        // Both fields needs to be exactly the same if at execution time
-        // both could be valid and therefore needed to be executed together
-        // The only case where they don't need to be the same is
-        // for both parents being Object types
-
-        GraphQLType parentTypeA = astParenType;
-        existingNormalizedField.
-                GraphQLType parentTypeB = unwrapAll(parentNormalizedField.getFieldType());
-
-        if (!sameType(parentTypeA, parentTypeB) &&
-                parentTypeA instanceof GraphQLObjectType &&
-                parentTypeB instanceof GraphQLObjectType) {
-
-            MergedField mergedField = normalizedFieldToMergedField.get(existingNormalizedField);
-            MergedField newMergedField = mergedField.transform(builder -> builder.addField(field));
-            normalizedFieldToMergedField.put(existingNormalizedField, newMergedField);
-            return null;
+        ChildOverlappingState childOverlappingState = existingNormalizedField.getChildOverlappingState(resultKey);
+        if (childOverlappingState == MUTUALLY_EXCLUSIVE_OBJECTS) {
+            if (!(astParentType instanceof GraphQLObjectType)) {
+                String reason = format("%s: %s and %s are different fields", resultKey, fieldA, fieldB);
+                return new Conflict(resultKey, reason, fieldA, fieldB);
+            }
+        } else if (childOverlappingState == SAME_FIELD) {
+            conflict = checkExactlySameField(resultKey, fieldA, fieldB, typeA, typeB);
+            if (conflict != null) {
+                return conflict;
+            }
+        } else if (childOverlappingState == UNDECIDED_OBJECTS) {
+            if (astParentType instanceof GraphQLObjectType) {
+                if (!isExactlySameField(resultKey, fieldA, fieldB, typeA, typeB)) {
+                    parentNormalizedField.updateChildOverlappingState(resultKey, MUTUALLY_EXCLUSIVE_OBJECTS);
+                }
+            } else {
+                conflict = checkExactlySameField(resultKey, fieldA, fieldB, typeA, typeB);
+                if (conflict != null) {
+                    return conflict;
+                }
+                parentNormalizedField.updateChildOverlappingState(resultKey, SAME_FIELD);
+            }
         }
 
+        return null;
+    }
+
+    private boolean isExactlySameField(String resultKey, Field fieldA, Field fieldB, GraphQLType typeA, GraphQLType typeB) {
+        return checkExactlySameField(resultKey, fieldA, fieldB, typeA, typeB) == null;
+    }
+
+    private Conflict checkExactlySameField(String resultKey, Field fieldA, Field fieldB, GraphQLType typeA, GraphQLType typeB) {
         String fieldNameA = fieldA.getName();
         String fieldNameB = fieldB.getName();
-
         if (!fieldNameA.equals(fieldNameB)) {
             String reason = format("%s: %s and %s are different fields", resultKey, fieldNameA, fieldNameB);
             return new Conflict(resultKey, reason, fieldA, fieldB);
         }
-
         if (!sameType(typeA, typeB)) {
             return mkNotSameTypeError(resultKey, fieldA, fieldB, typeA, typeB);
         }
@@ -343,7 +329,6 @@ public class OverlappingFields {
             String reason = format("%s: they have differing arguments", resultKey);
             return new Conflict(resultKey, reason, fieldA, fieldB);
         }
-
         return null;
     }
 
