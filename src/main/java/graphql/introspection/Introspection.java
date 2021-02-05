@@ -37,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static graphql.Assert.assertTrue;
 import static graphql.Scalars.GraphQLBoolean;
@@ -178,7 +179,11 @@ public class Introspection {
                     .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("args")
-                    .type(nonNull(list(nonNull(__InputValue)))))
+                    .type(nonNull(list(nonNull(__InputValue))))
+                    .argument(newArgument()
+                            .name("includeDeprecated")
+                            .type(GraphQLBoolean)
+                            .defaultValue(false)))
             .field(newFieldDefinition()
                     .name("type")
                     .type(nonNull(typeRef("__Type"))))
@@ -239,16 +244,9 @@ public class Introspection {
                     .getGraphQLSchema()
                     .getFieldVisibility()
                     .getFieldDefinitions(fieldsContainer);
-            if (includeDeprecated) {
-                return fieldDefinitions;
-            }
-            List<GraphQLFieldDefinition> filtered = new ArrayList<>(fieldDefinitions);
-            for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
-                if (fieldDefinition.isDeprecated()) {
-                    filtered.remove(fieldDefinition);
-                }
-            }
-            return filtered;
+            return fieldDefinitions.stream()
+                    .filter(field -> includeDeprecated || !field.isDeprecated())
+                    .collect(Collectors.toList());
         }
         return null;
     };
@@ -281,27 +279,24 @@ public class Introspection {
         Boolean includeDeprecated = environment.getArgument("includeDeprecated");
         if (type instanceof GraphQLEnumType) {
             List<GraphQLEnumValueDefinition> values = ((GraphQLEnumType) type).getValues();
-            if (includeDeprecated) {
-                return values;
-            }
-            List<GraphQLEnumValueDefinition> filtered = new ArrayList<>(values);
-            for (GraphQLEnumValueDefinition valueDefinition : values) {
-                if (valueDefinition.isDeprecated()) {
-                    filtered.remove(valueDefinition);
-                }
-            }
-            return filtered;
+            return values.stream()
+                    .filter(enumValue -> includeDeprecated || !enumValue.isDeprecated())
+                    .collect(Collectors.toList());
         }
         return null;
     };
 
     private static final IntrospectionDataFetcher inputFieldsFetcher = environment -> {
         Object type = environment.getSource();
+        Boolean includeDeprecated = environment.getArgument("includeDeprecated");
         if (type instanceof GraphQLInputObjectType) {
             GraphqlFieldVisibility fieldVisibility = environment
                     .getGraphQLSchema()
                     .getFieldVisibility();
-            return fieldVisibility.getFieldDefinitions((GraphQLInputObjectType) type);
+            List<GraphQLInputObjectField> inputFieldDefinitions = fieldVisibility.getFieldDefinitions((GraphQLInputObjectType) type)
+                    .stream().filter(inputField -> includeDeprecated || !inputField.isDeprecated())
+                    .collect(Collectors.toList());
+            return inputFieldDefinitions;
         }
         return null;
     };
@@ -355,7 +350,11 @@ public class Introspection {
                             .defaultValue(false)))
             .field(newFieldDefinition()
                     .name("inputFields")
-                    .type(list(nonNull(__InputValue))))
+                    .type(list(nonNull(__InputValue)))
+                    .argument(newArgument()
+                            .name("includeDeprecated")
+                            .type(GraphQLBoolean)
+                            .defaultValue(false)))
             .field(newFieldDefinition()
                     .name("ofType")
                     .type(typeRef("__Type")))

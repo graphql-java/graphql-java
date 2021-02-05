@@ -2,7 +2,6 @@ package graphql.schema.idl;
 
 import graphql.Assert;
 import graphql.AssertException;
-import graphql.Directives;
 import graphql.Internal;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Argument;
@@ -86,6 +85,9 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.Directives.DEPRECATED_DIRECTIVE_DEFINITION;
+import static graphql.Directives.SPECIFIED_BY_DIRECTIVE_DEFINITION;
+import static graphql.Directives.SpecifiedByDirective;
 import static graphql.collect.ImmutableKit.map;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
@@ -96,9 +98,6 @@ import static graphql.introspection.Introspection.DirectiveLocation.INPUT_OBJECT
 import static graphql.introspection.Introspection.DirectiveLocation.OBJECT;
 import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
 import static graphql.introspection.Introspection.DirectiveLocation.UNION;
-import static graphql.language.DirectiveLocation.newDirectiveLocation;
-import static graphql.language.NonNullType.newNonNullType;
-import static graphql.language.TypeName.newTypeName;
 import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition;
 import static graphql.schema.GraphQLTypeReference.typeRef;
 import static graphql.schema.GraphQLTypeUtil.isList;
@@ -209,36 +208,6 @@ public class SchemaGeneratorHelper {
     }
 
     static final String NO_LONGER_SUPPORTED = "No longer supported";
-    static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
-    static final DirectiveDefinition SPECIFIED_BY_DIRECTIVE_DEFINITION;
-
-    static {
-        DEPRECATED_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
-                .name(Directives.DeprecatedDirective.getName())
-                .directiveLocation(newDirectiveLocation().name(FIELD_DEFINITION.name()).build())
-                .directiveLocation(newDirectiveLocation().name(ENUM_VALUE.name()).build())
-                .description(createDescription("Marks the field or enum value as deprecated"))
-                .inputValueDefinition(
-                        InputValueDefinition.newInputValueDefinition()
-                                .name("reason")
-                                .description(createDescription("The reason for the deprecation"))
-                                .type(newTypeName().name("String").build())
-                                .defaultValue(StringValue.newStringValue().value(NO_LONGER_SUPPORTED).build())
-                                .build())
-                .build();
-
-        SPECIFIED_BY_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
-                .name(Directives.SpecifiedByDirective.getName())
-                .directiveLocation(newDirectiveLocation().name(SCALAR.name()).build())
-                .description(createDescription("Exposes a URL that specifies the behaviour of this scalar."))
-                .inputValueDefinition(
-                        InputValueDefinition.newInputValueDefinition()
-                                .name("url")
-                                .description(createDescription("The URL that specifies the behaviour of this scalar."))
-                                .type(newNonNullType(newTypeName().name("String").build()).build())
-                                .build())
-                .build();
-    }
 
     private static Description createDescription(String s) {
         return new Description(s, null, false);
@@ -351,6 +320,7 @@ public class SchemaGeneratorHelper {
         }
         return null;
     }
+
     private GraphQLDirective buildDirective(BuildContext buildCtx, Directive directive, DirectiveLocation directiveLocation, Set<GraphQLDirective> runtimeDirectives, GraphqlTypeComparatorRegistry comparatorRegistry, Set<String> previousNames) {
         GraphQLDirective gqlDirective = buildDirective(buildCtx, directive, runtimeDirectives, directiveLocation, comparatorRegistry);
         if (previousNames.contains(directive.getName())) {
@@ -534,6 +504,7 @@ public class SchemaGeneratorHelper {
         fieldBuilder.definition(fieldDef);
         fieldBuilder.name(fieldDef.getName());
         fieldBuilder.description(buildDescription(fieldDef, fieldDef.getDescription()));
+        fieldBuilder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
         fieldBuilder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
         // currently the spec doesnt allow deprecations on InputValueDefinitions but it should!
@@ -661,7 +632,7 @@ public class SchemaGeneratorHelper {
         List<Directive> allDirectives = new ArrayList<>(scalarTypeDefinition.getDirectives());
         extensions.forEach(extension -> allDirectives.addAll(extension.getDirectives()));
         Optional<Directive> specifiedByDirective = FpKit.findOne(allDirectives,
-                directiveDefinition -> directiveDefinition.getName().equals(Directives.SpecifiedByDirective.getName()));
+                directiveDefinition -> directiveDefinition.getName().equals(SpecifiedByDirective.getName()));
         if (!specifiedByDirective.isPresent()) {
             return null;
         }
@@ -928,6 +899,7 @@ public class SchemaGeneratorHelper {
      *
      * @param buildCtx the context we need to work out what we are doing
      * @param rawType  the type to be built
+     *
      * @return an output type
      */
     @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
@@ -1049,6 +1021,7 @@ public class SchemaGeneratorHelper {
         builder.definition(valueDefinition);
         builder.name(valueDefinition.getName());
         builder.description(buildDescription(valueDefinition, valueDefinition.getDescription()));
+        builder.deprecate(buildDeprecationReason(valueDefinition.getDirectives()));
         builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
         GraphQLInputType inputType = buildInputType(buildCtx, valueDefinition.getType());
@@ -1157,6 +1130,7 @@ public class SchemaGeneratorHelper {
      * but then we build the rest of the types specified and put them in as additional types
      *
      * @param buildCtx the context we need to work out what we are doing
+     *
      * @return the additional types not referenced from the top level operations
      */
     Set<GraphQLType> buildAdditionalTypes(BuildContext buildCtx) {
@@ -1209,6 +1183,7 @@ public class SchemaGeneratorHelper {
      * are not connected to the root operations types.
      *
      * @param buildCtx buildCtx
+     *
      * @return detached type names
      */
     private Set<String> getDetachedTypeNames(BuildContext buildCtx) {

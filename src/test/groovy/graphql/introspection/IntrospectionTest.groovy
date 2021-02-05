@@ -4,6 +4,11 @@ package graphql.introspection
 import graphql.TestUtil
 import spock.lang.Specification
 
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadFactory
+
 class IntrospectionTest extends Specification {
 
     def "bug 1186 - introspection depth check"() {
@@ -103,4 +108,22 @@ class IntrospectionTest extends Specification {
         geoPolygonType["isRepeatable"] == true
     }
 
+    def "introspection for deprecated support"() {
+        def spec = '''
+            type Query {
+               namedField: String @deprecated
+            }
+        '''
+
+        when:
+        def graphQL = TestUtil.graphQL(spec).build()
+        def executionResult = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        executionResult.errors.isEmpty()
+
+        def directives = executionResult.data.getAt("__schema").getAt("directives") as List
+        def geoPolygonType = directives.find { it['name'] == 'repeatableDirective' }
+        geoPolygonType["isRepeatable"] == true
+    }
 }
