@@ -2,6 +2,7 @@ package graphql.normalized;
 
 import graphql.Internal;
 import graphql.execution.MergedField;
+import graphql.execution.nextgen.Common;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -9,6 +10,7 @@ import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
 import graphql.normalized.FieldCollectorNormalizedQuery.CollectFieldResult;
 import graphql.schema.FieldCoordinates;
+import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
 import java.util.ArrayList;
@@ -52,7 +54,8 @@ public class NormalizedQueryTreeFactory {
                 .variables(variables)
                 .build();
 
-        CollectFieldResult topLevelFields = fieldCollector.collectFromOperation(parameters, operationDefinition, graphQLSchema.getQueryType());
+        GraphQLObjectType rootType = Common.getOperationRootType(graphQLSchema, operationDefinition);
+        CollectFieldResult topLevelFields = fieldCollector.collectFromOperation(parameters, operationDefinition, rootType);
 
         Map<Field, List<NormalizedField>> fieldToNormalizedField = new LinkedHashMap<>();
         Map<NormalizedField, MergedField> normalizedFieldToMergedField = new LinkedHashMap<>();

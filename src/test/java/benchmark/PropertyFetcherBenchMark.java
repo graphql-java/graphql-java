@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * This benchmarks a simple property fetch to help improve the key class PropertyDataFetcher
  * <p>
- * See http://hg.openjdk.java.net/code-tools/jmh/file/tip/jmh-samples/src/main/java/org/openjdk/jmh/samples/ for more samples
+ * See https://github.com/openjdk/jmh/tree/master/jmh-samples/src/main/java/org/openjdk/jmh/samples/ for more samples
  * on what you can do with JMH
  * <p>
  * You MUST have the JMH plugin for IDEA in place for this to work :  https://github.com/artyushov/idea-jmh-plugin

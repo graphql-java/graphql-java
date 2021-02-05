@@ -408,6 +408,7 @@ public class Introspection {
             .description("An enum describing valid locations where a directive can be placed")
             .value("QUERY", DirectiveLocation.QUERY, "Indicates the directive is valid on queries.")
             .value("MUTATION", DirectiveLocation.MUTATION, "Indicates the directive is valid on mutations.")
+            .value("SUBSCRIPTION", DirectiveLocation.SUBSCRIPTION, "Indicates the directive is valid on subscriptions.")
             .value("FIELD", DirectiveLocation.FIELD, "Indicates the directive is valid on fields.")
             .value("FRAGMENT_DEFINITION", DirectiveLocation.FRAGMENT_DEFINITION, "Indicates the directive is valid on fragment definitions.")
             .value("FRAGMENT_SPREAD", DirectiveLocation.FRAGMENT_SPREAD, "Indicates the directive is valid on fragment spreads.")
