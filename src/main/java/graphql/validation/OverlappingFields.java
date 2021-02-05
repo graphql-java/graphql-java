@@ -68,13 +68,19 @@ public class OverlappingFields {
     private Document document;
     private OperationDefinition operationDefinition;
     private ValidationContext validationContext;
+    private ValidationErrorCollector validationErrorCollector;
 
 
-    public OverlappingFields(GraphQLSchema schema, Document document, OperationDefinition operationDefinition, ValidationContext validationContext) {
+    public OverlappingFields(GraphQLSchema schema,
+                             Document document,
+                             OperationDefinition operationDefinition,
+                             ValidationContext validationContext,
+                             ValidationErrorCollector validationErrorCollector) {
         this.schema = schema;
         this.document = document;
         this.operationDefinition = operationDefinition;
         this.validationContext = validationContext;
+        this.validationErrorCollector = validationErrorCollector;
     }
 
 

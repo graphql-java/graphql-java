@@ -12,6 +12,7 @@ import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.ListType;
 import graphql.language.Node;
+import graphql.language.NodeUtil;
 import graphql.language.NonNullType;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
@@ -46,16 +47,23 @@ public class MainValidationTraversal {
     private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
     private OverlappingFields overlappingFields;
     private final ValidationContext validationContext;
+    private ValidationErrorCollector validationErrorCollector;
+
 
     public MainValidationTraversal(GraphQLSchema graphQLSchema,
                                    Document document,
                                    String operationName,
                                    RulesVisitor rulesVisitor,
-                                   ValidationContext validationContext) {
+                                   ValidationContext validationContext,
+                                   ValidationErrorCollector validationErrorCollector) {
         this.schema = graphQLSchema;
         this.document = document;
         this.rulesVisitor = rulesVisitor;
         this.validationContext = validationContext;
+        this.validationErrorCollector = validationErrorCollector;
+        NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, null);
+
+        this.overlappingFields = new OverlappingFields(schema, document, getOperationResult.operationDefinition, validationContext, validationErrorCollector);
     }
 
     public void checkDocument() {
