@@ -24,12 +24,11 @@ import graphql.language.TypeName;
 import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
-import graphql.normalized.NormalizedField;
+import graphql.normalized.NormalizedQueryTree;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -42,12 +41,11 @@ public class MainValidationTraversal {
     private List<Node> path = new ArrayList<>();
     private final RulesVisitor rulesVisitor;
 
-    private NormalizedField currentNormalizedField;
 
-    private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
-    private OverlappingFields overlappingFields;
+    private final Map<String, FragmentDefinition> fragmentsByName;
+    private final OverlappingFields overlappingFields;
     private final ValidationContext validationContext;
-    private ValidationErrorCollector validationErrorCollector;
+    private final ValidationErrorCollector validationErrorCollector;
 
 
     public MainValidationTraversal(GraphQLSchema graphQLSchema,
@@ -62,20 +60,19 @@ public class MainValidationTraversal {
         this.validationContext = validationContext;
         this.validationErrorCollector = validationErrorCollector;
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, null);
+        this.fragmentsByName = getOperationResult.fragmentsByName;
 
         this.overlappingFields = new OverlappingFields(schema, document, getOperationResult.operationDefinition, validationContext, validationErrorCollector);
+    }
+
+    public NormalizedQueryTree getNormalizedQueryTree() {
+        return overlappingFields.getNormalizedTree();
     }
 
     public void checkDocument() {
         rulesVisitor.enter(document, path);
         path.add(document);
         // we take the freedom here to collect first all FragmentDefinition so that we can access them later
-        for (Definition definition : document.getDefinitions()) {
-            if (definition instanceof FragmentDefinition) {
-                FragmentDefinition fragmentDefinition = (FragmentDefinition) definition;
-                fragmentsByName.put(fragmentDefinition.getName(), fragmentDefinition);
-            }
-        }
         for (Definition definition : document.getDefinitions()) {
             visitDefinition(definition);
         }
@@ -106,6 +103,7 @@ public class MainValidationTraversal {
     private void visitOperationDefinition(OperationDefinition definition) {
         rulesVisitor.enter(definition, path);
         path.add(definition);
+        overlappingFields.visitOperationDefinition(definition);
         GraphQLObjectType rootType = getRootType(definition);
         for (VariableDefinition variableDefinition : definition.getVariableDefinitions()) {
             visitVariableDefinition(variableDefinition);
@@ -114,6 +112,7 @@ public class MainValidationTraversal {
             visitDirective(directive);
         }
         visitSelectionSet(definition.getSelectionSet());
+        // depends on visitSelectionSet to be called earlier
         path.remove(path.size() - 1);
         rulesVisitor.leave(definition, path);
     }
@@ -224,7 +223,7 @@ public class MainValidationTraversal {
     private void visitField(Field field) {
         rulesVisitor.enter(field, path);
         path.add(field);
-        overlappingFields.visitField(field);
+        overlappingFields.visitSelectionSetOfField(field);
         for (Argument argument : field.getArguments()) {
             visitArgument(argument);
         }

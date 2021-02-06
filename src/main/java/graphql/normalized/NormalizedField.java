@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 
@@ -50,7 +49,7 @@ public class NormalizedField {
         this.alias = builder.alias;
         this.arguments = builder.arguments;
         this.objectType = builder.objectType;
-        this.fieldDefinition = assertNotNull(builder.fieldDefinition);
+        this.fieldDefinition = builder.fieldDefinition;
         this.children = builder.children;
         this.level = builder.level;
         this.parent = builder.parent;
@@ -197,6 +196,10 @@ public class NormalizedField {
                 normalizedField.replaceParent(this);
             });
         }
+    }
+
+    public void setChildren(Map<String, Map<GraphQLObjectType, NormalizedField>> newChildren) {
+        this.children = newChildren;
     }
 
     public GraphQLOutputType getFieldType() {

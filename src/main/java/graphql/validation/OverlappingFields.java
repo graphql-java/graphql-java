@@ -10,12 +10,16 @@ import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
+import graphql.language.Node;
 import graphql.language.OperationDefinition;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
+import graphql.language.SourceLocation;
 import graphql.language.Value;
 import graphql.normalized.NormalizedField;
 import graphql.normalized.NormalizedField.ChildOverlappingState;
+import graphql.normalized.NormalizedQueryTree;
+import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
@@ -36,7 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static graphql.Assert.assertNotNull;
 import static graphql.introspection.Introspection.SchemaMetaFieldDef;
 import static graphql.introspection.Introspection.TypeMetaFieldDef;
 import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
@@ -52,16 +55,20 @@ import static graphql.schema.GraphQLTypeUtil.isScalar;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
+import static graphql.validation.ValidationError.newValidationError;
+import static graphql.validation.ValidationErrorType.FieldsConflict;
 import static java.lang.String.format;
 
 public class OverlappingFields {
 
-    private NormalizedField currentNormalizedField;
 
     private Map<Field, List<NormalizedField>> fieldToNormalizedField = new LinkedHashMap<>();
     private Map<NormalizedField, MergedField> normalizedFieldToMergedField = new LinkedHashMap<>();
-    private Map<Field, Boolean> astParentIsObject = new LinkedHashMap<>();
+    private Map<FieldCoordinates, List<NormalizedField>> coordinatesToNormalizedFields = new LinkedHashMap<>();
     private List<NormalizedField> topLevelFields = new ArrayList<>();
+    private NormalizedField rootField = NormalizedField.newNormalizedField().build();
+
+    private Map<Field, Boolean> astParentIsObject = new LinkedHashMap<>();
     private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
 
     private GraphQLSchema schema;
@@ -83,35 +90,65 @@ public class OverlappingFields {
         this.validationErrorCollector = validationErrorCollector;
     }
 
+    public NormalizedQueryTree getNormalizedTree() {
+        return new NormalizedQueryTree(rootField.getChildren(),
+                fieldToNormalizedField,
+                normalizedFieldToMergedField,
+                coordinatesToNormalizedFields);
+    }
 
-    public void visitField(Field field) {
+    public void visitOperationDefinition(OperationDefinition operationDefinition) {
+        GraphQLObjectType rootType = (GraphQLObjectType) validationContext.getOutputType();
+        // something is wrong, other validations will catch it
+        if (rootType == null) {
+            return;
+        }
+        int level = 1;
+        Set<GraphQLObjectType> possibleObjects = new LinkedHashSet<>();
+        possibleObjects.add(rootType);
+        Map<String, Map<GraphQLObjectType, NormalizedField>> result = new LinkedHashMap<>(rootField.getChildrenAsMap());
+        visitSelectionSetImpl(operationDefinition.getSelectionSet(), result, possibleObjects, level, rootField, rootType);
+        rootField.setChildren(result);
+    }
+
+    // This traverses the selection set of
+    // the field, NOT the field itself
+    public void visitSelectionSetOfField(Field field) {
         if (field.getSelectionSet() == null) {
             return;
         }
-        GraphQLCompositeType parentType = validationContext.getParentType();
+        // this is the parent type of the field
+        GraphQLCompositeType parentTypeForTheField = validationContext.getParentType();
         // something is wrong, other validations will catch it
-        if (parentType == null) {
+        if (parentTypeForTheField == null) {
             return;
         }
+        GraphQLFieldDefinition fieldDef = getFieldDef(parentTypeForTheField, field);
+        if (fieldDef == null) {
+            return;
+        }
+        // this is the actual ast parent for the subselection
+        if (!(fieldDef.getType() instanceof GraphQLCompositeType)) {
+            return;
+        }
+        GraphQLCompositeType astParentType = (GraphQLCompositeType) fieldDef.getType();
+
+
         List<NormalizedField> parentNormalizedFields = fieldToNormalizedField.get(field);
         if (parentNormalizedFields == null) {
-            // this means this field a top level field
-            Map<String, Map<GraphQLObjectType, NormalizedField>> result = new LinkedHashMap<>();
-            Set<GraphQLObjectType> possibleObjects
-                    = new LinkedHashSet<>();
-            possibleObjects.add((GraphQLObjectType) parentType);
-            visitSelectionSetImpl(field.getSelectionSet(), result, possibleObjects, 1, null, parentType);
+            return;
         } else {
             for (NormalizedField parentNormalizedField : parentNormalizedFields) {
                 int level = parentNormalizedField.getLevel() + 1;
-                Map<String, Map<GraphQLObjectType, NormalizedField>> result = new LinkedHashMap<>(parentNormalizedField.getChildrenAsMap());
                 GraphQLUnmodifiedType fieldType = GraphQLTypeUtil.unwrapAll(parentNormalizedField.getFieldDefinition().getType());
-                Set<GraphQLObjectType> possibleObjects
-                        = new LinkedHashSet<>(resolvePossibleObjects((GraphQLCompositeType) fieldType));
+                Set<GraphQLObjectType> possibleObjects = new LinkedHashSet<>(resolvePossibleObjects((GraphQLCompositeType) fieldType));
+                Map<String, Map<GraphQLObjectType, NormalizedField>> result = new LinkedHashMap<>(parentNormalizedField.getChildrenAsMap());
 
-                visitSelectionSetImpl(field.getSelectionSet(), result, possibleObjects, level, parentNormalizedField, parentType);
+                visitSelectionSetImpl(field.getSelectionSet(), result, possibleObjects, level, parentNormalizedField, astParentType);
                 parentNormalizedField.replaceChildren(result);
             }
+            // this means this field a top level field
+
         }
     }
 
@@ -201,12 +238,14 @@ public class OverlappingFields {
                 NormalizedField existingChild = objectTypeToNormalizedField.get(objectType);
                 Conflict conflict = checkIfFieldIsCompatible(field, astParentType, fieldDef.getType(), existingChild, parentNormalizedField);
                 if (conflict != null) {
-                    // save conflict errors
+                    addError(FieldsConflict, conflict.fields, conflict.reason);
+                    continue;
                 }
 
                 MergedField mergedField1 = normalizedFieldToMergedField.get(existingChild);
                 MergedField updatedMergedField = mergedField1.transform(builder -> builder.addField(field));
                 normalizedFieldToMergedField.put(existingChild, updatedMergedField);
+                fieldToNormalizedField.computeIfAbsent(field, ignored -> new ArrayList<>()).add(existingChild);
 
             } else {
                 GraphQLFieldDefinition fieldDefinition;
@@ -217,7 +256,10 @@ public class OverlappingFields {
                 } else if (field.getName().equals(Introspection.TypeMetaFieldDef.getName())) {
                     fieldDefinition = TypeMetaFieldDef;
                 } else {
-                    fieldDefinition = assertNotNull(objectType.getFieldDefinition(field.getName()), () -> String.format("no field with name %s found in object %s", field.getName(), objectType.getName()));
+                    fieldDefinition = objectType.getFieldDefinition(field.getName());
+                    if (fieldDefinition == null) {
+                        continue;
+                    }
                 }
 
                 NormalizedField newNormalizedField = NormalizedField.newNormalizedField()
@@ -226,10 +268,12 @@ public class OverlappingFields {
                         .objectType(objectType)
                         .fieldDefinition(fieldDefinition)
                         .level(level)
-                        .parent(parentNormalizedField)
+                        // don't set the rootField as actually parent
+                        .parent(parentNormalizedField == rootField ? null : parentNormalizedField)
                         .build();
                 objectTypeToNormalizedField.put(objectType, newNormalizedField);
                 normalizedFieldToMergedField.put(newNormalizedField, MergedField.newMergedField(field).build());
+                fieldToNormalizedField.computeIfAbsent(field, ignored -> new ArrayList<>()).add(newNormalizedField);
             }
         }
     }
@@ -266,8 +310,6 @@ public class OverlappingFields {
                                               GraphQLOutputType fieldType,
                                               NormalizedField existingNormalizedField,
                                               NormalizedField parentNormalizedField) {
-        // normally checks two different fields using they type of the field, the parent types of the field
-        //
         String resultKey = field.getResultKey();
 
         Field fieldA = field;
@@ -490,6 +532,28 @@ public class OverlappingFields {
             return schema.getFieldVisibility().getFieldDefinition((GraphQLFieldsContainer) parentType, field.getName());
         }
         return null;
+    }
+
+    public void addError(ValidationErrorType validationErrorType, List<? extends Node<?>> locations, String description) {
+        List<SourceLocation> locationList = new ArrayList<>();
+        for (Node<?> node : locations) {
+            locationList.add(node.getSourceLocation());
+        }
+        addError(newValidationError()
+                .validationErrorType(validationErrorType)
+                .sourceLocations(locationList)
+                .description(description));
+    }
+
+    public void addError(ValidationErrorType validationErrorType, SourceLocation location, String description) {
+        addError(newValidationError()
+                .validationErrorType(validationErrorType)
+                .sourceLocation(location)
+                .description(description));
+    }
+
+    public void addError(ValidationError.Builder validationError) {
+        validationErrorCollector.addError(validationError.queryPath(validationContext.getQueryPath()).build());
     }
 
 
