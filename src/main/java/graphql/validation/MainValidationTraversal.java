@@ -62,7 +62,12 @@ public class MainValidationTraversal {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, null);
         this.fragmentsByName = getOperationResult.fragmentsByName;
 
-        this.overlappingFields = new OverlappingFields(schema, document, getOperationResult.operationDefinition, validationContext, validationErrorCollector);
+        this.overlappingFields = new OverlappingFields(schema,
+                document,
+                getOperationResult.operationDefinition,
+                validationContext,
+                validationErrorCollector,
+                getOperationResult.fragmentsByName);
     }
 
     public NormalizedQueryTree getNormalizedQueryTree() {
@@ -103,7 +108,7 @@ public class MainValidationTraversal {
     private void visitOperationDefinition(OperationDefinition definition) {
         rulesVisitor.enter(definition, path);
         path.add(definition);
-        overlappingFields.visitOperationDefinition(definition);
+        overlappingFields.visitSelectionSetOfOperationDefinition(definition);
         GraphQLObjectType rootType = getRootType(definition);
         for (VariableDefinition variableDefinition : definition.getVariableDefinitions()) {
             visitVariableDefinition(variableDefinition);

@@ -65,6 +65,7 @@ class MainValidationTraversalTest extends Specification {
 
     }
 
+
     MainValidationTraversal newMainValidationTraversal(
             schema,
             document,

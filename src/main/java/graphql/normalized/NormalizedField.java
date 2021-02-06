@@ -42,7 +42,7 @@ public class NormalizedField {
         // all ast are objects and are different fields, this means at least two objects
         MUTUALLY_EXCLUSIVE_OBJECTS,
         // all are the same field and at least on ast parent is an interface
-        SAME_FIELD
+        SAME_FIELD;
     }
 
     private NormalizedField(Builder builder) {

@@ -69,7 +69,7 @@ public class OverlappingFields {
     private NormalizedField rootField = NormalizedField.newNormalizedField().build();
 
     private Map<Field, Boolean> astParentIsObject = new LinkedHashMap<>();
-    private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
+    private final Map<String, FragmentDefinition> fragmentsByName;
 
     private GraphQLSchema schema;
     private Document document;
@@ -82,7 +82,10 @@ public class OverlappingFields {
                              Document document,
                              OperationDefinition operationDefinition,
                              ValidationContext validationContext,
-                             ValidationErrorCollector validationErrorCollector) {
+                             ValidationErrorCollector validationErrorCollector,
+                             Map<String, FragmentDefinition> fragmentsByName
+    ) {
+        this.fragmentsByName = fragmentsByName;
         this.schema = schema;
         this.document = document;
         this.operationDefinition = operationDefinition;
@@ -97,7 +100,7 @@ public class OverlappingFields {
                 coordinatesToNormalizedFields);
     }
 
-    public void visitOperationDefinition(OperationDefinition operationDefinition) {
+    public void visitSelectionSetOfOperationDefinition(OperationDefinition operationDefinition) {
         GraphQLObjectType rootType = (GraphQLObjectType) validationContext.getOutputType();
         // something is wrong, other validations will catch it
         if (rootType == null) {
@@ -107,8 +110,9 @@ public class OverlappingFields {
         Set<GraphQLObjectType> possibleObjects = new LinkedHashSet<>();
         possibleObjects.add(rootType);
         Map<String, Map<GraphQLObjectType, NormalizedField>> result = new LinkedHashMap<>(rootField.getChildrenAsMap());
-        visitSelectionSetImpl(operationDefinition.getSelectionSet(), result, possibleObjects, level, rootField, rootType);
+        // we need do set it before as this is accessed in visitSelectionSet
         rootField.setChildren(result);
+        visitSelectionSetImpl(operationDefinition.getSelectionSet(), result, possibleObjects, level, rootField, rootType);
     }
 
     // This traverses the selection set of
@@ -330,7 +334,14 @@ public class OverlappingFields {
         if (checkScalarAndEnumConflict(typeA, typeB)) {
             return mkNotSameTypeError(resultKey, fieldA, fieldB, typeA, typeB);
         }
-        ChildOverlappingState childOverlappingState = existingNormalizedField.getChildOverlappingState(resultKey);
+        Set<GraphQLObjectType> currentObjects = parentNormalizedField.getChildrenAsMap().get(resultKey).keySet();
+        if (astParentType instanceof GraphQLObjectType && currentObjects.contains(astParentType)) {
+            conflict = checkExactlySameField(resultKey, fieldA, fieldB, typeA, typeB);
+            if (conflict != null) {
+                return conflict;
+            }
+        }
+        ChildOverlappingState childOverlappingState = parentNormalizedField.getChildOverlappingState(resultKey);
         if (childOverlappingState == MUTUALLY_EXCLUSIVE_OBJECTS) {
             if (!(astParentType instanceof GraphQLObjectType)) {
                 String reason = format("%s: %s and %s are different fields", resultKey, fieldA, fieldB);
@@ -366,7 +377,7 @@ public class OverlappingFields {
         String fieldNameA = fieldA.getName();
         String fieldNameB = fieldB.getName();
         if (!fieldNameA.equals(fieldNameB)) {
-            String reason = format("%s: %s and %s are different fields", resultKey, fieldNameA, fieldNameB);
+            String reason = format("%s: %s and %s are different fields", resultKey, fieldNameB, fieldNameA);
             return new Conflict(resultKey, reason, fieldA, fieldB);
         }
         if (!sameType(typeA, typeB)) {
