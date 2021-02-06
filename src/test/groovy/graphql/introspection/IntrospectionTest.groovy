@@ -1,13 +1,7 @@
 package graphql.introspection
 
-
 import graphql.TestUtil
 import spock.lang.Specification
-
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadFactory
 
 class IntrospectionTest extends Specification {
 
@@ -136,12 +130,12 @@ class IntrospectionTest extends Specification {
         namedField["deprecationReason"] == "No longer supported"
 
         def enumType = types.find { it['name'] == 'Enum' }
-        def red = enumType["enumValues"].find({ it["name"] == "RED"})
+        def red = enumType["enumValues"].find({ it["name"] == "RED" })
         red["isDeprecated"]
         red["deprecationReason"] == "No longer supported"
 
         def inputType = types.find { it['name'] == 'InputType' }
-        def inputField = inputType["inputFields"].find({ it["name"] == "inputField"})
+        def inputField = inputType["inputFields"].find({ it["name"] == "inputField" })
         inputField["isDeprecated"]
         inputField["deprecationReason"] == "No longer supported"
 
