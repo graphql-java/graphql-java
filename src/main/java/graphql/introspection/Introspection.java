@@ -147,16 +147,32 @@ public class Introspection {
             .field(newFieldDefinition()
                     .name("defaultValue")
                     .type(GraphQLString))
+            .field(newFieldDefinition()
+                    .name("isDeprecated")
+                    .type(GraphQLBoolean))
+            .field(newFieldDefinition()
+                    .name("deprecationReason")
+                    .type(GraphQLString))
             .build();
 
     static {
         register(__InputValue, "defaultValue", environment -> {
-            if (environment.getSource() instanceof GraphQLArgument) {
-                GraphQLArgument inputField = environment.getSource();
+            Object type = environment.getSource();
+            if (type instanceof GraphQLArgument) {
+                GraphQLArgument inputField = (GraphQLArgument) type;
                 return inputField.getDefaultValue() != null ? print(inputField.getDefaultValue(), inputField.getType()) : null;
-            } else if (environment.getSource() instanceof GraphQLInputObjectField) {
-                GraphQLInputObjectField inputField = environment.getSource();
+            } else if (type instanceof GraphQLInputObjectField) {
+                GraphQLInputObjectField inputField = (GraphQLInputObjectField) type;
                 return inputField.getDefaultValue() != null ? print(inputField.getDefaultValue(), inputField.getType()) : null;
+            }
+            return null;
+        });
+        register(__InputValue, "isDeprecated", environment -> {
+            Object type = environment.getSource();
+            if (type instanceof GraphQLArgument) {
+                return ((GraphQLArgument) type).isDeprecated();
+            } else if (type instanceof GraphQLInputObjectField) {
+                return ((GraphQLInputObjectField) type).isDeprecated();
             }
             return null;
         });
@@ -237,9 +253,9 @@ public class Introspection {
 
     private static final IntrospectionDataFetcher fieldsFetcher = environment -> {
         Object type = environment.getSource();
-        Boolean includeDeprecated = environment.getArgument("includeDeprecated");
         if (type instanceof GraphQLFieldsContainer) {
             GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) type;
+            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
             List<GraphQLFieldDefinition> fieldDefinitions = environment
                     .getGraphQLSchema()
                     .getFieldVisibility()
@@ -288,15 +304,14 @@ public class Introspection {
 
     private static final IntrospectionDataFetcher inputFieldsFetcher = environment -> {
         Object type = environment.getSource();
-        Boolean includeDeprecated = environment.getArgument("includeDeprecated");
         if (type instanceof GraphQLInputObjectType) {
+            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
             GraphqlFieldVisibility fieldVisibility = environment
                     .getGraphQLSchema()
                     .getFieldVisibility();
-            List<GraphQLInputObjectField> inputFieldDefinitions = fieldVisibility.getFieldDefinitions((GraphQLInputObjectType) type)
+            return fieldVisibility.getFieldDefinitions((GraphQLInputObjectType) type)
                     .stream().filter(inputField -> includeDeprecated || !inputField.isDeprecated())
                     .collect(Collectors.toList());
-            return inputFieldDefinitions;
         }
         return null;
     };

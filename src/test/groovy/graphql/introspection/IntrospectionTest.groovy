@@ -111,7 +111,14 @@ class IntrospectionTest extends Specification {
     def "introspection for deprecated support"() {
         def spec = '''
             type Query {
-               namedField: String @deprecated
+               namedField(arg : InputType @deprecated ) : Enum @deprecated
+            }
+            enum Enum {
+                RED @deprecated
+                BLUE
+            }
+            input InputType {
+                inputField : String @deprecated
             }
         '''
 
@@ -122,8 +129,24 @@ class IntrospectionTest extends Specification {
         then:
         executionResult.errors.isEmpty()
 
-        def directives = executionResult.data.getAt("__schema").getAt("directives") as List
-        def geoPolygonType = directives.find { it['name'] == 'repeatableDirective' }
-        geoPolygonType["isRepeatable"] == true
+        def types = executionResult.data['__schema']['types'] as List
+        def queryType = types.find { it['name'] == 'Query' }
+        def namedField = (queryType['fields'] as List)[0]
+        namedField["isDeprecated"]
+        namedField["deprecationReason"] == "No longer supported"
+
+        def enumType = types.find { it['name'] == 'Enum' }
+        def red = enumType["enumValues"].find({ it["name"] == "RED"})
+        red["isDeprecated"]
+        red["deprecationReason"] == "No longer supported"
+
+        def inputType = types.find { it['name'] == 'InputType' }
+        def inputField = inputType["inputFields"].find({ it["name"] == "inputField"})
+        inputField["isDeprecated"]
+        inputField["deprecationReason"] == "No longer supported"
+
+        def argument = (namedField["args"] as List)[0]
+        argument["isDeprecated"]
+        argument["deprecationReason"] == "No longer supported"
     }
 }

@@ -42,7 +42,7 @@ public interface IntrospectionQuery {
             "      isDeprecated\n" +
             "      deprecationReason\n" +
             "    }\n" +
-            "    inputFields {\n" +
+            "    inputFields(includeDeprecated: true) {\n" +
             "      ...InputValue\n" +
             "    }\n" +
             "    interfaces {\n" +
@@ -64,6 +64,8 @@ public interface IntrospectionQuery {
             "    description\n" +
             "    type { ...TypeRef }\n" +
             "    defaultValue\n" +
+            "    isDeprecated\n" +
+            "    deprecationReason\n" +
             "  }\n" +
             "\n" +
             //
