@@ -106,6 +106,7 @@ class IntrospectionTest extends Specification {
         def spec = '''
             type Query {
                namedField(arg : InputType @deprecated ) : Enum @deprecated
+               notDeprecated(arg : InputType) : Enum
             }
             enum Enum {
                 RED @deprecated
@@ -125,9 +126,12 @@ class IntrospectionTest extends Specification {
 
         def types = executionResult.data['__schema']['types'] as List
         def queryType = types.find { it['name'] == 'Query' }
-        def namedField = (queryType['fields'] as List)[0]
+        def namedField = (queryType['fields'] as List).find({ it["name"] == "namedField"})
         namedField["isDeprecated"]
-        namedField["deprecationReason"] == "No longer supported"
+
+        def notDeprecatedField = (queryType['fields'] as List).find({ it["name"] == "notDeprecated"})
+        !notDeprecatedField["isDeprecated"]
+        notDeprecatedField["deprecationReason"] == null
 
         def enumType = types.find { it['name'] == 'Enum' }
         def red = enumType["enumValues"].find({ it["name"] == "RED" })
@@ -139,8 +143,12 @@ class IntrospectionTest extends Specification {
         inputField["isDeprecated"]
         inputField["deprecationReason"] == "No longer supported"
 
-        def argument = (namedField["args"] as List)[0]
+        def argument = (namedField["args"] as List).find({ it["name"] == "arg"})
         argument["isDeprecated"]
         argument["deprecationReason"] == "No longer supported"
+
+        def argument2 = (notDeprecatedField["args"] as List).find({ it["name"] == "arg"})
+        !argument2["isDeprecated"]
+        argument2["deprecationReason"] == null
     }
 }
