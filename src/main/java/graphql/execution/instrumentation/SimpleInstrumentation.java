@@ -31,17 +31,17 @@ public class SimpleInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
-        return new SimpleInstrumentationContext<>();
+        return SimpleInstrumentationContext.noOp();
     }
 
     @Override
     public InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
-        return new SimpleInstrumentationContext<>();
+        return SimpleInstrumentationContext.noOp();
     }
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        return new SimpleInstrumentationContext<>();
+        return SimpleInstrumentationContext.noOp();
     }
 
     @Override
@@ -61,16 +61,16 @@ public class SimpleInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
-        return new SimpleInstrumentationContext<>();
+        return SimpleInstrumentationContext.noOp();
     }
 
     @Override
     public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
-        return new SimpleInstrumentationContext<>();
+        return SimpleInstrumentationContext.noOp();
     }
 
     @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        return new SimpleInstrumentationContext<>();
+        return SimpleInstrumentationContext.noOp();
     }
 }
