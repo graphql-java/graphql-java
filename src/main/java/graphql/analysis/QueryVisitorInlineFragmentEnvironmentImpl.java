@@ -45,8 +45,7 @@ public class QueryVisitorInlineFragmentEnvironmentImpl implements QueryVisitorIn
 
     @Override
     public int hashCode() {
-
-        return Objects.hash(inlineFragment);
+        return Objects.hashCode(inlineFragment);
     }
 
     @Override

@@ -67,7 +67,10 @@ public class FieldCoordinates {
 
     @Override
     public int hashCode() {
-        return Objects.hash(typeName, fieldName);
+        int result = 1;
+        result = 31 * result + Objects.hashCode(typeName);
+        result = 31 * result + Objects.hashCode(fieldName);
+        return result;
     }
 
     @Override
