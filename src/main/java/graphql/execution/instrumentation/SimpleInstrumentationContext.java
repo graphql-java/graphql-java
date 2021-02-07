@@ -12,6 +12,8 @@ import java.util.function.Consumer;
 @PublicApi
 public class SimpleInstrumentationContext<T> implements InstrumentationContext<T> {
 
+    private static final InstrumentationContext<Object> NO_OP = new SimpleInstrumentationContext<>();
+
     /**
      * A context that does nothing
      *
@@ -19,8 +21,9 @@ public class SimpleInstrumentationContext<T> implements InstrumentationContext<T
      *
      * @return a context that does nothing
      */
+    @SuppressWarnings("unchecked")
     public static <T> InstrumentationContext<T> noOp() {
-        return new SimpleInstrumentationContext<>();
+        return (InstrumentationContext<T>) NO_OP;
     }
 
     private final BiConsumer<T, Throwable> codeToRunOnComplete;
