@@ -2,6 +2,8 @@ package graphql.schema.validation;
 
 import graphql.Internal;
 
+import java.util.Objects;
+
 import static graphql.Assert.assertNotNull;
 
 @Internal
@@ -27,7 +29,10 @@ public class SchemaValidationError {
 
     @Override
     public int hashCode() {
-        return errorType.hashCode() ^ description.hashCode();
+        int result = 1;
+        result = 31 * result + errorType.hashCode();
+        result = 31 * result + description.hashCode();
+        return result;
     }
 
     @Override

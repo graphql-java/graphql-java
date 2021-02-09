@@ -49,9 +49,10 @@ public class SourceLocation implements Serializable {
 
     @Override
     public int hashCode() {
-        int result = line;
-        result = 31 * result + column;
-        result = 31 * result + (sourceName != null ? sourceName.hashCode() : 0);
+        int result = 1;
+        result = 31 * result + Integer.hashCode(line);
+        result = 31 * result + Integer.hashCode(column);
+        result = 31 * result + Objects.hashCode(sourceName);
         return result;
     }
 

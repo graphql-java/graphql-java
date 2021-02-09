@@ -34,7 +34,7 @@ public class DefaultConnectionCursor implements ConnectionCursor {
 
     @Override
     public int hashCode() {
-        return value != null ? value.hashCode() : 0;
+        return Objects.hashCode(value);
     }
 
     @Override

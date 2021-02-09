@@ -119,8 +119,16 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
 
     @Override
     public int hashCode() {
-
-        return Objects.hash(typeNameIntrospectionField, field, fieldDefinition, parentType, unmodifiedParentType, arguments, parentEnvironment, selectionSetContainer);
+        int result = 1;
+        result = 31 * result + Objects.hashCode(typeNameIntrospectionField);
+        result = 31 * result + Objects.hashCode(field);
+        result = 31 * result + Objects.hashCode(fieldDefinition);
+        result = 31 * result + Objects.hashCode(parentType);
+        result = 31 * result + Objects.hashCode(unmodifiedParentType);
+        result = 31 * result + Objects.hashCode(arguments);
+        result = 31 * result + Objects.hashCode(parentEnvironment);
+        result = 31 * result + Objects.hashCode(selectionSetContainer);
+        return result;
     }
 
     @Override

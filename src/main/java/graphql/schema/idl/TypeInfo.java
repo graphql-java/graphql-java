@@ -152,9 +152,12 @@ public class TypeInfo {
 
     @Override
     public int hashCode() {
-        return Objects.hash(typeName.getName(), isNonNull(), isList());
+        int result = 1;
+        result = 31 * result + Objects.hashCode(typeName.getName());
+        result = 31 * result + Boolean.hashCode(isNonNull());
+        result = 31 * result + Boolean.hashCode(isList());
+        return result;
     }
-
 
     @Override
     public String toString() {
