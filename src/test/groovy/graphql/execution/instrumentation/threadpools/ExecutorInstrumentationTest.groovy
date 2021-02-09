@@ -148,6 +148,7 @@ class ExecutorInstrumentationTest extends Specification {
     def "will fetch on current thread if the executor is null but transfer control back"() {
 
         when:
+        def currentThreadName = currentThread().getName()
         instrumentation = build(null, ProcessingExecutor, observer)
 
         DataFetcher df = { env -> currentThread().getName() }
@@ -161,8 +162,8 @@ class ExecutorInstrumentationTest extends Specification {
         def value = asCF(returnedValue).join()
 
         then:
-        value == "main"
-        observer.actions == ["FETCHING on main", "PROCESSING on ProcessingThread"]
+        value == "${currentThreadName}"
+        observer.actions == ["FETCHING on ${currentThreadName}", "PROCESSING on ProcessingThread"]
     }
 
     def "a data fetcher can return a CF and that is handled"() {
