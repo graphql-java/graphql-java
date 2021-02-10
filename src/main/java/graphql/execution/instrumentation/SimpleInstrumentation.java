@@ -26,9 +26,6 @@ public class SimpleInstrumentation implements Instrumentation {
      */
     public static final SimpleInstrumentation INSTANCE = new SimpleInstrumentation();
 
-    public SimpleInstrumentation() {
-    }
-
     @Override
     public InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
         return SimpleInstrumentationContext.noOp();
