@@ -75,6 +75,20 @@ public class SchemaUtil {
         return ImmutableMap.copyOf(new TreeMap<>(result));
     }
 
+    public Map<String, List<GraphQLImplementingType>> groupImplementationsForInterfacesAndObjects(GraphQLSchema schema) {
+        Map<String, List<GraphQLImplementingType>> result = new LinkedHashMap<>();
+        for (GraphQLType type : schema.getAllTypesAsList()) {
+            if (type instanceof GraphQLImplementingType) {
+                List<GraphQLNamedOutputType> interfaces = ((GraphQLImplementingType) type).getInterfaces();
+                for (GraphQLNamedOutputType interfaceType : interfaces) {
+                    List<GraphQLImplementingType> myGroup = result.computeIfAbsent(interfaceType.getName(), k -> new ArrayList<>());
+                    myGroup.add((GraphQLImplementingType) type);
+                }
+            }
+        }
+        return ImmutableMap.copyOf(new TreeMap<>(result));
+    }
+
     /**
      * This method is deprecated due to a performance concern.
      *
