@@ -61,9 +61,11 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static graphql.Assert.assertNotNull;
@@ -314,7 +316,7 @@ public class Anonymizer {
                 GraphQLFieldDefinition fieldDefinition = (GraphQLFieldDefinition) parentNode;
                 String fieldName = fieldDefinition.getName();
                 GraphQLImplementingType implementingType = (GraphQLImplementingType) context.getParentContext().getParentNode();
-                List<GraphQLFieldDefinition> matchingInterfaceFieldDefinitions = getMatchingInterfaceFieldDefinitions(fieldName, implementingType.getInterfaces());
+                Set<GraphQLFieldDefinition> matchingInterfaceFieldDefinitions = getSameFields(fieldName, implementingType.getName(), interfaceToImplementations, schema);
                 String newName;
                 if (matchingInterfaceFieldDefinitions.size() == 0) {
                     newName = "argument" + argumentCounter.getAndIncrement();
@@ -367,17 +369,15 @@ public class Anonymizer {
 
             @Override
             public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition graphQLFieldDefinition, TraverserContext<GraphQLSchemaElement> context) {
-                String curName = graphQLFieldDefinition.getName();
+                String fieldName = graphQLFieldDefinition.getName();
                 GraphQLImplementingType parentNode = (GraphQLImplementingType) context.getParentNode();
-                List<GraphQLNamedOutputType> interfaces = parentNode.getInterfaces();
-                List<GraphQLFieldDefinition> sameFields = getMatchingInterfaceFieldDefinitions(curName, interfaces);
-                sameFields.addAll(getMatchingImplementationsFieldDefinitions(parentNode.getName(), curName, interfaceToImplementations));
+                Set<GraphQLFieldDefinition> sameFields = getSameFields(fieldName, parentNode.getName(), interfaceToImplementations, schema);
                 String newName;
                 if (sameFields.size() == 0) {
                     newName = "field" + fieldCounter.getAndIncrement();
                 } else {
-                    if (newNameMap.containsKey(sameFields.get(0))) {
-                        newName = newNameMap.get(sameFields.get(0));
+                    if (newNameMap.containsKey(sameFields.iterator().next())) {
+                        newName = newNameMap.get(sameFields.iterator().next());
                     } else {
                         newName = "field" + fieldCounter.getAndIncrement();
                         for (GraphQLFieldDefinition fieldDefinition : sameFields) {
@@ -453,39 +453,62 @@ public class Anonymizer {
         return newNameMap;
     }
 
-    private static List<GraphQLFieldDefinition> getMatchingInterfaceFieldDefinitions(
-            String curName,
-            List<GraphQLNamedOutputType> interfaces) {
-        List<GraphQLFieldDefinition> matchingInterfaceFieldDefinitions = new ArrayList<>();
-        for (GraphQLNamedOutputType iface : interfaces) {
-            GraphQLInterfaceType interfaceType = (GraphQLInterfaceType) iface;
-            if (interfaceType.getFieldDefinition(curName) != null) {
-                matchingInterfaceFieldDefinitions.add(interfaceType.getFieldDefinition(curName));
-            }
-        }
-        return matchingInterfaceFieldDefinitions;
+    private static Set<GraphQLFieldDefinition> getSameFields(String fieldName,
+                                                             String objectOrInterfaceName,
+                                                             Map<String, List<GraphQLImplementingType>> interfaceToImplementations,
+                                                             GraphQLSchema schema
+    ) {
+        Set<GraphQLFieldDefinition> result = new LinkedHashSet<>();
+        Set<String> alreadyChecked = new LinkedHashSet<>();
+        getSameFieldsImpl(fieldName, objectOrInterfaceName, interfaceToImplementations, schema, alreadyChecked, result);
+        return result;
     }
 
-    private static List<GraphQLFieldDefinition> getMatchingImplementationsFieldDefinitions(
-            String interfaceName,
-            String fieldName,
-            Map<String, List<GraphQLImplementingType>> interfaceToImplementations) {
-        List<GraphQLFieldDefinition> result = new ArrayList<>();
-        List<GraphQLImplementingType> implementations = interfaceToImplementations.get(interfaceName);
-        if (implementations == null) {
-            return Collections.emptyList();
+    private static void getSameFieldsImpl(String fieldName,
+                                          String curObjectOrInterface,
+                                          Map<String, List<GraphQLImplementingType>> interfaceToImplementations,
+                                          GraphQLSchema schema,
+                                          Set<String> alreadyChecked,
+                                          Set<GraphQLFieldDefinition> result) {
+        if (alreadyChecked.contains(curObjectOrInterface)) {
+            return;
         }
+        alreadyChecked.add(curObjectOrInterface);
+
+        // "up": get all Interfaces
+        GraphQLImplementingType type = (GraphQLImplementingType) schema.getType(curObjectOrInterface);
+        List<GraphQLNamedOutputType> interfaces = type.getInterfaces();
+        getMatchingFieldDefinitions(fieldName, interfaces, result);
+        for (GraphQLNamedOutputType interfaze : interfaces) {
+            getSameFieldsImpl(fieldName, interfaze.getName(), interfaceToImplementations, schema, alreadyChecked, result);
+        }
+
+        // "down": get all Object or Interfaces
+        List<GraphQLImplementingType> implementations = interfaceToImplementations.get(curObjectOrInterface);
+        if (implementations == null) {
+            return;
+        }
+        getMatchingFieldDefinitions(fieldName, implementations, result);
         for (GraphQLImplementingType implementingType : implementations) {
+            getSameFieldsImpl(fieldName, implementingType.getName(), interfaceToImplementations, schema, alreadyChecked, result);
+        }
+    }
+
+    private static void getMatchingFieldDefinitions(
+            String fieldName,
+            List<? extends GraphQLType> interfaces,
+            Set<GraphQLFieldDefinition> result) {
+        for (GraphQLType iface : interfaces) {
+            GraphQLImplementingType implementingType = (GraphQLImplementingType) iface;
             if (implementingType.getFieldDefinition(fieldName) != null) {
                 result.add(implementingType.getFieldDefinition(fieldName));
             }
         }
-        return result;
     }
 
     private static List<GraphQLArgument> getMatchingArgumentDefinitions(
             String name,
-            List<GraphQLFieldDefinition> fieldDefinitions) {
+            Set<GraphQLFieldDefinition> fieldDefinitions) {
         List<GraphQLArgument> result = new ArrayList<>();
         for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
             Optional.ofNullable(fieldDefinition.getArgument(name)).map(result::add);

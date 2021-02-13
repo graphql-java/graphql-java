@@ -545,12 +545,17 @@ type Object1 {
     def "same field across hierarchy"() {
         def schema = TestUtil.schema("""
             type Query {
-                foo: Object
+                foo: Interface2
             }
 interface Interface1 implements Interface2 & Interface3 {
   id: ID!
 }
-
+interface Interface4 implements Interface1 & Interface2 & Interface3 {
+  id: ID!
+}
+interface Interface5 implements Interface1 & Interface2 & Interface3 & Interface6{
+  id: ID!
+}
 interface Interface2 {
   id: ID!
 }
@@ -558,9 +563,14 @@ interface Interface2 {
 interface Interface3 {
   id: ID!
 }
-type Object implements Interface1 & Interface2 & Interface3 {
+interface Interface6 {
   id: ID!
 }
+
+interface Interface7 implements Interface6 {
+  id: ID!
+}
+
 
         """)
         when:
@@ -573,23 +583,35 @@ type Object implements Interface1 & Interface2 & Interface3 {
 }
 
 interface Interface1 implements Interface2 & Interface3 {
-  field2: ID!
+  field1: ID!
 }
 
 interface Interface2 {
-  field2: ID!
+  field1: ID!
 }
 
 interface Interface3 {
-  field2: ID!
+  field1: ID!
+}
+
+interface Interface4 implements Interface1 & Interface2 & Interface3 {
+  field1: ID!
+}
+
+interface Interface5 implements Interface1 & Interface2 & Interface3 & Interface6 {
+  field1: ID!
+}
+
+interface Interface6 {
+  field1: ID!
+}
+
+interface Interface7 implements Interface6 {
+  field1: ID!
 }
 
 type Object1 {
-  field1: Object2
-}
-
-type Object2 implements Interface1 & Interface2 & Interface3 {
-  field2: ID!
+  field2: Interface2
 }
 """
     }
