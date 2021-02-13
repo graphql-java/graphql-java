@@ -52,6 +52,7 @@ import graphql.schema.GraphQLTypeVisitor;
 import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.SchemaTransformer;
+import graphql.schema.SchemaUtil;
 import graphql.schema.TypeResolver;
 import graphql.schema.idl.DirectiveInfo;
 import graphql.schema.idl.ScalarInfo;
@@ -297,6 +298,9 @@ public class Anonymizer {
 
         Map<GraphQLNamedSchemaElement, String> newNameMap = new LinkedHashMap<>();
 
+        Map<String, List<GraphQLImplementingType>> interfaceToImplementations =
+                new SchemaUtil().groupImplementationsForInterfacesAndObjects(schema);
+
         GraphQLTypeVisitor visitor = new GraphQLTypeVisitorStub() {
             @Override
             public TraversalControl visitGraphQLArgument(GraphQLArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
@@ -366,16 +370,17 @@ public class Anonymizer {
                 String curName = graphQLFieldDefinition.getName();
                 GraphQLImplementingType parentNode = (GraphQLImplementingType) context.getParentNode();
                 List<GraphQLNamedOutputType> interfaces = parentNode.getInterfaces();
-                List<GraphQLFieldDefinition> matchingInterfaceFieldDefinitions = getMatchingInterfaceFieldDefinitions(curName, interfaces);
+                List<GraphQLFieldDefinition> sameFields = getMatchingInterfaceFieldDefinitions(curName, interfaces);
+                sameFields.addAll(getMatchingImplementationsFieldDefinitions(parentNode.getName(), curName, interfaceToImplementations));
                 String newName;
-                if (matchingInterfaceFieldDefinitions.size() == 0) {
+                if (sameFields.size() == 0) {
                     newName = "field" + fieldCounter.getAndIncrement();
                 } else {
-                    if (newNameMap.containsKey(matchingInterfaceFieldDefinitions.get(0))) {
-                        newName = newNameMap.get(matchingInterfaceFieldDefinitions.get(0));
+                    if (newNameMap.containsKey(sameFields.get(0))) {
+                        newName = newNameMap.get(sameFields.get(0));
                     } else {
                         newName = "field" + fieldCounter.getAndIncrement();
-                        for (GraphQLFieldDefinition fieldDefinition : matchingInterfaceFieldDefinitions) {
+                        for (GraphQLFieldDefinition fieldDefinition : sameFields) {
                             newNameMap.put(fieldDefinition, newName);
                         }
                     }
@@ -459,6 +464,23 @@ public class Anonymizer {
             }
         }
         return matchingInterfaceFieldDefinitions;
+    }
+
+    private static List<GraphQLFieldDefinition> getMatchingImplementationsFieldDefinitions(
+            String interfaceName,
+            String fieldName,
+            Map<String, List<GraphQLImplementingType>> interfaceToImplementations) {
+        List<GraphQLFieldDefinition> result = new ArrayList<>();
+        List<GraphQLImplementingType> implementations = interfaceToImplementations.get(interfaceName);
+        if (implementations == null) {
+            return Collections.emptyList();
+        }
+        for (GraphQLImplementingType implementingType : implementations) {
+            if (implementingType.getFieldDefinition(fieldName) != null) {
+                result.add(implementingType.getFieldDefinition(fieldName));
+            }
+        }
+        return result;
     }
 
     private static List<GraphQLArgument> getMatchingArgumentDefinitions(
@@ -613,6 +635,27 @@ public class Anonymizer {
         return AstPrinter.printAstCompact(newDocument);
     }
 
+//    private void findAllTheSameFields(GraphQLSchema schema) {
+//        Map<GraphQLFieldDefinition, Collection<GraphQLFieldDefinition>> sameFields = new LinkedHashMap<>();
+//
+//        GraphQLTypeVisitor visitor = new GraphQLTypeVisitorStub() {
+//            @Override
+//            public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition graphQLFieldDefinition, TraverserContext<GraphQLSchemaElement> context) {
+//                String curName = graphQLFieldDefinition.getName();
+//                GraphQLImplementingType parentNode = (GraphQLImplementingType) context.getParentNode();
+//                List<GraphQLNamedOutputType> interfaces = parentNode.getInterfaces();
+//                List<GraphQLFieldDefinition> matchingInterfaceFieldDefinitions = getMatchingInterfaceFieldDefinitions(curName, interfaces);
+//                if (matchingInterfaceFieldDefinitions.size() > 0) {
+//                    sameFields.put(graphQLFieldDefinition, matchingInterfaceFieldDefinitions);
+//                }
+//            }
+//
+//        };
+//
+//        SchemaTransformer.transformSchema(schema, visitor);
+//
+//    }
+
     private static void assertUniqueOperation(Document document) {
         String operationName = null;
         for (Definition definition : document.getDefinitions()) {
@@ -624,6 +667,7 @@ public class Anonymizer {
                 operationName = operationDefinition.getName();
             }
         }
+
     }
 
 }

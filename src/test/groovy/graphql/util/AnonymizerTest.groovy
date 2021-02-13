@@ -541,4 +541,56 @@ type Object1 {
 }
 """
     }
+
+    def "same field across hierarchy"() {
+        def schema = TestUtil.schema("""
+            type Query {
+                foo: Object
+            }
+interface Interface1 implements Interface2 & Interface3 {
+  id: ID!
+}
+
+interface Interface2 {
+  id: ID!
+}
+
+interface Interface3 {
+  id: ID!
+}
+type Object implements Interface1 & Interface2 & Interface3 {
+  id: ID!
+}
+
+        """)
+        when:
+        def result = Anonymizer.anonymizeSchema(schema)
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectiveDefinitions(false)).print(result)
+
+        then:
+        newSchema == """schema {
+  query: Object1
+}
+
+interface Interface1 implements Interface2 & Interface3 {
+  field2: ID!
+}
+
+interface Interface2 {
+  field2: ID!
+}
+
+interface Interface3 {
+  field2: ID!
+}
+
+type Object1 {
+  field1: Object2
+}
+
+type Object2 implements Interface1 & Interface2 & Interface3 {
+  field2: ID!
+}
+"""
+    }
 }
