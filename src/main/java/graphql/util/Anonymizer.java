@@ -2,6 +2,7 @@ package graphql.util;
 
 import graphql.AssertException;
 import graphql.Directives;
+import graphql.PublicApi;
 import graphql.Scalars;
 import graphql.analysis.QueryTraverser;
 import graphql.analysis.QueryVisitor;
@@ -70,9 +71,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLArgument.newArgument;
+import static graphql.schema.idl.SchemaGenerator.createdMockedSchema;
 import static graphql.util.TraversalControl.CONTINUE;
 import static graphql.util.TreeTransformerUtil.changeNode;
 
+/**
+ * Util class which converts schemas and optionally queries
+ * into anonymized schemas and queries.
+ */
+@PublicApi
 public class Anonymizer {
 
     public static class AnonymizeResult {
@@ -93,12 +100,24 @@ public class Anonymizer {
         }
     }
 
+    public static GraphQLSchema anonymizeSchema(String sdl) {
+        return anonymizeSchemaAndQueries(createdMockedSchema(sdl), Collections.emptyList(), Collections.emptyMap()).schema;
+    }
+
     public static GraphQLSchema anonymizeSchema(GraphQLSchema schema) {
         return anonymizeSchemaAndQueries(schema, Collections.emptyList(), Collections.emptyMap()).schema;
     }
 
+    public static AnonymizeResult anonymizeSchemaAndQueries(String sdl, List<String> queries) {
+        return anonymizeSchemaAndQueries(createdMockedSchema(sdl), queries, Collections.emptyMap());
+    }
+
     public static AnonymizeResult anonymizeSchemaAndQueries(GraphQLSchema schema, List<String> queries) {
         return anonymizeSchemaAndQueries(schema, queries, Collections.emptyMap());
+    }
+
+    public static AnonymizeResult anonymizeSchemaAndQueries(String sdl, List<String> queries, Map<String, Object> variables) {
+        return anonymizeSchemaAndQueries(createdMockedSchema(sdl), queries, variables);
     }
 
     public static AnonymizeResult anonymizeSchemaAndQueries(GraphQLSchema schema, List<String> queries, Map<String, Object> variables) {
