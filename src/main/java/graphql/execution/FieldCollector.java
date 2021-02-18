@@ -13,8 +13,8 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,7 +34,7 @@ public class FieldCollector {
     public MergedSelectionSet collectFields(FieldCollectorParameters parameters, MergedField mergedField) {
         List<Field> fields = mergedField.getFields();
         Map<String, ImmutableList.Builder<Field>> subFields = new LinkedHashMap<>(fields.size());
-        Set<String> visitedFragments = new LinkedHashSet<>(fields.size());
+        Set<String> visitedFragments = new HashSet<>(fields.size());
         for (Field field : fields) {
             if (field.getSelectionSet() == null) {
                 continue;
@@ -54,13 +54,13 @@ public class FieldCollector {
      */
     public MergedSelectionSet collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet) {
         Map<String, ImmutableList.Builder<Field>> subFields = new LinkedHashMap<>();
-        Set<String> visitedFragments = new LinkedHashSet<>();
+        Set<String> visitedFragments = new HashSet<>();
         this.collectFields(parameters, selectionSet, visitedFragments, subFields);
         return newMergedSelectionSet().withSubFields(subFields).build();
     }
 
     private void collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet, Set<String> visitedFragments, Map<String, ImmutableList.Builder<Field>> fields) {
-        for (Selection selection : selectionSet.getSelections()) {
+        for (Selection<?> selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
                 collectField(parameters, fields, (Field) selection);
             } else if (selection instanceof InlineFragment) {
@@ -99,7 +99,7 @@ public class FieldCollector {
     }
 
     private void collectField(FieldCollectorParameters parameters, Map<String, ImmutableList.Builder<Field>> fields, Field field) {
-        if (!conditionalNodes.shouldInclude(parameters.getVariables(), field.getDirectives())) {
+        if (!field.getDirectives().isEmpty() && !conditionalNodes.shouldInclude(parameters.getVariables(), field.getDirectives())) {
             return;
         }
         String name = field.getResultKey();
