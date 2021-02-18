@@ -61,12 +61,10 @@ import static graphql.Assert.assertNotEmpty;
 public class MergedField {
 
     private final ImmutableList<Field> fields;
-    private final Field singleField;
 
     private MergedField(List<Field> fields) {
         assertNotEmpty(fields);
         this.fields = ImmutableList.copyOf(fields);
-        this.singleField = fields.get(0);
     }
 
     /**
@@ -77,7 +75,7 @@ public class MergedField {
      * @return the name of of the merged fields.
      */
     public String getName() {
-        return singleField.getName();
+        return fields.get(0).getName();
     }
 
     /**
@@ -87,7 +85,7 @@ public class MergedField {
      * @return the key for this MergedField.
      */
     public String getResultKey() {
-        return singleField.getResultKey();
+        return fields.get(0).getResultKey();
     }
 
     /**
@@ -99,7 +97,7 @@ public class MergedField {
      * @return the fist of the merged Fields
      */
     public Field getSingleField() {
-        return singleField;
+        return fields.get(0);
     }
 
     /**
@@ -108,7 +106,7 @@ public class MergedField {
      * @return the list of arguments
      */
     public List<Argument> getArguments() {
-        return singleField.getArguments();
+        return fields.get(0).getArguments();
     }
 
 
