@@ -53,9 +53,10 @@ public class MergedSelectionSet {
 
     public static class Builder {
 
-        private final ImmutableMap.Builder<String, MergedField> subFields = ImmutableMap.builder();
+        private final ImmutableMap.Builder<String, MergedField> subFields;
 
         private Builder() {
+            subFields = ImmutableMap.builder();
         }
 
         public Builder subFields(Map<String, MergedField> subFields) {
