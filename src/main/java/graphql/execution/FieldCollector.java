@@ -99,7 +99,7 @@ public class FieldCollector {
     }
 
     private void collectField(FieldCollectorParameters parameters, Map<String, ImmutableList.Builder<Field>> fields, Field field) {
-        if (!field.getDirectives().isEmpty() && !conditionalNodes.shouldInclude(parameters.getVariables(), field.getDirectives())) {
+        if (!conditionalNodes.shouldInclude(parameters.getVariables(), field.getDirectives())) {
             return;
         }
         String name = field.getResultKey();
