@@ -139,18 +139,23 @@ public class MergedField {
 
     public static class Builder {
 
-        private final List<Field> fields;
+        private ImmutableList.Builder<Field> fields;
 
         private Builder() {
-            this.fields = new ArrayList<>();
+            this.fields = ImmutableList.builder();
         }
 
         private Builder(MergedField existing) {
-            this.fields = new ArrayList<>(existing.getFields());
+            this.fields = ImmutableList.builder();
+            for (Field field : existing.fields) {
+                this.fields.add(field);
+            }
         }
 
         public Builder fields(List<Field> fields) {
-            this.fields.addAll(fields);
+            for (Field field : fields) {
+                this.fields.add(field);
+            }
             return this;
         }
 
@@ -160,7 +165,7 @@ public class MergedField {
         }
 
         public MergedField build() {
-            return new MergedField(fields);
+            return new MergedField(fields.build());
         }
 
     }
