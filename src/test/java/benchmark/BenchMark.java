@@ -64,7 +64,7 @@ public class BenchMark {
         InputStream sdl = BenchMark.class.getClassLoader().getResourceAsStream("starWarsSchema.graphqls");
         TypeDefinitionRegistry definitionRegistry = new SchemaParser().parse(new InputStreamReader(sdl));
 
-        DataFetcher heroDataFetcher = environment -> CharacterDTO.mkCharacter(environment, "r2d2", NUMBER_OF_FRIENDS);
+        DataFetcher<?> heroDataFetcher = environment -> CharacterDTO.mkCharacter(environment, "r2d2", NUMBER_OF_FRIENDS);
 
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
                 .type(
