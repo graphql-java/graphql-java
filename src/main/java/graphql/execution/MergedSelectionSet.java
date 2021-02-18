@@ -2,9 +2,9 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.sun.scenario.effect.Merge;
 import graphql.Assert;
 import graphql.PublicApi;
+import graphql.language.Field;
 
 import java.util.List;
 import java.util.Map;
@@ -63,10 +63,10 @@ public class MergedSelectionSet {
             return this;
         }
 
-        public Builder withSubFields(Map<String, MergedField.Builder> subFields) {
+        public Builder withSubFields(Map<String, ImmutableList.Builder<Field>> subFields) {
             ImmutableMap.Builder<String, MergedField> builder = new ImmutableMap.Builder<>();
-            for (Map.Entry<String, MergedField.Builder> entry : subFields.entrySet()) {
-                builder.put(entry.getKey(), entry.getValue().build());
+            for (Map.Entry<String, ImmutableList.Builder<Field>> entry : subFields.entrySet()) {
+                builder.put(entry.getKey(), MergedField.newMergedField(entry.getValue()).build());
             }
             this.subFields = builder.build();
             return this;

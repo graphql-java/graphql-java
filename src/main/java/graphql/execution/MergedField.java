@@ -5,7 +5,6 @@ import graphql.PublicApi;
 import graphql.language.Argument;
 import graphql.language.Field;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -131,6 +130,10 @@ public class MergedField {
         return new Builder().fields(fields);
     }
 
+    public static Builder newMergedField(ImmutableList.Builder<Field> existingBuilder) {
+        return new Builder(existingBuilder);
+    }
+
     public MergedField transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
@@ -139,10 +142,15 @@ public class MergedField {
 
     public static class Builder {
 
-        private ImmutableList.Builder<Field> fields;
+        private final ImmutableList.Builder<Field> fields;
 
         private Builder() {
             this.fields = ImmutableList.builder();
+        }
+
+        // taking ownership of existing builder
+        private Builder(ImmutableList.Builder<Field> builder) {
+            this.fields = builder;
         }
 
         private Builder(MergedField existing) {
