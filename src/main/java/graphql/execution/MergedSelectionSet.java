@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-
 @PublicApi
 public class MergedSelectionSet {
 
@@ -53,27 +52,26 @@ public class MergedSelectionSet {
     }
 
     public static class Builder {
-        private Map<String, MergedField> subFields = ImmutableMap.of();
+
+        private final ImmutableMap.Builder<String, MergedField> subFields = ImmutableMap.builder();
 
         private Builder() {
         }
 
         public Builder subFields(Map<String, MergedField> subFields) {
-            this.subFields = ImmutableMap.copyOf(subFields);
+            this.subFields.putAll(subFields);
             return this;
         }
 
         public Builder withSubFields(Map<String, ImmutableList.Builder<Field>> subFields) {
-            ImmutableMap.Builder<String, MergedField> builder = new ImmutableMap.Builder<>();
             for (Map.Entry<String, ImmutableList.Builder<Field>> entry : subFields.entrySet()) {
-                builder.put(entry.getKey(), MergedField.newMergedField(entry.getValue()).build());
+                this.subFields.put(entry.getKey(), MergedField.newMergedField(entry.getValue()).build());
             }
-            this.subFields = builder.build();
             return this;
         }
 
         public MergedSelectionSet build() {
-            return new MergedSelectionSet(subFields);
+            return new MergedSelectionSet(subFields.build());
         }
 
     }
