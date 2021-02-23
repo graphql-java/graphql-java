@@ -70,12 +70,12 @@ class MainValidationTraversalTestMergedFieldValidation extends Specification {
     def "two aliases for different fields in fragment"() {
         given:
         def query = """
-            {
-                ...f
-            }
             fragment f on Test{
                 myName : name
                 myName : nickname
+            }
+            {
+                ...f
             }
         """
         when:
