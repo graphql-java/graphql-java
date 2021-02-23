@@ -33,8 +33,8 @@ public class FieldCollector {
 
     public MergedSelectionSet collectFields(FieldCollectorParameters parameters, MergedField mergedField) {
         List<Field> fields = mergedField.getFields();
-        Map<String, ImmutableList.Builder<Field>> subFields = new LinkedHashMap<>(fields.size());
-        Set<String> visitedFragments = new HashSet<>(fields.size());
+        Map<String, ImmutableList.Builder<Field>> subFields = new LinkedHashMap<>();
+        Set<String> visitedFragments = new HashSet<>();
         for (Field field : fields) {
             if (field.getSelectionSet() == null) {
                 continue;

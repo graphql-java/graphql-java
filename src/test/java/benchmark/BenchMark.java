@@ -76,7 +76,7 @@ public class BenchMark {
         GraphQLSchema graphQLSchema = new SchemaGenerator().makeExecutableSchema(definitionRegistry, runtimeWiring);
 
         return GraphQL.newGraphQL(graphQLSchema)
-                .instrumentation(new TracingInstrumentation())
+                //.instrumentation(new TracingInstrumentation())
                 .build();
     }
 
