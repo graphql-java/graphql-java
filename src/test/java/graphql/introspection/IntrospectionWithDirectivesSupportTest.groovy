@@ -10,7 +10,11 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
     def "can find directives in introspection"() {
         def sdl = '''
             type Query {
-                hello : String @deprecated
+                hello : Hello
+            }
+            
+            type Hello {
+                world : String @deprecated
             }
         '''
 
