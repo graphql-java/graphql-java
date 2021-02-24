@@ -68,7 +68,7 @@ public class Introspection {
         codeRegistry.systemDataFetcher(systemCoordinates(TypeNameMetaFieldDef.getName()), TypeNameMetaFieldDefDataFetcher);
         codeRegistry.systemDataFetcher(systemCoordinates(TypeMetaFieldDef.getName()), TypeMetaFieldDefDataFetcher);
 
-        introspectionDataFetchers.forEach((coordinates, idf) -> codeRegistry.dataFetcher(coordinates, idf));
+        introspectionDataFetchers.forEach(codeRegistry::dataFetcher);
     }
 
     public enum TypeKind {
@@ -603,15 +603,15 @@ public class Introspection {
     public static GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {
 
         if (schema.getQueryType() == parentType) {
-            if (fieldName.equals(SchemaMetaFieldDef.getName())) {
-                return SchemaMetaFieldDef;
+            if (fieldName.equals(schema.get__schemaFieldDefinition().getName())) {
+                return schema.get__schemaFieldDefinition();
             }
-            if (fieldName.equals(TypeMetaFieldDef.getName())) {
-                return TypeMetaFieldDef;
+            if (fieldName.equals(schema.get__typeFieldDefinition().getName())) {
+                return schema.get__typeFieldDefinition();
             }
         }
-        if (fieldName.equals(TypeNameMetaFieldDef.getName())) {
-            return TypeNameMetaFieldDef;
+        if (fieldName.equals(schema.get__typenameFieldDefinition().getName())) {
+            return schema.get__typenameFieldDefinition();
         }
 
         assertTrue(parentType instanceof GraphQLFieldsContainer, () -> String.format("should not happen : parent type must be an object or interface %s", parentType));

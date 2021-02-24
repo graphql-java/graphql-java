@@ -3,7 +3,6 @@ package graphql.normalized
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.MergedField
-import graphql.introspection.Introspection
 import graphql.language.Document
 import graphql.language.Field
 import graphql.language.FragmentDefinition
@@ -772,15 +771,15 @@ type Dog implements Animal{
         expect:
         fieldToNormalizedField.size() == 14
         fieldToNormalizedField.get(typeNameField)[0].objectType.name == "Query"
-        fieldToNormalizedField.get(typeNameField)[0].fieldDefinition == Introspection.TypeNameMetaFieldDef
+        fieldToNormalizedField.get(typeNameField)[0].fieldDefinition == graphQLSchema.get__typenameFieldDefinition()
         fieldToNormalizedField.get(aliasedTypeName)[0].alias == "alias"
-        fieldToNormalizedField.get(aliasedTypeName)[0].fieldDefinition == Introspection.TypeNameMetaFieldDef
+        fieldToNormalizedField.get(aliasedTypeName)[0].fieldDefinition == graphQLSchema.get__typenameFieldDefinition()
 
         fieldToNormalizedField.get(schemaField)[0].objectType.name == "Query"
-        fieldToNormalizedField.get(schemaField)[0].fieldDefinition == Introspection.SchemaMetaFieldDef
+        fieldToNormalizedField.get(schemaField)[0].fieldDefinition == graphQLSchema.get__schemaFieldDefinition()
 
         fieldToNormalizedField.get(typeField)[0].objectType.name == "Query"
-        fieldToNormalizedField.get(typeField)[0].fieldDefinition == Introspection.TypeMetaFieldDef
+        fieldToNormalizedField.get(typeField)[0].fieldDefinition == graphQLSchema.get__typeFieldDefinition()
 
     }
 
@@ -875,7 +874,7 @@ type Dog implements Animal{
                         'name: Dog.otherField: String (conditional: true)',
                         'Cat.name: String (conditional: true)'];
     }
-    
+
     def "normalized field to MergedField is build"() {
         given:
         def graphQLSchema = TestUtil.schema("""

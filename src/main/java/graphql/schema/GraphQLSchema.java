@@ -8,6 +8,7 @@ import graphql.Directives;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.introspection.Introspection;
 import graphql.language.SchemaDefinition;
 import graphql.language.SchemaExtensionDefinition;
 import graphql.schema.validation.InvalidSchemaException;
@@ -27,9 +28,6 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
-import static graphql.DirectivesUtil.allDirectivesByName;
-import static graphql.DirectivesUtil.nonRepeatableDirectivesByName;
-import static graphql.DirectivesUtil.nonRepeatedDirectiveByNameWithAssert;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.map;
 import static graphql.collect.ImmutableKit.nonNullCopyOf;
@@ -51,6 +49,10 @@ public class GraphQLSchema {
     private final GraphQLObjectType mutationType;
     private final GraphQLObjectType subscriptionType;
     private final ImmutableSet<GraphQLType> additionalTypes;
+    private final GraphQLFieldDefinition __schema;
+    private final GraphQLFieldDefinition __type;
+    // we don't allow modification of "__typename" - its a scalar
+    private final GraphQLFieldDefinition __typename = Introspection.TypeNameMetaFieldDef;
     private final DirectivesUtil.DirectivesHolder directives;
     private final DirectivesUtil.DirectivesHolder schemaDirectives;
     private final SchemaDefinition definition;
@@ -114,6 +116,8 @@ public class GraphQLSchema {
         this.mutationType = builder.mutationType;
         this.subscriptionType = builder.subscriptionType;
         this.additionalTypes = ImmutableSet.copyOf(builder.additionalTypes);
+        this.__schema = builder.__schema;
+        this.__type = builder.__type;
         this.directives = new DirectivesUtil.DirectivesHolder(builder.additionalDirectives);
         this.schemaDirectives = new DirectivesUtil.DirectivesHolder(builder.schemaDirectives);
         this.definition = builder.definition;
@@ -136,6 +140,8 @@ public class GraphQLSchema {
         this.mutationType = otherSchema.mutationType;
         this.subscriptionType = otherSchema.subscriptionType;
         this.additionalTypes = otherSchema.additionalTypes;
+        this.__schema = otherSchema.__schema;
+        this.__type = otherSchema.__type;
         this.directives = otherSchema.directives;
         this.schemaDirectives = otherSchema.schemaDirectives;
         this.definition = otherSchema.definition;
@@ -171,6 +177,28 @@ public class GraphQLSchema {
         return codeRegistry;
     }
 
+    /**
+     * @return the special system field called "__schema"
+     */
+    public GraphQLFieldDefinition get__schemaFieldDefinition() {
+        return __schema;
+    }
+
+    /**
+     * @return the special system field called "__type"
+     */
+    public GraphQLFieldDefinition get__typeFieldDefinition() {
+        return __type;
+    }
+
+    /**
+     * @return the special system field called "__typename"
+     */
+    public GraphQLFieldDefinition get__typenameFieldDefinition() {
+        return __typename;
+    }
+
+
     public Set<GraphQLType> getAdditionalTypes() {
         return additionalTypes;
     }
@@ -204,6 +232,7 @@ public class GraphQLSchema {
     public List<GraphQLNamedType> getAllTypesAsList() {
         return sortTypes(byNameAsc(), typeMap.values());
     }
+
 
     /**
      * This will return the list of {@link graphql.schema.GraphQLObjectType} types that implement the given
@@ -451,6 +480,9 @@ public class GraphQLSchema {
         private List<SchemaExtensionDefinition> extensionDefinitions;
         private String description;
 
+        private GraphQLFieldDefinition __schema = Introspection.SchemaMetaFieldDef;
+        private GraphQLFieldDefinition __type = Introspection.TypeMetaFieldDef;
+
         // we default these in
         private Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>(
                 asList(Directives.IncludeDirective, Directives.SkipDirective)
@@ -581,6 +613,16 @@ public class GraphQLSchema {
 
         public Builder description(String description) {
             this.description = description;
+            return this;
+        }
+
+        public Builder __schema(GraphQLFieldDefinition __schema) {
+            this.__schema = assertNotNull(__schema);
+            return this;
+        }
+
+        public Builder __type(GraphQLFieldDefinition __type) {
+            this.__type = assertNotNull(__type);
             return this;
         }
 

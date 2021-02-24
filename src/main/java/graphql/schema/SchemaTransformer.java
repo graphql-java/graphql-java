@@ -85,7 +85,7 @@ public class SchemaTransformer {
             builder.children(ADD_TYPES, additionalTypes);
             builder.children(DIRECTIVES, directives);
             builder.children(SCHEMA_DIRECTIVES, schemaDirectives);
-            builder.child(INTROSPECTION, Introspection.__Schema);
+            builder.child(INTROSPECTION, schema.getObjectType(Introspection.__Schema.getName()));
             return builder.build();
         }
 
@@ -113,6 +113,7 @@ public class SchemaTransformer {
      *
      * @param schema  the schema to transform
      * @param visitor the visitor call back
+     *
      * @return a new GraphQLSchema instance.
      */
     public static GraphQLSchema transformSchema(GraphQLSchema schema, GraphQLTypeVisitor visitor) {
