@@ -7,6 +7,8 @@ import spock.lang.Specification
 
 class IntrospectionWithDirectivesSupportTest extends Specification {
 
+    def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeIntrospectionTypes(true))
+
     def "can find directives in introspection"() {
         def sdl = '''
             directive @example( argName : String = "default") on OBJECT
@@ -24,7 +26,7 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
         def schema = TestUtil.schema(sdl)
         schema = new IntrospectionWithDirectivesSupport().apply(schema)
 
-        println new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeIntrospectionTypes(true)).print(schema)
+        println printer.print(schema)
 
         def graphql = GraphQL.newGraphQL(schema).build()
 

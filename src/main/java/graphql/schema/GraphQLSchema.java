@@ -157,6 +157,41 @@ public class GraphQLSchema {
         this.description = otherSchema.description;
     }
 
+    /**
+     * @return a new schema builder
+     */
+    public static Builder newSchema() {
+        return new Builder();
+    }
+
+    /**
+     * This allows you to build a schema from an existing schema.  It copies everything from the existing
+     * schema and then allows you to replace them.
+     *
+     * @param existingSchema the existing schema
+     *
+     * @return a new schema builder
+     */
+    public static Builder newSchema(GraphQLSchema existingSchema) {
+        return new Builder()
+                .query(existingSchema.getQueryType())
+                .mutation(existingSchema.getMutationType())
+                .subscription(existingSchema.getSubscriptionType())
+                .introspectionSchemaType(existingSchema.getIntrospectionSchemaType())
+                .codeRegistry(existingSchema.getCodeRegistry())
+                .clearAdditionalTypes()
+                .clearDirectives()
+                .additionalDirectives(new LinkedHashSet<>(existingSchema.getDirectives()))
+                .clearSchemaDirectives()
+                .withSchemaDirectives(schemaDirectivesArray(existingSchema))
+                .additionalTypes(existingSchema.additionalTypes)
+                .description(existingSchema.getDescription());
+    }
+
+    private static GraphQLDirective[] schemaDirectivesArray(GraphQLSchema existingSchema) {
+        return existingSchema.schemaDirectives.getDirectives().toArray(new GraphQLDirective[0]);
+    }
+
     private ImmutableMap<String, ImmutableList<GraphQLObjectType>> buildInterfacesToObjectTypes(Map<String, List<GraphQLObjectType>> groupImplementations) {
         ImmutableMap.Builder<String, ImmutableList<GraphQLObjectType>> map = ImmutableMap.builder();
         for (Map.Entry<String, List<GraphQLObjectType>> e : groupImplementations.entrySet()) {
@@ -174,7 +209,6 @@ public class GraphQLSchema {
         }
         return map.build();
     }
-
 
     public GraphQLCodeRegistry getCodeRegistry() {
         return codeRegistry;
@@ -209,8 +243,40 @@ public class GraphQLSchema {
         return additionalTypes;
     }
 
+    /**
+     * Gets the named type from the schema or null if its not present
+     *
+     * @param typeName the name of the type to retrieve
+     *
+     * @return the type
+     */
     public GraphQLType getType(String typeName) {
         return typeMap.get(typeName);
+    }
+
+    /**
+     * Gets the named type from the schema or null if its not present.
+     *
+     * Warning - your are inviting class cast errors if you the types are not what you expect.
+     *
+     * @param typeName the name of the type to retrieve
+     *
+     * @return the type cast to the target type.
+     */
+    public <T extends GraphQLType> T getTypeAs(String typeName) {
+        //noinspection unchecked
+        return (T) typeMap.get(typeName);
+    }
+
+    /**
+     * Returns true if the schema contains a type with the specified name
+     *
+     * @param typeName the name of the type to check
+     *
+     * @return true if there is a type with the specified name
+     */
+    public boolean containsType(String typeName) {
+        return typeMap.containsKey(typeName);
     }
 
     /**
@@ -238,7 +304,6 @@ public class GraphQLSchema {
     public List<GraphQLNamedType> getAllTypesAsList() {
         return sortTypes(byNameAsc(), typeMap.values());
     }
-
 
     /**
      * This will return the list of {@link graphql.schema.GraphQLObjectType} types that implement the given
@@ -440,41 +505,6 @@ public class GraphQLSchema {
         Builder builder = newSchema(this);
         builderConsumer.accept(builder);
         return builder.build();
-    }
-
-    /**
-     * @return a new schema builder
-     */
-    public static Builder newSchema() {
-        return new Builder();
-    }
-
-    /**
-     * This allows you to build a schema from an existing schema.  It copies everything from the existing
-     * schema and then allows you to replace them.
-     *
-     * @param existingSchema the existing schema
-     *
-     * @return a new schema builder
-     */
-    public static Builder newSchema(GraphQLSchema existingSchema) {
-        return new Builder()
-                .query(existingSchema.getQueryType())
-                .mutation(existingSchema.getMutationType())
-                .subscription(existingSchema.getSubscriptionType())
-                .introspectionSchemaType(existingSchema.getIntrospectionSchemaType())
-                .codeRegistry(existingSchema.getCodeRegistry())
-                .clearAdditionalTypes()
-                .clearDirectives()
-                .additionalDirectives(new LinkedHashSet<>(existingSchema.getDirectives()))
-                .clearSchemaDirectives()
-                .withSchemaDirectives(schemaDirectivesArray(existingSchema))
-                .additionalTypes(existingSchema.additionalTypes)
-                .description(existingSchema.getDescription());
-    }
-
-    private static GraphQLDirective[] schemaDirectivesArray(GraphQLSchema existingSchema) {
-        return existingSchema.schemaDirectives.getDirectives().toArray(new GraphQLDirective[0]);
     }
 
     public static class Builder {

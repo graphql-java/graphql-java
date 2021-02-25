@@ -82,7 +82,7 @@ public class IntrospectionWithDirectivesSupport {
                     GraphQLObjectType newObjectType = addDirectiveExtensions(objectType, codeRegistry, __DirectiveExtensions);
                     return changeNode(context, newObjectType);
                 }
-                // we need to change __Directive to have value as extensions
+                // we need to change __InputValue to have value and directives as extensions
                 if (__InputValue.getName().equals(objectType.getName())) {
                     GraphQLObjectType newObjectType = addInputValueValueExtensions(objectType, codeRegistry, __InputValueExtensions);
                     return changeNode(context, newObjectType);
@@ -106,23 +106,6 @@ public class IntrospectionWithDirectivesSupport {
         };
         codeRegistry.dataFetcher(coordinates(objectType.getName(), "extensions"), extDF);
         return objectType;
-    }
-
-    private List<GraphQLDirective> filterDirectives(GraphQLDirectiveContainer type, List<GraphQLDirective> directives) {
-        return directives.stream().filter(directive -> {
-            DirectivePredicateEnvironment env = new DirectivePredicateEnvironment() {
-                @Override
-                public GraphQLDirectiveContainer getContainingType() {
-                    return type;
-                }
-
-                @Override
-                public GraphQLDirective getDirective() {
-                    return directive;
-                }
-            };
-            return directivePredicate.isDirectiveIncluded(env);
-        }).collect(toList());
     }
 
     private GraphQLObjectType addInputValueValueExtensions(GraphQLObjectType __InputValue, GraphQLCodeRegistry.Builder codeRegistry, GraphQLObjectType __InputValueExtensions) {
@@ -151,6 +134,23 @@ public class IntrospectionWithDirectivesSupport {
         };
         codeRegistry.dataFetcher(coordinates(__InputValue.getName(), "extensions"), extDF);
         return __InputValue;
+    }
+
+    private List<GraphQLDirective> filterDirectives(GraphQLDirectiveContainer type, List<GraphQLDirective> directives) {
+        return directives.stream().filter(directive -> {
+            DirectivePredicateEnvironment env = new DirectivePredicateEnvironment() {
+                @Override
+                public GraphQLDirectiveContainer getContainingType() {
+                    return type;
+                }
+
+                @Override
+                public GraphQLDirective getDirective() {
+                    return directive;
+                }
+            };
+            return directivePredicate.isDirectiveIncluded(env);
+        }).collect(toList());
     }
 
     private boolean isForDirectivesFetch(DataFetchingEnvironment env) {
@@ -184,6 +184,13 @@ public class IntrospectionWithDirectivesSupport {
     @PublicSpi
     @FunctionalInterface
     interface DirectivePredicate {
+        /**
+         * Return true if the directive should be included
+         *
+         * @param environment the callback parameters
+         *
+         * @return true if the directive should be included
+         */
         boolean isDirectiveIncluded(DirectivePredicateEnvironment environment);
     }
 }
