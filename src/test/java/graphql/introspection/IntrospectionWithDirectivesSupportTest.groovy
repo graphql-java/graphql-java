@@ -2,7 +2,6 @@ package graphql.introspection
 
 import graphql.GraphQL
 import graphql.TestUtil
-import graphql.schema.diff.SchemaDiff
 import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
@@ -10,10 +9,10 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
 
     def "can find directives in introspection"() {
         def sdl = '''
-            directive @example on OBJECT
+            directive @example( argName : String = "default") on OBJECT
             
             
-            type Query @example {
+            type Query @example(argName : "onQuery") {
                 hello : Hello @deprecated
             }
             
@@ -35,16 +34,28 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
                 types {
                     name
                      extensions {
-                            directives {
-                               name
-                           }
-                       }
-                    fields(includeDeprecated:true) {
+                        directives {
+                            name
+                            args {
+                                name
+                                extensions {
+                                    value
+                                }  
+                            }                             
+                        }
+                   }
+                   fields(includeDeprecated:true) {
                         name
                         extensions {
                             directives {
-                               name
-                           }
+                                name
+                                args {
+                                    name
+                                    extensions {
+                                        value
+                                    }  
+                                }                             
+                            }
                        }
                     }
                 }
@@ -59,10 +70,14 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
         er.errors.isEmpty()
         println TestUtil.prettyPrint(er)
 
+        def queryType = er.data["__schema"]["types"].find({ type -> (type["name"] == "Query") })
+        queryType["extensions"]["directives"] == [[name: "example", args: [[name: "argName", extensions: [value: '"onQuery"']]]]]
+
         def helloType = er.data["__schema"]["types"].find({ type -> (type["name"] == "Hello") })
-        helloType["extensions"]["directives"] == [[name: "example"]]
+        helloType["extensions"]["directives"] == [[name: "example", args: [[name: "argName", extensions: [value: '"default"']]]]]
 
         def worldField = helloType["fields"].find({ type -> (type["name"] == "world") })
-        worldField["extensions"]["directives"] == [[name: "deprecated"]]
+        worldField["extensions"]["directives"] == [[name: 'deprecated', args: [[name: 'reason', extensions: [value: '"No longer supported"']]]]
+        ]
     }
 }

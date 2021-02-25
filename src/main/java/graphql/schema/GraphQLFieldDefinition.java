@@ -244,7 +244,6 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         return super.hashCode();
     }
 
-
     public static Builder newFieldDefinition(GraphQLFieldDefinition existing) {
         return new Builder(existing);
     }
