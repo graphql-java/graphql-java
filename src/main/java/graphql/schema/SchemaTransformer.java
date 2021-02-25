@@ -21,6 +21,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
@@ -36,80 +37,6 @@ import static java.lang.String.format;
 @PublicApi
 public class SchemaTransformer {
 
-    // artificial schema element which serves as root element for the transformation
-    private static class DummyRoot implements GraphQLSchemaElement {
-
-        static final String QUERY = "query";
-        static final String MUTATION = "mutation";
-        static final String SUBSCRIPTION = "subscription";
-        static final String ADD_TYPES = "addTypes";
-        static final String DIRECTIVES = "directives";
-        static final String SCHEMA_DIRECTIVES = "schemaDirectives";
-        static final String INTROSPECTION = "introspection";
-        GraphQLSchema schema;
-
-        GraphQLObjectType query;
-        GraphQLObjectType mutation;
-        GraphQLObjectType subscription;
-        GraphQLObjectType introspectionSchemaType;
-        Set<GraphQLType> additionalTypes;
-        Set<GraphQLDirective> directives;
-        Set<GraphQLDirective> schemaDirectives;
-
-        DummyRoot(GraphQLSchema schema) {
-            this.schema = schema;
-            query = schema.getQueryType();
-            mutation = schema.isSupportingMutations() ? schema.getMutationType() : null;
-            subscription = schema.isSupportingSubscriptions() ? schema.getSubscriptionType() : null;
-            introspectionSchemaType = schema.getIntrospectionSchemaType();
-            additionalTypes = schema.getAdditionalTypes();
-            schemaDirectives = new LinkedHashSet<>(schema.getSchemaDirectives());
-            directives = new LinkedHashSet<>(schema.getDirectives());
-        }
-
-
-        @Override
-        public List<GraphQLSchemaElement> getChildren() {
-            return assertShouldNeverHappen();
-        }
-
-        @Override
-        public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
-            SchemaElementChildrenContainer.Builder builder = newSchemaElementChildrenContainer()
-                    .child(QUERY, query);
-            if (schema.isSupportingMutations()) {
-                builder.child(MUTATION, mutation);
-            }
-            if (schema.isSupportingSubscriptions()) {
-                builder.child(SUBSCRIPTION, subscription);
-            }
-            builder.children(ADD_TYPES, additionalTypes);
-            builder.children(DIRECTIVES, directives);
-            builder.children(SCHEMA_DIRECTIVES, schemaDirectives);
-            builder.child(INTROSPECTION, introspectionSchemaType);
-            return builder.build();
-        }
-
-        @Override
-        public GraphQLSchemaElement withNewChildren(SchemaElementChildrenContainer newChildren) {
-            // special hack: we don't create a new dummy root, but we simply update it
-            query = newChildren.getChildOrNull(QUERY);
-            mutation = newChildren.getChildOrNull(MUTATION);
-            subscription = newChildren.getChildOrNull(SUBSCRIPTION);
-            introspectionSchemaType = newChildren.getChildOrNull(INTROSPECTION);
-            additionalTypes = new LinkedHashSet<>(newChildren.getChildren(ADD_TYPES));
-            directives = new LinkedHashSet<>(newChildren.getChildren(DIRECTIVES));
-            schemaDirectives = new LinkedHashSet<>(newChildren.getChildren(SCHEMA_DIRECTIVES));
-            return this;
-        }
-
-        @Override
-        public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
-            return assertShouldNeverHappen();
-        }
-    }
-
-
     /**
      * Transforms a GraphQLSchema and returns a new GraphQLSchema object.
      *
@@ -123,10 +50,31 @@ public class SchemaTransformer {
         return schemaTransformer.transform(schema, visitor);
     }
 
+    /**
+     * Transforms a GraphQLSchema and returns a new GraphQLSchema object.
+     *
+     * @param schema         the schema to transform
+     * @param visitor        the visitor call back
+     * @param afterTransform this allows you to do actions after the transformation and before the
+     *                       schema is built
+     *
+     * @return a new GraphQLSchema instance.
+     */
+    public static GraphQLSchema transformSchema(GraphQLSchema schema, GraphQLTypeVisitor visitor, Consumer<GraphQLSchema.Builder> afterTransform) {
+        SchemaTransformer schemaTransformer = new SchemaTransformer();
+        return schemaTransformer.transform(schema, visitor, afterTransform);
+    }
 
     public GraphQLSchema transform(final GraphQLSchema schema, GraphQLTypeVisitor visitor) {
+        return transformImpl(schema, visitor, builder -> {
+        });
+    }
 
+    public GraphQLSchema transform(final GraphQLSchema schema, GraphQLTypeVisitor visitor, Consumer<GraphQLSchema.Builder> afterTransform) {
+        return transformImpl(schema, visitor, afterTransform);
+    }
 
+    private GraphQLSchema transformImpl(final GraphQLSchema schema, GraphQLTypeVisitor visitor, Consumer<GraphQLSchema.Builder> afterTransform) {
         DummyRoot dummyRoot = new DummyRoot(schema);
 
         List<NodeZipper<GraphQLSchemaElement>> zippers = new LinkedList<>();
@@ -198,7 +146,7 @@ public class SchemaTransformer {
 
         zipUpToDummyRoot(zippers, topologicalSort, breadcrumbsByZipper, zipperByNodeAfterTraversing);
 
-        return GraphQLSchema.newSchema()
+        GraphQLSchema.Builder schemaBuilder = GraphQLSchema.newSchema()
                 .query(dummyRoot.query)
                 .mutation(dummyRoot.mutation)
                 .subscription(dummyRoot.subscription)
@@ -207,8 +155,9 @@ public class SchemaTransformer {
                 .additionalDirectives(dummyRoot.directives)
                 .withSchemaDirectives(dummyRoot.schemaDirectives)
                 .codeRegistry(builder.build())
-                .description(schema.getDescription())
-                .buildImpl(true);
+                .description(schema.getDescription());
+        afterTransform.accept(schemaBuilder);
+        return schemaBuilder.buildImpl(true);
     }
 
     private List<GraphQLSchemaElement> topologicalSort(Set<GraphQLSchemaElement> allNodes, Map<GraphQLSchemaElement, List<GraphQLSchemaElement>> reverseDependencies) {
@@ -330,17 +279,6 @@ public class SchemaTransformer {
         return result;
     }
 
-
-    private static class ZipperWithOneParent {
-        public ZipperWithOneParent(NodeZipper<GraphQLSchemaElement> zipper, Breadcrumb<GraphQLSchemaElement> parent) {
-            this.zipper = zipper;
-            this.parent = parent;
-        }
-
-        public NodeZipper<GraphQLSchemaElement> zipper;
-        public Breadcrumb<GraphQLSchemaElement> parent;
-    }
-
     private NodeZipper<GraphQLSchemaElement> moveUp(
             GraphQLSchemaElement parent,
             Map<NodeZipper<GraphQLSchemaElement>, List<Breadcrumb<GraphQLSchemaElement>>> sameParentsZipper) {
@@ -421,6 +359,89 @@ public class SchemaTransformer {
             newBreadcrumbs = Collections.emptyList();
         }
         return new NodeZipper<>(newNode, newBreadcrumbs, SCHEMA_ELEMENT_ADAPTER);
+    }
+
+    // artificial schema element which serves as root element for the transformation
+    private static class DummyRoot implements GraphQLSchemaElement {
+
+        static final String QUERY = "query";
+        static final String MUTATION = "mutation";
+        static final String SUBSCRIPTION = "subscription";
+        static final String ADD_TYPES = "addTypes";
+        static final String DIRECTIVES = "directives";
+        static final String SCHEMA_DIRECTIVES = "schemaDirectives";
+        static final String INTROSPECTION = "introspection";
+        GraphQLSchema schema;
+
+        GraphQLObjectType query;
+        GraphQLObjectType mutation;
+        GraphQLObjectType subscription;
+        GraphQLObjectType introspectionSchemaType;
+        Set<GraphQLType> additionalTypes;
+        Set<GraphQLDirective> directives;
+        Set<GraphQLDirective> schemaDirectives;
+
+        DummyRoot(GraphQLSchema schema) {
+            this.schema = schema;
+            query = schema.getQueryType();
+            mutation = schema.isSupportingMutations() ? schema.getMutationType() : null;
+            subscription = schema.isSupportingSubscriptions() ? schema.getSubscriptionType() : null;
+            introspectionSchemaType = schema.getIntrospectionSchemaType();
+            additionalTypes = schema.getAdditionalTypes();
+            schemaDirectives = new LinkedHashSet<>(schema.getSchemaDirectives());
+            directives = new LinkedHashSet<>(schema.getDirectives());
+        }
+
+
+        @Override
+        public List<GraphQLSchemaElement> getChildren() {
+            return assertShouldNeverHappen();
+        }
+
+        @Override
+        public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
+            SchemaElementChildrenContainer.Builder builder = newSchemaElementChildrenContainer()
+                    .child(QUERY, query);
+            if (schema.isSupportingMutations()) {
+                builder.child(MUTATION, mutation);
+            }
+            if (schema.isSupportingSubscriptions()) {
+                builder.child(SUBSCRIPTION, subscription);
+            }
+            builder.children(ADD_TYPES, additionalTypes);
+            builder.children(DIRECTIVES, directives);
+            builder.children(SCHEMA_DIRECTIVES, schemaDirectives);
+            builder.child(INTROSPECTION, introspectionSchemaType);
+            return builder.build();
+        }
+
+        @Override
+        public GraphQLSchemaElement withNewChildren(SchemaElementChildrenContainer newChildren) {
+            // special hack: we don't create a new dummy root, but we simply update it
+            query = newChildren.getChildOrNull(QUERY);
+            mutation = newChildren.getChildOrNull(MUTATION);
+            subscription = newChildren.getChildOrNull(SUBSCRIPTION);
+            introspectionSchemaType = newChildren.getChildOrNull(INTROSPECTION);
+            additionalTypes = new LinkedHashSet<>(newChildren.getChildren(ADD_TYPES));
+            directives = new LinkedHashSet<>(newChildren.getChildren(DIRECTIVES));
+            schemaDirectives = new LinkedHashSet<>(newChildren.getChildren(SCHEMA_DIRECTIVES));
+            return this;
+        }
+
+        @Override
+        public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
+            return assertShouldNeverHappen();
+        }
+    }
+
+    private static class ZipperWithOneParent {
+        public NodeZipper<GraphQLSchemaElement> zipper;
+        public Breadcrumb<GraphQLSchemaElement> parent;
+
+        public ZipperWithOneParent(NodeZipper<GraphQLSchemaElement> zipper, Breadcrumb<GraphQLSchemaElement> parent) {
+            this.zipper = zipper;
+            this.parent = parent;
+        }
     }
 
 }

@@ -9,7 +9,6 @@ import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
 import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLType;
@@ -21,9 +20,9 @@ import graphql.util.TraverserContext;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static graphql.introspection.Introspection.__Directive;
 import static graphql.introspection.Introspection.__EnumValue;
 import static graphql.introspection.Introspection.__Field;
 import static graphql.introspection.Introspection.__InputValue;
@@ -32,6 +31,7 @@ import static graphql.schema.FieldCoordinates.coordinates;
 import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
+import static graphql.schema.GraphQLTypeReference.typeRef;
 import static graphql.util.TraversalControl.CONTINUE;
 import static graphql.util.TreeTransformerUtil.changeNode;
 
@@ -61,7 +61,7 @@ public class IntrospectionWithDirectivesSupport {
                         .type(nonNull(list(__Directive))))
                 .build();
 
-        return SchemaTransformer.transformSchema(schema, new GraphQLTypeVisitorStub() {
+        GraphQLTypeVisitorStub visitor = new GraphQLTypeVisitorStub() {
             @Override
             public TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, TraverserContext<GraphQLSchemaElement> context) {
                 if (TARGETED_TYPES.contains(objectType.getName())) {
@@ -71,11 +71,13 @@ public class IntrospectionWithDirectivesSupport {
                 }
                 return CONTINUE;
             }
-        });
+        };
+        Consumer<GraphQLSchema.Builder> afterTransform = builder -> builder.additionalType(__DirectiveExtensions);
+        return SchemaTransformer.transformSchema(schema, visitor, afterTransform);
     }
 
-    private GraphQLObjectType addDirectiveExtensions(GraphQLObjectType objectType, GraphQLCodeRegistry.Builder codeRegistry, GraphQLOutputType __DirectiveExtensions) {
-        objectType = objectType.transform(bld -> bld.field(fld -> fld.name("extensions").type(__DirectiveExtensions)));
+    private GraphQLObjectType addDirectiveExtensions(GraphQLObjectType objectType, GraphQLCodeRegistry.Builder codeRegistry, GraphQLObjectType __DirectiveExtensions) {
+        objectType = objectType.transform(bld -> bld.field(fld -> fld.name("extensions").type(typeRef(__DirectiveExtensions.getName()))));
         DataFetcher<?> extDF = env -> {
             final GraphQLType type = env.getSource();
             List<GraphQLDirective> directives = Collections.emptyList();
