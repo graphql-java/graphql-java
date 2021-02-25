@@ -183,19 +183,19 @@ public class TypeAndFieldRule implements SchemaValidationRule {
     }
 
     private void assertTypeName(String typeName, SchemaValidationErrorCollector validationErrorCollector) {
-        if (typeName.length() >= 2 && typeName.startsWith("__")) {
-            SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.InvalidCustomizedNameError,
-                    String.format("\"%s\" must not begin with \"__\", which is reserved by GraphQL introspection.", typeName));
-            validationErrorCollector.addError(schemaValidationError);
-        }
+//        if (typeName.length() >= 2  && typeName.startsWith("__")) {
+//            SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.InvalidCustomizedNameError,
+//                    String.format("\"%s\" must not begin with \"__\", which is reserved by GraphQL introspection.", typeName));
+//            validationErrorCollector.addError(schemaValidationError);
+//        }
     }
 
     private void assertFieldName(String typeName, String fieldName, SchemaValidationErrorCollector errorCollector) {
-        if (fieldName.length() >= 2 && fieldName.startsWith("__")) {
-            SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.InvalidCustomizedNameError,
-                    String.format("\"%s\" in \"%s\" must not begin with \"__\", which is reserved by GraphQL introspection.", fieldName, typeName));
-            errorCollector.addError(schemaValidationError);
-        }
+//        if (fieldName.length() >= 2 && fieldName.startsWith("__")) {
+//            SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.InvalidCustomizedNameError,
+//                    String.format("\"%s\" in \"%s\" must not begin with \"__\", which is reserved by GraphQL introspection.", fieldName, typeName));
+//            errorCollector.addError(schemaValidationError);
+//        }
     }
 
     private void assertArgumentName(String typeName, String fieldName, String argumentName, SchemaValidationErrorCollector errorCollector) {

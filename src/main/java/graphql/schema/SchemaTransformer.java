@@ -2,7 +2,6 @@ package graphql.schema;
 
 import graphql.Assert;
 import graphql.PublicApi;
-import graphql.introspection.Introspection;
 import graphql.util.Breadcrumb;
 import graphql.util.NodeAdapter;
 import graphql.util.NodeLocation;
@@ -52,6 +51,7 @@ public class SchemaTransformer {
         GraphQLObjectType query;
         GraphQLObjectType mutation;
         GraphQLObjectType subscription;
+        GraphQLObjectType introspectionSchemaType;
         Set<GraphQLType> additionalTypes;
         Set<GraphQLDirective> directives;
         Set<GraphQLDirective> schemaDirectives;
@@ -61,6 +61,7 @@ public class SchemaTransformer {
             query = schema.getQueryType();
             mutation = schema.isSupportingMutations() ? schema.getMutationType() : null;
             subscription = schema.isSupportingSubscriptions() ? schema.getSubscriptionType() : null;
+            introspectionSchemaType = schema.getIntrospectionSchemaType();
             additionalTypes = schema.getAdditionalTypes();
             schemaDirectives = new LinkedHashSet<>(schema.getSchemaDirectives());
             directives = new LinkedHashSet<>(schema.getDirectives());
@@ -85,7 +86,7 @@ public class SchemaTransformer {
             builder.children(ADD_TYPES, additionalTypes);
             builder.children(DIRECTIVES, directives);
             builder.children(SCHEMA_DIRECTIVES, schemaDirectives);
-            builder.child(INTROSPECTION, schema.getObjectType(Introspection.__Schema.getName()));
+            builder.child(INTROSPECTION, introspectionSchemaType);
             return builder.build();
         }
 
@@ -95,6 +96,7 @@ public class SchemaTransformer {
             query = newChildren.getChildOrNull(QUERY);
             mutation = newChildren.getChildOrNull(MUTATION);
             subscription = newChildren.getChildOrNull(SUBSCRIPTION);
+            introspectionSchemaType = newChildren.getChildOrNull(INTROSPECTION);
             additionalTypes = new LinkedHashSet<>(newChildren.getChildren(ADD_TYPES));
             directives = new LinkedHashSet<>(newChildren.getChildren(DIRECTIVES));
             schemaDirectives = new LinkedHashSet<>(newChildren.getChildren(SCHEMA_DIRECTIVES));
@@ -196,17 +198,17 @@ public class SchemaTransformer {
 
         zipUpToDummyRoot(zippers, topologicalSort, breadcrumbsByZipper, zipperByNodeAfterTraversing);
 
-        GraphQLSchema newSchema = GraphQLSchema.newSchema()
+        return GraphQLSchema.newSchema()
                 .query(dummyRoot.query)
                 .mutation(dummyRoot.mutation)
                 .subscription(dummyRoot.subscription)
+                .introspectionSchemaType(dummyRoot.introspectionSchemaType)
                 .additionalTypes(dummyRoot.additionalTypes)
                 .additionalDirectives(dummyRoot.directives)
                 .withSchemaDirectives(dummyRoot.schemaDirectives)
                 .codeRegistry(builder.build())
                 .description(schema.getDescription())
                 .buildImpl(true);
-        return newSchema;
     }
 
     private List<GraphQLSchemaElement> topologicalSort(Set<GraphQLSchemaElement> allNodes, Map<GraphQLSchemaElement, List<GraphQLSchemaElement>> reverseDependencies) {

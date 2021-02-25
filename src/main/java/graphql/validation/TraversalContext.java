@@ -37,9 +37,6 @@ import graphql.schema.GraphQLUnmodifiedType;
 import java.util.ArrayList;
 import java.util.List;
 
-import static graphql.introspection.Introspection.SchemaMetaFieldDef;
-import static graphql.introspection.Introspection.TypeMetaFieldDef;
-import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
@@ -303,18 +300,18 @@ public class TraversalContext implements DocumentVisitor {
 
     private GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLType parentType, Field field) {
         if (schema.getQueryType().equals(parentType)) {
-            if (field.getName().equals(schema.get__schemaFieldDefinition().getName())) {
-                return schema.get__schemaFieldDefinition();
+            if (field.getName().equals(schema.getIntrospectionSchemaFieldDefinition().getName())) {
+                return schema.getIntrospectionSchemaFieldDefinition();
             }
-            if (field.getName().equals(schema.get__typeFieldDefinition().getName())) {
-                return schema.get__typeFieldDefinition();
+            if (field.getName().equals(schema.getIntrospectionTypeFieldDefinition().getName())) {
+                return schema.getIntrospectionTypeFieldDefinition();
             }
         }
-        if (field.getName().equals(schema.get__typenameFieldDefinition().getName())
+        if (field.getName().equals(schema.getIntrospectionTypenameFieldDefinition().getName())
                 && (parentType instanceof GraphQLObjectType ||
                 parentType instanceof GraphQLInterfaceType ||
                 parentType instanceof GraphQLUnionType)) {
-            return schema.get__typenameFieldDefinition();
+            return schema.getIntrospectionTypenameFieldDefinition();
         }
         if (parentType instanceof GraphQLFieldsContainer) {
             return schema.getFieldVisibility().getFieldDefinition((GraphQLFieldsContainer) parentType, field.getName());

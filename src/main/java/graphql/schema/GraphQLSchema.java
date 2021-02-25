@@ -48,9 +48,10 @@ public class GraphQLSchema {
     private final GraphQLObjectType queryType;
     private final GraphQLObjectType mutationType;
     private final GraphQLObjectType subscriptionType;
+    private final GraphQLObjectType introspectionSchemaType;
     private final ImmutableSet<GraphQLType> additionalTypes;
-    private final GraphQLFieldDefinition __schema;
-    private final GraphQLFieldDefinition __type;
+    private final GraphQLFieldDefinition intospectionSchemaField;
+    private final GraphQLFieldDefinition introspectionTypeField;
     // we don't allow modification of "__typename" - its a scalar
     private final GraphQLFieldDefinition __typename = Introspection.TypeNameMetaFieldDef;
     private final DirectivesUtil.DirectivesHolder directives;
@@ -116,8 +117,9 @@ public class GraphQLSchema {
         this.mutationType = builder.mutationType;
         this.subscriptionType = builder.subscriptionType;
         this.additionalTypes = ImmutableSet.copyOf(builder.additionalTypes);
-        this.__schema = builder.__schema;
-        this.__type = builder.__type;
+        this.introspectionSchemaType = builder.introspectionSchemaType;
+        this.intospectionSchemaField = Introspection.buildSchemaField(builder.introspectionSchemaType);
+        this.introspectionTypeField = Introspection.buildTypeField(builder.introspectionSchemaType);
         this.directives = new DirectivesUtil.DirectivesHolder(builder.additionalDirectives);
         this.schemaDirectives = new DirectivesUtil.DirectivesHolder(builder.schemaDirectives);
         this.definition = builder.definition;
@@ -139,9 +141,10 @@ public class GraphQLSchema {
         this.queryType = otherSchema.queryType;
         this.mutationType = otherSchema.mutationType;
         this.subscriptionType = otherSchema.subscriptionType;
+        this.introspectionSchemaType = otherSchema.introspectionSchemaType;
         this.additionalTypes = otherSchema.additionalTypes;
-        this.__schema = otherSchema.__schema;
-        this.__type = otherSchema.__type;
+        this.intospectionSchemaField = otherSchema.intospectionSchemaField;
+        this.introspectionTypeField = otherSchema.introspectionTypeField;
         this.directives = otherSchema.directives;
         this.schemaDirectives = otherSchema.schemaDirectives;
         this.definition = otherSchema.definition;
@@ -180,24 +183,27 @@ public class GraphQLSchema {
     /**
      * @return the special system field called "__schema"
      */
-    public GraphQLFieldDefinition get__schemaFieldDefinition() {
-        return __schema;
+    public GraphQLFieldDefinition getIntrospectionSchemaFieldDefinition() {
+        return intospectionSchemaField;
     }
 
     /**
      * @return the special system field called "__type"
      */
-    public GraphQLFieldDefinition get__typeFieldDefinition() {
-        return __type;
+    public GraphQLFieldDefinition getIntrospectionTypeFieldDefinition() {
+        return introspectionTypeField;
     }
 
     /**
      * @return the special system field called "__typename"
      */
-    public GraphQLFieldDefinition get__typenameFieldDefinition() {
+    public GraphQLFieldDefinition getIntrospectionTypenameFieldDefinition() {
         return __typename;
     }
 
+    public GraphQLObjectType getIntrospectionSchemaType() {
+        return introspectionSchemaType;
+    }
 
     public Set<GraphQLType> getAdditionalTypes() {
         return additionalTypes;
@@ -456,6 +462,7 @@ public class GraphQLSchema {
                 .query(existingSchema.getQueryType())
                 .mutation(existingSchema.getMutationType())
                 .subscription(existingSchema.getSubscriptionType())
+                .introspectionSchemaType(existingSchema.getIntrospectionSchemaType())
                 .codeRegistry(existingSchema.getCodeRegistry())
                 .clearAdditionalTypes()
                 .clearDirectives()
@@ -473,15 +480,13 @@ public class GraphQLSchema {
     public static class Builder {
         private GraphQLObjectType queryType;
         private GraphQLObjectType mutationType;
+        private GraphQLObjectType introspectionSchemaType = Introspection.__Schema;
         private GraphQLObjectType subscriptionType;
         private GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().build();
         private Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
         private SchemaDefinition definition;
         private List<SchemaExtensionDefinition> extensionDefinitions;
         private String description;
-
-        private GraphQLFieldDefinition __schema = Introspection.SchemaMetaFieldDef;
-        private GraphQLFieldDefinition __type = Introspection.TypeMetaFieldDef;
 
         // we default these in
         private Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>(
@@ -616,13 +621,8 @@ public class GraphQLSchema {
             return this;
         }
 
-        public Builder __schema(GraphQLFieldDefinition __schema) {
-            this.__schema = assertNotNull(__schema);
-            return this;
-        }
-
-        public Builder __type(GraphQLFieldDefinition __type) {
-            this.__type = assertNotNull(__type);
+        public Builder introspectionSchemaType(GraphQLObjectType introspectionSchemaType) {
+            this.introspectionSchemaType = introspectionSchemaType;
             return this;
         }
 

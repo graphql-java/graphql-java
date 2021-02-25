@@ -194,13 +194,13 @@ public class FieldCollectorNormalizedQuery {
             } else {
                 GraphQLFieldDefinition fieldDefinition;
                 GraphQLSchema schema = parameters.getGraphQLSchema();
-                if (field.getName().equals(schema.get__typenameFieldDefinition().getName())) {
-                    fieldDefinition = schema.get__typenameFieldDefinition();
+                if (field.getName().equals(schema.getIntrospectionTypenameFieldDefinition().getName())) {
+                    fieldDefinition = schema.getIntrospectionTypenameFieldDefinition();
                 } else {
-                    if (field.getName().equals(schema.get__schemaFieldDefinition().getName())) {
-                        fieldDefinition = schema.get__schemaFieldDefinition();
-                    } else if (field.getName().equals(schema.get__typeFieldDefinition().getName())) {
-                        fieldDefinition = schema.get__typeFieldDefinition();
+                    if (field.getName().equals(schema.getIntrospectionSchemaFieldDefinition().getName())) {
+                        fieldDefinition = schema.getIntrospectionSchemaFieldDefinition();
+                    } else if (field.getName().equals(schema.getIntrospectionTypeFieldDefinition().getName())) {
+                        fieldDefinition = schema.getIntrospectionTypeFieldDefinition();
                     } else {
                         fieldDefinition = assertNotNull(objectType.getFieldDefinition(field.getName()), () -> String.format("no field with name %s found in object %s", field.getName(), objectType.getName()));
                     }

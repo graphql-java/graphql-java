@@ -38,7 +38,7 @@ public class SchemaUtil {
             roots.addAll(schema.getDirectives());
         }
 
-        roots.add(Introspection.__Schema);
+        roots.add(schema.getIntrospectionSchemaType());
 
         GraphQLTypeCollectingVisitor visitor = new GraphQLTypeCollectingVisitor();
         SchemaTraverser traverser;

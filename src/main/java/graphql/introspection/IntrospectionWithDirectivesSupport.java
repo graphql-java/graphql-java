@@ -3,8 +3,10 @@ package graphql.introspection;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import graphql.PublicApi;
+import graphql.language.DirectivesContainer;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLCodeRegistry;
+import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
@@ -14,12 +16,12 @@ import graphql.schema.SchemaTransformer;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import static graphql.introspection.Introspection.__Directive;
-import static graphql.introspection.Introspection.__EnumValue;
 import static graphql.introspection.Introspection.__Field;
-import static graphql.introspection.Introspection.__InputValue;
 import static graphql.introspection.Introspection.__Type;
 import static graphql.schema.FieldCoordinates.coordinates;
 import static graphql.schema.GraphQLList.list;
@@ -61,10 +63,14 @@ public class IntrospectionWithDirectivesSupport {
     private GraphQLObjectType addDirectiveExtensions(GraphQLObjectType objectType, GraphQLCodeRegistry.Builder codeRegistry) {
         objectType = objectType.transform(bld -> bld.field(fld -> fld.name("extensions").type(__DIRECTIVE_EXTENSIONS)));
         DataFetcher<?> extDF = env -> {
-            GraphQLDirectiveContainer directiveContainer = env.getSource();
-            return ImmutableMap.of("extensions", ImmutableMap.of("directives", directiveContainer.getDirectives()));
+            Object type = env.getSource();
+            List<GraphQLDirective> directives = Collections.emptyList();
+            if (type instanceof GraphQLDirectiveContainer) {
+                directives = ((GraphQLDirectiveContainer) type).getDirectives();
+            }
+            return ImmutableMap.of("directives", directives);
         };
-        codeRegistry.dataFetcher(coordinates(__Field.getName(), "extensions"), extDF);
+        codeRegistry.dataFetcher(coordinates(objectType.getName(), "extensions"), extDF);
         return objectType;
     }
 

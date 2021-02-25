@@ -771,15 +771,15 @@ type Dog implements Animal{
         expect:
         fieldToNormalizedField.size() == 14
         fieldToNormalizedField.get(typeNameField)[0].objectType.name == "Query"
-        fieldToNormalizedField.get(typeNameField)[0].fieldDefinition == graphQLSchema.get__typenameFieldDefinition()
+        fieldToNormalizedField.get(typeNameField)[0].fieldDefinition == graphQLSchema.getIntrospectionTypenameFieldDefinition()
         fieldToNormalizedField.get(aliasedTypeName)[0].alias == "alias"
-        fieldToNormalizedField.get(aliasedTypeName)[0].fieldDefinition == graphQLSchema.get__typenameFieldDefinition()
+        fieldToNormalizedField.get(aliasedTypeName)[0].fieldDefinition == graphQLSchema.getIntrospectionTypenameFieldDefinition()
 
         fieldToNormalizedField.get(schemaField)[0].objectType.name == "Query"
-        fieldToNormalizedField.get(schemaField)[0].fieldDefinition == graphQLSchema.get__schemaFieldDefinition()
+        fieldToNormalizedField.get(schemaField)[0].fieldDefinition == graphQLSchema.getIntrospectionSchemaFieldDefinition()
 
         fieldToNormalizedField.get(typeField)[0].objectType.name == "Query"
-        fieldToNormalizedField.get(typeField)[0].fieldDefinition == graphQLSchema.get__typeFieldDefinition()
+        fieldToNormalizedField.get(typeField)[0].fieldDefinition == graphQLSchema.getIntrospectionTypeFieldDefinition()
 
     }
 
