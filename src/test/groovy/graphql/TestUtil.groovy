@@ -286,6 +286,11 @@ class TestUtil {
             Comparator.comparing({ it.length() }).reversed())
 
 
+    /**
+     * Turns a object kinto JSON and prints it - Helpful for debugging
+     * @param obj some obj
+     * @return a string
+     */
     static String prettyPrint(Object obj) {
         if (obj instanceof ExecutionResult) {
             obj = ((ExecutionResult) obj).toSpecification()
