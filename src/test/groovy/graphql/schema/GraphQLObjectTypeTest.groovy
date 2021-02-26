@@ -65,5 +65,10 @@ class GraphQLObjectTypeTest extends Specification {
         objectType2.getFieldDefinition("AddedInt").getType() == GraphQLInt
         objectType2.getFieldDefinition("Int").getType() == GraphQLInt
         objectType2.getFieldDefinition("Str").getType() == GraphQLBoolean
+
+        // getFields shortcuts work
+        objectType.getField("Int").getType() == GraphQLInt
+        objectType.getField("Str").getType() == GraphQLString
+        objectType.getFields().size() == 2
     }
 }
