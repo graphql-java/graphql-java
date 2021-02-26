@@ -47,6 +47,11 @@ public class MergedSelectionSet {
         return subFields.isEmpty();
     }
 
+    public static MergedSelectionSet newMergedSelectionSetFast(Map<String, MergedField> mergedFields) {
+        return new MergedSelectionSet(mergedFields);
+    }
+
+
     public static Builder newMergedSelectionSet() {
         return new Builder();
     }

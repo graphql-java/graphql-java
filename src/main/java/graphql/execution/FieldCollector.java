@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static graphql.execution.MergedSelectionSet.newMergedSelectionSet;
+import static graphql.execution.MergedSelectionSet.newMergedSelectionSetFast;
 import static graphql.execution.TypeFromAST.getTypeFromAST;
 
 /**
@@ -40,7 +41,7 @@ public class FieldCollector {
             }
             this.collectFields(parameters, field.getSelectionSet(), visitedFragments, subFields);
         }
-        return newMergedSelectionSet().subFields(subFields).build();
+        return newMergedSelectionSetFast(subFields);
     }
 
     /**
@@ -55,7 +56,7 @@ public class FieldCollector {
         Map<String, MergedField> subFields = new LinkedHashMap<>();
         Set<String> visitedFragments = new HashSet<>();
         this.collectFields(parameters, selectionSet, visitedFragments, subFields);
-        return newMergedSelectionSet().subFields(subFields).build();
+        return newMergedSelectionSetFast(subFields);
     }
 
     private void collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet, Set<String> visitedFragments, Map<String, MergedField> fields) {
