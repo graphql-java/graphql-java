@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import static graphql.Assert.assertNotEmpty;
-
 /**
  * This represent all Fields in a query which overlap and are merged into one.
  * This means they all represent the same field actually when the query is executed.
@@ -57,14 +55,7 @@ import static graphql.Assert.assertNotEmpty;
  * The actual logic when fields can successfully merged together is implemented in {#graphql.validation.rules.OverlappingFieldsCanBeMerged}
  */
 @PublicApi
-public class MergedField {
-
-    private final ImmutableList<Field> fields;
-
-    private MergedField(List<Field> fields) {
-        assertNotEmpty(fields);
-        this.fields = ImmutableList.copyOf(fields);
-    }
+public abstract class MergedField {
 
     /**
      * All merged fields have the same name.
@@ -73,9 +64,7 @@ public class MergedField {
      *
      * @return the name of of the merged fields.
      */
-    public String getName() {
-        return fields.get(0).getName();
-    }
+    public abstract String getName();
 
     /**
      * Returns the key of this MergedField for the overall result.
@@ -83,9 +72,7 @@ public class MergedField {
      *
      * @return the key for this MergedField.
      */
-    public String getResultKey() {
-        return fields.get(0).getResultKey();
-    }
+    public abstract String getResultKey();
 
     /**
      * The first of the merged fields.
@@ -95,18 +82,14 @@ public class MergedField {
      *
      * @return the fist of the merged Fields
      */
-    public Field getSingleField() {
-        return fields.get(0);
-    }
+    public abstract Field getSingleField();
 
     /**
      * All merged fields share the same arguments.
      *
      * @return the list of arguments
      */
-    public List<Argument> getArguments() {
-        return fields.get(0).getArguments();
-    }
+    public abstract List<Argument> getArguments();
 
 
     /**
@@ -114,9 +97,7 @@ public class MergedField {
      *
      * @return all merged fields
      */
-    public List<Field> getFields() {
-        return fields;
-    }
+    public abstract List<Field> getFields();
 
     public static Builder newMergedField() {
         return new Builder();
@@ -155,7 +136,7 @@ public class MergedField {
 
         private Builder(MergedField existing) {
             this.fields = ImmutableList.builder();
-            for (Field field : existing.fields) {
+            for (Field field : existing.getFields()) {
                 this.fields.add(field);
             }
         }
@@ -173,32 +154,68 @@ public class MergedField {
         }
 
         public MergedField build() {
-            return new MergedField(fields.build());
+            return new MonoMergedField(fields.build().get(0)); // todo: finish
         }
 
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        MergedField that = (MergedField) o;
-        return fields.equals(that.fields);
-    }
+    private static class MonoMergedField extends MergedField {
 
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(fields);
-    }
+        private final Field field;
 
-    @Override
-    public String toString() {
-        return "MergedField{" +
-                "fields=" + fields +
+        private MonoMergedField(Field field) {
+            this.field = field;
+        }
+
+        @Override
+        public String getName() {
+            return field.getName();
+        }
+
+        @Override
+        public String getResultKey() {
+            return field.getResultKey();
+        }
+
+        @Override
+        public Field getSingleField() {
+            return field;
+        }
+
+        @Override
+        public List<Argument> getArguments() {
+            return field.getArguments();
+        }
+
+        @Override
+        public List<Field> getFields() {
+            return ImmutableList.of(field);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            MonoMergedField that = (MonoMergedField) o;
+            return field.equals(that.field);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(field);
+        }
+
+        @Override
+        public String toString() {
+            return "MonoMergedField{" +
+                "field=" + field +
                 '}';
+        }
+
     }
+
 }
