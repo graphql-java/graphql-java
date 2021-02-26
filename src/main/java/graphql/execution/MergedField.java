@@ -99,6 +99,11 @@ public abstract class MergedField {
      */
     public abstract List<Field> getFields();
 
+
+    public static MergedField newMergedFieldFast(Field field) {
+        return new MonoMergedField(field);
+    }
+
     public static Builder newMergedField() {
         return new Builder();
     }

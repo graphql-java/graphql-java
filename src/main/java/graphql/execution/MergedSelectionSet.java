@@ -64,13 +64,6 @@ public class MergedSelectionSet {
             return this;
         }
 
-        public Builder withSubFields(Map<String, ImmutableList.Builder<Field>> subFields) {
-            for (Map.Entry<String, ImmutableList.Builder<Field>> entry : subFields.entrySet()) {
-                this.subFields.put(entry.getKey(), MergedField.newMergedField(entry.getValue()).build());
-            }
-            return this;
-        }
-
         public MergedSelectionSet build() {
             return new MergedSelectionSet(subFields.build());
         }

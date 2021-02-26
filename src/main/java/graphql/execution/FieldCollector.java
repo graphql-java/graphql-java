@@ -1,6 +1,5 @@
 package graphql.execution;
 
-import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -33,7 +32,7 @@ public class FieldCollector {
 
     public MergedSelectionSet collectFields(FieldCollectorParameters parameters, MergedField mergedField) {
         List<Field> fields = mergedField.getFields();
-        Map<String, ImmutableList.Builder<Field>> subFields = new LinkedHashMap<>();
+        Map<String, MergedField> subFields = new LinkedHashMap<>();
         Set<String> visitedFragments = new HashSet<>();
         for (Field field : fields) {
             if (field.getSelectionSet() == null) {
@@ -41,7 +40,7 @@ public class FieldCollector {
             }
             this.collectFields(parameters, field.getSelectionSet(), visitedFragments, subFields);
         }
-        return newMergedSelectionSet().withSubFields(subFields).build();
+        return newMergedSelectionSet().subFields(subFields).build();
     }
 
     /**
@@ -53,13 +52,13 @@ public class FieldCollector {
      * @return a map of the sub field selections
      */
     public MergedSelectionSet collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet) {
-        Map<String, ImmutableList.Builder<Field>> subFields = new LinkedHashMap<>();
+        Map<String, MergedField> subFields = new LinkedHashMap<>();
         Set<String> visitedFragments = new HashSet<>();
         this.collectFields(parameters, selectionSet, visitedFragments, subFields);
-        return newMergedSelectionSet().withSubFields(subFields).build();
+        return newMergedSelectionSet().subFields(subFields).build();
     }
 
-    private void collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet, Set<String> visitedFragments, Map<String, ImmutableList.Builder<Field>> fields) {
+    private void collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet, Set<String> visitedFragments, Map<String, MergedField> fields) {
         for (Selection<?> selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
                 collectField(parameters, fields, (Field) selection);
@@ -71,7 +70,7 @@ public class FieldCollector {
         }
     }
 
-    private void collectFragmentSpread(FieldCollectorParameters parameters, Set<String> visitedFragments, Map<String, ImmutableList.Builder<Field>> fields, FragmentSpread fragmentSpread) {
+    private void collectFragmentSpread(FieldCollectorParameters parameters, Set<String> visitedFragments, Map<String, MergedField> fields, FragmentSpread fragmentSpread) {
         if (visitedFragments.contains(fragmentSpread.getName())) {
             return;
         }
@@ -90,7 +89,7 @@ public class FieldCollector {
         collectFields(parameters, fragmentDefinition.getSelectionSet(), visitedFragments, fields);
     }
 
-    private void collectInlineFragment(FieldCollectorParameters parameters, Set<String> visitedFragments, Map<String, ImmutableList.Builder<Field>> fields, InlineFragment inlineFragment) {
+    private void collectInlineFragment(FieldCollectorParameters parameters, Set<String> visitedFragments, Map<String, MergedField> fields, InlineFragment inlineFragment) {
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), inlineFragment.getDirectives()) ||
                 !doesFragmentConditionMatch(parameters, inlineFragment)) {
             return;
@@ -98,12 +97,12 @@ public class FieldCollector {
         collectFields(parameters, inlineFragment.getSelectionSet(), visitedFragments, fields);
     }
 
-    private void collectField(FieldCollectorParameters parameters, Map<String, ImmutableList.Builder<Field>> fields, Field field) {
+    private void collectField(FieldCollectorParameters parameters, Map<String, MergedField> fields, Field field) {
         if (!conditionalNodes.shouldInclude(parameters.getVariables(), field.getDirectives())) {
             return;
         }
         String name = field.getResultKey();
-        fields.computeIfAbsent(name, ignored -> ImmutableList.builder()).add(field);
+        fields.computeIfAbsent(name, ignored -> MergedField.newMergedFieldFast(field)); // todo: handle case for multi
     }
 
     private boolean doesFragmentConditionMatch(FieldCollectorParameters parameters, InlineFragment inlineFragment) {
