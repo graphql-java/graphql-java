@@ -1,6 +1,8 @@
 package graphql.execution.instrumentation.threadpools;
 
+import com.google.common.annotations.Beta;
 import graphql.Assert;
+import graphql.Internal;
 import graphql.TrivialDataFetcher;
 import graphql.execution.Async;
 import graphql.execution.instrumentation.SimpleInstrumentation;
@@ -35,6 +37,8 @@ import static graphql.execution.instrumentation.threadpools.ExecutorInstrumentat
  * This code uses {@link CompletableFuture#supplyAsync(Supplier, Executor)} and {@link CompletableFuture#thenApplyAsync(Function, Executor)} to transfer
  * control between thread pools.
  */
+@Internal
+@Beta
 public class ExecutorInstrumentation extends SimpleInstrumentation {
 
     private static final Consumer<Action> NOOP = a -> {
