@@ -1,6 +1,7 @@
 package graphql.introspection;
 
 
+import com.google.common.collect.ImmutableSet;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -539,6 +540,12 @@ public class Introspection {
             .type(nonNull(GraphQLString))
             .description("The name of the current Object type at runtime.")
             .build();
+
+    public static final Set<String> INTROSPECTION_SYSTEM_FIELDS = ImmutableSet.of(
+            Introspection.SchemaMetaFieldDef.getName(),
+            Introspection.TypeMetaFieldDef.getName(),
+            Introspection.TypeNameMetaFieldDef.getName()
+    );
 
     public static final IntrospectionDataFetcher<?> SchemaMetaFieldDefDataFetcher = IntrospectionDataFetchingEnvironment::getGraphQLSchema;
 

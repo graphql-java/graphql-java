@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static graphql.introspection.Introspection.INTROSPECTION_SYSTEM_FIELDS;
 import static graphql.introspection.Introspection.isIntrospectionTypes;
 import static graphql.schema.idl.ScalarInfo.isGraphqlSpecifiedScalar;
 
@@ -57,7 +58,6 @@ public class TypeAndFieldRule implements SchemaValidationRule {
 
         checkTypes(filteredType, validationErrorCollector);
     }
-
 
     private void checkTypes(List<GraphQLNamedType> customizedType, SchemaValidationErrorCollector errorCollector) {
         if (customizedType == null || customizedType.isEmpty()) {
@@ -103,7 +103,7 @@ public class TypeAndFieldRule implements SchemaValidationRule {
         }
 
         for (GraphQLInputObjectField inputObjectField : inputObjectFields) {
-            validateInputFieldDefinition(inputObjectField, errorCollector);
+            validateInputFieldDefinition(type.getName(), inputObjectField, errorCollector);
         }
     }
 
@@ -147,6 +147,7 @@ public class TypeAndFieldRule implements SchemaValidationRule {
     }
 
     private void validateFieldDefinition(String typeName, GraphQLFieldDefinition fieldDefinition, SchemaValidationErrorCollector errorCollector) {
+        assertFieldName(typeName, fieldDefinition.getName(), errorCollector);
         assertNonNullType(fieldDefinition.getType(), errorCollector);
 
         List<GraphQLArgument> fieldDefinitionArguments = fieldDefinition.getArguments();
@@ -155,7 +156,8 @@ public class TypeAndFieldRule implements SchemaValidationRule {
         }
     }
 
-    private void validateInputFieldDefinition(GraphQLInputObjectField inputObjectField, SchemaValidationErrorCollector errorCollector) {
+    private void validateInputFieldDefinition(String typeName, GraphQLInputObjectField inputObjectField, SchemaValidationErrorCollector errorCollector) {
+        assertFieldName(typeName, inputObjectField.getName(), errorCollector);
         assertNonNullType(inputObjectField.getType(), errorCollector);
     }
 
@@ -203,12 +205,22 @@ public class TypeAndFieldRule implements SchemaValidationRule {
         return FpKit.filterList(graphQLNamedTypes, filterFunction);
     }
 
-
     @Override
     public void check(GraphQLFieldDefinition fieldDef, SchemaValidationErrorCollector validationErrorCollector) {
     }
 
     @Override
     public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
+    }
+
+    private void assertFieldName(String typeName, String fieldName, SchemaValidationErrorCollector errorCollector) {
+        if (INTROSPECTION_SYSTEM_FIELDS.contains(fieldName)) {
+            return;
+        }
+        if (fieldName.length() >= 2 && fieldName.startsWith("__")) {
+            SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.InvalidCustomizedNameError,
+                    String.format("\"%s\" in \"%s\" must not begin with \"__\", which is reserved by GraphQL introspection.", fieldName, typeName));
+            errorCollector.addError(schemaValidationError);
+        }
     }
 }

@@ -175,6 +175,7 @@ public class GraphQLTypeUtil {
      * and then cast to the target type.
      *
      * @param type the type to unwrapOne
+     * @param <T> for two
      *
      * @return the unwrapped type or the same type again if its not wrapped
      */
@@ -204,6 +205,7 @@ public class GraphQLTypeUtil {
      * and then cast to the target type.
      *
      * @param type the type to unwrapOne
+     * @param <T> for two
      *
      * @return the underlying type
      */
@@ -232,6 +234,7 @@ public class GraphQLTypeUtil {
      * and then cast to the target type.
      *
      * @param type the type to unwrap
+     * @param <T> for two
      *
      * @return the underlying type that is not {@link GraphQLNonNull}
      */
