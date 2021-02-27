@@ -602,4 +602,41 @@ type Query {
         newType.getFieldDefinition("FOO") != null
         newType.getFieldDefinition("BAR") != null
     }
+
+    def "can handle self referencing type"() {
+        def sdl = '''
+            type Query {
+                f : Foo
+            }
+            type Foo {
+                foo : Foo
+                bar : Bar
+            }
+            type Bar {
+                b : EnumType
+            }
+            enum EnumType {
+              E
+            }
+        '''
+        def schema = TestUtil.schema(sdl)
+
+        when:
+        GraphQLSchema newSchema = new SchemaTransformer().transform(schema, new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
+                return changeNode(context, node);
+            }
+
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
+                return changeNode(context, node);
+            }
+        })
+        then:
+        println new SchemaPrinter().print(newSchema)
+        newSchema.getType("QUERY") != null
+    }
 }
