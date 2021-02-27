@@ -1862,4 +1862,55 @@ type PrintMeType {
 """
 
     }
+
+    def "schema with directive prints directive"() {
+        def sdl = """
+            directive @foo on SCHEMA
+            type MyQuery { anything: String }
+            schema @foo {
+                query: MyQuery
+            }
+        """
+        def schema = TestUtil.schema(sdl)
+
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeDirectives(true)).print(schema)
+
+        then:
+        result == """schema @foo{
+  query: MyQuery
+}
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to skip this field or fragment when the `if`'argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @foo on SCHEMA
+
+"Marks the field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ENUM_VALUE
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
+type MyQuery {
+  anything: String
+}
+"""
+    }
+
 }

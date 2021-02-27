@@ -635,6 +635,7 @@ public class SchemaPrinter {
 
     private TypePrinter<GraphQLSchema> schemaPrinter() {
         return (out, schema, visibility) -> {
+            List<GraphQLDirective> schemaDirectives = schema.getSchemaDirectives();
             GraphQLObjectType queryType = schema.getQueryType();
             GraphQLObjectType mutationType = schema.getMutationType();
             GraphQLObjectType subscriptionType = schema.getSubscriptionType();
@@ -656,7 +657,7 @@ public class SchemaPrinter {
             }
 
             if (needsSchemaPrinted) {
-                out.format("schema {\n");
+                out.format("schema %s{\n", directivesString(GraphQLSchemaElement.class, schemaDirectives));
                 if (queryType != null) {
                     out.format("  query: %s\n", queryType.getName());
                 }
@@ -757,7 +758,9 @@ public class SchemaPrinter {
             return "";
         }
         StringBuilder sb = new StringBuilder();
-        sb.append(" ");
+        if (parent != GraphQLSchemaElement.class) {
+            sb.append(" ");
+        }
 
         GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
                 .parentType(parent)
