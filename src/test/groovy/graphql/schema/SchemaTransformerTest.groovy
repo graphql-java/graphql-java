@@ -563,4 +563,43 @@ type Query {
 }
 """
     }
+
+    def "can change a schema element only"() {
+        def sdl = '''
+            type Query {
+                f : Foo
+            }
+            type Foo {
+                foo : Foo
+                bar : Bar
+            }
+            type Bar {
+                b : EnumType
+            }
+            enum EnumType {
+              E
+            }
+        '''
+        def schema = TestUtil.schema(sdl)
+        def oldType = schema.getObjectType("Foo")
+        when:
+        GraphQLObjectType newType = new SchemaTransformer().transform(oldType, new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
+                return changeNode(context, node);
+            }
+
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
+                return changeNode(context, node);
+            }
+        })
+        then:
+        println new SchemaPrinter().print(newType)
+        newType.getName() == "FOO"
+        newType.getFieldDefinition("FOO") != null
+        newType.getFieldDefinition("BAR") != null
+    }
 }
