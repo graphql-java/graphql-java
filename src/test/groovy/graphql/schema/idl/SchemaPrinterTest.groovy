@@ -1866,9 +1866,9 @@ type PrintMeType {
     def "schema with directive prints directive"() {
         def sdl = """
             directive @foo on SCHEMA
-            type Query { anything: String }
+            type MyQuery { anything: String }
             schema @foo {
-                query: Query
+                query: MyQuery
             }
         """
         def schema = TestUtil.schema(sdl)
@@ -1878,7 +1878,7 @@ type PrintMeType {
 
         then:
         result == """schema @foo{
-  query: Query
+  query: MyQuery
 }
 
 "Directs the executor to include this field or fragment only when the `if` argument is true"
@@ -1907,7 +1907,7 @@ directive @specifiedBy(
     url: String!
   ) on SCALAR
 
-type Query {
+type MyQuery {
   anything: String
 }
 """
