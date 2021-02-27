@@ -642,8 +642,7 @@ public class SchemaPrinter {
 
             // when serializing a GraphQL schema using the type system language, a
             // schema definition should be omitted if only uses the default root type names.
-            boolean needsSchemaPrinted = options.isIncludeSchemaDefinition() ||
-                    (this.options.includeDirectiveDefinitions && !schemaDirectives.isEmpty());
+            boolean needsSchemaPrinted = options.isIncludeSchemaDefinition();
 
             if (!needsSchemaPrinted) {
                 if (queryType != null && !queryType.getName().equals("Query")) {
