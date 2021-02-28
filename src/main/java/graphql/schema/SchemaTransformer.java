@@ -1,6 +1,5 @@
 package graphql.schema;
 
-import graphql.Assert;
 import graphql.PublicApi;
 import graphql.util.Breadcrumb;
 import graphql.util.NodeAdapter;
@@ -14,7 +13,6 @@ import graphql.util.TraverserVisitor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -147,7 +145,7 @@ public class SchemaTransformer {
         traverser.rootVar(GraphQLCodeRegistry.Builder.class, builder);
         traverser.traverse(dummyRoot, nodeTraverserVisitor);
 
-        List<Set<GraphQLSchemaElement>> sccs = StrongConnect.getStronglyConnectedComponents(reverseDependencies, typeRefReverseDependencies);
+        List<List<GraphQLSchemaElement>> sccs = SccTopSort.getStronglyConnectedComponents(reverseDependencies, typeRefReverseDependencies);
 
 
         zipUpToDummyRoot(zippers, sccs, breadcrumbsByZipper, zipperByNodeAfterTraversing, reverseDependencies);
@@ -166,75 +164,9 @@ public class SchemaTransformer {
         return schemaBuilder.buildImpl(true);
     }
 
-    private List<GraphQLSchemaElement> topologicalSort(Set<GraphQLSchemaElement> allNodes, Map<GraphQLSchemaElement, List<GraphQLSchemaElement>> reverseDependencies) {
-        List<GraphQLSchemaElement> result = new ArrayList<>();
-        Set<GraphQLSchemaElement> notPermMarked = new LinkedHashSet<>(allNodes);
-        Set<GraphQLSchemaElement> tempMarked = new LinkedHashSet<>();
-        Set<GraphQLSchemaElement> permMarked = new LinkedHashSet<>();
-        /**
-         * Taken from: https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search
-         * while exists nodes without a permanent mark do
-         *     select an unmarked node n
-         *     visit(n)
-         */
-        while (true) {
-            Iterator<GraphQLSchemaElement> iterator = notPermMarked.iterator();
-            if (!iterator.hasNext()) {
-                break;
-            }
-            GraphQLSchemaElement n = iterator.next();
-            iterator.remove();
-            visit(n, tempMarked, permMarked, notPermMarked, result, reverseDependencies, allNodes);
-        }
-        return result;
-    }
-
-    private void visit(GraphQLSchemaElement n,
-                       Set<GraphQLSchemaElement> tempMarked,
-                       Set<GraphQLSchemaElement> permMarked,
-                       Set<GraphQLSchemaElement> notPermMarked,
-                       List<GraphQLSchemaElement> result,
-                       Map<GraphQLSchemaElement, List<GraphQLSchemaElement>> reverseDependencies,
-                       Set<GraphQLSchemaElement> allNodes) {
-        /**
-         * Taken from: https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search
-         * if n has a permanent mark then
-         *         return
-         *     if n has a temporary mark then
-         *         stop   (not a DAG)
-         *
-         *     mark n with a temporary mark
-         *
-         *     for each node m with an edge from n to m do
-         *         visit(m)
-         *
-         *     remove temporary mark from n
-         *     mark n with a permanent mark
-         *     add n to head of L
-         */
-        if (permMarked.contains(n)) {
-            return;
-        }
-        if (tempMarked.contains(n)) {
-            Assert.assertShouldNeverHappen("NOT A DAG: %s has temp mark", n);
-            return;
-        }
-        tempMarked.add(n);
-        if (reverseDependencies.containsKey(n)) {
-            for (GraphQLSchemaElement m : reverseDependencies.get(n)) {
-                if (allNodes.contains(m)) {
-                    visit(m, tempMarked, permMarked, notPermMarked, result, reverseDependencies, allNodes);
-                }
-            }
-        }
-        tempMarked.remove(n);
-        permMarked.add(n);
-        notPermMarked.remove(n);
-        result.add(n);
-    }
 
     private void zipUpToDummyRoot(List<NodeZipper<GraphQLSchemaElement>> zippers,
-                                  List<Set<GraphQLSchemaElement>> topSort,
+                                  List<List<GraphQLSchemaElement>> topSort,
                                   Map<NodeZipper<GraphQLSchemaElement>, List<List<Breadcrumb<GraphQLSchemaElement>>>> breadcrumbsByZipper,
                                   Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> nodeToZipper, Map<GraphQLSchemaElement, List<GraphQLSchemaElement>> reverseDependencies) {
         if (zippers.size() == 0) {
@@ -243,7 +175,7 @@ public class SchemaTransformer {
         Set<NodeZipper<GraphQLSchemaElement>> curZippers = new LinkedHashSet<>(zippers);
 
         for (int i = topSort.size() - 1; i >= 0; i--) {
-            Set<GraphQLSchemaElement> scc = topSort.get(i);
+            List<GraphQLSchemaElement> scc = topSort.get(i);
             boolean sccChanged = false;
             List<GraphQLSchemaElement> unchangedSccElements = new ArrayList<>();
             for (GraphQLSchemaElement element : scc) {
@@ -265,9 +197,8 @@ public class SchemaTransformer {
                 curZippers.add(newZipper);
                 breadcrumbsByZipper.put(newZipper, breadcrumbsForOriginalParent);
             }
-            List<GraphQLSchemaElement> sccTopSort = topologicalSort(scc, reverseDependencies);
-            for (int j = sccTopSort.size() - 1; j >= 0; j--) {
-                GraphQLSchemaElement element = sccTopSort.get(j);
+            for (int j = scc.size() - 1; j >= 0; j--) {
+                GraphQLSchemaElement element = scc.get(j);
                 Map<NodeZipper<GraphQLSchemaElement>, List<Breadcrumb<GraphQLSchemaElement>>> zipperWithSameParent = zipperWithSameParent(element, curZippers, breadcrumbsByZipper);
                 // this means we have a node which doesn't need to be changed
                 if (zipperWithSameParent.size() == 0) {
