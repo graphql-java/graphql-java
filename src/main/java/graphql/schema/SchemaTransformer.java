@@ -11,7 +11,6 @@ import graphql.util.TraversalControl;
 import graphql.util.Traverser;
 import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitor;
-import graphql.util.TreeTransformerUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,6 +30,7 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.schema.GraphQLSchemaElementAdapter.SCHEMA_ELEMENT_ADAPTER;
 import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChildrenContainer;
 import static graphql.util.NodeZipper.ModificationType.REPLACE;
+import static graphql.util.TraversalControl.CONTINUE;
 import static java.lang.String.format;
 
 /**
@@ -234,9 +234,9 @@ public class SchemaTransformer {
                 GraphQLNamedType graphQLNamedType = changedTypes.get(typeRef.getName());
                 if (graphQLNamedType != null) {
                     typeRef = GraphQLTypeReference.typeRef(graphQLNamedType.getName());
-                    return TreeTransformerUtil.changeNode(context, typeRef);
+                    return changedNode(typeRef, context);
                 }
-                return super.visitGraphQLTypeReference(typeRef, context);
+                return CONTINUE;
             }
         };
         traverseAndTransform(dummyRoot, new HashMap<>(), new HashMap<>(), typeRefVisitor, codeRegistry);

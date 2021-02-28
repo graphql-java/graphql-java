@@ -586,13 +586,13 @@ type Query {
             @Override
             TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
                 node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
-                return changeNode(context, node);
+                return changedNode(node, context)
             }
 
             @Override
             TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
                 node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
-                return changeNode(context, node);
+                return changedNode(node, context)
             }
         })
         then:
@@ -626,14 +626,14 @@ type Query {
             @Override
             TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
                 node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
-                return changeNode(context, node);
+                return changedNode(node, context)
             }
 
             @Override
             TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
                 if (node.getName().startsWith("__")) return TraversalControl.ABORT;
                 node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
-                return changeNode(context, node);
+                return changedNode(node, context)
             }
         })
         then:
