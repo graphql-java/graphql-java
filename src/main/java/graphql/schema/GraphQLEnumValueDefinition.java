@@ -190,6 +190,17 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
         return super.hashCode();
     }
 
+    @Override
+    public String toString() {
+        return "GraphQLEnumValueDefinition{" +
+                "name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", value=" + value +
+                ", deprecationReason='" + deprecationReason + '\'' +
+                ", directives=" + directives +
+                ", definition=" + definition +
+                '}';
+    }
 
     public static Builder newEnumValueDefinition() {
         return new Builder();

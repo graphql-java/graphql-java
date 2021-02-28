@@ -20,7 +20,6 @@ import static graphql.util.TreeTransformerUtil.deleteNode
 
 class SchemaTransformerTest extends Specification {
 
-
     def "can change field in schema"() {
         given:
         GraphQLSchema schema = TestUtil.schema("""
@@ -603,7 +602,7 @@ type Query {
         newType.getFieldDefinition("BAR") != null
     }
 
-    def "can handle self referencing type"() {
+    def "can handle self referencing type which require type references"() {
         def sdl = '''
             type Query {
                 f : Foo
@@ -613,10 +612,11 @@ type Query {
                 bar : Bar
             }
             type Bar {
-                b : EnumType
+                foo : Foo
+                enum : EnumType
             }
             enum EnumType {
-              E
+              e
             }
         '''
         def schema = TestUtil.schema(sdl)
@@ -637,7 +637,20 @@ type Query {
             }
         })
         then:
-        println new SchemaPrinter().print(newSchema)
-        newSchema.getType("QUERY") != null
+
+        // all our fields are upper case as are our object types
+        def queryType = newSchema.getObjectType("QUERY")
+        def fooType = newSchema.getObjectType("FOO")
+        def barType = newSchema.getObjectType("BAR")
+        def enumType = newSchema.getType("EnumType") as GraphQLEnumType
+
+        queryType.getFieldDefinition("F").getType().is(fooType) // groovy object equality
+        fooType.getFieldDefinition("FOO").getType().is(fooType)
+        fooType.getFieldDefinition("BAR").getType().is(barType)
+
+        barType.getFieldDefinition("FOO").getType().is(fooType)
+        barType.getFieldDefinition("ENUM").getType().is(enumType)
+
+        enumType.getValue("e") != null // left alone
     }
 }
