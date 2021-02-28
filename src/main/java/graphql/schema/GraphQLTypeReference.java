@@ -51,6 +51,13 @@ public class GraphQLTypeReference implements GraphQLNamedOutputType, GraphQLName
     }
 
     @Override
+    public String toString() {
+        return "GraphQLTypeReference{" +
+                "name='" + name + '\'' +
+                '}';
+    }
+
+    @Override
     public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLTypeReference(this, context);
     }
