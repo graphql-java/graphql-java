@@ -1,10 +1,9 @@
 package graphql.schema;
 
 
-import graphql.AssertException;
-import graphql.DirectivesUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.EnumTypeDefinition;
@@ -220,6 +219,12 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         builderConsumer.accept(builder);
         return builder.build();
     }
+
+    @Override
+    public GraphQLSchemaElement copy() {
+        return newEnum(this).build();
+    }
+
 
     @Override
     public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {

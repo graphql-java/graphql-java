@@ -84,6 +84,7 @@ public class SchemaTransformer {
         Map<NodeZipper<GraphQLSchemaElement>, List<List<Breadcrumb<GraphQLSchemaElement>>>> breadcrumbsByZipper = new LinkedHashMap<>();
 
         Map<GraphQLSchemaElement, List<GraphQLSchemaElement>> reverseDependencies = new LinkedHashMap<>();
+        Map<String, List<GraphQLSchemaElement>> typeRefReverseDependencies = new LinkedHashMap<>();
 
         TraverserVisitor<GraphQLSchemaElement> nodeTraverserVisitor = new TraverserVisitor<GraphQLSchemaElement>() {
             @Override
@@ -113,6 +114,11 @@ public class SchemaTransformer {
                 breadcrumbsByZipper.get(nodeZipper).add(context.getBreadcrumbs());
                 if (nodeZipper.getModificationType() != NodeZipper.ModificationType.DELETE) {
                     reverseDependencies.computeIfAbsent(context.thisNode(), ign -> new ArrayList<>()).add(context.getParentNode());
+
+                    if (context.originalThisNode() instanceof GraphQLTypeReference) {
+                        String typeName = ((GraphQLTypeReference) context.originalThisNode()).getName();
+                        typeRefReverseDependencies.computeIfAbsent(typeName, ign -> new ArrayList<>()).add(context.getParentNode());
+                    }
                 }
                 return result;
 
@@ -141,10 +147,12 @@ public class SchemaTransformer {
         traverser.rootVar(GraphQLCodeRegistry.Builder.class, builder);
         traverser.traverse(dummyRoot, nodeTraverserVisitor);
 
+        StrongConnect strongConnect = new StrongConnect(reverseDependencies, typeRefReverseDependencies);
+        List<Set<GraphQLSchemaElement>> sccs = strongConnect.getStronglyConnectedComponents();
 
-        List<GraphQLSchemaElement> topologicalSort = topologicalSort(zipperByNodeAfterTraversing.keySet(), reverseDependencies);
+//        List<GraphQLSchemaElement> topologicalSort = topologicalSort(zipperByNodeAfterTraversing.keySet(), reverseDependencies);
 
-        zipUpToDummyRoot(zippers, topologicalSort, breadcrumbsByZipper, zipperByNodeAfterTraversing);
+        zipUpToDummyRoot(zippers, sccs, breadcrumbsByZipper, zipperByNodeAfterTraversing, reverseDependencies);
 
         GraphQLSchema.Builder schemaBuilder = GraphQLSchema.newSchema()
                 .query(dummyRoot.query)
@@ -178,7 +186,7 @@ public class SchemaTransformer {
             }
             GraphQLSchemaElement n = iterator.next();
             iterator.remove();
-            visit(n, tempMarked, permMarked, notPermMarked, result, reverseDependencies);
+            visit(n, tempMarked, permMarked, notPermMarked, result, reverseDependencies, allNodes);
         }
         return result;
     }
@@ -188,7 +196,8 @@ public class SchemaTransformer {
                        Set<GraphQLSchemaElement> permMarked,
                        Set<GraphQLSchemaElement> notPermMarked,
                        List<GraphQLSchemaElement> result,
-                       Map<GraphQLSchemaElement, List<GraphQLSchemaElement>> reverseDependencies) {
+                       Map<GraphQLSchemaElement, List<GraphQLSchemaElement>> reverseDependencies,
+                       Set<GraphQLSchemaElement> allNodes) {
         /**
          * Taken from: https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search
          * if n has a permanent mark then
@@ -215,7 +224,9 @@ public class SchemaTransformer {
         tempMarked.add(n);
         if (reverseDependencies.containsKey(n)) {
             for (GraphQLSchemaElement m : reverseDependencies.get(n)) {
-                visit(m, tempMarked, permMarked, notPermMarked, result, reverseDependencies);
+                if (allNodes.contains(m)) {
+                    visit(m, tempMarked, permMarked, notPermMarked, result, reverseDependencies, allNodes);
+                }
             }
         }
         tempMarked.remove(n);
@@ -225,40 +236,87 @@ public class SchemaTransformer {
     }
 
     private void zipUpToDummyRoot(List<NodeZipper<GraphQLSchemaElement>> zippers,
-                                  List<GraphQLSchemaElement> topSort,
+                                  List<Set<GraphQLSchemaElement>> topSort,
                                   Map<NodeZipper<GraphQLSchemaElement>, List<List<Breadcrumb<GraphQLSchemaElement>>>> breadcrumbsByZipper,
-                                  Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> nodeToZipper) {
+                                  Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> nodeToZipper, Map<GraphQLSchemaElement, List<GraphQLSchemaElement>> reverseDependencies) {
         if (zippers.size() == 0) {
             return;
         }
         Set<NodeZipper<GraphQLSchemaElement>> curZippers = new LinkedHashSet<>(zippers);
 
         for (int i = topSort.size() - 1; i >= 0; i--) {
-            GraphQLSchemaElement element = topSort.get(i);
-            // that the map goes from  zipper -> one List (= one path) is because we know that in a schema one element
-            // has never two different edges to another element
-            Map<NodeZipper<GraphQLSchemaElement>, List<Breadcrumb<GraphQLSchemaElement>>> zipperWithSameParent = zipperWithSameParent(element, curZippers, breadcrumbsByZipper);
-            // this means we have a node which doesn't need to be changed
-            if (zipperWithSameParent.size() == 0) {
+            Set<GraphQLSchemaElement> scc = topSort.get(i);
+            boolean sccChanged = false;
+            List<GraphQLSchemaElement> unchangedSccElements = new ArrayList<>();
+            for (GraphQLSchemaElement element : scc) {
+                Map<NodeZipper<GraphQLSchemaElement>, List<Breadcrumb<GraphQLSchemaElement>>> zipperWithSameParent = zipperWithSameParent(element, curZippers, breadcrumbsByZipper);
+                if (zipperWithSameParent.size() > 0) {
+                    sccChanged = true;
+                } else {
+                    unchangedSccElements.add(element);
+                }
+            }
+            if (!sccChanged) {
                 continue;
             }
-            NodeZipper<GraphQLSchemaElement> newZipper = moveUp(element, zipperWithSameParent);
-            if (element instanceof DummyRoot) {
-                // this means we have updated the dummy root and we are done (dummy root is a special as it gets updated in place, see Implementation of DummyRoot)
-                break;
+            // we need to change all elements inside the current SCC
+            for (GraphQLSchemaElement element : unchangedSccElements) {
+                NodeZipper<GraphQLSchemaElement> originalZipper = nodeToZipper.get(element);
+                List<List<Breadcrumb<GraphQLSchemaElement>>> breadcrumbsForOriginalParent = breadcrumbsByZipper.get(originalZipper);
+                NodeZipper<GraphQLSchemaElement> newZipper = originalZipper.withNewNode(element.copy());
+                curZippers.add(newZipper);
+                breadcrumbsByZipper.put(newZipper, breadcrumbsForOriginalParent);
             }
+            List<GraphQLSchemaElement> sccTopSort = topologicalSort(scc, reverseDependencies);
+            for (int j = sccTopSort.size() - 1; j >= 0; j--) {
+                GraphQLSchemaElement element = sccTopSort.get(j);
+                Map<NodeZipper<GraphQLSchemaElement>, List<Breadcrumb<GraphQLSchemaElement>>> zipperWithSameParent = zipperWithSameParent(element, curZippers, breadcrumbsByZipper);
+                // this means we have a node which doesn't need to be changed
+                if (zipperWithSameParent.size() == 0) {
+                    continue;
+                }
+                NodeZipper<GraphQLSchemaElement> newZipper = moveUp(element, zipperWithSameParent);
 
-            // update curZippers
-            NodeZipper<GraphQLSchemaElement> curZipperForElement = nodeToZipper.get(element);
-            assertNotNull(curZipperForElement, () -> format("curZipperForElement is null for parentNode %s", element));
-            curZippers.remove(curZipperForElement);
-            curZippers.add(newZipper);
+                if (element instanceof DummyRoot) {
+                    // this means we have updated the dummy root and we are done (dummy root is a special as it gets updated in place, see Implementation of DummyRoot)
+                    break;
+                }
 
-            // update breadcrumbsByZipper to use the newZipper
-            List<List<Breadcrumb<GraphQLSchemaElement>>> breadcrumbsForOriginalParent = breadcrumbsByZipper.get(curZipperForElement);
-            assertNotNull(breadcrumbsForOriginalParent, () -> format("No breadcrumbs found for zipper %s", curZipperForElement));
-            breadcrumbsByZipper.remove(curZipperForElement);
-            breadcrumbsByZipper.put(newZipper, breadcrumbsForOriginalParent);
+                // update curZippers
+                NodeZipper<GraphQLSchemaElement> curZipperForElement = nodeToZipper.get(element);
+                assertNotNull(curZipperForElement, () -> format("curZipperForElement is null for parentNode %s", element));
+                curZippers.remove(curZipperForElement);
+                curZippers.add(newZipper);
+
+                // update breadcrumbsByZipper to use the newZipper
+                List<List<Breadcrumb<GraphQLSchemaElement>>> breadcrumbsForOriginalParent = breadcrumbsByZipper.get(curZipperForElement);
+                assertNotNull(breadcrumbsForOriginalParent, () -> format("No breadcrumbs found for zipper %s", curZipperForElement));
+                breadcrumbsByZipper.remove(curZipperForElement);
+                breadcrumbsByZipper.put(newZipper, breadcrumbsForOriginalParent);
+
+            }
+//            if (sccChanged && unchangedSccElements.size() > 0) {
+//                for (GraphQLSchemaElement element : unchangedSccElements) {
+//                    curZippers.add(nodeToZipper.get(element));
+//                }
+//                for(GraphQLSchemaElement element: unchangedSccElements)  {
+//                    Map<NodeZipper<GraphQLSchemaElement>, List<Breadcrumb<GraphQLSchemaElement>>> zipperWithSameParent = zipperWithSameParent(element, curZippers, breadcrumbsByZipper);
+//                    NodeZipper<GraphQLSchemaElement> newZipper = moveUp(element, zipperWithSameParent);
+//
+//                    // update curZippers
+//                    NodeZipper<GraphQLSchemaElement> curZipperForElement = nodeToZipper.get(element);
+//                    assertNotNull(curZipperForElement, () -> format("curZipperForElement is null for parentNode %s", element));
+//                    curZippers.remove(curZipperForElement);
+//                    curZippers.add(newZipper);
+//
+//                    // update breadcrumbsByZipper to use the newZipper
+//                    List<List<Breadcrumb<GraphQLSchemaElement>>> breadcrumbsForOriginalParent = breadcrumbsByZipper.get(curZipperForElement);
+//                    assertNotNull(breadcrumbsForOriginalParent, () -> format("No breadcrumbs found for zipper %s", curZipperForElement));
+//                    breadcrumbsByZipper.remove(curZipperForElement);
+//                    breadcrumbsByZipper.put(newZipper, breadcrumbsForOriginalParent);
+//
+//                }
+
 
         }
     }
@@ -269,6 +327,9 @@ public class SchemaTransformer {
         Map<NodeZipper<GraphQLSchemaElement>, List<Breadcrumb<GraphQLSchemaElement>>> result = new LinkedHashMap<>();
         outer:
         for (NodeZipper<GraphQLSchemaElement> zipper : zippers) {
+            if (curBreadcrumbsByZipper.get(zipper) == null) {
+                System.out.println("WRONG: " + zipper);
+            }
             for (List<Breadcrumb<GraphQLSchemaElement>> path : curBreadcrumbsByZipper.get(zipper)) {
                 if (path.get(0).getNode() == parent) {
                     result.put(zipper, path);
@@ -392,6 +453,10 @@ public class SchemaTransformer {
             directives = new LinkedHashSet<>(schema.getDirectives());
         }
 
+        @Override
+        public GraphQLSchemaElement copy() {
+            return assertShouldNeverHappen();
+        }
 
         @Override
         public List<GraphQLSchemaElement> getChildren() {

@@ -36,6 +36,7 @@ public interface GraphQLSchemaElement {
      * to treat a GraphQLSchema as an abstract graph.
      *
      * @param obj the reference object with which to compare.
+     *
      * @return {@code true} if this object is the same as the obj
      * argument; {@code false} otherwise.
      */
@@ -48,4 +49,11 @@ public interface GraphQLSchemaElement {
      * @return a hash code value for this object.
      */
     int hashCode();
+
+    /**
+     * Copy this element by preserving the original children before type references are replaced.
+     *
+     * @return
+     */
+    GraphQLSchemaElement copy();
 }

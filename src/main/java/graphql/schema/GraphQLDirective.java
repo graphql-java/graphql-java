@@ -117,6 +117,12 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
     }
 
     @Override
+    public GraphQLSchemaElement copy() {
+        return newDirective(this).build();
+    }
+
+
+    @Override
     public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLDirective(this, context);
     }

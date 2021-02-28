@@ -200,6 +200,12 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     }
 
     @Override
+    public GraphQLSchemaElement copy() {
+        return newInterface(this).build();
+    }
+
+
+    @Override
     public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLInterfaceType(this, context);
     }

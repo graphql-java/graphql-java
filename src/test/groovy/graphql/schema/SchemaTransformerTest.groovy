@@ -563,4 +563,44 @@ type Query {
 }
 """
     }
+
+    def "cycle with type refs"() {
+        given:
+        def field = newFieldDefinition()
+                .name("foo")
+                .type(typeRef("Foo"))
+                .build()
+
+        def query = newObject()
+                .name("Query")
+                .field(field)
+                .build()
+        def foo = newObject()
+                .name("Foo")
+                .field(newFieldDefinition().name("toChange").type(Scalars.GraphQLString))
+                .field(newFieldDefinition().name("subFoo").type(typeRef("Foo")))
+                .build()
+
+
+        GraphQLSchema schema = newSchema().query(query).additionalType(foo).build()
+        def fieldChanger = new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node,
+                                                         TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getName() == "toChange") {
+                    changeNode(context, node.transform({ builder -> builder.name("changed") }))
+                }
+                return TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        def newSchema = SchemaTransformer.transformSchema(schema, fieldChanger)
+
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
+        def newFoo = newSchema.getQueryType().getFieldDefinition("foo").getType() as GraphQLObjectType
+        then:
+        newFoo.getFieldDefinition("changed") != null
+    }
 }

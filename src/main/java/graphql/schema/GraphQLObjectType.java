@@ -112,6 +112,17 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         this.fieldDefinitionsByName = buildDefinitionMap(fieldDefinitions);
     }
 
+    private GraphQLObjectType(GraphQLObjectType existing) {
+        this.name = existing.name;
+        this.description = existing.description;
+        this.interfaceComparator = existing.interfaceComparator;
+        this.originalInterfaces = ImmutableList.copyOf(existing.originalInterfaces);
+        this.definition = existing.definition;
+        this.extensionDefinitions = ImmutableList.copyOf(existing.extensionDefinitions);
+        this.directives = new DirectivesUtil.DirectivesHolder(existing.getDirectives());
+        this.fieldDefinitionsByName = buildDefinitionMap(existing.getFieldDefinitions());
+    }
+
     void replaceInterfaces(List<GraphQLNamedOutputType> interfaces) {
         this.replacedInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
     }
@@ -200,6 +211,11 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         Builder builder = newObject(this);
         builderConsumer.accept(builder);
         return builder.build();
+    }
+
+    @Override
+    public GraphQLSchemaElement copy() {
+        return newObject(this).build();
     }
 
     @Override

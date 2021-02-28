@@ -197,6 +197,12 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
                         .replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES)));
     }
 
+    @Override
+    public GraphQLSchemaElement copy() {
+        return newArgument(this).build();
+    }
+
+
     /**
      * {@inheritDoc}
      */

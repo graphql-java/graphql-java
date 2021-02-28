@@ -1,7 +1,6 @@
 package graphql.schema;
 
 
-import com.google.common.collect.ImmutableList;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -10,14 +9,12 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
-import static graphql.util.FpKit.getByName;
 import static java.util.Collections.emptyList;
 
 /**
@@ -152,6 +149,12 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         builderConsumer.accept(builder);
         return builder.build();
     }
+
+    @Override
+    public GraphQLSchemaElement copy() {
+        return newInputObjectField(this).build();
+    }
+
 
     @Override
     public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
