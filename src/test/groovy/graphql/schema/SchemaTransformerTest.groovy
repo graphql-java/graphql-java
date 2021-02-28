@@ -631,6 +631,7 @@ type Query {
 
             @Override
             TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getName().startsWith("__")) return TraversalControl.ABORT;
                 node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
                 return changeNode(context, node);
             }

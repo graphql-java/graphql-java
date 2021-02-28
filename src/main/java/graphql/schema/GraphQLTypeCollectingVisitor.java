@@ -34,7 +34,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
 
     @Override
     public TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
-        if (isTypeReference(node.getName())) {
+        if (isNotTypeReference(node.getName())) {
             assertTypeUniqueness(node, result);
         } else {
             save(node.getName(), node);
@@ -44,7 +44,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
 
     @Override
     public TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType node, TraverserContext<GraphQLSchemaElement> context) {
-        if (isTypeReference(node.getName())) {
+        if (isNotTypeReference(node.getName())) {
             assertTypeUniqueness(node, result);
         } else {
             save(node.getName(), node);
@@ -54,7 +54,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
 
     @Override
     public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLSchemaElement> context) {
-        if (isTypeReference(node.getName())) {
+        if (isNotTypeReference(node.getName())) {
             assertTypeUniqueness(node, result);
         } else {
             save(node.getName(), node);
@@ -76,8 +76,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
         return super.visitGraphQLFieldDefinition(node, context);
     }
 
-    // TODO: eh? Isn't it similar to assertTypeUniqueness?
-    private boolean isTypeReference(String name) {
+    private boolean isNotTypeReference(String name) {
         return result.containsKey(name) && !(result.get(name) instanceof GraphQLTypeReference);
     }
 

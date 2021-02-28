@@ -82,7 +82,7 @@ public class SchemaTransformer {
         public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
             SchemaElementChildrenContainer.Builder builder = newSchemaElementChildrenContainer();
             if (schemaElement != null) {
-                builder.child(SCHEMA_ELEMENT,schemaElement);
+                builder.child(SCHEMA_ELEMENT, schemaElement);
             } else {
                 builder.child(QUERY, query);
                 if (schema.isSupportingMutations()) {
@@ -184,6 +184,7 @@ public class SchemaTransformer {
         Map<NodeZipper<GraphQLSchemaElement>, List<List<Breadcrumb<GraphQLSchemaElement>>>> breadcrumbsByZipper = new LinkedHashMap<>();
 
         Map<GraphQLSchemaElement, List<GraphQLSchemaElement>> reverseDependencies = new LinkedHashMap<>();
+        Map<String, String> typeNameMappings = new LinkedHashMap<>();
 
         TraverserVisitor<GraphQLSchemaElement> nodeTraverserVisitor = new TraverserVisitor<GraphQLSchemaElement>() {
             @Override
@@ -200,6 +201,13 @@ public class SchemaTransformer {
                 // detection if the node was changed
                 if (zippersBefore + 1 == zippers.size()) {
                     nodeZipper = zippers.get(zippers.size() - 1);
+                    if (context.originalThisNode() instanceof GraphQLNamedType) {
+                        GraphQLNamedType originalNamedType = (GraphQLNamedType) context.originalThisNode();
+                        GraphQLNamedType changedNamedType = (GraphQLNamedType) context.thisNode();
+                        if (!originalNamedType.getName().equals(changedNamedType.getName())) {
+                            typeNameMappings.put(originalNamedType.getName(), changedNamedType.getName());
+                        }
+                    }
                 }
                 zipperByOriginalNode.put(context.originalThisNode(), nodeZipper);
 
@@ -243,6 +251,7 @@ public class SchemaTransformer {
 
         traverser.traverse(dummyRoot, nodeTraverserVisitor);
 
+        System.out.println(typeNameMappings);
 
         List<GraphQLSchemaElement> topologicalSort = topologicalSort(zipperByNodeAfterTraversing.keySet(), reverseDependencies);
 
