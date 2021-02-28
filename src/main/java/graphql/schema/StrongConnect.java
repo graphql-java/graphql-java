@@ -27,20 +27,28 @@ public class StrongConnect {
     private final Map<String, List<GraphQLSchemaElement>> typeRefReverseDependencies;
 
 
-    public StrongConnect(Map<GraphQLSchemaElement, List<GraphQLSchemaElement>> reverseDependencies,
-                         Map<String, List<GraphQLSchemaElement>> typeRefReverseDependencies) {
+    private StrongConnect(Map<GraphQLSchemaElement, List<GraphQLSchemaElement>> reverseDependencies,
+                          Map<String, List<GraphQLSchemaElement>> typeRefReverseDependencies) {
         this.reverseDependencies = reverseDependencies;
         this.typeRefReverseDependencies = typeRefReverseDependencies;
     }
 
-    public List<Set<GraphQLSchemaElement>> getStronglyConnectedComponents() {
+    public static List<Set<GraphQLSchemaElement>> getStronglyConnectedComponents(
+            Map<GraphQLSchemaElement, List<GraphQLSchemaElement>> reverseDependencies,
+            Map<String, List<GraphQLSchemaElement>> typeRefReverseDependencies
+    ) {
+        StrongConnect strongConnect = new StrongConnect(reverseDependencies, typeRefReverseDependencies);
+        strongConnect.calculate();
+        return strongConnect.result;
+    }
+
+    private void calculate() {
         index = 0;
         for (GraphQLSchemaElement v : reverseDependencies.keySet()) {
             if (nodeToIndex.get(v) == null) {
                 strongConnect(v);
             }
         }
-        return result;
     }
 
     private void strongConnect(GraphQLSchemaElement v) {

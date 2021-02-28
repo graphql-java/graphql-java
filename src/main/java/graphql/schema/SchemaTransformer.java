@@ -147,10 +147,8 @@ public class SchemaTransformer {
         traverser.rootVar(GraphQLCodeRegistry.Builder.class, builder);
         traverser.traverse(dummyRoot, nodeTraverserVisitor);
 
-        StrongConnect strongConnect = new StrongConnect(reverseDependencies, typeRefReverseDependencies);
-        List<Set<GraphQLSchemaElement>> sccs = strongConnect.getStronglyConnectedComponents();
+        List<Set<GraphQLSchemaElement>> sccs = StrongConnect.getStronglyConnectedComponents(reverseDependencies, typeRefReverseDependencies);
 
-//        List<GraphQLSchemaElement> topologicalSort = topologicalSort(zipperByNodeAfterTraversing.keySet(), reverseDependencies);
 
         zipUpToDummyRoot(zippers, sccs, breadcrumbsByZipper, zipperByNodeAfterTraversing, reverseDependencies);
 
@@ -295,28 +293,6 @@ public class SchemaTransformer {
                 breadcrumbsByZipper.put(newZipper, breadcrumbsForOriginalParent);
 
             }
-//            if (sccChanged && unchangedSccElements.size() > 0) {
-//                for (GraphQLSchemaElement element : unchangedSccElements) {
-//                    curZippers.add(nodeToZipper.get(element));
-//                }
-//                for(GraphQLSchemaElement element: unchangedSccElements)  {
-//                    Map<NodeZipper<GraphQLSchemaElement>, List<Breadcrumb<GraphQLSchemaElement>>> zipperWithSameParent = zipperWithSameParent(element, curZippers, breadcrumbsByZipper);
-//                    NodeZipper<GraphQLSchemaElement> newZipper = moveUp(element, zipperWithSameParent);
-//
-//                    // update curZippers
-//                    NodeZipper<GraphQLSchemaElement> curZipperForElement = nodeToZipper.get(element);
-//                    assertNotNull(curZipperForElement, () -> format("curZipperForElement is null for parentNode %s", element));
-//                    curZippers.remove(curZipperForElement);
-//                    curZippers.add(newZipper);
-//
-//                    // update breadcrumbsByZipper to use the newZipper
-//                    List<List<Breadcrumb<GraphQLSchemaElement>>> breadcrumbsForOriginalParent = breadcrumbsByZipper.get(curZipperForElement);
-//                    assertNotNull(breadcrumbsForOriginalParent, () -> format("No breadcrumbs found for zipper %s", curZipperForElement));
-//                    breadcrumbsByZipper.remove(curZipperForElement);
-//                    breadcrumbsByZipper.put(newZipper, breadcrumbsForOriginalParent);
-//
-//                }
-
 
         }
     }
@@ -327,9 +303,6 @@ public class SchemaTransformer {
         Map<NodeZipper<GraphQLSchemaElement>, List<Breadcrumb<GraphQLSchemaElement>>> result = new LinkedHashMap<>();
         outer:
         for (NodeZipper<GraphQLSchemaElement> zipper : zippers) {
-            if (curBreadcrumbsByZipper.get(zipper) == null) {
-                System.out.println("WRONG: " + zipper);
-            }
             for (List<Breadcrumb<GraphQLSchemaElement>> path : curBreadcrumbsByZipper.get(zipper)) {
                 if (path.get(0).getNode() == parent) {
                     result.put(zipper, path);
