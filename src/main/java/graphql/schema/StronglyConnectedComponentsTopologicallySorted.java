@@ -24,7 +24,7 @@ import java.util.Set;
  * The inner sort algorithm is from https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search
  */
 @Internal
-public class SccTopSort {
+public class StronglyConnectedComponentsTopologicallySorted {
 
     private int index;
     private final Map<GraphQLSchemaElement, Integer> nodeToIndex = new LinkedHashMap<>();
@@ -38,17 +38,17 @@ public class SccTopSort {
     private final Map<String, List<GraphQLSchemaElement>> typeRefReverseDependencies;
 
 
-    private SccTopSort(Map<GraphQLSchemaElement, List<GraphQLSchemaElement>> reverseDependencies,
-                       Map<String, List<GraphQLSchemaElement>> typeRefReverseDependencies) {
+    private StronglyConnectedComponentsTopologicallySorted(Map<GraphQLSchemaElement, List<GraphQLSchemaElement>> reverseDependencies,
+                                                           Map<String, List<GraphQLSchemaElement>> typeRefReverseDependencies) {
         this.reverseDependencies = reverseDependencies;
         this.typeRefReverseDependencies = typeRefReverseDependencies;
     }
 
-    public static List<List<GraphQLSchemaElement>> getStronglyConnectedComponents(
+    public static List<List<GraphQLSchemaElement>> getStronglyConnectedComponentsTopologicallySorted(
             Map<GraphQLSchemaElement, List<GraphQLSchemaElement>> reverseDependencies,
             Map<String, List<GraphQLSchemaElement>> typeRefReverseDependencies
     ) {
-        SccTopSort sccTopSort = new SccTopSort(reverseDependencies, typeRefReverseDependencies);
+        StronglyConnectedComponentsTopologicallySorted sccTopSort = new StronglyConnectedComponentsTopologicallySorted(reverseDependencies, typeRefReverseDependencies);
         sccTopSort.calculate();
         return sccTopSort.result;
     }
@@ -57,12 +57,12 @@ public class SccTopSort {
         index = 0;
         for (GraphQLSchemaElement v : reverseDependencies.keySet()) {
             if (nodeToIndex.get(v) == null) {
-                strongConnect(v);
+                stronglyConnect(v);
             }
         }
     }
 
-    private void strongConnect(GraphQLSchemaElement v) {
+    private void stronglyConnect(GraphQLSchemaElement v) {
         nodeToIndex.put(v, index);
         nodeToLowLink.put(v, index);
         index++;
@@ -82,7 +82,7 @@ public class SccTopSort {
         }
         for (GraphQLSchemaElement w : dependencies) {
             if (nodeToIndex.get(w) == null) {
-                strongConnect(w);
+                stronglyConnect(w);
                 nodeToLowLink.put(v, Math.min(nodeToLowLink.get(v), nodeToLowLink.get(w)));
             } else if (Boolean.TRUE.equals(nodeToOnStack.get(w))) {
                 nodeToLowLink.put(v, Math.min(nodeToLowLink.get(v), nodeToIndex.get(w)));
@@ -96,16 +96,16 @@ public class SccTopSort {
                 nodeToOnStack.put(w, false);
                 newSCC.add(w);
             } while (w != v);
-            result.add(topologicalSort(newSCC));
+            result.add(topologicallySort(newSCC));
         }
     }
 
-    private List<GraphQLSchemaElement> topologicalSort(Set<GraphQLSchemaElement> allNodes) {
+    private List<GraphQLSchemaElement> topologicallySort(Set<GraphQLSchemaElement> allNodes) {
         List<GraphQLSchemaElement> result = new ArrayList<>();
         Set<GraphQLSchemaElement> notPermMarked = new LinkedHashSet<>(allNodes);
         Set<GraphQLSchemaElement> tempMarked = new LinkedHashSet<>();
         Set<GraphQLSchemaElement> permMarked = new LinkedHashSet<>();
-        /**
+        /*
          * Taken from: https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search
          * while exists nodes without a permanent mark do
          *     select an unmarked node n
@@ -129,7 +129,7 @@ public class SccTopSort {
                        Set<GraphQLSchemaElement> notPermMarked,
                        List<GraphQLSchemaElement> result,
                        Set<GraphQLSchemaElement> allNodes) {
-        /**
+        /*
          * Taken from: https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search
          * if n has a permanent mark then
          *         return
@@ -149,7 +149,8 @@ public class SccTopSort {
             return;
         }
         if (tempMarked.contains(n)) {
-            Assert.assertShouldNeverHappen("NOT A DAG: %s has temp mark", n);
+            // https://en.wikipedia.org/wiki/Directed_acyclic_graph
+            Assert.assertShouldNeverHappen("This schema is not forming an Directed Acyclic Graph : %s has already has a temporary mark", n);
             return;
         }
         tempMarked.add(n);
