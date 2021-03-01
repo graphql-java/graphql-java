@@ -502,6 +502,7 @@ public class SchemaTransformer {
                     .subscription(this.subscription)
                     .additionalTypes(this.additionalTypes)
                     .additionalDirectives(this.directives)
+                    .introspectionSchemaType(this.introspectionSchemaType)
                     .withSchemaDirectives(this.schemaDirectives)
                     .codeRegistry(codeRegistry.build())
                     .description(schema.getDescription())

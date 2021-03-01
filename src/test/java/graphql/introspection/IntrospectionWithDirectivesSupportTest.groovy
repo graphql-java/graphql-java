@@ -11,8 +11,11 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
 
     def "can find directives in introspection"() {
         def sdl = '''
-            directive @example( argName : String = "default") on OBJECT | FIELD_DEFINITION | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+            directive @example( argName : String = "default") on OBJECT | FIELD_DEFINITION | INPUT_OBJECT | INPUT_FIELD_DEFINITION | SCHEMA
             
+            schema @example(argName : "onSchema") {
+                query : Query
+            }
             
             type Query @example(argName : "onQuery") {
                 hello : Hello @deprecated
@@ -37,46 +40,41 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
         def query = '''
         {
             __schema {
+                appliedDirectives {
+                    name
+                    args {
+                        name
+                        value
+                    }                             
+                }
                 types {
                     name
-                     extensions {
-                        directives {
+                    appliedDirectives {
+                        name
+                        args {
+                            name
+                            value
+                        }                             
+                    }
+                    fields(includeDeprecated:true) {
+                        name
+                        appliedDirectives {
                             name
                             args {
                                 name
-                                extensions {
-                                    value
-                                }  
+                                value
                             }                             
                         }
-                   }
-                   fields(includeDeprecated:true) {
-                        name
-                        extensions {
-                            directives {
-                                name
-                                args {
-                                    name
-                                    extensions {
-                                        value
-                                    }  
-                                }                             
-                            }
-                       }
                     }
                     inputFields {
                         name
-                        extensions {
-                            directives {
+                        appliedDirectives {
+                            name
+                            args {
                                 name
-                                args {
-                                    name
-                                    extensions {
-                                        value
-                                    }  
-                                }                             
-                            }
-                       }
+                                value
+                            }                             
+                        }
                     }
                 }
             }
@@ -90,18 +88,21 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
         er.errors.isEmpty()
         println TestUtil.prettyPrint(er)
 
+        def schemaType = er.data["__schema"]
+        schemaType["appliedDirectives"] == [[name: "example", args: [[name: "argName", value: '"onSchema"']]]]
+
         def queryType = er.data["__schema"]["types"].find({ type -> (type["name"] == "Query") })
-        queryType["extensions"]["directives"] == [[name: "example", args: [[name: "argName", extensions: [value: '"onQuery"']]]]]
+        queryType["appliedDirectives"] == [[name: "example", args: [[name: "argName", value: '"onQuery"']]]]
 
         def helloType = er.data["__schema"]["types"].find({ type -> (type["name"] == "Hello") })
-        helloType["extensions"]["directives"] == [[name: "example", args: [[name: "argName", extensions: [value: '"default"']]]]]
+        helloType["appliedDirectives"] == [[name: "example", args: [[name: "argName", value: '"default"']]]]
 
         def worldField = helloType["fields"].find({ type -> (type["name"] == "world") })
-        worldField["extensions"]["directives"] == [[name: 'deprecated', args: [[name: 'reason', extensions: [value: '"No longer supported"']]]]]
+        worldField["appliedDirectives"] == [[name: 'deprecated', args: [[name: 'reason', value: '"No longer supported"']]]]
 
         def inputType = er.data["__schema"]["types"].find({ type -> (type["name"] == "InputType") })
         def inputField = inputType["inputFields"].find({ type -> (type["name"] == "inputField") })
-        inputField["extensions"]["directives"] == [[name: 'example', args: [[name: 'argName', extensions: [value: '"onInputField"']]]]]
+        inputField["appliedDirectives"] == [[name: 'example', args: [[name: 'argName', value: '"onInputField"']]]]
 
     }
 
@@ -135,17 +136,13 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
             __schema {
                 types {
                     name
-                     extensions {
-                        directives {
+                    appliedDirectives {
+                        name
+                        args {
                             name
-                            args {
-                                name
-                                extensions {
-                                    value
-                                }  
-                            }                             
-                        }
-                   }
+                            value
+                        }                             
+                    }
                 }
             }
         }
@@ -158,6 +155,6 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
         er.errors.isEmpty()
 
         def helloType = er.data["__schema"]["types"].find({ type -> (type["name"] == "Hello") })
-        helloType["extensions"]["directives"] == [[name: "example", args: [[name: "argName", extensions: [value: '"default"']]]]]
+        helloType["appliedDirectives"] == [[name: "example", args: [[name: "argName", value: '"default"']]]]
     }
 }

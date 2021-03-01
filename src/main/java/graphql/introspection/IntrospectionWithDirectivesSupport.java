@@ -1,18 +1,15 @@
 package graphql.introspection;
 
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import graphql.PublicApi;
 import graphql.PublicSpi;
-import graphql.Scalars;
 import graphql.language.AstPrinter;
 import graphql.language.AstValueHelper;
 import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
-import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
@@ -22,20 +19,20 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.Set;
 
-import static graphql.introspection.Introspection.__Directive;
+import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.Scalars.GraphQLString;
 import static graphql.introspection.Introspection.__EnumValue;
 import static graphql.introspection.Introspection.__Field;
 import static graphql.introspection.Introspection.__InputValue;
+import static graphql.introspection.Introspection.__Schema;
 import static graphql.introspection.Introspection.__Type;
 import static graphql.schema.FieldCoordinates.coordinates;
 import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
-import static graphql.schema.GraphQLTypeReference.typeRef;
 import static graphql.util.TraversalControl.CONTINUE;
-import static graphql.util.TreeTransformerUtil.changeNode;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -48,7 +45,7 @@ import static java.util.stream.Collectors.toList;
  *
  * This class takes a predicate that allows you to filter the directives you want to expose to the world.
  *
- * An `extension` field is added and this contains extra fields that hold the directives.
+ * An `appliedDirectives` field is added and this contains extra fields that hold the directives and their applied values.
  *
  * For example the `__Field` type becomes as follows:
  *
@@ -56,36 +53,50 @@ import static java.util.stream.Collectors.toList;
  *      type __Field {
  *          name: String!
  *          // other fields ...
- *          extensions: __FieldExtensions
+ *          appliedDirectives: [__AppliedDirective!]!   // NEW FIELD
  *      }
  *
- *      type __FieldExtensions {
- *          directives: [__Directive]!
- *      }
- *  </pre>
- *
- * `__Field`, `__Type` and `__Enum` are all enhanced with this `extensions: __XXXXExtensions` field.
- *
- * The `__InputValue` is also enhanced however it has two extra fields.  That is if the argument is a directive
- * argument then it has a `value` field in AST format along with any directives it may contain.
- *
- * <pre>
- *      type __InputValue {
+ *     type __AppliedDirective {                        // NEW INTROSPECTION TYPE
  *          name: String!
- *          // other field
- *          extensions: __InputValueExtensions
+ *          args: [__DirectiveArgument!]!
  *      }
  *
- *      type __InputValueExtensions {
- *          directives: [__Directive]!
+ *      type __DirectiveArgument {                      // NEW INTROSPECTION TYPE
+ *          name: String!
  *          value: String
  *      }
- * </pre>
+ *  </pre>
  */
 @PublicApi
 public class IntrospectionWithDirectivesSupport {
 
     private final DirectivePredicate directivePredicate;
+
+    private final Set<String> INTROSPECTION_ELEMENTS = ImmutableSet.of(
+            __Schema.getName(), __Type.getName(), __Field.getName(), __EnumValue.getName(), __InputValue.getName()
+    );
+
+    private final GraphQLObjectType __DirectiveArgument = newObject().name("__DirectiveArgument")
+            .description("Directive arguments can have names and values.  The values are in graphql SDL syntax printed as a string." +
+                    " This type is NOT specified by the graphql specification presently.")
+            .field(fld -> fld
+                    .name("name")
+                    .type(nonNull(GraphQLString)))
+            .field(fld -> fld
+                    .name("value")
+                    .type(GraphQLString))
+            .build();
+
+    private final GraphQLObjectType __AppliedDirective = newObject().name("__AppliedDirective")
+            .description("An Applied Directive is an instances of a directive as applied to a schema element." +
+                    " This type is NOT specified by the graphql specification presently.")
+            .field(fld -> fld
+                    .name("name")
+                    .type(GraphQLString))
+            .field(fld -> fld
+                    .name("args")
+                    .type(nonNull(list(nonNull(__DirectiveArgument)))))
+            .build();
 
     /**
      * This version lists all directives on a schema element
@@ -111,116 +122,55 @@ public class IntrospectionWithDirectivesSupport {
      * @return the transformed schema with new extension types and fields in it for Introspection
      */
     public GraphQLSchema apply(GraphQLSchema schema) {
-        // we need to build out custom types scoped to a schema
-        GraphQLObjectType __TypeExtensions = newObject().name("__TypeExtensions")
-                .field(fld -> fld
-                        .name("directives")
-                        .type(nonNull(list(nonNull(typeRef(__Directive.getName()))))))
-                .build();
-
-        GraphQLObjectType __FieldExtensions = newObject().name("__FieldExtensions")
-                .field(fld -> fld
-                        .name("directives")
-                        .type(nonNull(list(nonNull(typeRef(__Directive.getName()))))))
-                .build();
-
-        GraphQLObjectType __EnumValueExtensions = newObject().name("__EnumValueExtensions")
-                .field(fld -> fld
-                        .name("directives")
-                        .type(nonNull(list(nonNull(typeRef(__Directive.getName()))))))
-                .build();
-
-        GraphQLObjectType __InputValueExtensions = newObject().name("__InputValueExtensions")
-                .field(fld -> fld
-                        .name("value")
-                        .type(Scalars.GraphQLString))
-                .field(fld -> fld
-                        .name("directives")
-                        .type(nonNull(list(nonNull(typeRef(__Directive.getName()))))))
-                .build();
-
         GraphQLTypeVisitorStub visitor = new GraphQLTypeVisitorStub() {
             @Override
             public TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, TraverserContext<GraphQLSchemaElement> context) {
                 GraphQLCodeRegistry.Builder codeRegistry = context.getVarFromParents(GraphQLCodeRegistry.Builder.class);
                 // we need to change __XXX introspection types to have directive extensions
-                if (__Type.getName().equals(objectType.getName())) {
-                    GraphQLObjectType newObjectType = addDirectiveExtensions(objectType, codeRegistry, __TypeExtensions);
-                    return changeNode(context, newObjectType);
-                }
-                if (__Field.getName().equals(objectType.getName())) {
-                    GraphQLObjectType newObjectType = addDirectiveExtensions(objectType, codeRegistry, __FieldExtensions);
-                    return changeNode(context, newObjectType);
-                }
-                if (__EnumValue.getName().equals(objectType.getName())) {
-                    GraphQLObjectType newObjectType = addDirectiveExtensions(objectType, codeRegistry, __EnumValueExtensions);
-                    return changeNode(context, newObjectType);
-                }
-                // we need to change __InputValue to have value and directives as extensions
-                if (__InputValue.getName().equals(objectType.getName())) {
-                    GraphQLObjectType newObjectType = addInputValueValueExtensions(objectType, codeRegistry, __InputValueExtensions);
-                    return changeNode(context, newObjectType);
+                if (INTROSPECTION_ELEMENTS.contains(objectType.getName())) {
+                    GraphQLObjectType newObjectType = addAppliedDirectives(objectType, codeRegistry);
+                    return changedNode(newObjectType, context);
                 }
                 return CONTINUE;
             }
         };
-        Consumer<GraphQLSchema.Builder> afterTransform = builder -> builder
-                .additionalType(__TypeExtensions)
-                .additionalType(__FieldExtensions)
-                .additionalType(__EnumValueExtensions)
-                .additionalType(__InputValueExtensions);
-        return SchemaTransformer.transformSchema(schema, visitor, afterTransform);
+        return SchemaTransformer.transformSchema(schema, visitor);
     }
 
-    private GraphQLObjectType addDirectiveExtensions(GraphQLObjectType objectType, GraphQLCodeRegistry.Builder codeRegistry, GraphQLObjectType extensionsType) {
-        objectType = objectType.transform(bld -> bld.field(fld -> fld.name("extensions").type(typeRef(extensionsType.getName()))));
-        DataFetcher<?> extDF = env -> {
-            final GraphQLDirectiveContainer type = env.getSource();
-            List<GraphQLDirective> directives = filterDirectives(type);
-            return ImmutableMap.of("directives", directives);
+    private GraphQLObjectType addAppliedDirectives(GraphQLObjectType originalType, GraphQLCodeRegistry.Builder codeRegistry) {
+        GraphQLObjectType objectType = originalType.transform(bld -> bld.field(fld -> fld.name("appliedDirectives").type(nonNull(list(nonNull(__AppliedDirective))))));
+        DataFetcher<?> df = env -> {
+            Object source = env.getSource();
+            if (source instanceof GraphQLDirectiveContainer) {
+                GraphQLDirectiveContainer type = env.getSource();
+                return filterDirectives(type, type.getDirectives());
+            }
+            if (source instanceof GraphQLSchema) {
+                GraphQLSchema schema = (GraphQLSchema) source;
+                return filterDirectives(null, schema.getSchemaDirectives());
+            }
+            return assertShouldNeverHappen("What directive containing element have we not considered? - %s", originalType);
         };
-        codeRegistry.dataFetcher(coordinates(objectType.getName(), "extensions"), extDF);
+        DataFetcher<?> argsDF = env -> {
+            final GraphQLDirective directive = env.getSource();
+            return directive.getArguments();
+        };
+        DataFetcher<?> argValueDF = env -> {
+            final GraphQLArgument argument = env.getSource();
+            Object value = argument.getValue();
+            return AstPrinter.printAst(AstValueHelper.astFromValue(value, argument.getType()));
+        };
+        codeRegistry.dataFetcher(coordinates(objectType, "appliedDirectives"), df);
+        codeRegistry.dataFetcher(coordinates(__AppliedDirective, "args"), argsDF);
+        codeRegistry.dataFetcher(coordinates(__DirectiveArgument, "value"), argValueDF);
         return objectType;
     }
 
-    private GraphQLObjectType addInputValueValueExtensions(GraphQLObjectType __InputValue, GraphQLCodeRegistry.Builder codeRegistry, GraphQLObjectType __InputValueExtensions) {
-        __InputValue = __InputValue.transform(bld -> bld.field(fld -> fld.name("extensions").type(typeRef(__InputValueExtensions.getName()))));
-        DataFetcher<?> extDF = env -> {
-            final Object source = env.getSource();
-            if (source instanceof GraphQLArgument) {
-                GraphQLArgument argument = (GraphQLArgument) source;
-                ImmutableMap.Builder<String, Object> returned = ImmutableMap.builder();
-
-                // arguments have directives
-                List<GraphQLDirective> directives = filterDirectives(argument);
-                returned.put("directives", directives);
-
-                // and if we are looking at directives arguments then they have values.  But input fields and field arguments are also __InputValue
-                // so we have to be careful here - input fields and field args have no values - only directives on types and fields have values
-                if (isForDirectivesFetch(env)) {
-                    Object value = argument.getValue();
-                    String valueStr = AstPrinter.printAst(AstValueHelper.astFromValue(value, argument.getType()));
-                    returned.put("value", valueStr);
-                }
-                return returned.build();
-            }
-            if (source instanceof GraphQLInputObjectField) {
-                GraphQLInputObjectField inputField = (GraphQLInputObjectField) source;
-
-                List<GraphQLDirective> directives = filterDirectives(inputField);
-                return ImmutableMap.of("directives", directives);
-            }
-            return null;
-        };
-        codeRegistry.dataFetcher(coordinates(__InputValue.getName(), "extensions"), extDF);
-        return __InputValue;
-    }
-
-    private List<GraphQLDirective> filterDirectives(GraphQLDirectiveContainer container) {
-        return container.getDirectives().stream().filter(directive -> {
+    private List<GraphQLDirective> filterDirectives(GraphQLDirectiveContainer container, List<GraphQLDirective> directives) {
+        return directives.stream().filter(directive -> {
             DirectivePredicateEnvironment env = new DirectivePredicateEnvironment() {
                 @Override
-                public GraphQLDirectiveContainer getContainingType() {
+                public GraphQLDirectiveContainer getDirectiveContainer() {
                     return container;
                 }
 
@@ -233,12 +183,6 @@ public class IntrospectionWithDirectivesSupport {
         }).collect(toList());
     }
 
-    private boolean isForDirectivesFetch(DataFetchingEnvironment env) {
-        // we MUST be under /?/?/args/extensions - so is it a directives set of args or an input field set of __InputValue??
-        List<String> keysOnly = env.getExecutionStepInfo().getPath().getKeysOnly();
-        return keysOnly.contains("directives");
-    }
-
     /**
      * The parameter environment on a call to {@link DirectivePredicate}
      */
@@ -246,9 +190,12 @@ public class IntrospectionWithDirectivesSupport {
     interface DirectivePredicateEnvironment {
 
         /**
-         * @return the schema element that contained this directive
+         * The schema element that contained this directive.  If this is a {@link GraphQLSchema}
+         * then this will be null.  This is the only case where this is true.
+         *
+         * @return the schema element that contained this directive.
          */
-        GraphQLDirectiveContainer getContainingType();
+        GraphQLDirectiveContainer getDirectiveContainer();
 
         /**
          * @return the directive to be included
