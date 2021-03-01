@@ -51,9 +51,10 @@ public interface GraphQLSchemaElement {
     int hashCode();
 
     /**
-     * Copy this element by preserving the original children before type references are replaced.
+     * Each GraphQLSchemaElement should make a copy of itself when this is called.  The copy should
+     * be include its current contents as they currently exist into a new object.
      *
-     * @return
+     * @return a copy of this element
      */
     GraphQLSchemaElement copy();
 }

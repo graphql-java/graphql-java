@@ -68,10 +68,4 @@ public class GraphQLTypeReference implements GraphQLNamedOutputType, GraphQLName
     }
 
 
-    @Override
-    public String toString() {
-        return "GraphQLTypeReference{" +
-                "name='" + name + '\'' +
-                '}';
-    }
 }
