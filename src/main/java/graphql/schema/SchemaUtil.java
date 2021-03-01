@@ -42,6 +42,11 @@ public class SchemaUtil {
 
         GraphQLTypeCollectingVisitor visitor = new GraphQLTypeCollectingVisitor();
         SchemaTraverser traverser;
+        // when collecting all types we never want to follow type references
+        // When a schema is build first the type references are not replaced, so
+        // this is not a problem. But when a schema is transformed,
+        // the type references are actually replaced so we need to make sure we
+        // use the original type references
         if (afterTransform) {
             traverser = new SchemaTraverser(schemaElement -> schemaElement.getChildrenWithTypeReferences().getChildrenAsList());
         } else {

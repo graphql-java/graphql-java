@@ -271,6 +271,18 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     }
 
 
+    @Override
+    public String toString() {
+        return "GraphQLEnumType{" +
+                "name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", valueDefinitionMap=" + valueDefinitionMap +
+                ", definition=" + definition +
+                ", extensionDefinitions=" + extensionDefinitions +
+                ", directives=" + directives +
+                '}';
+    }
+
     public static Builder newEnum() {
         return new Builder();
     }
