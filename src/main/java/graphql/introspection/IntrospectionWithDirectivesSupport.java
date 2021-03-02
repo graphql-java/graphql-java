@@ -129,7 +129,7 @@ public class IntrospectionWithDirectivesSupport {
                 // we need to change __XXX introspection types to have directive extensions
                 if (INTROSPECTION_ELEMENTS.contains(objectType.getName())) {
                     GraphQLObjectType newObjectType = addAppliedDirectives(objectType, codeRegistry);
-                    return changedNode(newObjectType, context);
+                    return changeNode(context, newObjectType);
                 }
                 return CONTINUE;
             }

@@ -32,7 +32,41 @@ import static graphql.util.TraversalControl.CONTINUE;
 import static java.lang.String.format;
 
 /**
- * Transforms a {@link GraphQLSchema} object.
+ * Transforms a {@link GraphQLSchema} object by calling bac on a provided visitor.
+ * <p>
+ * To change a {@link GraphQLSchemaElement} node in the schema you need
+ * to return {@link GraphQLTypeVisitor#changeNode(TraverserContext, GraphQLSchemaElement)}
+ * which instructs the schema transformer to change that element upon leaving that
+ * visitor method.
+ * <pre>
+ * {@code
+ *  public TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, TraverserContext<GraphQLSchemaElement> context) {
+ *      GraphQLObjectType newObjectType = mkSomeNewNode(objectType);
+ *      return changeNode(context, newObjectType);
+ *  }
+ *  }
+ * </pre>
+ * <p>
+ * To delete an element use {@link GraphQLTypeVisitor#deleteNode(TraverserContext)}
+ * <pre>
+ * {@code
+ *  public TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, TraverserContext<GraphQLSchemaElement> context) {
+ *      return deleteNode(context, objectType);
+ *  }
+ *  }
+ * </pre>
+ * <p>
+ * To insert elements use either {@link GraphQLTypeVisitor#insertAfter(TraverserContext, GraphQLSchemaElement)} or
+ * {@link GraphQLTypeVisitor#insertBefore(TraverserContext, GraphQLSchemaElement)}
+ * which will insert the new node before or afgter the current node being visited
+ * <pre>
+ * {@code
+ *  public TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, TraverserContext<GraphQLSchemaElement> context) {
+ *      GraphQLObjectType newObjectType = mkSomeNewNode();
+ *      return insertAfter(context, newObjectType);
+ *  }
+ *  }
+ * </pre>
  */
 @PublicApi
 public class SchemaTransformer {
@@ -134,7 +168,7 @@ public class SchemaTransformer {
                 GraphQLNamedType graphQLNamedType = changedTypes.get(typeRef.getName());
                 if (graphQLNamedType != null) {
                     typeRef = GraphQLTypeReference.typeRef(graphQLNamedType.getName());
-                    return changedNode(typeRef, context);
+                    return changeNode(context, typeRef);
                 }
                 return CONTINUE;
             }

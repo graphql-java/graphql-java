@@ -15,7 +15,6 @@ import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
 import static graphql.schema.GraphQLTypeReference.typeRef
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
-import static graphql.util.TreeTransformerUtil.changeNode
 import static graphql.util.TreeTransformerUtil.deleteNode
 
 class SchemaTransformerTest extends Specification {
@@ -586,13 +585,13 @@ type Query {
             @Override
             TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
                 node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
-                return changedNode(node, context)
+                return changeNode(context, node)
             }
 
             @Override
             TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
                 node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
-                return changedNode(node, context)
+                return changeNode(context, node)
             }
         })
         then:
@@ -626,14 +625,14 @@ type Query {
             @Override
             TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
                 node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
-                return changedNode(node, context)
+                return changeNode(context, node)
             }
 
             @Override
             TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
                 if (node.getName().startsWith("__")) return TraversalControl.ABORT;
                 node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
-                return changedNode(node, context)
+                return changeNode(context, node)
             }
         })
         then:
