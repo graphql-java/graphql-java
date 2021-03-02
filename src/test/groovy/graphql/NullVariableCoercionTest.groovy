@@ -71,7 +71,7 @@ class NullVariableCoercionTest extends Specification {
         varResult.errors[0].locations == [new SourceLocation(1, 11)]
     }
 
-    def "null coercion errors with Max Query Complexity Instrumentation have source locations"() {
+    def "null coercion errors with MaxQueryComplexityInstrumentation return an error"() {
 
         when:
 
