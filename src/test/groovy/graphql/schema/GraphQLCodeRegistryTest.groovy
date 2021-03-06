@@ -9,6 +9,7 @@ import graphql.TypeResolutionEnvironment
 import graphql.schema.visibility.GraphqlFieldVisibility
 import spock.lang.Specification
 
+import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
@@ -283,6 +284,65 @@ class GraphQLCodeRegistryTest extends Specification {
         // when nothing is specified then its a plain old PropertyDataFetcher
         def queryType = schema.getObjectType("Query")
         schema.getCodeRegistry().getDataFetcher(queryType, queryType.getFieldDefinition("neitherSpecified")) instanceof PropertyDataFetcher
+    }
+
+    def "will detect system versus user data fetchers"() {
+        DataFetcher<?> dfSystem = { env -> "system" }
+        DataFetcher<?> dfUser = { env -> "user" }
+        def systemFieldDef = newFieldDefinition().name("__system").type(GraphQLInt).build()
+        def userFieldDef = newFieldDefinition().name("field").type(GraphQLInt).build()
+        def systemCoords = FieldCoordinates.systemCoordinates(systemFieldDef.name)
+        def userCoords = FieldCoordinates.coordinates("User", userFieldDef.name)
+
+
+        when:
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(systemCoords, dfSystem)
+                .dataFetcher(userCoords, dfUser)
+                .build()
+
+        then:
+        codeRegistry.hasDataFetcher(systemCoords)
+        codeRegistry.hasDataFetcher(userCoords)
+
+        codeRegistry.getDataFetcher(systemCoords, systemFieldDef) == dfSystem
+        codeRegistry.getDataFetcher(userCoords, userFieldDef) == dfUser
+    }
+
+    def "will put a data fetcher if absent"() {
+        DataFetcher<?> dfSystem = { env -> "system" }
+        DataFetcher<?> dfUser = { env -> "user" }
+
+        DataFetcher<?> dfSystem2 = { env -> "system2" }
+        DataFetcher<?> dfUser2 = { env -> "user2" }
+
+        def systemFieldDef = newFieldDefinition().name("__system").type(GraphQLInt).build()
+        def userFieldDef = newFieldDefinition().name("field").type(GraphQLInt).build()
+        def systemCoords = FieldCoordinates.systemCoordinates(systemFieldDef.name)
+        def userCoords = FieldCoordinates.coordinates("User", userFieldDef.name)
+
+
+        when:
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcherIfAbsent(systemCoords, dfSystem)
+                .dataFetcherIfAbsent(userCoords, dfUser)
+                .build()
+
+        then:
+
+        codeRegistry.getDataFetcher(systemCoords, systemFieldDef) == dfSystem
+        codeRegistry.getDataFetcher(userCoords, userFieldDef) == dfUser
+
+        when:
+        codeRegistry = GraphQLCodeRegistry.newCodeRegistry(codeRegistry)
+                .dataFetcherIfAbsent(systemCoords, dfSystem2)
+                .dataFetcherIfAbsent(userCoords, dfUser2)
+                .build()
+
+        then:
+
+        codeRegistry.getDataFetcher(systemCoords, systemFieldDef) == dfSystem
+        codeRegistry.getDataFetcher(userCoords, userFieldDef) == dfUser
 
     }
 }
