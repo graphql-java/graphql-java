@@ -14,6 +14,7 @@ import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -220,6 +221,11 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * @return the current {@link java.util.Locale} instance used for this request
      */
     Locale getLocale();
+
+    /**
+     * @return the current {@link Principal} instance used for this request
+     */
+    Principal getPrincipal();
 
     /**
      * @return the current operation that is being executed

@@ -18,6 +18,7 @@ import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 
+import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -44,6 +45,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
     private final Locale locale;
+    private final Principal principal;
     private final OperationDefinition operationDefinition;
     private final Document document;
     private final ImmutableMapWithNullValues<String, Object> variables;
@@ -67,6 +69,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.dataLoaderRegistry = builder.dataLoaderRegistry;
         this.cacheControl = builder.cacheControl;
         this.locale = builder.locale;
+        this.principal = builder.principal;
         this.operationDefinition = builder.operationDefinition;
         this.document = builder.document;
         this.variables = builder.variables == null ? ImmutableMapWithNullValues.emptyMap() : builder.variables;
@@ -93,6 +96,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                 .dataLoaderRegistry(executionContext.getDataLoaderRegistry())
                 .cacheControl(executionContext.getCacheControl())
                 .locale(executionContext.getLocale())
+                .principal(executionContext.getPrincipal())
                 .document(executionContext.getDocument())
                 .operationDefinition(executionContext.getOperationDefinition())
                 .variables(executionContext.getVariables())
@@ -220,6 +224,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
+    public Principal getPrincipal() {
+        return principal;
+    }
+
+    @Override
     public OperationDefinition getOperationDefinition() {
         return operationDefinition;
     }
@@ -258,6 +267,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private DataLoaderRegistry dataLoaderRegistry;
         private CacheControl cacheControl;
         private Locale locale;
+        private Principal principal;
         private OperationDefinition operationDefinition;
         private Document document;
         private Supplier<Map<String, Object>> arguments;
@@ -283,6 +293,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.dataLoaderRegistry = env.dataLoaderRegistry;
             this.cacheControl = env.cacheControl;
             this.locale = env.locale;
+            this.principal = env.principal;
             this.operationDefinition = env.operationDefinition;
             this.document = env.document;
             this.variables = env.variables;
@@ -382,6 +393,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
         public Builder locale(Locale locale) {
             this.locale = locale;
+            return this;
+        }
+
+        public Builder principal(Principal principal) {
+            this.principal = principal;
             return this;
         }
 

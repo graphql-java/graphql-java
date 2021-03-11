@@ -6,6 +6,7 @@ import graphql.schema.DataFetcher
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
+import java.security.Principal
 import java.util.function.UnaryOperator
 
 class ExecutionInputTest extends Specification {
@@ -16,6 +17,8 @@ class ExecutionInputTest extends Specification {
     def root = "root"
     def context = "context"
     def variables = [key: "value"]
+    Principal principal = TestUtil.principalCalled("p1")
+    Principal principal2 = TestUtil.principalCalled("p2")
 
     def "build works"() {
         when:
@@ -26,6 +29,7 @@ class ExecutionInputTest extends Specification {
                 .root(root)
                 .context(context)
                 .locale(Locale.GERMAN)
+                .principal(principal)
                 .extensions([some: "map"])
                 .build()
         then:
@@ -36,6 +40,7 @@ class ExecutionInputTest extends Specification {
         executionInput.cacheControl == cacheControl
         executionInput.query == query
         executionInput.locale == Locale.GERMAN
+        executionInput.principal == principal
         executionInput.extensions == [some: "map"]
     }
 
@@ -73,6 +78,7 @@ class ExecutionInputTest extends Specification {
                 .root(root)
                 .context(context)
                 .locale(Locale.GERMAN)
+                .principal(principal)
                 .build()
         def executionInput = executionInputOld.transform({ bldg -> bldg.query("new query") })
 
@@ -83,6 +89,7 @@ class ExecutionInputTest extends Specification {
         executionInput.dataLoaderRegistry == registry
         executionInput.cacheControl == cacheControl
         executionInput.locale == Locale.GERMAN
+        executionInput.principal == principal
         executionInput.extensions == [some: "map"]
         executionInput.query == "new query"
     }
@@ -94,6 +101,7 @@ class ExecutionInputTest extends Specification {
         executionInput.query == "{ q }"
         executionInput.cacheControl != null
         executionInput.locale == null
+        executionInput.principal == null
         executionInput.dataLoaderRegistry != null
         executionInput.variables == [:]
     }
@@ -108,6 +116,7 @@ class ExecutionInputTest extends Specification {
         DataFetcher df = { env ->
             return [
                     "locale"      : env.getLocale().getDisplayName(),
+                    "principal"   : env.getPrincipal().getName(),
                     "cacheControl": env.getCacheControl() == cacheControl,
                     "executionId" : env.getExecutionId().toString()
 
@@ -120,6 +129,7 @@ class ExecutionInputTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query("{ fetch }")
                 .locale(Locale.GERMAN)
+                .principal(principal)
                 .cacheControl(cacheControl)
                 .executionId(ExecutionId.from("ID123"))
                 .build()
@@ -127,6 +137,6 @@ class ExecutionInputTest extends Specification {
 
         then:
         er.errors.isEmpty()
-        er.data["fetch"] == "{locale=German, cacheControl=true, executionId=ID123}"
+        er.data["fetch"] == "{locale=German, principal=p1, cacheControl=true, executionId=ID123}"
     }
 }

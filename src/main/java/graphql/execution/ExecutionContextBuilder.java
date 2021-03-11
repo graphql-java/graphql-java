@@ -17,6 +17,7 @@ import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 import org.dataloader.DataLoaderRegistry;
 
+import java.security.Principal;
 import java.util.Locale;
 import java.util.Map;
 
@@ -42,6 +43,7 @@ public class ExecutionContextBuilder {
     DataLoaderRegistry dataLoaderRegistry;
     CacheControl cacheControl;
     Locale locale;
+    Principal principal;
     ImmutableList<GraphQLError> errors = emptyList();
     ValueUnboxer valueUnboxer;
     Object localContext;
@@ -88,6 +90,7 @@ public class ExecutionContextBuilder {
         dataLoaderRegistry = other.getDataLoaderRegistry();
         cacheControl = other.getCacheControl();
         locale = other.getLocale();
+        principal = other.getPrincipal();
         errors = ImmutableList.copyOf(other.getErrors());
         valueUnboxer = other.getValueUnboxer();
         executionInput = other.getExecutionInput();
@@ -175,6 +178,11 @@ public class ExecutionContextBuilder {
 
     public ExecutionContextBuilder locale(Locale locale) {
         this.locale = locale;
+        return this;
+    }
+
+    public ExecutionContextBuilder principal(Principal principal) {
+        this.principal = principal;
         return this;
     }
 

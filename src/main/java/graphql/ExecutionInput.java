@@ -5,6 +5,7 @@ import graphql.execution.ExecutionId;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentationState;
 import org.dataloader.DataLoaderRegistry;
 
+import java.security.Principal;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
@@ -29,6 +30,7 @@ public class ExecutionInput {
     private final CacheControl cacheControl;
     private final ExecutionId executionId;
     private final Locale locale;
+    private final Principal principal;
 
 
     @Internal
@@ -44,6 +46,7 @@ public class ExecutionInput {
         this.locale = builder.locale;
         this.localContext = builder.localContext;
         this.extensions = builder.extensions;
+        this.principal = builder.principal;
     }
 
     /**
@@ -119,6 +122,15 @@ public class ExecutionInput {
     }
 
     /**
+     * This returns the {@link Principal} of this operation.
+     *
+     * @return the Principal of this operation
+     */
+    public Principal getPrincipal() {
+        return principal;
+    }
+
+    /**
      * @return a map of extension values that can be sent in to a request
      */
     public Map<String, Object> getExtensions() {
@@ -130,6 +142,7 @@ public class ExecutionInput {
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new ExecutionInput object based on calling build on that builder
      */
     public ExecutionInput transform(Consumer<Builder> builderConsumer) {
@@ -144,7 +157,8 @@ public class ExecutionInput {
                 .variables(this.variables)
                 .extensions(this.extensions)
                 .executionId(this.executionId)
-                .locale(this.locale);
+                .locale(this.locale)
+                .principal(this.principal);
 
         builderConsumer.accept(builder);
 
@@ -176,6 +190,7 @@ public class ExecutionInput {
      * Creates a new builder of ExecutionInput objects with the given query
      *
      * @param query the query to execute
+     *
      * @return a new builder of ExecutionInput objects
      */
     public static Builder newExecutionInput(String query) {
@@ -198,6 +213,7 @@ public class ExecutionInput {
         private DataLoaderRegistry dataLoaderRegistry = DataLoaderDispatcherInstrumentationState.EMPTY_DATALOADER_REGISTRY;
         private CacheControl cacheControl = CacheControl.newCacheControl();
         private Locale locale;
+        private Principal principal;
         private ExecutionId executionId;
 
         public Builder query(String query) {
@@ -214,6 +230,7 @@ public class ExecutionInput {
          * A default one will be assigned, but you can set your own.
          *
          * @param executionId an execution id object
+         *
          * @return this builder
          */
         public Builder executionId(ExecutionId executionId) {
@@ -221,11 +238,11 @@ public class ExecutionInput {
             return this;
         }
 
-
         /**
-         * Sets the locale to use for this operation
+         * Sets the {@link Locale} to use for this operation
          *
          * @param locale the locale to use
+         *
          * @return this builder
          */
         public Builder locale(Locale locale) {
@@ -234,9 +251,22 @@ public class ExecutionInput {
         }
 
         /**
+         * Sets the {@link Principal} to use for this operation
+         *
+         * @param principal the principal to use
+         *
+         * @return this builder
+         */
+        public Builder principal(Principal principal) {
+            this.principal = principal;
+            return this;
+        }
+
+        /**
          * Sets initial localContext in root data fetchers
          *
          * @param localContext the local context to use
+         *
          * @return this builder
          */
         public Builder localContext(Object localContext) {
@@ -248,6 +278,7 @@ public class ExecutionInput {
          * By default you will get a {@link GraphQLContext} object but you can set your own.
          *
          * @param context the context object to use
+         *
          * @return this builder
          */
         public Builder context(Object context) {
@@ -287,6 +318,7 @@ public class ExecutionInput {
          * instances as this will create unexpected results.
          *
          * @param dataLoaderRegistry a registry of {@link org.dataloader.DataLoader}s
+         *
          * @return this builder
          */
         public Builder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {

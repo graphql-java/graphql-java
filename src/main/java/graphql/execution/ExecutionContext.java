@@ -19,6 +19,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import org.dataloader.DataLoaderRegistry;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -52,6 +53,7 @@ public class ExecutionContext {
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
     private final Locale locale;
+    private final Principal principal;
     private final ValueUnboxer valueUnboxer;
     private final ExecutionInput executionInput;
     private final Supplier<NormalizedQueryTree> queryTree;
@@ -73,6 +75,7 @@ public class ExecutionContext {
         this.dataLoaderRegistry = builder.dataLoaderRegistry;
         this.cacheControl = builder.cacheControl;
         this.locale = builder.locale;
+        this.principal = builder.principal;
         this.valueUnboxer = builder.valueUnboxer;
         this.errors.addAll(builder.errors);
         this.localContext = builder.localContext;
@@ -146,6 +149,10 @@ public class ExecutionContext {
 
     public Locale getLocale() {
         return locale;
+    }
+
+    public Principal getPrincipal() {
+        return principal;
     }
 
     public ValueUnboxer getValueUnboxer() {

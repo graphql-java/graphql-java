@@ -27,6 +27,7 @@ import graphql.schema.idl.TypeRuntimeWiring
 import graphql.schema.idl.WiringFactory
 import graphql.schema.idl.errors.SchemaProblem
 
+import java.security.Principal
 import java.util.function.Supplier
 import java.util.stream.Collectors
 
@@ -284,4 +285,13 @@ class TestUtil {
     static Comparator<? super GraphQLType> byGreatestLength = Comparator.comparing({ it.name },
             Comparator.comparing({ it.length() }).reversed())
 
+
+    static Principal principalCalled(String name) {
+        return new Principal() {
+            @Override
+            String getName() {
+                return name
+            }
+        }
+    }
 }

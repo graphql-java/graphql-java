@@ -1,5 +1,6 @@
 package graphql.schema
 
+import graphql.TestUtil
 import graphql.cachecontrol.CacheControl
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionStepInfo
@@ -30,6 +31,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
     def variables = [var: "able"]
     def dataLoaderRegistry = new DataLoaderRegistry().register("dataLoader", dataLoader)
     def cacheControl = CacheControl.newCacheControl()
+    def principal = TestUtil.principalCalled("p1")
 
     def executionContext = newExecutionContextBuilder()
             .root("root")
@@ -42,6 +44,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
             .fragmentsByName(fragmentByName)
             .dataLoaderRegistry(dataLoaderRegistry)
             .cacheControl(cacheControl)
+            .principal(principal)
             .build()
 
 
@@ -72,6 +75,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
         dfe.getVariables() == variables
         dfe.getOperationDefinition() == operationDefinition
         dfe.getExecutionId() == executionId
+        dfe.getPrincipal() == principal
         dfe.getDataLoader("dataLoader") == dataLoader
     }
 
@@ -94,6 +98,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
                 .dataLoaderRegistry(dataLoaderRegistry)
                 .cacheControl(cacheControl)
                 .locale(Locale.CANADA)
+                .principal(principal)
                 .localContext("localContext")
                 .build()
 
@@ -119,6 +124,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
         dfe.getDataLoader("dataLoader") == dataLoader
         dfe.getCacheControl() == cacheControl
         dfe.getLocale() == dfeCopy.getLocale()
+        dfe.getPrincipal() == dfeCopy.getPrincipal()
         dfe.getLocalContext() == dfeCopy.getLocalContext()
     }
 

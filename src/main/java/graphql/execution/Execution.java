@@ -92,6 +92,7 @@ public class Execution {
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
                 .cacheControl(executionInput.getCacheControl())
                 .locale(executionInput.getLocale())
+                .principal(executionInput.getPrincipal())
                 .valueUnboxer(valueUnboxer)
                 .executionInput(executionInput)
                 .build();
