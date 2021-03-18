@@ -63,7 +63,7 @@ import static java.util.stream.Collectors.toList;
  *
  *      type __DirectiveArgument {                      // NEW INTROSPECTION TYPE
  *          name: String!
- *          value: String
+ *          value: String!
  *      }
  *  </pre>
  */
@@ -84,7 +84,7 @@ public class IntrospectionWithDirectivesSupport {
                     .type(nonNull(GraphQLString)))
             .field(fld -> fld
                     .name("value")
-                    .type(GraphQLString))
+                    .type(nonNull(GraphQLString)))
             .build();
 
     private final GraphQLObjectType __AppliedDirective = newObject().name("__AppliedDirective")
@@ -92,7 +92,7 @@ public class IntrospectionWithDirectivesSupport {
                     " This type is NOT specified by the graphql specification presently.")
             .field(fld -> fld
                     .name("name")
-                    .type(GraphQLString))
+                    .type(nonNull(GraphQLString)))
             .field(fld -> fld
                     .name("args")
                     .type(nonNull(list(nonNull(__DirectiveArgument)))))
