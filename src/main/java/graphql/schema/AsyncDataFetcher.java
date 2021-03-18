@@ -53,6 +53,15 @@ public class AsyncDataFetcher<T> implements DataFetcher<CompletableFuture<T>> {
     private final DataFetcher<T> wrappedDataFetcher;
     private final Executor executor;
 
+
+    public DataFetcher<T> getWrappedDataFetcher() {
+        return wrappedDataFetcher;
+    }
+
+    public Executor getExecutor() {
+        return executor;
+    }
+
     public AsyncDataFetcher(DataFetcher<T> wrappedDataFetcher) {
         this(wrappedDataFetcher, ForkJoinPool.commonPool());
     }
