@@ -1,9 +1,9 @@
 package graphql.schema;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Assert;
 import graphql.DirectivesUtil;
-import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.UnionTypeDefinition;
@@ -178,6 +178,12 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         builderConsumer.accept(builder);
         return builder.build();
     }
+
+    @Override
+    public GraphQLSchemaElement copy() {
+        return newUnionType(this).build();
+    }
+
 
     @Override
     public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {

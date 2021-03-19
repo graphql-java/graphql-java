@@ -167,6 +167,12 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
     }
 
     @Override
+    public GraphQLSchemaElement copy() {
+        return newScalar(this).build();
+    }
+
+
+    @Override
     public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLScalarType(this, context);
     }

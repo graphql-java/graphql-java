@@ -1,9 +1,8 @@
 package graphql.schema;
 
-import graphql.AssertException;
-import graphql.DirectivesUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputObjectTypeDefinition;
@@ -21,7 +20,6 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
-import static graphql.Assert.assertTrue;
 import static graphql.Assert.assertValidName;
 import static graphql.util.FpKit.getByName;
 import static java.util.Collections.emptyList;
@@ -159,6 +157,12 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         builderConsumer.accept(builder);
         return builder.build();
     }
+
+    @Override
+    public GraphQLSchemaElement copy() {
+        return newInputObject(this).build();
+    }
+
 
     @Override
     public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {

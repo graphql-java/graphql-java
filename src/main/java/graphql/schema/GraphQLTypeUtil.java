@@ -171,6 +171,20 @@ public class GraphQLTypeUtil {
     }
 
     /**
+     * Unwraps one layer of the type or just returns the type again if its not a wrapped type
+     * and then cast to the target type.
+     *
+     * @param type the type to unwrapOne
+     * @param <T> for two
+     *
+     * @return the unwrapped type or the same type again if its not wrapped
+     */
+    public static <T extends GraphQLType> T unwrapOneAs(GraphQLType type) {
+        //noinspection unchecked
+        return (T) unwrapOne(type);
+    }
+
+    /**
      * Unwraps all layers of the type or just returns the type again if its not a wrapped type
      *
      * @param type the type to unwrapOne
@@ -186,11 +200,47 @@ public class GraphQLTypeUtil {
         }
     }
 
+    /**
+     * Unwraps all layers of the type or just returns the type again if its not a wrapped type
+     * and then cast to the target type.
+     *
+     * @param type the type to unwrapOne
+     * @param <T> for two
+     *
+     * @return the underlying type
+     */
+    public static <T extends GraphQLType> T unwrapAllAs(GraphQLType type) {
+        //noinspection unchecked
+        return (T) unwrapAll(type);
+    }
+
+
+    /**
+     * Unwraps all non nullable layers of the type until it reaches a type that is not {@link GraphQLNonNull}
+     *
+     * @param type the type to unwrap
+     *
+     * @return the underlying type that is not {@link GraphQLNonNull}
+     */
     public static GraphQLType unwrapNonNull(GraphQLType type) {
         while (isNonNull(type)) {
             type = unwrapOne(type);
         }
         return type;
+    }
+
+    /**
+     * Unwraps all non nullable layers of the type until it reaches a type that is not {@link GraphQLNonNull}
+     * and then cast to the target type.
+     *
+     * @param type the type to unwrap
+     * @param <T> for two
+     *
+     * @return the underlying type that is not {@link GraphQLNonNull}
+     */
+    public static <T extends GraphQLType> T unwrapNonNullAs(GraphQLType type) {
+        //noinspection unchecked
+        return (T) unwrapNonNull(type);
     }
 
     /**

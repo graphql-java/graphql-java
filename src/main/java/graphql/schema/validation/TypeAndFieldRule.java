@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static graphql.introspection.Introspection.INTROSPECTION_SYSTEM_FIELDS;
 import static graphql.introspection.Introspection.isIntrospectionTypes;
 import static graphql.schema.idl.ScalarInfo.isGraphqlSpecifiedScalar;
 
@@ -58,7 +59,6 @@ public class TypeAndFieldRule implements SchemaValidationRule {
         checkTypes(filteredType, validationErrorCollector);
     }
 
-
     private void checkTypes(List<GraphQLNamedType> customizedType, SchemaValidationErrorCollector errorCollector) {
         if (customizedType == null || customizedType.isEmpty()) {
             return;
@@ -78,14 +78,10 @@ public class TypeAndFieldRule implements SchemaValidationRule {
             validateEnum((GraphQLEnumType) type, errorCollector);
         } else if (type instanceof GraphQLInputObjectType) {
             validateInputObject((GraphQLInputObjectType) type, errorCollector);
-        } else if (type instanceof GraphQLScalarType) {
-            validateScalar((GraphQLScalarType) type, errorCollector);
         }
     }
 
     private void validateContainsField(GraphQLFieldsContainer type, SchemaValidationErrorCollector errorCollector) {
-        assertTypeName(type.getName(), errorCollector);
-
         List<GraphQLFieldDefinition> fieldDefinitions = type.getFieldDefinitions();
         if (fieldDefinitions == null || fieldDefinitions.size() == 0) {
             SchemaValidationError validationError = new SchemaValidationError(SchemaValidationErrorType.ImplementingTypeLackOfFieldError, String.format("\"%s\" must define one or more fields.", type.getName()));
@@ -99,8 +95,6 @@ public class TypeAndFieldRule implements SchemaValidationRule {
     }
 
     private void validateInputObject(GraphQLInputObjectType type, SchemaValidationErrorCollector errorCollector) {
-        assertTypeName(type.getName(), errorCollector);
-
         List<GraphQLInputObjectField> inputObjectFields = type.getFields();
         if (inputObjectFields == null || inputObjectFields.size() == 0) {
             SchemaValidationError validationError = new SchemaValidationError(SchemaValidationErrorType.InputObjectTypeLackOfFieldError, String.format("\"%s\" must define one or more fields.", type.getName()));
@@ -109,15 +103,13 @@ public class TypeAndFieldRule implements SchemaValidationRule {
         }
 
         for (GraphQLInputObjectField inputObjectField : inputObjectFields) {
-            validateInputFieldDefinition(inputObjectField.getName(), inputObjectField, errorCollector);
+            validateInputFieldDefinition(type.getName(), inputObjectField, errorCollector);
         }
     }
 
     private void validateUnion(GraphQLUnionType type, SchemaValidationErrorCollector errorCollector) {
-        assertTypeName(type.getName(), errorCollector);
-
         List<GraphQLNamedOutputType> memberTypes = type.getTypes();
-        if (memberTypes == null || memberTypes.size() == 0) {
+        if (memberTypes.size() == 0) {
             SchemaValidationError validationError =
                     new SchemaValidationError(SchemaValidationErrorType.UnionTypeLackOfTypeError, String.format("Union type \"%s\" must include one or more unique member types.", type.getName()));
             errorCollector.addError(validationError);
@@ -141,13 +133,7 @@ public class TypeAndFieldRule implements SchemaValidationRule {
         }
     }
 
-    private void validateScalar(GraphQLScalarType type, SchemaValidationErrorCollector errorCollector) {
-        assertTypeName(type.getName(), errorCollector);
-    }
-
     private void validateEnum(GraphQLEnumType type, SchemaValidationErrorCollector errorCollector) {
-        assertTypeName(type.getName(), errorCollector);
-
         List<GraphQLEnumValueDefinition> enumValueDefinitions = type.getValues();
         if (enumValueDefinitions == null || enumValueDefinitions.size() == 0) {
             SchemaValidationError validationError = new SchemaValidationError(SchemaValidationErrorType.EnumLackOfValueError, String.format("Enum type \"%s\" must define one or more enum values.", type.getName()));
@@ -165,10 +151,8 @@ public class TypeAndFieldRule implements SchemaValidationRule {
         assertNonNullType(fieldDefinition.getType(), errorCollector);
 
         List<GraphQLArgument> fieldDefinitionArguments = fieldDefinition.getArguments();
-        if (fieldDefinitionArguments != null || fieldDefinitionArguments.size() != 0) {
-            for (GraphQLArgument fieldDefinitionArgument : fieldDefinitionArguments) {
-                validateFieldDefinitionArgument(typeName, fieldDefinition.getName(), fieldDefinitionArgument, errorCollector);
-            }
+        for (GraphQLArgument fieldDefinitionArgument : fieldDefinitionArguments) {
+            validateFieldDefinitionArgument(typeName, fieldDefinition.getName(), fieldDefinitionArgument, errorCollector);
         }
     }
 
@@ -180,22 +164,6 @@ public class TypeAndFieldRule implements SchemaValidationRule {
     private void validateFieldDefinitionArgument(String typeName, String fieldName, GraphQLArgument argument, SchemaValidationErrorCollector errorCollector) {
         assertArgumentName(typeName, fieldName, argument.getName(), errorCollector);
         assertNonNullType(argument.getType(), errorCollector);
-    }
-
-    private void assertTypeName(String typeName, SchemaValidationErrorCollector validationErrorCollector) {
-        if (typeName.length() >= 2 && typeName.startsWith("__")) {
-            SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.InvalidCustomizedNameError,
-                    String.format("\"%s\" must not begin with \"__\", which is reserved by GraphQL introspection.", typeName));
-            validationErrorCollector.addError(schemaValidationError);
-        }
-    }
-
-    private void assertFieldName(String typeName, String fieldName, SchemaValidationErrorCollector errorCollector) {
-        if (fieldName.length() >= 2 && fieldName.startsWith("__")) {
-            SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.InvalidCustomizedNameError,
-                    String.format("\"%s\" in \"%s\" must not begin with \"__\", which is reserved by GraphQL introspection.", fieldName, typeName));
-            errorCollector.addError(schemaValidationError);
-        }
     }
 
     private void assertArgumentName(String typeName, String fieldName, String argumentName, SchemaValidationErrorCollector errorCollector) {
@@ -231,15 +199,11 @@ public class TypeAndFieldRule implements SchemaValidationRule {
             if (isIntrospectionTypes(namedType)) {
                 return false;
             }
-            if (namedType instanceof GraphQLScalarType && isGraphqlSpecifiedScalar((GraphQLScalarType) namedType)) {
-                return false;
-            }
-            return true;
+            return !(namedType instanceof GraphQLScalarType) || !isGraphqlSpecifiedScalar((GraphQLScalarType) namedType);
         };
 
         return FpKit.filterList(graphQLNamedTypes, filterFunction);
     }
-
 
     @Override
     public void check(GraphQLFieldDefinition fieldDef, SchemaValidationErrorCollector validationErrorCollector) {
@@ -247,5 +211,16 @@ public class TypeAndFieldRule implements SchemaValidationRule {
 
     @Override
     public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
+    }
+
+    private void assertFieldName(String typeName, String fieldName, SchemaValidationErrorCollector errorCollector) {
+        if (INTROSPECTION_SYSTEM_FIELDS.contains(fieldName)) {
+            return;
+        }
+        if (fieldName.length() >= 2 && fieldName.startsWith("__")) {
+            SchemaValidationError schemaValidationError = new SchemaValidationError(SchemaValidationErrorType.InvalidCustomizedNameError,
+                    String.format("\"%s\" in \"%s\" must not begin with \"__\", which is reserved by GraphQL introspection.", fieldName, typeName));
+            errorCollector.addError(schemaValidationError);
+        }
     }
 }

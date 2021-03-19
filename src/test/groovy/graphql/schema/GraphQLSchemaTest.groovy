@@ -63,15 +63,15 @@ class GraphQLSchemaTest extends Specification {
 
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
                 .type("Query", { wiring ->
-            wiring.dataFetcher("foo", { env ->
-                Map<String, Object> map = new HashMap<>()
-                map.put("id", "abc")
-                return map
-            })
-        } as UnaryOperator<TypeRuntimeWiring.Builder>)
+                    wiring.dataFetcher("foo", { env ->
+                        Map<String, Object> map = new HashMap<>()
+                        map.put("id", "abc")
+                        return map
+                    })
+                } as UnaryOperator<TypeRuntimeWiring.Builder>)
                 .type("Node", { wiring ->
-            wiring.typeResolver({ env -> (GraphQLObjectType) env.getSchema().getType("Foo") })
-        } as UnaryOperator<TypeRuntimeWiring.Builder>)
+                    wiring.typeResolver({ env -> (GraphQLObjectType) env.getSchema().getType("Foo") })
+                } as UnaryOperator<TypeRuntimeWiring.Builder>)
                 .build()
 
         def existingSchema = TestUtil.schema(idl, runtimeWiring)
@@ -100,27 +100,27 @@ class GraphQLSchemaTest extends Specification {
     def basicSchemaBuilder() {
         GraphQLSchema.newSchema()
                 .query(newObject()
-                .name("QueryType")
-                .field(newFieldDefinition()
-                .name("hero")
-                .type(GraphQLString)
-                .dataFetcher({ env -> null })))
+                        .name("QueryType")
+                        .field(newFieldDefinition()
+                                .name("hero")
+                                .type(GraphQLString)
+                                .dataFetcher({ env -> null })))
     }
 
     def additionalType1 = newObject()
             .name("Additional1")
             .field(newFieldDefinition()
-            .name("field")
-            .type(GraphQLString)
-            .dataFetcher({ env -> null }))
+                    .name("field")
+                    .type(GraphQLString)
+                    .dataFetcher({ env -> null }))
             .build()
 
     def additionalType2 = newObject()
             .name("Additional2")
             .field(newFieldDefinition()
-            .name("field")
-            .type(GraphQLString)
-            .dataFetcher({ env -> null }))
+                    .name("field")
+                    .type(GraphQLString)
+                    .dataFetcher({ env -> null }))
             .build()
 
     def "clear directives works as expected"() {
@@ -171,5 +171,46 @@ class GraphQLSchemaTest extends Specification {
         schema = schema.transform({ bldr -> bldr.additionalType(additionalType2) })
         then:
         schema.additionalTypes.size() == 2
+    }
+
+    def "getType works as expected"() {
+        def sdl = '''
+        type Query {
+            field1 : Pet
+            field2 : UnionType
+        }
+        
+        interface Pet {
+            name : String
+        }
+        
+        type Dog implements Pet {
+            name : String
+        }
+
+        type Cat implements Pet {
+            name : String
+        }
+            
+        union UnionType = Cat | Dog
+            
+        '''
+
+
+        when:
+        def schema = TestUtil.schema(sdl)
+
+        then:
+        schema.containsType("Pet")
+        schema.containsType("Dog")
+        !schema.containsType("Elephant")
+
+        schema.getType("Pet") != null
+
+        GraphQLInterfaceType petType = schema.getTypeAs("Pet")
+        petType.getName() == "Pet"
+
+        GraphQLObjectType dogType = schema.getTypeAs("Dog")
+        dogType.getName() == "Dog"
     }
 }

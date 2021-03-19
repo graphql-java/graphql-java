@@ -15,7 +15,6 @@ import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
 import static graphql.schema.GraphQLTypeReference.typeRef
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
-import static graphql.util.TreeTransformerUtil.changeNode
 import static graphql.util.TreeTransformerUtil.deleteNode
 
 class SchemaTransformerTest extends Specification {
@@ -586,13 +585,13 @@ type Query {
             @Override
             TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
                 node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
-                return changedNode(node, context)
+                return changeNode(context, node)
             }
 
             @Override
             TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
                 node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
-                return changedNode(node, context)
+                return changeNode(context, node)
             }
         })
         then:
@@ -626,14 +625,14 @@ type Query {
             @Override
             TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
                 node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
-                return changedNode(node, context)
+                return changeNode(context, node)
             }
 
             @Override
             TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
                 if (node.getName().startsWith("__")) return TraversalControl.ABORT;
                 node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
-                return changedNode(node, context)
+                return changeNode(context, node)
             }
         })
         then:
@@ -652,5 +651,45 @@ type Query {
         barType.getFieldDefinition("ENUM").getType().is(enumType)
 
         enumType.getValue("e") != null // left alone
+    }
+
+    def "cycle with type refs"() {
+        given:
+        def field = newFieldDefinition()
+                .name("foo")
+                .type(typeRef("Foo"))
+                .build()
+
+        def query = newObject()
+                .name("Query")
+                .field(field)
+                .build()
+        def foo = newObject()
+                .name("Foo")
+                .field(newFieldDefinition().name("toChange").type(Scalars.GraphQLString))
+                .field(newFieldDefinition().name("subFoo").type(typeRef("Foo")))
+                .build()
+
+
+        GraphQLSchema schema = newSchema().query(query).additionalType(foo).build()
+        def fieldChanger = new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node,
+                                                         TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getName() == "toChange") {
+                    changeNode(context, node.transform({ builder -> builder.name("changed") }))
+                }
+                return TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        def newSchema = SchemaTransformer.transformSchema(schema, fieldChanger)
+
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
+        def newFoo = newSchema.getQueryType().getFieldDefinition("foo").getType() as GraphQLObjectType
+        then:
+        newFoo.getFieldDefinition("changed") != null
     }
 }

@@ -40,7 +40,7 @@ directive @auth(roles: [String!]) on FIELD_DEFINITION
 directive @deprecated(
     "The reason for the deprecation"
     reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ENUM_VALUE
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(

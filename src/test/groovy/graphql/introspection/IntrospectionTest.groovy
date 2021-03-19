@@ -1,6 +1,5 @@
 package graphql.introspection
 
-
 import graphql.TestUtil
 import graphql.schema.DataFetcher
 import graphql.schema.FieldCoordinates
@@ -108,6 +107,56 @@ class IntrospectionTest extends Specification {
         def directives = executionResult.data.getAt("__schema").getAt("directives") as List
         def geoPolygonType = directives.find { it['name'] == 'repeatableDirective' }
         geoPolygonType["isRepeatable"] == true
+    }
+
+    def "introspection for deprecated support"() {
+        def spec = '''
+            type Query {
+               namedField(arg : InputType @deprecated ) : Enum @deprecated
+               notDeprecated(arg : InputType) : Enum
+            }
+            enum Enum {
+                RED @deprecated
+                BLUE
+            }
+            input InputType {
+                inputField : String @deprecated
+            }
+        '''
+
+        when:
+        def graphQL = TestUtil.graphQL(spec).build()
+        def executionResult = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        executionResult.errors.isEmpty()
+
+        def types = executionResult.data['__schema']['types'] as List
+        def queryType = types.find { it['name'] == 'Query' }
+        def namedField = (queryType['fields'] as List).find({ it["name"] == "namedField"})
+        namedField["isDeprecated"]
+
+        def notDeprecatedField = (queryType['fields'] as List).find({ it["name"] == "notDeprecated"})
+        !notDeprecatedField["isDeprecated"]
+        notDeprecatedField["deprecationReason"] == null
+
+        def enumType = types.find { it['name'] == 'Enum' }
+        def red = enumType["enumValues"].find({ it["name"] == "RED" })
+        red["isDeprecated"]
+        red["deprecationReason"] == "No longer supported"
+
+        def inputType = types.find { it['name'] == 'InputType' }
+        def inputField = inputType["inputFields"].find({ it["name"] == "inputField" })
+        inputField["isDeprecated"]
+        inputField["deprecationReason"] == "No longer supported"
+
+        def argument = (namedField["args"] as List).find({ it["name"] == "arg"})
+        argument["isDeprecated"]
+        argument["deprecationReason"] == "No longer supported"
+
+        def argument2 = (notDeprecatedField["args"] as List).find({ it["name"] == "arg"})
+        !argument2["isDeprecated"]
+        argument2["deprecationReason"] == null
     }
 
     def "can change data fetchers for introspection types"() {

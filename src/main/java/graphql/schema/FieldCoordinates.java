@@ -106,6 +106,18 @@ public class FieldCoordinates {
     }
 
     /**
+     * Creates new field coordinates
+     *
+     * @param parentType the container of the field
+     * @param fieldName  the field name
+     *
+     * @return new field coordinates represented by the two parameters
+     */
+    public static FieldCoordinates coordinates(GraphQLFieldsContainer parentType, String fieldName) {
+        return coordinates(parentType.getName(), fieldName);
+    }
+
+    /**
      * The exception to the general rule is the system __xxxx Introspection fields which have no parent type and
      * are able to be specified on any type
      *
