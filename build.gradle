@@ -59,7 +59,10 @@ jar {
     manifest {
         attributes('Automatic-Module-Name': 'com.graphql-java')
     }
-	bnd('-exportcontents': 'graphql.*')
+	bnd('''
+-exportcontents: graphql.*
+Import-Package: com.google.common.collect;version="[30.0,32)",*
+''')
 }
 
 dependencies {
