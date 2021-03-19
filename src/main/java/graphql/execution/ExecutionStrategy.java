@@ -454,7 +454,7 @@ public abstract class ExecutionStrategy {
 
     }
 
-    private CompletableFuture<ExecutionResult> completeValueForNull(ExecutionStrategyParameters parameters) {
+    protected CompletableFuture<ExecutionResult> completeValueForNull(ExecutionStrategyParameters parameters) {
         return Async.tryCatch(() -> {
             Object nullValue = parameters.getNonNullFieldValidator().validate(parameters.getPath(), null);
             return completedFuture(new ExecutionResultImpl(nullValue, null));
