@@ -53,8 +53,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static graphql.Directives.DeprecatedDirective;
+import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
+import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 import static graphql.util.EscapeUtil.escapeJsonString;
 import static java.util.Optional.ofNullable;
@@ -72,7 +74,7 @@ public class SchemaPrinter {
     //
     private static final GraphQLDirective DeprecatedDirective4Printing = GraphQLDirective.newDirective()
             .name("deprecated")
-            .validLocations(FIELD_DEFINITION, ENUM_VALUE)
+            .validLocations(FIELD_DEFINITION, ENUM_VALUE, ARGUMENT_DEFINITION, INPUT_FIELD_DEFINITION)
             .build();
 
     /**
