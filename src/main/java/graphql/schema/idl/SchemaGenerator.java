@@ -21,31 +21,19 @@ import java.util.Set;
 @PublicApi
 public class SchemaGenerator {
 
-    /**
-     * These options control how the schema generation works
-     */
-    public static class Options {
-
-        Options() {
-        }
-
-        public static Options defaultOptions() {
-            return new Options();
-        }
-    }
-
     private final SchemaTypeChecker typeChecker = new SchemaTypeChecker();
     private final SchemaGeneratorHelper schemaGeneratorHelper = new SchemaGeneratorHelper();
-
     public SchemaGenerator() {
     }
 
     /**
-     * Created a mocked schema from SDL.
+     * Created a schema from the SDL that is has a mocked runtime.
      *
-     * @param sdl
+     * @param sdl the SDL to be mocked
      *
-     * @return
+     * @return a schema with a mocked runtime
+     *
+     * @see RuntimeWiring#MOCKED_WIRING
      */
     public static GraphQLSchema createdMockedSchema(String sdl) {
         TypeDefinitionRegistry typeDefinitionRegistry = new SchemaParser().parse(sdl);
@@ -133,5 +121,18 @@ public class SchemaGenerator {
             graphQLSchema = postProcessing.process(graphQLSchema);
         }
         return graphQLSchema;
+    }
+
+    /**
+     * These options control how the schema generation works
+     */
+    public static class Options {
+
+        Options() {
+        }
+
+        public static Options defaultOptions() {
+            return new Options();
+        }
     }
 }

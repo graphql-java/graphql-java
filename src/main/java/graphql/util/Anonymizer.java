@@ -182,7 +182,7 @@ public class Anonymizer {
                 GraphQLEnumValueDefinition newElement = enumValueDefinition.transform(builder -> {
                     builder.name(newName).description(null).definition(null);
                 });
-                return changeNode(context, newElement);
+                return changeNode(context,newElement);
             }
 
             @Override
@@ -230,7 +230,7 @@ public class Anonymizer {
                     builder.description(null);
                     builder.definition(null);
                 });
-                return changeNode(context, newElement);
+                return changeNode(context,newElement);
             }
 
             @Override
@@ -242,7 +242,7 @@ public class Anonymizer {
                 GraphQLInputObjectType newElement = graphQLInputObjectType.transform(builder -> {
                     builder.name(newName).description(null).definition(null);
                 });
-                return changeNode(context, newElement);
+                return changeNode(context,newElement);
             }
 
 
@@ -255,7 +255,7 @@ public class Anonymizer {
                 GraphQLObjectType newElement = graphQLObjectType.transform(builder -> {
                     builder.name(newName).description(null).definition(null);
                 });
-                return changeNode(context, newElement);
+                return changeNode(context,newElement);
             }
 
             @Override
@@ -267,7 +267,7 @@ public class Anonymizer {
                 GraphQLScalarType newElement = graphQLScalarType.transform(builder -> {
                     builder.name(newName).description(null).definition(null);
                 });
-                return changeNode(context, newElement);
+                return changeNode(context,newElement);
             }
 
             @Override
@@ -282,7 +282,7 @@ public class Anonymizer {
                 GraphQLCodeRegistry.Builder codeRegistry = assertNotNull(context.getVarFromParents(GraphQLCodeRegistry.Builder.class));
                 TypeResolver typeResolver = codeRegistry.getTypeResolver(graphQLUnionType);
                 codeRegistry.typeResolver(newName, typeResolver);
-                return changeNode(context, newElement);
+                return changeNode(context,newElement);
             }
         });
 
