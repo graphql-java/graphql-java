@@ -59,6 +59,7 @@ jar {
     manifest {
         attributes('Automatic-Module-Name': 'com.graphql-java')
     }
+	bnd('-exportcontents': 'graphql.*')
 }
 
 dependencies {
