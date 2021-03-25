@@ -6,7 +6,6 @@ import graphql.Internal;
 import graphql.execution.ConditionalNodes;
 import graphql.execution.MergedField;
 import graphql.execution.ValuesResolver;
-import graphql.introspection.Introspection;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
@@ -32,9 +31,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.introspection.Introspection.SchemaMetaFieldDef;
-import static graphql.introspection.Introspection.TypeMetaFieldDef;
-import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 
 
 /**
@@ -197,14 +193,17 @@ public class FieldCollectorNormalizedQuery {
 
             } else {
                 GraphQLFieldDefinition fieldDefinition;
-                if (field.getName().equals(TypeNameMetaFieldDef.getName())) {
-                    fieldDefinition = TypeNameMetaFieldDef;
-                } else if (field.getName().equals(Introspection.SchemaMetaFieldDef.getName())) {
-                    fieldDefinition = SchemaMetaFieldDef;
-                } else if (field.getName().equals(Introspection.TypeMetaFieldDef.getName())) {
-                    fieldDefinition = TypeMetaFieldDef;
+                GraphQLSchema schema = parameters.getGraphQLSchema();
+                if (field.getName().equals(schema.getIntrospectionTypenameFieldDefinition().getName())) {
+                    fieldDefinition = schema.getIntrospectionTypenameFieldDefinition();
                 } else {
-                    fieldDefinition = assertNotNull(objectType.getFieldDefinition(field.getName()), () -> String.format("no field with name %s found in object %s", field.getName(), objectType.getName()));
+                    if (field.getName().equals(schema.getIntrospectionSchemaFieldDefinition().getName())) {
+                        fieldDefinition = schema.getIntrospectionSchemaFieldDefinition();
+                    } else if (field.getName().equals(schema.getIntrospectionTypeFieldDefinition().getName())) {
+                        fieldDefinition = schema.getIntrospectionTypeFieldDefinition();
+                    } else {
+                        fieldDefinition = assertNotNull(objectType.getFieldDefinition(field.getName()), () -> String.format("no field with name %s found in object %s", field.getName(), objectType.getName()));
+                    }
                 }
 
                 Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getVariables());

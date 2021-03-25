@@ -67,7 +67,10 @@ public class FieldCoordinates {
 
     @Override
     public int hashCode() {
-        return Objects.hash(typeName, fieldName);
+        int result = 1;
+        result = 31 * result + Objects.hashCode(typeName);
+        result = 31 * result + Objects.hashCode(fieldName);
+        return result;
     }
 
     @Override
@@ -97,6 +100,18 @@ public class FieldCoordinates {
      */
     public static FieldCoordinates coordinates(String parentType, String fieldName) {
         return new FieldCoordinates(parentType, fieldName, false);
+    }
+
+    /**
+     * Creates new field coordinates
+     *
+     * @param parentType the container of the field
+     * @param fieldName  the field name
+     *
+     * @return new field coordinates represented by the two parameters
+     */
+    public static FieldCoordinates coordinates(GraphQLFieldsContainer parentType, String fieldName) {
+        return coordinates(parentType.getName(), fieldName);
     }
 
     /**

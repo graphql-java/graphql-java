@@ -62,10 +62,11 @@ public class GraphqlErrorHelper {
     }
 
     public static int hashCode(GraphQLError dis) {
-        int result = dis.getMessage() != null ? dis.getMessage().hashCode() : 0;
-        result = 31 * result + (dis.getLocations() != null ? dis.getLocations().hashCode() : 0);
-        result = 31 * result + (dis.getPath() != null ? dis.getPath().hashCode() : 0);
-        result = 31 * result + dis.getErrorType().hashCode();
+        int result = 1;
+        result = 31 * result + Objects.hashCode(dis.getMessage());
+        result = 31 * result + Objects.hashCode(dis.getLocations());
+        result = 31 * result + Objects.hashCode(dis.getPath());
+        result = 31 * result + Objects.hashCode(dis.getErrorType());
         return result;
     }
 

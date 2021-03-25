@@ -26,6 +26,7 @@ import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.TypeRuntimeWiring
 import graphql.schema.idl.WiringFactory
 import graphql.schema.idl.errors.SchemaProblem
+import groovy.json.JsonOutput
 
 import java.util.function.Supplier
 import java.util.stream.Collectors
@@ -284,4 +285,17 @@ class TestUtil {
     static Comparator<? super GraphQLType> byGreatestLength = Comparator.comparing({ it.name },
             Comparator.comparing({ it.length() }).reversed())
 
+
+    /**
+     * Turns a object kinto JSON and prints it - Helpful for debugging
+     * @param obj some obj
+     * @return a string
+     */
+    static String prettyPrint(Object obj) {
+        if (obj instanceof ExecutionResult) {
+            obj = ((ExecutionResult) obj).toSpecification()
+        }
+        return JsonOutput.prettyPrint(JsonOutput.toJson(obj))
+
+    }
 }

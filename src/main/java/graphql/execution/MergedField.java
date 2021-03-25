@@ -181,7 +181,7 @@ public class MergedField {
 
     @Override
     public int hashCode() {
-        return Objects.hash(fields);
+        return Objects.hashCode(fields);
     }
 
     @Override

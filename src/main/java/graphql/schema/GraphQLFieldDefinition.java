@@ -196,6 +196,12 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
     }
 
     @Override
+    public GraphQLSchemaElement copy() {
+        return newFieldDefinition(this).build();
+    }
+
+
+    @Override
     public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLFieldDefinition(this, context);
     }
@@ -243,7 +249,6 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
     public final int hashCode() {
         return super.hashCode();
     }
-
 
     public static Builder newFieldDefinition(GraphQLFieldDefinition existing) {
         return new Builder(existing);

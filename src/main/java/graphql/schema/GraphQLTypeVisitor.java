@@ -3,7 +3,14 @@ package graphql.schema;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import graphql.util.TreeTransformerUtil;
 
+/**
+ * GraphQLTypeVisitor can be used to visit all the elements of a schema
+ * (types, fields, directives and so on) in a visitor pattern.
+ *
+ * @see GraphQLTypeVisitorStub
+ */
 @PublicApi
 public interface GraphQLTypeVisitor {
     TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLSchemaElement> context);
@@ -83,5 +90,51 @@ public interface GraphQLTypeVisitor {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * This helper method can be used to "change" a node when returning control from this visitor
+     *
+     * @param context        the current traversal context
+     * @param newChangedNode the new to be changed at this place
+     *
+     * @return this will always sent back TraversalControl.CONTINUE
+     */
+    default TraversalControl changeNode(TraverserContext<GraphQLSchemaElement> context, GraphQLSchemaElement newChangedNode) {
+        return TreeTransformerUtil.changeNode(context, newChangedNode);
+    }
+
+    /**
+     * This helper method can be used to "delete" the current node when returning control from this visitor
+     *
+     * @param context the current traversal context which is pointing to the current node to be deleted
+     *
+     * @return this will always sent back TraversalControl.CONTINUE
+     */
+    default TraversalControl deleteNode(TraverserContext<GraphQLSchemaElement> context) {
+        return TreeTransformerUtil.deleteNode(context);
+    }
+
+    /**
+     * This helper method can be used to "insert a new node" AFTER the current node when returning control from this visitor
+     *
+     * @param context       the current traversal context
+     * @param toInsertAfter the new to be inserted AFTER this current code
+     *
+     * @return this will always sent back TraversalControl.CONTINUE
+     */
+    default TraversalControl insertAfter(TraverserContext<GraphQLSchemaElement> context, GraphQLSchemaElement toInsertAfter) {
+        return TreeTransformerUtil.insertAfter(context, toInsertAfter);
+    }
+
+    /**
+     * This helper method can be used to "insert a new node" BEFORE the current node when returning control from this visitor
+     *
+     * @param context        the current traversal context
+     * @param toInsertBefore the new to be inserted BEFORE this current code
+     *
+     * @return this will always sent back TraversalControl.CONTINUE
+     */
+    default TraversalControl insertBefore(TraverserContext<GraphQLSchemaElement> context, GraphQLSchemaElement toInsertBefore) {
+        return TreeTransformerUtil.insertBefore(context, toInsertBefore);
+    }
 
 }

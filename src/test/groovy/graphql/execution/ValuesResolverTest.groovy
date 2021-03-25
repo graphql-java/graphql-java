@@ -115,7 +115,8 @@ class ValuesResolverTest extends Specification {
         def obj = new Person('a', 123)
         resolver.coerceVariableValues(schema, [variableDefinition], [variable: obj])
         then:
-        thrown(CoercingParseValueException)
+        def e = thrown(CoercingParseValueException)
+        e.path == ["variable"]
     }
 
     def "getVariableValues: simple value gets resolved to a list when the type is a List"() {
@@ -411,7 +412,8 @@ class ValuesResolverTest extends Specification {
         resolver.coerceVariableValues(schema, [variableDefinition], [variable: inputValue])
 
         then:
-        thrown(GraphQLException)
+        def e = thrown(GraphQLException)
+        e.path== ["variable", "intKey", "requiredField", "requiredField"]
 
         where:
         inputValue                        | _

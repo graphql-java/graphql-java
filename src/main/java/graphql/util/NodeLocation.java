@@ -6,7 +6,7 @@ import java.util.Objects;
 
 /**
  * General position of a Node inside a parent.
- *
+ * <p>
  * Can be an index or a name with an index.
  */
 @PublicApi
@@ -34,9 +34,9 @@ public class NodeLocation {
     @Override
     public String toString() {
         return "NodeLocation{" +
-                "name='" + name + '\'' +
-                ", index=" + index +
-                '}';
+            "name='" + name + '\'' +
+            ", index=" + index +
+            '}';
     }
 
     @Override
@@ -49,11 +49,14 @@ public class NodeLocation {
         }
         NodeLocation that = (NodeLocation) o;
         return index == that.index &&
-                Objects.equals(name, that.name);
+            Objects.equals(name, that.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, index);
+        int result = 1;
+        result = 31 * result + Objects.hashCode(name);
+        result = 31 * result + Integer.hashCode(index);
+        return result;
     }
 }

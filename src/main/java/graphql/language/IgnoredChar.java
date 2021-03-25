@@ -38,10 +38,10 @@ public class IgnoredChar implements Serializable {
     @Override
     public String toString() {
         return "IgnoredChar{" +
-                "value='" + value + '\'' +
-                ", kind=" + kind +
-                ", sourceLocation=" + sourceLocation +
-                '}';
+            "value='" + value + '\'' +
+            ", kind=" + kind +
+            ", sourceLocation=" + sourceLocation +
+            '}';
     }
 
     @Override
@@ -54,12 +54,16 @@ public class IgnoredChar implements Serializable {
         }
         IgnoredChar that = (IgnoredChar) o;
         return Objects.equals(value, that.value) &&
-                kind == that.kind &&
-                Objects.equals(sourceLocation, that.sourceLocation);
+            kind == that.kind &&
+            Objects.equals(sourceLocation, that.sourceLocation);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(value, kind, sourceLocation);
+        int result = 1;
+        result = 31 * result + Objects.hashCode(value);
+        result = 31 * result + Objects.hashCode(kind);
+        result = 31 * result + Objects.hashCode(sourceLocation);
+        return result;
     }
 }

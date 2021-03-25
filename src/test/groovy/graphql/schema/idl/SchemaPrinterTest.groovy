@@ -10,8 +10,8 @@ import graphql.schema.Coercing
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLEnumType
-import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLEnumValueDefinition
+import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInputType
@@ -991,7 +991,7 @@ directive @repeatableDirective repeatable on SCALAR
 directive @deprecated(
     "The reason for the deprecation"
     reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ENUM_VALUE
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(
@@ -1084,6 +1084,8 @@ input SomeInput {
               active : Enum
               deprecated : Enum @deprecated
               deprecatedWithReason : Enum @deprecated(reason : "Custom reason 1")
+              deprecatedFieldArgument( arg1 : String, arg2 : Int @deprecated) : Enum
+              deprecatedFieldArgumentWithReason( arg1 : String, arg2 : Int @deprecated(reason : "Custom arg reason 1")) : Enum
             }
             
             type Query {
@@ -1095,6 +1097,12 @@ input SomeInput {
               DEPRECATED @deprecated
               DEPRECATED_WITH_REASON @deprecated(reason : "Custom reason 2")
             }
+            
+            input Input {
+              active : Enum
+              deprecated : Enum @deprecated
+              deprecatedWithReason : Enum @deprecated(reason : "Custom reason 3")
+          }
         """
         def registry = new SchemaParser().parse(idl)
         def runtimeWiring = newRuntimeWiring().build()
@@ -1122,7 +1130,7 @@ directive @skip(
 directive @deprecated(
     "The reason for the deprecation"
     reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ENUM_VALUE
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(
@@ -1133,6 +1141,8 @@ directive @specifiedBy(
 type Field {
   active: Enum
   deprecated: Enum @deprecated(reason : "No longer supported")
+  deprecatedFieldArgument(arg1: String, arg2: Int @deprecated(reason : "No longer supported")): Enum
+  deprecatedFieldArgumentWithReason(arg1: String, arg2: Int @deprecated(reason : "Custom arg reason 1")): Enum
   deprecatedWithReason: Enum @deprecated(reason : "Custom reason 1")
 }
 
@@ -1144,6 +1154,12 @@ enum Enum {
   ACTIVE
   DEPRECATED @deprecated(reason : "No longer supported")
   DEPRECATED_WITH_REASON @deprecated(reason : "Custom reason 2")
+}
+
+input Input {
+  active: Enum
+  deprecated: Enum @deprecated(reason : "No longer supported")
+  deprecatedWithReason: Enum @deprecated(reason : "Custom reason 3")
 }
 '''
     }
@@ -1211,7 +1227,7 @@ directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION 
 directive @deprecated(
     "The reason for the deprecation"
     reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ENUM_VALUE
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(
@@ -1276,7 +1292,7 @@ directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION 
 directive @deprecated(
     "The reason for the deprecation"
     reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ENUM_VALUE
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(
@@ -1408,7 +1424,7 @@ directive @directive1 on SCALAR
 directive @deprecated(
     "The reason for the deprecation"
     reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ENUM_VALUE
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(
@@ -1519,6 +1535,10 @@ extend type Query {
             enum Enum {
               enumVal @deprecated
             }
+            
+            input Input {
+                deprecated : String @deprecated(reason : "custom reason")
+            }
         """
         def registry = new SchemaParser().parse(idl)
         def runtimeWiring = newRuntimeWiring().build()
@@ -1539,6 +1559,10 @@ type Query {
 
 enum Enum {
   enumVal @deprecated(reason : "No longer supported")
+}
+
+input Input {
+  deprecated: String @deprecated(reason : "custom reason")
 }
 '''
     }
@@ -1862,4 +1886,55 @@ type PrintMeType {
 """
 
     }
+
+    def "schema with directive prints directive"() {
+        def sdl = """
+            directive @foo on SCHEMA
+            type MyQuery { anything: String }
+            schema @foo {
+                query: MyQuery
+            }
+        """
+        def schema = TestUtil.schema(sdl)
+
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeDirectives(true)).print(schema)
+
+        then:
+        result == """schema @foo{
+  query: MyQuery
+}
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to skip this field or fragment when the `if`'argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @foo on SCHEMA
+
+"Marks the field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
+type MyQuery {
+  anything: String
+}
+"""
+    }
+
 }
