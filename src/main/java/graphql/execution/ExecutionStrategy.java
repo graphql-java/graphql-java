@@ -417,7 +417,7 @@ public abstract class ExecutionStrategy {
         CompletableFuture<ExecutionResult> fieldValue;
 
         if (result == null) {
-            fieldValue = completeValueForNull(parameters);
+            fieldValue = completeValueForNull(executionContext, parameters);
             return FieldValueInfo.newFieldValueInfo(NULL).fieldValue(fieldValue).build();
         } else if (isList(fieldType)) {
             return completeValueForList(executionContext, parameters, result);
@@ -454,7 +454,7 @@ public abstract class ExecutionStrategy {
 
     }
 
-    private CompletableFuture<ExecutionResult> completeValueForNull(ExecutionStrategyParameters parameters) {
+    protected CompletableFuture<ExecutionResult> completeValueForNull(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         return Async.tryCatch(() -> {
             Object nullValue = parameters.getNonNullFieldValidator().validate(parameters.getPath(), null);
             return completedFuture(new ExecutionResultImpl(nullValue, null));
