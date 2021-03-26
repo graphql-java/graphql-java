@@ -170,6 +170,63 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
         def definedDirectives = er.data["__schema"]["directives"]
         // secret is filter out
         definedDirectives == [[name: "include"], [name: "skip"], [name: "example"], [name: "deprecated"], [name: "specifiedBy"]]
+    }
 
+    def "can set prefixes onto the Applied types"() {
+        def sdl = '''
+            type Query {
+                hello : __Hello
+            }
+            
+            type __Hello {
+                world : _Bar 
+            }
+            
+            type _Bar {
+                bar  : String
+            }
+        '''
+
+        def schema = TestUtil.schema(sdl)
+        def filter = new IntrospectionWithDirectivesSupport.DirectivePredicate() {
+            @Override
+            boolean isDirectiveIncluded(IntrospectionWithDirectivesSupport.DirectivePredicateEnvironment env) {
+                return !env.getDirective().getName().contains("secret")
+            }
+        }
+        def newSchema = new IntrospectionWithDirectivesSupport(filter, "__x__").apply(schema)
+        def graphql = GraphQL.newGraphQL(newSchema).build()
+
+        def query = '''
+        {
+            __schema {
+                types {
+                    name
+                }
+            }
+        }
+        '''
+
+        when:
+        def er = graphql.execute(query)
+        then:
+        er.errors.isEmpty()
+        def types = er.data["__schema"]["types"]
+
+        types.find({ type -> (type["name"] == "__x__AppliedDirective") }) != null
+        types.find({ type -> (type["name"] == "__x__DirectiveArgument") }) != null
+
+        when:
+
+        newSchema = new IntrospectionWithDirectivesSupport(filter, "__").apply(schema)
+        graphql = GraphQL.newGraphQL(newSchema).build()
+        er = graphql.execute(query)
+
+        then:
+        er.errors.isEmpty()
+        def types2 = er.data["__schema"]["types"]
+
+        types2.find({ type -> (type["name"] == "__AppliedDirective") }) != null
+        types2.find({ type -> (type["name"] == "__DirectiveArgument") }) != null
     }
 }
