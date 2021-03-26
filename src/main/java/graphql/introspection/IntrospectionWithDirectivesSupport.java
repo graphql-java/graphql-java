@@ -134,7 +134,19 @@ public class IntrospectionWithDirectivesSupport {
                 return CONTINUE;
             }
         };
-        return SchemaTransformer.transformSchema(schema, visitor);
+        schema = SchemaTransformer.transformSchema(schema, visitor);
+        return addDirectiveDefinitionFilter(schema);
+    }
+
+    private GraphQLSchema addDirectiveDefinitionFilter(GraphQLSchema schema) {
+        DataFetcher<?> df = env -> {
+            List<GraphQLDirective> definedDirectives = env.getGraphQLSchema().getDirectives();
+            return filterDirectives(true, null, definedDirectives);
+        };
+        GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry().transform(builder -> {
+            builder.dataFetcher(coordinates(__Schema, "directives"), df);
+        });
+        return schema.transform(schemaBuilder -> schemaBuilder.codeRegistry(codeRegistry));
     }
 
     private GraphQLObjectType addAppliedDirectives(GraphQLObjectType originalType, GraphQLCodeRegistry.Builder codeRegistry) {
@@ -143,11 +155,11 @@ public class IntrospectionWithDirectivesSupport {
             Object source = env.getSource();
             if (source instanceof GraphQLDirectiveContainer) {
                 GraphQLDirectiveContainer type = env.getSource();
-                return filterDirectives(type, type.getDirectives());
+                return filterDirectives(false, type, type.getDirectives());
             }
             if (source instanceof GraphQLSchema) {
                 GraphQLSchema schema = (GraphQLSchema) source;
-                return filterDirectives(null, schema.getSchemaDirectives());
+                return filterDirectives(true, null, schema.getSchemaDirectives());
             }
             return assertShouldNeverHappen("What directive containing element have we not considered? - %s", originalType);
         };
@@ -166,12 +178,17 @@ public class IntrospectionWithDirectivesSupport {
         return objectType;
     }
 
-    private List<GraphQLDirective> filterDirectives(GraphQLDirectiveContainer container, List<GraphQLDirective> directives) {
+    private List<GraphQLDirective> filterDirectives(boolean isDefinedDirective, GraphQLDirectiveContainer container, List<GraphQLDirective> directives) {
         return directives.stream().filter(directive -> {
             DirectivePredicateEnvironment env = new DirectivePredicateEnvironment() {
                 @Override
                 public GraphQLDirectiveContainer getDirectiveContainer() {
                     return container;
+                }
+
+                @Override
+                public boolean isDefinedDirective() {
+                    return isDefinedDirective;
                 }
 
                 @Override
@@ -201,6 +218,16 @@ public class IntrospectionWithDirectivesSupport {
          * @return the directive to be included
          */
         GraphQLDirective getDirective();
+
+        /**
+         * A schema has two list of directives.  A list of directives that are defined
+         * in that schema and the list of direcives that are applied to a schema element.
+         *
+         * This returns true if this filtering represents the defined directives.
+         *
+         * @return true if this is filtering defined directives
+         */
+        boolean isDefinedDirective();
     }
 
 
