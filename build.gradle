@@ -1,7 +1,7 @@
 import java.text.SimpleDateFormat
 
 plugins {
-    id "com.jfrog.bintray" version "1.8.4"
+//    id "com.jfrog.bintray" version "1.8.4"
     id 'java'
     id 'java-library'
     id 'maven'
@@ -9,6 +9,7 @@ plugins {
     id 'antlr'
     id "com.github.johnrengelman.shadow" version "6.1.0"
     id "biz.aQute.bnd.builder" version "5.1.2"
+    id "io.github.gradle-nexus.publish-plugin" version "1.0.0"
 }
 
 
@@ -114,7 +115,7 @@ shadowJar {
 
 
 task removeNotNeededGuava(type: Zip) {
-    from({ zipTree({"build/libs/graphql-java-${project.version}.jar"})}) {
+    from({ zipTree({ "build/libs/graphql-java-${project.version}.jar" }) }) {
         exclude('/com/**')
     }
     archiveFileName = "graphql-java-tmp.jar"
@@ -233,36 +234,45 @@ publishing {
     }
 }
 
-
-bintray {
-    user = System.env.BINTRAY_USER ?: project["bintray.user"]
-    key = System.env.BINTRAY_API_KEY ?: project["bintray.key"]
-    publications = ['graphqlJava']
-    publish = true
-    pkg {
-        repo = 'graphql-java'
-        name = 'graphql-java'
-        desc = 'GraphQL in Java'
-        licenses = ['MIT']
-        vcsUrl = 'https://github.com/graphql-java/graphql-java'
-
-        version {
-            name = project.version
-            desc = project.description
-            released = new Date()
-            vcsTag = 'v' + project.version
-            gpg {
-                sign = true
-            }
-            mavenCentralSync {
-                sync = true
-                user = System.env.MAVEN_CENTRAL_USER
-                password = System.env.MAVEN_CENTRAL_PASSWORD
-                close = '1'
-            }
+nexusPublishing {
+    repositories {
+        sonatype {
+            username = System.env.MAVEN_CENTRAL_USER
+            password = System.env.MAVEN_CENTRAL_PASSWORD
         }
     }
 }
+
+
+//bintray {
+//    user = System.env.BINTRAY_USER ?: project["bintray.user"]
+//    key = System.env.BINTRAY_API_KEY ?: project["bintray.key"]
+//    publications = ['graphqlJava']
+//    publish = true
+//    pkg {
+//        repo = 'graphql-java'
+//        name = 'graphql-java'
+//        desc = 'GraphQL in Java'
+//        licenses = ['MIT']
+//        vcsUrl = 'https://github.com/graphql-java/graphql-java'
+//
+//        version {
+//            name = project.version
+//            desc = project.description
+//            released = new Date()
+//            vcsTag = 'v' + project.version
+//            gpg {
+//                sign = true
+//            }
+//            mavenCentralSync {
+//                sync = true
+//                user = System.env.MAVEN_CENTRAL_USER
+//                password = System.env.MAVEN_CENTRAL_PASSWORD
+//                close = '1'
+//            }
+//        }
+//    }
+//}
 
 // all publish tasks depend on the build task
 tasks.withType(PublishToMavenRepository) {
