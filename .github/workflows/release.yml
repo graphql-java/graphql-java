@@ -11,7 +11,6 @@ jobs:
   buildAndPublish:
     runs-on: ubuntu-latest
     env:
-      MAVEN_CENTRAL_KEY_ID: ${{ secrets.MAVEN_CENTRAL_KEY_ID }}
       MAVEN_CENTRAL_PGP_KEY: ${{ secrets.MAVEN_CENTRAL_PGP_KEY }}
       MAVEN_CENTRAL_USER: ${{ secrets.MAVEN_CENTRAL_USER }}
       MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
