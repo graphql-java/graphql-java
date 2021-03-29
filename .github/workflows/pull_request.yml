@@ -18,4 +18,4 @@ jobs:
         with:
           java-version: '8.0.282'
       - name: build and test
-        run: ./gradlew assemble && ./gradlew check --info
+        run: ./gradlew assemble && ./gradlew check --info --stacktrace
