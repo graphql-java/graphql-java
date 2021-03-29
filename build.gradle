@@ -1,7 +1,6 @@
 import java.text.SimpleDateFormat
 
 plugins {
-//    id "com.jfrog.bintray" version "1.8.4"
     id 'java'
     id 'java-library'
     id 'maven'
@@ -247,41 +246,10 @@ nexusPublishing {
 signing {
     def signingKeyId = System.env.MAVEN_CENTRAL_KEY_ID
     def signingKey = System.env.MAVEN_CENTRAL_PGP_KEY
-    def signingPassword = ""
-    useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+    useInMemoryPgpKeys(signingKeyId, signingKey, null)
     sign publishing.publications
 }
 
-
-//bintray {
-//    user = System.env.BINTRAY_USER ?: project["bintray.user"]
-//    key = System.env.BINTRAY_API_KEY ?: project["bintray.key"]
-//    publications = ['graphqlJava']
-//    publish = true
-//    pkg {
-//        repo = 'graphql-java'
-//        name = 'graphql-java'
-//        desc = 'GraphQL in Java'
-//        licenses = ['MIT']
-//        vcsUrl = 'https://github.com/graphql-java/graphql-java'
-//
-//        version {
-//            name = project.version
-//            desc = project.description
-//            released = new Date()
-//            vcsTag = 'v' + project.version
-//            gpg {
-//                sign = true
-//            }
-//            mavenCentralSync {
-//                sync = true
-//                user = System.env.MAVEN_CENTRAL_USER
-//                password = System.env.MAVEN_CENTRAL_PASSWORD
-//                close = '1'
-//            }
-//        }
-//    }
-//}
 
 // all publish tasks depend on the build task
 tasks.withType(PublishToMavenRepository) {
