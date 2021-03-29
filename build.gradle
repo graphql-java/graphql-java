@@ -244,10 +244,9 @@ nexusPublishing {
 }
 
 signing {
-    def signingKeyId = System.env.MAVEN_CENTRAL_KEY_ID
     def signingKey = System.env.MAVEN_CENTRAL_PGP_KEY
     def signingPassword = ""
-    useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+    useInMemoryPgpKeys(signingKey, signingPassword)
     sign publishing.publications
 }
 
