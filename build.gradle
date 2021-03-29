@@ -7,6 +7,7 @@ plugins {
     id 'maven'
     id 'maven-publish'
     id 'antlr'
+    id 'signing'
     id "com.github.johnrengelman.shadow" version "6.1.0"
     id "biz.aQute.bnd.builder" version "5.1.2"
     id "io.github.gradle-nexus.publish-plugin" version "1.0.0"
@@ -241,6 +242,14 @@ nexusPublishing {
             password = System.env.MAVEN_CENTRAL_PASSWORD
         }
     }
+}
+
+signing {
+    def signingKeyId = System.env.MAVEN_CENTRAL_KEY_ID
+    def signingKey = System.env.MAVEN_CENTRAL_PGP_KEY
+    def signingPassword = ""
+    useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+    sign publishing.publications
 }
 
 
