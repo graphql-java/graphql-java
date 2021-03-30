@@ -34,6 +34,5 @@ public enum ValidationErrorType {
     DuplicateDirectiveName,
     DuplicateArgumentNames,
     DuplicateVariableName,
-    NullValueForNonNullArgument,
-    MoreThanOneSubscriptionField
+    NullValueForNonNullArgument
 }
