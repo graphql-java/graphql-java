@@ -12,7 +12,7 @@ import static graphql.validation.rules.SingleSubscriptionFieldOnly.moreThanOneSu
 
 class SingleSubscriptionFieldOnlyTest extends Specification {
 
-    def '5.2.3.1 Subscription operations must have exactly one root field.'() {
+    def 'subscription operations must have exactly one root field.'() {
         def query = """
         subscription getName {
             onDogUpdate {
@@ -32,7 +32,7 @@ class SingleSubscriptionFieldOnlyTest extends Specification {
         validationErrors[0] == moreThanOneSubscription("getName", 2, 1)
     }
 
-    def '5.2.3.1 Can have multiple subscription operations'() {
+    def 'can have multiple subscription operations'() {
         def query = """
         subscription dogOperation {
             onDogUpdate {

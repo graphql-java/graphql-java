@@ -3,6 +3,7 @@ package graphql.validation.rules;
 import graphql.Internal;
 import graphql.language.OperationDefinition;
 import graphql.language.Selection;
+import graphql.normalized.FieldCollectorNormalizedQuery;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
@@ -18,8 +19,6 @@ import java.util.Set;
  */
 @Internal
 public class SingleSubscriptionFieldOnly extends AbstractRule {
-
-    private Set<String> operationNames = new LinkedHashSet<>();
 
     public SingleSubscriptionFieldOnly(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
