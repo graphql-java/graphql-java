@@ -505,7 +505,7 @@ public class AstPrinter {
             return "";
         }
         String s;
-        boolean startNewLine = description.getContent().charAt(0) == '\n';
+        boolean startNewLine = description.getContent().length() > 0 && description.getContent().charAt(0) == '\n';
         if (description.isMultiLine()) {
             s = "\"\"\"" + (startNewLine ? "" : "\n") + description.getContent() + "\n\"\"\"\n";
         } else {

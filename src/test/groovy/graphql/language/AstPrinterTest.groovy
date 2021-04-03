@@ -452,6 +452,20 @@ type Query {
 
     }
 
+    def "print empty description"() {
+        def query = '''
+""
+scalar Demo
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''""
+scalar Demo
+'''
+    }
+
     def "print type extensions"() {
         def query = '''
     extend schema {
