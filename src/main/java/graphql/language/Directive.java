@@ -18,7 +18,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static graphql.language.NodeUtil.argumentsByName;
+import static graphql.language.NodeUtil.nodeByName;
 
 @PublicApi
 public class Directive extends AbstractNode<Directive> implements NamedNode<Directive> {
@@ -60,7 +60,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
 
     public Map<String, Argument> getArgumentsByName() {
         // the spec says that args MUST be unique within context
-        return argumentsByName(arguments);
+        return nodeByName(arguments);
     }
 
     public Argument getArgument(String argumentName) {
