@@ -1,7 +1,14 @@
 package graphql.introspection
 
 import graphql.TestUtil
+import graphql.schema.DataFetcher
+import graphql.schema.FieldCoordinates
+import graphql.schema.GraphQLCodeRegistry
+import graphql.schema.GraphQLFieldsContainer
+import graphql.schema.GraphQLNamedType
 import spock.lang.Specification
+
+import static graphql.GraphQL.newGraphQL
 
 class IntrospectionTest extends Specification {
 
@@ -150,5 +157,60 @@ class IntrospectionTest extends Specification {
         def argument2 = (notDeprecatedField["args"] as List).find({ it["name"] == "arg"})
         !argument2["isDeprecated"]
         argument2["deprecationReason"] == null
+    }
+
+    def "can change data fetchers for introspection types"() {
+        def sdl = '''
+            type Query {
+                inA : Int
+                inB : Int
+                inC : Int
+                outA : Int
+                outB : Int
+                outC : Int
+            }
+        '''
+
+        def schema = TestUtil.schema(sdl)
+        def graphQL = newGraphQL(schema).build()
+        def query = '''
+            {
+                __schema {
+                    types {
+                        name
+                        fields {
+                            name
+                        }
+                    }
+                }
+            }
+        '''
+
+        when:
+        def er = graphQL.execute(query)
+        then:
+        def queryTypeFields = er.data["__schema"]["types"].find({ it["name"] == "Query" })["fields"]
+        queryTypeFields == [[name: "inA"], [name: "inB"], [name: "inC"], [name: "outA"], [name: "outB"], [name: "outC"]]
+
+        when:
+        DataFetcher introspectionFieldsOfTypeFetcher = { env ->
+            GraphQLNamedType type = env.getSource()
+            if (type instanceof GraphQLFieldsContainer) {
+                def fieldDefs = ((GraphQLFieldsContainer) type).getFieldDefinitions()
+                return fieldDefs.stream().filter({ fld -> fld.getName().startsWith("in") }).collect()
+            }
+        }
+        GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry()
+        codeRegistry = codeRegistry.transform({
+            bld -> bld.dataFetcher(FieldCoordinates.coordinates("__Type", "fields"), introspectionFieldsOfTypeFetcher)
+        }
+        )
+        schema = schema.transform({ bld -> bld.codeRegistry(codeRegistry) })
+        graphQL = newGraphQL(schema).build()
+        er = graphQL.execute(query)
+        queryTypeFields = er.data["__schema"]["types"].find({ it["name"] == "Query" })["fields"]
+
+        then:
+        queryTypeFields == [[name: "inA"], [name: "inB"], [name: "inC"]]
     }
 }

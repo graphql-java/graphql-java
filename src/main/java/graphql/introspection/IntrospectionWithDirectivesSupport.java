@@ -13,6 +13,7 @@ import graphql.schema.GraphQLDirectiveContainer;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
+import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.SchemaTransformer;
 import graphql.util.TraversalControl;
@@ -21,6 +22,7 @@ import graphql.util.TraverserContext;
 import java.util.List;
 import java.util.Set;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Scalars.GraphQLString;
 import static graphql.introspection.Introspection.__EnumValue;
@@ -53,15 +55,15 @@ import static java.util.stream.Collectors.toList;
  *      type __Field {
  *          name: String!
  *          // other fields ...
- *          appliedDirectives: [__AppliedDirective!]!   // NEW FIELD
+ *          appliedDirectives: [_AppliedDirective!]!   // NEW FIELD
  *      }
  *
- *     type __AppliedDirective {                        // NEW INTROSPECTION TYPE
+ *     type _AppliedDirective {                        // NEW INTROSPECTION TYPE
  *          name: String!
- *          args: [__DirectiveArgument!]!
+ *          args: [_DirectiveArgument!]!
  *      }
  *
- *      type __DirectiveArgument {                      // NEW INTROSPECTION TYPE
+ *      type _DirectiveArgument {                      // NEW INTROSPECTION TYPE
  *          name: String!
  *          value: String!
  *      }
@@ -71,32 +73,12 @@ import static java.util.stream.Collectors.toList;
 public class IntrospectionWithDirectivesSupport {
 
     private final DirectivePredicate directivePredicate;
+    private final String typePrefix;
 
     private final Set<String> INTROSPECTION_ELEMENTS = ImmutableSet.of(
             __Schema.getName(), __Type.getName(), __Field.getName(), __EnumValue.getName(), __InputValue.getName()
     );
 
-    private final GraphQLObjectType __DirectiveArgument = newObject().name("__DirectiveArgument")
-            .description("Directive arguments can have names and values.  The values are in graphql SDL syntax printed as a string." +
-                    " This type is NOT specified by the graphql specification presently.")
-            .field(fld -> fld
-                    .name("name")
-                    .type(nonNull(GraphQLString)))
-            .field(fld -> fld
-                    .name("value")
-                    .type(nonNull(GraphQLString)))
-            .build();
-
-    private final GraphQLObjectType __AppliedDirective = newObject().name("__AppliedDirective")
-            .description("An Applied Directive is an instances of a directive as applied to a schema element." +
-                    " This type is NOT specified by the graphql specification presently.")
-            .field(fld -> fld
-                    .name("name")
-                    .type(nonNull(GraphQLString)))
-            .field(fld -> fld
-                    .name("args")
-                    .type(nonNull(list(nonNull(__DirectiveArgument)))))
-            .build();
 
     /**
      * This version lists all directives on a schema element
@@ -111,7 +93,23 @@ public class IntrospectionWithDirectivesSupport {
      * @param directivePredicate the filtering predicate to decide what directives are shown
      */
     public IntrospectionWithDirectivesSupport(DirectivePredicate directivePredicate) {
-        this.directivePredicate = directivePredicate;
+        this(directivePredicate, "_");
+    }
+
+    /**
+     * This version allows you to filter what directives are listed via the provided predicate
+     *
+     * Some graphql systems (graphql-js in 2021) cannot cope with extra types starting with `__`
+     * so we use a `_` as a prefx by default.   You can supply your own prefix via this constructor.
+     *
+     * See: https://github.com/graphql-java/graphql-java/pull/2221 for more details
+     *
+     * @param directivePredicate the filtering predicate to decide what directives are shown
+     * @param typePrefix         the prefix to put on the new `AppliedDirectives` type
+     */
+    public IntrospectionWithDirectivesSupport(DirectivePredicate directivePredicate, String typePrefix) {
+        this.directivePredicate = assertNotNull(directivePredicate);
+        this.typePrefix = assertNotNull(typePrefix);
     }
 
     /**
@@ -122,32 +120,71 @@ public class IntrospectionWithDirectivesSupport {
      * @return the transformed schema with new extension types and fields in it for Introspection
      */
     public GraphQLSchema apply(GraphQLSchema schema) {
+        GraphQLObjectType directiveArgumentType = mkDirectiveArgumentType(typePrefix + "DirectiveArgument");
+        GraphQLObjectType appliedDirectiveType = mkAppliedDirectiveType(typePrefix + "AppliedDirective", directiveArgumentType);
         GraphQLTypeVisitorStub visitor = new GraphQLTypeVisitorStub() {
             @Override
             public TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, TraverserContext<GraphQLSchemaElement> context) {
                 GraphQLCodeRegistry.Builder codeRegistry = context.getVarFromParents(GraphQLCodeRegistry.Builder.class);
                 // we need to change __XXX introspection types to have directive extensions
                 if (INTROSPECTION_ELEMENTS.contains(objectType.getName())) {
-                    GraphQLObjectType newObjectType = addAppliedDirectives(objectType, codeRegistry);
+                    GraphQLObjectType newObjectType = addAppliedDirectives(objectType, codeRegistry, appliedDirectiveType, directiveArgumentType);
                     return changeNode(context, newObjectType);
                 }
                 return CONTINUE;
             }
         };
-        return SchemaTransformer.transformSchema(schema, visitor);
+        schema = SchemaTransformer.transformSchema(schema, visitor);
+        return addDirectiveDefinitionFilter(schema);
     }
 
-    private GraphQLObjectType addAppliedDirectives(GraphQLObjectType originalType, GraphQLCodeRegistry.Builder codeRegistry) {
-        GraphQLObjectType objectType = originalType.transform(bld -> bld.field(fld -> fld.name("appliedDirectives").type(nonNull(list(nonNull(__AppliedDirective))))));
+    private GraphQLObjectType mkDirectiveArgumentType(String name) {
+        return newObject().name(name)
+                .description("Directive arguments can have names and values.  The values are in graphql SDL syntax printed as a string." +
+                        " This type is NOT specified by the graphql specification presently.")
+                .field(fld -> fld
+                        .name("name")
+                        .type(nonNull(GraphQLString)))
+                .field(fld -> fld
+                        .name("value")
+                        .type(nonNull(GraphQLString)))
+                .build();
+    }
+
+    private GraphQLObjectType mkAppliedDirectiveType(String name, GraphQLType directiveArgumentType) {
+        return newObject().name(name)
+                .description("An Applied Directive is an instances of a directive as applied to a schema element." +
+                        " This type is NOT specified by the graphql specification presently.")
+                .field(fld -> fld
+                        .name("name")
+                        .type(nonNull(GraphQLString)))
+                .field(fld -> fld
+                        .name("args")
+                        .type(nonNull(list(nonNull(directiveArgumentType)))))
+                .build();
+    }
+
+    private GraphQLSchema addDirectiveDefinitionFilter(GraphQLSchema schema) {
+        DataFetcher<?> df = env -> {
+            List<GraphQLDirective> definedDirectives = env.getGraphQLSchema().getDirectives();
+            return filterDirectives(true, null, definedDirectives);
+        };
+        GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry().transform(bld ->
+                bld.dataFetcher(coordinates(__Schema, "directives"), df));
+        return schema.transform(bld -> bld.codeRegistry(codeRegistry));
+    }
+
+    private GraphQLObjectType addAppliedDirectives(GraphQLObjectType originalType, GraphQLCodeRegistry.Builder codeRegistry, GraphQLObjectType appliedDirectiveType, GraphQLObjectType directiveArgumentType) {
+        GraphQLObjectType objectType = originalType.transform(bld -> bld.field(fld -> fld.name("appliedDirectives").type(nonNull(list(nonNull(appliedDirectiveType))))));
         DataFetcher<?> df = env -> {
             Object source = env.getSource();
             if (source instanceof GraphQLDirectiveContainer) {
                 GraphQLDirectiveContainer type = env.getSource();
-                return filterDirectives(type, type.getDirectives());
+                return filterDirectives(false, type, type.getDirectives());
             }
             if (source instanceof GraphQLSchema) {
                 GraphQLSchema schema = (GraphQLSchema) source;
-                return filterDirectives(null, schema.getSchemaDirectives());
+                return filterDirectives(true, null, schema.getSchemaDirectives());
             }
             return assertShouldNeverHappen("What directive containing element have we not considered? - %s", originalType);
         };
@@ -161,17 +198,22 @@ public class IntrospectionWithDirectivesSupport {
             return AstPrinter.printAst(AstValueHelper.astFromValue(value, argument.getType()));
         };
         codeRegistry.dataFetcher(coordinates(objectType, "appliedDirectives"), df);
-        codeRegistry.dataFetcher(coordinates(__AppliedDirective, "args"), argsDF);
-        codeRegistry.dataFetcher(coordinates(__DirectiveArgument, "value"), argValueDF);
+        codeRegistry.dataFetcher(coordinates(appliedDirectiveType, "args"), argsDF);
+        codeRegistry.dataFetcher(coordinates(directiveArgumentType, "value"), argValueDF);
         return objectType;
     }
 
-    private List<GraphQLDirective> filterDirectives(GraphQLDirectiveContainer container, List<GraphQLDirective> directives) {
+    private List<GraphQLDirective> filterDirectives(boolean isDefinedDirective, GraphQLDirectiveContainer container, List<GraphQLDirective> directives) {
         return directives.stream().filter(directive -> {
             DirectivePredicateEnvironment env = new DirectivePredicateEnvironment() {
                 @Override
                 public GraphQLDirectiveContainer getDirectiveContainer() {
                     return container;
+                }
+
+                @Override
+                public boolean isDefinedDirective() {
+                    return isDefinedDirective;
                 }
 
                 @Override
@@ -201,6 +243,16 @@ public class IntrospectionWithDirectivesSupport {
          * @return the directive to be included
          */
         GraphQLDirective getDirective();
+
+        /**
+         * A schema has two list of directives.  A list of directives that are defined
+         * in that schema and the list of direcives that are applied to a schema element.
+         *
+         * This returns true if this filtering represents the defined directives.
+         *
+         * @return true if this is filtering defined directives
+         */
+        boolean isDefinedDirective();
     }
 
 
