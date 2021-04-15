@@ -41,7 +41,6 @@ import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECT
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_LIST_MESSAGE;
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_NON_NULL_MESSAGE;
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_OBJECT_MESSAGE;
-import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_SCALAR_MESSAGE;
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.MISSING_REQUIRED_FIELD_MESSAGE;
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.MUST_BE_VALID_ENUM_VALUE_MESSAGE;
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.NOT_A_VALID_SCALAR_LITERAL_MESSAGE;
@@ -213,14 +212,8 @@ class ArgValueOfAllowedTypeChecker {
     }
 
     private void checkArgValueMatchesAllowedScalar(List<GraphQLError> errors, Value<?> instanceValue, String allowedTypeName) {
-        if (instanceValue instanceof ArrayValue
-                || instanceValue instanceof EnumValue
-                || instanceValue instanceof ObjectValue) {
-            addValidationError(errors, EXPECTED_SCALAR_MESSAGE, instanceValue.getClass().getSimpleName());
-            return;
-        }
-
         GraphQLScalarType scalarType = runtimeWiring.getScalars().get(allowedTypeName);
+
         // scalarType will always be present as
         // scalar implementation validation has been performed earlier
         if (!isArgumentValueScalarLiteral(scalarType, instanceValue)) {

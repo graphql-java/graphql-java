@@ -1,27 +1,11 @@
 package graphql.schema.idl
 
-
 import graphql.TestUtil
 import graphql.introspection.Introspection
-import graphql.schema.GraphQLArgument
-import graphql.schema.GraphQLDirective
-import graphql.schema.GraphQLDirectiveContainer
-import graphql.schema.GraphQLEnumType
-import graphql.schema.GraphQLFieldDefinition
-import graphql.schema.GraphQLFieldsContainer
-import graphql.schema.GraphQLInputObjectType
-import graphql.schema.GraphQLInterfaceType
-import graphql.schema.GraphQLList
-import graphql.schema.GraphQLNamedType
-import graphql.schema.GraphQLNonNull
-import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLScalarType
-import graphql.schema.GraphQLSchema
-import graphql.schema.GraphQLType
-import graphql.schema.GraphQLTypeUtil
-import graphql.schema.GraphQLUnionType
-import graphql.schema.GraphqlTypeComparatorRegistry
-import graphql.schema.PropertyDataFetcher
+import graphql.language.ObjectField
+import graphql.language.ObjectValue
+import graphql.language.StringValue
+import graphql.schema.*
 import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
 import graphql.schema.idl.errors.SchemaProblem
@@ -30,10 +14,7 @@ import spock.lang.Specification
 
 import java.util.function.UnaryOperator
 
-import static graphql.Scalars.GraphQLBoolean
-import static graphql.Scalars.GraphQLFloat
-import static graphql.Scalars.GraphQLInt
-import static graphql.Scalars.GraphQLString
+import static graphql.Scalars.*
 import static graphql.schema.idl.SchemaGenerator.Options.defaultOptions
 
 class SchemaGeneratorTest extends Specification {
@@ -2302,5 +2283,53 @@ class SchemaGeneratorTest extends Specification {
         def inputType = schema.getType("ArgInput") as GraphQLInputObjectType
         def listOfEnumValues = inputType.getFieldDefinitions().collect({ it.getName() })
         listOfEnumValues.sort() == ["fieldA", "fieldB"]
+    }
+
+    def "use custom scalars as directive argument type"() {
+
+        given:
+        def spec = """
+        directive @test(arg: MyType = { foo: "bar" }) on OBJECT
+        
+        scalar MyType
+        
+        type Test @test(arg: { some: "data" }){
+            field: String
+        }
+        
+        type Query {
+            field: Test
+        }
+        """
+
+        when:
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .scalar(new GraphQLScalarType("MyType", "", new Coercing() {
+                    @Override
+                    Object serialize(Object input) throws CoercingSerializeException {
+                        return input
+                    }
+
+                    @Override
+                    Object parseValue(Object input) throws CoercingParseValueException {
+                        return input
+                    }
+
+                    @Override
+                    Object parseLiteral(Object input) throws CoercingParseLiteralException {
+                        return input
+                    }
+                }))
+                .build()
+        def schema = schema(spec, runtimeWiring)
+
+        then:
+        def inputType = schema.getType("Test") as GraphQLDirectiveContainer
+        def directive = inputType.getDirective("test")
+        def arg = directive.getArgument("arg")
+
+        expect:
+        (arg.defaultValue as ObjectValue).isEqualTo(new ObjectValue([new ObjectField("foo", new StringValue("bar"))]))
+        (arg.value as ObjectValue).isEqualTo(new ObjectValue([new ObjectField("some", new StringValue("data"))]))
     }
 }
