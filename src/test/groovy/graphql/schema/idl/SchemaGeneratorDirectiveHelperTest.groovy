@@ -939,6 +939,48 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         arg != null
     }
 
+    def "can use recursive input structure in directives"() {
+
+        def sdl = '''
+            type Test @test(arg: { name: "l1", deeper: {name: "l2", deeper: {name: "l3"}}}){
+              field: String
+            }
+            
+            directive @test(arg: Recursive = { name: "def-l1", deeper: {name: "def-l2"}}) on OBJECT
+
+            input Recursive {
+              deeper: Recursive
+              name: String
+            }
+            
+            type Query {
+                test: Test
+            }
+        '''
+
+        when:
+        def schema = schema(sdl)
+
+        then:
+        def test = schema.getObjectType("Test")
+        test != null
+
+        def testDirective = test.getDirective("test")
+        testDirective != null
+
+        def arg = testDirective.getArgument("arg")
+        arg != null
+
+        expect:
+        arg.value["name"] == "l1"
+        arg.value["deeper"]["name"] == "l2"
+        arg.value["deeper"]["deeper"]["name"] == "l3"
+        arg.value["deeper"]["deeper"]["deeper"] == null
+
+        arg.defaultValue["name"] == "def-l1"
+        arg.defaultValue["deeper"]["name"] == "def-l2"
+        arg.defaultValue["deeper"]["deeper"] == null
+    }
     def reverse(String s) {
         new StringBuilder(s).reverse().toString()
     }

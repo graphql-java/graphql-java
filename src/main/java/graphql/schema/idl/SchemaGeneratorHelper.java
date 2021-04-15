@@ -247,7 +247,15 @@ public class SchemaGeneratorHelper {
             }
         } else if (value instanceof ObjectValue && requiredType instanceof GraphQLInputObjectType) {
             result = buildObjectValue(buildCtx, (ObjectValue) value, (GraphQLInputObjectType) requiredType);
-        } else {
+        } else if (value instanceof ObjectValue && requiredType instanceof GraphQLTypeReference) {
+            String typeName = ((GraphQLTypeReference) requiredType).getName();
+            GraphQLInputType typeDefinition = buildCtx.inputGTypes.get(typeName);
+            if (typeDefinition instanceof GraphQLInputObjectType){
+                result = buildObjectValue(buildCtx, (ObjectValue) value, (GraphQLInputObjectType) typeDefinition);
+            }
+        }
+
+        if (result == null) {
             assertShouldNeverHappen(
                     "cannot build value of type %s from object class %s with instance %s", simplePrint(requiredType), value.getClass().getSimpleName(), String.valueOf(value));
         }
