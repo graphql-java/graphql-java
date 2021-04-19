@@ -187,7 +187,7 @@ public class IntrospectionWithDirectivesSupport {
      * The parameter environment on a call to {@link DirectivePredicate}
      */
     @PublicApi
-    interface DirectivePredicateEnvironment {
+    public interface DirectivePredicateEnvironment {
 
         /**
          * The schema element that contained this directive.  If this is a {@link GraphQLSchema}
@@ -210,7 +210,7 @@ public class IntrospectionWithDirectivesSupport {
      */
     @PublicSpi
     @FunctionalInterface
-    interface DirectivePredicate {
+    public interface DirectivePredicate {
         /**
          * Return true if the directive should be included
          *
