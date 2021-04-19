@@ -2303,44 +2303,4 @@ class SchemaGeneratorTest extends Specification {
         def listOfEnumValues = inputType.getFieldDefinitions().collect({ it.getName() })
         listOfEnumValues.sort() == ["fieldA", "fieldB"]
     }
-
-    def "extend"() {
-        def sdl = """
-            type Query {
-                blob : Blob
-            }
-            
-            type Blob {
-                id: ID!
-                name: String
-            }
-            
-            interface Thing {
-                name: String
-            }
-            
-            input Interval {
-                now : Int
-                then : Int
-            }
-            
-            # random input
-            input AwesomeInput {
-                interval: Interval!
-                amount: Int!
-            } 
-            
-            extend type Blob implements Thing
-            
-            
-        """
-
-        when:
-        def schema = TestUtil.schema(sdl)
-        then:
-        schema != null
-
-        println new SchemaPrinter().print(schema)
-
-    }
 }
