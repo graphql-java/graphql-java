@@ -19,17 +19,6 @@ import static graphql.util.FpKit.mergeFirst;
 @Internal
 public class NodeUtil {
 
-    public static boolean isEqualTo(String thisStr, String thatStr) {
-        if (null == thisStr) {
-            if (null != thatStr) {
-                return false;
-            }
-        } else if (!thisStr.equals(thatStr)) {
-            return false;
-        }
-        return true;
-    }
-
     public static <T extends NamedNode<T>> T findNodeByName(List<T> namedNodes, String name) {
         for (T namedNode : namedNodes) {
             if (Objects.equals(namedNode.getName(), name)) {
@@ -43,9 +32,10 @@ public class NodeUtil {
         return FpKit.groupingBy(directives, Directive::getName);
     }
 
-    public static Map<String, Argument> argumentsByName(List<Argument> arguments) {
-        return FpKit.getByName(arguments, Argument::getName, mergeFirst());
+    public static <T extends NamedNode<T>> Map<String, T> nodeByName(List<T> nameNode) {
+        return FpKit.getByName(nameNode, NamedNode::getName, mergeFirst());
     }
+
 
     public static class GetOperationResult {
         public OperationDefinition operationDefinition;

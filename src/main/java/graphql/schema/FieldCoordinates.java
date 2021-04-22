@@ -33,6 +33,9 @@ public class FieldCoordinates {
         return fieldName;
     }
 
+    public boolean isSystemCoordinates() {
+        return systemCoordinates;
+    }
 
     /**
      * Checks the validity of the field coordinate names.  The validity checks vary by coordinate type.  Standard

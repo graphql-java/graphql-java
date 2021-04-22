@@ -66,11 +66,11 @@ public class Introspection {
     @Internal
     public static void addCodeForIntrospectionTypes(GraphQLCodeRegistry.Builder codeRegistry) {
         // place the system __ fields into the mix.  They have no parent types
-        codeRegistry.systemDataFetcher(systemCoordinates(SchemaMetaFieldDef.getName()), SchemaMetaFieldDefDataFetcher);
-        codeRegistry.systemDataFetcher(systemCoordinates(TypeNameMetaFieldDef.getName()), TypeNameMetaFieldDefDataFetcher);
-        codeRegistry.systemDataFetcher(systemCoordinates(TypeMetaFieldDef.getName()), TypeMetaFieldDefDataFetcher);
+        codeRegistry.dataFetcherIfAbsent(systemCoordinates(SchemaMetaFieldDef.getName()), SchemaMetaFieldDefDataFetcher);
+        codeRegistry.dataFetcherIfAbsent(systemCoordinates(TypeNameMetaFieldDef.getName()), TypeNameMetaFieldDefDataFetcher);
+        codeRegistry.dataFetcherIfAbsent(systemCoordinates(TypeMetaFieldDef.getName()), TypeMetaFieldDefDataFetcher);
 
-        introspectionDataFetchers.forEach(codeRegistry::dataFetcher);
+        introspectionDataFetchers.forEach(codeRegistry::dataFetcherIfAbsent);
     }
 
 

@@ -53,6 +53,7 @@ public class GraphQLCodeRegistry {
      *
      * @param parentType      the container type
      * @param fieldDefinition the field definition
+     *
      * @return the DataFetcher associated with this field.  All fields have data fetchers
      */
     public DataFetcher<?> getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
@@ -64,10 +65,22 @@ public class GraphQLCodeRegistry {
      *
      * @param coordinates     the field coordinates
      * @param fieldDefinition the field definition
+     *
      * @return the DataFetcher associated with this field.  All fields have data fetchers
      */
     public DataFetcher<?> getDataFetcher(FieldCoordinates coordinates, GraphQLFieldDefinition fieldDefinition) {
         return getDataFetcherImpl(coordinates, fieldDefinition, dataFetcherMap, systemDataFetcherMap, defaultDataFetcherFactory);
+    }
+
+    /**
+     * Returns true if the code registry contained a data fetcher at the specified co-ordinates
+     *
+     * @param coordinates the field coordinates
+     *
+     * @return the true if there is a data fetcher at those co-ordinates
+     */
+    public boolean hasDataFetcher(FieldCoordinates coordinates) {
+        return hasDataFetcherImpl(coordinates, dataFetcherMap, systemDataFetcherMap);
     }
 
     private static DataFetcher<?> getDataFetcherImpl(FieldCoordinates coordinates, GraphQLFieldDefinition fieldDefinition, Map<FieldCoordinates, DataFetcherFactory<?>> dataFetcherMap, Map<String, DataFetcherFactory<?>> systemDataFetcherMap, DataFetcherFactory<?> defaultDataFetcherFactory) {
@@ -101,6 +114,7 @@ public class GraphQLCodeRegistry {
      * Returns the type resolver associated with this interface type
      *
      * @param interfaceType the interface type
+     *
      * @return a non null {@link graphql.schema.TypeResolver}
      */
     public TypeResolver getTypeResolver(GraphQLInterfaceType interfaceType) {
@@ -111,6 +125,7 @@ public class GraphQLCodeRegistry {
      * Returns the type resolver associated with this union type
      *
      * @param unionType the union type
+     *
      * @return a non null {@link graphql.schema.TypeResolver}
      */
 
@@ -141,6 +156,7 @@ public class GraphQLCodeRegistry {
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new GraphQLCodeRegistry object based on calling build on that builder
      */
     public GraphQLCodeRegistry transform(Consumer<Builder> builderConsumer) {
@@ -160,6 +176,7 @@ public class GraphQLCodeRegistry {
      * Returns a new builder of {@link graphql.schema.GraphQLCodeRegistry} objects based on the existing one
      *
      * @param existingCodeRegistry the existing code registry to use
+     *
      * @return a new builder of {@link graphql.schema.GraphQLCodeRegistry} objects
      */
     public static Builder newCodeRegistry(GraphQLCodeRegistry existingCodeRegistry) {
@@ -178,6 +195,7 @@ public class GraphQLCodeRegistry {
         }
 
         private Builder(GraphQLCodeRegistry codeRegistry) {
+            this.systemDataFetcherMap.putAll(codeRegistry.systemDataFetcherMap);
             this.dataFetcherMap.putAll(codeRegistry.dataFetcherMap);
             this.typeResolverMap.putAll(codeRegistry.typeResolverMap);
             this.fieldVisibility = codeRegistry.fieldVisibility;
@@ -189,6 +207,7 @@ public class GraphQLCodeRegistry {
          *
          * @param parentType      the container type
          * @param fieldDefinition the field definition
+         *
          * @return the DataFetcher associated with this field.  All fields have data fetchers
          */
         public DataFetcher<?> getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
@@ -200,6 +219,7 @@ public class GraphQLCodeRegistry {
          *
          * @param coordinates     the field coordinates
          * @param fieldDefinition the field definition
+         *
          * @return the DataFetcher associated with this field.  All fields have data fetchers
          */
         public DataFetcher<?> getDataFetcher(FieldCoordinates coordinates, GraphQLFieldDefinition fieldDefinition) {
@@ -207,10 +227,11 @@ public class GraphQLCodeRegistry {
         }
 
         /**
-         * Returns a data fetcher associated with a field within a container type
+         * Returns true if the code registry contained a data fetcher at the specified co-ordinates
          *
          * @param coordinates the field coordinates
-         * @return the true if there is a data fetcher already for this field
+         *
+         * @return the true if there is a data fetcher at those co-ordinates
          */
         public boolean hasDataFetcher(FieldCoordinates coordinates) {
             return hasDataFetcherImpl(coordinates, dataFetcherMap, systemDataFetcherMap);
@@ -220,6 +241,7 @@ public class GraphQLCodeRegistry {
          * Returns the type resolver associated with this interface type
          *
          * @param interfaceType the interface type
+         *
          * @return a non null {@link graphql.schema.TypeResolver}
          */
         public TypeResolver getTypeResolver(GraphQLInterfaceType interfaceType) {
@@ -230,6 +252,7 @@ public class GraphQLCodeRegistry {
          * Returns true of a type resolver has been registered for this type name
          *
          * @param typeName the name to check
+         *
          * @return true if there is already a type resolver
          */
         public boolean hasTypeResolver(String typeName) {
@@ -240,6 +263,7 @@ public class GraphQLCodeRegistry {
          * Returns the type resolver associated with this union type
          *
          * @param unionType the union type
+         *
          * @return a non null {@link graphql.schema.TypeResolver}
          */
         public TypeResolver getTypeResolver(GraphQLUnionType unionType) {
@@ -251,6 +275,7 @@ public class GraphQLCodeRegistry {
          *
          * @param coordinates the field coordinates
          * @param dataFetcher the data fetcher code for that field
+         *
          * @return this builder
          */
         public Builder dataFetcher(FieldCoordinates coordinates, DataFetcher<?> dataFetcher) {
@@ -264,6 +289,7 @@ public class GraphQLCodeRegistry {
          * @param parentType      the container type
          * @param fieldDefinition the field definition
          * @param dataFetcher     the data fetcher code for that field
+         *
          * @return this builder
          */
         public Builder dataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition, DataFetcher<?> dataFetcher) {
@@ -275,6 +301,7 @@ public class GraphQLCodeRegistry {
          *
          * @param coordinates the field coordinates
          * @param dataFetcher the data fetcher code for that field
+         *
          * @return this builder
          */
         public Builder systemDataFetcher(FieldCoordinates coordinates, DataFetcher<?> dataFetcher) {
@@ -290,13 +317,18 @@ public class GraphQLCodeRegistry {
          *
          * @param coordinates        the field coordinates
          * @param dataFetcherFactory the data fetcher factory code for that field
+         *
          * @return this builder
          */
         public Builder dataFetcher(FieldCoordinates coordinates, DataFetcherFactory<?> dataFetcherFactory) {
             assertNotNull(dataFetcherFactory);
             assertNotNull(coordinates);
             coordinates.assertValidNames();
-            dataFetcherMap.put(coordinates, dataFetcherFactory);
+            if (coordinates.isSystemCoordinates()) {
+                systemDataFetcherMap.put(coordinates.getFieldName(), dataFetcherFactory);
+            } else {
+                dataFetcherMap.put(coordinates, dataFetcherFactory);
+            }
             return this;
         }
 
@@ -305,10 +337,17 @@ public class GraphQLCodeRegistry {
          *
          * @param coordinates the field coordinates
          * @param dataFetcher the data fetcher code for that field
+         *
          * @return this builder
          */
         public Builder dataFetcherIfAbsent(FieldCoordinates coordinates, DataFetcher<?> dataFetcher) {
-            dataFetcherMap.putIfAbsent(assertNotNull(coordinates), DataFetcherFactories.useDataFetcher(dataFetcher));
+            if (!hasDataFetcher(coordinates)) {
+                if (coordinates.isSystemCoordinates()) {
+                    systemDataFetcher(coordinates, dataFetcher);
+                } else {
+                    dataFetcher(coordinates, dataFetcher);
+                }
+            }
             return this;
         }
 
@@ -317,6 +356,7 @@ public class GraphQLCodeRegistry {
          *
          * @param parentTypeName    the parent container type
          * @param fieldDataFetchers the map of field names to data fetchers
+         *
          * @return this builder
          */
         public Builder dataFetchers(String parentTypeName, Map<String, DataFetcher<?>> fieldDataFetchers) {
@@ -330,6 +370,7 @@ public class GraphQLCodeRegistry {
          * {@link graphql.schema.PropertyDataFetcher} is used but you can have your own default via this method.
          *
          * @param defaultDataFetcherFactory the default data fetcher factory used
+         *
          * @return this builder
          */
         public Builder defaultDataFetcher(DataFetcherFactory<?> defaultDataFetcherFactory) {

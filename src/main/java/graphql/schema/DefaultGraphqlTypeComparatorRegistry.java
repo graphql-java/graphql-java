@@ -5,9 +5,11 @@ import graphql.PublicApi;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.schema.GraphqlTypeComparatorEnvironment.newEnvironment;
 
 /**
@@ -16,7 +18,19 @@ import static graphql.schema.GraphqlTypeComparatorEnvironment.newEnvironment;
 @PublicApi
 public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparatorRegistry {
 
-    public static final Comparator<GraphQLSchemaElement> DEFAULT_COMPARATOR = Comparator.comparing(graphQLSchemaElement -> ((GraphQLNamedSchemaElement) graphQLSchemaElement).getName());
+    public static final Comparator<GraphQLSchemaElement> DEFAULT_COMPARATOR;
+    static {
+        DEFAULT_COMPARATOR = Comparator.comparing(element -> {
+            if (element instanceof GraphQLType) {
+                element = unwrapAll((GraphQLType) element);
+            }
+            if (element instanceof GraphQLNamedSchemaElement) {
+                return ((GraphQLNamedSchemaElement) element).getName();
+            } else {
+                return Objects.toString(element);
+            }
+        });
+    }
 
     private Map<GraphqlTypeComparatorEnvironment, Comparator<?>> registry = new HashMap<>();
 

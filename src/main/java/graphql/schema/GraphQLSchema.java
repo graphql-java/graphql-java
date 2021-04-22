@@ -260,7 +260,7 @@ public class GraphQLSchema {
      * Warning - your are inviting class cast errors if you the types are not what you expect.
      *
      * @param typeName the name of the type to retrieve
-     * @param <T> for two
+     * @param <T>      for two
      *
      * @return the type cast to the target type.
      */
