@@ -41,6 +41,10 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
     public static final String CHILD_TYPE = "type";
     public static final String CHILD_DIRECTIVES = "directives";
 
+    private static final Object DEFAULT_VALUE_SENTINEL = new Object() {
+    };
+
+
     /**
      * @param name the name
      * @param type the field type
@@ -111,7 +115,11 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
     }
 
     public Object getDefaultValue() {
-        return defaultValue;
+        return defaultValue == DEFAULT_VALUE_SENTINEL ? null : defaultValue;
+    }
+
+    public boolean hasSetDefaultValue() {
+        return defaultValue != DEFAULT_VALUE_SENTINEL;
     }
 
     public String getDescription() {
@@ -246,7 +254,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
 
     @PublicApi
     public static class Builder extends GraphqlTypeBuilder {
-        private Object defaultValue;
+        private Object defaultValue = DEFAULT_VALUE_SENTINEL;
         private GraphQLInputType type;
         private InputValueDefinition definition;
         private final List<GraphQLDirective> directives = new ArrayList<>();

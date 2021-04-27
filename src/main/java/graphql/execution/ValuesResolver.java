@@ -309,9 +309,6 @@ public class ValuesResolver {
         List<GraphQLInputObjectField> inputFieldTypes = fieldVisibility.getFieldDefinitions(type);
         for (GraphQLInputObjectField inputFieldType : inputFieldTypes) {
 
-//            Object defaultValue = inputFieldType.getDefaultValue();
-//            String fieldName = inputFieldType.getName();
-
             GraphQLInputType fieldType = inputFieldType.getType();
             String fieldName = inputFieldType.getName();
             ObjectField field = inputFieldsByName.get(fieldName);
@@ -326,7 +323,7 @@ public class ValuesResolver {
             } else {
                 value = fieldValue;
             }
-            if (!hasValue && inputFieldType.getDefaultValue() != null /*should be hasSetDefaultValue */) {
+            if (!hasValue && inputFieldType.hasSetDefaultValue()) {
                 //TODO: default value should be coerced
                 coercedValues.put(fieldName, defaultValue);
             } else if (isNonNull(fieldType) && (!hasValue || value == null)) {
