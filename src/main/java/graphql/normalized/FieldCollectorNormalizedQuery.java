@@ -5,7 +5,6 @@ import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.ConditionalNodes;
 import graphql.execution.MergedField;
-import graphql.execution.ValuesResolver;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
@@ -41,7 +40,8 @@ import static graphql.Assert.assertNotNull;
 public class FieldCollectorNormalizedQuery {
 
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
-    private final ValuesResolver valuesResolver = new ValuesResolver();
+    //    private final ValuesResolver valuesResolver = new ValuesResolver();
+    private final ArgumentsResolver argumentsResolver = new ArgumentsResolver();
 
     public static class CollectFieldResult {
         private final List<NormalizedField> children;
@@ -206,7 +206,7 @@ public class FieldCollectorNormalizedQuery {
                     }
                 }
 
-                Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getVariables());
+                Map<String, Object> argumentValues = argumentsResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getVariables());
                 NormalizedField newFieldWTC = NormalizedField.newQueryExecutionField()
                         .alias(field.getAlias())
                         .arguments(argumentValues)
