@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import graphql.Assert;
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -17,6 +18,7 @@ import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
@@ -57,19 +59,26 @@ public class ValuesResolver {
             String variableName = variableDefinition.getName();
             List<Object> nameStack = new ArrayList<>();
             GraphQLType variableType = TypeFromAST.getTypeFromAST(schema, variableDefinition.getType());
-
-            if (!variableValues.containsKey(variableName)) {
-                Value defaultValue = variableDefinition.getDefaultValue();
-                if (defaultValue != null) {
-                    Object coercedValue = coerceValueAst(fieldVisibility, variableType, defaultValue, null);
+            Assert.assertTrue(variableType instanceof GraphQLInputType);
+            // can be NullValue
+            Value defaultValue = variableDefinition.getDefaultValue();
+            boolean hasValue = variableValues.containsKey(variableName);
+            Object value = variableValues.get(variableName);
+            if (!hasValue && defaultValue != null) {
+                Object coercedDefaultValue = coerceValueAst(fieldVisibility, variableType, defaultValue, null);
+                coercedValues.put(variableName, coercedDefaultValue);
+            } else if (isNonNull(variableType) && (!hasValue || value == null)) {
+                throw new NonNullableValueCoercedAsNullException(variableDefinition, variableType);
+            } else if (hasValue) {
+                if (value == null) {
+                    coercedValues.put(variableName, null);
+                } else {
+                    Object coercedValue = coerceValue(fieldVisibility, variableDefinition, variableDefinition.getName(), variableType, value, nameStack);
                     coercedValues.put(variableName, coercedValue);
-                } else if (isNonNull(variableType)) {
-                    throw new NonNullableValueCoercedAsNullException(variableDefinition, variableType);
                 }
             } else {
-                Object value = variableValues.get(variableName);
-                Object coercedValue = coerceValue(fieldVisibility, variableDefinition, variableDefinition.getName(), variableType, value, nameStack);
-                coercedValues.put(variableName, coercedValue);
+                // hasValue = false && defaultValue == null for a nullable type
+                // meaning no value was provided for variableName
             }
         }
 
@@ -85,42 +94,51 @@ public class ValuesResolver {
         return getArgumentValuesImpl(codeRegistry, argumentTypes, arguments, variables);
     }
 
-    private Map<String, Object> getArgumentValuesImpl(GraphQLCodeRegistry codeRegistry, List<GraphQLArgument> argumentTypes, List<Argument> arguments, Map<String, Object> variables) {
+    private Map<String, Object> getArgumentValuesImpl(GraphQLCodeRegistry codeRegistry, List<GraphQLArgument> argumentTypes, List<Argument> arguments,
+                                                      Map<String, Object> coercedVariableValues) {
         if (argumentTypes.isEmpty()) {
             return Collections.emptyMap();
         }
 
-        Map<String, Object> result = new LinkedHashMap<>();
+        Map<String, Object> coercedValues = new LinkedHashMap<>();
         Map<String, Argument> argumentMap = argumentMap(arguments);
-        for (GraphQLArgument fieldArgument : argumentTypes) {
-            String argName = fieldArgument.getName();
-            Argument argument = argumentMap.get(argName);
-            Object value = null;
-            if (argument != null) {
-                value = coerceValueAst(codeRegistry.getFieldVisibility(), fieldArgument.getType(), argument.getValue(), variables);
+        for (GraphQLArgument argumentDefinition : argumentTypes) {
+            GraphQLInputType argumentType = argumentDefinition.getType();
+            String argumentName = argumentDefinition.getName();
+            Argument argument = argumentMap.get(argumentName);
+            Object defaultValue = argumentDefinition.getDefaultValue();
+            boolean hasValue = argument != null;
+            Object value;
+            Value argumentValue = argument != null ? argument.getValue() : null;
+            if (argumentValue instanceof VariableReference) {
+                String variableName = ((VariableReference) argumentValue).getName();
+                hasValue = coercedVariableValues.containsKey(variableName);
+                value = coercedVariableValues.get(variableName);
+            } else {
+                value = argumentValue;
             }
-            if (value == null
-                    && !(argument != null && argument.getValue() instanceof NullValue)
-                    && !(argument != null && argument.getValue() instanceof VariableReference && variables.containsKey(((VariableReference) argument.getValue()).getName()))
-            ) {
-                value = fieldArgument.getDefaultValue();
-            }
-            boolean wasValueProvided = false;
-            if (argumentMap.containsKey(argName)) {
-                if (argument.getValue() instanceof VariableReference) {
-                    wasValueProvided = variables.containsKey(((VariableReference) argument.getValue()).getName());
+            if (!hasValue && argumentDefinition.hasSetDefaultValue()) {
+                // default value needs to be coerced
+                coercedValues.put(argumentName, defaultValue);
+            } else if (isNonNull(argumentType) && (!hasValue || value == null)) {
+                throw new RuntimeException();
+            } else if (hasValue) {
+                if (value == null) {
+                    coercedValues.put(argumentName, null);
+                } else if (argumentValue instanceof VariableReference) {
+                    coercedValues.put(argumentName, value);
                 } else {
-                    wasValueProvided = true;
+                    value = coerceValueAst(codeRegistry.getFieldVisibility(), argumentType, argument.getValue(), coercedVariableValues);
+                    coercedValues.put(argumentName, value);
                 }
+            } else {
+                // nullable type && hasValue == false && hasDefaultValue == false
+                // meaning no value was provided for argumentName
             }
-            if (fieldArgument.hasSetDefaultValue()) {
-                wasValueProvided = true;
-            }
-            if (wasValueProvided) {
-                result.put(argName, value);
-            }
+
         }
-        return result;
+        return coercedValues;
+
     }
 
 

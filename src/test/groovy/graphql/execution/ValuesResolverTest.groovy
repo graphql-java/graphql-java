@@ -488,7 +488,7 @@ class ValuesResolverTest extends Specification {
 
         then:
         def error = thrown(NonNullableValueCoercedAsNullException)
-        error.message == "Field 'foo' of variable 'foo' has coerced Null value for NonNull type 'String!'"
+        error.message == "Variable 'foo' has coerced Null value for NonNull type 'String!'"
     }
 
     // Note: use NullValue defined in Field when it exists,
