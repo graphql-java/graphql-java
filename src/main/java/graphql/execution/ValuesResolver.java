@@ -78,7 +78,7 @@ public class ValuesResolver {
                     coercedValues.put(variableName, coercedValue);
                 }
             } else {
-                // hasValue = false && defaultValue == null for a nullable type
+                // hasValue = false && no defaultValue for a nullable type
                 // meaning no value was provided for variableName
             }
         }
