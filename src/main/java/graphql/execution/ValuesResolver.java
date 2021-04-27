@@ -50,6 +50,7 @@ public class ValuesResolver {
      * @param schema              the schema
      * @param variableDefinitions the variable definitions
      * @param variableValues      the supplied variables
+     *
      * @return coerced variable values as a map
      */
     public Map<String, Object> coerceVariableValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> variableValues) {
@@ -118,7 +119,7 @@ public class ValuesResolver {
                 value = argumentValue;
             }
             if (!hasValue && argumentDefinition.hasSetDefaultValue()) {
-                // default value needs to be coerced
+                //TODO: default value needs to be coerced
                 coercedValues.put(argumentName, defaultValue);
             } else if (isNonNull(argumentType) && (!hasValue || value == null)) {
                 throw new RuntimeException();
@@ -297,48 +298,54 @@ public class ValuesResolver {
         }
     }
 
-    private Object coerceValueAstForInputObject(GraphqlFieldVisibility fieldVisibility, GraphQLInputObjectType type, ObjectValue inputValue, Map<String, Object> variables) {
-        Map<String, Object> result = new LinkedHashMap<>();
+    private Object coerceValueAstForInputObject(GraphqlFieldVisibility fieldVisibility,
+                                                GraphQLInputObjectType type,
+                                                ObjectValue inputValue,
+                                                Map<String, Object> coercedVariableValues) {
+        Map<String, Object> coercedValues = new LinkedHashMap<>();
 
-        Map<String, ObjectField> inputValueFieldsByName = mapObjectValueFieldsByName(inputValue);
+        Map<String, ObjectField> inputFieldsByName = mapObjectValueFieldsByName(inputValue);
 
-        List<GraphQLInputObjectField> inputFields = fieldVisibility.getFieldDefinitions(type);
-        for (GraphQLInputObjectField inputTypeField : inputFields) {
-            if (inputValueFieldsByName.containsKey(inputTypeField.getName())) {
-                boolean putObjectInMap = true;
+        List<GraphQLInputObjectField> inputFieldTypes = fieldVisibility.getFieldDefinitions(type);
+        for (GraphQLInputObjectField inputFieldType : inputFieldTypes) {
 
-                ObjectField field = inputValueFieldsByName.get(inputTypeField.getName());
-                Value fieldInputValue = field.getValue();
+//            Object defaultValue = inputFieldType.getDefaultValue();
+//            String fieldName = inputFieldType.getName();
 
-                Object fieldObject = null;
-                if (fieldInputValue instanceof VariableReference) {
-                    String varName = ((VariableReference) fieldInputValue).getName();
-                    if (!variables.containsKey(varName)) {
-                        putObjectInMap = false;
-                    } else {
-                        fieldObject = variables.get(varName);
-                    }
-                } else {
-                    fieldObject = coerceValueAst(fieldVisibility, inputTypeField.getType(), fieldInputValue, variables);
-                }
-
-                if (fieldObject == null) {
-                    if (!(field.getValue() instanceof NullValue)) {
-                        fieldObject = inputTypeField.getDefaultValue();
-                    }
-                }
-                if (putObjectInMap) {
-                    result.put(field.getName(), fieldObject);
-                } else {
-                    assertNonNullInputField(inputTypeField);
-                }
-            } else if (inputTypeField.getDefaultValue() != null) {
-                result.put(inputTypeField.getName(), inputTypeField.getDefaultValue());
+            GraphQLInputType fieldType = inputFieldType.getType();
+            String fieldName = inputFieldType.getName();
+            ObjectField field = inputFieldsByName.get(fieldName);
+            Object defaultValue = inputFieldType.getDefaultValue();
+            boolean hasValue = field != null;
+            Object value;
+            Value fieldValue = field != null ? field.getValue() : null;
+            if (fieldValue instanceof VariableReference) {
+                String variableName = ((VariableReference) fieldValue).getName();
+                hasValue = coercedVariableValues.containsKey(variableName);
+                value = coercedVariableValues.get(variableName);
             } else {
-                assertNonNullInputField(inputTypeField);
+                value = fieldValue;
+            }
+            if (!hasValue && inputFieldType.getDefaultValue() != null /*should be hasSetDefaultValue */) {
+                //TODO: default value should be coerced
+                coercedValues.put(fieldName, defaultValue);
+            } else if (isNonNull(fieldType) && (!hasValue || value == null)) {
+                throw new NonNullableValueCoercedAsNullException(inputFieldType);
+            } else if (hasValue) {
+                if (value == null) {
+                    coercedValues.put(fieldName, null);
+                } else if (fieldValue instanceof VariableReference) {
+                    coercedValues.put(fieldName, value);
+                } else {
+                    value = coerceValueAst(fieldVisibility, fieldType, fieldValue, coercedVariableValues);
+                    coercedValues.put(fieldName, value);
+                }
+            } else {
+                // nullable type && hasValue == false && hasDefaultValue == false
+                // meaning no value was provided for this field
             }
         }
-        return result;
+        return coercedValues;
     }
 
     private void assertNonNullInputField(GraphQLInputObjectField inputTypeField) {
