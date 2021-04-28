@@ -2,6 +2,9 @@ package graphql.normalized;
 
 import java.util.Objects;
 
+/**
+ * A value with type information.
+ */
 public class NormalizedInputValue {
     private final String type;
     private final Object value;
@@ -22,7 +25,7 @@ public class NormalizedInputValue {
 
     /**
      * Depending on the type it returns:
-     * Scala: the value of the Scalar. Can be a list of Scalars
+     * Scala or Enum: the value of the Scalar.
      * InputObject: the value is a map of field-name => NormalizedInputValue
      *
      * @return
