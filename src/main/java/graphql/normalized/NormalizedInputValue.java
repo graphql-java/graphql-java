@@ -11,11 +11,22 @@ public class NormalizedInputValue {
         this.value = value;
     }
 
-    // this can be a wrapped type String
+    /**
+     * This can be a wrapped type: e.g. [String!]!
+     *
+     * @return
+     */
     public String getType() {
         return type;
     }
 
+    /**
+     * Depending on the type it returns:
+     * Scala: the value of the Scalar. Can be a list of Scalars
+     * InputObject: the value is a map of field-name => NormalizedInputValue
+     *
+     * @return
+     */
     public Object getValue() {
         return value;
     }
