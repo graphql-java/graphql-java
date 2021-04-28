@@ -213,19 +213,17 @@ public class ValuesResolver {
                                                  GraphQLInputObjectType inputObjectType,
                                                  Map<String, Object> inputMap,
                                                  Deque<Object> nameStack) {
-//        Map<String, Object> result = new LinkedHashMap<>();
-        List<GraphQLInputObjectField> fields = fieldVisibility.getFieldDefinitions(inputObjectType);
-        List<String> fieldNames = map(fields, GraphQLInputObjectField::getName);
-        for (String inputFieldName : inputMap.keySet()) {
-            if (!fieldNames.contains(inputFieldName)) {
-                throw new InputMapDefinesTooManyFieldsException(inputObjectType, inputFieldName);
+        List<GraphQLInputObjectField> fieldDefinitions = fieldVisibility.getFieldDefinitions(inputObjectType);
+        List<String> fieldNames = map(fieldDefinitions, GraphQLInputObjectField::getName);
+        for (String providedFieldName : inputMap.keySet()) {
+            if (!fieldNames.contains(providedFieldName)) {
+                throw new InputMapDefinesTooManyFieldsException(inputObjectType, providedFieldName);
             }
         }
 
         Map<String, Object> coercedValues = new LinkedHashMap<>();
 
-        List<GraphQLInputObjectField> inputFieldTypes = fieldVisibility.getFieldDefinitions(inputObjectType);
-        for (GraphQLInputObjectField inputFieldDefinition : inputFieldTypes) {
+        for (GraphQLInputObjectField inputFieldDefinition : fieldDefinitions) {
 
             GraphQLInputType fieldType = inputFieldDefinition.getType();
             String fieldName = inputFieldDefinition.getName();
@@ -260,22 +258,6 @@ public class ValuesResolver {
             }
         }
         return coercedValues;
-
-
-//        for (GraphQLInputObjectField inputField : fields) {
-//            if (inputMap.containsKey(inputField.getName()) || alwaysHasValue(inputField)) {
-//                // getOrDefault will return a null value if its present in the map as null
-//                // defaulting only applies if the key is missing - we want this
-//                Object inputValue = inputMap.getOrDefault(inputField.getName(), inputField.getDefaultValue());
-//                Object coerceValue = coerceValue(fieldVisibility, variableDefinition,
-//                        inputField.getName(),
-//                        inputField.getType(),
-//                        inputValue,
-//                        nameStack);
-//                result.put(inputField.getName(), coerceValue == null ? inputField.getDefaultValue() : coerceValue);
-//            }
-//        }
-//        return result;
     }
 
     private boolean alwaysHasValue(GraphQLInputObjectField inputField) {
