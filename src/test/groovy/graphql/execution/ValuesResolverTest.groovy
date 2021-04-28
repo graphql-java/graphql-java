@@ -362,17 +362,18 @@ class ValuesResolverTest extends Specification {
 
     }
 
-    def "getVariableValues: input object with non-required fields and default values"() {
+    @Unroll
+    def "getVariableValues: input object with non-required fields and default values. #inputValue -> #outputValue"() {
         given:
 
         def inputObjectType = newInputObject()
                 .name("InputObject")
                 .field(newInputObjectField()
-                .name("intKey")
-                .type(GraphQLInt))
+                        .name("intKey")
+                        .type(GraphQLInt))
                 .field(newInputObjectField()
-                .name("stringKey")
-                .type(GraphQLString)
+                        .name("stringKey")
+                        .type(GraphQLString)
                 .defaultValue("defaultString"))
                 .build()
 
@@ -388,7 +389,7 @@ class ValuesResolverTest extends Specification {
         where:
         inputValue                    || outputValue
         [intKey: 10]                  || [intKey: 10, stringKey: 'defaultString']
-        [intKey: 10, stringKey: null] || [intKey: 10, stringKey: 'defaultString']
+        [intKey: 10, stringKey: null] || [intKey: 10, stringKey: null]
 
     }
 
@@ -413,7 +414,7 @@ class ValuesResolverTest extends Specification {
 
         then:
         def e = thrown(GraphQLException)
-        e.path== ["variable", "intKey", "requiredField", "requiredField"]
+        e.path == ["variable", "requiredField"]
 
         where:
         inputValue                        | _
