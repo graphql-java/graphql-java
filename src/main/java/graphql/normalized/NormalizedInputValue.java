@@ -26,7 +26,7 @@ public class NormalizedInputValue {
     /**
      * Depending on the type it returns:
      * Scala or Enum: the value of the Scalar.
-     * InputObject: the value is a map of field-name => NormalizedInputValue
+     * InputObject: the value is a map of field-name to NormalizedInputValue
      *
      * @return
      */
