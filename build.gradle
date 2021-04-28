@@ -43,6 +43,18 @@ def releaseVersion = System.env.RELEASE_VERSION
 version = releaseVersion ? releaseVersion : getDevelopmentVersion()
 group = 'com.graphql-java'
 
+gradle.buildFinished { buildResult ->
+    println "*******************************"
+    println "*"
+    if (buildResult.failure != null) {
+        println "* FAILURE - ${buildResult.failure}"
+    } else {
+        println "* SUCCESS"
+    }
+    println "* Version: $version"
+    println "*"
+    println "*******************************"
+}
 
 repositories {
     mavenCentral()
