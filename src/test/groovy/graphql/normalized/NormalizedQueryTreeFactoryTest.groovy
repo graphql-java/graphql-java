@@ -1113,4 +1113,56 @@ schema {
 
     }
 
+    def "normalized arguments with lists"() {
+        given:
+        String schema = """
+        type Query{ 
+            search(arg1:[ID!], arg2:[[Input1]], arg3: [Input1]): Boolean
+        }
+        input Input1 {
+            foo: String
+            input2: Input2
+        }
+        input Input2 {
+            bar: Int
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = '''
+            query($var1: [Input1]){
+                search(arg1:["1","2"], arg2: [[{foo: "foo1", input2: {bar: 123}},{foo: "foo2", input2: {bar: 456}}]], arg3: $var1) 
+            }
+        '''
+
+        assertValidQuery(graphQLSchema, query)
+        Document document = TestUtil.parseQuery(query)
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
+        def variables = [
+                var1: [[foo: "foo3", input2: [bar: 789]]]
+        ]
+        when:
+        def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, variables)
+        def topLevelField = tree.getTopLevelFields().get(0)
+        def arg1 = topLevelField.getNormalizedArgument("arg1")
+        def arg2 = topLevelField.getNormalizedArgument("arg2")
+        def arg3 = topLevelField.getNormalizedArgument("arg3")
+
+        then:
+        arg1.type == "[ID!]"
+        arg1.value == ["1", "2"]
+        arg2.type == "[[Input1]]"
+        arg2.value == [[
+                               [foo: new NormalizedInputValue("String", "foo1"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 123)])],
+                               [foo: new NormalizedInputValue("String", "foo2"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 456)])]
+                       ]]
+
+        arg3.getType() == "[Input1]"
+        arg3.value == [
+                [foo: new NormalizedInputValue("String", "foo3"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 789)])],
+        ]
+
+
+    }
+
 }
