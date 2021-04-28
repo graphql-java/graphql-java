@@ -41,7 +41,6 @@ import static graphql.Assert.assertNotNull;
 public class FieldCollectorNormalizedQuery {
 
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
-    private final NormalizedValuesResolver normalizedValuesResolver = new NormalizedValuesResolver();
     private final ValuesResolver valuesResolver = new ValuesResolver();
 
     public static class CollectFieldResult {
@@ -137,12 +136,12 @@ public class FieldCollectorNormalizedQuery {
                                        Set<GraphQLObjectType> possibleObjects,
                                        int level,
                                        NormalizedField parent) {
-        if (!conditionalNodes.shouldInclude(parameters.getVariables(), fragmentSpread.getDirectives())) {
+        if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), fragmentSpread.getDirectives())) {
             return;
         }
         FragmentDefinition fragmentDefinition = assertNotNull(parameters.getFragmentsByName().get(fragmentSpread.getName()));
 
-        if (!conditionalNodes.shouldInclude(parameters.getVariables(), fragmentDefinition.getDirectives())) {
+        if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), fragmentDefinition.getDirectives())) {
             return;
         }
         GraphQLCompositeType newCondition = (GraphQLCompositeType) parameters.getGraphQLSchema().getType(fragmentDefinition.getTypeCondition().getName());
@@ -156,7 +155,7 @@ public class FieldCollectorNormalizedQuery {
                                        InlineFragment inlineFragment,
                                        Set<GraphQLObjectType> possibleObjects,
                                        int level, NormalizedField parent) {
-        if (!conditionalNodes.shouldInclude(parameters.getVariables(), inlineFragment.getDirectives())) {
+        if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), inlineFragment.getDirectives())) {
             return;
         }
         Set<GraphQLObjectType> newPossibleObjects = possibleObjects;
@@ -176,7 +175,7 @@ public class FieldCollectorNormalizedQuery {
                               Set<GraphQLObjectType> objectTypes,
                               int level,
                               NormalizedField parent) {
-        if (!conditionalNodes.shouldInclude(parameters.getVariables(), field.getDirectives())) {
+        if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), field.getDirectives())) {
             return;
         }
         String name = field.getResultKey();
@@ -207,8 +206,11 @@ public class FieldCollectorNormalizedQuery {
                     }
                 }
 
-                Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getVariables());
-                Map<String, NormalizedInputValue> normalizedArgumentValues = normalizedValuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getVariables());
+                Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getCoercedVariableValues());
+                Map<String, NormalizedInputValue> normalizedArgumentValues = null;
+                if (parameters.getNormalizedVariableValues() != null) {
+                    normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getCoercedVariableValues(), parameters.getNormalizedVariableValues());
+                }
                 NormalizedField newFieldWTC = NormalizedField.newQueryExecutionField()
                         .alias(field.getAlias())
                         .arguments(argumentValues)

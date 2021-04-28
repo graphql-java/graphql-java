@@ -4,6 +4,8 @@ import graphql.Assert;
 import graphql.Internal;
 import graphql.language.FragmentDefinition;
 import graphql.schema.GraphQLSchema;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -12,7 +14,8 @@ import java.util.Map;
 public class FieldCollectorNormalizedQueryParams {
     private final GraphQLSchema graphQLSchema;
     private final Map<String, FragmentDefinition> fragmentsByName;
-    private final Map<String, Object> variables;
+    private final Map<String, Object> coercedVariableValues;
+    private final Map<String, NormalizedInputValue> normalizedVariableValues;
 
     public GraphQLSchema getGraphQLSchema() {
         return graphQLSchema;
@@ -22,17 +25,24 @@ public class FieldCollectorNormalizedQueryParams {
         return fragmentsByName;
     }
 
-    public Map<String, Object> getVariables() {
-        return variables;
+    @NotNull
+    public Map<String, Object> getCoercedVariableValues() {
+        return coercedVariableValues;
     }
 
+    @Nullable
+    public Map<String, NormalizedInputValue> getNormalizedVariableValues() {
+        return normalizedVariableValues;
+    }
 
     private FieldCollectorNormalizedQueryParams(GraphQLSchema graphQLSchema,
-                                                Map<String, Object> variables,
+                                                Map<String, Object> coercedVariableValues,
+                                                Map<String, NormalizedInputValue> normalizedVariableValues,
                                                 Map<String, FragmentDefinition> fragmentsByName) {
         this.fragmentsByName = fragmentsByName;
         this.graphQLSchema = graphQLSchema;
-        this.variables = variables;
+        this.coercedVariableValues = coercedVariableValues;
+        this.normalizedVariableValues = normalizedVariableValues;
     }
 
     public static Builder newParameters() {
@@ -42,7 +52,8 @@ public class FieldCollectorNormalizedQueryParams {
     public static class Builder {
         private GraphQLSchema graphQLSchema;
         private final Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
-        private final Map<String, Object> variables = new LinkedHashMap<>();
+        private final Map<String, Object> coercedVariableValues = new LinkedHashMap<>();
+        private Map<String, NormalizedInputValue> normalizedVariableValues;
 
         /**
          * @see FieldCollectorNormalizedQueryParams#newParameters()
@@ -61,14 +72,19 @@ public class FieldCollectorNormalizedQueryParams {
             return this;
         }
 
-        public Builder variables(Map<String, Object> variables) {
-            this.variables.putAll(variables);
+        public Builder coercedVariables(Map<String, Object> coercedVariableValues) {
+            this.coercedVariableValues.putAll(coercedVariableValues);
+            return this;
+        }
+
+        public Builder normalizedVariables(Map<String, NormalizedInputValue> normalizedVariableValues) {
+            this.normalizedVariableValues = normalizedVariableValues;
             return this;
         }
 
         public FieldCollectorNormalizedQueryParams build() {
             Assert.assertNotNull(graphQLSchema, () -> "You must provide a schema");
-            return new FieldCollectorNormalizedQueryParams(graphQLSchema, variables, fragmentsByName);
+            return new FieldCollectorNormalizedQueryParams(graphQLSchema, coercedVariableValues, normalizedVariableValues, fragmentsByName);
         }
 
     }

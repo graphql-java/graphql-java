@@ -1079,7 +1079,7 @@ schema {
 
         String query = """
             query(\$var1: Input2, \$var2: Input1){dog(id: "123"){
-                search(arg1: {foo: "foo1", input2: {bar: 789}}, arg2: {foo: "foo2", input2: \$var1}, arg3: \$var2) 
+                search(arg1: {foo: "foo", input2: {bar: 123}}, arg2: {foo: "foo", input2: \$var1}, arg3: \$var2) 
             }}
         """
 
@@ -1088,10 +1088,12 @@ schema {
         NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
         def variables = [
                 var1: [bar: 123],
-                var2: [foo: "string", input2: [bar: 456]]
+                var2: [foo: "foo", input2: [bar: 123]]
         ]
+        // the normalized arg value should be the same regardless of how the value was provided
+        def expectedNormalizedArgValue = [foo: new NormalizedInputValue("String", "foo"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 123)])]
         when:
-        def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, variables)
+        def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, variables)
         def topLevelField = tree.getTopLevelFields().get(0)
         def secondField = topLevelField.getChildren().get(0)
         def arg1 = secondField.getNormalizedArgument("arg1")
@@ -1103,10 +1105,11 @@ schema {
         topLevelField.getNormalizedArgument("id").getValue() == "123"
 
         arg1.getType() == "Input1"
-        arg1.value == [foo: new NormalizedInputValue("String", "foo1"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 789)])]
+        arg1.getValue() == expectedNormalizedArgValue
         arg2.getType() == "Input1"
-//        arg2.value == [foo: new NormalizedInputValue("String", "foo2"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 456)])]
+        arg2.value == expectedNormalizedArgValue
         arg3.getType() == "Input1"
+        arg3.value == expectedNormalizedArgValue
 
     }
 
