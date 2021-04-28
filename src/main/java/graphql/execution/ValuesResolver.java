@@ -225,21 +225,21 @@ public class ValuesResolver {
         Map<String, Object> coercedValues = new LinkedHashMap<>();
 
         List<GraphQLInputObjectField> inputFieldTypes = fieldVisibility.getFieldDefinitions(inputObjectType);
-        for (GraphQLInputObjectField inputFieldType : inputFieldTypes) {
+        for (GraphQLInputObjectField inputFieldDefinition : inputFieldTypes) {
 
-            GraphQLInputType fieldType = inputFieldType.getType();
-            String fieldName = inputFieldType.getName();
-            Object defaultValue = inputFieldType.getDefaultValue();
+            GraphQLInputType fieldType = inputFieldDefinition.getType();
+            String fieldName = inputFieldDefinition.getName();
+            Object defaultValue = inputFieldDefinition.getDefaultValue();
             boolean hasValue = inputMap.containsKey(fieldName);
             Object value;
             Object fieldValue = inputMap.getOrDefault(fieldName, null);
             value = fieldValue;
-            if (!hasValue && inputFieldType.hasSetDefaultValue()) {
+            if (!hasValue && inputFieldDefinition.hasSetDefaultValue()) {
                 //TODO: default value should be coerced
                 coercedValues.put(fieldName, defaultValue);
             } else if (isNonNull(fieldType) && (!hasValue || value == null)) {
                 nameStack.addLast(fieldName);
-                throw new NonNullableValueCoercedAsNullException(inputFieldType, Arrays.asList(nameStack.toArray()));
+                throw new NonNullableValueCoercedAsNullException(variableDefinition, fieldName, Arrays.asList(nameStack.toArray()), fieldType);
             } else if (hasValue) {
                 if (value == null) {
                     coercedValues.put(fieldName, null);
@@ -248,7 +248,7 @@ public class ValuesResolver {
                 } else {
                     value = coerceValue(fieldVisibility,
                             variableDefinition,
-                            inputFieldType.getName(),
+                            inputFieldDefinition.getName(),
                             fieldType,
                             value,
                             nameStack);
