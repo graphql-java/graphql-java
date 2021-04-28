@@ -1065,24 +1065,48 @@ schema {
         }
         type Dog {
             name:String
+            search(arg1:Input1,arg2: Input1,arg3: Input1): Boolean
+        }
+        input Input1 {
+            foo: String
+            input2: Input2
+        }
+        input Input2 {
+            bar: Int
         }
         """
         GraphQLSchema graphQLSchema = TestUtil.schema(schema)
 
         String query = """
-            {dog(id: "123"){name}}
+            query(\$var1: Input2, \$var2: Input1){dog(id: "123"){
+                search(arg1: {foo: "foo1", input2: {bar: 789}}, arg2: {foo: "foo2", input2: \$var1}, arg3: \$var2) 
+            }}
         """
 
         assertValidQuery(graphQLSchema, query)
         Document document = TestUtil.parseQuery(query)
         NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
+        def variables = [
+                var1: [bar: 123],
+                var2: [foo: "string", input2: [bar: 456]]
+        ]
         when:
-        def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
+        def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, variables)
         def topLevelField = tree.getTopLevelFields().get(0)
+        def secondField = topLevelField.getChildren().get(0)
+        def arg1 = secondField.getNormalizedArgument("arg1")
+        def arg2 = secondField.getNormalizedArgument("arg2")
+        def arg3 = secondField.getNormalizedArgument("arg3")
 
         then:
         topLevelField.getNormalizedArgument("id").getType() == "ID"
         topLevelField.getNormalizedArgument("id").getValue() == "123"
+
+        arg1.getType() == "Input1"
+        arg1.value == [foo: new NormalizedInputValue("String", "foo1"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 789)])]
+        arg2.getType() == "Input1"
+//        arg2.value == [foo: new NormalizedInputValue("String", "foo2"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 456)])]
+        arg3.getType() == "Input1"
 
     }
 
