@@ -1056,4 +1056,34 @@ schema {
         GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build();
         assert graphQL.execute(query).errors.size() == 0
     }
+
+    def "normalized arguments"() {
+        given:
+        String schema = """
+        type Query{ 
+            dog(id:ID): Dog 
+        }
+        type Dog {
+            name:String
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = """
+            {dog(id: "123"){name}}
+        """
+
+        assertValidQuery(graphQLSchema, query)
+        Document document = TestUtil.parseQuery(query)
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
+        when:
+        def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
+        def topLevelField = tree.getTopLevelFields().get(0)
+
+        then:
+        topLevelField.getNormalizedArgument("id").getType() == "ID"
+        topLevelField.getNormalizedArgument("id").getValue() == "123"
+
+    }
+
 }

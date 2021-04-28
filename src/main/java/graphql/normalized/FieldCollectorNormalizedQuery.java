@@ -41,6 +41,7 @@ import static graphql.Assert.assertNotNull;
 public class FieldCollectorNormalizedQuery {
 
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
+    private final NormalizedValuesResolver normalizedValuesResolver = new NormalizedValuesResolver();
     private final ValuesResolver valuesResolver = new ValuesResolver();
 
     public static class CollectFieldResult {
@@ -207,9 +208,11 @@ public class FieldCollectorNormalizedQuery {
                 }
 
                 Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getVariables());
+                Map<String, NormalizedInputValue> normalizedArgumentValues = normalizedValuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getVariables());
                 NormalizedField newFieldWTC = NormalizedField.newQueryExecutionField()
                         .alias(field.getAlias())
                         .arguments(argumentValues)
+                        .normalizedArguments(normalizedArgumentValues)
                         .objectType(objectType)
                         .fieldDefinition(fieldDefinition)
                         .level(level)
