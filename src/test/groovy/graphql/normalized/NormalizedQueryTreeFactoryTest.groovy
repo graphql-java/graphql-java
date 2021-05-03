@@ -1101,14 +1101,14 @@ schema {
         def arg3 = secondField.getNormalizedArgument("arg3")
 
         then:
-        topLevelField.getNormalizedArgument("id").getType() == "ID"
+        topLevelField.getNormalizedArgument("id").getTypeName() == "ID"
         topLevelField.getNormalizedArgument("id").getValue() == "123"
 
-        arg1.getType() == "Input1"
+        arg1.getTypeName() == "Input1"
         arg1.getValue() == expectedNormalizedArgValue
-        arg2.getType() == "Input1"
+        arg2.getTypeName() == "Input1"
         arg2.value == expectedNormalizedArgValue
-        arg3.getType() == "Input1"
+        arg3.getTypeName() == "Input1"
         arg3.value == expectedNormalizedArgValue
 
     }
@@ -1149,15 +1149,15 @@ schema {
         def arg3 = topLevelField.getNormalizedArgument("arg3")
 
         then:
-        arg1.type == "[ID!]"
+        arg1.typeName == "[ID!]"
         arg1.value == ["1", "2"]
-        arg2.type == "[[Input1]]"
+        arg2.typeName == "[[Input1]]"
         arg2.value == [[
                                [foo: new NormalizedInputValue("String", "foo1"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 123)])],
                                [foo: new NormalizedInputValue("String", "foo2"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 456)])]
                        ]]
 
-        arg3.getType() == "[Input1]"
+        arg3.getTypeName() == "[Input1]"
         arg3.value == [
                 [foo: new NormalizedInputValue("String", "foo3"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 789)])],
         ]

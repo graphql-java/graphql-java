@@ -6,11 +6,11 @@ import java.util.Objects;
  * A value with type information.
  */
 public class NormalizedInputValue {
-    private final String type;
+    private final String typeName;
     private final Object value;
 
-    public NormalizedInputValue(String type, Object value) {
-        this.type = type;
+    public NormalizedInputValue(String typeName, Object value) {
+        this.typeName = typeName;
         this.value = value;
     }
 
@@ -19,8 +19,8 @@ public class NormalizedInputValue {
      *
      * @return
      */
-    public String getType() {
-        return type;
+    public String getTypeName() {
+        return typeName;
     }
 
     /**
@@ -44,18 +44,18 @@ public class NormalizedInputValue {
             return false;
         }
         NormalizedInputValue that = (NormalizedInputValue) o;
-        return Objects.equals(type, that.type) && Objects.equals(value, that.value);
+        return Objects.equals(typeName, that.typeName) && Objects.equals(value, that.value);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, value);
+        return Objects.hash(typeName, value);
     }
 
     @Override
     public String toString() {
         return "NormalizedInputValue{" +
-                "type='" + type + '\'' +
+                "typeName='" + typeName + '\'' +
                 ", value=" + value +
                 '}';
     }
