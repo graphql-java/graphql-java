@@ -11,6 +11,7 @@ import graphql.language.ObjectValue;
 import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
+import graphql.normalized.NormalizedInputValue;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.GraphQLArgument;
@@ -24,6 +25,7 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -38,12 +40,18 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.collect.ImmutableKit.map;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 
 @SuppressWarnings("rawtypes")
 @Internal
 public class ValuesResolver {
+
+    public enum ValueMode {
+        COERCED,
+        NORMALIZED
+    }
 
     /**
      * This method coerces the "raw" variables values provided to the engine. The coerced values will be used to
@@ -52,11 +60,54 @@ public class ValuesResolver {
      *
      * @param schema              the schema
      * @param variableDefinitions the variable definitions
-     * @param variableValues      the supplied variables
+     * @param rawVariables        the supplied variables
      *
      * @return coerced variable values as a map
      */
-    public Map<String, Object> coerceVariableValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> variableValues) {
+    public Map<String, Object> coerceVariableValues(GraphQLSchema schema,
+                                                    List<VariableDefinition> variableDefinitions,
+                                                    Map<String, Object> rawVariables) {
+
+        return coerceVariableValuesImpl(schema, variableDefinitions, rawVariables, ValueMode.COERCED);
+    }
+
+    public Map<String, NormalizedInputValue> coerceNormalizedVariableValues(GraphQLSchema schema,
+                                                                            List<VariableDefinition> variableDefinitions,
+                                                                            Map<String, Object> rawVariables) {
+        return (Map) coerceVariableValuesImpl(schema, variableDefinitions, rawVariables, ValueMode.NORMALIZED);
+    }
+
+    public Map<String, Object> getArgumentValues(List<GraphQLArgument> argumentTypes,
+                                                 List<Argument> arguments,
+                                                 Map<String, Object> coercedVariables) {
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().fieldVisibility(DEFAULT_FIELD_VISIBILITY).build();
+        return getArgumentValuesImpl(codeRegistry, argumentTypes, arguments, coercedVariables, null, ValueMode.COERCED);
+    }
+
+    public Map<String, NormalizedInputValue> getNormalizedArgumentValues(List<GraphQLArgument> argumentTypes,
+                                                                         List<Argument> arguments,
+                                                                         Map<String, Object> coercedVariables,
+                                                                         Map<String, NormalizedInputValue> normalizedVariables) {
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().fieldVisibility(DEFAULT_FIELD_VISIBILITY).build();
+        return (Map) getArgumentValuesImpl(codeRegistry,
+                argumentTypes,
+                arguments,
+                coercedVariables, normalizedVariables,
+                ValueMode.NORMALIZED);
+    }
+
+    public Map<String, Object> getArgumentValues(GraphQLCodeRegistry codeRegistry,
+                                                 List<GraphQLArgument> argumentTypes,
+                                                 List<Argument> arguments,
+                                                 Map<String, Object> coercedVariables) {
+        return getArgumentValuesImpl(codeRegistry, argumentTypes, arguments, coercedVariables, null, ValueMode.COERCED);
+    }
+
+
+    private Map<String, Object> coerceVariableValuesImpl(GraphQLSchema schema,
+                                                         List<VariableDefinition> variableDefinitions,
+                                                         Map<String, Object> rawVariables,
+                                                         ValueMode valueMode) {
         GraphqlFieldVisibility fieldVisibility = schema.getCodeRegistry().getFieldVisibility();
         Map<String, Object> coercedValues = new LinkedHashMap<>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
@@ -66,19 +117,19 @@ public class ValuesResolver {
             Assert.assertTrue(variableType instanceof GraphQLInputType);
             // can be NullValue
             Value defaultValue = variableDefinition.getDefaultValue();
-            boolean hasValue = variableValues.containsKey(variableName);
-            Object value = variableValues.get(variableName);
+            boolean hasValue = rawVariables.containsKey(variableName);
+            Object value = rawVariables.get(variableName);
             if (!hasValue && defaultValue != null) {
-                Object coercedDefaultValue = coerceValueAst(fieldVisibility, variableType, defaultValue, null);
-                coercedValues.put(variableName, coercedDefaultValue);
+                Object coercedDefaultValue = coerceValueAst(fieldVisibility, variableType, defaultValue, Collections.emptyMap(), null, valueMode);
+                coercedValues.put(variableName, newValue(coercedDefaultValue, variableType, valueMode));
             } else if (isNonNull(variableType) && (!hasValue || value == null)) {
                 throw new NonNullableValueCoercedAsNullException(variableDefinition, variableType);
             } else if (hasValue) {
                 if (value == null) {
-                    coercedValues.put(variableName, null);
+                    coercedValues.put(variableName, newValue(null, variableType, valueMode));
                 } else {
-                    Object coercedValue = coerceValue(fieldVisibility, variableDefinition, variableDefinition.getName(), variableType, value, nameStack);
-                    coercedValues.put(variableName, coercedValue);
+                    Object coercedValue = coerceValue(fieldVisibility, variableDefinition, variableDefinition.getName(), variableType, value, nameStack, valueMode);
+                    coercedValues.put(variableName, newValue(coercedValue, variableType, valueMode));
                 }
             } else {
                 // hasValue = false && no defaultValue for a nullable type
@@ -89,20 +140,17 @@ public class ValuesResolver {
         return coercedValues;
     }
 
-    public Map<String, Object> getArgumentValues(List<GraphQLArgument> argumentTypes, List<Argument> arguments, Map<String, Object> variables) {
-        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().fieldVisibility(DEFAULT_FIELD_VISIBILITY).build();
-        return getArgumentValuesImpl(codeRegistry, argumentTypes, arguments, variables);
-    }
 
-    public Map<String, Object> getArgumentValues(GraphQLCodeRegistry codeRegistry, List<GraphQLArgument> argumentTypes, List<Argument> arguments, Map<String, Object> variables) {
-        return getArgumentValuesImpl(codeRegistry, argumentTypes, arguments, variables);
-    }
-
-    private Map<String, Object> getArgumentValuesImpl(GraphQLCodeRegistry codeRegistry, List<GraphQLArgument> argumentTypes, List<Argument> arguments,
-                                                      Map<String, Object> coercedVariableValues) {
+    private Map<String, Object> getArgumentValuesImpl(GraphQLCodeRegistry codeRegistry,
+                                                      List<GraphQLArgument> argumentTypes,
+                                                      List<Argument> arguments,
+                                                      Map<String, Object> coercedVariables,
+                                                      @Nullable Map<String, NormalizedInputValue> normalizedVariables,
+                                                      ValueMode valueMode) {
         if (argumentTypes.isEmpty()) {
             return Collections.emptyMap();
         }
+        Map<String, Object> variables = getVariables(coercedVariables, normalizedVariables, valueMode);
 
         Map<String, Object> coercedValues = new LinkedHashMap<>();
         Map<String, Argument> argumentMap = argumentMap(arguments);
@@ -116,24 +164,24 @@ public class ValuesResolver {
             Value argumentValue = argument != null ? argument.getValue() : null;
             if (argumentValue instanceof VariableReference) {
                 String variableName = ((VariableReference) argumentValue).getName();
-                hasValue = coercedVariableValues.containsKey(variableName);
-                value = coercedVariableValues.get(variableName);
+                hasValue = variables.containsKey(variableName);
+                value = variables.get(variableName);
             } else {
-                value = argumentValue;
+                value = newValue(argumentValue, argumentType, valueMode);
             }
             if (!hasValue && argumentDefinition.hasSetDefaultValue()) {
                 //TODO: default value needs to be coerced
-                coercedValues.put(argumentName, defaultValue);
-            } else if (isNonNull(argumentType) && (!hasValue || value == null)) {
+                coercedValues.put(argumentName, newValue(defaultValue, argumentType, valueMode));
+            } else if (isNonNull(argumentType) && (!hasValue || isNullValue(value))) {
                 throw new RuntimeException();
             } else if (hasValue) {
-                if (value == null) {
-                    coercedValues.put(argumentName, null);
+                if (isNullValue(value)) {
+                    coercedValues.put(argumentName, value);
                 } else if (argumentValue instanceof VariableReference) {
                     coercedValues.put(argumentName, value);
                 } else {
-                    value = coerceValueAst(codeRegistry.getFieldVisibility(), argumentType, argument.getValue(), coercedVariableValues);
-                    coercedValues.put(argumentName, value);
+                    value = coerceValueAst(codeRegistry.getFieldVisibility(), argumentType, argument.getValue(), coercedVariables, normalizedVariables, valueMode);
+                    coercedValues.put(argumentName, newValue(value, argumentType, valueMode));
                 }
             } else {
                 // nullable type && hasValue == false && hasDefaultValue == false
@@ -143,6 +191,28 @@ public class ValuesResolver {
         }
         return coercedValues;
 
+    }
+
+    private Object newValue(Object value, GraphQLType type, ValueMode valueMode) {
+        if (valueMode == ValueMode.COERCED) {
+            return value;
+        } else if (valueMode == ValueMode.NORMALIZED) {
+            return new NormalizedInputValue(simplePrint(type), value);
+        } else {
+            return Assert.assertShouldNeverHappen();
+        }
+    }
+
+    private Map<String, Object> getVariables(Map<String, Object> coercedVariables,
+                                             @Nullable Map<String, NormalizedInputValue> normalizedVariables,
+                                             ValueMode valueMode) {
+        if (valueMode == ValueMode.COERCED) {
+            return coercedVariables;
+        } else if (valueMode == ValueMode.NORMALIZED) {
+            return (Map) normalizedVariables;
+        } else {
+            return Assert.assertShouldNeverHappen();
+        }
     }
 
 
@@ -156,12 +226,18 @@ public class ValuesResolver {
 
 
     @SuppressWarnings("unchecked")
-    private Object coerceValue(GraphqlFieldVisibility fieldVisibility, VariableDefinition variableDefinition, String inputName, GraphQLType graphQLType, Object value, Deque<Object> nameStack) {
+    private Object coerceValue(GraphqlFieldVisibility fieldVisibility,
+                               VariableDefinition variableDefinition,
+                               String inputName,
+                               GraphQLType graphQLType,
+                               Object value,
+                               Deque<Object> nameStack,
+                               ValueMode valueMode) {
         nameStack.addLast(inputName);
         try {
             if (isNonNull(graphQLType)) {
                 Object returnValue =
-                        coerceValue(fieldVisibility, variableDefinition, inputName, unwrapOne(graphQLType), value, nameStack);
+                        coerceValue(fieldVisibility, variableDefinition, inputName, unwrapOne(graphQLType), value, nameStack, valueMode);
                 if (returnValue == null) {
                     throw new NonNullableValueCoercedAsNullException(variableDefinition, inputName, Arrays.asList(nameStack.toArray()), graphQLType);
                 }
@@ -177,10 +253,10 @@ public class ValuesResolver {
             } else if (graphQLType instanceof GraphQLEnumType) {
                 return coerceValueForEnum((GraphQLEnumType) graphQLType, value);
             } else if (graphQLType instanceof GraphQLList) {
-                return coerceValueForList(fieldVisibility, variableDefinition, inputName, (GraphQLList) graphQLType, value, nameStack);
+                return coerceValueForList(fieldVisibility, variableDefinition, inputName, (GraphQLList) graphQLType, value, nameStack, valueMode);
             } else if (graphQLType instanceof GraphQLInputObjectType) {
                 if (value instanceof Map) {
-                    return coerceValueForInputObjectType(fieldVisibility, variableDefinition, (GraphQLInputObjectType) graphQLType, (Map<String, Object>) value, nameStack);
+                    return coerceValueForInputObjectType(fieldVisibility, variableDefinition, (GraphQLInputObjectType) graphQLType, (Map<String, Object>) value, nameStack, valueMode);
                 } else {
                     throw CoercingParseValueException.newCoercingParseValueException()
                             .message("Expected type 'Map' but was '" + value.getClass().getSimpleName() +
@@ -212,7 +288,8 @@ public class ValuesResolver {
                                                  VariableDefinition variableDefinition,
                                                  GraphQLInputObjectType inputObjectType,
                                                  Map<String, Object> inputMap,
-                                                 Deque<Object> nameStack) {
+                                                 Deque<Object> nameStack,
+                                                 ValueMode valueMode) {
         List<GraphQLInputObjectField> fieldDefinitions = fieldVisibility.getFieldDefinitions(inputObjectType);
         List<String> fieldNames = map(fieldDefinitions, GraphQLInputObjectField::getName);
         for (String providedFieldName : inputMap.keySet()) {
@@ -234,23 +311,24 @@ public class ValuesResolver {
             value = fieldValue;
             if (!hasValue && inputFieldDefinition.hasSetDefaultValue()) {
                 //TODO: default value should be coerced
-                coercedValues.put(fieldName, defaultValue);
+                coercedValues.put(fieldName, newValue(defaultValue, fieldType, valueMode));
             } else if (isNonNull(fieldType) && (!hasValue || value == null)) {
                 nameStack.addLast(fieldName);
                 throw new NonNullableValueCoercedAsNullException(variableDefinition, fieldName, Arrays.asList(nameStack.toArray()), fieldType);
             } else if (hasValue) {
                 if (value == null) {
-                    coercedValues.put(fieldName, null);
+                    coercedValues.put(fieldName, newValue(null, fieldType, valueMode));
                 } else if (fieldValue instanceof VariableReference) {
-                    coercedValues.put(fieldName, value);
+                    coercedValues.put(fieldName, newValue(value, fieldType, valueMode));
                 } else {
                     value = coerceValue(fieldVisibility,
                             variableDefinition,
                             inputFieldDefinition.getName(),
                             fieldType,
                             value,
-                            nameStack);
-                    coercedValues.put(fieldName, value);
+                            nameStack,
+                            valueMode);
+                    coercedValues.put(fieldName, newValue(value, fieldType, valueMode));
                 }
             } else {
                 // nullable type && hasValue == false && hasDefaultValue == false
@@ -258,11 +336,6 @@ public class ValuesResolver {
             }
         }
         return coercedValues;
-    }
-
-    private boolean alwaysHasValue(GraphQLInputObjectField inputField) {
-        return inputField.getDefaultValue() != null
-                || isNonNull(inputField.getType());
     }
 
     private Object coerceValueForScalar(GraphQLScalarType graphQLScalarType, Object value) {
@@ -273,39 +346,50 @@ public class ValuesResolver {
         return graphQLEnumType.parseValue(value);
     }
 
-    private List coerceValueForList(GraphqlFieldVisibility fieldVisibility, VariableDefinition variableDefinition, String inputName, GraphQLList graphQLList, Object value, Deque<Object> nameStack) {
+    private List coerceValueForList(GraphqlFieldVisibility fieldVisibility,
+                                    VariableDefinition variableDefinition,
+                                    String inputName,
+                                    GraphQLList graphQLList,
+                                    Object value,
+                                    Deque<Object> nameStack,
+                                    ValueMode valueMode) {
         if (value instanceof Iterable) {
             List<Object> result = new ArrayList<>();
             for (Object val : (Iterable) value) {
-                result.add(coerceValue(fieldVisibility, variableDefinition, inputName, graphQLList.getWrappedType(), val, nameStack));
+                result.add(coerceValue(fieldVisibility, variableDefinition, inputName, graphQLList.getWrappedType(), val, nameStack, valueMode));
             }
             return result;
         } else {
-            return Collections.singletonList(coerceValue(fieldVisibility, variableDefinition, inputName, graphQLList.getWrappedType(), value, nameStack));
+            return Collections.singletonList(coerceValue(fieldVisibility, variableDefinition, inputName, graphQLList.getWrappedType(), value, nameStack, valueMode));
         }
     }
 
-    private Object coerceValueAst(GraphqlFieldVisibility fieldVisibility, GraphQLType type, Value inputValue, Map<String, Object> variables) {
+    private Object coerceValueAst(GraphqlFieldVisibility fieldVisibility,
+                                  GraphQLType type,
+                                  Value inputValue,
+                                  Map<String, Object> coercedVariables,
+                                  @Nullable Map<String, NormalizedInputValue> normalizedVariables,
+                                  ValueMode valueMode) {
         if (inputValue instanceof VariableReference) {
-            return variables.get(((VariableReference) inputValue).getName());
+            return coercedVariables.get(((VariableReference) inputValue).getName());
         }
         if (inputValue instanceof NullValue) {
             return null;
         }
         if (type instanceof GraphQLScalarType) {
-            return parseLiteral(inputValue, ((GraphQLScalarType) type).getCoercing(), variables);
+            return parseLiteral(inputValue, ((GraphQLScalarType) type).getCoercing(), coercedVariables);
         }
         if (isNonNull(type)) {
-            return coerceValueAst(fieldVisibility, unwrapOne(type), inputValue, variables);
+            return coerceValueAst(fieldVisibility, unwrapOne(type), inputValue, coercedVariables, normalizedVariables, valueMode);
         }
         if (type instanceof GraphQLInputObjectType) {
-            return coerceValueAstForInputObject(fieldVisibility, (GraphQLInputObjectType) type, (ObjectValue) inputValue, variables);
+            return coerceValueAstForInputObject(fieldVisibility, (GraphQLInputObjectType) type, (ObjectValue) inputValue, coercedVariables, normalizedVariables, valueMode);
         }
         if (type instanceof GraphQLEnumType) {
             return ((GraphQLEnumType) type).parseLiteral(inputValue);
         }
         if (isList(type)) {
-            return coerceValueAstForList(fieldVisibility, (GraphQLList) type, inputValue, variables);
+            return coerceValueAstForList(fieldVisibility, (GraphQLList) type, inputValue, coercedVariables, normalizedVariables, valueMode);
         }
         return null;
     }
@@ -315,57 +399,71 @@ public class ValuesResolver {
         return coercing.parseLiteral(inputValue, variables);
     }
 
-    private Object coerceValueAstForList(GraphqlFieldVisibility fieldVisibility, GraphQLList graphQLList, Value value, Map<String, Object> variables) {
+    private Object coerceValueAstForList(GraphqlFieldVisibility fieldVisibility,
+                                         GraphQLList graphQLList,
+                                         Value value,
+                                         Map<String, Object> coercedVariables,
+                                         @Nullable Map<String, NormalizedInputValue> normalizedVariables,
+                                         ValueMode valueMode) {
         if (value instanceof ArrayValue) {
             ArrayValue arrayValue = (ArrayValue) value;
             List<Object> result = new ArrayList<>();
             for (Value singleValue : arrayValue.getValues()) {
-                result.add(coerceValueAst(fieldVisibility, graphQLList.getWrappedType(), singleValue, variables));
+                result.add(coerceValueAst(fieldVisibility, graphQLList.getWrappedType(), singleValue, coercedVariables, normalizedVariables, valueMode));
             }
             return result;
         } else {
-            return Collections.singletonList(coerceValueAst(fieldVisibility, graphQLList.getWrappedType(), value, variables));
+            return Collections.singletonList(coerceValueAst(fieldVisibility,
+                    graphQLList.getWrappedType(),
+                    value,
+                    coercedVariables,
+                    normalizedVariables,
+                    valueMode));
         }
     }
 
     private Object coerceValueAstForInputObject(GraphqlFieldVisibility fieldVisibility,
                                                 GraphQLInputObjectType type,
                                                 ObjectValue inputValue,
-                                                Map<String, Object> coercedVariableValues) {
+                                                Map<String, Object> coercedVariables,
+                                                @Nullable Map<String, NormalizedInputValue> normalizedVariables,
+                                                ValueMode valueMode) {
         Map<String, Object> coercedValues = new LinkedHashMap<>();
 
         Map<String, ObjectField> inputFieldsByName = mapObjectValueFieldsByName(inputValue);
 
-        List<GraphQLInputObjectField> inputFieldTypes = fieldVisibility.getFieldDefinitions(type);
-        for (GraphQLInputObjectField inputFieldType : inputFieldTypes) {
+        Map<String, Object> variables = getVariables(coercedVariables, normalizedVariables, valueMode);
 
-            GraphQLInputType fieldType = inputFieldType.getType();
-            String fieldName = inputFieldType.getName();
+        List<GraphQLInputObjectField> inputFieldTypes = fieldVisibility.getFieldDefinitions(type);
+        for (GraphQLInputObjectField inputFieldDefinition : inputFieldTypes) {
+
+            GraphQLInputType fieldType = inputFieldDefinition.getType();
+            String fieldName = inputFieldDefinition.getName();
             ObjectField field = inputFieldsByName.get(fieldName);
-            Object defaultValue = inputFieldType.getDefaultValue();
+            Object defaultValue = inputFieldDefinition.getDefaultValue();
             boolean hasValue = field != null;
             Object value;
             Value fieldValue = field != null ? field.getValue() : null;
             if (fieldValue instanceof VariableReference) {
                 String variableName = ((VariableReference) fieldValue).getName();
-                hasValue = coercedVariableValues.containsKey(variableName);
-                value = coercedVariableValues.get(variableName);
+                hasValue = variables.containsKey(variableName);
+                value = variables.get(variableName);
             } else {
-                value = fieldValue;
+                value = newValue(fieldValue, fieldType, valueMode);
             }
-            if (!hasValue && inputFieldType.hasSetDefaultValue()) {
+            if (!hasValue && inputFieldDefinition.hasSetDefaultValue()) {
                 //TODO: default value should be coerced
-                coercedValues.put(fieldName, defaultValue);
-            } else if (isNonNull(fieldType) && (!hasValue || value == null)) {
-                throw new NonNullableValueCoercedAsNullException(inputFieldType);
+                coercedValues.put(fieldName, newValue(defaultValue, fieldType, valueMode));
+            } else if (isNonNull(fieldType) && (!hasValue || isNullValue(value))) {
+                throw new NonNullableValueCoercedAsNullException(inputFieldDefinition);
             } else if (hasValue) {
-                if (value == null) {
-                    coercedValues.put(fieldName, null);
+                if (isNullValue(value)) {
+                    coercedValues.put(fieldName, value);
                 } else if (fieldValue instanceof VariableReference) {
                     coercedValues.put(fieldName, value);
                 } else {
-                    value = coerceValueAst(fieldVisibility, fieldType, fieldValue, coercedVariableValues);
-                    coercedValues.put(fieldName, value);
+                    value = coerceValueAst(fieldVisibility, fieldType, fieldValue, coercedVariables, normalizedVariables, valueMode);
+                    coercedValues.put(fieldName, newValue(value, fieldType, valueMode));
                 }
             } else {
                 // nullable type && hasValue == false && hasDefaultValue == false
@@ -375,10 +473,14 @@ public class ValuesResolver {
         return coercedValues;
     }
 
-    private void assertNonNullInputField(GraphQLInputObjectField inputTypeField) {
-        if (isNonNull(inputTypeField.getType())) {
-            throw new NonNullableValueCoercedAsNullException(inputTypeField);
+    private boolean isNullValue(Object value) {
+        if (value == null) {
+            return true;
         }
+        if (!(value instanceof NormalizedInputValue)) {
+            return false;
+        }
+        return ((NormalizedInputValue) value).getValue() == null;
     }
 
     private Map<String, ObjectField> mapObjectValueFieldsByName(ObjectValue inputValue) {

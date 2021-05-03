@@ -1056,4 +1056,113 @@ schema {
         GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build();
         assert graphQL.execute(query).errors.size() == 0
     }
+
+    def "normalized arguments"() {
+        given:
+        String schema = """
+        type Query{ 
+            dog(id:ID): Dog 
+        }
+        type Dog {
+            name:String
+            search(arg1:Input1,arg2: Input1,arg3: Input1): Boolean
+        }
+        input Input1 {
+            foo: String
+            input2: Input2
+        }
+        input Input2 {
+            bar: Int
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = """
+            query(\$var1: Input2, \$var2: Input1){dog(id: "123"){
+                search(arg1: {foo: "foo", input2: {bar: 123}}, arg2: {foo: "foo", input2: \$var1}, arg3: \$var2) 
+            }}
+        """
+
+        assertValidQuery(graphQLSchema, query)
+        Document document = TestUtil.parseQuery(query)
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
+        def variables = [
+                var1: [bar: 123],
+                var2: [foo: "foo", input2: [bar: 123]]
+        ]
+        // the normalized arg value should be the same regardless of how the value was provided
+        def expectedNormalizedArgValue = [foo: new NormalizedInputValue("String", "foo"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 123)])]
+        when:
+        def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, variables)
+        def topLevelField = tree.getTopLevelFields().get(0)
+        def secondField = topLevelField.getChildren().get(0)
+        def arg1 = secondField.getNormalizedArgument("arg1")
+        def arg2 = secondField.getNormalizedArgument("arg2")
+        def arg3 = secondField.getNormalizedArgument("arg3")
+
+        then:
+        topLevelField.getNormalizedArgument("id").getTypeName() == "ID"
+        topLevelField.getNormalizedArgument("id").getValue() == "123"
+
+        arg1.getTypeName() == "Input1"
+        arg1.getValue() == expectedNormalizedArgValue
+        arg2.getTypeName() == "Input1"
+        arg2.value == expectedNormalizedArgValue
+        arg3.getTypeName() == "Input1"
+        arg3.value == expectedNormalizedArgValue
+
+    }
+
+    def "normalized arguments with lists"() {
+        given:
+        String schema = """
+        type Query{ 
+            search(arg1:[ID!], arg2:[[Input1]], arg3: [Input1]): Boolean
+        }
+        input Input1 {
+            foo: String
+            input2: Input2
+        }
+        input Input2 {
+            bar: Int
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = '''
+            query($var1: [Input1]){
+                search(arg1:["1","2"], arg2: [[{foo: "foo1", input2: {bar: 123}},{foo: "foo2", input2: {bar: 456}}]], arg3: $var1) 
+            }
+        '''
+
+        assertValidQuery(graphQLSchema, query)
+        Document document = TestUtil.parseQuery(query)
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
+        def variables = [
+                var1: [[foo: "foo3", input2: [bar: 789]]]
+        ]
+        when:
+        def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, variables)
+        def topLevelField = tree.getTopLevelFields().get(0)
+        def arg1 = topLevelField.getNormalizedArgument("arg1")
+        def arg2 = topLevelField.getNormalizedArgument("arg2")
+        def arg3 = topLevelField.getNormalizedArgument("arg3")
+
+        then:
+        arg1.typeName == "[ID!]"
+        arg1.value == ["1", "2"]
+        arg2.typeName == "[[Input1]]"
+        arg2.value == [[
+                               [foo: new NormalizedInputValue("String", "foo1"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 123)])],
+                               [foo: new NormalizedInputValue("String", "foo2"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 456)])]
+                       ]]
+
+        arg3.getTypeName() == "[Input1]"
+        arg3.value == [
+                [foo: new NormalizedInputValue("String", "foo3"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 789)])],
+        ]
+
+
+    }
+
 }

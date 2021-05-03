@@ -75,6 +75,7 @@ jar {
 }
 
 dependencies {
+    compileOnly 'org.jetbrains:annotations:20.1.0'
     implementation 'org.antlr:antlr4-runtime:4.8'
     implementation 'org.slf4j:slf4j-api:' + slf4jVersion
     api 'com.graphql-java:java-dataloader:2.2.3'
