@@ -35,6 +35,24 @@ public class NormalizedInputValue {
         return value;
     }
 
+
+    public boolean isList() {
+        return typeName.startsWith("[");
+    }
+
+    public String getUnwrappedTypeName() {
+        String result = unwrapNonNull(typeName);
+        while (result.startsWith("[")) {
+            result = result.substring(1, result.length() - 2);
+            result = unwrapNonNull(result);
+        }
+        return result;
+    }
+
+    private String unwrapNonNull(String string) {
+        return string.endsWith("!") ? string.substring(0, string.length() - 2) : string;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

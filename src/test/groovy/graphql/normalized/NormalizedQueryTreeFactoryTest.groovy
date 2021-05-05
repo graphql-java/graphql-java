@@ -1052,9 +1052,9 @@ schema {
                         'Friend.name: String (conditional: false)']
     }
 
-    private void assertValidQuery(GraphQLSchema graphQLSchema, String query) {
+    private void assertValidQuery(GraphQLSchema graphQLSchema, String query, Map variables = [:]) {
         GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build();
-        assert graphQL.execute(query).errors.size() == 0
+        assert graphQL.execute(query, null, variables).errors.size() == 0
     }
 
     def "normalized arguments"() {
@@ -1130,17 +1130,18 @@ schema {
         GraphQLSchema graphQLSchema = TestUtil.schema(schema)
 
         String query = '''
-            query($var1: [Input1]){
-                search(arg1:["1","2"], arg2: [[{foo: "foo1", input2: {bar: 123}},{foo: "foo2", input2: {bar: 456}}]], arg3: $var1) 
+            query($var1: [Input1], $var2: ID!){
+                search(arg1:["1",$var2], arg2: [[{foo: "foo1", input2: {bar: 123}},{foo: "foo2", input2: {bar: 456}}]], arg3: $var1) 
             }
         '''
 
-        assertValidQuery(graphQLSchema, query)
+        def variables = [
+                var1: [[foo: "foo3", input2: [bar: 789]]],
+                var2: "2",
+        ]
+        assertValidQuery(graphQLSchema, query, variables)
         Document document = TestUtil.parseQuery(query)
         NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
-        def variables = [
-                var1: [[foo: "foo3", input2: [bar: 789]]]
-        ]
         when:
         def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, variables)
         def topLevelField = tree.getTopLevelFields().get(0)
@@ -1163,6 +1164,50 @@ schema {
         ]
 
 
+    }
+
+    def "normalized arguments with lists 2"() {
+        given:
+        String schema = """
+        type Query{ 
+            search(arg1:[[Input1]] ,arg2:[[ID!]!]): Boolean
+        }
+        input Input1 {
+            foo: String
+            input2: Input2
+        }
+        input Input2 {
+            bar: Int
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = '''
+            query($var1: [Input1], $var2: [ID!]!){
+                search(arg1: [$var1],arg2:[["1"],$var2] ) 
+            }
+        '''
+
+        def variables = [
+                var1: [[foo: "foo1", input2: [bar: 123]]],
+                var2: "2"
+        ]
+        assertValidQuery(graphQLSchema, query, variables)
+        Document document = TestUtil.parseQuery(query)
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
+        when:
+        def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, variables)
+        def topLevelField = tree.getTopLevelFields().get(0)
+        def arg1 = topLevelField.getNormalizedArgument("arg1")
+        def arg2 = topLevelField.getNormalizedArgument("arg2")
+
+        then:
+        arg1.typeName == "[[Input1]]"
+        arg1.value == [[
+                               [foo: new NormalizedInputValue("String", "foo1"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 123)])],
+                       ]]
+        arg2.typeName == "[[ID!]!]"
+        arg2.value == [["1"], ["2"]]
     }
 
 }
