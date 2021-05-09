@@ -5,8 +5,9 @@ import com.google.common.collect.ImmutableSet;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.execution.ValuesResolver;
 import graphql.language.AstPrinter;
-import graphql.language.AstValueHelper;
+import graphql.language.Value;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
@@ -162,10 +163,10 @@ public class Introspection {
             Object type = environment.getSource();
             if (type instanceof GraphQLArgument) {
                 GraphQLArgument inputField = (GraphQLArgument) type;
-                return inputField.getDefaultValue() != null ? print(inputField.getDefaultValue(), inputField.getType()) : null;
+                return inputField.getDefaultValue() != null ? printDefaultValue(inputField.getDefaultValue(), inputField.getType()) : null;
             } else if (type instanceof GraphQLInputObjectField) {
                 GraphQLInputObjectField inputField = (GraphQLInputObjectField) type;
-                return inputField.getDefaultValue() != null ? print(inputField.getDefaultValue(), inputField.getType()) : null;
+                return inputField.getDefaultValue() != null ? printDefaultValue(inputField.getDefaultValue(), inputField.getType()) : null;
             }
             return null;
         });
@@ -182,8 +183,11 @@ public class Introspection {
         register(__InputValue, "description", descriptionDataFetcher);
     }
 
-    private static String print(Object value, GraphQLInputType type) {
-        return AstPrinter.printAst(AstValueHelper.astFromValue(value, type));
+    private static String printDefaultValue(Object value, GraphQLInputType type) {
+        if (value instanceof Value) {
+            return AstPrinter.printAst((Value) value);
+        }
+        return AstPrinter.printAst(ValuesResolver.externalInputValueToLiteralLegacy(value, type));
     }
 
 

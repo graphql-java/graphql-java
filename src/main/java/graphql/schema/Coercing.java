@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.PublicSpi;
+import graphql.language.Value;
 
 import java.util.Map;
 
@@ -92,5 +93,12 @@ public interface Coercing<I, O> {
         return parseLiteral(input);
     }
 
-    ;
+
+    default Object literalToValue(Value astLiteral) throws CoercingLiteralToValueException {
+        throw new CoercingLiteralToValueException("literalToValue not implemented");
+    }
+
+    default Object valueToLiteral(Object input) throws CoercingLiteralToValueException {
+        throw new CoercingLiteralToValueException("literalToValue not implemented");
+    }
 }
