@@ -2,8 +2,8 @@ package graphql.schema.idl;
 
 import graphql.Assert;
 import graphql.PublicApi;
+import graphql.execution.ValuesResolver;
 import graphql.language.AstPrinter;
-import graphql.language.AstValueHelper;
 import graphql.language.Description;
 import graphql.language.Document;
 import graphql.language.EnumTypeDefinition;
@@ -16,6 +16,7 @@ import graphql.language.ObjectTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.TypeDefinition;
 import graphql.language.UnionTypeDefinition;
+import graphql.language.Value;
 import graphql.schema.DefaultGraphqlTypeComparatorRegistry;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
@@ -632,7 +633,10 @@ public class SchemaPrinter {
     }
 
     private static String printAst(Object value, GraphQLInputType type) {
-        return AstPrinter.printAst(AstValueHelper.astFromValue(value, type));
+        if (value instanceof Value) {
+            return AstPrinter.printAst((Value) value);
+        }
+        return AstPrinter.printAst(ValuesResolver.externalInputValueToLiteralLegacy(value, type));
     }
 
     private TypePrinter<GraphQLSchema> schemaPrinter() {

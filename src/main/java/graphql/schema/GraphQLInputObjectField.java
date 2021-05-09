@@ -4,7 +4,9 @@ package graphql.schema;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.execution.ValuesResolver;
 import graphql.language.InputValueDefinition;
+import graphql.language.Value;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -31,12 +33,20 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
     private final String name;
     private final String description;
     private final GraphQLInputType originalType;
+    /**
+     * This should normally always be a Value (Ast Literal),
+     * but in order to preserve backwards compatibility
+     * we accept Objects and treat is as already coerced internal
+     * input values.
+     */
     private final Object defaultValue;
     private final String deprecationReason;
     private final InputValueDefinition definition;
     private final DirectivesUtil.DirectivesHolder directives;
 
     private GraphQLInputType replacedType;
+
+    private ValuesResolver valuesResolver = new ValuesResolver();
 
     public static final String CHILD_TYPE = "type";
     public static final String CHILD_DIRECTIVES = "directives";
@@ -255,10 +265,17 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
     @PublicApi
     public static class Builder extends GraphqlTypeBuilder {
         private Object defaultValue = DEFAULT_VALUE_SENTINEL;
+        private DefaultValueState defaultValueState;
         private GraphQLInputType type;
         private InputValueDefinition definition;
         private final List<GraphQLDirective> directives = new ArrayList<>();
         private String deprecationReason;
+
+        private enum DefaultValueState {
+            LITERAL,
+            EXTERNAL_VALUE,
+            INTERNAL_VALUE // this is deprecated and should not be used going forward
+        }
 
         public Builder() {
         }
@@ -310,8 +327,29 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
             return this;
         }
 
+        /**
+         * @param defaultValue
+         *
+         * @return
+         *
+         * @deprecated
+         */
+        @Deprecated
         public Builder defaultValue(Object defaultValue) {
             this.defaultValue = defaultValue;
+            this.defaultValueState = DefaultValueState.INTERNAL_VALUE;
+            return this;
+        }
+
+        public Builder defaultValueLiteral(Value defaultValue) {
+            this.defaultValue = defaultValue;
+            this.defaultValueState = DefaultValueState.LITERAL;
+            return this;
+        }
+
+        public Builder defaultValueExternal(Object defaultValue) {
+            this.defaultValue = defaultValue;
+            this.defaultValueState = DefaultValueState.EXTERNAL_VALUE;
             return this;
         }
 
@@ -353,6 +391,10 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         }
 
         public GraphQLInputObjectField build() {
+            assertNotNull(type, () -> "type can't be null");
+            if (defaultValue != DEFAULT_VALUE_SENTINEL && defaultValueState == DefaultValueState.EXTERNAL_VALUE) {
+                defaultValue = ValuesResolver.externalInputValueToLiteral(defaultValue, type);
+            }
             return new GraphQLInputObjectField(
                     name,
                     description,

@@ -103,6 +103,22 @@ public class ValuesResolver {
         return getArgumentValuesImpl(codeRegistry, argumentTypes, arguments, coercedVariables, null, ValueMode.COERCED);
     }
 
+    public static Value externalInputValueToLiteral(Object externalValue, GraphQLInputType inputType) {
+        return new ValuesResolver().externalInputValueToLiteral(externalValue, inputType);
+    }
+
+    //    public static Object literalToExternalInputValue(Value literal, GraphQLInputType inputType) {
+//        return null;
+//    }
+//
+    public static Value externalInputValueToLiteralLegacy(Object defaultValue, GraphQLInputType inputType) {
+        return null;
+    }
+
+    private Value externalInputValueToLiteralImpl(Object value, GraphQLInputType type) {
+        return null;
+    }
+
 
     private Map<String, Object> coerceVariableValuesImpl(GraphQLSchema schema,
                                                          List<VariableDefinition> variableDefinitions,
@@ -500,4 +516,6 @@ public class ValuesResolver {
         }
         return inputValueFieldsByName;
     }
+
+
 }

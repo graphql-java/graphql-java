@@ -43,7 +43,9 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     private final String description;
     private final String deprecationReason;
     private final GraphQLInputType originalType;
+
     private final Object value;
+
     private final Object defaultValue;
     private final InputValueDefinition definition;
     private final DirectivesUtil.DirectivesHolder directives;
