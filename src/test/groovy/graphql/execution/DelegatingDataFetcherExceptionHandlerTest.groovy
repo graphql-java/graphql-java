@@ -124,4 +124,74 @@ class DelegatingDataFetcherExceptionHandlerTest extends Specification {
         and: 'the actual result is equal to the expected result'
         actualResult == expectedResult
     }
+
+    def "fromThrowableTypeMapping only delegates to matching delegate"() {
+        given: 'a delegate that matches and a delegate that does not match'
+        def matchingDelegate = Mock(DataFetcherExceptionHandler)
+        def notMatchingDelegate = Mock(DataFetcherExceptionHandler)
+        def expectedResult = Mock(DataFetcherExceptionHandlerResult)
+        def delegates = new LinkedHashMap<Throwable, DataFetcherExceptionHandler>()
+        delegates.put(IllegalStateException, matchingDelegate)
+        delegates.put(IllegalArgumentException, notMatchingDelegate)
+        def environment = DataFetchingEnvironmentImpl.newDataFetchingEnvironment()
+                .build()
+        def handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
+                .dataFetchingEnvironment(environment)
+                .exception(new IllegalStateException())
+                .build();
+        def handler = DelegatingDataFetcherExceptionHandler.fromThrowableTypeMapping(delegates)
+
+        when: 'onException invoked'
+        def actualResult = handler.onException(handlerParameters)
+
+        then: 'only the matching delegate is invoked'
+        1 * matchingDelegate.onException(handlerParameters) >> expectedResult
+        0 * _
+
+        and: 'the actual result is equal to the expected result'
+        actualResult == expectedResult
+    }
+
+    def "fromThrowableTypeMapping only delegates to matching delegate when subclass exception"() {
+        given: 'a delegate that matches and a delegate that does not match'
+        def matchingDelegate = Mock(DataFetcherExceptionHandler)
+        def notMatchingDelegate = Mock(DataFetcherExceptionHandler)
+        def expectedResult = Mock(DataFetcherExceptionHandlerResult)
+        def delegates = new LinkedHashMap<Throwable, DataFetcherExceptionHandler>()
+        delegates.put(IllegalStateException, notMatchingDelegate)
+        delegates.put(IllegalArgumentException, matchingDelegate)
+        def environment = DataFetchingEnvironmentImpl.newDataFetchingEnvironment()
+                .build()
+        def handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
+                .dataFetchingEnvironment(environment)
+                .exception(new IllegalFormatException())
+                .build();
+        def handler = DelegatingDataFetcherExceptionHandler.fromThrowableTypeMapping(delegates)
+
+        when: 'onException invoked'
+        def actualResult = handler.onException(handlerParameters)
+
+        then: 'only the matching delegate is invoked'
+        1 * matchingDelegate.onException(handlerParameters) >> expectedResult
+        0 * _
+
+        and: 'the actual result is equal to the expected result'
+        actualResult == expectedResult
+    }
+
+    def "fromThrowableTypeMapping null types"() {
+        when: 'set null types'
+        DelegatingDataFetcherExceptionHandler.fromThrowableTypeMapping()
+
+        then: 'fail assert on validation'
+        thrown AssertException
+    }
+
+    def "fromThrowableTypeMapping empty types"() {
+        when: 'set empy types'
+        new DelegatingDataFetcherExceptionHandler(new LinkedHashMap<Class<? extends Throwable>, DataFetcherExceptionHandler>())
+
+        then: 'fail assert on validation'
+        thrown AssertException
+    }
 }

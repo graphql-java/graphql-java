@@ -6,6 +6,7 @@ import graphql.PublicApi;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 
@@ -27,10 +28,7 @@ public class DelegatingDataFetcherExceptionHandler implements DataFetcherExcepti
      * @param delegates the mapping of {@link Predicate} to {@link DataFetcherExceptionHandler}.
      */
     public DelegatingDataFetcherExceptionHandler(LinkedHashMap<Predicate<Throwable>, DataFetcherExceptionHandler> delegates) {
-        if (delegates == null || delegates.isEmpty()) {
-            throw new AssertException("handlers can't be empty");
-        }
-        this.delegates = delegates;
+        this.delegates = assertNotEmpty(delegates, "handlers can't be empty");
     }
 
     @Override
@@ -52,5 +50,35 @@ public class DelegatingDataFetcherExceptionHandler implements DataFetcherExcepti
      */
     public void setDefaultHandler(DataFetcherExceptionHandler defaultHandler) {
         this.defaultHandler = assertNotNull(defaultHandler, () -> "defaultHandler can't be null");
+    }
+
+    /**
+     * Creates a {@link DelegatingDataFetcherExceptionHandler} from a mapping of {@link Throwable} to
+     * {@link DataFetcherExceptionHandler} such that match occurs if the
+     * {@link DataFetcherExceptionHandlerParameters#getException()} contains an {@link Exception} that is the same or
+     * subtype of the key.
+     *
+     * @param types the mapping of type to {@link DataFetcherExceptionHandler}
+     *
+     * @return the {@link DelegatingDataFetcherExceptionHandler} to use
+     */
+    public static DelegatingDataFetcherExceptionHandler fromThrowableTypeMapping(LinkedHashMap<Class<? extends Throwable>, DataFetcherExceptionHandler> types) {
+        LinkedHashMap<Class<? extends Throwable>, DataFetcherExceptionHandler> typeToHandler = assertNotEmpty(types, "types can't be null");
+        LinkedHashMap<Predicate<Throwable>, DataFetcherExceptionHandler> handlers = typeToHandler.entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        e -> (Predicate<Throwable>) throwable -> e.getKey().isAssignableFrom(throwable.getClass()),
+                        e -> e.getValue(),
+                        (v1, v2) -> v1,
+                        LinkedHashMap::new)
+                );
+        return new DelegatingDataFetcherExceptionHandler(handlers);
+    }
+
+    private static <M extends Map<K, V>, K, V> M assertNotEmpty(M map, String message) {
+        if (map == null || map.isEmpty()) {
+            throw new AssertException(message);
+        }
+        return map;
     }
 }
