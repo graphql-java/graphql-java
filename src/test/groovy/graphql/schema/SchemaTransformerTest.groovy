@@ -15,11 +15,9 @@ import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
 import static graphql.schema.GraphQLTypeReference.typeRef
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
-import static graphql.util.TreeTransformerUtil.changeNode
 import static graphql.util.TreeTransformerUtil.deleteNode
 
 class SchemaTransformerTest extends Specification {
-
 
     def "can change field in schema"() {
         given:
@@ -562,5 +560,136 @@ type Query {
   manchu: Manchu
 }
 """
+    }
+
+    def "can change a schema element only"() {
+        def sdl = '''
+            type Query {
+                f : Foo
+            }
+            type Foo {
+                foo : Foo
+                bar : Bar
+            }
+            type Bar {
+                b : EnumType
+            }
+            enum EnumType {
+              E
+            }
+        '''
+        def schema = TestUtil.schema(sdl)
+        def oldType = schema.getObjectType("Foo")
+        when:
+        GraphQLObjectType newType = new SchemaTransformer().transform(oldType, new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
+                return changeNode(context, node)
+            }
+
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
+                return changeNode(context, node)
+            }
+        })
+        then:
+        println new SchemaPrinter().print(newType)
+        newType.getName() == "FOO"
+        newType.getFieldDefinition("FOO") != null
+        newType.getFieldDefinition("BAR") != null
+    }
+
+    def "can handle self referencing type which require type references"() {
+        def sdl = '''
+            type Query {
+                f : Foo
+            }
+            type Foo {
+                foo : Foo
+                bar : Bar
+            }
+            type Bar {
+                foo : Foo
+                enum : EnumType
+            }
+            enum EnumType {
+              e
+            }
+        '''
+        def schema = TestUtil.schema(sdl)
+
+        when:
+        GraphQLSchema newSchema = new SchemaTransformer().transform(schema, new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
+                return changeNode(context, node)
+            }
+
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getName().startsWith("__")) return TraversalControl.ABORT;
+                node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
+                return changeNode(context, node)
+            }
+        })
+        then:
+
+        // all our fields are upper case as are our object types
+        def queryType = newSchema.getObjectType("QUERY")
+        def fooType = newSchema.getObjectType("FOO")
+        def barType = newSchema.getObjectType("BAR")
+        def enumType = newSchema.getType("EnumType") as GraphQLEnumType
+
+        queryType.getFieldDefinition("F").getType().is(fooType) // groovy object equality
+        fooType.getFieldDefinition("FOO").getType().is(fooType)
+        fooType.getFieldDefinition("BAR").getType().is(barType)
+
+        barType.getFieldDefinition("FOO").getType().is(fooType)
+        barType.getFieldDefinition("ENUM").getType().is(enumType)
+
+        enumType.getValue("e") != null // left alone
+    }
+
+    def "cycle with type refs"() {
+        given:
+        def field = newFieldDefinition()
+                .name("foo")
+                .type(typeRef("Foo"))
+                .build()
+
+        def query = newObject()
+                .name("Query")
+                .field(field)
+                .build()
+        def foo = newObject()
+                .name("Foo")
+                .field(newFieldDefinition().name("toChange").type(Scalars.GraphQLString))
+                .field(newFieldDefinition().name("subFoo").type(typeRef("Foo")))
+                .build()
+
+
+        GraphQLSchema schema = newSchema().query(query).additionalType(foo).build()
+        def fieldChanger = new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node,
+                                                         TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getName() == "toChange") {
+                    changeNode(context, node.transform({ builder -> builder.name("changed") }))
+                }
+                return TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        def newSchema = SchemaTransformer.transformSchema(schema, fieldChanger)
+
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
+        def newFoo = newSchema.getQueryType().getFieldDefinition("foo").getType() as GraphQLObjectType
+        then:
+        newFoo.getFieldDefinition("changed") != null
     }
 }

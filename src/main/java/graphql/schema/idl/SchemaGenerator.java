@@ -21,23 +21,24 @@ import java.util.Set;
 @PublicApi
 public class SchemaGenerator {
 
-    /**
-     * These options control how the schema generation works
-     */
-    public static class Options {
-
-        Options() {
-        }
-
-        public static Options defaultOptions() {
-            return new Options();
-        }
-    }
-
     private final SchemaTypeChecker typeChecker = new SchemaTypeChecker();
     private final SchemaGeneratorHelper schemaGeneratorHelper = new SchemaGeneratorHelper();
-
     public SchemaGenerator() {
+    }
+
+    /**
+     * Created a schema from the SDL that is has a mocked runtime.
+     *
+     * @param sdl the SDL to be mocked
+     *
+     * @return a schema with a mocked runtime
+     *
+     * @see RuntimeWiring#MOCKED_WIRING
+     */
+    public static GraphQLSchema createdMockedSchema(String sdl) {
+        TypeDefinitionRegistry typeDefinitionRegistry = new SchemaParser().parse(sdl);
+        GraphQLSchema graphQLSchema = new SchemaGenerator().makeExecutableSchema(typeDefinitionRegistry, RuntimeWiring.MOCKED_WIRING);
+        return graphQLSchema;
     }
 
     /**
@@ -45,7 +46,9 @@ public class SchemaGenerator {
      *
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
+     *
      * @return an executable schema
+     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -59,7 +62,9 @@ public class SchemaGenerator {
      * @param options      the controlling options
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
+     *
      * @return an executable schema
+     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(Options options, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -116,5 +121,18 @@ public class SchemaGenerator {
             graphQLSchema = postProcessing.process(graphQLSchema);
         }
         return graphQLSchema;
+    }
+
+    /**
+     * These options control how the schema generation works
+     */
+    public static class Options {
+
+        Options() {
+        }
+
+        public static Options defaultOptions() {
+            return new Options();
+        }
     }
 }

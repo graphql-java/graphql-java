@@ -21,6 +21,7 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
 @Internal
 public class NormalizedField {
     private final String alias;
+    private final Map<String, NormalizedInputValue> normalizedArguments;
     private final Map<String, Object> arguments;
     private final GraphQLObjectType objectType;
     private final GraphQLFieldDefinition fieldDefinition;
@@ -33,6 +34,7 @@ public class NormalizedField {
     private NormalizedField(Builder builder) {
         this.alias = builder.alias;
         this.arguments = builder.arguments;
+        this.normalizedArguments = builder.normalizedArguments;
         this.objectType = builder.objectType;
         this.fieldDefinition = assertNotNull(builder.fieldDefinition);
         this.children = builder.children;
@@ -77,6 +79,14 @@ public class NormalizedField {
 
     public boolean isConditional() {
         return isConditional;
+    }
+
+    public NormalizedInputValue getNormalizedArgument(String name) {
+        return normalizedArguments.get(name);
+    }
+
+    public Map<String, NormalizedInputValue> getNormalizedArguments() {
+        return normalizedArguments;
     }
 
     public Map<String, Object> getArguments() {
@@ -213,6 +223,7 @@ public class NormalizedField {
         private int level;
         private NormalizedField parent;
         private String alias;
+        private Map<String, NormalizedInputValue> normalizedArguments = Collections.emptyMap();
         private Map<String, Object> arguments = Collections.emptyMap();
 
         private Builder() {
@@ -221,6 +232,7 @@ public class NormalizedField {
 
         private Builder(NormalizedField existing) {
             this.alias = existing.alias;
+            this.normalizedArguments = existing.normalizedArguments;
             this.arguments = existing.arguments;
             this.objectType = existing.getObjectType();
             this.fieldDefinition = existing.getFieldDefinition();
@@ -237,6 +249,11 @@ public class NormalizedField {
 
         public Builder alias(String alias) {
             this.alias = alias;
+            return this;
+        }
+
+        public Builder normalizedArguments(Map<String, NormalizedInputValue> arguments) {
+            this.normalizedArguments = arguments == null ? Collections.emptyMap() : arguments;
             return this;
         }
 

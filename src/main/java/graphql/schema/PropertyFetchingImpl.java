@@ -312,7 +312,11 @@ public class PropertyFetchingImpl {
 
         @Override
         public int hashCode() {
-            return Objects.hash(classLoader, className, propertyName);
+            int result = 1;
+            result = 31 * result + Objects.hashCode(classLoader);
+            result = 31 * result + Objects.hashCode(className);
+            result = 31 * result + Objects.hashCode(propertyName);
+            return result;
         }
 
         @Override

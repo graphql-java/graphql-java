@@ -151,6 +151,12 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
     }
 
     @Override
+    public GraphQLSchemaElement copy() {
+        return newEnumValueDefinition(this).build();
+    }
+
+
+    @Override
     public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLEnumValueDefinition(this, context);
     }
@@ -190,6 +196,12 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
         return super.hashCode();
     }
 
+    @Override
+    public String toString() {
+        return "GraphQLEnumValueDefinition{" +
+                "name='" + name + '\'' +
+                '}';
+    }
 
     public static Builder newEnumValueDefinition() {
         return new Builder();

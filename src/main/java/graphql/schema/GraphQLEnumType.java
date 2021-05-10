@@ -1,9 +1,9 @@
 package graphql.schema;
 
 
-import graphql.DirectivesUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.EnumTypeDefinition;
@@ -221,6 +221,12 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     }
 
     @Override
+    public GraphQLSchemaElement copy() {
+        return newEnum(this).build();
+    }
+
+
+    @Override
     public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLEnumType(this, context);
     }
@@ -264,6 +270,18 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         return super.hashCode();
     }
 
+
+    @Override
+    public String toString() {
+        return "GraphQLEnumType{" +
+                "name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", valueDefinitionMap=" + valueDefinitionMap +
+                ", definition=" + definition +
+                ", extensionDefinitions=" + extensionDefinitions +
+                ", directives=" + directives +
+                '}';
+    }
 
     public static Builder newEnum() {
         return new Builder();

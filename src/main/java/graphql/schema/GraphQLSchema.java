@@ -8,6 +8,7 @@ import graphql.Directives;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.introspection.Introspection;
 import graphql.language.SchemaDefinition;
 import graphql.language.SchemaExtensionDefinition;
 import graphql.schema.validation.InvalidSchemaException;
@@ -47,7 +48,12 @@ public class GraphQLSchema {
     private final GraphQLObjectType queryType;
     private final GraphQLObjectType mutationType;
     private final GraphQLObjectType subscriptionType;
+    private final GraphQLObjectType introspectionSchemaType;
     private final ImmutableSet<GraphQLType> additionalTypes;
+    private final GraphQLFieldDefinition intospectionSchemaField;
+    private final GraphQLFieldDefinition introspectionTypeField;
+    // we don't allow modification of "__typename" - its a scalar
+    private final GraphQLFieldDefinition __typename = Introspection.TypeNameMetaFieldDef;
     private final DirectivesUtil.DirectivesHolder directives;
     private final DirectivesUtil.DirectivesHolder schemaDirectives;
     private final SchemaDefinition definition;
@@ -111,6 +117,9 @@ public class GraphQLSchema {
         this.mutationType = builder.mutationType;
         this.subscriptionType = builder.subscriptionType;
         this.additionalTypes = ImmutableSet.copyOf(builder.additionalTypes);
+        this.introspectionSchemaType = builder.introspectionSchemaType;
+        this.intospectionSchemaField = Introspection.buildSchemaField(builder.introspectionSchemaType);
+        this.introspectionTypeField = Introspection.buildTypeField(builder.introspectionSchemaType);
         this.directives = new DirectivesUtil.DirectivesHolder(builder.additionalDirectives);
         this.schemaDirectives = new DirectivesUtil.DirectivesHolder(builder.schemaDirectives);
         this.definition = builder.definition;
@@ -132,7 +141,10 @@ public class GraphQLSchema {
         this.queryType = otherSchema.queryType;
         this.mutationType = otherSchema.mutationType;
         this.subscriptionType = otherSchema.subscriptionType;
+        this.introspectionSchemaType = otherSchema.introspectionSchemaType;
         this.additionalTypes = otherSchema.additionalTypes;
+        this.intospectionSchemaField = otherSchema.intospectionSchemaField;
+        this.introspectionTypeField = otherSchema.introspectionTypeField;
         this.directives = otherSchema.directives;
         this.schemaDirectives = otherSchema.schemaDirectives;
         this.definition = otherSchema.definition;
@@ -143,6 +155,41 @@ public class GraphQLSchema {
         this.interfaceNameToObjectTypes = otherSchema.interfaceNameToObjectTypes;
         this.interfaceNameToObjectTypeNames = otherSchema.interfaceNameToObjectTypeNames;
         this.description = otherSchema.description;
+    }
+
+    /**
+     * @return a new schema builder
+     */
+    public static Builder newSchema() {
+        return new Builder();
+    }
+
+    /**
+     * This allows you to build a schema from an existing schema.  It copies everything from the existing
+     * schema and then allows you to replace them.
+     *
+     * @param existingSchema the existing schema
+     *
+     * @return a new schema builder
+     */
+    public static Builder newSchema(GraphQLSchema existingSchema) {
+        return new Builder()
+                .query(existingSchema.getQueryType())
+                .mutation(existingSchema.getMutationType())
+                .subscription(existingSchema.getSubscriptionType())
+                .introspectionSchemaType(existingSchema.getIntrospectionSchemaType())
+                .codeRegistry(existingSchema.getCodeRegistry())
+                .clearAdditionalTypes()
+                .clearDirectives()
+                .additionalDirectives(new LinkedHashSet<>(existingSchema.getDirectives()))
+                .clearSchemaDirectives()
+                .withSchemaDirectives(schemaDirectivesArray(existingSchema))
+                .additionalTypes(existingSchema.additionalTypes)
+                .description(existingSchema.getDescription());
+    }
+
+    private static GraphQLDirective[] schemaDirectivesArray(GraphQLSchema existingSchema) {
+        return existingSchema.schemaDirectives.getDirectives().toArray(new GraphQLDirective[0]);
     }
 
     private ImmutableMap<String, ImmutableList<GraphQLObjectType>> buildInterfacesToObjectTypes(Map<String, List<GraphQLObjectType>> groupImplementations) {
@@ -163,17 +210,74 @@ public class GraphQLSchema {
         return map.build();
     }
 
-
     public GraphQLCodeRegistry getCodeRegistry() {
         return codeRegistry;
+    }
+
+    /**
+     * @return the special system field called "__schema"
+     */
+    public GraphQLFieldDefinition getIntrospectionSchemaFieldDefinition() {
+        return intospectionSchemaField;
+    }
+
+    /**
+     * @return the special system field called "__type"
+     */
+    public GraphQLFieldDefinition getIntrospectionTypeFieldDefinition() {
+        return introspectionTypeField;
+    }
+
+    /**
+     * @return the special system field called "__typename"
+     */
+    public GraphQLFieldDefinition getIntrospectionTypenameFieldDefinition() {
+        return __typename;
+    }
+
+    public GraphQLObjectType getIntrospectionSchemaType() {
+        return introspectionSchemaType;
     }
 
     public Set<GraphQLType> getAdditionalTypes() {
         return additionalTypes;
     }
 
+    /**
+     * Gets the named type from the schema or null if its not present
+     *
+     * @param typeName the name of the type to retrieve
+     *
+     * @return the type
+     */
     public GraphQLType getType(String typeName) {
         return typeMap.get(typeName);
+    }
+
+    /**
+     * Gets the named type from the schema or null if its not present.
+     *
+     * Warning - your are inviting class cast errors if you the types are not what you expect.
+     *
+     * @param typeName the name of the type to retrieve
+     * @param <T>      for two
+     *
+     * @return the type cast to the target type.
+     */
+    public <T extends GraphQLType> T getTypeAs(String typeName) {
+        //noinspection unchecked
+        return (T) typeMap.get(typeName);
+    }
+
+    /**
+     * Returns true if the schema contains a type with the specified name
+     *
+     * @param typeName the name of the type to check
+     *
+     * @return true if there is a type with the specified name
+     */
+    public boolean containsType(String typeName) {
+        return typeMap.containsKey(typeName);
     }
 
     /**
@@ -404,43 +508,10 @@ public class GraphQLSchema {
         return builder.build();
     }
 
-    /**
-     * @return a new schema builder
-     */
-    public static Builder newSchema() {
-        return new Builder();
-    }
-
-    /**
-     * This allows you to build a schema from an existing schema.  It copies everything from the existing
-     * schema and then allows you to replace them.
-     *
-     * @param existingSchema the existing schema
-     *
-     * @return a new schema builder
-     */
-    public static Builder newSchema(GraphQLSchema existingSchema) {
-        return new Builder()
-                .query(existingSchema.getQueryType())
-                .mutation(existingSchema.getMutationType())
-                .subscription(existingSchema.getSubscriptionType())
-                .codeRegistry(existingSchema.getCodeRegistry())
-                .clearAdditionalTypes()
-                .clearDirectives()
-                .additionalDirectives(new LinkedHashSet<>(existingSchema.getDirectives()))
-                .clearSchemaDirectives()
-                .withSchemaDirectives(schemaDirectivesArray(existingSchema))
-                .additionalTypes(existingSchema.additionalTypes)
-                .description(existingSchema.getDescription());
-    }
-
-    private static GraphQLDirective[] schemaDirectivesArray(GraphQLSchema existingSchema) {
-        return existingSchema.schemaDirectives.getDirectives().toArray(new GraphQLDirective[0]);
-    }
-
     public static class Builder {
         private GraphQLObjectType queryType;
         private GraphQLObjectType mutationType;
+        private GraphQLObjectType introspectionSchemaType = Introspection.__Schema;
         private GraphQLObjectType subscriptionType;
         private GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().build();
         private Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
@@ -578,6 +649,11 @@ public class GraphQLSchema {
 
         public Builder description(String description) {
             this.description = description;
+            return this;
+        }
+
+        public Builder introspectionSchemaType(GraphQLObjectType introspectionSchemaType) {
+            this.introspectionSchemaType = introspectionSchemaType;
             return this;
         }
 

@@ -19,7 +19,7 @@ class FieldCoordinatesTest extends Specification {
     def validSystemFieldDef = newFieldDefinition().name(validSystemFieldName).type(GraphQLFloat).build()
     def validFieldDef = newFieldDefinition().name(validFieldName).type(GraphQLFloat).build()
 
-    def validParentType = newObject().name(validParentName).field(validFieldDef).build()
+    GraphQLObjectType validParentType = newObject().name(validParentName).field(validFieldDef).build()
     def emptyParentType = [
             getName: { -> "" },
             getFieldDefinition: { name -> validFieldDef }
@@ -129,7 +129,7 @@ class FieldCoordinatesTest extends Specification {
 
     def "FieldCoordinate.coordinates(GraphQLFieldsContainer, GraphQLFieldDefinition) creation failure on null fieldDefinition"() {
         when: 'null field definition is given for coordinates and no validation'
-        FieldCoordinates.coordinates(validParentType, null)
+        FieldCoordinates.coordinates(validParentType, null as GraphQLFieldDefinition)
         then: 'throw NullPointerException'
         thrown NullPointerException;
     }
@@ -177,7 +177,7 @@ class FieldCoordinatesTest extends Specification {
 
     def "FieldCoordinate.coordinates(String, String) test validation"() {
         when: 'null parent name is given for coordinates'
-        def coordinates = FieldCoordinates.coordinates(null, validFieldName)
+        def coordinates = FieldCoordinates.coordinates(null as String, validFieldName)
         coordinates.assertValidNames()
         then: 'fail assert on validation'
         thrown AssertException
@@ -222,7 +222,7 @@ class FieldCoordinatesTest extends Specification {
 
     def "FieldCoordinate.coordinates(String, String) creation success with no validation"() {
         when: 'null parent name is given for coordinates and no validation'
-        def coordinates = FieldCoordinates.coordinates(null, validFieldName)
+        def coordinates = FieldCoordinates.coordinates(null as String, validFieldName)
         then: 'succeed'
         null == coordinates.getTypeName()
         validFieldName.equals(coordinates.getFieldName())

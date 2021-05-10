@@ -38,10 +38,15 @@ public class SchemaUtil {
             roots.addAll(schema.getDirectives());
         }
 
-        roots.add(Introspection.__Schema);
+        roots.add(schema.getIntrospectionSchemaType());
 
         GraphQLTypeCollectingVisitor visitor = new GraphQLTypeCollectingVisitor();
         SchemaTraverser traverser;
+        // when collecting all types we never want to follow type references
+        // When a schema is build first the type references are not replaced, so
+        // this is not a problem. But when a schema is transformed,
+        // the type references are actually replaced so we need to make sure we
+        // use the original type references
         if (afterTransform) {
             traverser = new SchemaTraverser(schemaElement -> schemaElement.getChildrenWithTypeReferences().getChildrenAsList());
         } else {
@@ -69,6 +74,20 @@ public class SchemaUtil {
                 for (GraphQLNamedOutputType interfaceType : interfaces) {
                     List<GraphQLObjectType> myGroup = result.computeIfAbsent(interfaceType.getName(), k -> new ArrayList<>());
                     myGroup.add((GraphQLObjectType) type);
+                }
+            }
+        }
+        return ImmutableMap.copyOf(new TreeMap<>(result));
+    }
+
+    public Map<String, List<GraphQLImplementingType>> groupImplementationsForInterfacesAndObjects(GraphQLSchema schema) {
+        Map<String, List<GraphQLImplementingType>> result = new LinkedHashMap<>();
+        for (GraphQLType type : schema.getAllTypesAsList()) {
+            if (type instanceof GraphQLImplementingType) {
+                List<GraphQLNamedOutputType> interfaces = ((GraphQLImplementingType) type).getInterfaces();
+                for (GraphQLNamedOutputType interfaceType : interfaces) {
+                    List<GraphQLImplementingType> myGroup = result.computeIfAbsent(interfaceType.getName(), k -> new ArrayList<>());
+                    myGroup.add((GraphQLImplementingType) type);
                 }
             }
         }

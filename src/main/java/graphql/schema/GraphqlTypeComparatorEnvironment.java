@@ -63,17 +63,14 @@ public class GraphqlTypeComparatorEnvironment {
         }
 
         GraphqlTypeComparatorEnvironment that = (GraphqlTypeComparatorEnvironment) o;
-
-        if (!Objects.equals(parentType, that.parentType)) {
-            return false;
-        }
-        return elementType.equals(that.elementType);
+        return Objects.equals(parentType, that.parentType) && elementType.equals(that.elementType);
     }
 
     @Override
     public int hashCode() {
-        int result = parentType != null ? parentType.hashCode() : 0;
-        result = 31 * result + elementType.hashCode();
+        int result = 1;
+        result = 31 * result + Objects.hashCode(parentType);
+        result = 31 * result + Objects.hashCode(elementType);
         return result;
     }
 

@@ -17,4 +17,12 @@ public interface GraphQLFieldsContainer extends GraphQLCompositeType {
     GraphQLFieldDefinition getFieldDefinition(String name);
 
     List<GraphQLFieldDefinition> getFieldDefinitions();
+
+    default GraphQLFieldDefinition getField(String name) {
+        return getFieldDefinition(name);
+    }
+
+    default List<GraphQLFieldDefinition> getFields() {
+        return getFieldDefinitions();
+    }
 }

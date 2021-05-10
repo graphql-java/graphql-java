@@ -203,6 +203,11 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     }
 
     @Override
+    public GraphQLSchemaElement copy() {
+        return newObject(this).build();
+    }
+
+    @Override
     public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLObjectType(this, context);
     }

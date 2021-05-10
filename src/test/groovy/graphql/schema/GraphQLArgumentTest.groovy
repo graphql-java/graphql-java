@@ -13,6 +13,7 @@ class GraphQLArgumentTest extends Specification {
         def startingArgument = GraphQLArgument.newArgument().name("A1")
                 .description("A1_description")
                 .type(GraphQLInt)
+                .deprecate("custom reason")
                 .withDirective(newDirective().name("directive1"))
                 .build()
         when:
@@ -23,6 +24,7 @@ class GraphQLArgumentTest extends Specification {
                     .type(GraphQLString)
                     .withDirective(newDirective().name("directive3"))
                     .value("VALUE")
+                    .deprecate(null)
                     .defaultValue("DEFAULT")
         })
 
@@ -31,6 +33,8 @@ class GraphQLArgumentTest extends Specification {
         startingArgument.description == "A1_description"
         startingArgument.type == GraphQLInt
         startingArgument.defaultValue == null
+        startingArgument.deprecationReason == "custom reason"
+        startingArgument.isDeprecated()
         startingArgument.getDirectives().size() == 1
         startingArgument.getDirective("directive1") != null
 
@@ -39,6 +43,8 @@ class GraphQLArgumentTest extends Specification {
         transformedArgument.type == GraphQLString
         transformedArgument.value == "VALUE"
         transformedArgument.defaultValue == "DEFAULT"
+        transformedArgument.deprecationReason == null
+        !transformedArgument.isDeprecated()
         transformedArgument.getDirectives().size() == 2
         transformedArgument.getDirective("directive1") != null
         transformedArgument.getDirective("directive3") != null

@@ -78,16 +78,16 @@ class CacheControlTest extends Specification {
         DataFetcher dfA = { env ->
             CacheControl cc = env.getContext()
             cc.hint(env, 100)
-        }
+        } as DataFetcher
         DataFetcher dfB = { env ->
             CacheControl cc = env.getContext()
             cc.hint(env, 999)
-        }
+        } as DataFetcher
 
         DataFetcher dfC = { env ->
             CacheControl cc = env.getContext()
             cc.hint(env, CacheControl.Scope.PRIVATE)
-        }
+        } as DataFetcher
 
         def graphQL = TestUtil.graphQL(sdl, [
                 Query : [levelA: dfA,],

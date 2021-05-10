@@ -58,19 +58,6 @@ class TypeAndFieldRuleTest extends Specification {
         e.message == "invalid schema:\n\"InputType\" must define one or more fields."
     }
 
-    def "customized type name must not begin with \"__\""() {
-        when:
-        def sdl = '''
-        type Query { field: Int }
-        
-        type __A{ field: Int }
-        '''
-
-        TestUtil.schema(sdl)
-        then:
-        InvalidSchemaException e = thrown(InvalidSchemaException)
-        e.message == "invalid schema:\n\"__A\" must not begin with \"__\", which is reserved by GraphQL introspection."
-    }
 
     def "field name must not begin with \"__\""() {
         when:
@@ -109,47 +96,7 @@ class TypeAndFieldRuleTest extends Specification {
         e.message == "invalid schema:\n\"Interface\" must define one or more fields."
     }
 
-    def "interface name must not begin with \"__\""() {
-        when:
-        def sdl = '''
-        type Query { field: Int }
-        
-        interface __A{ field: Int }
-        '''
 
-        TestUtil.schema(sdl)
-        then:
-        InvalidSchemaException e = thrown(InvalidSchemaException)
-        e.message == "invalid schema:\n\"__A\" must not begin with \"__\", which is reserved by GraphQL introspection."
-    }
-
-    def "union name must not begin with \"__\""() {
-        when:
-        def sdl = '''
-        type Query { field: Int }
-        '''
-
-        def objType1 = newObject().name("A")
-                .field(newFieldDefinition().name("f1").type(GraphQLBoolean))
-                .build()
-        def objType2 = newObject().name("B")
-                .field(newFieldDefinition().name("f1").type(GraphQLBoolean))
-                .build()
-
-        def unionType = newUnionType().name("__AB")
-                .description("StartingDescription")
-                .possibleType(objType1)
-                .possibleType(objType2)
-                .typeResolver(new TypeResolverProxy())
-                .build()
-
-        def graphQLSchema = TestUtil.schema(sdl)
-        graphQLSchema.transform({ schema -> schema.additionalType(unionType) })
-
-        then:
-        InvalidSchemaException e = thrown(InvalidSchemaException)
-        e.message == "invalid schema:\n\"__AB\" must not begin with \"__\", which is reserved by GraphQL introspection."
-    }
 
     def "union member types must be object types"() {
         def sdl = '''

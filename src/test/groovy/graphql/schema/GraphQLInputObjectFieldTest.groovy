@@ -17,12 +17,14 @@ class GraphQLInputObjectFieldTest extends Specification {
                 .description("F1_description")
                 .withDirective(newDirective().name("directive1"))
                 .withDirective(newDirective().name("directive2"))
+                .deprecate("No longer useful")
                 .build()
 
         when:
         def transformedField = startingField.transform({ builder ->
             builder.name("F2")
                     .type(GraphQLInt)
+                    .deprecate(null)
                     .withDirective(newDirective().name("directive3"))
 
         })
@@ -33,6 +35,8 @@ class GraphQLInputObjectFieldTest extends Specification {
         startingField.name == "F1"
         startingField.type == GraphQLFloat
         startingField.description == "F1_description"
+        startingField.isDeprecated()
+        startingField.getDeprecationReason() == "No longer useful"
 
         startingField.getDirectives().size() == 2
         startingField.getDirective("directive1") != null
@@ -41,6 +45,9 @@ class GraphQLInputObjectFieldTest extends Specification {
         transformedField.name == "F2"
         transformedField.type == GraphQLInt
         transformedField.description == "F1_description" // left alone
+
+        ! transformedField.isDeprecated()
+        transformedField.getDeprecationReason() == null
 
         transformedField.getDirectives().size() == 3
         transformedField.getDirective("directive1") != null

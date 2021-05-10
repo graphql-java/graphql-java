@@ -85,7 +85,6 @@ class GraphQLTypeUtilTest extends Specification {
         then:
         GraphQLTypeUtil.isList(type)
 
-
         when:
         type = GraphQLTypeUtil.unwrapOne(type)
 
@@ -98,6 +97,12 @@ class GraphQLTypeUtilTest extends Specification {
         then:
         !GraphQLTypeUtil.isWrapped(type)
         type == GraphQLString
+
+        when:
+        GraphQLScalarType scalar = GraphQLTypeUtil.unwrapOneAs(nonNull(GraphQLString))
+
+        then:
+        scalar == GraphQLString
     }
 
     def "unwrapAll tests"() {

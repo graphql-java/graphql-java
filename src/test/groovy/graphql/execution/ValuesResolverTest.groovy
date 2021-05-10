@@ -41,7 +41,7 @@ class ValuesResolverTest extends Specification {
     def "getVariableValues: simple variable input #inputValue"() {
         given:
         def schema = TestUtil.schemaWithInputType(inputType)
-        VariableDefinition variableDefinition = new VariableDefinition("variable", variableType,null)
+        VariableDefinition variableDefinition = new VariableDefinition("variable", variableType, null)
         when:
         def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], [variable: inputValue])
         then:
@@ -115,7 +115,8 @@ class ValuesResolverTest extends Specification {
         def obj = new Person('a', 123)
         resolver.coerceVariableValues(schema, [variableDefinition], [variable: obj])
         then:
-        thrown(CoercingParseValueException)
+        def e = thrown(CoercingParseValueException)
+        e.path == ["variable"]
     }
 
     def "getVariableValues: simple value gets resolved to a list when the type is a List"() {
@@ -166,20 +167,20 @@ class ValuesResolverTest extends Specification {
         def subObjectType = newInputObject()
                 .name("SubType")
                 .field(newInputObjectField()
-                .name("subKey")
-                .type(GraphQLBoolean))
+                        .name("subKey")
+                        .type(GraphQLBoolean))
                 .build()
         def inputObjectType = newInputObject()
                 .name("inputObject")
                 .field(newInputObjectField()
-                .name("intKey")
-                .type(GraphQLInt))
+                        .name("intKey")
+                        .type(GraphQLInt))
                 .field(newInputObjectField()
-                .name("stringKey")
-                .type(GraphQLString))
+                        .name("stringKey")
+                        .type(GraphQLString))
                 .field(newInputObjectField()
-                .name("subObject")
-                .type(subObjectType))
+                        .name("subObject")
+                        .type(subObjectType))
                 .build()
         def fieldArgument = new GraphQLArgument("arg", inputObjectType)
 
@@ -219,15 +220,15 @@ class ValuesResolverTest extends Specification {
         def inputObjectType = newInputObject()
                 .name("inputObject")
                 .field(newInputObjectField()
-                .name("intKey")
-                .type(nonNull(GraphQLInt))
-                .defaultValue(3)
-                .build())
+                        .name("intKey")
+                        .type(nonNull(GraphQLInt))
+                        .defaultValue(3)
+                        .build())
                 .field(newInputObjectField()
-                .name("stringKey")
-                .type(GraphQLString)
-                .defaultValue("defaultString")
-                .build())
+                        .name("stringKey")
+                        .type(GraphQLString)
+                        .defaultValue("defaultString")
+                        .build())
                 .build()
         def fieldArgument = new GraphQLArgument("arg", inputObjectType)
 
@@ -261,9 +262,9 @@ class ValuesResolverTest extends Specification {
         def inputObjectType = newInputObject()
                 .name("inputObject")
                 .field(newInputObjectField()
-                .name("intKey")
-                .type(nonNull(GraphQLInt))
-                .build())
+                        .name("intKey")
+                        .type(nonNull(GraphQLInt))
+                        .build())
                 .build()
         def fieldArgument = new GraphQLArgument("arg", inputObjectType)
 
@@ -361,18 +362,19 @@ class ValuesResolverTest extends Specification {
 
     }
 
-    def "getVariableValues: input object with non-required fields and default values"() {
+    @Unroll
+    def "getVariableValues: input object with non-required fields and default values. #inputValue -> #outputValue"() {
         given:
 
         def inputObjectType = newInputObject()
                 .name("InputObject")
                 .field(newInputObjectField()
-                .name("intKey")
-                .type(GraphQLInt))
+                        .name("intKey")
+                        .type(GraphQLInt))
                 .field(newInputObjectField()
-                .name("stringKey")
-                .type(GraphQLString)
-                .defaultValue("defaultString"))
+                        .name("stringKey")
+                        .type(GraphQLString)
+                        .defaultValue("defaultString"))
                 .build()
 
         def schema = TestUtil.schemaWithInputType(inputObjectType)
@@ -387,7 +389,7 @@ class ValuesResolverTest extends Specification {
         where:
         inputValue                    || outputValue
         [intKey: 10]                  || [intKey: 10, stringKey: 'defaultString']
-        [intKey: 10, stringKey: null] || [intKey: 10, stringKey: 'defaultString']
+        [intKey: 10, stringKey: null] || [intKey: 10, stringKey: null]
 
     }
 
@@ -397,11 +399,11 @@ class ValuesResolverTest extends Specification {
         def inputObjectType = newInputObject()
                 .name("InputObject")
                 .field(newInputObjectField()
-                .name("intKey")
-                .type(GraphQLInt))
+                        .name("intKey")
+                        .type(GraphQLInt))
                 .field(newInputObjectField()
-                .name("requiredField")
-                .type(nonNull(GraphQLString)))
+                        .name("requiredField")
+                        .type(nonNull(GraphQLString)))
                 .build()
 
         def schema = TestUtil.schemaWithInputType(inputObjectType)
@@ -411,7 +413,8 @@ class ValuesResolverTest extends Specification {
         resolver.coerceVariableValues(schema, [variableDefinition], [variable: inputValue])
 
         then:
-        thrown(GraphQLException)
+        def e = thrown(GraphQLException)
+        e.path == ["variable", "requiredField"]
 
         where:
         inputValue                        | _
@@ -486,7 +489,7 @@ class ValuesResolverTest extends Specification {
 
         then:
         def error = thrown(NonNullableValueCoercedAsNullException)
-        error.message == "Field 'foo' of variable 'foo' has coerced Null value for NonNull type 'String!'"
+        error.message == "Variable 'foo' has coerced Null value for NonNull type 'String!'"
     }
 
     // Note: use NullValue defined in Field when it exists,

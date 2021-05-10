@@ -1,14 +1,15 @@
 import java.text.SimpleDateFormat
 
 plugins {
-    id "com.jfrog.bintray" version "1.8.4"
     id 'java'
     id 'java-library'
     id 'maven'
     id 'maven-publish'
     id 'antlr'
+    id 'signing'
     id "com.github.johnrengelman.shadow" version "6.1.0"
     id "biz.aQute.bnd.builder" version "5.1.2"
+    id "io.github.gradle-nexus.publish-plugin" version "1.0.0"
 }
 
 
@@ -22,7 +23,7 @@ def getDevelopmentVersion() {
         println "git hash is empty: error: ${error.toString()}"
         throw new IllegalStateException("git hash could not be determined")
     }
-    def version = new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date()) + "-" + gitHash
+    def version = "0.0.0-" + new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date()) + "-" + gitHash
     println "created development version: $version"
     version
 }
@@ -42,6 +43,18 @@ def releaseVersion = System.env.RELEASE_VERSION
 version = releaseVersion ? releaseVersion : getDevelopmentVersion()
 group = 'com.graphql-java'
 
+gradle.buildFinished { buildResult ->
+    println "*******************************"
+    println "*"
+    if (buildResult.failure != null) {
+        println "* FAILURE - ${buildResult.failure}"
+    } else {
+        println "* SUCCESS"
+    }
+    println "* Version: $version"
+    println "*"
+    println "*******************************"
+}
 
 repositories {
     mavenCentral()
@@ -62,6 +75,7 @@ jar {
 }
 
 dependencies {
+    compileOnly 'org.jetbrains:annotations:20.1.0'
     implementation 'org.antlr:antlr4-runtime:4.8'
     implementation 'org.slf4j:slf4j-api:' + slf4jVersion
     api 'com.graphql-java:java-dataloader:2.2.3'
@@ -70,7 +84,7 @@ dependencies {
     implementation 'com.google.guava:guava:30.0-jre'
     testImplementation group: 'junit', name: 'junit', version: '4.12'
     testImplementation 'org.spockframework:spock-core:1.3-groovy-2.5'
-    testImplementation 'org.codehaus.groovy:groovy-all:2.5.13'
+    testImplementation('org.codehaus.groovy:groovy:2.5.13')
     testImplementation 'cglib:cglib-nodep:3.3.0'
     testImplementation 'org.objenesis:objenesis:2.1'
     testImplementation 'com.google.code.gson:gson:2.8.0'
@@ -110,11 +124,30 @@ shadowJar {
     manifest {
         attributes('Automatic-Module-Name': 'com.graphqljava')
     }
+    //Apply biz.aQute.bnd.builder plugin logic to shadowJar as in BndBuilderPlugin 
+    convention.plugins.bundle = new aQute.bnd.gradle.BundleTaskConvention(it)
+    doLast {
+        //Call bnd after the ShadowJar was built to update the MANIFEST.MF
+        buildBundle()
+    }
+
+    //Configure bnd for shadowJar
+    // -exportcontents: graphql.*  Adds all packages of graphql and below to the exported packages list
+    // -removeheaders:  Private-Package Removes the MANIFEST.MF header Private-Package, which contains all the internal packages and 
+    //                                  also the repackaged pckages like guava, which would be wrong after repackaging.
+    // Import-Package:  Changes the imported packages header, to exclude guava and dependencies from the import list (! excludes packages)
+    //                  Guava was repackaged and included inside the jar, so we need remove it.
+    //                  The last ,* copies all the existing imports from the other dependencies, which is required.
+    bnd('''
+-exportcontents: graphql.*
+-removeheaders: Private-Package
+Import-Package: !com.google.*,!org.checkerframework.*,!javax.annotation.*,!graphql.com.google.*,*
+''')
 }
 
 
 task removeNotNeededGuava(type: Zip) {
-    from({ zipTree({"build/libs/graphql-java-${project.version}.jar"})}) {
+    from({ zipTree({ "build/libs/graphql-java-${project.version}.jar" }) }) {
         exclude('/com/**')
     }
     archiveFileName = "graphql-java-tmp.jar"
@@ -233,36 +266,21 @@ publishing {
     }
 }
 
-
-bintray {
-    user = System.env.BINTRAY_USER ?: project["bintray.user"]
-    key = System.env.BINTRAY_API_KEY ?: project["bintray.key"]
-    publications = ['graphqlJava']
-    publish = true
-    pkg {
-        repo = 'graphql-java'
-        name = 'graphql-java'
-        desc = 'GraphQL in Java'
-        licenses = ['MIT']
-        vcsUrl = 'https://github.com/graphql-java/graphql-java'
-
-        version {
-            name = project.version
-            desc = project.description
-            released = new Date()
-            vcsTag = 'v' + project.version
-            gpg {
-                sign = true
-            }
-            mavenCentralSync {
-                sync = true
-                user = System.env.MAVEN_CENTRAL_USER
-                password = System.env.MAVEN_CENTRAL_PASSWORD
-                close = '1'
-            }
+nexusPublishing {
+    repositories {
+        sonatype {
+            username = System.env.MAVEN_CENTRAL_USER
+            password = System.env.MAVEN_CENTRAL_PASSWORD
         }
     }
 }
+
+signing {
+    def signingKey = System.env.MAVEN_CENTRAL_PGP_KEY
+    useInMemoryPgpKeys(signingKey, "")
+    sign publishing.publications
+}
+
 
 // all publish tasks depend on the build task
 tasks.withType(PublishToMavenRepository) {

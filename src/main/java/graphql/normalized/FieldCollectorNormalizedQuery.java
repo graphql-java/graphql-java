@@ -6,7 +6,6 @@ import graphql.Internal;
 import graphql.execution.ConditionalNodes;
 import graphql.execution.MergedField;
 import graphql.execution.ValuesResolver;
-import graphql.introspection.Introspection;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
@@ -32,9 +31,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.introspection.Introspection.SchemaMetaFieldDef;
-import static graphql.introspection.Introspection.TypeMetaFieldDef;
-import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 
 
 /**
@@ -140,12 +136,12 @@ public class FieldCollectorNormalizedQuery {
                                        Set<GraphQLObjectType> possibleObjects,
                                        int level,
                                        NormalizedField parent) {
-        if (!conditionalNodes.shouldInclude(parameters.getVariables(), fragmentSpread.getDirectives())) {
+        if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), fragmentSpread.getDirectives())) {
             return;
         }
         FragmentDefinition fragmentDefinition = assertNotNull(parameters.getFragmentsByName().get(fragmentSpread.getName()));
 
-        if (!conditionalNodes.shouldInclude(parameters.getVariables(), fragmentDefinition.getDirectives())) {
+        if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), fragmentDefinition.getDirectives())) {
             return;
         }
         GraphQLCompositeType newCondition = (GraphQLCompositeType) parameters.getGraphQLSchema().getType(fragmentDefinition.getTypeCondition().getName());
@@ -159,7 +155,7 @@ public class FieldCollectorNormalizedQuery {
                                        InlineFragment inlineFragment,
                                        Set<GraphQLObjectType> possibleObjects,
                                        int level, NormalizedField parent) {
-        if (!conditionalNodes.shouldInclude(parameters.getVariables(), inlineFragment.getDirectives())) {
+        if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), inlineFragment.getDirectives())) {
             return;
         }
         Set<GraphQLObjectType> newPossibleObjects = possibleObjects;
@@ -179,7 +175,7 @@ public class FieldCollectorNormalizedQuery {
                               Set<GraphQLObjectType> objectTypes,
                               int level,
                               NormalizedField parent) {
-        if (!conditionalNodes.shouldInclude(parameters.getVariables(), field.getDirectives())) {
+        if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), field.getDirectives())) {
             return;
         }
         String name = field.getResultKey();
@@ -197,20 +193,28 @@ public class FieldCollectorNormalizedQuery {
 
             } else {
                 GraphQLFieldDefinition fieldDefinition;
-                if (field.getName().equals(TypeNameMetaFieldDef.getName())) {
-                    fieldDefinition = TypeNameMetaFieldDef;
-                } else if (field.getName().equals(Introspection.SchemaMetaFieldDef.getName())) {
-                    fieldDefinition = SchemaMetaFieldDef;
-                } else if (field.getName().equals(Introspection.TypeMetaFieldDef.getName())) {
-                    fieldDefinition = TypeMetaFieldDef;
+                GraphQLSchema schema = parameters.getGraphQLSchema();
+                if (field.getName().equals(schema.getIntrospectionTypenameFieldDefinition().getName())) {
+                    fieldDefinition = schema.getIntrospectionTypenameFieldDefinition();
                 } else {
-                    fieldDefinition = assertNotNull(objectType.getFieldDefinition(field.getName()), () -> String.format("no field with name %s found in object %s", field.getName(), objectType.getName()));
+                    if (field.getName().equals(schema.getIntrospectionSchemaFieldDefinition().getName())) {
+                        fieldDefinition = schema.getIntrospectionSchemaFieldDefinition();
+                    } else if (field.getName().equals(schema.getIntrospectionTypeFieldDefinition().getName())) {
+                        fieldDefinition = schema.getIntrospectionTypeFieldDefinition();
+                    } else {
+                        fieldDefinition = assertNotNull(objectType.getFieldDefinition(field.getName()), () -> String.format("no field with name %s found in object %s", field.getName(), objectType.getName()));
+                    }
                 }
 
-                Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getVariables());
+                Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getCoercedVariableValues());
+                Map<String, NormalizedInputValue> normalizedArgumentValues = null;
+                if (parameters.getNormalizedVariableValues() != null) {
+                    normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getCoercedVariableValues(), parameters.getNormalizedVariableValues());
+                }
                 NormalizedField newFieldWTC = NormalizedField.newQueryExecutionField()
                         .alias(field.getAlias())
                         .arguments(argumentValues)
+                        .normalizedArguments(normalizedArgumentValues)
                         .objectType(objectType)
                         .fieldDefinition(fieldDefinition)
                         .level(level)
