@@ -5,6 +5,7 @@ import graphql.PublicApi;
 import graphql.PublicSpi;
 import graphql.execution.ValuesResolver;
 import graphql.language.AstPrinter;
+import graphql.language.Value;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
@@ -195,7 +196,10 @@ public class IntrospectionWithDirectivesSupport {
         DataFetcher<?> argValueDF = env -> {
             final GraphQLArgument argument = env.getSource();
             Object value = argument.getValue();
-            return AstPrinter.printAst(ValuesResolver.externalInputValueToLiteralLegacy(value, argument.getType()));
+            if (value instanceof Value || value == null) {
+                return value;
+            }
+            return AstPrinter.printAst(ValuesResolver.valueToLiteralLegacy(value, argument.getType()));
         };
         codeRegistry.dataFetcher(coordinates(objectType, "appliedDirectives"), df);
         codeRegistry.dataFetcher(coordinates(appliedDirectiveType, "args"), argsDF);

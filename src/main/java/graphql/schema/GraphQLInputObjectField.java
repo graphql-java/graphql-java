@@ -284,6 +284,11 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
             this.name = existing.getName();
             this.description = existing.getDescription();
             this.defaultValue = existing.getDefaultValue();
+            if (this.defaultValue instanceof Value) {
+                this.defaultValueState = DefaultValueState.LITERAL;
+            } else {
+                this.defaultValueState = DefaultValueState.INTERNAL_VALUE;
+            }
             this.type = existing.originalType;
             this.definition = existing.getDefinition();
             this.deprecationReason = existing.deprecationReason;
@@ -332,7 +337,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
          *
          * @return
          *
-         * @deprecated
+         * @deprecated use {@link #defaultValueLiteral(Value)}
          */
         @Deprecated
         public Builder defaultValue(Object defaultValue) {
@@ -347,7 +352,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
             return this;
         }
 
-        public Builder defaultValueExternal(Object defaultValue) {
+        public Builder defaultValueProgrammatic(Object defaultValue) {
             this.defaultValue = defaultValue;
             this.defaultValueState = DefaultValueState.EXTERNAL_VALUE;
             return this;
