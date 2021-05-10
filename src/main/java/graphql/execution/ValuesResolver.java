@@ -2,12 +2,19 @@ package graphql.execution;
 
 
 import graphql.Assert;
+import graphql.AssertException;
 import graphql.Internal;
+import graphql.Scalars;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
+import graphql.language.BooleanValue;
+import graphql.language.EnumValue;
+import graphql.language.FloatValue;
+import graphql.language.IntValue;
 import graphql.language.NullValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
+import graphql.language.StringValue;
 import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
@@ -21,12 +28,18 @@ import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
+import graphql.schema.PropertyDataFetcherHelper;
 import graphql.schema.visibility.GraphqlFieldVisibility;
+import graphql.util.FpKit;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -103,16 +116,8 @@ public class ValuesResolver {
         return getArgumentValuesImpl(codeRegistry, argumentTypes, arguments, coercedVariables, null, ValueMode.COERCED);
     }
 
-    public static Value externalInputValueToLiteral(Object externalValue, GraphQLInputType inputType) {
+    public static Value externalInputValueToLiteral(@Nullable Object externalValue, @NotNull GraphQLInputType inputType) {
         return new ValuesResolver().externalInputValueToLiteral(externalValue, inputType);
-    }
-
-    //    public static Object literalToExternalInputValue(Value literal, GraphQLInputType inputType) {
-//        return null;
-//    }
-//
-    public static Value externalInputValueToLiteralLegacy(Object defaultValue, GraphQLInputType inputType) {
-        return null;
     }
 
     private Value externalInputValueToLiteralImpl(Object value, GraphQLInputType type) {
@@ -516,6 +521,155 @@ public class ValuesResolver {
         }
         return inputValueFieldsByName;
     }
+
+    /**
+     * Legacy logic to convert an arbitrary java object to an Ast Literal.
+     * Only provided here to preserve backwards compatibility.
+     */
+    public static Value<?> valueToLiteralLegacy(Object value, GraphQLType type) {
+        Assert.assertTrue(!(value instanceof Value), () -> "Unexpected literal");
+        if (value == null) {
+            return null;
+        }
+
+        if (isNonNull(type)) {
+            return handleNonNullLegacy(value, (GraphQLNonNull) type);
+        }
+
+        // Convert JavaScript array to GraphQL list. If the GraphQLType is a list, but
+        // the value is not an array, convert the value using the list's item type.
+        if (isList(type)) {
+            return handleListLegacy(value, (GraphQLList) type);
+        }
+
+        // Populate the fields of the input object by creating ASTs from each value
+        // in the JavaScript object according to the fields in the input type.
+        if (type instanceof GraphQLInputObjectType) {
+            return handleInputObjectLegacy(value, (GraphQLInputObjectType) type);
+        }
+
+        if (!(type instanceof GraphQLScalarType || type instanceof GraphQLEnumType)) {
+            throw new AssertException("Must provide Input Type, cannot use: " + type.getClass());
+        }
+
+        // Since value is an internally represented value, it must be serialized
+        // to an externally represented value before converting into an AST.
+        final Object serialized = serializeLegacy(type, value);
+        if (isNullishLegacy(serialized)) {
+            return null;
+        }
+
+        // Others serialize based on their corresponding JavaScript scalar types.
+        if (serialized instanceof Boolean) {
+            return BooleanValue.newBooleanValue().value((Boolean) serialized).build();
+        }
+
+        String stringValue = serialized.toString();
+        // numbers can be Int or Float values.
+        if (serialized instanceof Number) {
+            return handleNumberLegacy(stringValue);
+        }
+
+        if (serialized instanceof String) {
+            // Enum types use Enum literals.
+            if (type instanceof GraphQLEnumType) {
+                return EnumValue.newEnumValue().name(stringValue).build();
+            }
+
+            // ID types can use Int literals.
+            if (type == Scalars.GraphQLID && stringValue.matches("^[0-9]+$")) {
+                return IntValue.newIntValue().value(new BigInteger(stringValue)).build();
+            }
+
+            return StringValue.newStringValue().value(stringValue).build();
+        }
+
+        throw new AssertException("'Cannot convert value to AST: " + serialized);
+    }
+
+    private static Value<?> handleInputObjectLegacy(Object javaValue, GraphQLInputObjectType type) {
+        List<GraphQLInputObjectField> fields = type.getFields();
+        List<ObjectField> fieldNodes = new ArrayList<>();
+        fields.forEach(field -> {
+            String fieldName = field.getName();
+            GraphQLInputType fieldType = field.getType();
+            Object fieldValueObj = PropertyDataFetcherHelper.getPropertyValue(fieldName, javaValue, fieldType);
+            Value<?> nodeValue = valueToLiteralLegacy(fieldValueObj, fieldType);
+            if (nodeValue != null) {
+                fieldNodes.add(ObjectField.newObjectField().name(fieldName).value(nodeValue).build());
+            }
+        });
+        return ObjectValue.newObjectValue().objectFields(fieldNodes).build();
+    }
+
+    private static Value<?> handleNumberLegacy(String stringValue) {
+        if (stringValue.matches("^[0-9]+$")) {
+            return IntValue.newIntValue().value(new BigInteger(stringValue)).build();
+        } else {
+            return FloatValue.newFloatValue().value(new BigDecimal(stringValue)).build();
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static Value<?> handleListLegacy(Object _value, GraphQLList type) {
+        GraphQLType itemType = type.getWrappedType();
+        boolean isIterable = _value instanceof Iterable;
+        if (isIterable || (_value != null && _value.getClass().isArray())) {
+            Iterable<?> iterable = isIterable ? (Iterable<?>) _value : FpKit.toCollection(_value);
+            List<Value> valuesNodes = new ArrayList<>();
+            for (Object item : iterable) {
+                Value<?> itemNode = valueToLiteralLegacy(item, itemType);
+                if (itemNode != null) {
+                    valuesNodes.add(itemNode);
+                }
+            }
+            return ArrayValue.newArrayValue().values(valuesNodes).build();
+        }
+        return valueToLiteralLegacy(_value, itemType);
+    }
+
+    private static Value<?> handleNonNullLegacy(Object _value, GraphQLNonNull type) {
+        GraphQLType wrappedType = type.getWrappedType();
+        return valueToLiteralLegacy(_value, wrappedType);
+    }
+
+    private static Object serializeLegacy(GraphQLType type, Object value) {
+        if (type instanceof GraphQLScalarType) {
+            return ((GraphQLScalarType) type).getCoercing().serialize(value);
+        } else {
+            return ((GraphQLEnumType) type).serialize(value);
+        }
+    }
+
+    private static boolean isNullishLegacy(Object serialized) {
+        if (serialized instanceof Number) {
+            return Double.isNaN(((Number) serialized).doubleValue());
+        }
+        return serialized == null;
+    }
+
+
+//    /**
+//     * Parses an AST value literal into the correct {@link graphql.language.Value} which
+//     * MUST be of the correct shape eg '"string"' or 'true' or '1' or '{ "object", "form" }'
+//     * or '[ "array", "form" ]' otherwise an exception is thrown
+//     *
+//     * @param astLiteral the string to parse an AST literal
+//     * @return a valid Value
+//     * @throws graphql.AssertException if the input can be parsed
+//     */
+//    public static Value<?> valueFromAst(String astLiteral) {
+//        // we use the parser to give us the AST elements as if we defined an inputType
+//        String toParse = "input X { x : String = " + astLiteral + "}";
+//        try {
+//            Document doc = new Parser().parseDocument(toParse);
+//            InputObjectTypeDefinition inputType = (InputObjectTypeDefinition) doc.getDefinitions().get(0);
+//            InputValueDefinition inputValueDefinition = inputType.getInputValueDefinitions().get(0);
+//            return inputValueDefinition.getDefaultValue();
+//        } catch (Exception e) {
+//            return Assert.assertShouldNeverHappen("valueFromAst of '%s' failed because of '%s'", astLiteral, e.getMessage());
+//        }
+//    }
 
 
 }

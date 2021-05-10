@@ -187,7 +187,7 @@ public class Introspection {
         if (value instanceof Value) {
             return AstPrinter.printAst((Value) value);
         }
-        return AstPrinter.printAst(ValuesResolver.externalInputValueToLiteralLegacy(value, type));
+        return AstPrinter.printAst(ValuesResolver.valueToLiteralLegacy(value, type));
     }
 
 

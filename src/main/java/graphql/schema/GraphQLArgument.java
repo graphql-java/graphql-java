@@ -4,9 +4,13 @@ package graphql.schema;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.execution.ValuesResolver;
 import graphql.language.InputValueDefinition;
+import graphql.language.Value;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,9 +48,21 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     private final String deprecationReason;
     private final GraphQLInputType originalType;
 
+    /**
+     * This should normally always be a Value (Ast Literal),
+     * but in order to preserve backwards compatibility
+     * we accept Objects and treat is as already coerced internal
+     * input values.
+     */
+    private final Object defaultValue;
+    /**
+     * This should normally always be a Value (Ast Literal),
+     * but in order to preserve backwards compatibility
+     * we accept Objects and treat is as already coerced internal
+     * input values.
+     */
     private final Object value;
 
-    private final Object defaultValue;
     private final InputValueDefinition definition;
     private final DirectivesUtil.DirectivesHolder directives;
 
@@ -55,7 +71,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_TYPE = "type";
 
-    private static final Object DEFAULT_VALUE_SENTINEL = new Object() {
+    private static final Object VALUE_SENTINEL = new Object() {
     };
 
     /**
@@ -81,7 +97,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     @Internal
     @Deprecated
     public GraphQLArgument(String name, GraphQLInputType type) {
-        this(name, null, type, DEFAULT_VALUE_SENTINEL, null);
+        this(name, null, type, VALUE_SENTINEL, null);
     }
 
     /**
@@ -129,23 +145,23 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * can have and it can also have a default value when used in a schema definition language (SDL) where the
      * default value comes via the directive definition.
      *
-     * @return the default value of an argument
+     * @return the default value of an argument. Should normally be a Value (or null), but can be an arbitrary object for legacy code.
      */
-    public Object getDefaultValue() {
-        return defaultValue == DEFAULT_VALUE_SENTINEL ? null : defaultValue;
+    public @Nullable Object getDefaultValue() {
+        return defaultValue == VALUE_SENTINEL ? null : defaultValue;
     }
 
     public boolean hasSetDefaultValue() {
-        return defaultValue != DEFAULT_VALUE_SENTINEL;
+        return defaultValue != VALUE_SENTINEL;
     }
 
     /**
      * An argument ONLY has a value when its used in a schema definition language (SDL) context as the arguments to SDL directives.  The method
      * should not be called in a query context, but rather the AST / variables map should be used to obtain an arguments value.
      *
-     * @return the argument value
+     * @return the argument value. Should normally be a Value (or null), but can be an arbitrary object for legacy code.
      */
-    public Object getValue() {
+    public @Nullable Object getValue() {
         return value;
     }
 
@@ -272,11 +288,21 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     public static class Builder extends GraphqlTypeBuilder {
 
         private GraphQLInputType type;
-        private Object defaultValue = DEFAULT_VALUE_SENTINEL;
-        private Object value;
+        private Object defaultValue = VALUE_SENTINEL;
+        private Object value = VALUE_SENTINEL;
+        private ValueState defaultValueState = ValueState.NOT_SET;
+        private ValueState valueState = ValueState.NOT_SET;
         private String deprecationReason;
         private InputValueDefinition definition;
         private final List<GraphQLDirective> directives = new ArrayList<>();
+
+        private enum ValueState {
+            NOT_SET,
+            LITERAL,
+            EXTERNAL_VALUE,
+            INTERNAL_VALUE // this is deprecated and should not be used going forward
+        }
+
 
         public Builder() {
         }
@@ -285,7 +311,17 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
             this.name = existing.getName();
             this.type = existing.originalType;
             this.value = existing.getValue();
+            if (this.value instanceof Value) {
+                this.valueState = ValueState.LITERAL;
+            } else {
+                this.valueState = ValueState.INTERNAL_VALUE;
+            }
             this.defaultValue = existing.defaultValue;
+            if (this.defaultValue instanceof Value) {
+                this.defaultValueState = ValueState.LITERAL;
+            } else {
+                this.defaultValueState = ValueState.INTERNAL_VALUE;
+            }
             this.description = existing.getDescription();
             this.definition = existing.getDefinition();
             this.deprecationReason = existing.deprecationReason;
@@ -325,13 +361,97 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
             return this;
         }
 
+        /**
+         * @param defaultValue
+         *
+         * @return
+         *
+         * @deprecated use {@link #defaultValueLiteral(Value)} or {@link #defaultValueProgrammatic(Object)}
+         */
+        @Deprecated
         public Builder defaultValue(Object defaultValue) {
             this.defaultValue = defaultValue;
+            this.defaultValueState = ValueState.INTERNAL_VALUE;
             return this;
         }
 
+        /**
+         * @param defaultValue can't be null as a `null` is represented a @{@link graphql.language.NullValue} Literal
+         *
+         * @return
+         */
+        public Builder defaultValueLiteral(@NotNull Value defaultValue) {
+            this.defaultValue = assertNotNull(defaultValue, () -> "defaultValue can't be null");
+            this.defaultValueState = ValueState.LITERAL;
+            return this;
+        }
+
+        /**
+         * @param defaultValue Can be null to represent null value
+         *
+         * @return
+         */
+        public Builder defaultValueProgrammatic(@Nullable Object defaultValue) {
+            this.defaultValue = defaultValue;
+            this.defaultValueState = ValueState.EXTERNAL_VALUE;
+            return this;
+        }
+
+        /**
+         * Removes the defaultValue to represent a missing default value (which is different from null)
+         *
+         * @return
+         */
+        public Builder clearDefaultValue() {
+            this.defaultValue = VALUE_SENTINEL;
+            this.defaultValueState = ValueState.NOT_SET;
+            return this;
+        }
+
+        /**
+         * @param value
+         *
+         * @return
+         *
+         * @deprecated use {@link #valueLiteral(Value)} or {@link #valueProgrammatic(Object)}
+         */
+        @Deprecated
         public Builder value(Object value) {
             this.value = value;
+            this.valueState = ValueState.INTERNAL_VALUE;
+            return this;
+        }
+
+        /**
+         * @param value can't be null as a `null` is represented a @{@link graphql.language.NullValue} Literal
+         *
+         * @return defaultValue Can be null to represent null value
+         */
+        public Builder valueLiteral(@NotNull Value value) {
+            this.value = value;
+            this.value = ValueState.LITERAL;
+            return this;
+        }
+
+        /**
+         * @param
+         *
+         * @return values can be null to represent null value
+         */
+        public Builder valueProgrammatic(@Nullable Object value) {
+            this.value = value;
+            this.value = ValueState.EXTERNAL_VALUE;
+            return this;
+        }
+
+        /**
+         * Removes the value to represent a missing value (which is different from null)
+         *
+         * @return
+         */
+        public Builder clearValue() {
+            this.value = null;
+            this.valueState = ValueState.NOT_SET;
             return this;
         }
 
@@ -373,6 +493,14 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
 
 
         public GraphQLArgument build() {
+            assertNotNull(type, () -> "type can't be null");
+            if (defaultValueState == ValueState.EXTERNAL_VALUE) {
+                defaultValue = ValuesResolver.externalInputValueToLiteral(defaultValue, type);
+            }
+            if (valueState == ValueState.EXTERNAL_VALUE) {
+                value = ValuesResolver.externalInputValueToLiteral(value, type);
+            }
+
             return new GraphQLArgument(
                     name,
                     description,

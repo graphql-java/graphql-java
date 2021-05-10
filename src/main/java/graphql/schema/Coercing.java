@@ -98,7 +98,7 @@ public interface Coercing<I, O> {
         throw new CoercingLiteralToValueException("literalToValue not implemented");
     }
 
-    default Object valueToLiteral(Object input) throws CoercingLiteralToValueException {
-        throw new CoercingLiteralToValueException("literalToValue not implemented");
+    default Value valueToLiteral(Object input) throws CoercingLiteralToValueException {
+        throw new CoercingLiteralToValueException("valueToLiteral not implemented");
     }
 }

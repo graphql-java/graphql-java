@@ -89,7 +89,7 @@ public class SchemaGenerator {
 
         GraphQLSchema.Builder schemaBuilder = GraphQLSchema.newSchema();
 
-        Set<GraphQLDirective> additionalDirectives = schemaGeneratorHelper.buildAdditionalDirectives(buildCtx);
+        Set<GraphQLDirective> additionalDirectives = schemaGeneratorHelper.buildAdditionalDirectiveDefinitions(buildCtx);
         schemaBuilder.additionalDirectives(additionalDirectives);
 
         schemaGeneratorHelper.buildSchemaDirectivesAndExtensions(buildCtx, schemaBuilder);
