@@ -1911,11 +1911,11 @@ class SchemaGeneratorTest extends Specification {
         def queryType = schema.getObjectType("Query")
         def fieldWithEnum = queryType.getFieldDefinition("fieldWithEnum")
         def arg = fieldWithEnum.getArgument("arg")
-        arg.defaultValue == [value: "ONE"]
+        printAst(arg.defaultValue) == '{value : ONE}'
 
         def fieldWithString = queryType.getFieldDefinition("fieldWithString")
         def arg2 = fieldWithString.getArgument("arg")
-        arg2.defaultValue == [value: "ONE"]
+        printAst(arg2.defaultValue) == '{value : "ONE"}'
     }
 
     def "extensions are captured into runtime objects"() {
@@ -2179,7 +2179,7 @@ class SchemaGeneratorTest extends Specification {
         then:
         directive != null
         GraphQLTypeUtil.simplePrint(directive.getArgument("enumArguments").getType()) == "[SomeEnum!]"
-        directive.getArgument("enumArguments").getDefaultValue() == []
+        printAst(directive.getArgument("enumArguments").getDefaultValue()) == "[]"
     }
 
     def "scalar used as output is not in additional types"() {
