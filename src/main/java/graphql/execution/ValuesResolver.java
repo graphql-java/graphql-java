@@ -806,28 +806,4 @@ public class ValuesResolver {
         return serialized == null;
     }
 
-
-//    /**
-//     * Parses an AST value literal into the correct {@link graphql.language.Value} which
-//     * MUST be of the correct shape eg '"string"' or 'true' or '1' or '{ "object", "form" }'
-//     * or '[ "array", "form" ]' otherwise an exception is thrown
-//     *
-//     * @param astLiteral the string to parse an AST literal
-//     * @return a valid Value
-//     * @throws graphql.AssertException if the input can be parsed
-//     */
-//    public static Value<?> valueFromAst(String astLiteral) {
-//        // we use the parser to give us the AST elements as if we defined an inputType
-//        String toParse = "input X { x : String = " + astLiteral + "}";
-//        try {
-//            Document doc = new Parser().parseDocument(toParse);
-//            InputObjectTypeDefinition inputType = (InputObjectTypeDefinition) doc.getDefinitions().get(0);
-//            InputValueDefinition inputValueDefinition = inputType.getInputValueDefinitions().get(0);
-//            return inputValueDefinition.getDefaultValue();
-//        } catch (Exception e) {
-//            return Assert.assertShouldNeverHappen("valueFromAst of '%s' failed because of '%s'", astLiteral, e.getMessage());
-//        }
-//    }
-
-
 }

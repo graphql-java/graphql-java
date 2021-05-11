@@ -871,12 +871,12 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         def e = thrown(InvalidSyntaxException)
         e.message.contains("Invalid Syntax")
         where:
-        value | _
-        '00'  | _
-        '01'  | _
-        '123.'  | _
-        '123e'  | _
-        '123E'  | _
+        value  | _
+        '00'   | _
+        '01'   | _
+        '123.' | _
+        '123e' | _
+        '123E' | _
     }
 
     @Unroll
@@ -891,10 +891,26 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         def e = thrown(InvalidSyntaxException)
         e.message.contains("Invalid Syntax")
         where:
-        value | _
-        '01.23'  | _
-        '1.2e3.4'  | _
+        value     | _
+        '01.23'   | _
+        '1.2e3.4' | _
         '1.23.4'  | _
         '1.2e3e'  | _
     }
+
+    @Unroll
+    def 'parse ast literals #valueLiteral'() {
+        expect:
+        Parser.parseValue(valueLiteral) in expectedValue
+
+        where:
+        valueLiteral                                  | expectedValue
+        '"s"'                                         | StringValue.class
+        'true'                                        | BooleanValue.class
+        '666'                                         | IntValue.class
+        '666.6'                                       | FloatValue.class
+        '["A", "B", "C"]'                             | ArrayValue.class
+        '{string : "s", integer : 1, boolean : true}' | ObjectValue.class
+    }
+
 }
