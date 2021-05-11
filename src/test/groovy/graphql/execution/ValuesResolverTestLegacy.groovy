@@ -183,18 +183,5 @@ class ValuesResolverTestLegacy extends Specification {
         )
     }
 
-//    def 'parse ast literals'() {
-//        expect:
-//        AstValueHelper.valueFromAst(valueLiteral) in expectedValue
-//
-//        where:
-//        valueLiteral                                  | expectedValue
-//        '"s"'                                         | StringValue.class
-//        'true'                                        | BooleanValue.class
-//        '666'                                         | IntValue.class
-//        '666.6'                                       | FloatValue.class
-//        '["A", "B", "C"]'                             | ArrayValue.class
-//        '{string : "s", integer : 1, boolean : true}' | ObjectValue.class
-//    }
 
 }
