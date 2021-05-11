@@ -16,7 +16,6 @@ import graphql.language.ObjectTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.TypeDefinition;
 import graphql.language.UnionTypeDefinition;
-import graphql.language.Value;
 import graphql.schema.DefaultGraphqlTypeComparatorRegistry;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
@@ -39,6 +38,7 @@ import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphqlTypeComparatorEnvironment;
 import graphql.schema.GraphqlTypeComparatorRegistry;
+import graphql.schema.ValueState;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.io.PrintWriter;
@@ -167,6 +167,7 @@ public class SchemaPrinter {
          * This will allow you to include introspection types that are contained in a schema
          *
          * @param flag whether to include them
+         *
          * @return options
          */
         public Options includeIntrospectionTypes(boolean flag) {
@@ -177,6 +178,7 @@ public class SchemaPrinter {
          * This will allow you to include scalar types that are contained in a schema
          *
          * @param flag whether to include them
+         *
          * @return options
          */
         public Options includeScalarTypes(boolean flag) {
@@ -190,6 +192,7 @@ public class SchemaPrinter {
          * types do not use the default names.
          *
          * @param flag whether to force include the schema definition
+         *
          * @return options
          */
         public Options includeSchemaDefinition(boolean flag) {
@@ -205,6 +208,7 @@ public class SchemaPrinter {
          * On by default.
          *
          * @param flag whether to print directive definitions
+         *
          * @return new instance of options
          */
         public Options includeDirectiveDefinitions(boolean flag) {
@@ -216,6 +220,7 @@ public class SchemaPrinter {
          * make the printout noisy and having this flag would allow cleaner printout. On by default.
          *
          * @param flag whether to print directives
+         *
          * @return new instance of options
          */
         public Options includeDirectives(boolean flag) {
@@ -226,6 +231,7 @@ public class SchemaPrinter {
          * This is a Predicate that decides whether a directive element is printed.
          *
          * @param includeDirective the predicate to decide of a directive is printed
+         *
          * @return new instance of options
          */
         public Options includeDirectives(Predicate<GraphQLDirective> includeDirective) {
@@ -236,6 +242,7 @@ public class SchemaPrinter {
          * This is a general purpose Predicate that decides whether a schema element is printed ever.
          *
          * @param includeSchemaElement the predicate to decide of a schema is printed
+         *
          * @return new instance of options
          */
         public Options includeSchemaElement(Predicate<GraphQLSchemaElement> includeSchemaElement) {
@@ -248,6 +255,7 @@ public class SchemaPrinter {
          * allows access to any `extend type` declarations that might have been originally made.
          *
          * @param flag whether to print via AST type definitions
+         *
          * @return new instance of options
          */
         public Options useAstDefinitions(boolean flag) {
@@ -261,6 +269,7 @@ public class SchemaPrinter {
          * This option is provided to ease adoption and may be removed in future versions.
          *
          * @param flag whether to print description as # comments
+         *
          * @return new instance of options
          */
         public Options descriptionsAsHashComments(boolean flag) {
@@ -273,6 +282,7 @@ public class SchemaPrinter {
          * The default is to sort elements by name but you can put in your own code to decide on the field order
          *
          * @param comparatorRegistry The registry containing the {@code Comparator} and environment scoping rules.
+         *
          * @return options
          */
         public Options setComparators(GraphqlTypeComparatorRegistry comparatorRegistry) {
@@ -306,6 +316,7 @@ public class SchemaPrinter {
      * first to get the {@link graphql.language.Document} and then print that.
      *
      * @param schemaIDL the parsed schema IDL
+     *
      * @return the logical schema definition
      */
     public String print(Document schemaIDL) {
@@ -317,6 +328,7 @@ public class SchemaPrinter {
      * This can print an in memory GraphQL schema back to a logical schema definition
      *
      * @param schema the schema in play
+     *
      * @return the logical schema definition
      */
     public String print(GraphQLSchema schema) {
@@ -588,9 +600,9 @@ public class SchemaPrinter {
                                 printComments(out, fd, "  ");
                                 out.format("  %s: %s",
                                         fd.getName(), typeString(fd.getType()));
-                                Object defaultValue = fd.getDefaultValue();
-                                if (defaultValue != null) {
-                                    String astValue = printAst(defaultValue, fd.getType());
+                                if (fd.hasSetDefaultValue()) {
+                                    Object defaultValue = fd.getDefaultValue();
+                                    String astValue = printAst(defaultValue, fd.getDefaultValueState(), fd.getType());
                                     out.format(" = %s", astValue);
                                 }
                                 out.format(directivesString(GraphQLInputObjectField.class, fd.getDirectives()));
@@ -607,6 +619,7 @@ public class SchemaPrinter {
      * This will return true if the options say to use the AST and we have an AST element
      *
      * @param definition the AST type definition
+     *
      * @return true if we should print using AST nodes
      */
     private boolean shouldPrintAsAst(TypeDefinition<?> definition) {
@@ -632,11 +645,8 @@ public class SchemaPrinter {
         out.println();
     }
 
-    private static String printAst(Object value, GraphQLInputType type) {
-        if (value instanceof Value) {
-            return AstPrinter.printAst((Value) value);
-        }
-        return AstPrinter.printAst(ValuesResolver.valueToLiteralLegacy(value, type));
+    private static String printAst(Object value, ValueState valueState, GraphQLInputType type) {
+        return AstPrinter.printAst(ValuesResolver.valueToLiteral(value, valueState, type));
     }
 
     private TypePrinter<GraphQLSchema> schemaPrinter() {
@@ -730,10 +740,10 @@ public class SchemaPrinter {
             sb.append(printComments(argument, prefix));
 
             sb.append(prefix).append(argument.getName()).append(": ").append(typeString(argument.getType()));
-            Object defaultValue = argument.getDefaultValue();
-            if (defaultValue != null) {
+            if (argument.hasSetDefaultValue()) {
+                Object defaultValue = argument.getDefaultValue();
                 sb.append(" = ");
-                sb.append(printAst(defaultValue, argument.getType()));
+                sb.append(printAst(defaultValue, argument.getDefaultValueState(), argument.getType()));
             }
 
             argument.getDirectives().stream()
@@ -819,10 +829,10 @@ public class SchemaPrinter {
             for (int i = 0; i < args.size(); i++) {
                 GraphQLArgument arg = args.get(i);
                 String argValue = null;
-                if (arg.getValue() != null) {
-                    argValue = printAst(arg.getValue(), arg.getType());
-                } else if (arg.getDefaultValue() != null) {
-                    argValue = printAst(arg.getDefaultValue(), arg.getType());
+                if (arg.hasSetValue()) {
+                    argValue = printAst(arg.getValue(), arg.getValueState(), arg.getType());
+                } else if (arg.hasSetDefaultValue()) {
+                    argValue = printAst(arg.getDefaultValue(), arg.getDefaultValueState(), arg.getType());
                 }
                 if (!isNullOrEmpty(argValue)) {
                     sb.append(arg.getName());

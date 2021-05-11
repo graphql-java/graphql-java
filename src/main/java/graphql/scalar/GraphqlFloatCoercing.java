@@ -3,10 +3,12 @@ package graphql.scalar;
 import graphql.Internal;
 import graphql.language.FloatValue;
 import graphql.language.IntValue;
+import graphql.language.Value;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
+import graphql.schema.CoercingValueToLiteralException;
 
 import java.math.BigDecimal;
 
@@ -65,6 +67,17 @@ public class GraphqlFloatCoercing implements Coercing<Double, Double> {
                     "Expected AST type 'IntValue' or 'FloatValue' but was '" + typeName(input) + "'."
             );
         }
+    }
+
+    @Override
+    public Value valueToLiteral(Object input) throws CoercingValueToLiteralException {
+        Double result = convertImpl(input);
+        if (result == null) {
+            throw new CoercingValueToLiteralException(
+                    "Expected 'Float' but was '" + typeName(input) + "'."
+            );
+        }
+        return FloatValue.newFloatValue(BigDecimal.valueOf(result)).build();
     }
 }
 

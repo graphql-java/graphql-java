@@ -2,10 +2,12 @@ package graphql.scalar;
 
 import graphql.Internal;
 import graphql.language.IntValue;
+import graphql.language.Value;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
+import graphql.schema.CoercingValueToLiteralException;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -75,5 +77,16 @@ public class GraphqlIntCoercing implements Coercing<Integer, Integer> {
             );
         }
         return value.intValue();
+    }
+
+    @Override
+    public Value valueToLiteral(Object input) throws CoercingValueToLiteralException {
+        Integer result = convertImpl(input);
+        if (result == null) {
+            throw new CoercingValueToLiteralException(
+                    "Expected 'Integer' but was '" + typeName(input) + "'."
+            );
+        }
+        return IntValue.newIntValue(BigInteger.valueOf(result)).build();
     }
 }

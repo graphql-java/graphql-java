@@ -3,10 +3,12 @@ package graphql.scalar;
 import graphql.Internal;
 import graphql.language.IntValue;
 import graphql.language.StringValue;
+import graphql.language.Value;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
+import graphql.schema.CoercingValueToLiteralException;
 
 import java.math.BigInteger;
 import java.util.UUID;
@@ -69,5 +71,16 @@ public class GraphqlIDCoercing implements Coercing<Object, Object> {
         throw new CoercingParseLiteralException(
                 "Expected AST type 'IntValue' or 'StringValue' but was '" + typeName(input) + "'."
         );
+    }
+
+    @Override
+    public Value valueToLiteral(Object input) throws CoercingValueToLiteralException {
+        String result = convertImpl(input);
+        if (result == null) {
+            throw new CoercingValueToLiteralException(
+                    "Expected 'ID' but was '" + typeName(input) + "'."
+            );
+        }
+        return StringValue.newStringValue(result).build();
     }
 }

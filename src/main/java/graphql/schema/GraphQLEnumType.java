@@ -9,6 +9,7 @@ import graphql.PublicApi;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.EnumValue;
+import graphql.language.Value;
 import graphql.util.FpKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -120,6 +121,16 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
             );
         }
         return enumValueDefinition.getValue();
+    }
+
+    @Internal
+    public Value valueToLiteral(Object input) {
+        GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(input.toString());
+        if (enumValueDefinition != null) {
+            return EnumValue.newEnumValue(enumValueDefinition.getName()).build();
+        }
+        throw new CoercingValueToLiteralException("Invalid input for Enum '" + name + "'. No value found for name '" + input.toString() + "'");
+
     }
 
     public List<GraphQLEnumValueDefinition> getValues() {
