@@ -601,7 +601,7 @@ public class SchemaPrinter {
                                 out.format("  %s: %s",
                                         fd.getName(), typeString(fd.getType()));
                                 if (fd.hasSetDefaultValue()) {
-                                    Object defaultValue = fd.getDefaultValue();
+                                    Object defaultValue = fd.getInputFieldDefaultValue();
                                     String astValue = printAst(defaultValue, fd.getDefaultValueState(), fd.getType());
                                     out.format(" = %s", astValue);
                                 }
@@ -741,7 +741,7 @@ public class SchemaPrinter {
 
             sb.append(prefix).append(argument.getName()).append(": ").append(typeString(argument.getType()));
             if (argument.hasSetDefaultValue()) {
-                Object defaultValue = argument.getDefaultValue();
+                Object defaultValue = argument.getArgumentDefaultValue();
                 sb.append(" = ");
                 sb.append(printAst(defaultValue, argument.getDefaultValueState(), argument.getType()));
             }
@@ -821,7 +821,7 @@ public class SchemaPrinter {
         List<GraphQLArgument> args = directive.getArguments();
         args = args
                 .stream()
-                .filter(arg -> arg.getValue() != null || arg.getDefaultValue() != null)
+                .filter(arg -> arg.getArgumentValue() != null || arg.getArgumentDefaultValue() != null)
                 .sorted(comparator)
                 .collect(toList());
         if (!args.isEmpty()) {
@@ -830,9 +830,9 @@ public class SchemaPrinter {
                 GraphQLArgument arg = args.get(i);
                 String argValue = null;
                 if (arg.hasSetValue()) {
-                    argValue = printAst(arg.getValue(), arg.getValueState(), arg.getType());
+                    argValue = printAst(arg.getArgumentValue(), arg.getValueState(), arg.getType());
                 } else if (arg.hasSetDefaultValue()) {
-                    argValue = printAst(arg.getDefaultValue(), arg.getDefaultValueState(), arg.getType());
+                    argValue = printAst(arg.getArgumentDefaultValue(), arg.getDefaultValueState(), arg.getType());
                 }
                 if (!isNullOrEmpty(argValue)) {
                     sb.append(arg.getName());

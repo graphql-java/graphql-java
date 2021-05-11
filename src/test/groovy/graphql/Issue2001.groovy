@@ -22,7 +22,7 @@ class Issue2001 extends Specification {
 
         def closure = {
             def argument = it.fieldDefinition.getDirective("test").getArgument("value") as GraphQLArgument
-            return ValuesResolver.valueToInternalValue(argument.getValue(), argument.getValueState(), argument.getType())[0]
+            return ValuesResolver.valueToInternalValue(argument.getArgumentValue(), argument.getValueState(), argument.getType())[0]
         }
         def graphql = TestUtil.graphQL(spec, RuntimeWiring.newRuntimeWiring()
                     .type("Query", {
