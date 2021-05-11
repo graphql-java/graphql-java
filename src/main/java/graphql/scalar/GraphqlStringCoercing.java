@@ -2,8 +2,10 @@ package graphql.scalar;
 
 import graphql.Internal;
 import graphql.language.StringValue;
+import graphql.language.Value;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
+import graphql.schema.CoercingValueToLiteralException;
 
 import static graphql.scalar.CoercingUtil.typeName;
 
@@ -27,5 +29,10 @@ public class GraphqlStringCoercing implements Coercing<String, String> {
             );
         }
         return ((StringValue) input).getValue();
+    }
+
+    @Override
+    public Value valueToLiteral(Object input) throws CoercingValueToLiteralException {
+        return StringValue.newStringValue(input.toString()).build();
     }
 }

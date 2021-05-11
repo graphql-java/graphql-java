@@ -7,7 +7,6 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.execution.ValuesResolver;
 import graphql.language.AstPrinter;
-import graphql.language.Value;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
@@ -31,6 +30,7 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.ValueState;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.ArrayList;
@@ -55,6 +55,7 @@ import static graphql.schema.GraphQLTypeReference.typeRef;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAllAs;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
+import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 
 @PublicApi
 public class Introspection {
@@ -163,10 +164,10 @@ public class Introspection {
             Object type = environment.getSource();
             if (type instanceof GraphQLArgument) {
                 GraphQLArgument inputField = (GraphQLArgument) type;
-                return inputField.getDefaultValue() != null ? printDefaultValue(inputField.getDefaultValue(), inputField.getType()) : null;
+                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getDefaultValue(), inputField.getDefaultValueState(), inputField.getType()) : null;
             } else if (type instanceof GraphQLInputObjectField) {
                 GraphQLInputObjectField inputField = (GraphQLInputObjectField) type;
-                return inputField.getDefaultValue() != null ? printDefaultValue(inputField.getDefaultValue(), inputField.getType()) : null;
+                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getDefaultValue(), inputField.getDefaultValueState(), inputField.getType()) : null;
             }
             return null;
         });
@@ -183,11 +184,8 @@ public class Introspection {
         register(__InputValue, "description", descriptionDataFetcher);
     }
 
-    private static String printDefaultValue(Object value, GraphQLInputType type) {
-        if (value instanceof Value) {
-            return AstPrinter.printAst((Value) value);
-        }
-        return AstPrinter.printAst(ValuesResolver.valueToLiteralLegacy(value, type));
+    private static String printDefaultValue(Object value, ValueState valueState, GraphQLInputType type) {
+        return AstPrinter.printAst(ValuesResolver.valueToLiteral(DEFAULT_FIELD_VISIBILITY, value, valueState, type));
     }
 
 

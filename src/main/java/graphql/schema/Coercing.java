@@ -94,11 +94,12 @@ public interface Coercing<I, O> {
     }
 
 
-    default Object literalToValue(Value astLiteral) throws CoercingLiteralToValueException {
-        throw new CoercingLiteralToValueException("literalToValue not implemented");
-    }
+    // TODO: maybe needed, maybe not for now
+//    default Object literalToValue(Value astLiteral) throws CoercingLiteralToValueException {
+//        throw new CoercingLiteralToValueException("literalToValue not implemented");
+//    }
 
-    default Value valueToLiteral(Object input) throws CoercingLiteralToValueException {
-        throw new CoercingLiteralToValueException("valueToLiteral not implemented");
+    default Value valueToLiteral(Object input) throws CoercingValueToLiteralException {
+        throw new CoercingValueToLiteralException("This is not implemented by this Scalar " + this.getClass());
     }
 }
