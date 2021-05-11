@@ -307,15 +307,19 @@ public class SchemaGeneratorHelper {
 
         for (GraphQLArgument directiveDefArg : directiveDefinition.getArguments()) {
             if (!declaredArgs.containsKey(directiveDefArg.getName())) {
-                GraphQLArgument missingArg = GraphQLArgument.newArgument()
+                GraphQLArgument.Builder missingArg = GraphQLArgument.newArgument()
                         .name(directiveDefArg.getName())
                         .description(directiveDefArg.getDescription())
                         .definition(directiveDefArg.getDefinition())
-                        .type(directiveDefArg.getType())
-                        .defaultValue(directiveDefArg.getDefaultValue())
-                        .value(directiveDefArg.getDefaultValue())
-                        .build();
-                argumentsOut.add(missingArg);
+                        .type(directiveDefArg.getType());
+
+                if (directiveDefArg.hasSetDefaultValue()) {
+                    missingArg.defaultValueLiteral((Value) directiveDefArg.getDefaultValue());
+                }
+                if (directiveDefArg.hasSetValue()) {
+                    missingArg.valueLiteral((Value) directiveDefArg.getValue());
+                }
+                argumentsOut.add(missingArg.build());
             }
         }
         return argumentsOut;

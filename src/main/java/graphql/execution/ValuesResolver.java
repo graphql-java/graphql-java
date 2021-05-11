@@ -5,6 +5,7 @@ import graphql.Assert;
 import graphql.AssertException;
 import graphql.Internal;
 import graphql.Scalars;
+import graphql.VisibleForTesting;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.BooleanValue;
@@ -36,6 +37,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.PropertyDataFetcherHelper;
 import graphql.schema.ValueState;
+import graphql.schema.visibility.DefaultGraphqlFieldVisibility;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 import graphql.util.FpKit;
 import org.jetbrains.annotations.Nullable;
@@ -52,6 +54,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.collect.ImmutableKit.map;
 import static graphql.language.NullValue.newNullValue;
 import static graphql.language.ObjectField.newObjectField;
@@ -136,6 +139,20 @@ public class ValuesResolver {
         }
         if (valueState == ValueState.LITERAL) {
             return (Value<?>) value;
+        }
+        if (valueState == ValueState.EXTERNAL_VALUE) {
+            return new ValuesResolver().externalValueToLiteral(fieldVisibility, value, (GraphQLInputType) type);
+        }
+        return Assert.assertShouldNeverHappen("unexpected value state " + valueState);
+    }
+
+    public static Object valueToInternalValue(Object value, ValueState valueState, GraphQLType type) {
+        DefaultGraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
+        if (valueState == ValueState.INTERNAL_VALUE) {
+            return value;
+        }
+        if (valueState == ValueState.LITERAL) {
+            return new ValuesResolver().literalToInternalValue(fieldVisibility, type, (Value<?>) value, emptyMap(), null, ValueMode.COERCED, false);
         }
         if (valueState == ValueState.EXTERNAL_VALUE) {
             return new ValuesResolver().externalValueToLiteral(fieldVisibility, value, (GraphQLInputType) type);
@@ -520,7 +537,7 @@ public class ValuesResolver {
             return null;
         }
         if (type instanceof GraphQLScalarType) {
-            return literalToInternalValue(inputValue, ((GraphQLScalarType) type).getCoercing(), coercedVariables);
+            return literalToInternalValueForScalar(inputValue, (GraphQLScalarType) type, coercedVariables);
         }
         if (isNonNull(type)) {
             return literalToInternalValue(fieldVisibility, unwrapOne(type), inputValue, coercedVariables, normalizedVariables, valueMode, unwrappingList);
@@ -537,9 +554,9 @@ public class ValuesResolver {
         return null;
     }
 
-    private Object literalToInternalValue(Value inputValue, Coercing coercing, Map<String, Object> variables) {
+    private Object literalToInternalValueForScalar(Value inputValue, GraphQLScalarType scalarType, Map<String, Object> variables) {
         // the CoercingParseLiteralException exception that could happen here has been validated earlier via ValidationUtil
-        return coercing.parseLiteral(inputValue, variables);
+        return scalarType.getCoercing().parseLiteral(inputValue, variables);
     }
 
     private Object literalToInternalValueForList(GraphqlFieldVisibility fieldVisibility,
@@ -666,8 +683,9 @@ public class ValuesResolver {
      * Legacy logic to convert an arbitrary java object to an Ast Literal.
      * Only provided here to preserve backwards compatibility.
      */
-    private static Value<?> valueToLiteralLegacy(Object value, GraphQLType type) {
-        assertTrue(!(value instanceof Value), () -> "Unexpected literal");
+    @VisibleForTesting
+    static Value<?> valueToLiteralLegacy(Object value, GraphQLType type) {
+        assertTrue(!(value instanceof Value), () -> "Unexpected literal " + value);
         if (value == null) {
             return null;
         }
