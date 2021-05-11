@@ -1,7 +1,7 @@
 package graphql
 
-import graphql.language.ArrayValue
-import graphql.schema.CoercingParseLiteralException
+import graphql.execution.ValuesResolver
+import graphql.schema.GraphQLArgument
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
@@ -21,10 +21,8 @@ class Issue2001 extends Specification {
             '''
 
         def closure = {
-            return it.fieldDefinition
-                    .getDirective("test")
-                    .getArgument("value")
-                    .value[0]
+            def argument = it.fieldDefinition.getDirective("test").getArgument("value") as GraphQLArgument
+            return ValuesResolver.valueToInternalValue(argument.getValue(), argument.getValueState(), argument.getType())[0]
         }
         def graphql = TestUtil.graphQL(spec, RuntimeWiring.newRuntimeWiring()
                     .type("Query", {
