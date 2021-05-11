@@ -147,7 +147,7 @@ public class Anonymizer {
                 GraphQLArgument newElement = graphQLArgument.transform(builder -> {
                     builder.name(newName).description(null).definition(null);
                     if (graphQLArgument.hasSetDefaultValue()) {
-                        Value<?> defaultValueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getDefaultValue(), graphQLArgument.getDefaultValueState(), graphQLArgument.getType());
+                        Value<?> defaultValueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getArgumentDefaultValue(), graphQLArgument.getDefaultValueState(), graphQLArgument.getType());
                         builder.defaultValueLiteral(replaceDefaultValue(defaultValueLiteral, defaultStringValueCounter, defaultIntValueCounter));
                     }
                 });
@@ -227,7 +227,7 @@ public class Anonymizer {
 
                 Value<?> defaultValue = null;
                 if (graphQLInputObjectField.hasSetDefaultValue()) {
-                    defaultValue = ValuesResolver.valueToLiteral(graphQLInputObjectField.getDefaultValue(), graphQLInputObjectField.getDefaultValueState(), graphQLInputObjectField.getType());
+                    defaultValue = ValuesResolver.valueToLiteral(graphQLInputObjectField.getInputFieldDefaultValue(), graphQLInputObjectField.getDefaultValueState(), graphQLInputObjectField.getType());
                     defaultValue = replaceDefaultValue(defaultValue, defaultStringValueCounter, defaultIntValueCounter);
                 }
 

@@ -104,8 +104,8 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      *
      * @return
      */
-    public @Nullable Object getDefaultValue() {
-            return defaultValue;
+    public @Nullable Object getArgumentDefaultValue() {
+        return defaultValue;
     }
 
     public @NotNull ValueState getDefaultValueState() {
@@ -127,7 +127,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      *
      * @return
      */
-    public @Nullable Object getValue() {
+    public @Nullable Object getArgumentValue() {
         return value;
     }
 
@@ -273,7 +273,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         public Builder(GraphQLArgument existing) {
             this.name = existing.getName();
             this.type = existing.originalType;
-            this.value = existing.getValue();
+            this.value = existing.getArgumentValue();
             this.valueState = existing.getValueState();
             this.defaultValue = existing.defaultValue;
             this.defaultValueState = existing.getDefaultValueState();

@@ -45,11 +45,11 @@ class QueryDirectivesImplTest extends Specification {
         result[0].getName() == "cached"
         result[1].getName() == "cached"
 
-        result[0].getArgument("forMillis").getValue() == 99 // defaults
-        printAst(result[0].getArgument("forMillis").getDefaultValue()) == "99"
+        result[0].getArgument("forMillis").getArgumentValue() == 99 // defaults
+        printAst(result[0].getArgument("forMillis").getArgumentDefaultValue()) == "99"
 
-        result[1].getArgument("forMillis").getValue() == 10
-        printAst(result[1].getArgument("forMillis").getDefaultValue()) == "99"
+        result[1].getArgument("forMillis").getArgumentValue() == 10
+        printAst(result[1].getArgument("forMillis").getArgumentDefaultValue()) == "99"
 
         // the prototypical other properties are copied ok
         result[0].validLocations().collect({ it.name() }).sort() == ["FIELD", "QUERY"]

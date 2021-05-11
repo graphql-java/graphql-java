@@ -149,8 +149,8 @@ public class TypesImplementInterfaces implements SchemaValidationRule {
                         same = false;
                     }
                     if (objectArg.hasSetDefaultValue() && interfaceArg.hasSetDefaultValue()) {
-                        Value<?> objectDefaultValue = ValuesResolver.valueToLiteral(objectArg.getDefaultValue(), objectArg.getDefaultValueState(), objectArg.getType());
-                        Value<?> interfaceDefaultValue = ValuesResolver.valueToLiteral(interfaceArg.getDefaultValue(), interfaceArg.getDefaultValueState(), interfaceArg.getType());
+                        Value<?> objectDefaultValue = ValuesResolver.valueToLiteral(objectArg.getArgumentDefaultValue(), objectArg.getDefaultValueState(), objectArg.getType());
+                        Value<?> interfaceDefaultValue = ValuesResolver.valueToLiteral(interfaceArg.getArgumentDefaultValue(), interfaceArg.getDefaultValueState(), interfaceArg.getType());
                         if (!Objects.equals(printAst(objectDefaultValue), printAst(interfaceDefaultValue))) {
                             same = false;
                         }

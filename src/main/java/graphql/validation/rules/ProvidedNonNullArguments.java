@@ -38,7 +38,7 @@ public class ProvidedNonNullArguments extends AbstractRule {
         for (GraphQLArgument graphQLArgument : fieldDef.getArguments()) {
             Argument argument = argumentMap.get(graphQLArgument.getName());
             boolean nonNullType = isNonNull(graphQLArgument.getType());
-            boolean noDefaultValue = graphQLArgument.getDefaultValue() == null;
+            boolean noDefaultValue = graphQLArgument.getArgumentDefaultValue() == null;
             if (argument == null && nonNullType && noDefaultValue) {
                 String message = String.format("Missing field argument %s", graphQLArgument.getName());
                 addError(ValidationErrorType.MissingFieldArgument, field.getSourceLocation(), message);
@@ -64,7 +64,7 @@ public class ProvidedNonNullArguments extends AbstractRule {
         for (GraphQLArgument graphQLArgument : graphQLDirective.getArguments()) {
             Argument argument = argumentMap.get(graphQLArgument.getName());
             boolean nonNullType = isNonNull(graphQLArgument.getType());
-            boolean noDefaultValue = graphQLArgument.getDefaultValue() == null;
+            boolean noDefaultValue = graphQLArgument.getArgumentDefaultValue() == null;
             if (argument == null && nonNullType && noDefaultValue) {
                 String message = String.format("Missing directive argument %s", graphQLArgument.getName());
                 addError(ValidationErrorType.MissingDirectiveArgument, directive.getSourceLocation(), message);

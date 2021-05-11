@@ -195,7 +195,7 @@ public class IntrospectionWithDirectivesSupport {
         DataFetcher<?> argValueDF = env -> {
             final GraphQLArgument argument = env.getSource();
             if (argument.hasSetValue()) {
-                Object value = argument.getValue();
+                Object value = argument.getArgumentValue();
                 return AstPrinter.printAst(ValuesResolver.valueToLiteral(value, argument.getValueState(), argument.getType()));
             } else {
                 return null;

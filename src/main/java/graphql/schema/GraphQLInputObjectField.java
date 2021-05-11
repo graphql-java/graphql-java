@@ -83,7 +83,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         return replacedType != null ? replacedType : originalType;
     }
 
-    public Object getDefaultValue() {
+    public Object getInputFieldDefaultValue() {
         return defaultValue;
     }
 
@@ -241,7 +241,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         public Builder(GraphQLInputObjectField existing) {
             this.name = existing.getName();
             this.description = existing.getDescription();
-            this.defaultValue = existing.getDefaultValue();
+            this.defaultValue = existing.getInputFieldDefaultValue();
             this.defaultValueState = existing.getDefaultValueState();
             this.type = existing.originalType;
             this.definition = existing.getDefinition();

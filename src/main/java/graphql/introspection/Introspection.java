@@ -164,10 +164,10 @@ public class Introspection {
             Object type = environment.getSource();
             if (type instanceof GraphQLArgument) {
                 GraphQLArgument inputField = (GraphQLArgument) type;
-                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getDefaultValue(), inputField.getDefaultValueState(), inputField.getType()) : null;
+                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getArgumentDefaultValue(), inputField.getDefaultValueState(), inputField.getType()) : null;
             } else if (type instanceof GraphQLInputObjectField) {
                 GraphQLInputObjectField inputField = (GraphQLInputObjectField) type;
-                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getDefaultValue(), inputField.getDefaultValueState(), inputField.getType()) : null;
+                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getInputFieldDefaultValue(), inputField.getDefaultValueState(), inputField.getType()) : null;
             }
             return null;
         });

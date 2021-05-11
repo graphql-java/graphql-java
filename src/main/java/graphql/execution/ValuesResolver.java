@@ -233,7 +233,7 @@ public class ValuesResolver {
             boolean hasValue = inputMap.containsKey(fieldName);
             Object fieldValue = inputMap.getOrDefault(fieldName, null);
             if (!hasValue && inputFieldDefinition.hasSetDefaultValue()) {
-                Value defaultValueLiteral = valueToLiteral(fieldVisibility, inputFieldDefinition.getDefaultValue(), inputFieldDefinition.getDefaultValueState(), fieldType);
+                Value defaultValueLiteral = valueToLiteral(fieldVisibility, inputFieldDefinition.getInputFieldDefaultValue(), inputFieldDefinition.getDefaultValueState(), fieldType);
                 objectFields.add(newObjectField().value(defaultValueLiteral).build());
             } else if (isNonNull(fieldType) && (!hasValue || fieldValue == null)) {
                 throw new RuntimeException("non nullable field");
@@ -309,7 +309,7 @@ public class ValuesResolver {
             GraphQLInputType argumentType = argumentDefinition.getType();
             String argumentName = argumentDefinition.getName();
             Argument argument = argumentMap.get(argumentName);
-            Object defaultValue = argumentDefinition.getDefaultValue();
+            Object defaultValue = argumentDefinition.getArgumentDefaultValue();
             boolean hasValue = argument != null;
             Object value;
             Value argumentValue = argument != null ? argument.getValue() : null;
@@ -456,7 +456,7 @@ public class ValuesResolver {
         for (GraphQLInputObjectField inputFieldDefinition : fieldDefinitions) {
             GraphQLInputType fieldType = inputFieldDefinition.getType();
             String fieldName = inputFieldDefinition.getName();
-            Object defaultValue = inputFieldDefinition.getDefaultValue();
+            Object defaultValue = inputFieldDefinition.getInputFieldDefaultValue();
             boolean hasValue = inputMap.containsKey(fieldName);
             Object value;
             Object fieldValue = inputMap.getOrDefault(fieldName, null);
@@ -612,7 +612,7 @@ public class ValuesResolver {
             }
             if (!hasValue && inputFieldDefinition.hasSetDefaultValue()) {
                 Object coercedDefaultValue = defaultValueToInternalValue(fieldVisibility,
-                        inputFieldDefinition.getDefaultValue(),
+                        inputFieldDefinition.getInputFieldDefaultValue(),
                         inputFieldDefinition.getDefaultValueState(),
                         fieldType,
                         fieldName,
