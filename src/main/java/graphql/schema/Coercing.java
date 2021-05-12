@@ -3,6 +3,7 @@ package graphql.schema;
 
 import graphql.PublicSpi;
 import graphql.language.Value;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
@@ -39,7 +40,7 @@ public interface Coercing<I, O> {
      *
      * @throws graphql.schema.CoercingSerializeException if value input can't be serialized
      */
-    O serialize(Object dataFetcherResult) throws CoercingSerializeException;
+    O serialize(@NotNull Object dataFetcherResult) throws CoercingSerializeException;
 
     /**
      * Called to resolve an input from a query variable into a Java object acceptable for the scalar type.
@@ -53,7 +54,7 @@ public interface Coercing<I, O> {
      *
      * @throws graphql.schema.CoercingParseValueException if value input can't be parsed
      */
-    I parseValue(Object input) throws CoercingParseValueException;
+    @NotNull I parseValue(@NotNull Object input) throws CoercingParseValueException;
 
     /**
      * Called during query validation to convert a query input AST node into a Java object acceptable for the scalar type.  The input
@@ -68,7 +69,7 @@ public interface Coercing<I, O> {
      *
      * @throws graphql.schema.CoercingParseLiteralException if input literal can't be parsed
      */
-    I parseLiteral(Object input) throws CoercingParseLiteralException;
+    @NotNull I parseLiteral(@NotNull Object input) throws CoercingParseLiteralException;
 
     /**
      * Called during query execution to convert a query input AST node into a Java object acceptable for the scalar type.  The input
@@ -89,17 +90,21 @@ public interface Coercing<I, O> {
      * @throws graphql.schema.CoercingParseLiteralException if input literal can't be parsed
      */
     @SuppressWarnings("unused")
-    default I parseLiteral(Object input, Map<String, Object> variables) throws CoercingParseLiteralException {
+    default @NotNull I parseLiteral(Object input, Map<String, Object> variables) throws CoercingParseLiteralException {
         return parseLiteral(input);
     }
 
 
-    // TODO: maybe needed, maybe not for now
-//    default Object literalToValue(Value astLiteral) throws CoercingLiteralToValueException {
-//        throw new CoercingLiteralToValueException("literalToValue not implemented");
-//    }
-
-    default Value valueToLiteral(Object input) throws CoercingValueToLiteralException {
+    /**
+     * Converts an internal input value to a literal (Ast Value)
+     *
+     * @param input an external input value
+     *
+     * @return The literal matching the external input value.
+     *
+     * @throws CoercingValueToLiteralException
+     */
+    default @NotNull Value valueToLiteral(@NotNull Object input) throws CoercingValueToLiteralException {
         throw new CoercingValueToLiteralException("This is not implemented by this Scalar " + this.getClass());
     }
 }
