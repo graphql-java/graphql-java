@@ -9,10 +9,12 @@ import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLSchemaElement;
+import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.GraphQLUnionType;
 import graphql.util.FpKit;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +35,7 @@ import static java.lang.String.format;
  * implement the interfaces they say they implement.
  */
 @Internal
-public class TypesImplementInterfaces implements SchemaValidationRule {
+public class TypesImplementInterfaces extends GraphQLTypeVisitorStub {
     private static final Map<Class<? extends GraphQLImplementingType>, String> TYPE_OF_MAP = new HashMap<>();
 
     static {
@@ -42,19 +44,19 @@ public class TypesImplementInterfaces implements SchemaValidationRule {
     }
 
     @Override
-    public void check(GraphQLFieldDefinition fieldDef, SchemaValidationErrorCollector validationErrorCollector) {
+    public TraversalControl visitGraphQLObjectType(GraphQLObjectType type, TraverserContext<GraphQLSchemaElement> context) {
+        SchemaValidationErrorCollector validationErrorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
+        check((GraphQLImplementingType) type, validationErrorCollector);
+        return TraversalControl.CONTINUE;
     }
 
     @Override
-    public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
-        if (type instanceof GraphQLImplementingType) {
-            check((GraphQLImplementingType) type, validationErrorCollector);
-        }
+    public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType type, TraverserContext<GraphQLSchemaElement> context) {
+        SchemaValidationErrorCollector validationErrorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
+        check((GraphQLImplementingType) type, validationErrorCollector);
+        return TraversalControl.CONTINUE;
     }
 
-    @Override
-    public void check(GraphQLSchema graphQLSchema, SchemaValidationErrorCollector validationErrorCollector) {
-    }
 
     private void check(GraphQLImplementingType implementingType, SchemaValidationErrorCollector validationErrorCollector) {
         List<GraphQLNamedOutputType> interfaces = implementingType.getInterfaces();

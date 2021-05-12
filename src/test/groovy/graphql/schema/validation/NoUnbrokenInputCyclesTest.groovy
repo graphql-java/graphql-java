@@ -4,6 +4,7 @@ import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
+import graphql.util.TraverserContext
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
@@ -30,13 +31,15 @@ class NoUnbrokenInputCyclesTest extends Specification {
                 .name("exists")
                 .type(GraphQLBoolean)
                 .argument(GraphQLArgument.newArgument()
-                .name("person")
-                .type(PersonInputType))
+                        .name("person")
+                        .type(PersonInputType))
                 .build()
 
         PersonInputType.getFieldDefinition("friend").replacedType = nonNull(PersonInputType)
+        def context = Mock(TraverserContext)
+        context.getVarFromParents(SchemaValidationErrorCollector) >> errorCollector
         when:
-        new NoUnbrokenInputCycles().check(field, errorCollector)
+        new NoUnbrokenInputCycles().visitGraphQLFieldDefinition(field, context)
         then:
         errorCollector.containsValidationError(SchemaValidationErrorType.UnbrokenInputCycle)
     }

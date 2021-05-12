@@ -13,16 +13,18 @@ import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
-import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
+import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.GraphQLUnionType;
 import graphql.util.FpKit;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -43,43 +45,55 @@ import static graphql.schema.idl.ScalarInfo.isGraphqlSpecifiedScalar;
  * <p>
  * details in https://spec.graphql.org/June2018/#sec-Type-System
  */
-public class TypeAndFieldRule implements SchemaValidationRule {
-
-    private Map<String, GraphQLNamedType> schemaTypeHolder;
+public class TypeAndFieldRule extends GraphQLTypeVisitorStub {
 
     @Override
-    public void check(GraphQLSchema graphQLSchema, SchemaValidationErrorCollector validationErrorCollector) {
-
-        List<GraphQLNamedType> allTypesAsList = graphQLSchema.getAllTypesAsList();
-
-        List<GraphQLNamedType> filteredType = filterBuiltInTypes(allTypesAsList);
-
-        schemaTypeHolder = graphQLSchema.getTypeMap();
-
-        checkTypes(filteredType, validationErrorCollector);
+    public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType type, TraverserContext<GraphQLSchemaElement> context) {
+        SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
+        validateContainsField((GraphQLFieldsContainer) type, errorCollector);
+        return super.visitGraphQLInterfaceType(type, context);
     }
 
-    private void checkTypes(List<GraphQLNamedType> customizedType, SchemaValidationErrorCollector errorCollector) {
-        if (customizedType == null || customizedType.isEmpty()) {
-            return;
+    @Override
+    public TraversalControl visitGraphQLObjectType(GraphQLObjectType type, TraverserContext<GraphQLSchemaElement> context) {
+        if (isIntrospectionTypes(type)) {
+            return TraversalControl.CONTINUE;
         }
-
-        for (GraphQLType type : customizedType) {
-            checkType(type, errorCollector);
-        }
+        SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
+        validateContainsField((GraphQLFieldsContainer) type, errorCollector);
+        return TraversalControl.CONTINUE;
     }
 
-    private void checkType(GraphQLType type, SchemaValidationErrorCollector errorCollector) {
-        if (type instanceof GraphQLObjectType || type instanceof GraphQLInterfaceType) {
-            validateContainsField((GraphQLFieldsContainer) type, errorCollector);
-        } else if (type instanceof GraphQLUnionType) {
-            validateUnion((GraphQLUnionType) type, errorCollector);
-        } else if (type instanceof GraphQLEnumType) {
-            validateEnum((GraphQLEnumType) type, errorCollector);
-        } else if (type instanceof GraphQLInputObjectType) {
-            validateInputObject((GraphQLInputObjectType) type, errorCollector);
+    @Override
+    public TraversalControl visitGraphQLUnionType(GraphQLUnionType type, TraverserContext<GraphQLSchemaElement> context) {
+        if (isIntrospectionTypes(type)) {
+            return TraversalControl.CONTINUE;
         }
+        SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
+        validateUnion((GraphQLUnionType) type, errorCollector);
+        return TraversalControl.CONTINUE;
     }
+
+    @Override
+    public TraversalControl visitGraphQLEnumType(GraphQLEnumType type, TraverserContext<GraphQLSchemaElement> context) {
+        if (isIntrospectionTypes(type)) {
+            return TraversalControl.CONTINUE;
+        }
+        SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
+        validateEnum((GraphQLEnumType) type, errorCollector);
+        return TraversalControl.CONTINUE;
+    }
+
+    @Override
+    public TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType type, TraverserContext<GraphQLSchemaElement> context) {
+        if (isIntrospectionTypes(type)) {
+            return TraversalControl.CONTINUE;
+        }
+        SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
+        validateInputObject((GraphQLInputObjectType) type, errorCollector);
+        return TraversalControl.CONTINUE;
+    }
+
 
     private void validateContainsField(GraphQLFieldsContainer type, SchemaValidationErrorCollector errorCollector) {
         List<GraphQLFieldDefinition> fieldDefinitions = type.getFieldDefinitions();
@@ -116,10 +130,10 @@ public class TypeAndFieldRule implements SchemaValidationRule {
         }
 
         Set<String> typeNames = new HashSet<>();
-        for (GraphQLNamedOutputType memberType : memberTypes) {
+        for (GraphQLNamedOutputType memberType : type.getTypes()) {
             String typeName = memberType.getName();
-            GraphQLNamedType graphQLNamedType = schemaTypeHolder.get(typeName);
-            if (!(graphQLNamedType instanceof GraphQLObjectType)) {
+//            GraphQLNamedType graphQLNamedType = schemaTypeHolder.get(typeName);
+            if (!(memberType instanceof GraphQLObjectType)) {
                 SchemaValidationError validationError =
                         new SchemaValidationError(SchemaValidationErrorType.InvalidUnionMemberTypeError, String.format("The member types of a Union type must all be Object base types. member type \"%s\" in Union \"%s\" is invalid.", memberType.getName(), type.getName()));
                 errorCollector.addError(validationError);
@@ -205,13 +219,6 @@ public class TypeAndFieldRule implements SchemaValidationRule {
         return FpKit.filterList(graphQLNamedTypes, filterFunction);
     }
 
-    @Override
-    public void check(GraphQLFieldDefinition fieldDef, SchemaValidationErrorCollector validationErrorCollector) {
-    }
-
-    @Override
-    public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
-    }
 
     private void assertFieldName(String typeName, String fieldName, SchemaValidationErrorCollector errorCollector) {
         if (INTROSPECTION_SYSTEM_FIELDS.contains(fieldName)) {
