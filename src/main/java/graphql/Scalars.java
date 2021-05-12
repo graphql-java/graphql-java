@@ -1,16 +1,10 @@
 package graphql;
 
 
-import graphql.scalar.GraphqlBigDecimalCoercing;
-import graphql.scalar.GraphqlBigIntegerCoercing;
 import graphql.scalar.GraphqlBooleanCoercing;
-import graphql.scalar.GraphqlByteCoercing;
-import graphql.scalar.GraphqlCharCoercing;
 import graphql.scalar.GraphqlFloatCoercing;
 import graphql.scalar.GraphqlIDCoercing;
 import graphql.scalar.GraphqlIntCoercing;
-import graphql.scalar.GraphqlLongCoercing;
-import graphql.scalar.GraphqlShortCoercing;
 import graphql.scalar.GraphqlStringCoercing;
 import graphql.schema.GraphQLScalarType;
 
@@ -61,61 +55,4 @@ public class Scalars {
      */
     public static final GraphQLScalarType GraphQLID = GraphQLScalarType.newScalar()
             .name("ID").description("Built-in ID").coercing(new GraphqlIDCoercing()).build();
-
-    /**
-     * This represents the "Long" type which is a representation of java.lang.Long
-     *
-     * @deprecated The is a non standard scalar and is difficult for clients (such as browser and mobile code) to cope with
-     * the exact semantics.  These will be removed in the future version and moved to another library.
-     */
-    public static final GraphQLScalarType GraphQLLong = GraphQLScalarType.newScalar()
-            .name("Long").description("Long type").coercing(new GraphqlLongCoercing()).build();
-
-    /**
-     * This represents the "Short" type which is a representation of java.lang.Short
-     *
-     * @deprecated The is a non standard scalar and is difficult for clients (such as browser and mobile code) to cope with
-     * the exact semantics.  These will be removed in the future version and moved to another library.
-     */
-    public static final GraphQLScalarType GraphQLShort = GraphQLScalarType.newScalar()
-            .name("Short").description("Built-in Short as Int").coercing(new GraphqlShortCoercing()).build();
-
-    /**
-     * This represents the "Byte" type which is a representation of java.lang.Byte
-     *
-     * @deprecated The is a non standard scalar and is difficult for clients (such as browser and mobile code) to cope with
-     * the exact semantics.  These will be removed in the future version and moved to another library.
-     */
-    public static final GraphQLScalarType GraphQLByte = GraphQLScalarType.newScalar()
-            .name("Byte").description("Built-in Byte as Int").coercing(new GraphqlByteCoercing()).build();
-
-
-    /**
-     * This represents the "BigInteger" type which is a representation of java.math.BigInteger
-     *
-     * @deprecated The is a non standard scalar and is difficult for clients (such as browser and mobile code) to cope with
-     * the exact semantics.  These will be removed in the future version and moved to another library.
-     */
-    public static final GraphQLScalarType GraphQLBigInteger = GraphQLScalarType.newScalar()
-            .name("BigInteger").description("Built-in java.math.BigInteger").coercing(new GraphqlBigIntegerCoercing()).build();
-
-    /**
-     * This represents the "BigDecimal" type which is a representation of java.math.BigDecimal
-     *
-     * @deprecated The is a non standard scalar and is difficult for clients (such as browser and mobile code) to cope with
-     * the exact semantics.  These will be removed in the future version and moved to another library.
-     */
-    public static final GraphQLScalarType GraphQLBigDecimal = GraphQLScalarType.newScalar()
-            .name("BigDecimal").description("Built-in java.math.BigDecimal").coercing(new GraphqlBigDecimalCoercing()).build();
-
-
-    /**
-     * This represents the "Char" type which is a representation of java.lang.Character
-     *
-     * @deprecated The is a non standard scalar and is difficult for clients (such as browser and mobile code) to cope with
-     * the exact semantics.  These will be removed in the future version and moved to another library.
-     */
-    public static final GraphQLScalarType GraphQLChar = GraphQLScalarType.newScalar()
-            .name("Char").description("Built-in Char as Character").coercing(new GraphqlCharCoercing()).build();
-
 }

@@ -18,8 +18,8 @@ import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
-import static graphql.Scalars.GraphQLBigDecimal
 import static graphql.Scalars.GraphQLBoolean
+import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.StarWarsSchema.starWarsSchema
 
@@ -37,7 +37,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         given:
         def variableReference = new VariableReference("ref")
         def argumentLiteral = new Argument("arg", variableReference)
-        def graphQLArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLBigDecimal).build()
+        def graphQLArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLInt).build()
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
         when:
         argumentsOfCorrectType.checkArgument(argumentLiteral)
