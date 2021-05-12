@@ -1240,12 +1240,12 @@ type Query {
         def error = thrown(InvalidSchemaException)
 
         assertErrorMessage(error,
+                "interface type 'Interface3' cannot implement 'Interface1' because that would result on a circular reference",
+                "interface type 'Interface3' cannot implement 'Interface2' because that would result on a circular reference",
                 "interface type 'Interface1' cannot implement 'Interface3' because that would result on a circular reference",
                 "interface type 'Interface1' cannot implement 'Interface2' because that would result on a circular reference",
                 "interface type 'Interface2' cannot implement 'Interface1' because that would result on a circular reference",
                 "interface type 'Interface2' cannot implement 'Interface3' because that would result on a circular reference",
-                "interface type 'Interface3' cannot implement 'Interface1' because that would result on a circular reference",
-                "interface type 'Interface3' cannot implement 'Interface2' because that would result on a circular reference"
         )
     }
 

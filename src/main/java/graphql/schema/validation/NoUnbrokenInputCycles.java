@@ -8,8 +8,11 @@ import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
-import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeVisitorStub;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -25,26 +28,19 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
  * as such a type would be impossible to satisfy
  */
 @Internal
-public class NoUnbrokenInputCycles implements SchemaValidationRule {
+public class NoUnbrokenInputCycles extends GraphQLTypeVisitorStub {
 
     @Override
-    public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
-    }
-
-    @Override
-    public void check(GraphQLSchema graphQLSchema, SchemaValidationErrorCollector validationErrorCollector) {
-    }
-
-    @Override
-    public void check(GraphQLFieldDefinition fieldDef, SchemaValidationErrorCollector validationErrorCollector) {
+    public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition fieldDef, TraverserContext<GraphQLSchemaElement> context) {
+        SchemaValidationErrorCollector validationErrorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
         for (GraphQLArgument argument : fieldDef.getArguments()) {
             GraphQLInputType argumentType = argument.getType();
             if (argumentType instanceof GraphQLInputObjectType) {
                 List<String> path = new ArrayList<>();
-//                path.add(argumentType.getName());
                 check((GraphQLInputObjectType) argumentType, new LinkedHashSet<>(), path, validationErrorCollector);
             }
         }
+        return TraversalControl.CONTINUE;
     }
 
     private void check(GraphQLInputObjectType type, Set<GraphQLType> seen, List<String> path, SchemaValidationErrorCollector validationErrorCollector) {
