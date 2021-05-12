@@ -670,8 +670,8 @@ class ExecutionStrategyTest extends Specification {
     def "#163 completes value for an primitive type array"() {
         given:
         ExecutionContext executionContext = buildContext()
-        long[] result = [1L, 2L, 3L]
-        def fieldType = list(Scalars.GraphQLLong)
+        long[] result = [1, 2, 3]
+        def fieldType = list(Scalars.GraphQLInt)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(ResultPath.rootPath()).fieldDefinition(fldDef).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
@@ -688,14 +688,14 @@ class ExecutionStrategyTest extends Specification {
         def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue
 
         then:
-        executionResult.get().data == [1L, 2L, 3L]
+        executionResult.get().data == [1, 2, 3]
     }
 
     def "#842 completes value for java.util.Stream"() {
         given:
         ExecutionContext executionContext = buildContext()
-        Stream<Long> result = Stream.of(1L, 2L, 3L)
-        def fieldType = list(Scalars.GraphQLLong)
+        Stream<Long> result = Stream.of(1, 2, 3)
+        def fieldType = list(Scalars.GraphQLInt)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(ResultPath.rootPath()).fieldDefinition(fldDef).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
@@ -712,14 +712,14 @@ class ExecutionStrategyTest extends Specification {
         def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue
 
         then:
-        executionResult.get().data == [1L, 2L, 3L]
+        executionResult.get().data == [1, 2, 3]
     }
 
     def "#842 completes value for java.util.Iterator"() {
         given:
         ExecutionContext executionContext = buildContext()
         Iterator<Long> result = Arrays.asList(1L, 2L, 3L).iterator()
-        def fieldType = list(Scalars.GraphQLLong)
+        def fieldType = list(Scalars.GraphQLInt)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(ResultPath.rootPath()).fieldDefinition(fldDef).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
@@ -736,7 +736,7 @@ class ExecutionStrategyTest extends Specification {
         def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue
 
         then:
-        executionResult.get().data == [1L, 2L, 3L]
+        executionResult.get().data == [1, 2, 3]
     }
 
 
@@ -744,7 +744,7 @@ class ExecutionStrategyTest extends Specification {
         given:
 
         ExecutionContext executionContext = buildContext()
-        def fieldType = list(Scalars.GraphQLLong)
+        def fieldType = list(Scalars.GraphQLInt)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
         def field = Field.newField("parent").sourceLocation(new SourceLocation(5, 10)).build()
@@ -773,7 +773,7 @@ class ExecutionStrategyTest extends Specification {
     def "#1558 forward localContext on nonBoxed return from DataFetcher"() {
         given:
         ExecutionContext executionContext = buildContext()
-        def fieldType = list(Scalars.GraphQLLong)
+        def fieldType = list(Scalars.GraphQLInt)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
         def field = Field.newField("parent").sourceLocation(new SourceLocation(5, 10)).build()
@@ -797,7 +797,7 @@ class ExecutionStrategyTest extends Specification {
         given:
 
         ExecutionContext executionContext = buildContext()
-        def fieldType = list(Scalars.GraphQLLong)
+        def fieldType = list(Scalars.GraphQLInt)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
         def field = Field.newField("parent").sourceLocation(new SourceLocation(5, 10)).build()
@@ -825,7 +825,7 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         List<Long> result = [1L, 2L, 3L]
-        def fieldType = list(Scalars.GraphQLLong)
+        def fieldType = list(Scalars.GraphQLInt)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(ResultPath.rootPath()).fieldDefinition(fldDef).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
@@ -849,7 +849,7 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         Map<String, Object> result = new HashMap<>()
-        def fieldType = list(Scalars.GraphQLLong)
+        def fieldType = list(Scalars.GraphQLInt)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
