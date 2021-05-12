@@ -8,11 +8,11 @@ import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
-import graphql.schema.CoercingValueToLiteralException;
 
 import java.math.BigInteger;
 import java.util.UUID;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.scalar.CoercingUtil.typeName;
 
 @Internal
@@ -74,13 +74,8 @@ public class GraphqlIDCoercing implements Coercing<Object, Object> {
     }
 
     @Override
-    public Value valueToLiteral(Object input) throws CoercingValueToLiteralException {
-        String result = convertImpl(input);
-        if (result == null) {
-            throw new CoercingValueToLiteralException(
-                    "Expected 'ID' but was '" + typeName(input) + "'."
-            );
-        }
+    public Value valueToLiteral(Object input) {
+        String result = assertNotNull(convertImpl(input));
         return StringValue.newStringValue(result).build();
     }
 }

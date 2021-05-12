@@ -96,15 +96,15 @@ public interface Coercing<I, O> {
 
 
     /**
-     * Converts an internal input value to a literal (Ast Value)
+     * Converts an external input value to a literal (Ast Value).
+     *
+     * IMPORTANT: the argument is validated before by calling {@link #parseValue(Object)}.
      *
      * @param input an external input value
      *
      * @return The literal matching the external input value.
-     *
-     * @throws CoercingValueToLiteralException
      */
-    default @NotNull Value valueToLiteral(@NotNull Object input) throws CoercingValueToLiteralException {
-        throw new CoercingValueToLiteralException("This is not implemented by this Scalar " + this.getClass());
+    default @NotNull Value valueToLiteral(@NotNull Object input) {
+        throw new UnsupportedOperationException("This is not implemented by this Scalar " + this.getClass());
     }
 }

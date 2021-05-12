@@ -21,7 +21,6 @@ import graphql.schema.Coercing
 import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
-import graphql.schema.CoercingValueToLiteralException
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
@@ -846,7 +845,7 @@ directive @repeatableDirective repeatable on FIELD_DEFINITION
             }
 
             @Override
-            Value valueToLiteral(Object input) throws CoercingValueToLiteralException {
+            Value valueToLiteral(Object input) {
                 return null
             }
         }).build()
@@ -916,7 +915,7 @@ scalar EmployeeRef
             }
 
             @Override
-            Value valueToLiteral(Object input) throws CoercingValueToLiteralException {
+            Value valueToLiteral(Object input) {
                 if (input instanceof ExternalEmployeeRef) {
                     def externalRef = StringValue.newStringValue(input.externalRef).build()
                     def refField = ObjectField.newObjectField().name("ref").value(externalRef).build()
