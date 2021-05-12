@@ -15,7 +15,7 @@ import java.util.Set;
 public class SchemaValidator {
 
 
-    private List<GraphQLTypeVisitor> rules = new ArrayList<>();
+    private final List<GraphQLTypeVisitor> rules = new ArrayList<>();
 
     public SchemaValidator() {
         rules.add(new NoUnbrokenInputCycles());

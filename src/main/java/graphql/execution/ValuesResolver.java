@@ -1,7 +1,6 @@
 package graphql.execution;
 
 
-import graphql.Assert;
 import graphql.AssertException;
 import graphql.Internal;
 import graphql.Scalars;
@@ -21,6 +20,7 @@ import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.normalized.NormalizedInputValue;
 import graphql.schema.Coercing;
+import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
@@ -144,10 +144,10 @@ public class ValuesResolver {
         if (valueState == ValueState.EXTERNAL_VALUE) {
             return new ValuesResolver().externalValueToLiteral(fieldVisibility, value, (GraphQLInputType) type);
         }
-        return Assert.assertShouldNeverHappen("unexpected value state " + valueState);
+        return assertShouldNeverHappen("unexpected value state " + valueState);
     }
 
-    public static Object valueToInternalValue(Object value, ValueState valueState, GraphQLType type) {
+    public static Object valueToInternalValue(Object value, ValueState valueState, GraphQLType type) throws CoercingParseValueException, CoercingParseLiteralException {
         DefaultGraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
         if (valueState == ValueState.INTERNAL_VALUE) {
             return value;
@@ -158,7 +158,7 @@ public class ValuesResolver {
         if (valueState == ValueState.EXTERNAL_VALUE) {
             return new ValuesResolver().externalValueToInternalValue(fieldVisibility, "value", (GraphQLInputType) type, value, ValueMode.COERCED);
         }
-        return Assert.assertShouldNeverHappen("unexpected value state " + valueState);
+        return assertShouldNeverHappen("unexpected value state " + valueState);
     }
 
     private Value externalValueToLiteral(GraphqlFieldVisibility fieldVisibility, @Nullable Object value, GraphQLInputType type) {
@@ -339,7 +339,7 @@ public class ValuesResolver {
         } else if (valueMode == ValueMode.NORMALIZED) {
             return new NormalizedInputValue(simplePrint(type), value);
         } else {
-            return Assert.assertShouldNeverHappen();
+            return assertShouldNeverHappen();
         }
     }
 
@@ -351,7 +351,7 @@ public class ValuesResolver {
         } else if (valueMode == ValueMode.NORMALIZED) {
             return (Map) normalizedVariables;
         } else {
-            return Assert.assertShouldNeverHappen();
+            return assertShouldNeverHappen();
         }
     }
 
@@ -365,12 +365,15 @@ public class ValuesResolver {
     }
 
 
+    /**
+     * Performs validation too
+     */
     @SuppressWarnings("unchecked")
     private Object externalValueToInternalValue(GraphqlFieldVisibility fieldVisibility,
                                                 String inputName,
                                                 GraphQLType graphQLType,
                                                 Object value,
-                                                ValueMode valueMode) {
+                                                ValueMode valueMode) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
 //        nameStack.addLast(inputName);
         try {
             if (isNonNull(graphQLType)) {
@@ -422,10 +425,13 @@ public class ValuesResolver {
 
     }
 
+    /**
+     * performs validation
+     */
     private Object externalValueToInternalValueForObject(GraphqlFieldVisibility fieldVisibility,
                                                          GraphQLInputObjectType inputObjectType,
                                                          Map<String, Object> inputMap,
-                                                         ValueMode valueMode) {
+                                                         ValueMode valueMode) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
         List<GraphQLInputObjectField> fieldDefinitions = fieldVisibility.getFieldDefinitions(inputObjectType);
         List<String> fieldNames = map(fieldDefinitions, GraphQLInputObjectField::getName);
         for (String providedFieldName : inputMap.keySet()) {
@@ -473,19 +479,28 @@ public class ValuesResolver {
         return coercedValues;
     }
 
-    private Object externalValueToInternalValueForScalar(GraphQLScalarType graphQLScalarType, Object value) {
+    /**
+     * including validation
+     */
+    private Object externalValueToInternalValueForScalar(GraphQLScalarType graphQLScalarType, Object value) throws CoercingParseValueException {
         return graphQLScalarType.getCoercing().parseValue(value);
     }
 
-    private Object externalValueToInternalValueForEnum(GraphQLEnumType graphQLEnumType, Object value) {
+    /**
+     * including validation
+     */
+    private Object externalValueToInternalValueForEnum(GraphQLEnumType graphQLEnumType, Object value) throws CoercingParseValueException {
         return graphQLEnumType.parseValue(value);
     }
 
+    /**
+     * including validation
+     */
     private List externalValueToInternalValueForList(GraphqlFieldVisibility fieldVisibility,
                                                      String inputName,
                                                      GraphQLList graphQLList,
                                                      Object value,
-                                                     ValueMode valueMode) {
+                                                     ValueMode valueMode) throws CoercingParseValueException, NonNullableValueCoercedAsNullException {
         if (value instanceof Iterable) {
             List<Object> result = new ArrayList<>();
             for (Object val : (Iterable) value) {
@@ -497,6 +512,9 @@ public class ValuesResolver {
         }
     }
 
+    /**
+     * No validation (it was checked before via ArgumentsOfCorrectType and VariableDefaultValuesOfCorrectType)
+     */
     public Object literalToInternalValue(GraphqlFieldVisibility fieldVisibility,
                                          GraphQLType type,
                                          Value inputValue,
@@ -537,11 +555,17 @@ public class ValuesResolver {
         return null;
     }
 
+    /**
+     * no validation
+     */
     private Object literalToInternalValueForScalar(Value inputValue, GraphQLScalarType scalarType, Map<String, Object> variables) {
         // the CoercingParseLiteralException exception that could happen here has been validated earlier via ValidationUtil
         return scalarType.getCoercing().parseLiteral(inputValue, variables);
     }
 
+    /**
+     * no validation
+     */
     private Object literalToInternalValueForList(GraphqlFieldVisibility fieldVisibility,
                                                  GraphQLList graphQLList,
                                                  Value value,
@@ -565,6 +589,9 @@ public class ValuesResolver {
         }
     }
 
+    /**
+     * no validation
+     */
     private Object literalToInternalValueForInputObject(GraphqlFieldVisibility fieldVisibility,
                                                         GraphQLInputObjectType type,
                                                         ObjectValue inputValue,
@@ -579,7 +606,6 @@ public class ValuesResolver {
 
         List<GraphQLInputObjectField> inputFieldTypes = fieldVisibility.getFieldDefinitions(type);
         for (GraphQLInputObjectField inputFieldDefinition : inputFieldTypes) {
-
             GraphQLInputType fieldType = inputFieldDefinition.getType();
             String fieldName = inputFieldDefinition.getName();
             ObjectField field = inputFieldsByName.get(fieldName);
@@ -602,7 +628,7 @@ public class ValuesResolver {
                         valueMode);
                 coercedValues.put(fieldName, newValue(coercedDefaultValue, fieldType, valueMode));
             } else if (isNonNull(fieldType) && (!hasValue || isNullValue(value))) {
-                throw new NonNullableValueCoercedAsNullException(inputFieldDefinition);
+                return assertShouldNeverHappen("Should have been validated before");
             } else if (hasValue) {
                 if (isNullValue(value)) {
                     coercedValues.put(fieldName, value);
@@ -654,7 +680,7 @@ public class ValuesResolver {
         if (valueState == ValueState.EXTERNAL_VALUE) {
             return externalValueToInternalValue(fieldVisibility, inputName, type, defaultValue, valueMode);
         }
-        return Assert.assertShouldNeverHappen();
+        return assertShouldNeverHappen();
     }
 
 

@@ -1213,4 +1213,23 @@ many lines''']
         then:
         capturedMsg == "BANG!"
     }
+
+    def "invalid argument literal"() {
+        def sdl = '''
+            type Query {
+                foo(arg: Input): String
+            }
+            input Input {
+                required: String!
+            }
+        '''
+
+        def schema = TestUtil.schema(sdl)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        when:
+        def executionResult = graphQL.execute("{foo(arg:{})}")
+        then:
+        executionResult.errors.size() == 1
+        executionResult.errors[0].message.contains("is missing required fields")
+    }
 }
