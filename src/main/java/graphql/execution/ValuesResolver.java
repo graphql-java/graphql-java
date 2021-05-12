@@ -155,7 +155,7 @@ public class ValuesResolver {
             return new ValuesResolver().literalToInternalValue(fieldVisibility, type, (Value<?>) value, emptyMap(), null, ValueMode.COERCED, false);
         }
         if (valueState == ValueState.EXTERNAL_VALUE) {
-            return new ValuesResolver().externalValueToLiteral(fieldVisibility, value, (GraphQLInputType) type);
+            return new ValuesResolver().externalValueToInternalValue(fieldVisibility, "value", (GraphQLInputType) type, value, ValueMode.COERCED);
         }
         return Assert.assertShouldNeverHappen("unexpected value state " + valueState);
     }
