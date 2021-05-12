@@ -8,10 +8,10 @@ import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
-import graphql.schema.CoercingValueToLiteralException;
 
 import java.math.BigDecimal;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.scalar.CoercingUtil.isNumberIsh;
 import static graphql.scalar.CoercingUtil.typeName;
 
@@ -70,13 +70,8 @@ public class GraphqlFloatCoercing implements Coercing<Double, Double> {
     }
 
     @Override
-    public Value valueToLiteral(Object input) throws CoercingValueToLiteralException {
-        Double result = convertImpl(input);
-        if (result == null) {
-            throw new CoercingValueToLiteralException(
-                    "Expected 'Float' but was '" + typeName(input) + "'."
-            );
-        }
+    public Value valueToLiteral(Object input) {
+        Double result = assertNotNull(convertImpl(input));
         return FloatValue.newFloatValue(BigDecimal.valueOf(result)).build();
     }
 }

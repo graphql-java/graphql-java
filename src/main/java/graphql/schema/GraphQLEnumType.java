@@ -126,10 +126,8 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     @Internal
     public Value valueToLiteral(Object input) {
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(input.toString());
-        if (enumValueDefinition != null) {
-            return EnumValue.newEnumValue(enumValueDefinition.getName()).build();
-        }
-        throw new CoercingValueToLiteralException("Invalid input for Enum '" + name + "'. No value found for name '" + input.toString() + "'");
+        assertNotNull(enumValueDefinition, () -> "Invalid input for Enum '" + name + "'. No value found for name '" + input.toString() + "'");
+        return EnumValue.newEnumValue(enumValueDefinition.getName()).build();
 
     }
 
@@ -318,7 +316,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
             this.definition = existing.getDefinition();
             this.extensionDefinitions = existing.getExtensionDefinitions();
             this.values.putAll(getByName(existing.getValues(), GraphQLEnumValueDefinition::getName));
-            DirectivesUtil.enforceAddAll(this.directives,existing.getDirectives());
+            DirectivesUtil.enforceAddAll(this.directives, existing.getDirectives());
         }
 
         @Override

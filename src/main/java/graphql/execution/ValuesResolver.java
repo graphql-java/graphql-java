@@ -22,7 +22,6 @@ import graphql.language.VariableReference;
 import graphql.normalized.NormalizedInputValue;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseValueException;
-import graphql.schema.CoercingValueToLiteralException;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLEnumType;
@@ -131,6 +130,8 @@ public class ValuesResolver {
     /**
      * Takes a value which can be in different states (internal, literal, external value) and converts into Literal
      *
+     * This assumes the value is valid!
+     *
      * @return
      */
     public static Value<?> valueToLiteral(GraphqlFieldVisibility fieldVisibility, Object value, ValueState valueState, GraphQLType type) {
@@ -160,16 +161,12 @@ public class ValuesResolver {
         return Assert.assertShouldNeverHappen("unexpected value state " + valueState);
     }
 
-    private Value externalValueToLiteral(GraphqlFieldVisibility fieldVisibility, Object value, GraphQLInputType type) {
-        // the value is not validated
+    private Value externalValueToLiteral(GraphqlFieldVisibility fieldVisibility, @Nullable Object value, GraphQLInputType type) {
+        if (value == null) {
+            return newNullValue().build();
+        }
         if (GraphQLTypeUtil.isNonNull(type)) {
-            if (value == null) {
-                throw new CoercingValueToLiteralException(String.format("expected non null value for type %s", GraphQLTypeUtil.simplePrint(type)));
-            }
-            Value literal = externalValueToLiteral(fieldVisibility, value, (GraphQLInputType) unwrapNonNull(type));
-            if (literal instanceof NullValue) {
-                throw new CoercingValueToLiteralException(String.format("expected non null value for type %s", GraphQLTypeUtil.simplePrint(type)));
-            }
+            return externalValueToLiteral(fieldVisibility, value, (GraphQLInputType) unwrapNonNull(type));
         }
         if (type instanceof GraphQLScalarType) {
             return externalValueToLiteralForScalar((GraphQLScalarType) type, value);
@@ -209,22 +206,10 @@ public class ValuesResolver {
     private ObjectValue externalValueToLiteralForObject(GraphqlFieldVisibility fieldVisibility,
                                                         GraphQLInputObjectType inputObjectType,
                                                         Object inputValue) {
-        if (!(inputValue instanceof Map)) {
-            throw CoercingValueToLiteralException.newCoercingValueToLiteralException()
-                    .message("Expected type 'Map' but was '" + inputValue.getClass().getSimpleName() +
-                            "'. Values for input objects must be an instance of type 'Map'.")
-                    .build();
-        }
+        assertTrue(inputValue instanceof Map, () -> "Expect Map as input");
         Map<String, Object> inputMap = (Map<String, Object>) inputValue;
         List<GraphQLInputObjectField> fieldDefinitions = fieldVisibility.getFieldDefinitions(inputObjectType);
-        List<String> fieldNames = map(fieldDefinitions, GraphQLInputObjectField::getName);
-        for (String providedFieldName : inputMap.keySet()) {
-            if (!fieldNames.contains(providedFieldName)) {
-                throw new InputMapDefinesTooManyFieldsException(inputObjectType, providedFieldName);
-            }
-        }
 
-        //TODO: what about normalized literals??
 
         List<ObjectField> objectFields = new ArrayList<>();
         for (GraphQLInputObjectField inputFieldDefinition : fieldDefinitions) {
@@ -235,8 +220,6 @@ public class ValuesResolver {
             if (!hasValue && inputFieldDefinition.hasSetDefaultValue()) {
                 Value defaultValueLiteral = valueToLiteral(fieldVisibility, inputFieldDefinition.getInputFieldDefaultValue(), inputFieldDefinition.getDefaultValueState(), fieldType);
                 objectFields.add(newObjectField().value(defaultValueLiteral).build());
-            } else if (isNonNull(fieldType) && (!hasValue || fieldValue == null)) {
-                throw new RuntimeException("non nullable field");
             } else if (hasValue) {
                 if (fieldValue == null) {
                     objectFields.add(newObjectField().value(newNullValue().build()).build());
