@@ -1889,7 +1889,7 @@ class SchemaGeneratorTest extends Specification {
         schema.getDirective("extra") != null
     }
 
-    def "1509- enum object string default values are handled"() {
+    def "enum object default values are handled"() {
         def spec = '''
             enum EnumValue {
                 ONE, TWO, THREE
@@ -1901,7 +1901,6 @@ class SchemaGeneratorTest extends Specification {
             
             type Query {
                 fieldWithEnum(arg : InputType = { value : ONE } ) : String
-                fieldWithString(arg : InputType = { value : "ONE" } ) : String
             }
         '''
         def types = new SchemaParser().parse(spec)
@@ -1912,10 +1911,6 @@ class SchemaGeneratorTest extends Specification {
         def fieldWithEnum = queryType.getFieldDefinition("fieldWithEnum")
         def arg = fieldWithEnum.getArgument("arg")
         printAst(arg.argumentDefaultValue) == '{value : ONE}'
-
-        def fieldWithString = queryType.getFieldDefinition("fieldWithString")
-        def arg2 = fieldWithString.getArgument("arg")
-        printAst(arg2.argumentDefaultValue) == '{value : "ONE"}'
     }
 
     def "extensions are captured into runtime objects"() {

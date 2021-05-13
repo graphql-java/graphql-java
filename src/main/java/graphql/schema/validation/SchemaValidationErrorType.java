@@ -14,6 +14,7 @@ public enum SchemaValidationErrorType {
     InvalidUnionMemberTypeError,
     InvalidCustomizedNameError,
     NonNullWrapNonNullError,
-    RepetitiveElementError
+    RepetitiveElementError,
+    InvalidDefaultValue
 
 }

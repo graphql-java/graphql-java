@@ -25,6 +25,7 @@ import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.StaticDataFetcher
+import graphql.schema.validation.InvalidSchemaException
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
@@ -1231,5 +1232,85 @@ many lines''']
         then:
         executionResult.errors.size() == 1
         executionResult.errors[0].message.contains("is missing required fields")
+    }
+
+    def "invalid default value for argument via SDL"() {
+        given:
+        def sdl = '''
+            type Query {
+                foo(arg: Input = {}): String
+            }
+            input Input {
+                required: String!
+            }
+        '''
+        when:
+        def schema = TestUtil.schema(sdl)
+        then:
+        def e = thrown(InvalidSchemaException)
+        e.message.contains("Invalid default value")
+    }
+
+    def "invalid default value for argument programmatically"() {
+        given:
+        def arg = newArgument().name("arg").type(GraphQLInt).defaultValueProgrammatic(new LinkedHashMap()).build()
+        def field = newFieldDefinition()
+                .name("hello")
+                .type(GraphQLString)
+                .argument(arg)
+                .build()
+        when:
+        newSchema().query(
+                newObject()
+                        .name("Query")
+                        .field(field)
+                        .build())
+                .build()
+        then:
+        def e = thrown(InvalidSchemaException)
+        e.message.contains("Invalid default value")
+    }
+
+    def "invalid default value for input objects via SDL"() {
+        given:
+        def sdl = '''
+            type Query {
+                foo(arg: Input ={required: null}): String
+            }
+            input Input {
+                required: String!
+            }
+        '''
+        when:
+        def schema = TestUtil.schema(sdl)
+        then:
+        def e = thrown(InvalidSchemaException)
+        e.message.contains("Invalid default value")
+    }
+
+    def "invalid default value for input object programmatically"() {
+        given:
+        def defaultValue = [required: null]
+        def inputObject = newInputObject().name("Input").field(
+                newInputObjectField().name("required").type(GraphQLNonNull.nonNull(GraphQLString)).build())
+                .build()
+        def arg = newArgument().name("arg")
+                .type(inputObject)
+                .defaultValueProgrammatic(defaultValue).build()
+        def field = newFieldDefinition()
+                .name("hello")
+                .type(GraphQLString)
+                .argument(arg)
+                .build()
+        when:
+        newSchema().query(
+                newObject()
+                        .name("Query")
+                        .field(field)
+                        .build())
+                .build()
+        then:
+        def e = thrown(InvalidSchemaException)
+        e.message.contains("Invalid default value")
     }
 }

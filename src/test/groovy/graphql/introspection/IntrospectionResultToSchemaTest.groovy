@@ -827,7 +827,6 @@ directive @repeatableDirective repeatable on FIELD_DEFINITION
 
     def "round trip of default values of complex custom Scalar via SDL"() {
         given:
-        // non of
         def employeeRefScalar = GraphQLScalarType.newScalar().name("EmployeeRef").coercing(new Coercing() {
             @Override
             Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
@@ -877,7 +876,7 @@ directive @repeatableDirective repeatable on FIELD_DEFINITION
 
         def astPrinterResult = printAst(schemaDefinitionDocument)
 
-        def actualSchema = TestUtil.schema(astPrinterResult)
+        def actualSchema = TestUtil.schema(astPrinterResult, rw)
         def actualPrintedSchema = new SchemaPrinter(options).print(actualSchema)
 
         then:
@@ -953,7 +952,8 @@ scalar EmployeeRef
 
         def astPrinterResult = printAst(schemaDefinitionDocument)
 
-        def actualSchema = TestUtil.schema(astPrinterResult)
+        def rw = RuntimeWiring.newRuntimeWiring().scalar(employeeRefScalar).build()
+        def actualSchema = TestUtil.schema(astPrinterResult, rw)
         def actualPrintedSchema = new SchemaPrinter(options).print(actualSchema)
 
         then:
