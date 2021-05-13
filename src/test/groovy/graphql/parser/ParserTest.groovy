@@ -39,6 +39,7 @@ import graphql.language.VariableDefinition
 import graphql.language.VariableReference
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.ParserRuleContext
+import org.junit.Ignore
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -814,6 +815,76 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         operationDefinition.getComments()[0].content == " Represents the 😕 emoji."
     }
 
+    def "allow braced escaped unicode"() {
+        def input = '''
+              {
+              foo(arg: "\\u{1F37A}")
+               }
+    '''
+        when:
+        Document document = Parser.parse(input)
+        OperationDefinition operationDefinition = (document.definitions[0] as OperationDefinition)
+        def field = operationDefinition.getSelectionSet().getSelections()[0] as Field
+        def argValue = field.arguments[0].value as StringValue
+
+        then:
+        argValue.getValue() == "🍺"
+
+    }
+
+    def "allow surrogate pairs escaped unicode"() {
+        def input = '''
+              {
+              foo(arg: "\\ud83c\\udf7a")
+               }
+    '''
+        when:
+        Document document = Parser.parse(input)
+        OperationDefinition operationDefinition = (document.definitions[0] as OperationDefinition)
+        def field = operationDefinition.getSelectionSet().getSelections()[0] as Field
+        def argValue = field.arguments[0].value as StringValue
+
+        then:
+        argValue.getValue() == "🍺"
+
+    }
+
+    @Ignore
+    def "invalid surrogate pair"() {
+        def input = '''
+              {
+              foo(arg: "\\uD83D\\uDBFF")
+               }
+    '''
+        when:
+        Document document = Parser.parse(input)
+        OperationDefinition operationDefinition = (document.definitions[0] as OperationDefinition)
+        def field = operationDefinition.getSelectionSet().getSelections()[0] as Field
+        def argValue = field.arguments[0].value as StringValue
+
+        then:
+        argValue.getValue() == "🍺"
+
+    }
+
+    def "invalid unicode code point"() {
+        def input = '''
+              {
+              foo(arg: "\\u{fffffff}")
+               }
+    '''
+        when:
+        Document document = Parser.parse(input)
+        OperationDefinition operationDefinition = (document.definitions[0] as OperationDefinition)
+        def field = operationDefinition.getSelectionSet().getSelections()[0] as Field
+        def argValue = field.arguments[0].value as StringValue
+
+        then:
+        argValue.getValue() == "🍺"
+
+    }
+
+
     def "can override antlr to ast"() {
 
         def query = '''
@@ -897,4 +968,5 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         '1.23.4'  | _
         '1.2e3e'  | _
     }
+
 }

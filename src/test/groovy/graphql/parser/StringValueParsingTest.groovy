@@ -40,7 +40,7 @@ class StringValueParsingTest extends Specification {
         parsed == '''"'''
     }
 
-    def "parsing emoji should work"() {
+    def "parsing beer mug as surrogate pair"() {
         // needs surrogate pairs for this emoji
         given:
         def input = '''"\\ud83c\\udf7a"'''
@@ -52,15 +52,39 @@ class StringValueParsingTest extends Specification {
         parsed == '''🍺''' // contains the beer icon 	U+1F37A  : http://www.charbase.com/1f37a-unicode-beer-mug
     }
 
-    def "parsing simple unicode should work"() {
+    def "parsing beer mug as escaped unicode"() {
+        // needs surrogate pairs for this emoji
         given:
-        def input = '''"\\u56fe"'''
+        def input = '''"\\u{1F37A} hello"'''
 
         when:
         String parsed = StringValueParsing.parseSingleQuotedString(input)
 
         then:
-        parsed == '''图'''
+        parsed == '''🍺 hello''' // contains the beer icon 	U+1F37A  : http://www.charbase.com/1f37a-unicode-beer-mug
+    }
+
+    def "parsing beer mug non escaped"() {
+        // needs surrogate pairs for this emoji
+        given:
+        def input = '''"🍺 hello"'''
+
+        when:
+        String parsed = StringValueParsing.parseSingleQuotedString(input)
+
+        then:
+        parsed == '''🍺 hello''' // contains the beer icon 	U+1F37A  : http://www.charbase.com/1f37a-unicode-beer-mug
+    }
+
+    def "parsing simple unicode should work"() {
+        given:
+        def input = '''"\\u56fe hello"'''
+
+        when:
+        String parsed = StringValueParsing.parseSingleQuotedString(input)
+
+        then:
+        parsed == '''图 hello'''
     }
 
 

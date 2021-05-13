@@ -125,7 +125,7 @@ fragment StringCharacter:
 '\\' EscapedCharacter;
 
 fragment EscapedCharacter :  ["\\/bfnrt];
-fragment EscapedUnicode : Hex Hex Hex Hex;
+fragment EscapedUnicode : Hex Hex Hex Hex | '{' Hex+ '}';
 fragment Hex : [0-9a-fA-F];
 
 
