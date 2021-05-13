@@ -258,26 +258,6 @@ class ValuesResolverTest extends Specification {
         ]
     }
 
-//    def "getArgumentValues: missing InputObject fields which are non-null cause error"() {
-//        given: "schema defining input object"
-//        def inputObjectType = newInputObject()
-//                .name("inputObject")
-//                .field(newInputObjectField()
-//                        .name("intKey")
-//                        .type(nonNull(GraphQLInt))
-//                        .build())
-//                .build()
-//        def fieldArgument = newArgument().name("arg").type(inputObjectType).build()
-//
-//        when:
-//        // equal to empty literal
-//        def argument = new Argument("arg", ObjectValue.newObjectValue().build())
-//        resolver.getArgumentValues([fieldArgument], [argument], [:])
-//
-//        then:
-//        thrown(GraphQLException)
-//    }
-
     ObjectValue buildObjectLiteral(Map<String, Object> contents) {
         def object = ObjectValue.newObjectValue()
         contents.each { key, value ->
