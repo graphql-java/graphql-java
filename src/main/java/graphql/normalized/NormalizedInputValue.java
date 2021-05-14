@@ -1,6 +1,10 @@
 package graphql.normalized;
 
+import graphql.language.Value;
+
 import java.util.Objects;
+
+import static graphql.language.AstPrinter.printAst;
 
 /**
  * A value with type information.
@@ -62,6 +66,9 @@ public class NormalizedInputValue {
             return false;
         }
         NormalizedInputValue that = (NormalizedInputValue) o;
+        if (value instanceof Value && that.value instanceof Value) {
+            return Objects.equals(typeName, that.typeName) && Objects.equals(printAst((Value) value), printAst((Value) that.value));
+        }
         return Objects.equals(typeName, that.typeName) && Objects.equals(value, that.value);
     }
 

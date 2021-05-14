@@ -14,6 +14,8 @@ import graphql.util.TraverserContext
 import graphql.util.TraverserVisitorStub
 import spock.lang.Specification
 
+import static graphql.language.AstPrinter.printAst
+import static graphql.parser.Parser.parseValue
 import static graphql.schema.FieldCoordinates.coordinates
 
 class NormalizedQueryTreeFactoryTest extends Specification {
@@ -1091,7 +1093,7 @@ schema {
                 var2: [foo: "foo", input2: [bar: 123]]
         ]
         // the normalized arg value should be the same regardless of how the value was provided
-        def expectedNormalizedArgValue = [foo: new NormalizedInputValue("String", "foo"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 123)])]
+        def expectedNormalizedArgValue = [foo: new NormalizedInputValue("String", parseValue('"foo"')), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", parseValue("123"))])]
         when:
         def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, variables)
         def topLevelField = tree.getTopLevelFields().get(0)
@@ -1102,7 +1104,7 @@ schema {
 
         then:
         topLevelField.getNormalizedArgument("id").getTypeName() == "ID"
-        topLevelField.getNormalizedArgument("id").getValue() == "123"
+        printAst(topLevelField.getNormalizedArgument("id").getValue()) == '"123"'
 
         arg1.getTypeName() == "Input1"
         arg1.getValue() == expectedNormalizedArgValue
@@ -1151,16 +1153,16 @@ schema {
 
         then:
         arg1.typeName == "[ID!]"
-        arg1.value == ["1", "2"]
+        arg1.value.collect { printAst(it) } == ['"1"', '"2"']
         arg2.typeName == "[[Input1]]"
         arg2.value == [[
-                               [foo: new NormalizedInputValue("String", "foo1"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 123)])],
-                               [foo: new NormalizedInputValue("String", "foo2"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 456)])]
+                               [foo: new NormalizedInputValue("String", parseValue('"foo1"')), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", parseValue("123"))])],
+                               [foo: new NormalizedInputValue("String", parseValue('"foo2"')), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", parseValue("456"))])]
                        ]]
 
         arg3.getTypeName() == "[Input1]"
         arg3.value == [
-                [foo: new NormalizedInputValue("String", "foo3"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 789)])],
+                [foo: new NormalizedInputValue("String", parseValue('"foo3"')), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", parseValue("789"))])],
         ]
 
 
@@ -1204,10 +1206,10 @@ schema {
         then:
         arg1.typeName == "[[Input1]]"
         arg1.value == [[
-                               [foo: new NormalizedInputValue("String", "foo1"), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", 123)])],
+                               [foo: new NormalizedInputValue("String", parseValue('"foo1"')), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", parseValue("123"))])],
                        ]]
         arg2.typeName == "[[ID!]!]"
-        arg2.value == [["1"], ["2"]]
+        arg2.value.collect { outer -> outer.collect { printAst(it) } } == [['"1"'], ['"2"']]
     }
 
 }

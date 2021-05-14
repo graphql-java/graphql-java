@@ -58,7 +58,7 @@ public class NormalizedQueryTreeFactory {
 
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
         Map<String, Object> coerceVariableValues = valuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, rawVariables);
-        Map<String, NormalizedInputValue> normalizedVariableValues = valuesResolver.coerceNormalizedVariableValues(graphQLSchema, variableDefinitions, rawVariables);
+        Map<String, NormalizedInputValue> normalizedVariableValues = valuesResolver.getNormalizedVariableValues(graphQLSchema, variableDefinitions, rawVariables);
         return createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coerceVariableValues, normalizedVariableValues);
     }
 

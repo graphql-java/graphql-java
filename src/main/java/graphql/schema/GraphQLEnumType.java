@@ -126,7 +126,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     @Internal
     public Value valueToLiteral(Object input) {
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(input.toString());
-        assertNotNull(enumValueDefinition, () -> "Invalid input for Enum '" + name + "'. No value found for name '" + input.toString() + "'");
+        assertNotNull(enumValueDefinition, () -> "Invalid input for Enum '" + name + "'. No value found for name '" + input + "'");
         return EnumValue.newEnumValue(enumValueDefinition.getName()).build();
 
     }
