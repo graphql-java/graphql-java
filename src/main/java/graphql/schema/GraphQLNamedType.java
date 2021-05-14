@@ -8,5 +8,15 @@ import graphql.PublicApi;
 @PublicApi
 public interface GraphQLNamedType extends GraphQLType, GraphQLNamedSchemaElement {
 
+    /**
+     * Returns {@code true} if {@code other} type is of the kind and name as this one.
+     */
+    @Override
+    default boolean isEquivalentTo(final GraphQLType other) {
+        if ((other == null) || (other.getClass() != this.getClass())) {
+            return false;
+        }
 
+        return ((GraphQLNamedType)other).getName().equals(this.getName());
+    }
 }
