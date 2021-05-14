@@ -13,4 +13,17 @@ import graphql.PublicApi;
 public interface GraphQLModifiedType extends GraphQLType {
 
     GraphQLType getWrappedType();
+
+    /**
+     * Returns {@code true} if {@code other} type is of the kind as this
+     * one and wraps equivalent type.
+     */
+    @Override
+    default boolean isEquivalentTo(GraphQLType other) {
+        if ((other == null) || (other.getClass() != this.getClass())) {
+            return false;
+        }
+
+        return getWrappedType().isEquivalentTo(((GraphQLModifiedType)other).getWrappedType());
+    }
 }

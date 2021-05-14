@@ -129,7 +129,7 @@ public class FieldCollector {
 
     private boolean checkTypeCondition(FieldCollectorParameters parameters, GraphQLType conditionType) {
         GraphQLObjectType type = parameters.getObjectType();
-        if (conditionType.equals(type)) {
+        if (conditionType.isEquivalentTo(type)) {
             return true;
         }
 
