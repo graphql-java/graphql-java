@@ -17,6 +17,7 @@ import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLNamedSchemaElement
+import graphql.schema.GraphQLNamedType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLOutputType
 import graphql.schema.GraphQLScalarType
@@ -87,6 +88,15 @@ class SchemaPrinterTest extends Specification {
 
         MyGraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions) {
             super(name, description, fieldDefinitions, new ArrayList<GraphQLOutputType>())
+        }
+
+        @Override
+        boolean isEquivalentTo(GraphQLType other) {
+            if ((other == null) || (other.getClass() != this.getClass())) {
+                return false;
+            }
+
+            return ((GraphQLNamedType)other).getName().equals(this.getName());
         }
     }
 
