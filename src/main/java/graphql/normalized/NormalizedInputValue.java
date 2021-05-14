@@ -29,9 +29,9 @@ public class NormalizedInputValue {
 
     /**
      * Depending on the type it returns:
-     * Scalar or Enum: the value of the Scalar.
+     * Scalar or Enum: the ast literal of the Scalar.
      * InputObject: the value is a map of field-name to NormalizedInputValue
-     * List of Scalar/Enum/InputObject (or even List of List ..)
+     * List of Scalar literal or Enum literal or NormalizedInput (or even List of List ..)
      *
      * @return
      */
