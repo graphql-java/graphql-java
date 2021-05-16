@@ -98,9 +98,9 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     }
 
     /**
-     * An argument has a default value when it represents the logical argument structure that a {@link graphql.schema.GraphQLFieldDefinition}
-     * can have and it can also have a default value when used in a schema definition language (SDL) where the
-     * default value comes via the directive definition.
+     * The default value of this argument.
+     *
+     * The semantics of the returned Object depend on getDefaultValueState
      *
      * @return
      */
@@ -108,6 +108,13 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         return defaultValue;
     }
 
+    /**
+     * Returns the state of {@link #getArgumentDefaultValue()}
+     *
+     * See {@link ValueState}.
+     *
+     * @return
+     */
     public @NotNull ValueState getDefaultValueState() {
         return defaultValueState;
     }
@@ -122,15 +129,21 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
 
 
     /**
-     * An argument ONLY has a value when its used in a schema definition language (SDL) context as the arguments to SDL directives.  The method
-     * should not be called in a query context, but rather the AST / variables map should be used to obtain an arguments value.
+     * This is only used for applied directives.
      *
-     * @return
+     * The semantics of the returned Object depend on {@link #getValueState()}.
      */
     public @Nullable Object getArgumentValue() {
         return value;
     }
 
+    /**
+     * Returns the state of {@link #getArgumentValue()}
+     *
+     * See {@link ValueState}.
+     *
+     * @return
+     */
     public @NotNull ValueState getValueState() {
         return valueState;
     }

@@ -7,6 +7,8 @@ import graphql.language.InputValueDefinition;
 import graphql.language.Value;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -83,11 +85,25 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         return replacedType != null ? replacedType : originalType;
     }
 
-    public Object getInputFieldDefaultValue() {
+    /**
+     * The default value of this input field.
+     *
+     * The semantics of the returned Object depend on getDefaultValueState.
+     *
+     * @return
+     */
+    public @Nullable Object getInputFieldDefaultValue() {
         return defaultValue;
     }
 
-    public ValueState getDefaultValueState() {
+    /**
+     * Returns the state of {@link #getInputFieldDefaultValue()}
+     *
+     * See {@link ValueState}.
+     *
+     * @return
+     */
+    public @NotNull ValueState getDefaultValueState() {
         return defaultValueState;
     }
 
