@@ -233,20 +233,10 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         return TraversalControl.CONTINUE;
     }
 
-    private static boolean isChildOfVariableDefinition(TraverserContext<Node> context) {
-        if (context == null) {
-            return false;
-        }
-        if (context.getParentNode() instanceof VariableDefinition) {
-            return true;
-        }
-        return isChildOfVariableDefinition(context.getParentContext());
-    }
-
     @Override
     protected TraversalControl visitValue(Value<?> value, TraverserContext<Node> context) {
-        if (isChildOfVariableDefinition(context)) {
-            return TraversalControl.CONTINUE;
+        if (context.getParentNode() instanceof VariableDefinition) {
+            return TraversalControl.ABORT;
         }
 
         QueryVisitorFieldArgumentEnvironment fieldArgEnv = context.getVarFromParents(QueryVisitorFieldArgumentEnvironment.class);
