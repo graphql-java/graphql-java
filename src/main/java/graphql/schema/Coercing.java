@@ -19,7 +19,7 @@ import java.util.Map;
  * Input coercion is made out of three different methods {@link #parseLiteral(Object)} which converts an literal Ast
  * into an internal input value, {@link #parseValue(Object)} which converts an external input value into an internal one
  * and {@link #valueToLiteral(Object)} which is a translation between an external input value into a literal.
- * <br/>
+ * <br>
  * The relationship between these three methods is as follows:
  * It is required that every valid external input values for {@link #parseValue(Object)} is also valid for
  * {@link #valueToLiteral(Object)}
