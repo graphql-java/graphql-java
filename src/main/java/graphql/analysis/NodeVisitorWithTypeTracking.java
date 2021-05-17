@@ -236,6 +236,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
     @Override
     protected TraversalControl visitValue(Value<?> value, TraverserContext<Node> context) {
         if (context.getParentNode() instanceof VariableDefinition) {
+            visitVariableDefinition(((VariableDefinition) context.getParentNode()), context);
             return TraversalControl.ABORT;
         }
 
