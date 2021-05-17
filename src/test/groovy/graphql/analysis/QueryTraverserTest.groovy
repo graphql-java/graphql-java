@@ -582,6 +582,62 @@ class QueryTraverserTest extends Specification {
     }
 
     @Unroll
+    def "traverse a query when a default variable is a list: (#order)"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo(arg1: [String]): String
+            }
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery("""
+            query myQuery(\$myVar: [String] = ["hello default"]) {foo(arg1: \$myVar)} 
+            """)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema, ['myVar': 'hello'])
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "foo" &&
+                    it.arguments == ['arg1': ['hello']]
+        })
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+    }
+
+    @Unroll
+    def "traverse a query when a default variable is a list and query does not specify variables: (#order)"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo(arg1: [String]): String
+            }
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery("""
+            query myQuery(\$myVar: [String] = ["hello default"]) {foo(arg1: \$myVar)} 
+            """)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema, [:])
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "foo" &&
+                    it.arguments == ['arg1': ['hello default']]
+        })
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+    }
+
+    @Unroll
     def "simple query (#order)"() {
         given:
         def schema = TestUtil.schema("""
