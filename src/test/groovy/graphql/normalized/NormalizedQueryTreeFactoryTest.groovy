@@ -678,7 +678,7 @@ type Dog implements Animal{
         def fieldToNormalizedField = tree.getFieldToNormalizedField()
 
         expect:
-        fieldToNormalizedField.size() == 3
+        fieldToNormalizedField.keys().size() == 4
         fieldToNormalizedField.get(subFooField).size() == 2
         fieldToNormalizedField.get(subFooField)[0].level == 2
         fieldToNormalizedField.get(subFooField)[1].level == 3
@@ -722,7 +722,7 @@ type Dog implements Animal{
 
 
         expect:
-        fieldToNormalizedField.size() == 2
+        fieldToNormalizedField.size() == 3
         fieldToNormalizedField.get(idField).size() == 2
         fieldToNormalizedField.get(idField)[0].objectType.name == "Cat"
         fieldToNormalizedField.get(idField)[1].objectType.name == "Dog"
@@ -938,10 +938,10 @@ type Dog implements Animal{
         def coordinatesToNormalizedFields = tree.coordinatesToNormalizedFields
 
         then:
-        coordinatesToNormalizedFields.size() == 3
-        coordinatesToNormalizedFields[coordinates("Query", "foo")].size() == 1
-        coordinatesToNormalizedFields[coordinates("Foo", "moreFoos")].size() == 1
-        coordinatesToNormalizedFields[coordinates("Foo", "subFoo")].size() == 2
+        coordinatesToNormalizedFields.size() == 4
+        coordinatesToNormalizedFields.get(coordinates("Query", "foo")).size() == 1
+        coordinatesToNormalizedFields.get(coordinates("Foo", "moreFoos")).size() == 1
+        coordinatesToNormalizedFields.get(coordinates("Foo", "subFoo")).size() == 2
     }
 
     def "handles mutations"() {
@@ -1208,6 +1208,56 @@ schema {
                        ]]
         arg2.typeName == "[[ID!]!]"
         arg2.value == [["1"], ["2"]]
+    }
+
+
+    def "recursive schema with a lot of objects"() {
+        given:
+        String schema = """
+        type Query{ 
+            foo: Foo 
+        }
+        interface Foo {
+            field: Foo
+            id: ID
+        }
+        type O1 implements Foo {
+            field: Foo
+            id: ID
+        }
+        type O2 implements Foo {
+            field: Foo
+            id: ID
+        }
+        type O3 implements Foo {
+            field: Foo
+            id: ID
+        }
+        type O4 implements Foo {
+            field: Foo
+            id: ID
+        }
+        type O5 implements Foo {
+            field: Foo
+            id: ID
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = '''
+            {foo{field{id}}}
+        '''
+        assertValidQuery(graphQLSchema, query)
+        Document document = TestUtil.parseQuery(query)
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
+        when:
+        def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, [:])
+
+        then:
+        tree.normalizedFieldToMergedField.size() == 31
+        println String.join("\n", printTree(tree))
+        /**
+         * NF{Query.foo} -> NF{"O1...O5".field,} -> NF{O1...O5.id}*/
     }
 
 }

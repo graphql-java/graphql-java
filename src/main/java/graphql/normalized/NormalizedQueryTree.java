@@ -1,5 +1,6 @@
 package graphql.normalized;
 
+import com.google.common.collect.ImmutableListMultimap;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.MergedField;
@@ -15,21 +16,21 @@ import java.util.Map;
 public class NormalizedQueryTree {
 
     private final List<NormalizedField> topLevelFields;
-    private final Map<Field, List<NormalizedField>> fieldToNormalizedField;
+    private final ImmutableListMultimap<Field, NormalizedField> fieldToNormalizedField;
     private final Map<NormalizedField, MergedField> normalizedFieldToMergedField;
-    private final Map<FieldCoordinates, List<NormalizedField>> coordinatesToNormalizedFields;
+    private final ImmutableListMultimap<FieldCoordinates, NormalizedField> coordinatesToNormalizedFields;
 
     public NormalizedQueryTree(List<NormalizedField> topLevelFields,
-                               Map<Field, List<NormalizedField>> fieldToNormalizedField,
+                               ImmutableListMultimap<Field, NormalizedField> fieldToNormalizedField,
                                Map<NormalizedField, MergedField> normalizedFieldToMergedField,
-                               Map<FieldCoordinates, List<NormalizedField>> coordinatesToNormalizedFields) {
+                               ImmutableListMultimap<FieldCoordinates, NormalizedField> coordinatesToNormalizedFields) {
         this.topLevelFields = topLevelFields;
         this.fieldToNormalizedField = fieldToNormalizedField;
         this.normalizedFieldToMergedField = normalizedFieldToMergedField;
         this.coordinatesToNormalizedFields = coordinatesToNormalizedFields;
     }
 
-    public Map<FieldCoordinates, List<NormalizedField>> getCoordinatesToNormalizedFields() {
+    public ImmutableListMultimap<FieldCoordinates, NormalizedField> getCoordinatesToNormalizedFields() {
         return coordinatesToNormalizedFields;
     }
 
@@ -37,7 +38,12 @@ public class NormalizedQueryTree {
         return topLevelFields;
     }
 
-    public Map<Field, List<NormalizedField>> getFieldToNormalizedField() {
+    /**
+     * This is a multimap: the size of it reflects the all the normalized fields
+     *
+     * @return
+     */
+    public ImmutableListMultimap<Field, NormalizedField> getFieldToNormalizedField() {
         return fieldToNormalizedField;
     }
 
