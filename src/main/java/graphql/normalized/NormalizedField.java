@@ -1,32 +1,38 @@
 package graphql.normalized;
 
-import graphql.Assert;
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
+import graphql.collect.ImmutableKit;
+import graphql.language.Argument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLTypeUtil;
-import graphql.schema.GraphQLUnmodifiedType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.schema.GraphQLTypeUtil.simplePrint;
+import static graphql.Assert.assertTrue;
 
 @Internal
 public class NormalizedField {
     private final String alias;
     private final Map<String, NormalizedInputValue> normalizedArguments;
     private final Map<String, Object> arguments;
-    private final GraphQLObjectType objectType;
-    private final GraphQLFieldDefinition fieldDefinition;
+    private final ImmutableList<Argument> astArguments;
+    private final Set<String> objectTypes;
+    private final String fieldName;
     private final List<NormalizedField> children;
-    private final boolean isConditional;
+    //    private final boolean isConditional;
     private final int level;
     private NormalizedField parent;
 
@@ -35,18 +41,44 @@ public class NormalizedField {
         this.alias = builder.alias;
         this.arguments = builder.arguments;
         this.normalizedArguments = builder.normalizedArguments;
-        this.objectType = builder.objectType;
-        this.fieldDefinition = assertNotNull(builder.fieldDefinition);
+        this.astArguments = builder.astArguments;
+        this.objectTypes = builder.objectTypes;
+        this.fieldName = assertNotNull(builder.fieldName);
         this.children = builder.children;
         this.level = builder.level;
         this.parent = builder.parent;
         // can be null for the top level fields
-        if (parent == null) {
-            this.isConditional = false;
+//        if (parent == null) {
+//            this.isConditional = false;
+//        } else {
+//            GraphQLUnmodifiedType parentType = GraphQLTypeUtil.unwrapAll(parent.getFieldDefinition().getType());
+//            this.isConditional = parentType != this.objectType;
+//        }
+    }
+
+    public GraphQLType getType(GraphQLSchema schema) {
+        return getFieldDefinition(schema).getType();
+    }
+
+    public GraphQLFieldDefinition getFieldDefinition(GraphQLSchema schema) {
+        GraphQLFieldDefinition fieldDefinition;
+        if (fieldName.equals(schema.getIntrospectionTypenameFieldDefinition().getName())) {
+            fieldDefinition = schema.getIntrospectionTypenameFieldDefinition();
         } else {
-            GraphQLUnmodifiedType parentType = GraphQLTypeUtil.unwrapAll(parent.getFieldDefinition().getType());
-            this.isConditional = parentType != this.objectType;
+            if (fieldName.equals(schema.getIntrospectionSchemaFieldDefinition().getName())) {
+                fieldDefinition = schema.getIntrospectionSchemaFieldDefinition();
+            } else if (fieldName.equals(schema.getIntrospectionTypeFieldDefinition().getName())) {
+                fieldDefinition = schema.getIntrospectionTypeFieldDefinition();
+            } else {
+                GraphQLObjectType type = (GraphQLObjectType) assertNotNull(schema.getType(objectTypes.iterator().next()));
+                fieldDefinition = assertNotNull(type.getField(fieldName), () -> String.format("no field %s found for type %s", fieldName, objectTypes.iterator().next()));
+            }
         }
+        return fieldDefinition;
+    }
+
+    public void addObjectTypes(Collection<String> objectTypes) {
+        this.objectTypes.addAll(objectTypes);
     }
 
     /**
@@ -57,7 +89,7 @@ public class NormalizedField {
      * @return the name of of the merged fields.
      */
     public String getName() {
-        return getFieldDefinition().getName();
+        return getFieldName();
     }
 
     /**
@@ -77,8 +109,13 @@ public class NormalizedField {
         return alias;
     }
 
-    public boolean isConditional() {
-        return isConditional;
+//    public boolean isConditional() {
+//        return isConditional;
+//    }
+
+
+    public List<Argument> getAstArguments() {
+        return astArguments;
     }
 
     public NormalizedInputValue getNormalizedArgument(String name) {
@@ -99,8 +136,8 @@ public class NormalizedField {
     }
 
 
-    public GraphQLFieldDefinition getFieldDefinition() {
-        return fieldDefinition;
+    public String getFieldName() {
+        return fieldName;
     }
 
 
@@ -110,8 +147,8 @@ public class NormalizedField {
         return builder.build();
     }
 
-    public GraphQLObjectType getObjectType() {
-        return objectType;
+    public Set<String> getObjectTypes() {
+        return objectTypes;
     }
 
     public String printDetails() {
@@ -120,8 +157,7 @@ public class NormalizedField {
         if (getAlias() != null) {
             result.append(getAlias()).append(": ");
         }
-        return result + objectType.getName() + "." + fieldDefinition.getName() + ": " + simplePrint(fieldDefinition.getType()) +
-                " (conditional: " + this.isConditional + ")";
+        return result + objectTypes.toString() + "." + fieldName;
     }
 
     public String print() {
@@ -130,7 +166,7 @@ public class NormalizedField {
         if (getAlias() != null) {
             result.append(getAlias()).append(":");
         }
-        return result + objectType.getName() + "." + fieldDefinition.getName() + ")";
+        return result + objectTypes.toString() + "." + fieldName + ")";
     }
 
     public String printFullPath() {
@@ -172,24 +208,20 @@ public class NormalizedField {
         this.parent = newParent;
     }
 
-    public boolean isIntrospectionField() {
-        return getFieldDefinition().getName().startsWith("__") || getObjectType().getName().startsWith("__");
-    }
 
     @Override
     public String toString() {
         return "NormalizedField{" +
-                objectType.getName() + "." + fieldDefinition.getName() +
+                objectTypes.toString() + "." + fieldName +
                 ", alias=" + alias +
                 ", level=" + level +
-                ", conditional=" + isConditional +
                 ", children=" + children.stream().map(NormalizedField::toString).collect(Collectors.joining("\n")) +
                 '}';
     }
 
     public List<NormalizedField> getChildren(int includingRelativeLevel) {
         List<NormalizedField> result = new ArrayList<>();
-        Assert.assertTrue(includingRelativeLevel >= 1, () -> "relative level must be >= 1");
+        assertTrue(includingRelativeLevel >= 1, () -> "relative level must be >= 1");
 
         this.getChildren().forEach(child -> {
             traverseImpl(child, result::add, 1, includingRelativeLevel);
@@ -217,14 +249,15 @@ public class NormalizedField {
     }
 
     public static class Builder {
-        private GraphQLObjectType objectType;
-        private GraphQLFieldDefinition fieldDefinition;
+        private Set<String> objectTypes = new LinkedHashSet<>();
+        private String fieldName;
         private List<NormalizedField> children = new ArrayList<>();
         private int level;
         private NormalizedField parent;
         private String alias;
         private Map<String, NormalizedInputValue> normalizedArguments = Collections.emptyMap();
         private Map<String, Object> arguments = Collections.emptyMap();
+        private ImmutableList<Argument> astArguments = ImmutableKit.emptyList();
 
         private Builder() {
 
@@ -233,19 +266,25 @@ public class NormalizedField {
         private Builder(NormalizedField existing) {
             this.alias = existing.alias;
             this.normalizedArguments = existing.normalizedArguments;
+            this.astArguments = existing.astArguments;
             this.arguments = existing.arguments;
-            this.objectType = existing.getObjectType();
-            this.fieldDefinition = existing.getFieldDefinition();
+            this.objectTypes = existing.getObjectTypes();
+            this.fieldName = existing.getFieldName();
             this.children = existing.getChildren();
             this.level = existing.getLevel();
             this.parent = existing.getParent();
         }
 
-        public Builder objectType(GraphQLObjectType objectType) {
-            this.objectType = objectType;
+        public Builder objectTypes(List<String> objectTypes) {
+            this.objectTypes.addAll(objectTypes);
             return this;
         }
 
+//        public Builder objectType(String objectType) {
+//            this.objectTypes = ImmutableList.of(objectType);
+//            return this;
+//        }
+//
 
         public Builder alias(String alias) {
             this.alias = alias;
@@ -262,9 +301,14 @@ public class NormalizedField {
             return this;
         }
 
+        public Builder astArguments(List<Argument> astArguments) {
+            this.astArguments = ImmutableList.copyOf(astArguments);
+            return this;
+        }
 
-        public Builder fieldDefinition(GraphQLFieldDefinition fieldDefinition) {
-            this.fieldDefinition = fieldDefinition;
+
+        public Builder fieldName(String fieldName) {
+            this.fieldName = fieldName;
             return this;
         }
 

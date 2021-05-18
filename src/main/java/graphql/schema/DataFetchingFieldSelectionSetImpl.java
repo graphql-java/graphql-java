@@ -223,11 +223,11 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
             normalisedSelectionSetFields.computeIfAbsent(globQualifiedName, newList()).add(selectedField);
             normalisedSelectionSetFields.computeIfAbsent(globSimpleName, newList()).add(selectedField);
 
-            GraphQLFieldDefinition fieldDefinition = normalizedSubSelectedField.getFieldDefinition();
-            GraphQLType unwrappedType = GraphQLTypeUtil.unwrapAll(fieldDefinition.getType());
-            if (!GraphQLTypeUtil.isLeaf(unwrappedType)) {
-                traverseSubSelectedFields(normalizedSubSelectedField, globQualifiedName, globSimpleName, false);
-            }
+//            GraphQLFieldDefinition fieldDefinition = normalizedSubSelectedField.getFieldDefinition();
+//            GraphQLType unwrappedType = GraphQLTypeUtil.unwrapAll(normalizedSubSelectedField.getType());
+//            if (!GraphQLTypeUtil.isLeaf(unwrappedType)) {
+//                traverseSubSelectedFields(normalizedSubSelectedField, globQualifiedName, globSimpleName, false);
+//            }
         }
     }
 
@@ -240,7 +240,8 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     }
 
     private static String mkTypeQualifiedName(NormalizedField normalizedField) {
-        return normalizedField.getObjectType().getName() + "." + normalizedField.getName();
+//        return normalizedField.getObjectTypes().getName() + "." + normalizedField.getName();
+        return null;
     }
 
     private static String mkFieldGlobName(String fieldPrefix, String fieldName) {
@@ -312,12 +313,14 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
         @Override
         public GraphQLObjectType getObjectType() {
-            return normalizedField.getObjectType();
+//            return normalizedField.getObjectTypes();
+            return null;
         }
 
         @Override
         public GraphQLFieldDefinition getFieldDefinition() {
-            return normalizedField.getFieldDefinition();
+//            return normalizedField.getFieldDefinition();
+            return null;
         }
 
         @Override
@@ -332,7 +335,8 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
         @Override
         public boolean isConditional() {
-            return normalizedField.isConditional();
+//            return normalizedField.isConditional();
+            return false;
         }
 
         @Override

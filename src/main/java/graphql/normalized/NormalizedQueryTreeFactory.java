@@ -1,16 +1,18 @@
 package graphql.normalized;
 
-import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Table;
+import com.google.common.collect.Multimap;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.ConditionalNodes;
 import graphql.execution.MergedField;
 import graphql.execution.ValuesResolver;
 import graphql.execution.nextgen.Common;
+import graphql.language.Argument;
+import graphql.language.AstComparator;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -20,6 +22,7 @@ import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
+import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLCompositeType;
@@ -40,6 +43,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.map;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 
 @Internal
@@ -119,8 +123,10 @@ public class NormalizedQueryTreeFactory {
             fixUpParentReference(realTopLevel);
 
             normalizedFieldToMergedField.put(realTopLevel, MergedField.newMergedField(mergedField).build());
-            FieldCoordinates coordinates = FieldCoordinates.coordinates(realTopLevel.getObjectType(), realTopLevel.getFieldDefinition());
-            coordinatesToNormalizedFields.put(coordinates, realTopLevel);
+            for (String objectType : realTopLevel.getObjectTypes()) {
+                FieldCoordinates coordinates = FieldCoordinates.coordinates(objectType, realTopLevel.getFieldName());
+                coordinatesToNormalizedFields.put(coordinates, realTopLevel);
+            }
             updateByAstFieldMap(realTopLevel, mergedField, fieldToNormalizedField);
             realRoots.add(realTopLevel);
         }
@@ -151,8 +157,10 @@ public class NormalizedQueryTreeFactory {
             fixUpParentReference(realChild);
 
             normalizedFieldToMergedField.put(realChild, MergedField.newMergedField(mergedFieldForChild).build());
-            FieldCoordinates coordinates = FieldCoordinates.coordinates(realChild.getObjectType(), realChild.getFieldDefinition());
-            coordinatesToNormalizedFields.put(coordinates, realChild);
+            for (String objectType : realChild.getObjectTypes()) {
+                FieldCoordinates coordinates = FieldCoordinates.coordinates(objectType, realChild.getFieldName());
+                coordinatesToNormalizedFields.put(coordinates, realChild);
+            }
 
             realChildren.add(realChild);
 
@@ -187,14 +195,13 @@ public class NormalizedQueryTreeFactory {
                                             NormalizedField normalizedField,
                                             ImmutableList<Field> mergedField,
                                             int level) {
-        GraphQLUnmodifiedType fieldType = unwrapAll(normalizedField.getFieldDefinition().getType());
+        GraphQLUnmodifiedType fieldType = unwrapAll(normalizedField.getType(parameters.getGraphQLSchema()));
         // if not composite we don't have any selectionSet because it is a Scalar or enum
         if (!(fieldType instanceof GraphQLCompositeType)) {
             return new CollectFieldResult(Collections.emptyList(), ImmutableListMultimap.of());
         }
 
-        // result key -> ObjectType -> NormalizedField
-        Table<String, GraphQLObjectType, NormalizedField> subFields = HashBasedTable.create();
+        Multimap<String, NormalizedField> subFields = ArrayListMultimap.create();
         ImmutableListMultimap.Builder<NormalizedField, Field> mergedFieldByNormalizedField = ImmutableListMultimap.builder();
         Set<GraphQLObjectType> possibleObjects
                 = new LinkedHashSet<>(resolvePossibleObjects((GraphQLCompositeType) fieldType, parameters.getGraphQLSchema()));
@@ -202,7 +209,7 @@ public class NormalizedQueryTreeFactory {
             if (field.getSelectionSet() == null) {
                 continue;
             }
-            this.collectFields(parameters,
+            this.collectFromSelectionSet(parameters,
                     field.getSelectionSet(),
                     subFields,
                     mergedFieldByNormalizedField,
@@ -210,28 +217,29 @@ public class NormalizedQueryTreeFactory {
                     level,
                     normalizedField);
         }
-        return new CollectFieldResult(subFields.values(), mergedFieldByNormalizedField.build());
+        return new CollectFieldResult(new LinkedHashSet<>(subFields.values()), mergedFieldByNormalizedField.build());
     }
 
     public CollectFieldResult collectFromOperation(FieldCollectorNormalizedQueryParams parameters,
                                                    OperationDefinition operationDefinition,
                                                    GraphQLObjectType rootType) {
-        Table<String, GraphQLObjectType, NormalizedField> subFields = HashBasedTable.create();
+
+        Multimap<String, NormalizedField> subFields = ArrayListMultimap.create();
         ImmutableListMultimap.Builder<NormalizedField, Field> normalizedFieldToAstFields = ImmutableListMultimap.builder();
         Set<GraphQLObjectType> possibleObjects = new LinkedHashSet<>();
         possibleObjects.add(rootType);
-        this.collectFields(parameters, operationDefinition.getSelectionSet(), subFields, normalizedFieldToAstFields, possibleObjects, 1, null);
+        this.collectFromSelectionSet(parameters, operationDefinition.getSelectionSet(), subFields, normalizedFieldToAstFields, possibleObjects, 1, null);
         return new CollectFieldResult(subFields.values(), normalizedFieldToAstFields.build());
     }
 
 
-    private void collectFields(FieldCollectorNormalizedQueryParams parameters,
-                               SelectionSet selectionSet,
-                               Table<String, GraphQLObjectType, NormalizedField> result,
-                               ImmutableListMultimap.Builder<NormalizedField, Field> mergedFieldByNormalizedField,
-                               Set<GraphQLObjectType> possibleObjects,
-                               int level,
-                               NormalizedField parent) {
+    private void collectFromSelectionSet(FieldCollectorNormalizedQueryParams parameters,
+                                         SelectionSet selectionSet,
+                                         Multimap<String, NormalizedField> result,
+                                         ImmutableListMultimap.Builder<NormalizedField, Field> mergedFieldByNormalizedField,
+                                         Set<GraphQLObjectType> possibleObjects,
+                                         int level,
+                                         NormalizedField parent) {
 
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
@@ -245,7 +253,7 @@ public class NormalizedQueryTreeFactory {
     }
 
     private void collectFragmentSpread(FieldCollectorNormalizedQueryParams parameters,
-                                       Table<String, GraphQLObjectType, NormalizedField> result,
+                                       Multimap<String, NormalizedField> result,
                                        ImmutableListMultimap.Builder<NormalizedField, Field> mergedFieldByNormalizedField,
                                        FragmentSpread fragmentSpread,
                                        Set<GraphQLObjectType> possibleObjects,
@@ -261,11 +269,11 @@ public class NormalizedQueryTreeFactory {
         }
         GraphQLCompositeType newCondition = (GraphQLCompositeType) parameters.getGraphQLSchema().getType(fragmentDefinition.getTypeCondition().getName());
         Set<GraphQLObjectType> newConditions = narrowDownPossibleObjects(possibleObjects, newCondition, parameters.getGraphQLSchema());
-        collectFields(parameters, fragmentDefinition.getSelectionSet(), result, mergedFieldByNormalizedField, newConditions, level, parent);
+        collectFromSelectionSet(parameters, fragmentDefinition.getSelectionSet(), result, mergedFieldByNormalizedField, newConditions, level, parent);
     }
 
     private void collectInlineFragment(FieldCollectorNormalizedQueryParams parameters,
-                                       Table<String, GraphQLObjectType, NormalizedField> result,
+                                       Multimap<String, NormalizedField> result,
                                        ImmutableListMultimap.Builder<NormalizedField, Field> mergedFieldByNormalizedField,
                                        InlineFragment inlineFragment,
                                        Set<GraphQLObjectType> possibleObjects,
@@ -280,62 +288,138 @@ public class NormalizedQueryTreeFactory {
             newPossibleObjects = narrowDownPossibleObjects(possibleObjects, newCondition, parameters.getGraphQLSchema());
 
         }
-        collectFields(parameters, inlineFragment.getSelectionSet(), result, mergedFieldByNormalizedField, newPossibleObjects, level, parent);
+        collectFromSelectionSet(parameters, inlineFragment.getSelectionSet(), result, mergedFieldByNormalizedField, newPossibleObjects, level, parent);
     }
 
     private void collectField(FieldCollectorNormalizedQueryParams parameters,
-                              Table<String, GraphQLObjectType, NormalizedField> result,
+                              Multimap<String, NormalizedField> result,
                               ImmutableListMultimap.Builder<NormalizedField, Field> fieldsByNormalizedField,
                               Field field,
                               Set<GraphQLObjectType> objectTypes,
                               int level,
                               NormalizedField parent) {
+        // we know that all Objects are actually the same field so they are one NF
+        // The question is how we recognize existing NF
         if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), field.getDirectives())) {
             return;
         }
-        String name = field.getResultKey();
-        Map<GraphQLObjectType, NormalizedField> existingNormalizedFields = result.row(name);
+        // this means there is actually no possible type for this field and we are done
+        if (objectTypes.size() == 0) {
+            return;
+        }
+        String resultKey = field.getResultKey();
+        String fieldName = field.getName();
+        GraphQLFieldDefinition fieldDefinition = getFieldDefinition(parameters.getGraphQLSchema(), objectTypes.iterator().next(), fieldName);
 
-        for (GraphQLObjectType objectType : objectTypes) {
-            if (existingNormalizedFields.containsKey(objectType)) {
-                NormalizedField normalizedField = existingNormalizedFields.get(objectType);
-                fieldsByNormalizedField.put(normalizedField, field);
-            } else {
-                GraphQLFieldDefinition fieldDefinition;
-                GraphQLSchema schema = parameters.getGraphQLSchema();
-                // get field definition while considering special fields
-                if (field.getName().equals(schema.getIntrospectionTypenameFieldDefinition().getName())) {
-                    fieldDefinition = schema.getIntrospectionTypenameFieldDefinition();
-                } else {
-                    if (field.getName().equals(schema.getIntrospectionSchemaFieldDefinition().getName())) {
-                        fieldDefinition = schema.getIntrospectionSchemaFieldDefinition();
-                    } else if (field.getName().equals(schema.getIntrospectionTypeFieldDefinition().getName())) {
-                        fieldDefinition = schema.getIntrospectionTypeFieldDefinition();
-                    } else {
-                        fieldDefinition = assertNotNull(objectType.getFieldDefinition(field.getName()), () -> String.format("no field with name %s found in object %s", field.getName(), objectType.getName()));
-                    }
-                }
-
-                Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getCoercedVariableValues());
-                Map<String, NormalizedInputValue> normalizedArgumentValues = null;
-                if (parameters.getNormalizedVariableValues() != null) {
-                    normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getCoercedVariableValues(), parameters.getNormalizedVariableValues());
-                }
-                NormalizedField normalizedField = NormalizedField.newQueryExecutionField()
-                        .alias(field.getAlias())
-                        .arguments(argumentValues)
-                        .normalizedArguments(normalizedArgumentValues)
-                        .objectType(objectType)
-                        .fieldDefinition(fieldDefinition)
-                        .level(level)
-                        .parent(parent)
-                        .build();
-                System.out.println("new " + normalizedField);
-                existingNormalizedFields.put(objectType, normalizedField);
-                fieldsByNormalizedField.put(normalizedField, field);
+        if (result.containsKey(resultKey)) {
+            // we need to iterate over the existing NF for the key to find a matching one
+            // we only
+            Collection<NormalizedField> existingNFs = result.get(resultKey);
+            NormalizedField matchingNF = findMatchingNF(parameters.getGraphQLSchema(), existingNFs, fieldDefinition, field.getArguments());
+            if (matchingNF != null) {
+                matchingNF.addObjectTypes(map(objectTypes, GraphQLObjectType::getName));
+                fieldsByNormalizedField.put(matchingNF, field);
+                return;
             }
         }
+        // this means we have no existing NF
+        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getCoercedVariableValues());
+        Map<String, NormalizedInputValue> normalizedArgumentValues = null;
+        if (parameters.getNormalizedVariableValues() != null) {
+            normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getCoercedVariableValues(), parameters.getNormalizedVariableValues());
+        }
+        ImmutableList<String> objectTypeNames = map(objectTypes, GraphQLObjectType::getName);
+        NormalizedField normalizedField = NormalizedField.newQueryExecutionField()
+                .alias(field.getAlias())
+                .arguments(argumentValues)
+                .normalizedArguments(normalizedArgumentValues)
+                .astArguments(field.getArguments())
+                .objectTypes(objectTypeNames)
+                .fieldName(fieldName)
+                .level(level)
+                .parent(parent)
+                .build();
+
+        result.put(resultKey, normalizedField);
+        fieldsByNormalizedField.put(normalizedField, field);
     }
+
+    private NormalizedField findMatchingNF(GraphQLSchema schema, Collection<NormalizedField> normalizedFields, GraphQLFieldDefinition fieldDefinition, List<Argument> arguments) {
+        for (NormalizedField nf : normalizedFields) {
+            GraphQLFieldDefinition nfFieldDefinition = nf.getFieldDefinition(schema);
+            // same field name
+            if (!nfFieldDefinition.getName().equals(fieldDefinition.getName())) {
+                continue;
+            }
+            // same type
+            if (!nfFieldDefinition.getType().equals(fieldDefinition.getType())) {
+                continue;
+            }
+            // same arguments
+            if (!sameArguments(nf.getAstArguments(), arguments)) {
+                continue;
+            }
+            return nf;
+        }
+        return null;
+    }
+
+    // copied from graphql.validation.rules.OverlappingFieldsCanBeMerged
+    private boolean sameArguments(List<Argument> arguments1, List<Argument> arguments2) {
+        if (arguments1.size() != arguments2.size()) {
+            return false;
+        }
+        for (Argument argument : arguments1) {
+            Argument matchedArgument = findArgumentByName(argument.getName(), arguments2);
+            if (matchedArgument == null) {
+                return false;
+            }
+            if (!sameValue(argument.getValue(), matchedArgument.getValue())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private Argument findArgumentByName(String name, List<Argument> arguments) {
+        for (Argument argument : arguments) {
+            if (argument.getName().equals(name)) {
+                return argument;
+            }
+        }
+        return null;
+    }
+
+    private boolean sameValue(Value value1, Value value2) {
+        if (value1 == null && value2 == null) {
+            return true;
+        }
+        if (value1 == null) {
+            return false;
+        }
+        if (value2 == null) {
+            return false;
+        }
+        return new AstComparator().isEqual(value1, value2);
+    }
+
+
+    private GraphQLFieldDefinition getFieldDefinition(GraphQLSchema schema, GraphQLObjectType objectType, String fieldName) {
+        GraphQLFieldDefinition fieldDefinition;
+        if (fieldName.equals(schema.getIntrospectionTypenameFieldDefinition().getName())) {
+            fieldDefinition = schema.getIntrospectionTypenameFieldDefinition();
+        } else {
+            if (fieldName.equals(schema.getIntrospectionSchemaFieldDefinition().getName())) {
+                fieldDefinition = schema.getIntrospectionSchemaFieldDefinition();
+            } else if (fieldName.equals(schema.getIntrospectionTypeFieldDefinition().getName())) {
+                fieldDefinition = schema.getIntrospectionTypeFieldDefinition();
+            } else {
+                fieldDefinition = assertNotNull(objectType.getField(fieldName), () -> String.format("no field %s found for type %s", fieldName, objectType));
+            }
+        }
+        return fieldDefinition;
+    }
+
 
     private Set<GraphQLObjectType> narrowDownPossibleObjects(Set<GraphQLObjectType> currentOnes,
                                                              GraphQLCompositeType typeCondition,

@@ -1,8 +1,10 @@
 package benchmark;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.io.Resources;
 import graphql.language.Document;
+import graphql.language.Field;
 import graphql.normalized.NormalizedField;
 import graphql.normalized.NormalizedQueryTree;
 import graphql.normalized.NormalizedQueryTreeFactory;
@@ -76,7 +78,7 @@ public class NQBenchmark2 {
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public NormalizedQueryTree benchMarkAvgTime(MyState myState) throws ExecutionException, InterruptedException {
         NormalizedQueryTree normalizedQuery = NormalizedQueryTreeFactory.createNormalizedQuery(myState.schema, myState.document, null, Collections.emptyMap());
-        System.out.println("fields size:" + normalizedQuery.getFieldToNormalizedField().size());
+//        System.out.println("fields size:" + normalizedQuery.getFieldToNormalizedField().size());
         return normalizedQuery;
     }
 
@@ -84,8 +86,9 @@ public class NQBenchmark2 {
         MyState myState = new MyState();
         myState.setup();
         NormalizedQueryTree normalizedQuery = NormalizedQueryTreeFactory.createNormalizedQuery(myState.schema, myState.document, null, Collections.emptyMap());
-        System.out.println(printTree(normalizedQuery));
-//        ImmutableListMultimap<Field, NormalizedField> fieldToNormalizedField = normalizedQuery.getFieldToNormalizedField();
+//        System.out.println(printTree(normalizedQuery));
+        ImmutableListMultimap<Field, NormalizedField> fieldToNormalizedField = normalizedQuery.getFieldToNormalizedField();
+        System.out.println(fieldToNormalizedField.size());
 //        for (Field field : fieldToNormalizedField.keySet()) {
 //            System.out.println("field" + field);
 //            System.out.println("nf count:" + fieldToNormalizedField.get(field).size());

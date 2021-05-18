@@ -63,6 +63,9 @@ type Dog implements Animal{
             animal{
                 name
                 otherName: name
+                ... on Animal {
+                    name
+                }
                ... on Cat {
                     name
                     friends {
@@ -724,8 +727,8 @@ type Dog implements Animal{
         expect:
         fieldToNormalizedField.size() == 3
         fieldToNormalizedField.get(idField).size() == 2
-        fieldToNormalizedField.get(idField)[0].objectType.name == "Cat"
-        fieldToNormalizedField.get(idField)[1].objectType.name == "Dog"
+        fieldToNormalizedField.get(idField)[0].objectTypes.name == "Cat"
+        fieldToNormalizedField.get(idField)[1].objectTypes.name == "Dog"
 
 
     }
@@ -1245,7 +1248,7 @@ schema {
         GraphQLSchema graphQLSchema = TestUtil.schema(schema)
 
         String query = '''
-            {foo{field{id}}}
+            {foo{field{id}}foo{field{id}}}
         '''
         assertValidQuery(graphQLSchema, query)
         Document document = TestUtil.parseQuery(query)
@@ -1254,10 +1257,108 @@ schema {
         def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, [:])
 
         then:
-        tree.normalizedFieldToMergedField.size() == 31
+        tree.normalizedFieldToMergedField.size() == 3
+        tree.fieldToNormalizedField.size() == 6
         println String.join("\n", printTree(tree))
         /**
          * NF{Query.foo} -> NF{"O1...O5".field,} -> NF{O1...O5.id}*/
+    }
+
+    def "diverged fields"() {
+        given:
+        String schema = """
+        type Query {
+          pets: Pet
+        }
+        interface Pet {
+          name: String
+        }
+        type Cat implements Pet {
+            name: String
+            catValue: Int
+            catFriend(arg: String): CatFriend
+        }
+        type CatFriend {
+          catFriendName: String
+        }
+        type Dog implements Pet {
+             name: String
+             dogValue: Float
+             dogFriend: DogFriend
+        }
+        type DogFriend {
+           dogFriendName: String
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = '''
+          {pets {
+                ... on Cat {
+                  friend: catFriend(arg: "hello") {
+                    catFriendName
+              }}
+                ... on Cat {
+                  friend: catFriend(arg: "hello") {
+                    catFriendName
+              }}
+                ... on Dog {
+                  friend: dogFriend {
+                    dogFriendName
+              }}
+          }}
+        '''
+        assertValidQuery(graphQLSchema, query)
+        Document document = TestUtil.parseQuery(query)
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
+        when:
+        def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, [:])
+        println String.join("\n", printTree(tree))
+
+        then:
+        tree.normalizedFieldToMergedField.size() == 5
+        tree.fieldToNormalizedField.size() == 7
+    }
+
+    def "diverged fields 2"() {
+        given:
+        String schema = """
+        type Query {
+          pets: Pet
+        }
+        interface Pet {
+          name(arg:String): String
+        }
+        type Cat implements Pet {
+            name(arg: String): String
+        }
+        
+        type Dog implements Pet {
+             name(arg: String): String
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = '''
+          {pets {
+                ... on Cat {
+                    name(arg: "foo")
+              }
+                ... on Dog {
+                    name(arg: "foo")
+              }
+          }}
+        '''
+        assertValidQuery(graphQLSchema, query)
+        Document document = TestUtil.parseQuery(query)
+        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
+        when:
+        def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, [:])
+        println String.join("\n", printTree(tree))
+
+        then:
+        tree.normalizedFieldToMergedField.size() == 2
+        tree.fieldToNormalizedField.size() == 3
     }
 
 }
