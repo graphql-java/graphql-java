@@ -151,7 +151,7 @@ public class NormalizedQueryTreeFactory {
                                                    ImmutableListMultimap.Builder<FieldCoordinates, NormalizedField> coordinatesToNormalizedFields,
                                                    int curLevel) {
 
-        CollectFieldResult fieldsWithoutChildren = collectFields(fieldCollectorNormalizedQueryParams, field, mergedField, curLevel + 1);
+        CollectFieldResult fieldsWithoutChildren = collectFromMergedField(fieldCollectorNormalizedQueryParams, field, mergedField, curLevel + 1);
         List<NormalizedField> realChildren = new ArrayList<>();
         for (NormalizedField fieldWithoutChildren : fieldsWithoutChildren.children) {
 
@@ -176,9 +176,6 @@ public class NormalizedQueryTreeFactory {
                                      ImmutableList<Field> mergedField,
                                      ImmutableListMultimap.Builder<Field, NormalizedField> fieldToNormalizedField) {
         for (Field astField : mergedField) {
-//            if (fieldToNormalizedField.build().get(astField).contains(normalizedField)) {
-//                System.out.println("already in: " + normalizedField);
-//            }
             fieldToNormalizedField.put(astField, normalizedField);
         }
     }
@@ -194,10 +191,10 @@ public class NormalizedQueryTreeFactory {
     }
 
 
-    public CollectFieldResult collectFields(FieldCollectorNormalizedQueryParams parameters,
-                                            NormalizedField normalizedField,
-                                            ImmutableList<Field> mergedField,
-                                            int level) {
+    public CollectFieldResult collectFromMergedField(FieldCollectorNormalizedQueryParams parameters,
+                                                     NormalizedField normalizedField,
+                                                     ImmutableList<Field> mergedField,
+                                                     int level) {
         GraphQLUnmodifiedType fieldType = unwrapAll(normalizedField.getType(parameters.getGraphQLSchema()));
         // if not composite we don't have any selectionSet because it is a Scalar or enum
         if (!(fieldType instanceof GraphQLCompositeType)) {
@@ -206,8 +203,7 @@ public class NormalizedQueryTreeFactory {
 
         Multimap<String, NormalizedField> subFields = LinkedHashMultimap.create();
         ImmutableListMultimap.Builder<NormalizedField, Field> mergedFieldByNormalizedField = ImmutableListMultimap.builder();
-        Set<GraphQLObjectType> possibleObjects
-                = new LinkedHashSet<>(resolvePossibleObjects((GraphQLCompositeType) fieldType, parameters.getGraphQLSchema()));
+        Set<GraphQLObjectType> possibleObjects = resolvePossibleObjects((GraphQLCompositeType) fieldType, parameters.getGraphQLSchema());
         for (Field field : mergedField) {
             if (field.getSelectionSet() == null) {
                 continue;
@@ -244,7 +240,7 @@ public class NormalizedQueryTreeFactory {
                                          int level,
                                          NormalizedField parent) {
 
-        for (Selection selection : selectionSet.getSelections()) {
+        for (Selection<?> selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
                 collectField(parameters, result, mergedFieldByNormalizedField, (Field) selection, possibleObjects, level, parent);
             } else if (selection instanceof InlineFragment) {
