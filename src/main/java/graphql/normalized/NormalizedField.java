@@ -24,6 +24,9 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 
+/**
+ * Intentionally Mutable: parent and object types can be mutated.
+ */
 @Internal
 public class NormalizedField {
     private final String alias;
@@ -47,13 +50,6 @@ public class NormalizedField {
         this.children = builder.children;
         this.level = builder.level;
         this.parent = builder.parent;
-        // can be null for the top level fields
-//        if (parent == null) {
-//            this.isConditional = false;
-//        } else {
-//            GraphQLUnmodifiedType parentType = GraphQLTypeUtil.unwrapAll(parent.getFieldDefinition().getType());
-//            this.isConditional = parentType != this.objectType;
-//        }
     }
 
     public boolean isConditional(GraphQLSchema schema) {
@@ -135,11 +131,6 @@ public class NormalizedField {
     public String getAlias() {
         return alias;
     }
-
-//    public boolean isConditional() {
-//        return isConditional;
-//    }
-
 
     public List<Argument> getAstArguments() {
         return astArguments;
@@ -297,12 +288,6 @@ public class NormalizedField {
             this.objectTypeNames.addAll(objectTypeNames);
             return this;
         }
-
-//        public Builder objectType(String objectType) {
-//            this.objectTypes = ImmutableList.of(objectType);
-//            return this;
-//        }
-//
 
         public Builder alias(String alias) {
             this.alias = alias;
