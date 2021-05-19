@@ -3,8 +3,10 @@ package graphql.normalized;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.ConditionalNodes;
@@ -299,8 +301,6 @@ public class NormalizedQueryTreeFactory {
                               Set<GraphQLObjectType> objectTypes,
                               int level,
                               NormalizedField parent) {
-        // we know that all Objects are actually the same field so they are one NF
-        // The question is how we recognize existing NF
         if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), field.getDirectives())) {
             return;
         }
@@ -313,8 +313,6 @@ public class NormalizedQueryTreeFactory {
         GraphQLFieldDefinition fieldDefinition = getFieldDefinition(parameters.getGraphQLSchema(), objectTypes.iterator().next(), fieldName);
 
         if (result.containsKey(resultKey)) {
-            // we need to iterate over the existing NF for the key to find a matching one
-            // we only
             Collection<NormalizedField> existingNFs = result.get(resultKey);
             NormalizedField matchingNF = findMatchingNF(parameters.getGraphQLSchema(), existingNFs, fieldDefinition, field.getArguments());
             if (matchingNF != null) {
@@ -426,24 +424,21 @@ public class NormalizedQueryTreeFactory {
                                                              GraphQLCompositeType typeCondition,
                                                              GraphQLSchema graphQLSchema) {
 
-        List<GraphQLObjectType> resolvedTypeCondition = resolvePossibleObjects(typeCondition, graphQLSchema);
+        ImmutableSet<GraphQLObjectType> resolvedTypeCondition = resolvePossibleObjects(typeCondition, graphQLSchema);
         if (currentOnes.size() == 0) {
-            return new LinkedHashSet<>(resolvedTypeCondition);
+            return resolvedTypeCondition;
         }
-
-        Set<GraphQLObjectType> result = new LinkedHashSet<>(currentOnes);
-        result.retainAll(resolvedTypeCondition);
-        return result;
+        return Sets.intersection(currentOnes, resolvedTypeCondition);
     }
 
-    private List<GraphQLObjectType> resolvePossibleObjects(GraphQLCompositeType type, GraphQLSchema graphQLSchema) {
+    private ImmutableSet<GraphQLObjectType> resolvePossibleObjects(GraphQLCompositeType type, GraphQLSchema graphQLSchema) {
         if (type instanceof GraphQLObjectType) {
-            return Collections.singletonList((GraphQLObjectType) type);
+            return ImmutableSet.of((GraphQLObjectType) type);
         } else if (type instanceof GraphQLInterfaceType) {
-            return graphQLSchema.getImplementations((GraphQLInterfaceType) type);
+            return ImmutableSet.copyOf(graphQLSchema.getImplementations((GraphQLInterfaceType) type));
         } else if (type instanceof GraphQLUnionType) {
             List types = ((GraphQLUnionType) type).getTypes();
-            return new ArrayList<GraphQLObjectType>(types);
+            return ImmutableSet.copyOf((types));
         } else {
             return Assert.assertShouldNeverHappen();
         }
