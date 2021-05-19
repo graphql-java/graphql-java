@@ -98,18 +98,13 @@ type Dog implements Animal{
         def printedTree = printTree(tree)
 
         expect:
-        printedTree == ['Query.animal: Animal (conditional: false)',
-                        'Bird.name: String (conditional: true)',
-                        'Cat.name: String (conditional: true)',
-                        'Dog.name: String (conditional: true)',
-                        'otherName: Bird.name: String (conditional: true)',
-                        'otherName: Cat.name: String (conditional: true)',
-                        'otherName: Dog.name: String (conditional: true)',
-                        'Cat.friends: [Friend] (conditional: true)',
-                        'Friend.isCatOwner: Boolean (conditional: false)',
-                        'Bird.friends: [Friend] (conditional: true)',
-                        'Friend.isBirdOwner: Boolean (conditional: false)',
-                        'Friend.name: String (conditional: false)']
+        printedTree == ['Query.animal',
+                        '[Bird, Cat, Dog].name',
+                        'otherName: [Bird, Cat, Dog].name',
+                        '[Cat, Bird].friends',
+                        'Friend.isCatOwner',
+                        'Friend.isBirdOwner',
+                        'Friend.name']
 
     }
 
@@ -184,18 +179,11 @@ type Dog implements Animal{
         def printedTree = printTree(tree)
 
         expect:
-        printedTree == ['Query.a: A (conditional: false)',
-                        'myAlias: A1.b: B (conditional: true)',
-                        'B1.leaf: String (conditional: true)',
-                        'B2.leaf: String (conditional: true)',
-                        'myAlias: A2.b: B (conditional: true)',
-                        'B1.leaf: String (conditional: true)',
-                        'B2.leaf: String (conditional: true)',
-                        'A1.b: B (conditional: true)',
-                        'B1.leaf: String (conditional: true)',
-                        'B2.leaf: String (conditional: true)',
-                        'A2.b: B (conditional: true)',
-                        'B2.leaf: String (conditional: true)']
+        printedTree == ['Query.a',
+                        'myAlias: [A1, A2].b',
+                        '[B1, B2].leaf',
+                        '[A1, A2].b',
+                        '[B1, B2].leaf']
     }
 
     def "test3"() {
@@ -266,12 +254,11 @@ type Dog implements Animal{
         def printedTree = printTree(tree)
 
         expect:
-        printedTree == ['Query.object: Object (conditional: false)',
-                        'Object.someValue: String (conditional: false)',
-                        'Query.a: [A] (conditional: false)',
-                        'A1.b: B (conditional: true)',
-                        'B1.leaf: String (conditional: true)',
-                        'B2.leaf: String (conditional: true)']
+        printedTree == ['Query.object',
+                        'Object.someValue',
+                        'Query.a',
+                        'A1.b',
+                        '[B1, B2].leaf']
 
     }
 
@@ -317,7 +304,7 @@ type Dog implements Animal{
         def printedTree = printTree(tree)
 
         expect:
-        printedTree == ['Query.pets: [Pet] (conditional: false)']
+        printedTree == ['Query.pets']
 
     }
 
@@ -360,11 +347,10 @@ type Dog implements Animal{
         def printedTree = printTree(tree)
 
         expect:
-        printedTree == ['Query.pets: [CatOrDog] (conditional: false)',
-                        'Cat.__typename: String! (conditional: true)',
-                        'Dog.__typename: String! (conditional: true)',
-                        'Cat.catName: String (conditional: true)',
-                        'Dog.dogName: String (conditional: true)']
+        printedTree == ['Query.pets',
+                        '[Cat, Dog].__typename',
+                        'Cat.catName',
+                        'Dog.dogName']
 
     }
 
@@ -411,11 +397,10 @@ type Dog implements Animal{
         def printedTree = printTree(tree)
 
         expect:
-        printedTree == ['Query.pets: [Pet] (conditional: false)',
-                        'Cat.id: ID (conditional: true)',
-                        'Dog.id: ID (conditional: true)',
-                        'Cat.catName: String (conditional: true)',
-                        'Dog.dogName: String (conditional: true)']
+        printedTree == ['Query.pets',
+                        '[Cat, Dog].id',
+                        'Cat.catName',
+                        'Dog.dogName']
 
     }
 
@@ -475,13 +460,10 @@ type Dog implements Animal{
         def printedTree = printTree(tree)
 
         expect:
-        printedTree == ['Query.a: [A] (conditional: false)',
-                        'A1.b: String (conditional: true)',
-                        'A2.b: String (conditional: true)',
-                        'A3.b: String (conditional: true)',
-                        'A2.otherField: A (conditional: true)',
-                        'A2.b: String (conditional: true)',
-                        'A3.b: String (conditional: true)']
+        printedTree == ['Query.a',
+                        '[A1, A2, A3].b',
+                        'A2.otherField',
+                        '[A2, A3].b']
 
     }
 
@@ -523,11 +505,11 @@ type Dog implements Animal{
         def printedTree = printTree(tree)
 
         expect:
-        printedTree == ['Query.issues: [Issue] (conditional: false)',
-                        'Issue.author: User (conditional: false)',
-                        'User.name: String (conditional: false)',
-                        'User.createdIssues: [Issue] (conditional: false)',
-                        'Issue.id: ID (conditional: false)']
+        printedTree == ['Query.issues',
+                        'Issue.author',
+                        'User.name',
+                        'User.createdIssues',
+                        'Issue.id']
 
     }
 
@@ -567,11 +549,11 @@ type Dog implements Animal{
         def printedTree = printTree(tree)
 
         expect:
-        printedTree == ['Query.issues: [Issue] (conditional: false)',
-                        'Issue.authors: [User] (conditional: false)',
-                        'User.friends: [User] (conditional: false)',
-                        'User.friends: [User] (conditional: false)',
-                        'User.name: String (conditional: false)']
+        printedTree == ['Query.issues',
+                        'Issue.authors',
+                        'User.friends',
+                        'User.friends',
+                        'User.name']
 
     }
 
@@ -597,10 +579,10 @@ type Dog implements Animal{
         def printedTree = printTree(tree)
 
         expect:
-        printedTree == ['Query.foo: Foo (conditional: false)',
-                        'Foo.subFoo: String (conditional: false)',
-                        'Foo.moreFoos: Foo (conditional: false)',
-                        'Foo.subFoo: String (conditional: false)']
+        printedTree == ['Query.foo',
+                        'Foo.subFoo',
+                        'Foo.moreFoos',
+                        'Foo.subFoo']
     }
 
     def "query with interface in between"() {
@@ -636,11 +618,9 @@ type Dog implements Animal{
         def printedTree = printTree(tree)
 
         expect:
-        printedTree == ['Query.pets: [Pet] (conditional: false)',
-                        'Cat.friends: [Human] (conditional: true)',
-                        'Human.name: String (conditional: false)',
-                        'Dog.friends: [Human] (conditional: true)',
-                        'Human.name: String (conditional: false)']
+        printedTree == ['Query.pets',
+                        '[Cat, Dog].friends',
+                        'Human.name']
     }
 
 
@@ -725,10 +705,11 @@ type Dog implements Animal{
 
 
         expect:
-        fieldToNormalizedField.size() == 3
-        fieldToNormalizedField.get(idField).size() == 2
-        fieldToNormalizedField.get(idField)[0].objectTypes.name == "Cat"
-        fieldToNormalizedField.get(idField)[1].objectTypes.name == "Dog"
+        fieldToNormalizedField.size() == 2
+        fieldToNormalizedField.get(petsField).size() == 1
+        fieldToNormalizedField.get(petsField)[0].printDetails() == "Query.pets"
+        fieldToNormalizedField.get(idField).size() == 1
+        fieldToNormalizedField.get(idField)[0].printDetails() == "[Cat, Dog].id"
 
 
     }
@@ -762,10 +743,10 @@ type Dog implements Animal{
 
         Document document = TestUtil.parseQuery(query)
         def selections = (document.getDefinitions()[0] as OperationDefinition).getSelectionSet().getSelections()
-        def typeNameField = selections[0]
-        def aliasedTypeName = selections[1]
-        def schemaField = selections[2]
-        def typeField = selections[3]
+        def typeNameField = selections[0] as Field
+        def aliasedTypeName = selections[1] as Field
+        def schemaField = selections[2] as Field
+        def typeField = selections[3] as Field
 
         NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
         def tree = dependencyGraph.createNormalizedQuery(graphQLSchema, document, null, [:])
@@ -773,16 +754,16 @@ type Dog implements Animal{
 
         expect:
         fieldToNormalizedField.size() == 14
-        fieldToNormalizedField.get(typeNameField)[0].objectType.name == "Query"
-        fieldToNormalizedField.get(typeNameField)[0].fieldDefinition == graphQLSchema.getIntrospectionTypenameFieldDefinition()
+        fieldToNormalizedField.get(typeNameField)[0].objectTypeNamesToString() == "Query"
+        fieldToNormalizedField.get(typeNameField)[0].getFieldDefinitions(graphQLSchema) == [graphQLSchema.getIntrospectionTypenameFieldDefinition()]
         fieldToNormalizedField.get(aliasedTypeName)[0].alias == "alias"
-        fieldToNormalizedField.get(aliasedTypeName)[0].fieldDefinition == graphQLSchema.getIntrospectionTypenameFieldDefinition()
+        fieldToNormalizedField.get(aliasedTypeName)[0].getFieldDefinitions(graphQLSchema) == [graphQLSchema.getIntrospectionTypenameFieldDefinition()]
 
-        fieldToNormalizedField.get(schemaField)[0].objectType.name == "Query"
-        fieldToNormalizedField.get(schemaField)[0].fieldDefinition == graphQLSchema.getIntrospectionSchemaFieldDefinition()
+        fieldToNormalizedField.get(schemaField)[0].objectTypeNamesToString() == "Query"
+        fieldToNormalizedField.get(schemaField)[0].getFieldDefinitions(graphQLSchema) == [graphQLSchema.getIntrospectionSchemaFieldDefinition()]
 
-        fieldToNormalizedField.get(typeField)[0].objectType.name == "Query"
-        fieldToNormalizedField.get(typeField)[0].fieldDefinition == graphQLSchema.getIntrospectionTypeFieldDefinition()
+        fieldToNormalizedField.get(typeField)[0].objectTypeNamesToString() == "Query"
+        fieldToNormalizedField.get(typeField)[0].getFieldDefinitions(graphQLSchema) == [graphQLSchema.getIntrospectionTypeFieldDefinition()]
 
     }
 
@@ -829,9 +810,8 @@ type Dog implements Animal{
         def printedTree = printTree(tree)
 
         expect:
-        printedTree == ['Query.pet: Pet (conditional: false)',
-                        'Dog.name: String (conditional: true)',
-                        'Cat.name: String (conditional: true)'];
+        printedTree == ['Query.pet',
+                        '[Dog, Cat].name'];
     }
 
     def "same result key but different field"() {
@@ -873,9 +853,9 @@ type Dog implements Animal{
         def printedTree = printTree(tree)
 
         expect:
-        printedTree == ['Query.pet: Pet (conditional: false)',
-                        'name: Dog.otherField: String (conditional: true)',
-                        'Cat.name: String (conditional: true)'];
+        printedTree == ['Query.pet',
+                        'name: Dog.otherField',
+                        'Cat.name'];
     }
 
     def "normalized field to MergedField is build"() {
@@ -1040,19 +1020,14 @@ schema {
         def printedTree = printTree(tree)
 
         expect:
-        printedTree == ['Mutation.createAnimal: Query (conditional: false)',
-                        'Query.animal: Animal (conditional: false)',
-                        'Bird.name: String (conditional: true)',
-                        'Cat.name: String (conditional: true)',
-                        'Dog.name: String (conditional: true)',
-                        'otherName: Bird.name: String (conditional: true)',
-                        'otherName: Cat.name: String (conditional: true)',
-                        'otherName: Dog.name: String (conditional: true)',
-                        'Cat.friends: [Friend] (conditional: true)',
-                        'Friend.isCatOwner: Boolean (conditional: false)',
-                        'Bird.friends: [Friend] (conditional: true)',
-                        'Friend.isBirdOwner: Boolean (conditional: false)',
-                        'Friend.name: String (conditional: false)']
+        printedTree == ['Mutation.createAnimal',
+                        'Query.animal',
+                        '[Bird, Cat, Dog].name',
+                        'otherName: [Bird, Cat, Dog].name',
+                        '[Cat, Bird].friends',
+                        'Friend.isCatOwner',
+                        'Friend.isBirdOwner',
+                        'Friend.name']
     }
 
     private void assertValidQuery(GraphQLSchema graphQLSchema, String query, Map variables = [:]) {

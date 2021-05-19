@@ -253,7 +253,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         Supplier<NormalizedField> normalizedFieldSupplier = getNormalizedField(executionContext, parameters, parameters::getExecutionStepInfo);
 
         GraphQLOutputType fieldType = fieldDef.getType();
-        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(fieldType, normalizedFieldSupplier);
+        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext.getGraphQLSchema(), fieldType, normalizedFieldSupplier);
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(node.getSources())

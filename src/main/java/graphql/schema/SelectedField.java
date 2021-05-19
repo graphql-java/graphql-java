@@ -2,6 +2,7 @@ package graphql.schema;
 
 import graphql.PublicApi;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,21 +27,31 @@ public interface SelectedField {
 
     /**
      * The selected field has a more complex type qualified name which is the path of field names to it
-     * as well as the object type of the parent.  For example `Invoice.payments/Payment.amount`
+     * as well as the object type of the parent.  For example `[Invoice, Statement].payments/[Payment].amount`
      *
      * @return the fully qualified name of the selected field
      */
     String getFullyQualifiedName();
 
     /**
-     * @return the containing object type of this selected field
+     * @return the object types of this SelectedField
      */
-    GraphQLObjectType getObjectType();
+    List<GraphQLObjectType> getObjectTypes();
+
+    /**
+     * @return The list of all object types
+     */
+    List<String> getObjectTypeNames();
 
     /**
      * @return the field runtime definition
      */
-    GraphQLFieldDefinition getFieldDefinition();
+    List<GraphQLFieldDefinition> getFieldDefinitions();
+
+    /**
+     * @return the type of this field
+     */
+    GraphQLOutputType getType();
 
     /**
      * @return a map of the arguments to this selected field

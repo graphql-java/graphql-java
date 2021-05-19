@@ -1,9 +1,9 @@
 package graphql.normalized;
 
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import graphql.Assert;
 import graphql.Internal;
@@ -44,6 +44,7 @@ import java.util.Set;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.map;
+import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 
 @Internal
@@ -123,7 +124,7 @@ public class NormalizedQueryTreeFactory {
             fixUpParentReference(realTopLevel);
 
             normalizedFieldToMergedField.put(realTopLevel, MergedField.newMergedField(mergedField).build());
-            for (String objectType : realTopLevel.getObjectTypes()) {
+            for (String objectType : realTopLevel.getObjectTypeNames()) {
                 FieldCoordinates coordinates = FieldCoordinates.coordinates(objectType, realTopLevel.getFieldName());
                 coordinatesToNormalizedFields.put(coordinates, realTopLevel);
             }
@@ -157,7 +158,7 @@ public class NormalizedQueryTreeFactory {
             fixUpParentReference(realChild);
 
             normalizedFieldToMergedField.put(realChild, MergedField.newMergedField(mergedFieldForChild).build());
-            for (String objectType : realChild.getObjectTypes()) {
+            for (String objectType : realChild.getObjectTypeNames()) {
                 FieldCoordinates coordinates = FieldCoordinates.coordinates(objectType, realChild.getFieldName());
                 coordinatesToNormalizedFields.put(coordinates, realChild);
             }
@@ -201,7 +202,7 @@ public class NormalizedQueryTreeFactory {
             return new CollectFieldResult(Collections.emptyList(), ImmutableListMultimap.of());
         }
 
-        Multimap<String, NormalizedField> subFields = ArrayListMultimap.create();
+        Multimap<String, NormalizedField> subFields = LinkedHashMultimap.create();
         ImmutableListMultimap.Builder<NormalizedField, Field> mergedFieldByNormalizedField = ImmutableListMultimap.builder();
         Set<GraphQLObjectType> possibleObjects
                 = new LinkedHashSet<>(resolvePossibleObjects((GraphQLCompositeType) fieldType, parameters.getGraphQLSchema()));
@@ -224,7 +225,7 @@ public class NormalizedQueryTreeFactory {
                                                    OperationDefinition operationDefinition,
                                                    GraphQLObjectType rootType) {
 
-        Multimap<String, NormalizedField> subFields = ArrayListMultimap.create();
+        Multimap<String, NormalizedField> subFields = LinkedHashMultimap.create();
         ImmutableListMultimap.Builder<NormalizedField, Field> normalizedFieldToAstFields = ImmutableListMultimap.builder();
         Set<GraphQLObjectType> possibleObjects = new LinkedHashSet<>();
         possibleObjects.add(rootType);
@@ -317,7 +318,7 @@ public class NormalizedQueryTreeFactory {
             Collection<NormalizedField> existingNFs = result.get(resultKey);
             NormalizedField matchingNF = findMatchingNF(parameters.getGraphQLSchema(), existingNFs, fieldDefinition, field.getArguments());
             if (matchingNF != null) {
-                matchingNF.addObjectTypes(map(objectTypes, GraphQLObjectType::getName));
+                matchingNF.addObjectTypeNames(map(objectTypes, GraphQLObjectType::getName));
                 fieldsByNormalizedField.put(matchingNF, field);
                 return;
             }
@@ -331,10 +332,10 @@ public class NormalizedQueryTreeFactory {
         ImmutableList<String> objectTypeNames = map(objectTypes, GraphQLObjectType::getName);
         NormalizedField normalizedField = NormalizedField.newQueryExecutionField()
                 .alias(field.getAlias())
-                .arguments(argumentValues)
+                .resolvedArguments(argumentValues)
                 .normalizedArguments(normalizedArgumentValues)
                 .astArguments(field.getArguments())
-                .objectTypes(objectTypeNames)
+                .objectTypeNames(objectTypeNames)
                 .fieldName(fieldName)
                 .level(level)
                 .parent(parent)
@@ -346,13 +347,13 @@ public class NormalizedQueryTreeFactory {
 
     private NormalizedField findMatchingNF(GraphQLSchema schema, Collection<NormalizedField> normalizedFields, GraphQLFieldDefinition fieldDefinition, List<Argument> arguments) {
         for (NormalizedField nf : normalizedFields) {
-            GraphQLFieldDefinition nfFieldDefinition = nf.getFieldDefinition(schema);
+            GraphQLFieldDefinition nfFieldDefinition = nf.getOneFieldDefinition(schema);
             // same field name
             if (!nfFieldDefinition.getName().equals(fieldDefinition.getName())) {
                 continue;
             }
             // same type
-            if (!nfFieldDefinition.getType().equals(fieldDefinition.getType())) {
+            if (!simplePrint(nfFieldDefinition.getType()).equals(simplePrint(fieldDefinition.getType()))) {
                 continue;
             }
             // same arguments
