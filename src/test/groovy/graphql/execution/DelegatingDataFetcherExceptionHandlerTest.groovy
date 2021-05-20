@@ -91,7 +91,7 @@ class DelegatingDataFetcherExceptionHandlerTest extends Specification {
         when: 'onException invoked'
         def actualResult = handler.onException(handlerParameters)
 
-        then: 'only the matching delegate is invoked'
+        then: 'none of the delegates are invoked'
         0 * _
 
         and: 'the actual result is not null'
