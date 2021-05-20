@@ -1,6 +1,5 @@
 package graphql.execution;
 
-import graphql.AssertException;
 import graphql.PublicApi;
 
 import java.util.LinkedHashMap;
@@ -8,6 +7,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 
 /**
@@ -28,7 +28,7 @@ public class DelegatingDataFetcherExceptionHandler implements DataFetcherExcepti
      * @param delegates the mapping of {@link Predicate} to {@link DataFetcherExceptionHandler}.
      */
     public DelegatingDataFetcherExceptionHandler(LinkedHashMap<Predicate<Throwable>, DataFetcherExceptionHandler> delegates) {
-        this.delegates = assertNotEmpty(delegates, "handlers can't be empty");
+        this.delegates = assertNotEmpty(delegates, () -> "handlers can't be empty");
     }
 
     @Override
@@ -63,7 +63,7 @@ public class DelegatingDataFetcherExceptionHandler implements DataFetcherExcepti
      * @return the {@link DelegatingDataFetcherExceptionHandler} to use
      */
     public static DelegatingDataFetcherExceptionHandler fromThrowableTypeMapping(LinkedHashMap<Class<? extends Throwable>, DataFetcherExceptionHandler> types) {
-        LinkedHashMap<Class<? extends Throwable>, DataFetcherExceptionHandler> typeToHandler = assertNotEmpty(types, "types can't be null");
+        LinkedHashMap<Class<? extends Throwable>, DataFetcherExceptionHandler> typeToHandler = assertNotEmpty(types, () -> "types can't be null");
         LinkedHashMap<Predicate<Throwable>, DataFetcherExceptionHandler> handlers = typeToHandler.entrySet()
                 .stream()
                 .collect(Collectors.toMap(
@@ -73,12 +73,5 @@ public class DelegatingDataFetcherExceptionHandler implements DataFetcherExcepti
                         LinkedHashMap::new)
                 );
         return new DelegatingDataFetcherExceptionHandler(handlers);
-    }
-
-    private static <M extends Map<K, V>, K, V> M assertNotEmpty(M map, String message) {
-        if (map == null || map.isEmpty()) {
-            throw new AssertException(message);
-        }
-        return map;
     }
 }
