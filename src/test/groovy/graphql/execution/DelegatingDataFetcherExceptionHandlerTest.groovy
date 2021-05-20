@@ -1,6 +1,5 @@
 package graphql.execution
 
-import graphql.AssertException
 import graphql.language.SourceLocation
 import graphql.schema.DataFetchingEnvironmentImpl
 import spock.lang.Specification
@@ -13,35 +12,6 @@ import static graphql.execution.MergedField.newMergedField
 import static graphql.language.Field.newField
 
 class DelegatingDataFetcherExceptionHandlerTest extends Specification {
-
-    def "set null delegates"() {
-        when: 'set null delegates'
-        new DelegatingDataFetcherExceptionHandler()
-
-        then: 'fail assert on validation'
-        thrown AssertException
-    }
-
-    def "set empty delegates"() {
-        when: 'set null delegates'
-        new DelegatingDataFetcherExceptionHandler(new LinkedHashMap<Predicate<Throwable>, DataFetcherExceptionHandler>())
-
-        then: 'fail assert on validation'
-        thrown AssertException
-    }
-
-    def "set null defaultHandler"() {
-        given:
-        def delegates = new LinkedHashMap<Predicate<Throwable>, DataFetcherExceptionHandler>()
-        delegates.put({ t -> false } as Predicate, Mock(DataFetcherExceptionHandler))
-        def handler = new DelegatingDataFetcherExceptionHandler(delegates)
-
-        when: 'set null defaultHandler'
-        handler.setDefaultHandler(null)
-
-        then: 'fail assert on validation'
-        thrown AssertException
-    }
 
     def "delegates only to matching delegate"() {
         given: 'a delegate that matches and a delegate that does not match'
@@ -177,21 +147,5 @@ class DelegatingDataFetcherExceptionHandlerTest extends Specification {
 
         and: 'the actual result is equal to the expected result'
         actualResult == expectedResult
-    }
-
-    def "fromThrowableTypeMapping null types"() {
-        when: 'set null types'
-        DelegatingDataFetcherExceptionHandler.fromThrowableTypeMapping()
-
-        then: 'fail assert on validation'
-        thrown AssertException
-    }
-
-    def "fromThrowableTypeMapping empty types"() {
-        when: 'set empy types'
-        new DelegatingDataFetcherExceptionHandler(new LinkedHashMap<Class<? extends Throwable>, DataFetcherExceptionHandler>())
-
-        then: 'fail assert on validation'
-        thrown AssertException
     }
 }
