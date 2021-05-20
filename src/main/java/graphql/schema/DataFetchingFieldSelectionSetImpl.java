@@ -327,12 +327,12 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
         @Override
         public List<GraphQLObjectType> getObjectTypes() {
-            return (List) this.schema.getTypes(normalizedField.getObjectTypeNames());
+            return this.schema.getTypes(normalizedField.getObjectTypeNames());
         }
 
         @Override
         public List<String> getObjectTypeNames() {
-            return new ArrayList<>(normalizedField.getObjectTypeNames());
+            return ImmutableList.copyOf(normalizedField.getObjectTypeNames());
         }
 
         @Override

@@ -13,6 +13,7 @@ import graphql.execution.ConditionalNodes;
 import graphql.execution.MergedField;
 import graphql.execution.ValuesResolver;
 import graphql.execution.nextgen.Common;
+import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.AstComparator;
 import graphql.language.Document;
@@ -306,7 +307,7 @@ public class NormalizedQueryTreeFactory {
         }
         String resultKey = field.getResultKey();
         String fieldName = field.getName();
-        GraphQLFieldDefinition fieldDefinition = getFieldDefinition(parameters.getGraphQLSchema(), objectTypes.iterator().next(), fieldName);
+        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(parameters.getGraphQLSchema(), objectTypes.iterator().next(), fieldName);
 
         if (result.containsKey(resultKey)) {
             Collection<NormalizedField> existingNFs = result.get(resultKey);
@@ -399,21 +400,6 @@ public class NormalizedQueryTreeFactory {
     }
 
 
-    private GraphQLFieldDefinition getFieldDefinition(GraphQLSchema schema, GraphQLObjectType objectType, String fieldName) {
-        GraphQLFieldDefinition fieldDefinition;
-        if (fieldName.equals(schema.getIntrospectionTypenameFieldDefinition().getName())) {
-            fieldDefinition = schema.getIntrospectionTypenameFieldDefinition();
-        } else {
-            if (fieldName.equals(schema.getIntrospectionSchemaFieldDefinition().getName())) {
-                fieldDefinition = schema.getIntrospectionSchemaFieldDefinition();
-            } else if (fieldName.equals(schema.getIntrospectionTypeFieldDefinition().getName())) {
-                fieldDefinition = schema.getIntrospectionTypeFieldDefinition();
-            } else {
-                fieldDefinition = assertNotNull(objectType.getField(fieldName), () -> String.format("no field %s found for type %s", fieldName, objectType));
-            }
-        }
-        return fieldDefinition;
-    }
 
 
     private Set<GraphQLObjectType> narrowDownPossibleObjects(Set<GraphQLObjectType> currentOnes,

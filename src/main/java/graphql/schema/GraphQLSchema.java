@@ -262,10 +262,10 @@ public class GraphQLSchema {
      *
      * @return The List of resolved types.
      */
-    public List<GraphQLType> getTypes(Collection<String> typeNames) {
-        ImmutableList.Builder<GraphQLType> builder = ImmutableList.builder();
+    public <T extends GraphQLType> List<T> getTypes(Collection<String> typeNames) {
+        ImmutableList.Builder<T> builder = ImmutableList.builder();
         for (String typeName : typeNames) {
-            builder.add(assertNotNull(typeMap.get(typeName), () -> String.format("No type found for name %s", typeName)));
+            builder.add((T) assertNotNull(typeMap.get(typeName), () -> String.format("No type found for name %s", typeName)));
         }
         return builder.build();
     }
