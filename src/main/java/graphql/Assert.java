@@ -72,7 +72,7 @@ public class Assert {
         return map;
     }
 
-    public static <T> Collection<T> assertNotEmpty(Collection<T> collection, Supplier<String> msg) {
+    public static <C extends Collection<T>, T> C assertNotEmpty(C collection, Supplier<String> msg) {
         if (collection == null || collection.isEmpty()) {
             throw new AssertException(msg.get());
         }
