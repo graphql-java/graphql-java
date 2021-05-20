@@ -649,7 +649,7 @@ public class Introspection {
         assertTrue(parentType instanceof GraphQLFieldsContainer, () -> String.format("should not happen : parent type must be an object or interface %s", parentType));
         GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
         GraphQLFieldDefinition fieldDefinition = schema.getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, fieldName);
-        Assert.assertTrue(fieldDefinition != null, () -> String.format("Unknown field '%s'", fieldName));
+        assertTrue(fieldDefinition != null, () -> String.format("Unknown field '%s' for type %s", fieldName, fieldsContainer.getName()));
         return fieldDefinition;
     }
 }

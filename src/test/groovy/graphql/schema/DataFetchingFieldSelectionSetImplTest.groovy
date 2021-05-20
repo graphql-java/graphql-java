@@ -187,7 +187,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         def selectedNodesField = selectionSet.getFields("nodes")[0]
         selectedNodesField.getName() == "nodes"
-        GraphQLTypeUtil.simplePrint(selectedNodesField.fieldDefinition.type) == "[Thing]"
+        GraphQLTypeUtil.simplePrint(selectedNodesField.type) == "[Thing]"
         selectedNodesField.getSelectionSet().contains("key")
         selectedNodesField.getSelectionSet().contains("summary")
         selectedNodesField.getSelectionSet().contains("status")
@@ -204,14 +204,14 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         then:
         selectedKeyField.getName() == "key"
-        GraphQLTypeUtil.simplePrint(selectedKeyField.fieldDefinition.type) == "String"
+        GraphQLTypeUtil.simplePrint(selectedKeyField.type) == "String"
 
         when:
         def selectedStatusField = selectedNodesField.getSelectionSet().getFields("status")[0]
 
         then:
         selectedStatusField.getName() == "status"
-        GraphQLTypeUtil.simplePrint(selectedStatusField.fieldDefinition.type) == "Status"
+        GraphQLTypeUtil.simplePrint(selectedStatusField.type) == "Status"
         selectedStatusField.getSelectionSet().contains("name")
 
         // jump straight to compound fq name (which is 2 down from 'nodes')
@@ -220,7 +220,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         then:
         selectedStatusNameField.getName() == "name"
-        GraphQLTypeUtil.simplePrint(selectedStatusNameField.fieldDefinition.type) == "String"
+        GraphQLTypeUtil.simplePrint(selectedStatusNameField.type) == "String"
 
     }
 
@@ -240,10 +240,10 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def fieldNames = sortedSelectedUnderNodesAster.collect({ sf -> sf.name })
         fieldNames == ["key", "status", "stuff", "summary"]
 
-        GraphQLTypeUtil.simplePrint(sortedSelectedUnderNodesAster[0].fieldDefinition.type) == "String"
-        GraphQLTypeUtil.simplePrint(sortedSelectedUnderNodesAster[1].fieldDefinition.type) == "Status"
-        GraphQLTypeUtil.simplePrint(sortedSelectedUnderNodesAster[2].fieldDefinition.type) == "Stuff"
-        GraphQLTypeUtil.simplePrint(sortedSelectedUnderNodesAster[3].fieldDefinition.type) == "String"
+        GraphQLTypeUtil.simplePrint(sortedSelectedUnderNodesAster[0].type) == "String"
+        GraphQLTypeUtil.simplePrint(sortedSelectedUnderNodesAster[1].type) == "Status"
+        GraphQLTypeUtil.simplePrint(sortedSelectedUnderNodesAster[2].type) == "Stuff"
+        GraphQLTypeUtil.simplePrint(sortedSelectedUnderNodesAster[3].type) == "String"
 
         // descend one down from here Status.name which has not further sub selection
         when:
@@ -251,7 +251,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         then:
         statusName.name == "name"
-        GraphQLTypeUtil.simplePrint(statusName.fieldDefinition.type) == "String"
+        GraphQLTypeUtil.simplePrint(statusName.type) == "String"
         statusName.getSelectionSet().getFields().isEmpty()
     }
 
@@ -267,7 +267,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         then:
 
-        allFieldsViaAsterAster.size() == 28
+        allFieldsViaAsterAster.size() == 14
         allFields.size() == 28
         def allFieldsViaAsterAsterSorted = new ArrayList<>(allFieldsViaAsterAster).sort({ sf -> sf.qualifiedName })
         def allFieldsSorted = new ArrayList<>(allFields).sort({ sf -> sf.qualifiedName })
@@ -471,10 +471,10 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         er.errors.isEmpty()
 
         petSelectionSet.contains("name")
-        petSelectionSet.contains("Dog.name")
-        petSelectionSet.contains("Cat.name")
-        petSelectionSet.contains("Bird.name")
-        petSelectionSet.contains("Bird.*")
+        petSelectionSet.contains("*Dog*.name")
+        petSelectionSet.contains("*Cat*.name")
+        petSelectionSet.contains("*Bird*.name")
+        petSelectionSet.contains("*Bird*.*")
         petSelectionSet.contains("*name")
         !petSelectionSet.contains("notPresent")
 
@@ -486,12 +486,12 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def selectedFields = petSelectionSet.getFields("name")
 
         then:
-        selectedFields.size() == 5
-        assertTheyAreExpected(selectedFields, ["Bird.name", "Cat.name", "Dog.name", "n1:Cat.name", "n2:Cat.name"])
+        selectedFields.size() == 3
+        assertTheyAreExpected(selectedFields, ["[Bird, Cat, Dog].name", "n1:Cat.name", "n2:Cat.name"])
 
         def byResultKey = petSelectionSet.getFieldsGroupedByResultKey("name")
         byResultKey.size() == 3
-        assertTheyAreExpected(byResultKey["name"], ["Bird.name", "Cat.name", "Dog.name"])
+        assertTheyAreExpected(byResultKey["name"], ["[Bird, Cat, Dog].name"])
         assertTheyAreExpected(byResultKey["n1"], ["n1:Cat.name"])
         assertTheyAreExpected(byResultKey["n2"], ["n2:Cat.name"])
 
@@ -499,17 +499,17 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         petSelectionSet.contains("lead/material")
 
         when:
-        selectedFields = petSelectionSet.getFields("Dog.name")
+        selectedFields = petSelectionSet.getFields("*Dog*.name")
         then:
         selectedFields.size() == 1
 
         when:
-        selectedFields = new ArrayList<>(petSelectionSet.getFields("lead"))
+        selectedFields = new ArrayList<>(petSelectionSet.getFields("*lead*"))
         selectedFields.sort(byName())
 
         then:
-        selectedFields.size() == 3 //one for the Cat and Dog and Bird entries
-        assertTheyAreExpected(selectedFields, ["Bird.lead", "Cat.lead", "Dog.lead"])
+        selectedFields.size() == 1
+        assertTheyAreExpected(selectedFields, ["[Bird, Cat, Dog].lead"])
         // we can work our sub selection from them as well
         selectedFields[0].getSelectionSet().contains("material")
         !selectedFields[0].getSelectionSet().contains("rubbish")
@@ -520,11 +520,9 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         selectedFields.sort(byName())
 
         then:
-        selectedFields.size() == 3 //one for the Cat and Dog and Bird entries
-        assertTheyAreExpected(selectedFields, ["Lead.material", "Lead.material", "Lead.material"])
-        selectedFields[0].getParentField().getFullyQualifiedName() == "Bird.lead"
-        selectedFields[1].getParentField().getFullyQualifiedName() == "Cat.lead"
-        selectedFields[2].getParentField().getFullyQualifiedName() == "Dog.lead"
+        selectedFields.size() == 1 //one for the Cat and Dog and Bird entries
+        assertTheyAreExpected(selectedFields, ["Lead.material"])
+        selectedFields[0].getParentField().getFullyQualifiedName() == "[Bird, Cat, Dog].lead"
 
         // parents can have computed selection sets
         def birdLead = selectedFields[0].getParentField()
@@ -534,7 +532,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         when:
         selectedFields = petSelectionSet.getFields("name", "lead**")
         then:
-        selectedFields.size() == 11
+        selectedFields.size() == 5
     }
 
     def "aliasing returns values as selected fields"() {
@@ -556,7 +554,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         er.errors.isEmpty()
 
         def selectedFields = petSelectionSet.getFields("name")
-        selectedFields.size() == 4
+        selectedFields.size() == 2
 
         def byResultKey = petSelectionSet.getFieldsGroupedByResultKey()
         byResultKey.size() == 2
@@ -614,8 +612,8 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         when:
         def selectedFields = petUnionSelectionSet.getFields("name")
         then:
-        selectedFields.size() == 2
-        assertTheyAreExpected(selectedFields, ["Cat.name", "Dog.name"])
+        selectedFields.size() == 1
+        assertTheyAreExpected(selectedFields, ["[Cat, Dog].name"])
     }
 
     def "test normalised selection occurs on objects"() {
@@ -671,15 +669,13 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def selectedFields = petSelectionSet.getFields("name")
 
         then:
-        selectedFields.size() == 5
-        assertTheyAreExpected(selectedFields, ["Bird.name", "Cat.name", "Dog.name", "n1:Cat.name", "n2:Cat.name"])
+        selectedFields.size() == 3
+        assertTheyAreExpected(selectedFields, ["[Bird, Cat, Dog].name", "n1:Cat.name", "n2:Cat.name"])
 
         def byResultKey = petSelectionSet.getFieldsGroupedByResultKey("name")
         byResultKey.size() == 3
 
         byResultKey["name"][0].getArguments()["nameArg"] == "OnPet"
-        byResultKey["name"][1].getArguments()["nameArg"] == "OnPet"
-        byResultKey["name"][2].getArguments()["nameArg"] == "OnPet"
 
         byResultKey["n1"][0].getArguments()["nameArg"] == "OnCatN1"
         byResultKey["n2"][0].getArguments()["nameArg"] == "OnCatN2"
@@ -704,11 +700,9 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         selectedFields.sort(byName())
 
         then:
-        selectedFields[0].getObjectType().getName() == "Bird"
-        selectedFields[0].getFieldDefinition().getName() == "name"
+        selectedFields[0].getObjectTypeNames() == ["Bird", "Cat", "Dog"]
+        selectedFields[0].getName() == "name"
 
-        selectedFields[1].getObjectType().getName() == "Cat"
-        selectedFields[1].getFieldDefinition().getName() == "name"
     }
 
     def "fragments inline and defined work as expected"() {
@@ -739,8 +733,8 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         selectedFields.sort(byName())
 
         then:
-        selectedFields.size() == 3
-        assertTheyAreExpected(selectedFields, ["Bird.name", "Cat.name", "Dog.name"])
+        selectedFields.size() == 1
+        assertTheyAreExpected(selectedFields, ["[Bird, Cat, Dog].name"])
 
     }
 
@@ -770,9 +764,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def selectedFields = petSelectionSet.getImmediateFields()
         then:
         assertTheyAreExpected(selectedFields, [
-                "Bird.lead", "Bird.name",
-                "Cat.lead", "Cat.meow", "Cat.name",
-                "Dog.lead", "Dog.name", "Dog.woof"])
+                "Cat.meow", "Dog.woof", "[Bird, Cat, Dog].lead", "[Bird, Cat, Dog].name"])
 
         when:
         selectedFields = petSelectionSet.getFields("lead")
@@ -841,6 +833,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
     }
 
     String mkSpecialName(SelectedField selectedField) {
-        (selectedField.getAlias() == null ? "" : selectedField.getAlias() + ":") + selectedField.getObjectType().getName() + "." + selectedField.getName()
+        def names = selectedField.getObjectTypeNames()
+        (selectedField.getAlias() == null ? "" : selectedField.getAlias() + ":") + (names.size() > 1 ? names.toString() : names.get(0)) + "." + selectedField.getName()
     }
 }

@@ -1,13 +1,20 @@
 package benchmark;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.io.Resources;
 import graphql.language.Document;
+import graphql.language.Field;
+import graphql.normalized.NormalizedField;
 import graphql.normalized.NormalizedQueryTree;
 import graphql.normalized.NormalizedQueryTreeFactory;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaGenerator;
+import graphql.util.TraversalControl;
+import graphql.util.Traverser;
+import graphql.util.TraverserContext;
+import graphql.util.TraverserVisitorStub;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -22,7 +29,9 @@ import org.openjdk.jmh.annotations.Warmup;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -62,15 +71,48 @@ public class NQBenchmark2 {
 
     @Benchmark
     @Warmup(iterations = 2)
-    @Measurement(iterations = 100, time = 10)
+    @Measurement(iterations = 5, time = 10)
     @Threads(1)
     @Fork(3)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public NormalizedQueryTree benchMarkAvgTime(MyState myState) throws ExecutionException, InterruptedException {
         NormalizedQueryTree normalizedQuery = NormalizedQueryTreeFactory.createNormalizedQuery(myState.schema, myState.document, null, Collections.emptyMap());
-        System.out.println("fields size:" + normalizedQuery.getFieldToNormalizedField().size());
+//        System.out.println("fields size:" + normalizedQuery.getFieldToNormalizedField().size());
         return normalizedQuery;
     }
 
+    public static void main(String[] args) {
+        MyState myState = new MyState();
+        myState.setup();
+        NormalizedQueryTree normalizedQuery = NormalizedQueryTreeFactory.createNormalizedQuery(myState.schema, myState.document, null, Collections.emptyMap());
+//        System.out.println(printTree(normalizedQuery));
+        ImmutableListMultimap<Field, NormalizedField> fieldToNormalizedField = normalizedQuery.getFieldToNormalizedField();
+        System.out.println(fieldToNormalizedField.size());
+//        for (Field field : fieldToNormalizedField.keySet()) {
+//            System.out.println("field" + field);
+//            System.out.println("nf count:" + fieldToNormalizedField.get(field).size());
+//            if (field.getName().equals("field49")) {
+//                ImmutableList<NormalizedField> normalizedFields = fieldToNormalizedField.get(field);
+//                for (NormalizedField nf : normalizedFields) {
+//                    System.out.println(nf);
+//                }
+//            }
+//        }
+//        System.out.println("fields size:" + normalizedQuery.getFieldToNormalizedField().size());
+    }
+
+    static List<String> printTree(NormalizedQueryTree queryExecutionTree) {
+        List<String> result = new ArrayList<>();
+        Traverser<NormalizedField> traverser = Traverser.depthFirst(NormalizedField::getChildren);
+        traverser.traverse(queryExecutionTree.getTopLevelFields(), new TraverserVisitorStub<NormalizedField>() {
+            @Override
+            public TraversalControl enter(TraverserContext<NormalizedField> context) {
+                NormalizedField queryExecutionField = context.thisNode();
+                result.add(queryExecutionField.printDetails());
+                return TraversalControl.CONTINUE;
+            }
+        });
+        return result;
+    }
 }
