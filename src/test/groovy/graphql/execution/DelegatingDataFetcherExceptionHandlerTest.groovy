@@ -18,16 +18,16 @@ class DelegatingDataFetcherExceptionHandlerTest extends Specification {
         def matchingDelegate = Mock(DataFetcherExceptionHandler)
         def notMatchingDelegate = Mock(DataFetcherExceptionHandler)
         def expectedResult = Mock(DataFetcherExceptionHandlerResult)
-        def delegates = new LinkedHashMap<Predicate<Throwable>, DataFetcherExceptionHandler>()
-        delegates.put({ t -> true } as Predicate, matchingDelegate)
-        delegates.put({ t -> false } as Predicate, notMatchingDelegate)
         def environment = DataFetchingEnvironmentImpl.newDataFetchingEnvironment()
                 .build()
         def handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                 .dataFetchingEnvironment(environment)
                 .exception(new RuntimeException())
                 .build();
-        def handler = new DelegatingDataFetcherExceptionHandler(delegates)
+        def handler = DelegatingDataFetcherExceptionHandler.newDelegatingDataFetcherExceptionHandler()
+                .addMapping({ t -> true }, matchingDelegate)
+                .addMapping({ t -> false }, notMatchingDelegate)
+                .build()
 
         when: 'onException invoked'
         def actualResult = handler.onException(handlerParameters)
@@ -56,7 +56,9 @@ class DelegatingDataFetcherExceptionHandlerTest extends Specification {
                 .dataFetchingEnvironment(environment)
                 .exception(new RuntimeException())
                 .build();
-        def handler = new DelegatingDataFetcherExceptionHandler(delegates)
+        def handler = DelegatingDataFetcherExceptionHandler.newDelegatingDataFetcherExceptionHandler()
+                .addMapping({ t -> false }, notMatchingDelegate)
+                .build()
 
         when: 'onException invoked'
         def actualResult = handler.onException(handlerParameters)
@@ -73,16 +75,16 @@ class DelegatingDataFetcherExceptionHandlerTest extends Specification {
         def notMatchingDelegate = Mock(DataFetcherExceptionHandler)
         def defaultDelegate = Mock(DataFetcherExceptionHandler)
         def expectedResult = Mock(DataFetcherExceptionHandlerResult)
-        def delegates = new LinkedHashMap<Predicate<Throwable>, DataFetcherExceptionHandler>()
-        delegates.put({ t -> false } as Predicate, notMatchingDelegate)
         def environment = DataFetchingEnvironmentImpl.newDataFetchingEnvironment()
                 .build()
         def handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                 .dataFetchingEnvironment(environment)
                 .exception(new RuntimeException())
                 .build();
-        def handler = new DelegatingDataFetcherExceptionHandler(delegates)
-        handler.defaultHandler = defaultDelegate
+        def handler = DelegatingDataFetcherExceptionHandler.newDelegatingDataFetcherExceptionHandler()
+                .addMapping({ t -> false }, notMatchingDelegate)
+                .defaultHandler(defaultDelegate)
+                .build()
 
         when: 'onException invoked'
         def actualResult = handler.onException(handlerParameters)
@@ -100,16 +102,16 @@ class DelegatingDataFetcherExceptionHandlerTest extends Specification {
         def matchingDelegate = Mock(DataFetcherExceptionHandler)
         def notMatchingDelegate = Mock(DataFetcherExceptionHandler)
         def expectedResult = Mock(DataFetcherExceptionHandlerResult)
-        def delegates = new LinkedHashMap<Throwable, DataFetcherExceptionHandler>()
-        delegates.put(IllegalStateException, matchingDelegate)
-        delegates.put(IllegalArgumentException, notMatchingDelegate)
         def environment = DataFetchingEnvironmentImpl.newDataFetchingEnvironment()
                 .build()
         def handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                 .dataFetchingEnvironment(environment)
                 .exception(new IllegalStateException())
                 .build();
-        def handler = DelegatingDataFetcherExceptionHandler.fromThrowableTypeMapping(delegates)
+        def handler = DelegatingDataFetcherExceptionHandler.newDelegatingDataFetcherExceptionHandler()
+                .addMapping(IllegalStateException, matchingDelegate)
+                .addMapping(IllegalArgumentException, notMatchingDelegate)
+                .build()
 
         when: 'onException invoked'
         def actualResult = handler.onException(handlerParameters)
@@ -127,16 +129,16 @@ class DelegatingDataFetcherExceptionHandlerTest extends Specification {
         def matchingDelegate = Mock(DataFetcherExceptionHandler)
         def notMatchingDelegate = Mock(DataFetcherExceptionHandler)
         def expectedResult = Mock(DataFetcherExceptionHandlerResult)
-        def delegates = new LinkedHashMap<Throwable, DataFetcherExceptionHandler>()
-        delegates.put(IllegalStateException, notMatchingDelegate)
-        delegates.put(IllegalArgumentException, matchingDelegate)
         def environment = DataFetchingEnvironmentImpl.newDataFetchingEnvironment()
                 .build()
         def handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                 .dataFetchingEnvironment(environment)
                 .exception(new IllegalFormatException())
                 .build();
-        def handler = DelegatingDataFetcherExceptionHandler.fromThrowableTypeMapping(delegates)
+        def handler = DelegatingDataFetcherExceptionHandler.newDelegatingDataFetcherExceptionHandler()
+                .addMapping(IllegalStateException, notMatchingDelegate)
+                .addMapping(IllegalArgumentException, matchingDelegate)
+                .build()
 
         when: 'onException invoked'
         def actualResult = handler.onException(handlerParameters)
