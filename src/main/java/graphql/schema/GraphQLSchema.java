@@ -258,7 +258,7 @@ public class GraphQLSchema {
 
     /**
      * All types with the provided names.
-     * throws Exception when a type name could not be resolved
+     * throws {@link graphql.AssertException} when a type name could not be resolved
      *
      * @return The List of resolved types.
      */

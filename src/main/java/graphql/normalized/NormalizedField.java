@@ -33,6 +33,7 @@ public class NormalizedField {
     private final Map<String, NormalizedInputValue> normalizedArguments;
     private final Map<String, Object> resolvedArguments;
     private final ImmutableList<Argument> astArguments;
+    // Mutable List on purpose: it is modified after creation
     private final Set<String> objectTypeNames;
     private final String fieldName;
     private final List<NormalizedField> children;
