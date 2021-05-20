@@ -1,6 +1,7 @@
 package graphql.normalized;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
 import graphql.language.Argument;
@@ -8,10 +9,11 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,11 +32,11 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 @Internal
 public class NormalizedField {
     private final String alias;
-    private final Map<String, NormalizedInputValue> normalizedArguments;
-    private final Map<String, Object> resolvedArguments;
+    private final ImmutableMap<String, NormalizedInputValue> normalizedArguments;
+    private final ImmutableMap<String, Object> resolvedArguments;
     private final ImmutableList<Argument> astArguments;
     // Mutable List on purpose: it is modified after creation
-    private final Set<String> objectTypeNames;
+    private final LinkedHashSet<String> objectTypeNames;
     private final String fieldName;
     private final List<NormalizedField> children;
     private final int level;
@@ -166,6 +168,10 @@ public class NormalizedField {
         return builder.build();
     }
 
+
+    /**
+     * @return Warning: returns a Mutable Set. No defensive copy is made for performance reasons.
+     */
     public Set<String> getObjectTypeNames() {
         return objectTypeNames;
     }
@@ -259,14 +265,14 @@ public class NormalizedField {
     }
 
     public static class Builder {
-        private Set<String> objectTypeNames = new LinkedHashSet<>();
+        private LinkedHashSet<String> objectTypeNames = new LinkedHashSet<>();
         private String fieldName;
         private List<NormalizedField> children = new ArrayList<>();
         private int level;
         private NormalizedField parent;
         private String alias;
-        private Map<String, NormalizedInputValue> normalizedArguments = Collections.emptyMap();
-        private Map<String, Object> resolvedArguments = Collections.emptyMap();
+        private ImmutableMap<String, NormalizedInputValue> normalizedArguments = ImmutableKit.emptyMap();
+        private ImmutableMap<String, Object> resolvedArguments = ImmutableKit.emptyMap();
         private ImmutableList<Argument> astArguments = ImmutableKit.emptyList();
 
         private Builder() {
@@ -278,7 +284,7 @@ public class NormalizedField {
             this.normalizedArguments = existing.normalizedArguments;
             this.astArguments = existing.astArguments;
             this.resolvedArguments = existing.resolvedArguments;
-            this.objectTypeNames = existing.getObjectTypeNames();
+            this.objectTypeNames = new LinkedHashSet<>(existing.getObjectTypeNames());
             this.fieldName = existing.getFieldName();
             this.children = existing.getChildren();
             this.level = existing.getLevel();
@@ -295,17 +301,17 @@ public class NormalizedField {
             return this;
         }
 
-        public Builder normalizedArguments(Map<String, NormalizedInputValue> arguments) {
-            this.normalizedArguments = arguments == null ? Collections.emptyMap() : arguments;
+        public Builder normalizedArguments(@Nullable Map<String, NormalizedInputValue> arguments) {
+            this.normalizedArguments = arguments == null ? ImmutableKit.emptyMap() : ImmutableMap.copyOf(arguments);
             return this;
         }
 
-        public Builder resolvedArguments(Map<String, Object> arguments) {
-            this.resolvedArguments = arguments == null ? Collections.emptyMap() : arguments;
+        public Builder resolvedArguments(@Nullable Map<String, Object> arguments) {
+            this.resolvedArguments = arguments == null ? ImmutableKit.emptyMap() : ImmutableMap.copyOf(arguments);
             return this;
         }
 
-        public Builder astArguments(List<Argument> astArguments) {
+        public Builder astArguments(@NotNull List<Argument> astArguments) {
             this.astArguments = ImmutableList.copyOf(astArguments);
             return this;
         }
