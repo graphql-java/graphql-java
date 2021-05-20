@@ -135,7 +135,7 @@ public class NormalizedField {
         return alias;
     }
 
-    public List<Argument> getAstArguments() {
+    public ImmutableList<Argument> getAstArguments() {
         return astArguments;
     }
 
@@ -143,11 +143,11 @@ public class NormalizedField {
         return normalizedArguments.get(name);
     }
 
-    public Map<String, NormalizedInputValue> getNormalizedArguments() {
+    public ImmutableMap<String, NormalizedInputValue> getNormalizedArguments() {
         return normalizedArguments;
     }
 
-    public Map<String, Object> getResolvedArguments() {
+    public ImmutableMap<String, Object> getResolvedArguments() {
         return resolvedArguments;
     }
 
