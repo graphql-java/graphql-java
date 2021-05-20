@@ -11,7 +11,6 @@ import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
-import graphql.language.Value;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLObjectType;
@@ -245,19 +244,6 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         return type1.equals(type2);
     }
 
-    @SuppressWarnings("SimplifiableIfStatement")
-    private boolean sameValue(Value value1, Value value2) {
-        if (value1 == null && value2 == null) {
-            return true;
-        }
-        if (value1 == null) {
-            return false;
-        }
-        if (value2 == null) {
-            return false;
-        }
-        return new AstComparator().isEqual(value1, value2);
-    }
 
     private boolean sameArguments(List<Argument> arguments1, List<Argument> arguments2) {
         if (arguments1.size() != arguments2.size()) {
@@ -268,7 +254,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             if (matchedArgument == null) {
                 return false;
             }
-            if (!sameValue(argument.getValue(), matchedArgument.getValue())) {
+            if (!AstComparator.sameValue(argument.getValue(), matchedArgument.getValue())) {
                 return false;
             }
         }

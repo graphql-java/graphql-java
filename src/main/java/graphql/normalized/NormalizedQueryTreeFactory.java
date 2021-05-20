@@ -25,7 +25,6 @@ import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
-import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLCompositeType;
@@ -370,7 +369,7 @@ public class NormalizedQueryTreeFactory {
             if (matchedArgument == null) {
                 return false;
             }
-            if (!sameValue(argument.getValue(), matchedArgument.getValue())) {
+            if (!AstComparator.sameValue(argument.getValue(), matchedArgument.getValue())) {
                 return false;
             }
         }
@@ -386,18 +385,6 @@ public class NormalizedQueryTreeFactory {
         return null;
     }
 
-    private boolean sameValue(Value value1, Value value2) {
-        if (value1 == null && value2 == null) {
-            return true;
-        }
-        if (value1 == null) {
-            return false;
-        }
-        if (value2 == null) {
-            return false;
-        }
-        return new AstComparator().isEqual(value1, value2);
-    }
 
 
 
