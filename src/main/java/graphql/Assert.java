@@ -1,7 +1,6 @@
 package graphql;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -63,13 +62,6 @@ public class Assert {
             throw new AssertException("collection must be not null and not empty");
         }
         return collection;
-    }
-
-    public static <M extends Map<K, V>, K, V> M assertNotEmpty(M map, Supplier<String> message) {
-        if (map == null || map.isEmpty()) {
-            throw new AssertException(message.get());
-        }
-        return map;
     }
 
     public static <C extends Collection<T>, T> C assertNotEmpty(C collection, Supplier<String> msg) {

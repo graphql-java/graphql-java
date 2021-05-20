@@ -77,7 +77,7 @@ class AssertTest extends Specification {
 
     def "assertNotEmpty collection should throw on null or empty"() {
         when:
-        Assert.assertNotEmpty(value as Collection, { -> String.format(format, arg) })
+        Assert.assertNotEmpty(value, { -> String.format(format, arg) })
 
         then:
         def error = thrown(AssertException)
@@ -92,28 +92,6 @@ class AssertTest extends Specification {
     def "assertNotEmpty should not throw on none empty collection"() {
         when:
         Assert.assertNotEmpty(["some object"], { -> "error message"})
-
-        then:
-        noExceptionThrown()
-    }
-
-    def "assertNotEmpty map should throw on null or empty"() {
-        when:
-        Assert.assertNotEmpty(value as Map, { -> String.format(format, arg) })
-
-        then:
-        def error = thrown(AssertException)
-        error.message == expectedMessage
-
-        where:
-        value | format     | arg   || expectedMessage
-        null  | "error %s" | "msg" || "error msg"
-        [:]    | "code %d"  | 1     || "code 1"
-    }
-
-    def "assertNotEmpty should not throw on none empty nao"() {
-        when:
-        Assert.assertNotEmpty(["some key":"some value"], { -> "error message"})
 
         then:
         noExceptionThrown()
