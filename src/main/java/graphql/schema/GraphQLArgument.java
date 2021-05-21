@@ -345,7 +345,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          * @deprecated use {@link #valueLiteral(Value)} or {@link #valueProgrammatic(Object)}
          */
         @Deprecated
-        public Builder value(Object value) {
+        public Builder value(@Nullable Object value) {
             this.value = InputValueWithState.newInternalValue(value);
             return this;
         }

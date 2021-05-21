@@ -204,7 +204,7 @@ public class Anonymizer {
                 if (Directives.DEPRECATED_DIRECTIVE_DEFINITION.getName().equals(graphQLDirective.getName())) {
                     GraphQLArgument reason = newArgument().name("reason")
                             .type(Scalars.GraphQLString)
-                            .value(null).build();
+                            .clearValue().build();
                     GraphQLDirective newElement = graphQLDirective.transform(builder -> {
                         builder.description(null).argument(reason);
                     });
