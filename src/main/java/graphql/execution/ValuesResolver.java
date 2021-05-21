@@ -157,7 +157,7 @@ public class ValuesResolver {
             GraphQLInputType argumentType = argumentDefinition.getType();
             String argumentName = argumentDefinition.getName();
             Argument argument = argumentMap.get(argumentName);
-            Object value = literalToNormalizedValue(codeRegistry.getFieldVisibility(), argumentType, (Value) argument.getValue(), normalizedVariables);
+            Object value = literalToNormalizedValue(codeRegistry.getFieldVisibility(), argumentType, argument.getValue(), normalizedVariables);
             result.put(argumentName, new NormalizedInputValue(simplePrint(argumentType), value));
         }
         return result;
@@ -182,10 +182,10 @@ public class ValuesResolver {
      * @return
      */
     public static Value<?> valueToLiteral(@NotNull GraphqlFieldVisibility fieldVisibility, @NotNull InputValueWithState inputValueWithState, @NotNull GraphQLType type) {
-        return (Value<?>) valueToLiteral(fieldVisibility, value, valueState, type, ValueMode.LITERAL);
+        return (Value<?>) valueToLiteral(fieldVisibility, inputValueWithState, type, ValueMode.LITERAL);
     }
 
-    private static Object valueToLiteral(GraphqlFieldVisibility fieldVisibility, Object value, ValueState valueState, GraphQLType type, ValueMode valueMode) {
+    private static Object valueToLiteral(GraphqlFieldVisibility fieldVisibility, InputValueWithState inputValueWithState, GraphQLType type, ValueMode valueMode) {
         if (inputValueWithState.isInternal()) {
             if (valueMode == NORMALIZED) {
                 return assertShouldNeverHappen("can't infer normalized structure");
@@ -193,7 +193,7 @@ public class ValuesResolver {
             return valueToLiteralLegacy(inputValueWithState.getValue(), type);
         }
         if (inputValueWithState.isLiteral()) {
-            return (Value<?>) inputValueWithState.getValue();
+            return inputValueWithState.getValue();
         }
         if (inputValueWithState.isExternal()) {
             return new ValuesResolver().externalValueToLiteral(fieldVisibility, inputValueWithState.getValue(), (GraphQLInputType) type, valueMode);
@@ -222,7 +222,7 @@ public class ValuesResolver {
             return new ValuesResolver().literalToInternalValue(fieldVisibility, type, (Value<?>) inputValueWithState.getValue(), emptyMap());
         }
         if (inputValueWithState.isExternal()) {
-            return new ValuesResolver().externalValueToInternalValue(fieldVisibility, (GraphQLInputType) type, value);
+            return new ValuesResolver().externalValueToInternalValue(fieldVisibility, (GraphQLInputType) type, inputValueWithState.getValue());
         }
         return assertShouldNeverHappen("unexpected value state " + inputValueWithState);
     }
@@ -816,27 +816,9 @@ public class ValuesResolver {
             // default value literals can't reference variables, this is why the variables are empty
             return literalToInternalValue(fieldVisibility, type, (Value) defaultValue.getValue(), Collections.emptyMap());
         }
-        if (valueState == ValueState.EXTERNAL_VALUE) {
-            // performs validation too
-            return externalValueToInternalValue(fieldVisibility, type, defaultValue);
-        }
-        return assertShouldNeverHappen();
-    }
-
-    private Object defaultValueToNormalizedValue(GraphqlFieldVisibility fieldVisibility,
-                                                 Object defaultValue,
-                                                 ValueState valueState,
-                                                 GraphQLInputType type
-    ) {
-        if (valueState == ValueState.INTERNAL_VALUE) {
-            return assertShouldNeverHappen("can't build normalized value");
-        }
-        if (valueState == ValueState.LITERAL) {
-            return defaultValue;
-        }
         if (defaultValue.isExternal()) {
             // performs validation too
-            return externalValueToLiteral(fieldVisibility, defaultValue.getValue(), type, NORMALIZED);
+            return externalValueToInternalValue(fieldVisibility, type, defaultValue.getValue());
         }
         return assertShouldNeverHappen();
     }
