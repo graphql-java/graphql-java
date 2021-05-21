@@ -15,6 +15,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeVisitorStub;
+import graphql.schema.InputValueWithState;
 import graphql.schema.SchemaTransformer;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -195,8 +196,8 @@ public class IntrospectionWithDirectivesSupport {
         DataFetcher<?> argValueDF = env -> {
             final GraphQLArgument argument = env.getSource();
             if (argument.hasSetValue()) {
-                Object value = argument.getArgumentValue();
-                return AstPrinter.printAst(ValuesResolver.valueToLiteral(value, argument.getValueState(), argument.getType()));
+                InputValueWithState value = argument.getArgumentValue();
+                return AstPrinter.printAst(ValuesResolver.valueToLiteral(value, argument.getType()));
             } else {
                 return null;
             }

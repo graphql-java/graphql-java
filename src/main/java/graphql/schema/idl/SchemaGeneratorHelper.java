@@ -286,9 +286,8 @@ public class SchemaGeneratorHelper {
         GraphQLInputType inputType = directiveDefArgument.getType();
         builder.type(inputType);
         // we know it is a literal because it was created by SchemaGenerator
-        Value defaultValue = (Value) directiveDefArgument.getArgumentDefaultValue();
-        if (defaultValue != null) {
-            builder.defaultValueLiteral(defaultValue);
+        if (directiveDefArgument.getArgumentDefaultValue().isSet()) {
+            builder.defaultValueLiteral((Value) directiveDefArgument.getArgumentDefaultValue().getValue());
         }
 
         // Object value = buildCtx, arg.getValue(), inputType);
@@ -314,10 +313,10 @@ public class SchemaGeneratorHelper {
                         .type(directiveDefArg.getType());
 
                 if (directiveDefArg.hasSetDefaultValue()) {
-                    missingArg.defaultValueLiteral((Value) directiveDefArg.getArgumentDefaultValue());
+                    missingArg.defaultValueLiteral((Value) directiveDefArg.getArgumentDefaultValue().getValue());
                 }
                 if (directiveDefArg.hasSetValue()) {
-                    missingArg.valueLiteral((Value) directiveDefArg.getArgumentValue());
+                    missingArg.valueLiteral((Value) directiveDefArg.getArgumentValue().getValue());
                 }
                 argumentsOut.add(missingArg.build());
             }

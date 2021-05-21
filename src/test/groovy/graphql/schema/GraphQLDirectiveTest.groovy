@@ -100,7 +100,7 @@ class GraphQLDirectiveTest extends Specification {
         schema.getAllSchemaDirectivesByName().keySet() == ["d1", "dr"] as Set
         schema.getAllSchemaDirectivesByName()["d1"].size() == 1
         schema.getAllSchemaDirectivesByName()["dr"].size() == 2
-        schema.getAllSchemaDirectivesByName()["dr"].collect({ printAst(it.getArgument("arg").argumentValue) }) == ['"a1"', '"a2"']
+        schema.getAllSchemaDirectivesByName()["dr"].collect({ printAst(it.getArgument("arg").argumentValue.value) }) == ['"a1"', '"a2"']
 
         when:
         schema.getSchemaDirective("dr")
@@ -189,7 +189,7 @@ class GraphQLDirectiveTest extends Specification {
 
         assert container.getDirectives("d1").size() == 1
         assert container.getDirectives("dr").size() == 2
-        assert container.getDirectives("dr").collect({ printAst(it.getArgument("arg").argumentValue) }) == ['"a1"', '"a2"']
+        assert container.getDirectives("dr").collect({ printAst(it.getArgument("arg").argumentValue.value) }) == ['"a1"', '"a2"']
 
         try {
             container.getDirective("dr")

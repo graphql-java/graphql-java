@@ -16,11 +16,16 @@ import java.util.Map;
  * For example imagine a DateTime scalar, the result coercion would need to take an object and turn it into a
  * ISO date or throw an exception if it cant.
  * <p>
- * Input coercion is taking a value that came in from requests variables or hard coded query literals and coercing them into a
- * Java object value that is acceptable to the scalar type.  Again using the DateTime example, the input coercion would try to
- * parse an ISO date time object or throw an exception if it cant.
- *
- * See http://facebook.github.io/graphql/#sec-Scalars
+ * Input coercion is made out of three different methods {@link #parseLiteral(Object)} which converts an literal Ast
+ * into an internal input value, {@link #parseValue(Object)} which converts an external input value into an internal one
+ * and {@link #valueToLiteral(Object)} which is a translation between an external input value into a literal.
+ * <br>
+ * The relationship between these three methods is as follows:
+ * It is required that every valid external input values for {@link #parseValue(Object)} is also valid for
+ * {@link #valueToLiteral(Object)}
+ * and vice versa.
+ * Furthermore the literals returned by {@link #valueToLiteral(Object)} are required to be valid for
+ * {@link #parseLiteral(Object)}.
  */
 @PublicSpi
 public interface Coercing<I, O> {

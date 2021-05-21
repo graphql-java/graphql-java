@@ -32,7 +32,7 @@ class GraphQLArgumentTest extends Specification {
         startingArgument.name == "A1"
         startingArgument.description == "A1_description"
         startingArgument.type == GraphQLInt
-        startingArgument.argumentDefaultValue == null
+        startingArgument.argumentDefaultValue.value == null
         startingArgument.deprecationReason == "custom reason"
         startingArgument.isDeprecated()
         startingArgument.getDirectives().size() == 1
@@ -41,8 +41,8 @@ class GraphQLArgumentTest extends Specification {
         transformedArgument.name == "A2"
         transformedArgument.description == "A2_description"
         transformedArgument.type == GraphQLString
-        transformedArgument.argumentValue == "VALUE"
-        transformedArgument.argumentDefaultValue == "DEFAULT"
+        transformedArgument.argumentValue.value == "VALUE"
+        transformedArgument.argumentDefaultValue.value == "DEFAULT"
         transformedArgument.deprecationReason == null
         !transformedArgument.isDeprecated()
         transformedArgument.getDirectives().size() == 2

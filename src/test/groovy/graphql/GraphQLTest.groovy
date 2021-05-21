@@ -2,6 +2,7 @@ package graphql
 
 import graphql.analysis.MaxQueryComplexityInstrumentation
 import graphql.analysis.MaxQueryDepthInstrumentation
+import graphql.collect.ImmutableKit
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.DataFetcherExceptionHandler
 import graphql.execution.DataFetcherResult
@@ -18,6 +19,7 @@ import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrume
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInterfaceType
@@ -25,6 +27,8 @@ import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.StaticDataFetcher
+import graphql.schema.idl.SchemaGenerator
+import graphql.schema.idl.errors.SchemaProblem
 import graphql.schema.validation.InvalidSchemaException
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
@@ -1312,5 +1316,45 @@ many lines''']
         then:
         def e = thrown(InvalidSchemaException)
         e.message.contains("Invalid default value")
+    }
+
+    def "Applied schema directives arguments are validated for SDL"() {
+        given:
+        def sdl = '''
+        directive @cached(
+          key: String 
+        ) on FIELD_DEFINITION 
+
+        type Query {
+          hello: String @cached(key: {foo: "bar"}) 
+        }
+        '''
+        when:
+        SchemaGenerator.createdMockedSchema(sdl)
+        then:
+        def e = thrown(SchemaProblem)
+        e.message.contains("an illegal value for the argument ")
+    }
+
+    def "Applied schema directives arguments are validated for programmatic schemas"() {
+        given:
+        def arg = newArgument().name("arg").type(GraphQLInt).valueProgrammatic(ImmutableKit.emptyMap()).build()
+        def directive = GraphQLDirective.newDirective().name("cached").argument(arg).build()
+        def field = newFieldDefinition()
+                .name("hello")
+                .type(GraphQLString)
+                .argument(arg)
+                .withDirective(directive)
+                .build()
+        when:
+        newSchema().query(
+                newObject()
+                        .name("Query")
+                        .field(field)
+                        .build())
+                .build()
+        then:
+        def e = thrown(InvalidSchemaException)
+        e.message.contains("Invalid argument 'arg' for applied directive of name 'cached'")
     }
 }
