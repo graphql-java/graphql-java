@@ -30,7 +30,7 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
-import graphql.schema.ValueState;
+import graphql.schema.InputValueWithState;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.ArrayList;
@@ -164,10 +164,10 @@ public class Introspection {
             Object type = environment.getSource();
             if (type instanceof GraphQLArgument) {
                 GraphQLArgument inputField = (GraphQLArgument) type;
-                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getArgumentDefaultValue(), inputField.getDefaultValueState(), inputField.getType()) : null;
+                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getArgumentDefaultValue(), inputField.getType()) : null;
             } else if (type instanceof GraphQLInputObjectField) {
                 GraphQLInputObjectField inputField = (GraphQLInputObjectField) type;
-                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getInputFieldDefaultValue(), inputField.getDefaultValueState(), inputField.getType()) : null;
+                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getInputFieldDefaultValue(), inputField.getType()) : null;
             }
             return null;
         });
@@ -184,8 +184,8 @@ public class Introspection {
         register(__InputValue, "description", descriptionDataFetcher);
     }
 
-    private static String printDefaultValue(Object value, ValueState valueState, GraphQLInputType type) {
-        return AstPrinter.printAst(ValuesResolver.valueToLiteral(DEFAULT_FIELD_VISIBILITY, value, valueState, type));
+    private static String printDefaultValue(InputValueWithState inputValueWithState, GraphQLInputType type) {
+        return AstPrinter.printAst(ValuesResolver.valueToLiteral(DEFAULT_FIELD_VISIBILITY, inputValueWithState, type));
     }
 
 

@@ -35,11 +35,12 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
+import graphql.schema.InputValueWithState;
 import graphql.schema.PropertyDataFetcherHelper;
-import graphql.schema.ValueState;
 import graphql.schema.visibility.DefaultGraphqlFieldVisibility;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 import graphql.util.FpKit;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
@@ -124,8 +125,8 @@ public class ValuesResolver {
         return getArgumentValuesImpl(codeRegistry, argumentTypes, arguments, coercedVariables, null, ValueMode.COERCED);
     }
 
-    public static Value<?> valueToLiteral(Object value, ValueState valueState, GraphQLType type) {
-        return valueToLiteral(DEFAULT_FIELD_VISIBILITY, value, valueState, type);
+    public static Value<?> valueToLiteral(InputValueWithState inputValueWithState, GraphQLType type) {
+        return valueToLiteral(DEFAULT_FIELD_VISIBILITY, inputValueWithState, type);
     }
 
     /**
@@ -135,17 +136,17 @@ public class ValuesResolver {
      *
      * @return
      */
-    public static Value<?> valueToLiteral(GraphqlFieldVisibility fieldVisibility, Object value, ValueState valueState, GraphQLType type) {
-        if (valueState == ValueState.INTERNAL_VALUE) {
-            return valueToLiteralLegacy(value, type);
+    public static Value<?> valueToLiteral(@NotNull GraphqlFieldVisibility fieldVisibility, @NotNull InputValueWithState inputValueWithState, @NotNull GraphQLType type) {
+        if (inputValueWithState.isInternal()) {
+            return valueToLiteralLegacy(inputValueWithState.getValue(), type);
         }
-        if (valueState == ValueState.LITERAL) {
-            return (Value<?>) value;
+        if (inputValueWithState.isLiteral()) {
+            return (Value<?>) inputValueWithState.getValue();
         }
-        if (valueState == ValueState.EXTERNAL_VALUE) {
-            return new ValuesResolver().externalValueToLiteral(fieldVisibility, value, (GraphQLInputType) type);
+        if (inputValueWithState.isExternal()) {
+            return new ValuesResolver().externalValueToLiteral(fieldVisibility, inputValueWithState.getValue(), (GraphQLInputType) type);
         }
-        return assertShouldNeverHappen("unexpected value state " + valueState);
+        return assertShouldNeverHappen("unexpected value state " + inputValueWithState);
     }
 
 
@@ -156,18 +157,18 @@ public class ValuesResolver {
         return new ValuesResolver().externalValueToInternalValue(fieldVisibility, type, externalValue, ValueMode.COERCED);
     }
 
-    public static Object valueToInternalValue(Object value, ValueState valueState, GraphQLType type) throws CoercingParseValueException, CoercingParseLiteralException {
+    public static Object valueToInternalValue(InputValueWithState inputValueWithState, GraphQLType type) throws CoercingParseValueException, CoercingParseLiteralException {
         DefaultGraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
-        if (valueState == ValueState.INTERNAL_VALUE) {
-            return value;
+        if (inputValueWithState.isInternal()) {
+            return inputValueWithState.getValue();
         }
-        if (valueState == ValueState.LITERAL) {
-            return new ValuesResolver().literalToInternalValue(fieldVisibility, type, (Value<?>) value, emptyMap(), null, ValueMode.COERCED, false);
+        if (inputValueWithState.isLiteral()) {
+            return new ValuesResolver().literalToInternalValue(fieldVisibility, type, (Value<?>) inputValueWithState.getValue(), emptyMap(), null, ValueMode.COERCED, false);
         }
-        if (valueState == ValueState.EXTERNAL_VALUE) {
-            return new ValuesResolver().externalValueToInternalValue(fieldVisibility, (GraphQLInputType) type, value, ValueMode.COERCED);
+        if (inputValueWithState.isExternal()) {
+            return new ValuesResolver().externalValueToInternalValue(fieldVisibility, (GraphQLInputType) type, inputValueWithState.getValue(), ValueMode.COERCED);
         }
-        return assertShouldNeverHappen("unexpected value state " + valueState);
+        return assertShouldNeverHappen("unexpected value state " + inputValueWithState);
     }
 
     private Value externalValueToLiteral(GraphqlFieldVisibility fieldVisibility, @Nullable Object value, GraphQLInputType type) {
@@ -227,7 +228,7 @@ public class ValuesResolver {
             boolean hasValue = inputMap.containsKey(fieldName);
             Object fieldValue = inputMap.getOrDefault(fieldName, null);
             if (!hasValue && inputFieldDefinition.hasSetDefaultValue()) {
-                Value defaultValueLiteral = valueToLiteral(fieldVisibility, inputFieldDefinition.getInputFieldDefaultValue(), inputFieldDefinition.getDefaultValueState(), fieldType);
+                Value defaultValueLiteral = valueToLiteral(fieldVisibility, inputFieldDefinition.getInputFieldDefaultValue(), fieldType);
                 objectFields.add(newObjectField().value(defaultValueLiteral).build());
             } else if (hasValue) {
                 if (fieldValue == null) {
@@ -301,7 +302,7 @@ public class ValuesResolver {
             GraphQLInputType argumentType = argumentDefinition.getType();
             String argumentName = argumentDefinition.getName();
             Argument argument = argumentMap.get(argumentName);
-            Object defaultValue = argumentDefinition.getArgumentDefaultValue();
+            InputValueWithState defaultValue = argumentDefinition.getArgumentDefaultValue();
             boolean hasValue = argument != null;
             Object value;
             Value argumentValue = argument != null ? argument.getValue() : null;
@@ -316,7 +317,6 @@ public class ValuesResolver {
                 Object coercedDefaultValue = defaultValueToInternalValue(
                         codeRegistry.getFieldVisibility(),
                         defaultValue,
-                        argumentDefinition.getDefaultValueState(),
                         argumentType,
                         valueMode);
                 coercedValues.put(argumentName, newValue(coercedDefaultValue, argumentType, valueMode));
@@ -452,7 +452,7 @@ public class ValuesResolver {
         for (GraphQLInputObjectField inputFieldDefinition : fieldDefinitions) {
             GraphQLInputType fieldType = inputFieldDefinition.getType();
             String fieldName = inputFieldDefinition.getName();
-            Object defaultValue = inputFieldDefinition.getInputFieldDefaultValue();
+            InputValueWithState defaultValue = inputFieldDefinition.getInputFieldDefaultValue();
             boolean hasValue = inputMap.containsKey(fieldName);
             Object value;
             Object fieldValue = inputMap.getOrDefault(fieldName, null);
@@ -460,7 +460,6 @@ public class ValuesResolver {
             if (!hasValue && inputFieldDefinition.hasSetDefaultValue()) {
                 Object coercedDefaultValue = defaultValueToInternalValue(fieldVisibility,
                         defaultValue,
-                        inputFieldDefinition.getDefaultValueState(),
                         fieldType,
                         valueMode);
                 coercedValues.put(fieldName, newValue(coercedDefaultValue, fieldType, valueMode));
@@ -626,7 +625,6 @@ public class ValuesResolver {
             if (!hasValue && inputFieldDefinition.hasSetDefaultValue()) {
                 Object coercedDefaultValue = defaultValueToInternalValue(fieldVisibility,
                         inputFieldDefinition.getInputFieldDefaultValue(),
-                        inputFieldDefinition.getDefaultValueState(),
                         fieldType,
                         valueMode);
                 coercedValues.put(fieldName, newValue(coercedDefaultValue, fieldType, valueMode));
@@ -668,19 +666,18 @@ public class ValuesResolver {
     }
 
     private Object defaultValueToInternalValue(GraphqlFieldVisibility fieldVisibility,
-                                               Object defaultValue,
-                                               ValueState valueState,
+                                               InputValueWithState defaultValue,
                                                GraphQLInputType type,
                                                ValueMode valueMode) {
-        if (valueState == ValueState.INTERNAL_VALUE) {
-            return defaultValue;
+        if (defaultValue.isInternal()) {
+            return defaultValue.getValue();
         }
-        if (valueState == ValueState.LITERAL) {
+        if (defaultValue.isLiteral()) {
             // default value literals can't reference variables
-            return literalToInternalValue(fieldVisibility, type, (Value) defaultValue, Collections.emptyMap(), null, valueMode, false);
+            return literalToInternalValue(fieldVisibility, type, (Value) defaultValue.getValue(), Collections.emptyMap(), null, valueMode, false);
         }
-        if (valueState == ValueState.EXTERNAL_VALUE) {
-            return externalValueToInternalValue(fieldVisibility, type, defaultValue, valueMode);
+        if (defaultValue.isExternal()) {
+            return externalValueToInternalValue(fieldVisibility, type, defaultValue.getValue(), valueMode);
         }
         return assertShouldNeverHappen();
     }

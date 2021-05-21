@@ -10,7 +10,7 @@ import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLTypeVisitorStub;
-import graphql.schema.ValueState;
+import graphql.schema.InputValueWithState;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import graphql.validation.ValidationUtil;
@@ -39,13 +39,13 @@ public class AppliedDirectiveArgumentsAreValid extends GraphQLTypeVisitorStub {
         }
         GraphQLSchema schema = context.getVarFromParents(GraphQLSchema.class);
         SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
-        ValueState argumentState = argument.getValueState();
+        InputValueWithState argumentValue = argument.getArgumentValue();
         boolean invalid = false;
-        if (argumentState == ValueState.LITERAL &&
-                !validationUtil.isValidLiteralValue((Value<?>) argument.getArgumentValue(), argument.getType(), schema)) {
+        if (argumentValue.isLiteral() &&
+                !validationUtil.isValidLiteralValue((Value<?>) argumentValue.getValue(), argument.getType(), schema)) {
             invalid = true;
-        } else if (argumentState == ValueState.EXTERNAL_VALUE &&
-                !isValidExternalValue(schema, argument.getArgumentValue(), argument.getType())) {
+        } else if (argumentValue.isExternal() &&
+                !isValidExternalValue(schema, argumentValue.getValue(), argument.getType())) {
             invalid = true;
         }
         if (invalid) {

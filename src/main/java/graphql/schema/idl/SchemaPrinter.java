@@ -38,7 +38,7 @@ import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphqlTypeComparatorEnvironment;
 import graphql.schema.GraphqlTypeComparatorRegistry;
-import graphql.schema.ValueState;
+import graphql.schema.InputValueWithState;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.io.PrintWriter;
@@ -601,8 +601,8 @@ public class SchemaPrinter {
                                 out.format("  %s: %s",
                                         fd.getName(), typeString(fd.getType()));
                                 if (fd.hasSetDefaultValue()) {
-                                    Object defaultValue = fd.getInputFieldDefaultValue();
-                                    String astValue = printAst(defaultValue, fd.getDefaultValueState(), fd.getType());
+                                    InputValueWithState defaultValue = fd.getInputFieldDefaultValue();
+                                    String astValue = printAst(defaultValue, fd.getType());
                                     out.format(" = %s", astValue);
                                 }
                                 out.format(directivesString(GraphQLInputObjectField.class, fd.getDirectives()));
@@ -645,8 +645,8 @@ public class SchemaPrinter {
         out.println();
     }
 
-    private static String printAst(Object value, ValueState valueState, GraphQLInputType type) {
-        return AstPrinter.printAst(ValuesResolver.valueToLiteral(value, valueState, type));
+    private static String printAst(InputValueWithState value, GraphQLInputType type) {
+        return AstPrinter.printAst(ValuesResolver.valueToLiteral(value, type));
     }
 
     private TypePrinter<GraphQLSchema> schemaPrinter() {
@@ -741,9 +741,9 @@ public class SchemaPrinter {
 
             sb.append(prefix).append(argument.getName()).append(": ").append(typeString(argument.getType()));
             if (argument.hasSetDefaultValue()) {
-                Object defaultValue = argument.getArgumentDefaultValue();
+                InputValueWithState defaultValue = argument.getArgumentDefaultValue();
                 sb.append(" = ");
-                sb.append(printAst(defaultValue, argument.getDefaultValueState(), argument.getType()));
+                sb.append(printAst(defaultValue, argument.getType()));
             }
 
             argument.getDirectives().stream()
@@ -821,7 +821,7 @@ public class SchemaPrinter {
         List<GraphQLArgument> args = directive.getArguments();
         args = args
                 .stream()
-                .filter(arg -> arg.getArgumentValue() != null || arg.getArgumentDefaultValue() != null)
+                .filter(arg -> arg.getArgumentValue().isSet() || arg.getArgumentDefaultValue().isSet())
                 .sorted(comparator)
                 .collect(toList());
         if (!args.isEmpty()) {
@@ -830,9 +830,9 @@ public class SchemaPrinter {
                 GraphQLArgument arg = args.get(i);
                 String argValue = null;
                 if (arg.hasSetValue()) {
-                    argValue = printAst(arg.getArgumentValue(), arg.getValueState(), arg.getType());
+                    argValue = printAst(arg.getArgumentValue(), arg.getType());
                 } else if (arg.hasSetDefaultValue()) {
-                    argValue = printAst(arg.getArgumentDefaultValue(), arg.getDefaultValueState(), arg.getType());
+                    argValue = printAst(arg.getArgumentDefaultValue(), arg.getType());
                 }
                 if (!isNullOrEmpty(argValue)) {
                     sb.append(arg.getName());

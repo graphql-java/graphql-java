@@ -11,7 +11,7 @@ import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLTypeVisitorStub;
-import graphql.schema.ValueState;
+import graphql.schema.InputValueWithState;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import graphql.validation.ValidationUtil;
@@ -35,17 +35,17 @@ public class DefaultValuesAreValid extends GraphQLTypeVisitorStub {
         }
         SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
         GraphQLSchema schema = context.getVarFromParents(GraphQLSchema.class);
-        ValueState defaultValueState = inputObjectField.getDefaultValueState();
+        InputValueWithState defaultValue = inputObjectField.getInputFieldDefaultValue();
         boolean invalid = false;
-        if (defaultValueState == ValueState.LITERAL &&
-                !validationUtil.isValidLiteralValue((Value<?>) inputObjectField.getInputFieldDefaultValue(), inputObjectField.getType(), schema)) {
+        if (defaultValue.isLiteral() &&
+                !validationUtil.isValidLiteralValue((Value<?>) defaultValue.getValue(), inputObjectField.getType(), schema)) {
             invalid = true;
-        } else if (defaultValueState == ValueState.EXTERNAL_VALUE &&
-                !isValidExternalValue(schema, inputObjectField.getInputFieldDefaultValue(), inputObjectField.getType())) {
+        } else if (defaultValue.isExternal() &&
+                !isValidExternalValue(schema, defaultValue.getValue(), inputObjectField.getType())) {
             invalid = true;
         }
         if (invalid) {
-            String message = format("Invalid default value %s for type %s", inputObjectField.getInputFieldDefaultValue(), simplePrint(inputObjectField.getType()));
+            String message = format("Invalid default value %s for type %s", defaultValue.getValue(), simplePrint(inputObjectField.getType()));
             errorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.InvalidDefaultValue, message));
         }
         return TraversalControl.CONTINUE;
@@ -58,17 +58,17 @@ public class DefaultValuesAreValid extends GraphQLTypeVisitorStub {
         }
         GraphQLSchema schema = context.getVarFromParents(GraphQLSchema.class);
         SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
-        ValueState defaultValueState = argument.getDefaultValueState();
+        InputValueWithState defaultValue = argument.getArgumentDefaultValue();
         boolean invalid = false;
-        if (defaultValueState == ValueState.LITERAL &&
-                !validationUtil.isValidLiteralValue((Value<?>) argument.getArgumentDefaultValue(), argument.getType(), schema)) {
+        if (defaultValue.isLiteral() &&
+                !validationUtil.isValidLiteralValue((Value<?>) defaultValue.getValue(), argument.getType(), schema)) {
             invalid = true;
-        } else if (defaultValueState == ValueState.EXTERNAL_VALUE &&
-                !isValidExternalValue(schema, argument.getArgumentDefaultValue(), argument.getType())) {
+        } else if (defaultValue.isExternal() &&
+                !isValidExternalValue(schema, defaultValue.getValue(), argument.getType())) {
             invalid = true;
         }
         if (invalid) {
-            String message = format("Invalid default value %s for type %s", argument.getArgumentDefaultValue(), simplePrint(argument.getType()));
+            String message = format("Invalid default value %s for type %s", defaultValue.getValue(), simplePrint(argument.getType()));
             errorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.InvalidDefaultValue, message));
         }
         return TraversalControl.CONTINUE;

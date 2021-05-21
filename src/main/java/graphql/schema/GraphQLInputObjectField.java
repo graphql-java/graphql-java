@@ -8,7 +8,6 @@ import graphql.language.Value;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,10 +16,6 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
-import static graphql.schema.ValueState.EXTERNAL_VALUE;
-import static graphql.schema.ValueState.INTERNAL_VALUE;
-import static graphql.schema.ValueState.LITERAL;
-import static graphql.schema.ValueState.NOT_SET;
 
 /**
  * Input objects defined via {@link graphql.schema.GraphQLInputObjectType} contains these input fields.
@@ -36,8 +31,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
     private final String name;
     private final String description;
     private final GraphQLInputType originalType;
-    private final Object defaultValue;
-    private final ValueState defaultValueState;
+    private final InputValueWithState defaultValue;
 
     private final String deprecationReason;
     private final InputValueDefinition definition;
@@ -53,8 +47,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
             String name,
             String description,
             GraphQLInputType type,
-            Object defaultValue,
-            ValueState defaultValueState,
+            InputValueWithState defaultValue,
             List<GraphQLDirective> directives,
             InputValueDefinition definition,
             String deprecationReason) {
@@ -65,7 +58,6 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         this.name = name;
         this.originalType = type;
         this.defaultValue = defaultValue;
-        this.defaultValueState = assertNotNull(defaultValueState, () -> "defaultValueState can't be null");
         this.description = description;
         this.directives = new DirectivesUtil.DirectivesHolder(directives);
         this.definition = definition;
@@ -92,23 +84,12 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
      *
      * @return
      */
-    public @Nullable Object getInputFieldDefaultValue() {
+    public @NotNull InputValueWithState getInputFieldDefaultValue() {
         return defaultValue;
     }
 
-    /**
-     * Returns the state of {@link #getInputFieldDefaultValue()}
-     *
-     * See {@link ValueState}.
-     *
-     * @return
-     */
-    public @NotNull ValueState getDefaultValueState() {
-        return defaultValueState;
-    }
-
     public boolean hasSetDefaultValue() {
-        return defaultValueState != NOT_SET;
+        return defaultValue.isSet();
     }
 
     public String getDescription() {
@@ -243,8 +224,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
 
     @PublicApi
     public static class Builder extends GraphqlTypeBuilder {
-        private Object defaultValue;
-        private ValueState defaultValueState = NOT_SET;
+        private InputValueWithState defaultValue = InputValueWithState.NOT_SET;
         private GraphQLInputType type;
         private InputValueDefinition definition;
         private final List<GraphQLDirective> directives = new ArrayList<>();
@@ -258,7 +238,6 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
             this.name = existing.getName();
             this.description = existing.getDescription();
             this.defaultValue = existing.getInputFieldDefaultValue();
-            this.defaultValueState = existing.getDefaultValueState();
             this.type = existing.originalType;
             this.definition = existing.getDefinition();
             this.deprecationReason = existing.deprecationReason;
@@ -311,26 +290,22 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
          */
         @Deprecated
         public Builder defaultValue(Object defaultValue) {
-            this.defaultValue = defaultValue;
-            this.defaultValueState = INTERNAL_VALUE;
+            this.defaultValue = InputValueWithState.newInternalValue(defaultValue);
             return this;
         }
 
         public Builder defaultValueLiteral(Value defaultValue) {
-            this.defaultValue = defaultValue;
-            this.defaultValueState = LITERAL;
+            this.defaultValue = InputValueWithState.newLiteralValue(defaultValue);
             return this;
         }
 
         public Builder defaultValueProgrammatic(Object defaultValue) {
-            this.defaultValue = defaultValue;
-            this.defaultValueState = EXTERNAL_VALUE;
+            this.defaultValue = InputValueWithState.newExternalValue(defaultValue);
             return this;
         }
 
         public Builder clearDefaultValue() {
-            this.defaultValue = null;
-            this.defaultValueState = NOT_SET;
+            this.defaultValue = InputValueWithState.NOT_SET;
             return this;
         }
 
@@ -378,7 +353,6 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
                     description,
                     type,
                     defaultValue,
-                    defaultValueState,
                     sort(directives, GraphQLInputObjectField.class, GraphQLDirective.class),
                     definition,
                     deprecationReason);
