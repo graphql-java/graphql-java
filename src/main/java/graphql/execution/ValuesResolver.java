@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.AssertException;
 import graphql.Internal;
 import graphql.Scalars;
@@ -219,7 +220,7 @@ public class ValuesResolver {
         List<GraphQLInputObjectField> fieldDefinitions = fieldVisibility.getFieldDefinitions(inputObjectType);
 
 
-        List<ObjectField> objectFields = new ArrayList<>();
+        ImmutableList.Builder<ObjectField> objectFields = ImmutableList.builder();
         for (GraphQLInputObjectField inputFieldDefinition : fieldDefinitions) {
             GraphQLInputType fieldType = inputFieldDefinition.getType();
             String fieldName = inputFieldDefinition.getName();
@@ -242,7 +243,7 @@ public class ValuesResolver {
                 // meaning no value was provided for this field
             }
         }
-        return ObjectValue.newObjectValue().objectFields(objectFields).build();
+        return ObjectValue.newObjectValue().objectFields(objectFields.build()).build();
     }
 
 

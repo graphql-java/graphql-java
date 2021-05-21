@@ -38,9 +38,6 @@ public class Parser {
     public Document parseDocument(String input) throws InvalidSyntaxException {
         return parseDocument(input, null);
     }
-//    public Value<?> parseValue(String input) throws InvalidSyntaxException {
-//        return parseDocument(input, null);
-//    }
 
     public Document parseDocument(String input, String sourceName) throws InvalidSyntaxException {
         MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
