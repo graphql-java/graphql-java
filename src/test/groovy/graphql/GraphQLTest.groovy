@@ -1355,6 +1355,6 @@ many lines''']
                 .build()
         then:
         def e = thrown(InvalidSchemaException)
-        e.message.contains("Invalid argument")
+        e.message.contains("Invalid argument 'arg' for applied directive of name 'cached'")
     }
 }
