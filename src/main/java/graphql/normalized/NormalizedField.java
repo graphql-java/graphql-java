@@ -1,52 +1,110 @@
 package graphql.normalized;
 
-import graphql.Assert;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
+import graphql.collect.ImmutableKit;
+import graphql.language.Argument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLTypeUtil;
-import graphql.schema.GraphQLUnmodifiedType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLSchema;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.schema.GraphQLTypeUtil.simplePrint;
+import static graphql.Assert.assertTrue;
+import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 
+/**
+ * Intentionally Mutable: parent and object types can be mutated.
+ */
 @Internal
 public class NormalizedField {
     private final String alias;
-    private final Map<String, NormalizedInputValue> normalizedArguments;
-    private final Map<String, Object> arguments;
-    private final GraphQLObjectType objectType;
-    private final GraphQLFieldDefinition fieldDefinition;
+    private final ImmutableMap<String, NormalizedInputValue> normalizedArguments;
+    private final ImmutableMap<String, Object> resolvedArguments;
+    private final ImmutableList<Argument> astArguments;
+    // Mutable List on purpose: it is modified after creation
+    private final LinkedHashSet<String> objectTypeNames;
+    private final String fieldName;
     private final List<NormalizedField> children;
-    private final boolean isConditional;
     private final int level;
     private NormalizedField parent;
 
 
     private NormalizedField(Builder builder) {
         this.alias = builder.alias;
-        this.arguments = builder.arguments;
+        this.resolvedArguments = builder.resolvedArguments;
         this.normalizedArguments = builder.normalizedArguments;
-        this.objectType = builder.objectType;
-        this.fieldDefinition = assertNotNull(builder.fieldDefinition);
+        this.astArguments = builder.astArguments;
+        this.objectTypeNames = builder.objectTypeNames;
+        this.fieldName = assertNotNull(builder.fieldName);
         this.children = builder.children;
         this.level = builder.level;
         this.parent = builder.parent;
-        // can be null for the top level fields
+    }
+
+    public boolean isConditional(GraphQLSchema schema) {
         if (parent == null) {
-            this.isConditional = false;
-        } else {
-            GraphQLUnmodifiedType parentType = GraphQLTypeUtil.unwrapAll(parent.getFieldDefinition().getType());
-            this.isConditional = parentType != this.objectType;
+            return false;
         }
+        return objectTypeNames.size() > 1 || unwrapAll(parent.getType(schema)) != getOneObjectType(schema);
+    }
+
+    public GraphQLOutputType getType(GraphQLSchema schema) {
+        return getOneFieldDefinition(schema).getType();
+    }
+
+    public GraphQLFieldDefinition getOneFieldDefinition(GraphQLSchema schema) {
+        GraphQLFieldDefinition fieldDefinition;
+        GraphQLFieldDefinition introspectionField = resolveIntrospectionField(fieldName, schema);
+        if (introspectionField != null) {
+            return introspectionField;
+        }
+        GraphQLObjectType type = (GraphQLObjectType) assertNotNull(schema.getType(objectTypeNames.iterator().next()));
+        fieldDefinition = assertNotNull(type.getField(fieldName), () -> String.format("no field %s found for type %s", fieldName, objectTypeNames.iterator().next()));
+        return fieldDefinition;
+    }
+
+    public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLSchema schema) {
+        GraphQLFieldDefinition fieldDefinition = resolveIntrospectionField(fieldName, schema);
+        if (fieldDefinition != null) {
+            return ImmutableList.of(fieldDefinition);
+        }
+        ImmutableList.Builder<GraphQLFieldDefinition> builder = ImmutableList.builder();
+        for (String objectTypeName : objectTypeNames) {
+            GraphQLObjectType type = (GraphQLObjectType) assertNotNull(schema.getType(objectTypeName));
+            builder.add(assertNotNull(type.getField(fieldName), () -> String.format("no field %s found for type %s", fieldName, objectTypeNames.iterator().next())));
+        }
+        return builder.build();
+    }
+
+    private static GraphQLFieldDefinition resolveIntrospectionField(String fieldName, GraphQLSchema schema) {
+        if (fieldName.equals(schema.getIntrospectionTypenameFieldDefinition().getName())) {
+            return schema.getIntrospectionTypenameFieldDefinition();
+        } else {
+            if (fieldName.equals(schema.getIntrospectionSchemaFieldDefinition().getName())) {
+                return schema.getIntrospectionSchemaFieldDefinition();
+            } else if (fieldName.equals(schema.getIntrospectionTypeFieldDefinition().getName())) {
+                return schema.getIntrospectionTypeFieldDefinition();
+            }
+        }
+        return null;
+    }
+
+    public void addObjectTypeNames(Collection<String> objectTypeNames) {
+        this.objectTypeNames.addAll(objectTypeNames);
     }
 
     /**
@@ -57,7 +115,7 @@ public class NormalizedField {
      * @return the name of of the merged fields.
      */
     public String getName() {
-        return getFieldDefinition().getName();
+        return getFieldName();
     }
 
     /**
@@ -77,20 +135,20 @@ public class NormalizedField {
         return alias;
     }
 
-    public boolean isConditional() {
-        return isConditional;
+    public ImmutableList<Argument> getAstArguments() {
+        return astArguments;
     }
 
     public NormalizedInputValue getNormalizedArgument(String name) {
         return normalizedArguments.get(name);
     }
 
-    public Map<String, NormalizedInputValue> getNormalizedArguments() {
+    public ImmutableMap<String, NormalizedInputValue> getNormalizedArguments() {
         return normalizedArguments;
     }
 
-    public Map<String, Object> getArguments() {
-        return arguments;
+    public ImmutableMap<String, Object> getResolvedArguments() {
+        return resolvedArguments;
     }
 
 
@@ -99,8 +157,8 @@ public class NormalizedField {
     }
 
 
-    public GraphQLFieldDefinition getFieldDefinition() {
-        return fieldDefinition;
+    public String getFieldName() {
+        return fieldName;
     }
 
 
@@ -110,9 +168,18 @@ public class NormalizedField {
         return builder.build();
     }
 
-    public GraphQLObjectType getObjectType() {
-        return objectType;
+
+    /**
+     * @return Warning: returns a Mutable Set. No defensive copy is made for performance reasons.
+     */
+    public Set<String> getObjectTypeNames() {
+        return objectTypeNames;
     }
+
+    public GraphQLObjectType getOneObjectType(GraphQLSchema schema) {
+        return (GraphQLObjectType) schema.getType(objectTypeNames.iterator().next());
+    }
+
 
     public String printDetails() {
 
@@ -120,30 +187,15 @@ public class NormalizedField {
         if (getAlias() != null) {
             result.append(getAlias()).append(": ");
         }
-        return result + objectType.getName() + "." + fieldDefinition.getName() + ": " + simplePrint(fieldDefinition.getType()) +
-                " (conditional: " + this.isConditional + ")";
+        return result + objectTypeNamesToString() + "." + fieldName;
     }
 
-    public String print() {
-        StringBuilder result = new StringBuilder();
-        result.append("(");
-        if (getAlias() != null) {
-            result.append(getAlias()).append(":");
+    public String objectTypeNamesToString() {
+        if (objectTypeNames.size() == 1) {
+            return objectTypeNames.iterator().next();
+        } else {
+            return objectTypeNames.toString();
         }
-        return result + objectType.getName() + "." + fieldDefinition.getName() + ")";
-    }
-
-    public String printFullPath() {
-        StringBuilder result = new StringBuilder();
-        NormalizedField cur = this;
-        while (cur != null) {
-            if (result.length() > 0) {
-                result.insert(0, "/");
-            }
-            result.insert(0, cur.print());
-            cur = cur.getParent();
-        }
-        return result.toString();
     }
 
     public List<String> getListOfResultKeys() {
@@ -172,24 +224,20 @@ public class NormalizedField {
         this.parent = newParent;
     }
 
-    public boolean isIntrospectionField() {
-        return getFieldDefinition().getName().startsWith("__") || getObjectType().getName().startsWith("__");
-    }
 
     @Override
     public String toString() {
         return "NormalizedField{" +
-                objectType.getName() + "." + fieldDefinition.getName() +
+                objectTypeNamesToString() + "." + fieldName +
                 ", alias=" + alias +
                 ", level=" + level +
-                ", conditional=" + isConditional +
                 ", children=" + children.stream().map(NormalizedField::toString).collect(Collectors.joining("\n")) +
                 '}';
     }
 
     public List<NormalizedField> getChildren(int includingRelativeLevel) {
         List<NormalizedField> result = new ArrayList<>();
-        Assert.assertTrue(includingRelativeLevel >= 1, () -> "relative level must be >= 1");
+        assertTrue(includingRelativeLevel >= 1, () -> "relative level must be >= 1");
 
         this.getChildren().forEach(child -> {
             traverseImpl(child, result::add, 1, includingRelativeLevel);
@@ -217,14 +265,15 @@ public class NormalizedField {
     }
 
     public static class Builder {
-        private GraphQLObjectType objectType;
-        private GraphQLFieldDefinition fieldDefinition;
+        private LinkedHashSet<String> objectTypeNames = new LinkedHashSet<>();
+        private String fieldName;
         private List<NormalizedField> children = new ArrayList<>();
         private int level;
         private NormalizedField parent;
         private String alias;
-        private Map<String, NormalizedInputValue> normalizedArguments = Collections.emptyMap();
-        private Map<String, Object> arguments = Collections.emptyMap();
+        private ImmutableMap<String, NormalizedInputValue> normalizedArguments = ImmutableKit.emptyMap();
+        private ImmutableMap<String, Object> resolvedArguments = ImmutableKit.emptyMap();
+        private ImmutableList<Argument> astArguments = ImmutableKit.emptyList();
 
         private Builder() {
 
@@ -233,38 +282,43 @@ public class NormalizedField {
         private Builder(NormalizedField existing) {
             this.alias = existing.alias;
             this.normalizedArguments = existing.normalizedArguments;
-            this.arguments = existing.arguments;
-            this.objectType = existing.getObjectType();
-            this.fieldDefinition = existing.getFieldDefinition();
+            this.astArguments = existing.astArguments;
+            this.resolvedArguments = existing.resolvedArguments;
+            this.objectTypeNames = new LinkedHashSet<>(existing.getObjectTypeNames());
+            this.fieldName = existing.getFieldName();
             this.children = existing.getChildren();
             this.level = existing.getLevel();
             this.parent = existing.getParent();
         }
 
-        public Builder objectType(GraphQLObjectType objectType) {
-            this.objectType = objectType;
+        public Builder objectTypeNames(List<String> objectTypeNames) {
+            this.objectTypeNames.addAll(objectTypeNames);
             return this;
         }
-
 
         public Builder alias(String alias) {
             this.alias = alias;
             return this;
         }
 
-        public Builder normalizedArguments(Map<String, NormalizedInputValue> arguments) {
-            this.normalizedArguments = arguments == null ? Collections.emptyMap() : arguments;
+        public Builder normalizedArguments(@Nullable Map<String, NormalizedInputValue> arguments) {
+            this.normalizedArguments = arguments == null ? ImmutableKit.emptyMap() : ImmutableMap.copyOf(arguments);
             return this;
         }
 
-        public Builder arguments(Map<String, Object> arguments) {
-            this.arguments = arguments == null ? Collections.emptyMap() : arguments;
+        public Builder resolvedArguments(@Nullable Map<String, Object> arguments) {
+            this.resolvedArguments = arguments == null ? ImmutableKit.emptyMap() : ImmutableMap.copyOf(arguments);
+            return this;
+        }
+
+        public Builder astArguments(@NotNull List<Argument> astArguments) {
+            this.astArguments = ImmutableList.copyOf(astArguments);
             return this;
         }
 
 
-        public Builder fieldDefinition(GraphQLFieldDefinition fieldDefinition) {
-            this.fieldDefinition = fieldDefinition;
+        public Builder fieldName(String fieldName) {
+            this.fieldName = fieldName;
             return this;
         }
 

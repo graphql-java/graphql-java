@@ -15,6 +15,8 @@ import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
 import graphql.schema.visibility.GraphqlFieldVisibility;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -250,8 +252,22 @@ public class GraphQLSchema {
      *
      * @return the type
      */
-    public GraphQLType getType(String typeName) {
+    public @Nullable GraphQLType getType(@NotNull String typeName) {
         return typeMap.get(typeName);
+    }
+
+    /**
+     * All types with the provided names.
+     * throws {@link graphql.AssertException} when a type name could not be resolved
+     *
+     * @return The List of resolved types.
+     */
+    public <T extends GraphQLType> List<T> getTypes(Collection<String> typeNames) {
+        ImmutableList.Builder<T> builder = ImmutableList.builder();
+        for (String typeName : typeNames) {
+            builder.add((T) assertNotNull(typeMap.get(typeName), () -> String.format("No type found for name %s", typeName)));
+        }
+        return builder.build();
     }
 
     /**
