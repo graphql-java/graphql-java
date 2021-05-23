@@ -23,7 +23,7 @@ import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import org.dataloader.DataLoaderRegistry
-import org.junit.Ignore
+import spock.lang.Ignore
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -80,8 +80,8 @@ class ExecutionStrategyTest extends Specification {
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")
-    @Ignore
     // to hard to mock
+    @Ignore
     def "complete values always calls query strategy to execute more"() {
         given:
         def dataFetcher = Mock(DataFetcher)
