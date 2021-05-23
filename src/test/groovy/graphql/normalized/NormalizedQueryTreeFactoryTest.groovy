@@ -73,6 +73,11 @@ type Dog implements Animal{
                     friends {
                         ... on Friend {
                             isCatOwner
+                            pets {
+                               ... on Dog {
+                                name
+                               } 
+                            }
                         }
                    } 
                }
@@ -82,6 +87,11 @@ type Dog implements Animal{
                     }
                     friends {
                         name
+                        pets {
+                           ... on Cat {
+                            breed
+                           } 
+                        }
                     }
                }
                ... on Dog {
@@ -105,6 +115,9 @@ type Dog implements Animal{
                         'otherName: [Bird, Cat, Dog].name',
                         '[Cat, Bird].friends',
                         'Friend.isCatOwner',
+                        'Friend.pets',
+                        'Dog.name',
+                        'Cat.breed',
                         'Friend.isBirdOwner',
                         'Friend.name']
 

@@ -35,12 +35,14 @@ public class NormalizedField {
     private final ImmutableMap<String, NormalizedInputValue> normalizedArguments;
     private final ImmutableMap<String, Object> resolvedArguments;
     private final ImmutableList<Argument> astArguments;
+
     // Mutable List on purpose: it is modified after creation
     private final LinkedHashSet<String> objectTypeNames;
-    private final String fieldName;
-    private final List<NormalizedField> children;
-    private final int level;
+    private ArrayList<NormalizedField> children;
     private NormalizedField parent;
+
+    private final String fieldName;
+    private final int level;
 
 
     private NormalizedField(Builder builder) {
@@ -105,6 +107,10 @@ public class NormalizedField {
 
     public void addObjectTypeNames(Collection<String> objectTypeNames) {
         this.objectTypeNames.addAll(objectTypeNames);
+    }
+
+    public void addChild(NormalizedField normalizedField) {
+        this.children.add(normalizedField);
     }
 
     /**
@@ -267,7 +273,7 @@ public class NormalizedField {
     public static class Builder {
         private LinkedHashSet<String> objectTypeNames = new LinkedHashSet<>();
         private String fieldName;
-        private List<NormalizedField> children = new ArrayList<>();
+        private ArrayList<NormalizedField> children = new ArrayList<>();
         private int level;
         private NormalizedField parent;
         private String alias;
@@ -286,7 +292,7 @@ public class NormalizedField {
             this.resolvedArguments = existing.resolvedArguments;
             this.objectTypeNames = new LinkedHashSet<>(existing.getObjectTypeNames());
             this.fieldName = existing.getFieldName();
-            this.children = existing.getChildren();
+            this.children = new ArrayList<>(existing.children);
             this.level = existing.getLevel();
             this.parent = existing.getParent();
         }
