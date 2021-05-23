@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
@@ -646,7 +647,21 @@ public abstract class ExecutionStrategy {
                 .variables(executionContext.getVariables())
                 .build();
 
-        MergedSelectionSet subFields = fieldCollector.collectFields(collectorParameters, parameters.getField());
+
+        // finding the NF for the current object field
+        NormalizedQueryTree normalizedQueryTree = executionContext.getNormalizedQueryTree().get();
+        NormalizedField normalizedField = normalizedQueryTree.getNormalizedField(executionStepInfo.getField(), executionStepInfo.getObjectType(), executionStepInfo.getPath());
+
+        Map<String, MergedField> subFieldsMap = new LinkedHashMap<>();
+        for (NormalizedField child : normalizedField.getChildren()) {
+            // only add child if the type matches
+            if (!child.getObjectTypeNames().contains(resolvedObjectType.getName())) {
+                continue;
+            }
+            MergedField newMergedField = normalizedQueryTree.getNormalizedFieldToMergedField().get(child);
+            subFieldsMap.put(child.getResultKey(), newMergedField);
+        }
+        MergedSelectionSet subFields = MergedSelectionSet.newMergedSelectionSet().subFields(subFieldsMap).build();
 
         ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(resolvedObjectType);
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, newExecutionStepInfo);
