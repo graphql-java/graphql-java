@@ -209,10 +209,6 @@ public class ValuesResolver {
         return new ValuesResolver().externalValueToInternalValue(fieldVisibility, type, externalValue);
     }
 
-//    public static Object externalValueToInternalValue(Object externalValue, GraphQLInputType type) {
-//        return new ValuesResolver().externalValueToInternalValue(DEFAULT_FIELD_VISIBILITY, type, externalValue);
-//    }
-
     public static Object valueToInternalValue(InputValueWithState inputValueWithState, GraphQLType type) throws CoercingParseValueException, CoercingParseLiteralException {
         DefaultGraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
         if (inputValueWithState.isInternal()) {
@@ -440,29 +436,6 @@ public class ValuesResolver {
         return coercedValues;
 
     }
-
-//    private Object newValue(Object value, GraphQLType type, ValueMode valueMode) {
-//        if (valueMode == ValueMode.COERCED) {
-//            return value;
-//        } else if (valueMode == NORMALIZED) {
-//            return new NormalizedInputValue(simplePrint(type), value);
-//        } else {
-//            return assertShouldNeverHappen();
-//        }
-//    }
-
-//    private Map<String, Object> getVariables(Map<String, Object> coercedVariables,
-//                                             @Nullable Map<String, NormalizedInputValue> normalizedVariables,
-//                                             ValueMode valueMode) {
-//        if (valueMode == ValueMode.COERCED) {
-//            return coercedVariables;
-//        } else if (valueMode == ValueMode.NORMALIZED) {
-//            return (Map) normalizedVariables;
-//        } else {
-//            return assertShouldNeverHappen();
-//        }
-//    }
-
 
     private Map<String, Argument> argumentMap(List<Argument> arguments) {
         Map<String, Argument> result = new LinkedHashMap<>(arguments.size());
