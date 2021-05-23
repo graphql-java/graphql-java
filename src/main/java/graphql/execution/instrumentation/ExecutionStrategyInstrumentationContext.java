@@ -13,4 +13,8 @@ public interface ExecutionStrategyInstrumentationContext extends Instrumentation
 
     }
 
+    default void onFieldValuesException() {
+
+    }
+
 }
