@@ -121,12 +121,16 @@ public class NormalizedQueryTreeFactory {
             ImmutableList<Field> mergedField = collectFromOperationResult.normalizedFieldToAstFields.get(topLevel);
             normalizedFieldToMergedField.put(topLevel, MergedField.newMergedField(mergedField).build());
             updateFieldToNFMap(topLevel, mergedField, fieldToNormalizedField);
+            updateCoordinatedToNFMap(coordinatesToNormalizedFields, topLevel);
 
-            buildFieldWithChildren(topLevel, mergedField, parameters, fieldToNormalizedField, normalizedFieldToMergedField, coordinatesToNormalizedFields, 1);
-            for (String objectType : topLevel.getObjectTypeNames()) {
-                FieldCoordinates coordinates = FieldCoordinates.coordinates(objectType, topLevel.getFieldName());
-                coordinatesToNormalizedFields.put(coordinates, topLevel);
-            }
+            buildFieldWithChildren(topLevel,
+                    mergedField,
+                    parameters,
+                    fieldToNormalizedField,
+                    normalizedFieldToMergedField,
+                    coordinatesToNormalizedFields,
+                    1);
+
         }
         return new NormalizedQueryTree(new ArrayList<>(collectFromOperationResult.children), fieldToNormalizedField.build(), normalizedFieldToMergedField.build(), coordinatesToNormalizedFields.build());
     }
@@ -141,11 +145,12 @@ public class NormalizedQueryTreeFactory {
                                         int curLevel) {
         CollectFieldResult nextLevel = collectFromMergedField(fieldCollectorNormalizedQueryParams, field, mergedField, curLevel + 1);
         for (NormalizedField child : nextLevel.children) {
-            field.addChild(child);
 
+            field.addChild(child);
             ImmutableList<Field> mergedFieldForChild = nextLevel.normalizedFieldToAstFields.get(child);
             normalizedFieldToMergedField.put(child, MergedField.newMergedField(mergedFieldForChild).build());
             updateFieldToNFMap(child, mergedFieldForChild, fieldNormalizedField);
+            updateCoordinatedToNFMap(coordinatesToNormalizedFields, child);
 
             buildFieldWithChildren(child,
                     mergedFieldForChild,
@@ -154,11 +159,6 @@ public class NormalizedQueryTreeFactory {
                     normalizedFieldToMergedField,
                     coordinatesToNormalizedFields,
                     curLevel + 1);
-
-            for (String objectType : child.getObjectTypeNames()) {
-                FieldCoordinates coordinates = FieldCoordinates.coordinates(objectType, child.getFieldName());
-                coordinatesToNormalizedFields.put(coordinates, child);
-            }
         }
     }
 
@@ -169,6 +169,14 @@ public class NormalizedQueryTreeFactory {
             fieldToNormalizedField.put(astField, normalizedField);
         }
     }
+
+    private void updateCoordinatedToNFMap(ImmutableListMultimap.Builder<FieldCoordinates, NormalizedField> coordinatesToNormalizedFields, NormalizedField topLevel) {
+        for (String objectType : topLevel.getObjectTypeNames()) {
+            FieldCoordinates coordinates = FieldCoordinates.coordinates(objectType, topLevel.getFieldName());
+            coordinatesToNormalizedFields.put(coordinates, topLevel);
+        }
+    }
+
 
     public static class CollectFieldResult {
         private final Collection<NormalizedField> children;
