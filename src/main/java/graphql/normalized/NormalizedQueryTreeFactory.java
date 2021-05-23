@@ -321,7 +321,7 @@ public class NormalizedQueryTreeFactory {
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getCoercedVariableValues());
         Map<String, NormalizedInputValue> normalizedArgumentValues = null;
         if (parameters.getNormalizedVariableValues() != null) {
-            normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getCoercedVariableValues(), parameters.getNormalizedVariableValues());
+            normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getNormalizedVariableValues());
         }
         ImmutableList<String> objectTypeNames = map(objectTypes, GraphQLObjectType::getName);
         NormalizedField normalizedField = NormalizedField.newQueryExecutionField()
