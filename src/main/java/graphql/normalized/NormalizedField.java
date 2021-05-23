@@ -27,7 +27,7 @@ import static graphql.Assert.assertTrue;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 
 /**
- * Intentionally Mutable: parent and object types can be mutated.
+ * Intentionally Mutable
  */
 @Internal
 public class NormalizedField {
@@ -38,7 +38,7 @@ public class NormalizedField {
 
     // Mutable List on purpose: it is modified after creation
     private final LinkedHashSet<String> objectTypeNames;
-    private ArrayList<NormalizedField> children;
+    private final ArrayList<NormalizedField> children;
     private NormalizedField parent;
 
     private final String fieldName;
@@ -111,6 +111,11 @@ public class NormalizedField {
 
     public void addChild(NormalizedField normalizedField) {
         this.children.add(normalizedField);
+    }
+
+    public void clearChildren() {
+        this.children.clear();
+        ;
     }
 
     /**
