@@ -1,6 +1,10 @@
 package graphql.normalized;
 
+import graphql.language.Value;
+
 import java.util.Objects;
+
+import static graphql.language.AstPrinter.printAst;
 
 /**
  * A value with type information.
@@ -25,9 +29,9 @@ public class NormalizedInputValue {
 
     /**
      * Depending on the type it returns:
-     * Scalar or Enum: the value of the Scalar.
+     * Scalar or Enum: the ast literal of the Scalar.
      * InputObject: the value is a map of field-name to NormalizedInputValue
-     * List of Scalar/Enum/InputObject (or even List of List ..)
+     * List of Scalar literal or Enum literal or NormalizedInput (or even List of List ..)
      *
      * @return
      */
@@ -62,6 +66,9 @@ public class NormalizedInputValue {
             return false;
         }
         NormalizedInputValue that = (NormalizedInputValue) o;
+        if (value instanceof Value && that.value instanceof Value) {
+            return Objects.equals(typeName, that.typeName) && Objects.equals(printAst((Value) value), printAst((Value) that.value));
+        }
         return Objects.equals(typeName, that.typeName) && Objects.equals(value, that.value);
     }
 

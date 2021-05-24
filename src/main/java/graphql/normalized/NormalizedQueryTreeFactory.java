@@ -87,7 +87,7 @@ public class NormalizedQueryTreeFactory {
 
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
         Map<String, Object> coerceVariableValues = valuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, rawVariables);
-        Map<String, NormalizedInputValue> normalizedVariableValues = valuesResolver.coerceNormalizedVariableValues(graphQLSchema, variableDefinitions, rawVariables);
+        Map<String, NormalizedInputValue> normalizedVariableValues = valuesResolver.getNormalizedVariableValues(graphQLSchema, variableDefinitions, rawVariables);
         return createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coerceVariableValues, normalizedVariableValues);
     }
 
@@ -111,74 +111,72 @@ public class NormalizedQueryTreeFactory {
 
         GraphQLObjectType rootType = Common.getOperationRootType(graphQLSchema, operationDefinition);
 
-        CollectFieldResult topLevelFields = collectFromOperation(parameters, operationDefinition, rootType);
+        CollectFieldResult collectFromOperationResult = collectFromOperation(parameters, operationDefinition, rootType);
 
         ImmutableListMultimap.Builder<Field, NormalizedField> fieldToNormalizedField = ImmutableListMultimap.builder();
         ImmutableMap.Builder<NormalizedField, MergedField> normalizedFieldToMergedField = ImmutableMap.builder();
         ImmutableListMultimap.Builder<FieldCoordinates, NormalizedField> coordinatesToNormalizedFields = ImmutableListMultimap.builder();
 
-        List<NormalizedField> realRoots = new ArrayList<>();
+        for (NormalizedField topLevel : collectFromOperationResult.children) {
+            ImmutableList<Field> mergedField = collectFromOperationResult.normalizedFieldToAstFields.get(topLevel);
+            normalizedFieldToMergedField.put(topLevel, MergedField.newMergedField(mergedField).build());
+            updateFieldToNFMap(topLevel, mergedField, fieldToNormalizedField);
+            updateCoordinatedToNFMap(coordinatesToNormalizedFields, topLevel);
 
-        for (NormalizedField topLevel : topLevelFields.children) {
+            buildFieldWithChildren(topLevel,
+                    mergedField,
+                    parameters,
+                    fieldToNormalizedField,
+                    normalizedFieldToMergedField,
+                    coordinatesToNormalizedFields,
+                    1);
 
-            ImmutableList<Field> mergedField = topLevelFields.normalizedFieldToAstFields.get(topLevel);
-            NormalizedField realTopLevel = buildFieldWithChildren(topLevel, mergedField, parameters, fieldToNormalizedField, normalizedFieldToMergedField, coordinatesToNormalizedFields, 1);
-            fixUpParentReference(realTopLevel);
-
-            normalizedFieldToMergedField.put(realTopLevel, MergedField.newMergedField(mergedField).build());
-            for (String objectType : realTopLevel.getObjectTypeNames()) {
-                FieldCoordinates coordinates = FieldCoordinates.coordinates(objectType, realTopLevel.getFieldName());
-                coordinatesToNormalizedFields.put(coordinates, realTopLevel);
-            }
-            updateByAstFieldMap(realTopLevel, mergedField, fieldToNormalizedField);
-            realRoots.add(realTopLevel);
         }
-        return new NormalizedQueryTree(realRoots, fieldToNormalizedField.build(), normalizedFieldToMergedField.build(), coordinatesToNormalizedFields.build());
-    }
-
-    private void fixUpParentReference(NormalizedField rootNormalizedField) {
-        for (NormalizedField child : rootNormalizedField.getChildren()) {
-            child.replaceParent(rootNormalizedField);
-        }
+        return new NormalizedQueryTree(new ArrayList<>(collectFromOperationResult.children), fieldToNormalizedField.build(), normalizedFieldToMergedField.build(), coordinatesToNormalizedFields.build());
     }
 
 
-    private NormalizedField buildFieldWithChildren(NormalizedField field,
-                                                   ImmutableList<Field> mergedField,
-                                                   FieldCollectorNormalizedQueryParams fieldCollectorNormalizedQueryParams,
-                                                   ImmutableListMultimap.Builder<Field, NormalizedField> fieldNormalizedField,
-                                                   ImmutableMap.Builder<NormalizedField, MergedField> normalizedFieldToMergedField,
-                                                   ImmutableListMultimap.Builder<FieldCoordinates, NormalizedField> coordinatesToNormalizedFields,
-                                                   int curLevel) {
+    private void buildFieldWithChildren(NormalizedField field,
+                                        ImmutableList<Field> mergedField,
+                                        FieldCollectorNormalizedQueryParams fieldCollectorNormalizedQueryParams,
+                                        ImmutableListMultimap.Builder<Field, NormalizedField> fieldNormalizedField,
+                                        ImmutableMap.Builder<NormalizedField, MergedField> normalizedFieldToMergedField,
+                                        ImmutableListMultimap.Builder<FieldCoordinates, NormalizedField> coordinatesToNormalizedFields,
+                                        int curLevel) {
+        CollectFieldResult nextLevel = collectFromMergedField(fieldCollectorNormalizedQueryParams, field, mergedField, curLevel + 1);
+        for (NormalizedField child : nextLevel.children) {
 
-        CollectFieldResult fieldsWithoutChildren = collectFromMergedField(fieldCollectorNormalizedQueryParams, field, mergedField, curLevel + 1);
-        List<NormalizedField> realChildren = new ArrayList<>();
-        for (NormalizedField fieldWithoutChildren : fieldsWithoutChildren.children) {
+            field.addChild(child);
+            ImmutableList<Field> mergedFieldForChild = nextLevel.normalizedFieldToAstFields.get(child);
+            normalizedFieldToMergedField.put(child, MergedField.newMergedField(mergedFieldForChild).build());
+            updateFieldToNFMap(child, mergedFieldForChild, fieldNormalizedField);
+            updateCoordinatedToNFMap(coordinatesToNormalizedFields, child);
 
-            ImmutableList<Field> mergedFieldForChild = fieldsWithoutChildren.normalizedFieldToAstFields.get(fieldWithoutChildren);
-            NormalizedField realChild = buildFieldWithChildren(fieldWithoutChildren, mergedFieldForChild, fieldCollectorNormalizedQueryParams, fieldNormalizedField, normalizedFieldToMergedField, coordinatesToNormalizedFields, curLevel + 1);
-            fixUpParentReference(realChild);
-
-            normalizedFieldToMergedField.put(realChild, MergedField.newMergedField(mergedFieldForChild).build());
-            for (String objectType : realChild.getObjectTypeNames()) {
-                FieldCoordinates coordinates = FieldCoordinates.coordinates(objectType, realChild.getFieldName());
-                coordinatesToNormalizedFields.put(coordinates, realChild);
-            }
-
-            realChildren.add(realChild);
-
-            updateByAstFieldMap(realChild, mergedFieldForChild, fieldNormalizedField);
+            buildFieldWithChildren(child,
+                    mergedFieldForChild,
+                    fieldCollectorNormalizedQueryParams,
+                    fieldNormalizedField,
+                    normalizedFieldToMergedField,
+                    coordinatesToNormalizedFields,
+                    curLevel + 1);
         }
-        return field.transform(builder -> builder.children(realChildren));
     }
 
-    private void updateByAstFieldMap(NormalizedField normalizedField,
-                                     ImmutableList<Field> mergedField,
-                                     ImmutableListMultimap.Builder<Field, NormalizedField> fieldToNormalizedField) {
+    private void updateFieldToNFMap(NormalizedField normalizedField,
+                                    ImmutableList<Field> mergedField,
+                                    ImmutableListMultimap.Builder<Field, NormalizedField> fieldToNormalizedField) {
         for (Field astField : mergedField) {
             fieldToNormalizedField.put(astField, normalizedField);
         }
     }
+
+    private void updateCoordinatedToNFMap(ImmutableListMultimap.Builder<FieldCoordinates, NormalizedField> coordinatesToNormalizedFields, NormalizedField topLevel) {
+        for (String objectType : topLevel.getObjectTypeNames()) {
+            FieldCoordinates coordinates = FieldCoordinates.coordinates(objectType, topLevel.getFieldName());
+            coordinatesToNormalizedFields.put(coordinates, topLevel);
+        }
+    }
+
 
     public static class CollectFieldResult {
         private final Collection<NormalizedField> children;
@@ -292,7 +290,7 @@ public class NormalizedQueryTreeFactory {
 
     private void collectField(FieldCollectorNormalizedQueryParams parameters,
                               Multimap<String, NormalizedField> result,
-                              ImmutableListMultimap.Builder<NormalizedField, Field> fieldsByNormalizedField,
+                              ImmutableListMultimap.Builder<NormalizedField, Field> normalizedFieldToMergedField,
                               Field field,
                               Set<GraphQLObjectType> objectTypes,
                               int level,
@@ -313,7 +311,7 @@ public class NormalizedQueryTreeFactory {
             NormalizedField matchingNF = findMatchingNF(parameters.getGraphQLSchema(), existingNFs, fieldDefinition, field.getArguments());
             if (matchingNF != null) {
                 matchingNF.addObjectTypeNames(map(objectTypes, GraphQLObjectType::getName));
-                fieldsByNormalizedField.put(matchingNF, field);
+                normalizedFieldToMergedField.put(matchingNF, field);
                 return;
             }
         }
@@ -321,7 +319,7 @@ public class NormalizedQueryTreeFactory {
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getCoercedVariableValues());
         Map<String, NormalizedInputValue> normalizedArgumentValues = null;
         if (parameters.getNormalizedVariableValues() != null) {
-            normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getCoercedVariableValues(), parameters.getNormalizedVariableValues());
+            normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getNormalizedVariableValues());
         }
         ImmutableList<String> objectTypeNames = map(objectTypes, GraphQLObjectType::getName);
         NormalizedField normalizedField = NormalizedField.newQueryExecutionField()
@@ -336,7 +334,7 @@ public class NormalizedQueryTreeFactory {
                 .build();
 
         result.put(resultKey, normalizedField);
-        fieldsByNormalizedField.put(normalizedField, field);
+        normalizedFieldToMergedField.put(normalizedField, field);
     }
 
     private NormalizedField findMatchingNF(GraphQLSchema schema, Collection<NormalizedField> normalizedFields, GraphQLFieldDefinition fieldDefinition, List<Argument> arguments) {
@@ -384,9 +382,6 @@ public class NormalizedQueryTreeFactory {
         }
         return null;
     }
-
-
-
 
 
     private Set<GraphQLObjectType> narrowDownPossibleObjects(Set<GraphQLObjectType> currentOnes,
