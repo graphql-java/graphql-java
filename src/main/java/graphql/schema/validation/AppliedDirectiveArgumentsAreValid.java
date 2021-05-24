@@ -1,5 +1,6 @@
 package graphql.schema.validation;
 
+import graphql.Internal;
 import graphql.execution.NonNullableValueCoercedAsNullException;
 import graphql.execution.ValuesResolver;
 import graphql.language.Value;
@@ -17,6 +18,7 @@ import graphql.validation.ValidationUtil;
 
 import static java.lang.String.format;
 
+@Internal
 public class AppliedDirectiveArgumentsAreValid extends GraphQLTypeVisitorStub {
 
     private ValidationUtil validationUtil = new ValidationUtil();
