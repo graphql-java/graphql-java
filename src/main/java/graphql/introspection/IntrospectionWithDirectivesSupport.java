@@ -3,8 +3,8 @@ package graphql.introspection;
 import com.google.common.collect.ImmutableSet;
 import graphql.PublicApi;
 import graphql.PublicSpi;
+import graphql.execution.ValuesResolver;
 import graphql.language.AstPrinter;
-import graphql.language.AstValueHelper;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
@@ -15,6 +15,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeVisitorStub;
+import graphql.schema.InputValueWithState;
 import graphql.schema.SchemaTransformer;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -194,8 +195,12 @@ public class IntrospectionWithDirectivesSupport {
         };
         DataFetcher<?> argValueDF = env -> {
             final GraphQLArgument argument = env.getSource();
-            Object value = argument.getValue();
-            return AstPrinter.printAst(AstValueHelper.astFromValue(value, argument.getType()));
+            if (argument.hasSetValue()) {
+                InputValueWithState value = argument.getArgumentValue();
+                return AstPrinter.printAst(ValuesResolver.valueToLiteral(value, argument.getType()));
+            } else {
+                return null;
+            }
         };
         codeRegistry.dataFetcher(coordinates(objectType, "appliedDirectives"), df);
         codeRegistry.dataFetcher(coordinates(appliedDirectiveType, "args"), argsDF);

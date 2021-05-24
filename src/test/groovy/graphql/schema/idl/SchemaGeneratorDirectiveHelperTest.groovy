@@ -2,6 +2,7 @@ package graphql.schema.idl
 
 import graphql.ExecutionInput
 import graphql.GraphQL
+import graphql.execution.ValuesResolver
 import graphql.schema.Coercing
 import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
@@ -140,7 +141,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 fieldDefinitions[name] = environment.getFieldDefinition()?.getName()
 
                 GraphQLDirective directive = environment.getDirective()
-                String target = directive.getArgument("target").getValue()
+                def arg = directive.getArgument("target")
+                String target = ValuesResolver.valueToInternalValue(arg.getArgumentValue(), arg.getType())
                 assert name == target, " The target $target is not equal to the object name $name"
                 return element
             }

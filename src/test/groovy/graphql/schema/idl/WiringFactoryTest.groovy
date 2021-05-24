@@ -1,6 +1,6 @@
 package graphql.schema.idl
 
-import graphql.Scalars
+
 import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
 import graphql.schema.Coercing
@@ -206,7 +206,6 @@ class WiringFactoryTest extends Specification {
 
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(combinedWiringFactory)
-                .scalar(Scalars.GraphQLLong)
                 .build()
 
         def schema = TestUtil.schema(spec, wiring)

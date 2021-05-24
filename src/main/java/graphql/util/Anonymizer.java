@@ -12,6 +12,7 @@ import graphql.analysis.QueryVisitorFieldArgumentValueEnvironment;
 import graphql.analysis.QueryVisitorFieldEnvironment;
 import graphql.analysis.QueryVisitorFragmentSpreadEnvironment;
 import graphql.analysis.QueryVisitorInlineFragmentEnvironment;
+import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.AstPrinter;
@@ -28,6 +29,7 @@ import graphql.language.NodeVisitorStub;
 import graphql.language.OperationDefinition;
 import graphql.language.StringValue;
 import graphql.language.TypeName;
+import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.parser.Parser;
@@ -142,9 +144,12 @@ public class Anonymizer {
             @Override
             public TraversalControl visitGraphQLArgument(GraphQLArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
                 String newName = assertNotNull(newNameMap.get(graphQLArgument));
-                Object defaultValue = replaceDefaultValue(graphQLArgument.getDefaultValue(), defaultStringValueCounter, defaultIntValueCounter);
                 GraphQLArgument newElement = graphQLArgument.transform(builder -> {
-                    builder.name(newName).defaultValue(defaultValue).description(null).definition(null);
+                    builder.name(newName).description(null).definition(null);
+                    if (graphQLArgument.hasSetDefaultValue()) {
+                        Value<?> defaultValueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getArgumentDefaultValue(), graphQLArgument.getType());
+                        builder.defaultValueLiteral(replaceDefaultValue(defaultValueLiteral, defaultStringValueCounter, defaultIntValueCounter));
+                    }
                 });
                 return changeNode(context, newElement);
             }
@@ -182,7 +187,7 @@ public class Anonymizer {
                 GraphQLEnumValueDefinition newElement = enumValueDefinition.transform(builder -> {
                     builder.name(newName).description(null).definition(null);
                 });
-                return changeNode(context,newElement);
+                return changeNode(context, newElement);
             }
 
             @Override
@@ -199,7 +204,7 @@ public class Anonymizer {
                 if (Directives.DEPRECATED_DIRECTIVE_DEFINITION.getName().equals(graphQLDirective.getName())) {
                     GraphQLArgument reason = newArgument().name("reason")
                             .type(Scalars.GraphQLString)
-                            .value(null).build();
+                            .clearValue().build();
                     GraphQLDirective newElement = graphQLDirective.transform(builder -> {
                         builder.description(null).argument(reason);
                     });
@@ -220,17 +225,22 @@ public class Anonymizer {
             public TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField graphQLInputObjectField, TraverserContext<GraphQLSchemaElement> context) {
                 String newName = assertNotNull(newNameMap.get(graphQLInputObjectField));
 
-                Object defaultValue = graphQLInputObjectField.getDefaultValue();
-                defaultValue = replaceDefaultValue(defaultValue, defaultStringValueCounter, defaultIntValueCounter);
+                Value<?> defaultValue = null;
+                if (graphQLInputObjectField.hasSetDefaultValue()) {
+                    defaultValue = ValuesResolver.valueToLiteral(graphQLInputObjectField.getInputFieldDefaultValue(), graphQLInputObjectField.getType());
+                    defaultValue = replaceDefaultValue(defaultValue, defaultStringValueCounter, defaultIntValueCounter);
+                }
 
-                Object finalDefaultValue = defaultValue;
+                Value<?> finalDefaultValue = defaultValue;
                 GraphQLInputObjectField newElement = graphQLInputObjectField.transform(builder -> {
                     builder.name(newName);
-                    builder.defaultValue(finalDefaultValue);
+                    if (finalDefaultValue != null) {
+                        builder.defaultValueLiteral(finalDefaultValue);
+                    }
                     builder.description(null);
                     builder.definition(null);
                 });
-                return changeNode(context,newElement);
+                return changeNode(context, newElement);
             }
 
             @Override
@@ -242,7 +252,7 @@ public class Anonymizer {
                 GraphQLInputObjectType newElement = graphQLInputObjectType.transform(builder -> {
                     builder.name(newName).description(null).definition(null);
                 });
-                return changeNode(context,newElement);
+                return changeNode(context, newElement);
             }
 
 
@@ -255,7 +265,7 @@ public class Anonymizer {
                 GraphQLObjectType newElement = graphQLObjectType.transform(builder -> {
                     builder.name(newName).description(null).definition(null);
                 });
-                return changeNode(context,newElement);
+                return changeNode(context, newElement);
             }
 
             @Override
@@ -267,7 +277,7 @@ public class Anonymizer {
                 GraphQLScalarType newElement = graphQLScalarType.transform(builder -> {
                     builder.name(newName).description(null).definition(null);
                 });
-                return changeNode(context,newElement);
+                return changeNode(context, newElement);
             }
 
             @Override
@@ -282,7 +292,7 @@ public class Anonymizer {
                 GraphQLCodeRegistry.Builder codeRegistry = assertNotNull(context.getVarFromParents(GraphQLCodeRegistry.Builder.class));
                 TypeResolver typeResolver = codeRegistry.getTypeResolver(graphQLUnionType);
                 codeRegistry.typeResolver(newName, typeResolver);
-                return changeNode(context,newElement);
+                return changeNode(context, newElement);
             }
         });
 
@@ -295,13 +305,13 @@ public class Anonymizer {
         return result;
     }
 
-    private static Object replaceDefaultValue(Object defaultValue, AtomicInteger defaultStringValueCounter, AtomicInteger defaultIntValueCounter) {
-        if (defaultValue instanceof String) {
-            defaultValue = "defaultValue" + defaultStringValueCounter.getAndIncrement();
-        } else if (defaultValue instanceof Integer) {
-            defaultValue = defaultIntValueCounter.getAndIncrement();
+    private static Value replaceDefaultValue(Value defaultValueLiteral, AtomicInteger defaultStringValueCounter, AtomicInteger defaultIntValueCounter) {
+        if (defaultValueLiteral instanceof StringValue) {
+            return StringValue.newStringValue("defaultValue" + defaultStringValueCounter.getAndIncrement()).build();
+        } else if (defaultValueLiteral instanceof IntValue) {
+            return IntValue.newIntValue(BigInteger.valueOf(defaultIntValueCounter.getAndIncrement())).build();
         }
-        return defaultValue;
+        return defaultValueLiteral;
     }
 
     public static Map<GraphQLNamedSchemaElement, String> recordNewNames(GraphQLSchema schema) {

@@ -2,13 +2,16 @@ package graphql.parser;
 
 import graphql.PublicApi;
 import graphql.language.Document;
+import graphql.language.Node;
 import graphql.language.SourceLocation;
+import graphql.language.Value;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CodePointCharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
@@ -18,6 +21,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.function.BiFunction;
 
 @PublicApi
 public class Parser {
@@ -25,6 +29,10 @@ public class Parser {
 
     public static Document parse(String input) {
         return new Parser().parseDocument(input);
+    }
+
+    public static Value<?> parseValue(String input) {
+        return new Parser().parseValueImpl(input);
     }
 
     public Document parseDocument(String input) throws InvalidSyntaxException {
@@ -39,7 +47,29 @@ public class Parser {
         return parseDocument(multiSourceReader);
     }
 
-    public Document parseDocument(Reader reader) throws InvalidSyntaxException {
+    public Document parseDocument(Reader reader) {
+        BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction = (parser, toLanguage) -> {
+            GraphqlParser.DocumentContext documentContext = parser.document();
+            Document doc = toLanguage.createDocument(documentContext);
+            return new Object[]{documentContext, doc};
+        };
+        return (Document) parseImpl(reader, nodeFunction);
+    }
+
+    private Value<?> parseValueImpl(String input) {
+        BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction = (parser, toLanguage) -> {
+            GraphqlParser.ValueContext documentContext = parser.value();
+            Value value = toLanguage.createValue(documentContext);
+            return new Object[]{documentContext, value};
+        };
+        MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
+                .string(input, null)
+                .trackData(true)
+                .build();
+        return (Value<?>) parseImpl(multiSourceReader, nodeFunction);
+    }
+
+    private Node parseImpl(Reader reader, BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction) throws InvalidSyntaxException {
         MultiSourceReader multiSourceReader;
         if (reader instanceof MultiSourceReader) {
             multiSourceReader = (MultiSourceReader) reader;
@@ -75,11 +105,11 @@ public class Parser {
         parser.setErrorHandler(bailStrategy);
 
         GraphqlAntlrToLanguage toLanguage = getAntlrToLanguage(tokens, multiSourceReader);
-        GraphqlParser.DocumentContext documentContext = parser.document();
+        Object[] contextAndNode = nodeFunction.apply(parser, toLanguage);
+        ParserRuleContext parserRuleContext = (ParserRuleContext) contextAndNode[0];
+        Node node = (Node) contextAndNode[1];
 
-        Document doc = toLanguage.createDocument(documentContext);
-
-        Token stop = documentContext.getStop();
+        Token stop = parserRuleContext.getStop();
         List<Token> allTokens = tokens.getTokens();
         if (stop != null && allTokens != null && !allTokens.isEmpty()) {
             Token last = allTokens.get(allTokens.size() - 1);
@@ -93,7 +123,7 @@ public class Parser {
                 throw bailStrategy.mkMoreTokensException(last);
             }
         }
-        return doc;
+        return node;
     }
 
     /**
@@ -101,6 +131,7 @@ public class Parser {
      *
      * @param tokens            the token stream
      * @param multiSourceReader the source of the query document
+     *
      * @return a new GraphqlAntlrToLanguage instance
      */
     protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {

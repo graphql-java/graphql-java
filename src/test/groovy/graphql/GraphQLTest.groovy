@@ -2,6 +2,7 @@ package graphql
 
 import graphql.analysis.MaxQueryComplexityInstrumentation
 import graphql.analysis.MaxQueryDepthInstrumentation
+import graphql.collect.ImmutableKit
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.DataFetcherExceptionHandler
 import graphql.execution.DataFetcherResult
@@ -18,6 +19,7 @@ import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrume
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInterfaceType
@@ -25,6 +27,9 @@ import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.StaticDataFetcher
+import graphql.schema.idl.SchemaGenerator
+import graphql.schema.idl.errors.SchemaProblem
+import graphql.schema.validation.InvalidSchemaException
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
@@ -1212,5 +1217,144 @@ many lines''']
         graphQL.execute("{f}")
         then:
         capturedMsg == "BANG!"
+    }
+
+    def "invalid argument literal"() {
+        def sdl = '''
+            type Query {
+                foo(arg: Input): String
+            }
+            input Input {
+                required: String!
+            }
+        '''
+
+        def schema = TestUtil.schema(sdl)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        when:
+        def executionResult = graphQL.execute("{foo(arg:{})}")
+        then:
+        executionResult.errors.size() == 1
+        executionResult.errors[0].message.contains("is missing required fields")
+    }
+
+    def "invalid default value for argument via SDL"() {
+        given:
+        def sdl = '''
+            type Query {
+                foo(arg: Input = {}): String
+            }
+            input Input {
+                required: String!
+            }
+        '''
+        when:
+        def schema = TestUtil.schema(sdl)
+        then:
+        def e = thrown(InvalidSchemaException)
+        e.message.contains("Invalid default value")
+    }
+
+    def "invalid default value for argument programmatically"() {
+        given:
+        def arg = newArgument().name("arg").type(GraphQLInt).defaultValueProgrammatic(new LinkedHashMap()).build()
+        def field = newFieldDefinition()
+                .name("hello")
+                .type(GraphQLString)
+                .argument(arg)
+                .build()
+        when:
+        newSchema().query(
+                newObject()
+                        .name("Query")
+                        .field(field)
+                        .build())
+                .build()
+        then:
+        def e = thrown(InvalidSchemaException)
+        e.message.contains("Invalid default value")
+    }
+
+    def "invalid default value for input objects via SDL"() {
+        given:
+        def sdl = '''
+            type Query {
+                foo(arg: Input ={required: null}): String
+            }
+            input Input {
+                required: String!
+            }
+        '''
+        when:
+        def schema = TestUtil.schema(sdl)
+        then:
+        def e = thrown(InvalidSchemaException)
+        e.message.contains("Invalid default value")
+    }
+
+    def "invalid default value for input object programmatically"() {
+        given:
+        def defaultValue = [required: null]
+        def inputObject = newInputObject().name("Input").field(
+                newInputObjectField().name("required").type(GraphQLNonNull.nonNull(GraphQLString)).build())
+                .build()
+        def arg = newArgument().name("arg")
+                .type(inputObject)
+                .defaultValueProgrammatic(defaultValue).build()
+        def field = newFieldDefinition()
+                .name("hello")
+                .type(GraphQLString)
+                .argument(arg)
+                .build()
+        when:
+        newSchema().query(
+                newObject()
+                        .name("Query")
+                        .field(field)
+                        .build())
+                .build()
+        then:
+        def e = thrown(InvalidSchemaException)
+        e.message.contains("Invalid default value")
+    }
+
+    def "Applied schema directives arguments are validated for SDL"() {
+        given:
+        def sdl = '''
+        directive @cached(
+          key: String 
+        ) on FIELD_DEFINITION 
+
+        type Query {
+          hello: String @cached(key: {foo: "bar"}) 
+        }
+        '''
+        when:
+        SchemaGenerator.createdMockedSchema(sdl)
+        then:
+        def e = thrown(SchemaProblem)
+        e.message.contains("an illegal value for the argument ")
+    }
+
+    def "Applied schema directives arguments are validated for programmatic schemas"() {
+        given:
+        def arg = newArgument().name("arg").type(GraphQLInt).valueProgrammatic(ImmutableKit.emptyMap()).build()
+        def directive = GraphQLDirective.newDirective().name("cached").argument(arg).build()
+        def field = newFieldDefinition()
+                .name("hello")
+                .type(GraphQLString)
+                .argument(arg)
+                .withDirective(directive)
+                .build()
+        when:
+        newSchema().query(
+                newObject()
+                        .name("Query")
+                        .field(field)
+                        .build())
+                .build()
+        then:
+        def e = thrown(InvalidSchemaException)
+        e.message.contains("Invalid argument 'arg' for applied directive of name 'cached'")
     }
 }

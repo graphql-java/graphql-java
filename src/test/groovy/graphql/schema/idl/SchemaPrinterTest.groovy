@@ -109,9 +109,9 @@ class SchemaPrinterTest extends Specification {
     }
 
     def "argsString"() {
-        def argument1 = new GraphQLArgument("arg1", null, list(nonNull(Scalars.GraphQLInt)), 10)
-        def argument2 = new GraphQLArgument("arg2", null, GraphQLString, null)
-        def argument3 = new GraphQLArgument("arg3", null, GraphQLString, "default")
+        def argument1 = newArgument().name("arg1").type(list(nonNull(GraphQLInt))).defaultValue(10).build()
+        def argument2 = newArgument().name("arg2").type(GraphQLString).build();
+        def argument3 = newArgument().name("arg3").type(GraphQLString).defaultValue("default").build()
         def argStr = new SchemaPrinter().argsString([argument1, argument2, argument3])
 
         expect:
@@ -120,9 +120,9 @@ class SchemaPrinterTest extends Specification {
     }
 
     def "argsString_sorts"() {
-        def argument1 = new GraphQLArgument("arg1", null, list(nonNull(Scalars.GraphQLInt)), 10)
-        def argument2 = new GraphQLArgument("arg2", null, GraphQLString, null)
-        def argument3 = new GraphQLArgument("arg3", null, GraphQLString, "default")
+        def argument1 = newArgument().name("arg1").type(list(nonNull(GraphQLInt))).defaultValue(10).build()
+        def argument2 = newArgument().name("arg2").type(GraphQLString).build();
+        def argument3 = newArgument().name("arg3").type(GraphQLString).defaultValue("default").build()
         def argStr = new SchemaPrinter().argsString([argument2, argument1, argument3])
 
         expect:
@@ -131,8 +131,8 @@ class SchemaPrinterTest extends Specification {
     }
 
     def "argsString_comments"() {
-        def argument1 = new GraphQLArgument("arg1", "A multiline\ncomment", list(nonNull(Scalars.GraphQLInt)), 10)
-        def argument2 = new GraphQLArgument("arg2", "A single line comment", list(nonNull(Scalars.GraphQLInt)), 10)
+        def argument1 = newArgument().name("arg1").description("A multiline\ncomment").type(list(nonNull(GraphQLInt))).defaultValue(10).build()
+        def argument2 = newArgument().name("arg2").description("A single line comment").type(list(nonNull(GraphQLInt))).defaultValue(10).build()
         def argStr = new SchemaPrinter().argsString([argument1, argument2])
 
         expect:

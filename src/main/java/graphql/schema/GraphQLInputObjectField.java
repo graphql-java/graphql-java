@@ -2,11 +2,12 @@ package graphql.schema;
 
 
 import graphql.DirectivesUtil;
-import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
+import graphql.language.Value;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +16,6 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
-import static java.util.Collections.emptyList;
 
 /**
  * Input objects defined via {@link graphql.schema.GraphQLInputObjectType} contains these input fields.
@@ -31,7 +31,8 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
     private final String name;
     private final String description;
     private final GraphQLInputType originalType;
-    private final Object defaultValue;
+    private final InputValueWithState defaultValue;
+
     private final String deprecationReason;
     private final InputValueDefinition definition;
     private final DirectivesUtil.DirectivesHolder directives;
@@ -41,53 +42,15 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
     public static final String CHILD_TYPE = "type";
     public static final String CHILD_DIRECTIVES = "directives";
 
-    private static final Object DEFAULT_VALUE_SENTINEL = new Object() {
-    };
 
-
-    /**
-     * @param name the name
-     * @param type the field type
-     *
-     * @deprecated use the {@link #newInputObjectField()} builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLInputObjectField(String name, GraphQLInputType type) {
-        this(name, null, type, null, emptyList(), null);
-    }
-
-    /**
-     * @param name         the name
-     * @param description  the description
-     * @param type         the field type
-     * @param defaultValue the default value
-     *
-     * @deprecated use the {@link #newInputObjectField()} builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue) {
-        this(name, description, type, defaultValue, emptyList(), null);
-    }
-
-    /**
-     * @param name         the name
-     * @param description  the description
-     * @param type         the field type
-     * @param defaultValue the default value
-     * @param directives   the directives on this type element
-     * @param definition   the AST definition
-     *
-     * @deprecated use the {@link #newInputObjectField()} builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue, List<GraphQLDirective> directives, InputValueDefinition definition) {
-        this(name, description, type, defaultValue, directives, definition, null);
-    }
-
-    private GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue, List<GraphQLDirective> directives, InputValueDefinition definition, String deprecationReason) {
+    private GraphQLInputObjectField(
+            String name,
+            String description,
+            GraphQLInputType type,
+            InputValueWithState defaultValue,
+            List<GraphQLDirective> directives,
+            InputValueDefinition definition,
+            String deprecationReason) {
         assertValidName(name);
         assertNotNull(type, () -> "type can't be null");
         assertNotNull(directives, () -> "directives cannot be null");
@@ -114,12 +77,19 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         return replacedType != null ? replacedType : originalType;
     }
 
-    public Object getDefaultValue() {
-        return defaultValue == DEFAULT_VALUE_SENTINEL ? null : defaultValue;
+    /**
+     * The default value of this input field.
+     *
+     * The semantics of the returned Object depend on getDefaultValueState.
+     *
+     * @return
+     */
+    public @NotNull InputValueWithState getInputFieldDefaultValue() {
+        return defaultValue;
     }
 
     public boolean hasSetDefaultValue() {
-        return defaultValue != DEFAULT_VALUE_SENTINEL;
+        return defaultValue.isSet();
     }
 
     public String getDescription() {
@@ -254,11 +224,12 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
 
     @PublicApi
     public static class Builder extends GraphqlTypeBuilder {
-        private Object defaultValue = DEFAULT_VALUE_SENTINEL;
+        private InputValueWithState defaultValue = InputValueWithState.NOT_SET;
         private GraphQLInputType type;
         private InputValueDefinition definition;
         private final List<GraphQLDirective> directives = new ArrayList<>();
         private String deprecationReason;
+
 
         public Builder() {
         }
@@ -266,7 +237,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         public Builder(GraphQLInputObjectField existing) {
             this.name = existing.getName();
             this.description = existing.getDescription();
-            this.defaultValue = existing.getDefaultValue();
+            this.defaultValue = existing.getInputFieldDefaultValue();
             this.type = existing.originalType;
             this.definition = existing.getDefinition();
             this.deprecationReason = existing.deprecationReason;
@@ -310,8 +281,31 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
             return this;
         }
 
+        /**
+         * @param defaultValue
+         *
+         * @return
+         *
+         * @deprecated use {@link #defaultValueLiteral(Value)}
+         */
+        @Deprecated
         public Builder defaultValue(Object defaultValue) {
-            this.defaultValue = defaultValue;
+            this.defaultValue = InputValueWithState.newInternalValue(defaultValue);
+            return this;
+        }
+
+        public Builder defaultValueLiteral(Value defaultValue) {
+            this.defaultValue = InputValueWithState.newLiteralValue(defaultValue);
+            return this;
+        }
+
+        public Builder defaultValueProgrammatic(Object defaultValue) {
+            this.defaultValue = InputValueWithState.newExternalValue(defaultValue);
+            return this;
+        }
+
+        public Builder clearDefaultValue() {
+            this.defaultValue = InputValueWithState.NOT_SET;
             return this;
         }
 
@@ -353,6 +347,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         }
 
         public GraphQLInputObjectField build() {
+            assertNotNull(type, () -> "type can't be null");
             return new GraphQLInputObjectField(
                     name,
                     description,
