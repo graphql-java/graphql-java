@@ -33,10 +33,6 @@ import static graphql.language.TypeName.newTypeName;
 public class NormalizedQueryToAstCompiler {
 
     public static Document compileToDocument(List<NormalizedField> topLevelFields) {
-        return new NormalizedQueryToAstCompiler().toDocument(topLevelFields);
-    }
-
-    private Document toDocument(List<NormalizedField> topLevelFields) {
         List<Selection<?>> selections = selectionsForNormalizedFields(topLevelFields);
         SelectionSet selectionSet = newSelectionSet(selections).build();
         Document document = Document.newDocument().definition(newOperationDefinition()
@@ -47,7 +43,7 @@ public class NormalizedQueryToAstCompiler {
         return document;
     }
 
-    private List<Selection<?>> selectionsForNormalizedFields(List<NormalizedField> normalizedFields) {
+    private static List<Selection<?>> selectionsForNormalizedFields(List<NormalizedField> normalizedFields) {
         ImmutableList.Builder<Selection<?>> result = ImmutableList.builder();
         for (NormalizedField nf : normalizedFields) {
             result.addAll(selectionForNormalizedField(nf));
@@ -55,7 +51,7 @@ public class NormalizedQueryToAstCompiler {
         return result.build();
     }
 
-    private List<Selection<?>> selectionForNormalizedField(NormalizedField normalizedField) {
+    private static List<Selection<?>> selectionForNormalizedField(NormalizedField normalizedField) {
         List<Selection<?>> result = new ArrayList<>();
         for (String objectType : normalizedField.getObjectTypeNames()) {
             TypeName typeName = newTypeName(objectType).build();
@@ -82,11 +78,11 @@ public class NormalizedQueryToAstCompiler {
         return result;
     }
 
-    private SelectionSet selectionSet(Field field) {
+    private static SelectionSet selectionSet(Field field) {
         return newSelectionSet().selection(field).build();
     }
 
-    private List<Argument> createArguments(NormalizedField normalizedField) {
+    private static List<Argument> createArguments(NormalizedField normalizedField) {
         ImmutableList.Builder<Argument> result = ImmutableList.builder();
         ImmutableMap<String, NormalizedInputValue> normalizedArguments = normalizedField.getNormalizedArguments();
         for (String argName : normalizedArguments.keySet()) {
@@ -99,10 +95,10 @@ public class NormalizedQueryToAstCompiler {
         return result.build();
     }
 
-    private Value<?> argValue(Object value) {
+    private static Value<?> argValue(Object value) {
         if (value instanceof List) {
             ArrayValue.Builder arrayValue = ArrayValue.newArrayValue();
-            arrayValue.values(map((List<Object>) value, this::argValue));
+            arrayValue.values(map((List<Object>) value, NormalizedQueryToAstCompiler::argValue));
             return arrayValue.build();
         }
         if (value instanceof Map) {
