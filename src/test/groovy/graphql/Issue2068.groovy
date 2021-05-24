@@ -23,7 +23,7 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 import static graphql.ExecutionInput.newExecutionInput
 
 class Issue2068 extends Specification {
-    def "deadlock attempt"() {
+    def "shouldn't hang on exception in resolveFieldWithInfo"() {
         setup:
         def sdl = """
         type Nation {
@@ -72,120 +72,15 @@ class Issue2068 extends Specification {
                 .type(newTypeWiring("Query")
                         .dataFetcher("pets", new StaticDataFetcher(['cats': cats, 'dogs': dogs])))
                 .type(newTypeWiring("Cat")
-                        .dataFetcher("toys", new StaticDataFetcher(new List<Object>() {
+                        .dataFetcher("toys", new StaticDataFetcher(new AbstractList() {
+                            @Override
+                            Object get(int i) {
+                                throw new RuntimeException("Simulated failure");
+                            }
+
                             @Override
                             int size() {
                                 return 1
-                            }
-
-                            @Override
-                            boolean isEmpty() {
-                                return false
-                            }
-
-                            @Override
-                            boolean contains(Object o) {
-                                return false
-                            }
-
-                            @Override
-                            Iterator iterator() {
-                                throw new RuntimeException()
-                            }
-
-                            @Override
-                            Object[] toArray() {
-                                return new Object[0]
-                            }
-
-                            @Override
-                            Object[] toArray(Object[] a) {
-                                return null
-                            }
-
-                            @Override
-                            boolean add(Object o) {
-                                return false
-                            }
-
-                            @Override
-                            boolean remove(Object o) {
-                                return false
-                            }
-
-                            @Override
-                            boolean containsAll(Collection c) {
-                                return false
-                            }
-
-                            @Override
-                            boolean addAll(Collection c) {
-                                return false
-                            }
-
-                            @Override
-                            boolean addAll(int index, Collection c) {
-                                return false
-                            }
-
-                            @Override
-                            boolean removeAll(Collection c) {
-                                return false
-                            }
-
-                            @Override
-                            boolean retainAll(Collection c) {
-                                return false
-                            }
-
-                            @Override
-                            void clear() {
-
-                            }
-
-                            @Override
-                            Object get(int index) {
-                                return null
-                            }
-
-                            @Override
-                            Object set(int index, Object element) {
-                                return null
-                            }
-
-                            @Override
-                            void add(int index, Object element) {
-
-                            }
-
-                            @Override
-                            Object remove(int index) {
-                                return null
-                            }
-
-                            @Override
-                            int indexOf(Object o) {
-                                return 0
-                            }
-
-                            @Override
-                            int lastIndexOf(Object o) {
-                                return 0
-                            }
-
-                            @Override
-                            ListIterator listIterator() {
-                                return null
-                            }
-
-                            @Override
-                            ListIterator listIterator(int index) {
-                                return null
-                            }
-
-                            @Override
-                            List subList(int fromIndex, int toIndex) {
-                                return null
                             }
                         })))
                 .type(newTypeWiring("Dog")
