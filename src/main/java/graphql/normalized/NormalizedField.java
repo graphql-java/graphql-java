@@ -163,7 +163,7 @@ public class NormalizedField {
     }
 
 
-    public static Builder newQueryExecutionField() {
+    public static Builder newNormalizedField() {
         return new Builder();
     }
 

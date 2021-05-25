@@ -241,7 +241,7 @@ class NormalizedQueryToAstCompilerTest extends Specification {
         assertValidQuery(schema, query)
         Document originalDocument = TestUtil.parseQuery(query)
 
-        NormalizedQueryTreeFactory dependencyGraph = new NormalizedQueryTreeFactory();
+        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
         def tree = dependencyGraph.createNormalizedQueryWithRawVariables(schema, originalDocument, null, [:])
         return tree.getTopLevelFields()
     }

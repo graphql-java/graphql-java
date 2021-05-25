@@ -21,7 +21,7 @@ import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.Field;
 import graphql.normalized.NormalizedField;
-import graphql.normalized.NormalizedQueryTree;
+import graphql.normalized.NormalizedQuery;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -300,7 +300,7 @@ public abstract class ExecutionStrategy {
     }
 
     protected Supplier<NormalizedField> getNormalizedField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Supplier<ExecutionStepInfo> executionStepInfo) {
-        Supplier<NormalizedQueryTree> normalizedQuery = executionContext.getNormalizedQueryTree();
+        Supplier<NormalizedQuery> normalizedQuery = executionContext.getNormalizedQueryTree();
         return () -> normalizedQuery.get().getNormalizedField(parameters.getField(), executionStepInfo.get().getObjectType(), executionStepInfo.get().getPath());
     }
 
