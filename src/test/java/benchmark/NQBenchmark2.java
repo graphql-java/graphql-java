@@ -6,8 +6,8 @@ import com.google.common.io.Resources;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.normalized.NormalizedField;
-import graphql.normalized.NormalizedQueryTree;
-import graphql.normalized.NormalizedQueryTreeFactory;
+import graphql.normalized.NormalizedQuery;
+import graphql.normalized.NormalizedQueryFactory;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaGenerator;
@@ -76,8 +76,8 @@ public class NQBenchmark2 {
     @Fork(3)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public NormalizedQueryTree benchMarkAvgTime(MyState myState) throws ExecutionException, InterruptedException {
-        NormalizedQueryTree normalizedQuery = NormalizedQueryTreeFactory.createNormalizedQuery(myState.schema, myState.document, null, Collections.emptyMap());
+    public NormalizedQuery benchMarkAvgTime(MyState myState) throws ExecutionException, InterruptedException {
+        NormalizedQuery normalizedQuery = NormalizedQueryFactory.createNormalizedQuery(myState.schema, myState.document, null, Collections.emptyMap());
 //        System.out.println("fields size:" + normalizedQuery.getFieldToNormalizedField().size());
         return normalizedQuery;
     }
@@ -85,7 +85,7 @@ public class NQBenchmark2 {
     public static void main(String[] args) {
         MyState myState = new MyState();
         myState.setup();
-        NormalizedQueryTree normalizedQuery = NormalizedQueryTreeFactory.createNormalizedQuery(myState.schema, myState.document, null, Collections.emptyMap());
+        NormalizedQuery normalizedQuery = NormalizedQueryFactory.createNormalizedQuery(myState.schema, myState.document, null, Collections.emptyMap());
 //        System.out.println(printTree(normalizedQuery));
         ImmutableListMultimap<Field, NormalizedField> fieldToNormalizedField = normalizedQuery.getFieldToNormalizedField();
         System.out.println(fieldToNormalizedField.size());
@@ -102,7 +102,7 @@ public class NQBenchmark2 {
 //        System.out.println("fields size:" + normalizedQuery.getFieldToNormalizedField().size());
     }
 
-    static List<String> printTree(NormalizedQueryTree queryExecutionTree) {
+    static List<String> printTree(NormalizedQuery queryExecutionTree) {
         List<String> result = new ArrayList<>();
         Traverser<NormalizedField> traverser = Traverser.depthFirst(NormalizedField::getChildren);
         traverser.traverse(queryExecutionTree.getTopLevelFields(), new TraverserVisitorStub<NormalizedField>() {

@@ -20,7 +20,7 @@ import graphql.execution.ValuesResolver;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.language.Field;
 import graphql.normalized.NormalizedField;
-import graphql.normalized.NormalizedQueryTree;
+import graphql.normalized.NormalizedQuery;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingFieldSelectionSet;
@@ -125,7 +125,7 @@ public class ValueFetcher {
 
         GraphQLOutputType fieldType = fieldDef.getType();
 
-        Supplier<NormalizedQueryTree> normalizedQuery = executionContext.getNormalizedQueryTree();
+        Supplier<NormalizedQuery> normalizedQuery = executionContext.getNormalizedQueryTree();
         Supplier<NormalizedField> normalisedField = () -> normalizedQuery.get().getNormalizedField(sameFields, executionInfo.getObjectType(), executionInfo.getPath());
         DataFetchingFieldSelectionSet selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext.getGraphQLSchema(), fieldType, normalisedField);
 

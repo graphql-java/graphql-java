@@ -50,39 +50,39 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 
 @Internal
-public class NormalizedQueryTreeFactory {
+public class NormalizedQueryFactory {
 
     private final ValuesResolver valuesResolver = new ValuesResolver();
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
-    public static NormalizedQueryTree createNormalizedQuery(GraphQLSchema graphQLSchema,
-                                                            Document document,
-                                                            String operationName,
-                                                            Map<String, Object> coercedVariableValues) {
+    public static NormalizedQuery createNormalizedQuery(GraphQLSchema graphQLSchema,
+                                                        Document document,
+                                                        String operationName,
+                                                        Map<String, Object> coercedVariableValues) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
-        return new NormalizedQueryTreeFactory().createNormalizedQueryImpl(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, coercedVariableValues, null);
+        return new NormalizedQueryFactory().createNormalizedQueryImpl(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, coercedVariableValues, null);
     }
 
 
-    public static NormalizedQueryTree createNormalizedQuery(GraphQLSchema graphQLSchema,
-                                                            OperationDefinition operationDefinition,
-                                                            Map<String, FragmentDefinition> fragments,
-                                                            Map<String, Object> coercedVariableValues) {
-        return new NormalizedQueryTreeFactory().createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coercedVariableValues, null);
+    public static NormalizedQuery createNormalizedQuery(GraphQLSchema graphQLSchema,
+                                                        OperationDefinition operationDefinition,
+                                                        Map<String, FragmentDefinition> fragments,
+                                                        Map<String, Object> coercedVariableValues) {
+        return new NormalizedQueryFactory().createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coercedVariableValues, null);
     }
 
-    public static NormalizedQueryTree createNormalizedQueryWithRawVariables(GraphQLSchema graphQLSchema,
-                                                                            Document document,
-                                                                            String operationName,
-                                                                            Map<String, Object> rawVariables) {
+    public static NormalizedQuery createNormalizedQueryWithRawVariables(GraphQLSchema graphQLSchema,
+                                                                        Document document,
+                                                                        String operationName,
+                                                                        Map<String, Object> rawVariables) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
-        return new NormalizedQueryTreeFactory().createNormalizedQueryImplWithRawVariables(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, rawVariables);
+        return new NormalizedQueryFactory().createNormalizedQueryImplWithRawVariables(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, rawVariables);
     }
 
-    private NormalizedQueryTree createNormalizedQueryImplWithRawVariables(GraphQLSchema graphQLSchema,
-                                                                          OperationDefinition operationDefinition,
-                                                                          Map<String, FragmentDefinition> fragments,
-                                                                          Map<String, Object> rawVariables
+    private NormalizedQuery createNormalizedQueryImplWithRawVariables(GraphQLSchema graphQLSchema,
+                                                                      OperationDefinition operationDefinition,
+                                                                      Map<String, FragmentDefinition> fragments,
+                                                                      Map<String, Object> rawVariables
     ) {
 
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
@@ -94,11 +94,11 @@ public class NormalizedQueryTreeFactory {
     /**
      * Creates a new Normalized query tree for the provided query
      */
-    private NormalizedQueryTree createNormalizedQueryImpl(GraphQLSchema graphQLSchema,
-                                                          OperationDefinition operationDefinition,
-                                                          Map<String, FragmentDefinition> fragments,
-                                                          Map<String, Object> coercedVariableValues,
-                                                          @Nullable Map<String, NormalizedInputValue> normalizedVariableValues) {
+    private NormalizedQuery createNormalizedQueryImpl(GraphQLSchema graphQLSchema,
+                                                      OperationDefinition operationDefinition,
+                                                      Map<String, FragmentDefinition> fragments,
+                                                      Map<String, Object> coercedVariableValues,
+                                                      @Nullable Map<String, NormalizedInputValue> normalizedVariableValues) {
 
 
         FieldCollectorNormalizedQueryParams parameters = FieldCollectorNormalizedQueryParams
@@ -132,7 +132,7 @@ public class NormalizedQueryTreeFactory {
                     1);
 
         }
-        return new NormalizedQueryTree(new ArrayList<>(collectFromOperationResult.children), fieldToNormalizedField.build(), normalizedFieldToMergedField.build(), coordinatesToNormalizedFields.build());
+        return new NormalizedQuery(new ArrayList<>(collectFromOperationResult.children), fieldToNormalizedField.build(), normalizedFieldToMergedField.build(), coordinatesToNormalizedFields.build());
     }
 
 
@@ -322,7 +322,7 @@ public class NormalizedQueryTreeFactory {
             normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getNormalizedVariableValues());
         }
         ImmutableList<String> objectTypeNames = map(objectTypes, GraphQLObjectType::getName);
-        NormalizedField normalizedField = NormalizedField.newQueryExecutionField()
+        NormalizedField normalizedField = NormalizedField.newNormalizedField()
                 .alias(field.getAlias())
                 .resolvedArguments(argumentValues)
                 .normalizedArguments(normalizedArgumentValues)

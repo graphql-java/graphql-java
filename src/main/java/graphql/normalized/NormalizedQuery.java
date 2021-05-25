@@ -13,17 +13,17 @@ import java.util.List;
 import java.util.Map;
 
 @Internal
-public class NormalizedQueryTree {
+public class NormalizedQuery {
 
     private final List<NormalizedField> topLevelFields;
     private final ImmutableListMultimap<Field, NormalizedField> fieldToNormalizedField;
     private final Map<NormalizedField, MergedField> normalizedFieldToMergedField;
     private final ImmutableListMultimap<FieldCoordinates, NormalizedField> coordinatesToNormalizedFields;
 
-    public NormalizedQueryTree(List<NormalizedField> topLevelFields,
-                               ImmutableListMultimap<Field, NormalizedField> fieldToNormalizedField,
-                               Map<NormalizedField, MergedField> normalizedFieldToMergedField,
-                               ImmutableListMultimap<FieldCoordinates, NormalizedField> coordinatesToNormalizedFields) {
+    public NormalizedQuery(List<NormalizedField> topLevelFields,
+                           ImmutableListMultimap<Field, NormalizedField> fieldToNormalizedField,
+                           Map<NormalizedField, MergedField> normalizedFieldToMergedField,
+                           ImmutableListMultimap<FieldCoordinates, NormalizedField> coordinatesToNormalizedFields) {
         this.topLevelFields = topLevelFields;
         this.fieldToNormalizedField = fieldToNormalizedField;
         this.normalizedFieldToMergedField = normalizedFieldToMergedField;
