@@ -275,6 +275,7 @@ nexusPublishing {
     }
 }
 
+// to publish to local maven repo skip signing: ./gradlew publishToMavenLocal  -x signGraphqlJavaPublication
 signing {
     def signingKey = System.env.MAVEN_CENTRAL_PGP_KEY
     useInMemoryPgpKeys(signingKey, "")

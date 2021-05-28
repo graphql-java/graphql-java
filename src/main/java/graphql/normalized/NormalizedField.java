@@ -302,6 +302,11 @@ public class NormalizedField {
             this.parent = existing.getParent();
         }
 
+        public Builder clearObjectTypesNames() {
+            this.objectTypeNames.clear();
+            return this;
+        }
+
         public Builder objectTypeNames(List<String> objectTypeNames) {
             this.objectTypeNames.addAll(objectTypeNames);
             return this;
