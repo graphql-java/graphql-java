@@ -65,7 +65,7 @@ class GraphQLInputObjectFieldTest extends Specification {
                 .defaultValueProgrammatic(1.23d)
                 .build()
         def inputValue = startingField.getInputFieldDefaultValue()
-        def resolvedValue = GraphQLInputObjectField.getArgumentDefaultValue(startingField)
+        def resolvedValue = GraphQLInputObjectField.getInputFieldDefaultValue(startingField)
 
         then:
         inputValue.isExternal()
@@ -80,7 +80,7 @@ class GraphQLInputObjectFieldTest extends Specification {
                 .defaultValueLiteral(FloatValue.newFloatValue().value(1.23d).build())
                 .build()
         inputValue = startingField.getInputFieldDefaultValue()
-        resolvedValue = GraphQLInputObjectField.getArgumentDefaultValue(startingField)
+        resolvedValue = GraphQLInputObjectField.getInputFieldDefaultValue(startingField)
 
         then:
         inputValue.isLiteral()
@@ -94,7 +94,7 @@ class GraphQLInputObjectFieldTest extends Specification {
                 .description("F1_description")
                 .build()
         inputValue = startingField.getInputFieldDefaultValue()
-        resolvedValue = GraphQLInputObjectField.getArgumentDefaultValue(startingField)
+        resolvedValue = GraphQLInputObjectField.getInputFieldDefaultValue(startingField)
 
         then:
         inputValue.isNotSet()

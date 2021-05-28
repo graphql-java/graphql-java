@@ -101,7 +101,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
      *
      * @return a value of type T which is the java value of the input field default
      */
-    public static <T> T getArgumentDefaultValue(GraphQLInputObjectField inputObjectField) {
+    public static <T> T getInputFieldDefaultValue(GraphQLInputObjectField inputObjectField) {
         return getInputValueImpl(inputObjectField.getType(), inputObjectField.getInputFieldDefaultValue());
     }
 
