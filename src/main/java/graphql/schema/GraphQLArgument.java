@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.execution.ValuesResolver.getInputValueImpl;
 
 /**
  * This defines an argument that can be supplied to a graphql field (via {@link graphql.schema.GraphQLFieldDefinition}.
@@ -94,7 +95,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     /**
      * The default value of this argument.
      *
-     * @return
+     * @return a {@link InputValueWithState} that represents the arguments default value
      */
     public @NotNull InputValueWithState getArgumentDefaultValue() {
         return defaultValue;
@@ -116,6 +117,37 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         return value;
     }
 
+    /**
+     * This static helper method will give out a java value based on the semantics captured
+     * in the {@link InputValueWithState} from {@link GraphQLArgument#getArgumentValue()}
+     *
+     * Note : You MUST only call this on a {@link GraphQLArgument} that is part of a fully formed schema.  We need
+     * all of the types to be resolved in order for this work correctly.
+     *
+     * @param argument the fully formed {@link GraphQLArgument}
+     * @param <T>      the type you want it cast as
+     *
+     * @return a value of type T which is the java value of the argument
+     */
+    public static <T> T getArgumentValue(GraphQLArgument argument) {
+        return getInputValueImpl(argument.getType(), argument.getArgumentValue());
+    }
+
+    /**
+     * This static helper method will give out a java value based on the semantics captured
+     * in the {@link InputValueWithState} from {@link GraphQLArgument#getArgumentDefaultValue()}
+     *
+     * Note : You MUST only call this on a {@link GraphQLArgument} that is part of a fully formed schema.  We need
+     * all of the types to be resolved in order for this work correctly.
+     *
+     * @param argument the fully formed {@link GraphQLArgument}
+     * @param <T>      the type you want it cast as
+     *
+     * @return a value of type T which is the java value of the argument default
+     */
+    public static <T> T getArgumentDefaultValue(GraphQLArgument argument) {
+        return getInputValueImpl(argument.getType(), argument.getArgumentDefaultValue());
+    }
 
     public String getDescription() {
         return description;

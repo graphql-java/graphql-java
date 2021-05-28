@@ -133,6 +133,16 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
             return this;
         }
 
+        public Builder value(double value) {
+            this.value = BigDecimal.valueOf(value);
+            return this;
+        }
+
+        public Builder value(long value) {
+            this.value = BigDecimal.valueOf(value);
+            return this;
+        }
+
         public Builder comments(List<Comment> comments) {
             this.comments = ImmutableList.copyOf(comments);
             return this;

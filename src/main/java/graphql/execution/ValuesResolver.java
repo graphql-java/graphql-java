@@ -223,6 +223,16 @@ public class ValuesResolver {
         return assertShouldNeverHappen("unexpected value state " + inputValueWithState);
     }
 
+
+    @Nullable
+    @SuppressWarnings("unchecked")
+    public static <T> T getInputValueImpl(GraphQLInputType inputType, InputValueWithState inputValue) {
+        if (inputValue.isNotSet()) {
+            return null;
+        }
+        return (T) valueToInternalValue(inputValue, inputType);
+    }
+
     /**
      * No validation: the external value is assumed to be valid.
      */
