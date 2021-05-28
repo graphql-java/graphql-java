@@ -1351,4 +1351,64 @@ schema {
         tree.fieldToNormalizedField.size() == 3
     }
 
+    def "skip/include is respected"() {
+        given:
+        String schema = """
+        type Query {
+          pets: Pet
+        }
+        interface Pet {
+          name: String
+        }
+        type Cat implements Pet {
+          name: String
+        }
+        type Dog implements Pet {
+            name: String
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = '''
+          query($true: Boolean!,$false: Boolean!){pets {
+                ... on Cat {
+                    cat_not: name @skip(if:true)
+                    cat_not: name @skip(if:$true)
+                    cat_yes_1: name @include(if:true)
+                    cat_yes_2: name @skip(if:$false)
+              }
+                ... on Dog @include(if:$true) {
+                    dog_no: name @include(if:false)
+                    dog_no: name @include(if:$false)
+                    dog_yes_1: name @include(if:$true)
+                    dog_yes_2: name @skip(if:$false)
+              }
+              ... on Pet @skip(if:$true) {
+                    not: name
+              }
+              ... on Pet @skip(if:$false) {
+                    pet_name: name
+              }
+          }}
+        '''
+        def variables = ["true": Boolean.TRUE, "false": Boolean.FALSE]
+        assertValidQuery(graphQLSchema, query, variables)
+        Document document = TestUtil.parseQuery(query)
+        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
+        when:
+        def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, variables)
+        println String.join("\n", printTree(tree))
+        def printedTree = printTree(tree)
+
+
+        then:
+        printedTree == ['Query.pets',
+                        'cat_yes_1: Cat.name',
+                        'cat_yes_2: Cat.name',
+                        'dog_yes_1: Dog.name',
+                        'dog_yes_2: Dog.name',
+                        'pet_name: [Cat, Dog].name',
+        ]
+    }
+
 }
