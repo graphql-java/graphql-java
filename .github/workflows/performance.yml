@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '14'
-      - run: cd perf-sdk
+      - run: cd perf-cdk
       - run: npm install -g aws-cdk
       - run: npm install -g typescript
       - run: cdk deploy --require-approval never
