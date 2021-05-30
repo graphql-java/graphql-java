@@ -61,6 +61,7 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_USER_KEY }}
           port: 22
+          command_timeout: 240m
           script: |
             pwd
             ls -l
