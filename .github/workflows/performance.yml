@@ -38,6 +38,15 @@ jobs:
           cdk deploy --require-approval never -O deploy-output.json
           echo "::set-output name=host_ip::$(jq -r .PerfCdkStack.simpleinstance1output deploy-output.json)"
       - run: echo ${{ steps.cdk_deploy.outputs.host_ip }}
+      - name: Test connection
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.cdk_deploy.outputs.host_ip }}
+          username: ec2-user
+          key: ${{ secrets.EC2_USER_KEY }}
+          port: 22
+          script: |
+            whoami
       - name: Copy jar
         uses: appleboy/scp-action@master
         with:
