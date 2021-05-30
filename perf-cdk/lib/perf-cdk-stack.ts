@@ -1,7 +1,6 @@
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as iam from '@aws-cdk/aws-iam';
-import * as fs from 'fs'
 
 export class PerfCdkStack extends cdk.Stack {
     constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -60,16 +59,13 @@ export class PerfCdkStack extends cdk.Stack {
 
             keyName: 'simple-instance-1-key',
         })
-        instance.addUserData(
-            fs.readFileSync('lib/setup.sh', 'utf8')
-        )
+        // instance.addUserData(
+        //     fs.readFileSync('lib/setup.sh', 'utf8')
+        // )
 
-        // cdk lets us output prperties of the resources we create after they are created
-        // we want the ip address of this new instance so we can ssh into it later
         new cdk.CfnOutput(this, 'simple-instance-1-output', {
             value: instance.instancePublicIp
         })
-
 
     }
 }

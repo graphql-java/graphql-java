@@ -25,6 +25,16 @@ jobs:
       - run: npm install -g aws-cdk
       - run: npm install -g typescript
       - run: npm i
-      - run: cdk deploy -v --debug --require-approval never
+      - id: cdk-deploy
+        run: cdk deploy --require-approval never
+      - run: echo ${{ steps.cdk-deploy.outputs }}
+      #      - name: executing remote ssh commands using password
+      #        uses: appleboy/ssh-action@master
+      #        with:
+      #          host: ${{ steps.cdk-deploy.outputs }}
+      #          username: ec2-user
+      #          key: ${{ secrets.EC2_USER_KEY }}
+      #          port: 22
+      #          script: whoami
       - run: cdk destroy -f
 
