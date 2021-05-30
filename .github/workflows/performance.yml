@@ -28,7 +28,7 @@ jobs:
       - id: cdk_deploy
         run: |
         cdk deploy --require-approval never -O deploy-output.json
-        echo "::set-output name=host_ip::test"
+        echo "::set-output name=action_fruit::strawberry"
       #        echo "::set-output name=host_ip::$(jq -r .PerfCdkStack.simpleinstance1output deploy-output.json)"
       - run: echo ${{ steps.cdk_deploy.outputs.host_ip }}
       - uses: appleboy/ssh-action@master
