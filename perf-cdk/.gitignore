@@ -7,3 +7,5 @@ node_modules
 .cdk.staging
 cdk.out
 cdk.context.json
+deploy-output.json
+output.json

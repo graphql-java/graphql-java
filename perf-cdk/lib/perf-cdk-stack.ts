@@ -31,17 +31,17 @@ export class PerfCdkStack extends cdk.Stack {
             'Allows SSH access from Internet'
         )
 
-        securityGroup.addIngressRule(
-            ec2.Peer.anyIpv4(),
-            ec2.Port.tcp(80),
-            'Allows HTTP access from Internet'
-        )
-
-        securityGroup.addIngressRule(
-            ec2.Peer.anyIpv4(),
-            ec2.Port.tcp(443),
-            'Allows HTTPS access from Internet'
-        )
+        // securityGroup.addIngressRule(
+        //     ec2.Peer.anyIpv4(),
+        //     ec2.Port.tcp(80),
+        //     'Allows HTTP access from Internet'
+        // )
+        //
+        // securityGroup.addIngressRule(
+        //     ec2.Peer.anyIpv4(),
+        //     ec2.Port.tcp(443),
+        //     'Allows HTTPS access from Internet'
+        // )
 
         // Finally lets provision our ec2 instance
         const instance = new ec2.Instance(this, 'simple-instance-1', {

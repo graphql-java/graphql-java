@@ -25,16 +25,17 @@ jobs:
       - run: npm install -g aws-cdk
       - run: npm install -g typescript
       - run: npm i
-      - id: cdk-deploy
-        run: cdk deploy --require-approval never
-      - run: echo ${{ steps.cdk-deploy.outputs }}
-      #      - name: executing remote ssh commands using password
-      #        uses: appleboy/ssh-action@master
-      #        with:
-      #          host: ${{ steps.cdk-deploy.outputs }}
-      #          username: ec2-user
-      #          key: ${{ secrets.EC2_USER_KEY }}
-      #          port: 22
-      #          script: whoami
+      - id: cdk_deploy
+        run: |
+        cdk deploy --require-approval never -O deploy-output.json
+        echo ::set-output name=host_ip::$(jq -r .PerfCdkStack.simpleinstance1output deploy-output.json)
+      - run: echo ${{ steps.cdk_deploy.outputs.host_ip }}
+      - uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.cdk_deploy.outputs.host_ip }}
+          username: ec2-user
+          key: ${{ secrets.EC2_USER_KEY }}
+          port: 22
+          script: whoami
       - run: cdk destroy -f
 
