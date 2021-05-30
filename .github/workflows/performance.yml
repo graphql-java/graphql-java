@@ -24,6 +24,6 @@ jobs:
       - run: npm install -g aws-cdk
       - run: npm install -g typescript
       - run: npm i
-      - run: cdk deploy --require-approval never
+      - run: cdk deploy -v --debug --require-approval never
       - run: cdk destroy -f
 
