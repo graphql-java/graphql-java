@@ -53,6 +53,7 @@ jobs:
           port: 22
           source: "build/libs/graphql-java-jmh.jar"
           target: "~"
+          strip_components: 2
       - name: Run JMH
         uses: appleboy/ssh-action@master
         with:
