@@ -40,6 +40,10 @@ jobs:
       - run: echo ${{ steps.cdk_deploy.outputs.host_ip }}
       - name: Wait a bit
         run: sleep 2
+      - run: ls -l build/libs/graphql-java-jmh.jar
+        working-directory: ./
+      - run: ls -l build/libs
+        working-directory: ./
       - name: Copy jar
         uses: appleboy/scp-action@master
         with:
