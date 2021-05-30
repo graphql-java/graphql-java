@@ -96,6 +96,10 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
      * Note : You MUST only call this on a {@link GraphQLInputObjectField} that is part of a fully formed schema.  We need
      * all of the types to be resolved in order for this work correctly.
      *
+     * Note: This method will return null if the value is not set or explicitly set to null.  If you you to know the difference
+     * when "not set" and "set to null" then you cant use this method.  Rather you should use {@link GraphQLInputObjectField#getInputFieldDefaultValue()}
+     * and use the {@link InputValueWithState#isNotSet()} methods to decide how to handle those values.
+     *
      * @param inputObjectField the fully formed {@link GraphQLInputObjectField}
      * @param <T>              the type you want it cast as
      *
