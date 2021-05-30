@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: '14'
       - name: build jmh jar
-        run: ./gradlew jmhJar
+        run: RELEASE_VERSION="jmh" ./gradlew clean jmhJar
         working-directory: ./
       - run: npm install -g aws-cdk
       - run: npm install -g typescript
@@ -38,7 +38,17 @@ jobs:
           cdk deploy --require-approval never -O deploy-output.json
           echo "::set-output name=host_ip::$(jq -r .PerfCdkStack.simpleinstance1output deploy-output.json)"
       - run: echo ${{ steps.cdk_deploy.outputs.host_ip }}
-      - uses: appleboy/ssh-action@master
+      - name: Copy jar
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ steps.cdk_deploy.outputs.host_ip }}
+          username: ec2-user
+          key: ${{ secrets.EC2_USER_KEY }}
+          port: 22
+          source: "build/libs/graphql-java-jmh.jar"
+          target: "graphql-java-jmh.jar"
+      - name: Run JMH
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ steps.cdk_deploy.outputs.host_ip }}
           username: ec2-user
@@ -48,7 +58,7 @@ jobs:
             curl -s "https://get.sdkman.io" | bash
             source "/home/ec2-user/.sdkman/bin/sdkman-init.sh"
             sdk install java 11.0.11.hs-adpt
-            sdk install java 8.0.252.hs-adpt
             java -version
+            java -jar graphql-java-jmh.jar
       - run: cdk destroy -f
 
