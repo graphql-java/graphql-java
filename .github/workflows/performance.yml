@@ -36,6 +36,10 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_USER_KEY }}
           port: 22
-          script: whoami
+          script: |
+            curl -s "https://get.sdkman.io" | bash
+            sdk install java 11.0.11.hs-adpt
+            sdk install java 8.0.252.hs-adpt
+            java -version
       - run: cdk destroy -f
 
