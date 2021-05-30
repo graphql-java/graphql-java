@@ -1,7 +1,9 @@
 package graphql.schema
 
+import graphql.language.FloatValue
 import spock.lang.Specification
 
+import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLDirective.newDirective
@@ -112,4 +114,78 @@ class GraphQLArgumentTest extends Specification {
         argument.getDirective("directive2") != null
         argument.getDirective("directive3") != null
     }
+
+    def "can get values statically"() {
+        when:
+        GraphQLArgument startingArg = GraphQLArgument.newArgument()
+                .name("F1")
+                .type(GraphQLFloat)
+                .description("F1_description")
+                .valueProgrammatic(4.56d)
+                .defaultValueProgrammatic(1.23d)
+                .build()
+        def inputValue = startingArg.getArgumentValue()
+        def resolvedValue = GraphQLArgument.getArgumentValue(startingArg)
+
+        def inputDefaultValue = startingArg.getArgumentDefaultValue()
+        def resolvedDefaultValue = GraphQLArgument.getArgumentDefaultValue(startingArg)
+
+        then:
+        inputValue.isExternal()
+        inputValue.getValue() == 4.56d
+        resolvedValue == 4.56d
+
+        inputDefaultValue.isExternal()
+        inputDefaultValue.getValue() == 1.23d
+        resolvedDefaultValue == 1.23d
+
+        when:
+        startingArg = GraphQLArgument.newArgument()
+                .name("F1")
+                .type(GraphQLFloat)
+                .description("F1_description")
+                .valueLiteral(FloatValue.newFloatValue().value(4.56d).build())
+                .defaultValueLiteral(FloatValue.newFloatValue().value(1.23d).build())
+                .build()
+
+        inputValue = startingArg.getArgumentValue()
+        resolvedValue = GraphQLArgument.getArgumentValue(startingArg)
+
+        inputDefaultValue = startingArg.getArgumentDefaultValue()
+        resolvedDefaultValue = GraphQLArgument.getArgumentDefaultValue(startingArg)
+
+        then:
+
+        inputValue.isLiteral()
+        (inputValue.getValue() as FloatValue).getValue().toDouble() == 4.56d
+        resolvedValue == 4.56d
+
+        inputDefaultValue.isLiteral()
+        (inputDefaultValue.getValue() as FloatValue).getValue().toDouble() == 1.23d
+        resolvedDefaultValue == 1.23d
+
+        when:
+        startingArg = GraphQLArgument.newArgument()
+                .name("F1")
+                .type(GraphQLFloat)
+                .description("F1_description")
+                .build()
+
+        inputValue = startingArg.getArgumentValue()
+        resolvedValue = GraphQLArgument.getArgumentValue(startingArg)
+
+        inputDefaultValue = startingArg.getArgumentDefaultValue()
+        resolvedDefaultValue = GraphQLArgument.getArgumentDefaultValue(startingArg)
+
+        then:
+
+        inputValue.isNotSet()
+        inputValue.getValue() == null
+        resolvedValue == null
+
+        inputDefaultValue.isNotSet()
+        inputDefaultValue.getValue() == null
+        resolvedDefaultValue == null
+    }
+
 }

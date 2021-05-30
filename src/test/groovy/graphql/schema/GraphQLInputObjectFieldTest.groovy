@@ -1,5 +1,6 @@
 package graphql.schema
 
+import graphql.language.FloatValue
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLFloat
@@ -46,12 +47,58 @@ class GraphQLInputObjectFieldTest extends Specification {
         transformedField.type == GraphQLInt
         transformedField.description == "F1_description" // left alone
 
-        ! transformedField.isDeprecated()
+        !transformedField.isDeprecated()
         transformedField.getDeprecationReason() == null
 
         transformedField.getDirectives().size() == 3
         transformedField.getDirective("directive1") != null
         transformedField.getDirective("directive2") != null
         transformedField.getDirective("directive3") != null
+    }
+
+    def "can get default values statically"() {
+        when:
+        def startingField = newInputObjectField()
+                .name("F1")
+                .type(GraphQLFloat)
+                .description("F1_description")
+                .defaultValueProgrammatic(1.23d)
+                .build()
+        def inputValue = startingField.getInputFieldDefaultValue()
+        def resolvedValue = GraphQLInputObjectField.getInputFieldDefaultValue(startingField)
+
+        then:
+        inputValue.isExternal()
+        inputValue.getValue() == 1.23d
+        resolvedValue == 1.23d
+
+        when:
+        startingField = newInputObjectField()
+                .name("F1")
+                .type(GraphQLFloat)
+                .description("F1_description")
+                .defaultValueLiteral(FloatValue.newFloatValue().value(1.23d).build())
+                .build()
+        inputValue = startingField.getInputFieldDefaultValue()
+        resolvedValue = GraphQLInputObjectField.getInputFieldDefaultValue(startingField)
+
+        then:
+        inputValue.isLiteral()
+        (inputValue.getValue() as FloatValue).getValue().toDouble() == 1.23d
+        resolvedValue == 1.23d
+
+        when: " we have no values "
+        startingField = newInputObjectField()
+                .name("F1")
+                .type(GraphQLFloat)
+                .description("F1_description")
+                .build()
+        inputValue = startingField.getInputFieldDefaultValue()
+        resolvedValue = GraphQLInputObjectField.getInputFieldDefaultValue(startingField)
+
+        then:
+        inputValue.isNotSet()
+        inputValue.getValue() == null
+        resolvedValue == null
     }
 }

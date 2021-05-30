@@ -16,6 +16,7 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.execution.ValuesResolver.getInputValueImpl;
 
 /**
  * Input objects defined via {@link graphql.schema.GraphQLInputObjectType} contains these input fields.
@@ -80,13 +81,34 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
     /**
      * The default value of this input field.
      *
-     * The semantics of the returned Object depend on getDefaultValueState.
+     * The semantics of the returned Object depend on how the {@link InputValueWithState} was created.
      *
-     * @return
+     * @return a input value with captured state
      */
     public @NotNull InputValueWithState getInputFieldDefaultValue() {
         return defaultValue;
     }
+
+    /**
+     * This static helper method will give out a java value based on the semantics captured
+     * in the {@link InputValueWithState} from {@link GraphQLInputObjectField#getInputFieldDefaultValue()}
+     *
+     * Note : You MUST only call this on a {@link GraphQLInputObjectField} that is part of a fully formed schema.  We need
+     * all of the types to be resolved in order for this work correctly.
+     *
+     * Note: This method will return null if the value is not set or explicitly set to null.  If you you to know the difference
+     * when "not set" and "set to null" then you cant use this method.  Rather you should use {@link GraphQLInputObjectField#getInputFieldDefaultValue()}
+     * and use the {@link InputValueWithState#isNotSet()} methods to decide how to handle those values.
+     *
+     * @param inputObjectField the fully formed {@link GraphQLInputObjectField}
+     * @param <T>              the type you want it cast as
+     *
+     * @return a value of type T which is the java value of the input field default
+     */
+    public static <T> T getInputFieldDefaultValue(GraphQLInputObjectField inputObjectField) {
+        return getInputValueImpl(inputObjectField.getType(), inputObjectField.getInputFieldDefaultValue());
+    }
+
 
     public boolean hasSetDefaultValue() {
         return defaultValue.isSet();
