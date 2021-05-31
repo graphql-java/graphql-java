@@ -70,6 +70,8 @@ jobs:
             source "/home/ec2-user/.sdkman/bin/sdkman-init.sh"
             sdk install java 11.0.11.hs-adpt
             java -version
-            java -jar graphql-java-jmh.jar
+            java -jar graphql-java-jmh.jar -rf json
+            ls -l
+            cat jmh-result.json
       - run: cdk destroy -f
 
