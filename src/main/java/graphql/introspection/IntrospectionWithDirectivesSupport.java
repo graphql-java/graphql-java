@@ -5,6 +5,7 @@ import graphql.PublicApi;
 import graphql.PublicSpi;
 import graphql.execution.ValuesResolver;
 import graphql.language.AstPrinter;
+import graphql.language.Node;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
@@ -191,16 +192,15 @@ public class IntrospectionWithDirectivesSupport {
         };
         DataFetcher<?> argsDF = env -> {
             final GraphQLDirective directive = env.getSource();
-            return directive.getArguments();
+            // we only show directive arguments that have values set on them
+            return directive.getArguments().stream()
+                    .filter(arg -> arg.getArgumentValue().isSet());
         };
         DataFetcher<?> argValueDF = env -> {
             final GraphQLArgument argument = env.getSource();
-            if (argument.hasSetValue()) {
-                InputValueWithState value = argument.getArgumentValue();
-                return AstPrinter.printAst(ValuesResolver.valueToLiteral(value, argument.getType()));
-            } else {
-                return null;
-            }
+            InputValueWithState value = argument.getArgumentValue();
+            Node<?> literal = ValuesResolver.valueToLiteral(value, argument.getType());
+            return AstPrinter.printAst(literal);
         };
         codeRegistry.dataFetcher(coordinates(objectType, "appliedDirectives"), df);
         codeRegistry.dataFetcher(coordinates(appliedDirectiveType, "args"), argsDF);
