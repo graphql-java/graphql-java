@@ -1,6 +1,7 @@
 import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as iam from '@aws-cdk/aws-iam';
+import {Effect, PolicyStatement} from '@aws-cdk/aws-iam';
 
 export class PerfCdkStack extends cdk.Stack {
     constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -8,9 +9,19 @@ export class PerfCdkStack extends cdk.Stack {
         const defaultVpc = ec2.Vpc.fromLookup(this, 'VPC', {isDefault: true})
         const role = new iam.Role(
             this,
-            'simple-instance-1-role', // this is a unique id that will represent this resource in a Cloudformation template
+            'GJPerfTestEC2',
             {assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com')}
         )
+        role.addToPolicy(new PolicyStatement({
+            effect: Effect.ALLOW,
+            actions: ["s3:PutObject",
+                "s3:GetObject",
+                "s3:ListBucket"
+            ],
+            resources: [
+                "arn:aws:s3:::graphql-java-perf-tests",
+                "arn:aws:s3:::graphql-java-perf-tests/*"]
+        }));
 
         // lets create a security group for our instance
         // A security group acts as a virtual firewall for your instance to control inbound and outbound traffic.

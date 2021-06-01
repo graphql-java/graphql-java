@@ -73,5 +73,6 @@ jobs:
             java -jar graphql-java-jmh.jar -rf json
             ls -l
             cat jmh-result.json
+            aws s3 cp jmh-result s3://graphql-java-perf-tests/jmh-results/jmh-${{ GITHUB_SHA }}-jdk11-${{ env.GITHUB_SHA_SHORT }}.json
       - run: cdk destroy -f
 
