@@ -70,8 +70,7 @@ jobs:
             source "/home/ec2-user/.sdkman/bin/sdkman-init.sh"
             sdk install java 11.0.11.hs-adpt
             java -version
-            echo "java -jar graphql-java-jmh.jar -rf json"
-            echo "test" > jmh-result.json
+            java -jar graphql-java-jmh.jar -rf json NQBenchmark2
             ls -l
             cat jmh-result.json
             aws s3 cp jmh-result.json s3://graphql-java-perf-tests/jmh-results/jmh-${{ github.sha }}-jdk11-$(date --iso-8601=seconds).json

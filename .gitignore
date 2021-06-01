@@ -16,3 +16,4 @@ docs/_build/
 /.nb-gradle/
 gen
 .DS_Store
+/jmh-result.json
