@@ -70,10 +70,6 @@ export class PerfCdkStack extends cdk.Stack {
 
             keyName: 'simple-instance-1-key',
         })
-        // instance.addUserData(
-        //     fs.readFileSync('lib/setup.sh', 'utf8')
-        // )
-
         new cdk.CfnOutput(this, 'simple-instance-1-output', {
             value: instance.instancePublicIp
         })
