@@ -17,7 +17,7 @@ const s3Client = new S3Client({region: REGION});
 
 interface JmhResult {
     benchmark: string // the FQN of the benchmark class + method name
-    mode: string // avgt or thrpt or something else from org.openjdk.jmh.annotations.Mode
+    mode: 'avgt' | 'thrpt' // avgt or thrpt or something else from org.openjdk.jmh.annotations.Mode
     threads: number
     forks: number
     jvm: string
@@ -87,6 +87,20 @@ async function comparePrevResultsWithCurrent(current: PerfResults, prev: PerfRes
 
 function compareTwoBenchmarks(current: JmhResult, prev: JmhResult, regressions: Array<PerformanceRegression>) {
     console.log('checking benchmark ', current.benchmark);
+    if (prev.mode === 'avgt') {
+        console.log('current', current.primaryMetric.scoreConfidence);
+        console.log('prev', current.primaryMetric.scoreConfidence);
+        // we compare teh prev higher value with the current lower value to make sure we really regressed
+        if (prev.primaryMetric.scoreConfidence[1] < current.primaryMetric.scoreConfidence[0]) {
+            regressions.push({message: `${current.benchmark} has regressed: prev ${prev.primaryMetric.scoreConfidence[1]} vs now ${current.primaryMetric.scoreConfidence[0]}`})
+        } else {
+            console.log('no regression');
+        }
+    } else if (prev.mode === 'thrpt') {
+        throw new Error(`not implemented benchmark mode ${prev.mode}`);
+    } else {
+        throw new Error(`not implemented benchmark mode ${prev.mode}`);
+    }
 }
 
 function resultsByName(data: JmhResult[]): Map<string, JmhResult> {
@@ -142,7 +156,6 @@ async function findPerformanceResults(sha: string): Promise<PerfResults | null> 
     }
     const getResult = await s3Client.send<GetObjectCommandInput, GetObjectCommandOutput>(new GetObjectCommand(getInput))
     const stringResult = await streamToString(getResult.Body);
-    console.log('result: ', stringResult);
     return {
         fileKey: key,
         sha: sha,
@@ -164,14 +177,14 @@ function getParentCommits(sha: string): Promise<string[]> {
         exec("git log --pretty=%P -n 1 " + sha,
             (error: ExecException | null, stdout: string, stderr: string) => {
                 if (error) {
-                    console.log(`error: ${error.message}`);
+                    // console.log(`error: ${error.message}`);
                     reject(error);
                 }
                 if (stderr) {
-                    console.log(`stderr: ${stderr}`);
+                    // console.log(`stderr: ${stderr}`);
                     reject(error);
                 }
-                console.log(`stdout: ${stdout}`);
+                // console.log(`stdout: ${stdout}`);
                 resolve(stdout.split(' ').map(singleString => singleString.trim()));
             });
     });
