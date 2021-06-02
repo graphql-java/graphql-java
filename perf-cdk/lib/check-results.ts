@@ -38,6 +38,10 @@ interface PerfResults {
     data: JmhResult[]
 }
 
+interface PerformanceRegression {
+    message: string
+}
+
 async function run() {
 
     const startingSha: string | undefined = process.env.CURRENT_SHA
@@ -57,12 +61,40 @@ async function run() {
         return;
     } else {
         console.log('found previous perf result:', prevPerformanceResults);
-        await comparePrevResultsWithCurrent(currentResults, prevPerformanceResults);
+        const regressions = new Array<PerformanceRegression>();
+        await comparePrevResultsWithCurrent(currentResults, prevPerformanceResults, regressions);
+        if (regressions.length > 0) {
+            console.log('ERROR: found performance regressions:', regressions);
+            throw new Error('Found performance regressions');
+        } else {
+            console.log('no performance regressions found');
+        }
     }
 }
 
-async function comparePrevResultsWithCurrent(current: PerfResults, prev: PerfResults) {
+async function comparePrevResultsWithCurrent(current: PerfResults, prev: PerfResults, regressions: Array<PerformanceRegression>) {
     console.log(`comparing ${current.fileKey} vs ${prev.fileKey}`);
+    const currentTests = resultsByName(current.data);
+    const prevTests = resultsByName(prev.data);
+    for (const testName of currentTests.keys()) {
+        if (!prevTests.has(testName)) {
+            console.log(`for test ${testName} no previous test was found`);
+            continue;
+        }
+        compareTwoBenchmarks(currentTests.get(testName)!, prevTests.get(testName)!, regressions)
+    }
+}
+
+function compareTwoBenchmarks(current: JmhResult, prev: JmhResult, regressions: Array<PerformanceRegression>) {
+    console.log('checking benchmark ', current.benchmark);
+}
+
+function resultsByName(data: JmhResult[]): Map<string, JmhResult> {
+    const result: Map<string, JmhResult> = new Map();
+    for (const singleResult of data) {
+        result.set(singleResult.benchmark, singleResult);
+    }
+    return result;
 }
 
 async function searchForPrevResultsRecursively(sha: string, depth: number): Promise<PerfResults | null> {
