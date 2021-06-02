@@ -32,6 +32,12 @@ interface JmhResult {
     }
 }
 
+interface PerfResults {
+    fileKey: string
+    sha: string
+    data: JmhResult[]
+}
+
 async function run() {
 
     const startingSha: string | undefined = process.env.CURRENT_SHA
@@ -40,16 +46,26 @@ async function run() {
         return;
     }
     console.log('starting sha', startingSha);
+    const currentResults = await findPerformanceResults(startingSha);
+    if (!currentResults) {
+        console.log('no current results found');
+        return;
+    }
     const prevPerformanceResults = await searchForPrevResultsRecursively(startingSha, 0);
     if (!prevPerformanceResults) {
         console.log('no previous perf results found')
         return;
     } else {
         console.log('found previous perf result:', prevPerformanceResults);
+        await comparePrevResultsWithCurrent(currentResults, prevPerformanceResults);
     }
 }
 
-async function searchForPrevResultsRecursively(sha: string, depth: number): Promise<{ data: JmhResult[], sha: string } | null> {
+async function comparePrevResultsWithCurrent(current: PerfResults, prev: PerfResults) {
+    console.log(`comparing ${current.fileKey} vs ${prev.fileKey}`);
+}
+
+async function searchForPrevResultsRecursively(sha: string, depth: number): Promise<PerfResults | null> {
     if (depth > 10) {
         console.log('abort: no previous perf results found');
         return null;
@@ -60,7 +76,7 @@ async function searchForPrevResultsRecursively(sha: string, depth: number): Prom
     for (const parentCommit of parentCommits) {
         const prevCommitPerfResult = await findPerformanceResults(parentCommit)
         if (prevCommitPerfResult) {
-            return {data: prevCommitPerfResult, sha: parentCommit};
+            return prevCommitPerfResult;
         }
     }
     for (const prevCommit of parentCommits) {
@@ -72,7 +88,7 @@ async function searchForPrevResultsRecursively(sha: string, depth: number): Prom
     return null;
 }
 
-async function findPerformanceResults(sha: string): Promise<JmhResult[] | null> {
+async function findPerformanceResults(sha: string): Promise<PerfResults | null> {
     const listInput: ListObjectsV2CommandInput = {
         Bucket: BUCKET_NAME,
         Prefix: "jmh-results/jmh-" + sha
@@ -95,7 +111,11 @@ async function findPerformanceResults(sha: string): Promise<JmhResult[] | null> 
     const getResult = await s3Client.send<GetObjectCommandInput, GetObjectCommandOutput>(new GetObjectCommand(getInput))
     const stringResult = await streamToString(getResult.Body);
     console.log('result: ', stringResult);
-    return JSON.parse(stringResult);
+    return {
+        fileKey: key,
+        sha: sha,
+        data: JSON.parse(stringResult)
+    } as PerfResults;
 }
 
 function streamToString(stream: ReadableStream): Promise<string> {
