@@ -74,5 +74,7 @@ jobs:
             ls -l
             cat jmh-result.json
             aws s3 cp jmh-result.json s3://graphql-java-perf-tests/jmh-results/jmh-${{ github.sha }}-jdk11-$(date --iso-8601=seconds).json
+      - name: Check results
+        run: npm run check-performance-results
       - run: cdk destroy -f
 

@@ -9,7 +9,7 @@
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk",
-    "check-performance-results": "ts-node lib/check-results.ts"
+    "check-perf-results": "ts-node lib/check-results.ts"
   },
   "devDependencies": {
     "@aws-cdk/assert": "1.106.1",

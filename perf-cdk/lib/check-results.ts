@@ -15,20 +15,43 @@ const BUCKET_NAME = "graphql-java-perf-tests"
 
 const s3Client = new S3Client({region: REGION});
 
-const run = async () => {
-    await findPerformanceResults("9e1f39b13ee7063e7f2a7ab1a5c0374e7f4fb9a8")
+async function run() {
 
-    // const startingSha: string | undefined = process.env.sha;
-    // if (!startingSha) {
-    //     console.log('no starting sha found');
-    //     return;
-    // }
-    // console.log('starting sha', startingSha);
-    // const prevCommits = await getPreviousCommits(startingSha);
-    // console.log('prev commits: ', prevCommits);
-    // for (const prevCommit of prevCommits) {
-    //     await findPerformanceResults(prevCommit)
-    // }
+    const startingSha: string | undefined = process.env.sha;
+    if (!startingSha) {
+        console.log('no starting sha found');
+        return;
+    }
+    console.log('starting sha', startingSha);
+    const prevPerformanceResults = await searchForPrevResultsRecursively(startingSha, 0);
+    if (prevPerformanceResults) {
+        console.log('found previous perf result:', prevPerformanceResults);
+    } else {
+        console.log('no previous perf results found')
+    }
+}
+
+async function searchForPrevResultsRecursively(sha: string, depth: number): Promise<{ data: any, sha: string } | null> {
+    if (depth > 10) {
+        console.log('abort: no previous perf results found');
+        return null;
+    }
+    const parentCommits = await getParentCommits(sha);
+    console.log(`prev commits: ${parentCommits} of ${sha}`);
+    // breadth first search: first checking for all direct parents of the current commit
+    for (const parentCommit of parentCommits) {
+        const prevCommitPerfResult = await findPerformanceResults(parentCommit)
+        if (prevCommitPerfResult) {
+            return {data: prevCommitPerfResult, sha: parentCommit};
+        }
+    }
+    for (const prevCommit of parentCommits) {
+        const prevCommitResults = searchForPrevResultsRecursively(prevCommit, depth + 1)
+        if (prevCommitResults) {
+            return prevCommitResults;
+        }
+    }
+    return null;
 }
 
 async function findPerformanceResults(sha: string): Promise<any> {
@@ -66,7 +89,7 @@ function streamToString(stream: ReadableStream): Promise<string> {
     })
 }
 
-function getPreviousCommits(sha: string): Promise<string[]> {
+function getParentCommits(sha: string): Promise<string[]> {
     return new Promise((resolve, reject) => {
         exec("git log --pretty=%P -n 1 " + sha,
             (error: ExecException | null, stdout: string, stderr: string) => {
