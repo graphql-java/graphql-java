@@ -58,7 +58,7 @@ class WiringFactoryTest extends Specification {
 
         @Override
         GraphQLScalarType getScalar(ScalarWiringEnvironment environment) {
-            return new GraphQLScalarType(name, "Custom scalar", new Coercing() {
+            return GraphQLScalarType.newScalar().name(name).description("Custom scalar").coercing(new Coercing() {
                 @Override
                 Object serialize(Object input) {
                     throw new UnsupportedOperationException("Not implemented")
@@ -74,6 +74,7 @@ class WiringFactoryTest extends Specification {
                     throw new UnsupportedOperationException("Not implemented")
                 }
             })
+            .build()
         }
 
         @Override

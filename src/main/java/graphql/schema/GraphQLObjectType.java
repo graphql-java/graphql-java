@@ -23,7 +23,6 @@ import java.util.function.UnaryOperator;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertValidName;
-import static graphql.schema.GraphqlTypeComparators.asIsOrder;
 import static graphql.schema.GraphqlTypeComparators.sortTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
@@ -57,40 +56,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
 
-
-    /**
-     * @param name             the name
-     * @param description      the description
-     * @param fieldDefinitions the fields
-     * @param interfaces       the possible interfaces
-     *
-     * @deprecated use the {@link #newObject()} builder pattern instead, as this constructor will be made private in a future version.
-     */
     @Internal
-    @Deprecated
-    public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
-                             List<GraphQLNamedOutputType> interfaces) {
-        this(name, description, fieldDefinitions, interfaces, emptyList(), null);
-    }
-
-    /**
-     * @param name             the name
-     * @param description      the description
-     * @param fieldDefinitions the fields
-     * @param interfaces       the possible interfaces
-     * @param directives       the directives on this type element
-     * @param definition       the AST definition
-     *
-     * @deprecated use the {@link #newObject()} builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
-                             List<GraphQLNamedOutputType> interfaces, List<GraphQLDirective> directives, ObjectTypeDefinition definition) {
-        this(name, description, fieldDefinitions, interfaces, directives, definition, emptyList(), asIsOrder());
-    }
-
-
     private GraphQLObjectType(String name,
                               String description,
                               List<GraphQLFieldDefinition> fieldDefinitions,

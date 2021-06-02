@@ -10,7 +10,6 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,38 +49,8 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
     public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_TYPE = "type";
 
-
-    /**
-     * @param name              the name
-     * @param description       the description
-     * @param type              the field type
-     * @param dataFetcher       the field data fetcher
-     * @param arguments         the field arguments
-     * @param deprecationReason the deprecation reason
-     *
-     * @deprecated use the {@link #newFieldDefinition()} builder pattern instead, as this constructor will be made private in a future version.
-     */
     @Internal
-    @Deprecated
-    public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher<?> dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
-        this(name, description, type, DataFetcherFactories.useDataFetcher(dataFetcher), arguments, deprecationReason, Collections.emptyList(), null);
-    }
-
-    /**
-     * @param name               the name
-     * @param description        the description
-     * @param type               the field type
-     * @param dataFetcherFactory the field data fetcher factory
-     * @param arguments          the field arguments
-     * @param deprecationReason  the deprecation reason
-     * @param directives         the directives on this type element
-     * @param definition         the AST definition
-     *
-     * @deprecated use the {@link #newFieldDefinition()} builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcherFactory dataFetcherFactory, List<GraphQLArgument> arguments, String deprecationReason, List<GraphQLDirective> directives, FieldDefinition definition) {
+    private GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcherFactory dataFetcherFactory, List<GraphQLArgument> arguments, String deprecationReason, List<GraphQLDirective> directives, FieldDefinition definition) {
         assertValidName(name);
         assertNotNull(type, () -> "type can't be null");
         assertNotNull(arguments, () -> "arguments can't be null");

@@ -14,9 +14,11 @@ import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.TypeRuntimeWiring
 import spock.lang.Specification
 
+import static graphql.schema.GraphQLScalarType.newScalar
+
 class CoercingTest extends Specification {
 
-    GraphQLScalarType mapLikeScalar = new GraphQLScalarType("MapLike", "MapLike", new Coercing() {
+    GraphQLScalarType mapLikeScalar = newScalar().name("MapLike").description("MapLike").coercing(new Coercing() {
         @Override
         Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
             return dataFetcherResult
@@ -68,6 +70,7 @@ class CoercingTest extends Specification {
             throw new CoercingParseLiteralException()
         }
     })
+    .build()
 
 
     def "end to end test of coercing with variables references"() {
@@ -114,7 +117,7 @@ class CoercingTest extends Specification {
         er.data == [field: [s: "strVar", i: 666]]
     }
 
-    GraphQLScalarType customScalar = new GraphQLScalarType("CustomScalar", "CustomScalar", new Coercing() {
+    GraphQLScalarType customScalar = newScalar().name("CustomScalar").description("CustomScalar").coercing(new Coercing() {
         @Override
         Object serialize(Object input) throws CoercingSerializeException {
             if ("bang" == String.valueOf(input)) {
@@ -143,6 +146,7 @@ class CoercingTest extends Specification {
             return new StringValue(String.valueOf("input"))
         }
     })
+    .build()
 
     def customScalarSDL = '''
             scalar CustomScalar

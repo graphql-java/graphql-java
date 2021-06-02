@@ -18,7 +18,6 @@ import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLNamedSchemaElement
 import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLOutputType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLSchemaElement
@@ -40,6 +39,8 @@ import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInterfaceType.newInterface
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
+import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLScalarType.newScalar
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
 import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
 
@@ -58,7 +59,7 @@ class SchemaPrinterTest extends Specification {
     }
 
 
-    GraphQLScalarType ASTEROID = new GraphQLScalarType("Asteroid", "desc", new Coercing() {
+    GraphQLScalarType ASTEROID = newScalar().name("Asteroid").description("desc").coercing(new Coercing() {
         @Override
         Object serialize(Object input) {
             throw new UnsupportedOperationException("Not implemented")
@@ -74,6 +75,7 @@ class SchemaPrinterTest extends Specification {
             throw new UnsupportedOperationException("Not implemented")
         }
     })
+    .build()
 
     def resolver = new TypeResolver() {
 
@@ -82,21 +84,6 @@ class SchemaPrinterTest extends Specification {
             throw new UnsupportedOperationException("Not implemented")
         }
     }
-
-    static class MyGraphQLObjectType extends GraphQLObjectType {
-
-        MyGraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions) {
-            super(name, description, fieldDefinitions, new ArrayList<GraphQLOutputType>())
-        }
-    }
-
-    static class MyTestGraphQLObjectType extends MyGraphQLObjectType {
-
-        MyTestGraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions) {
-            super(name, description, fieldDefinitions)
-        }
-    }
-
 
     def "typeString"() {
 
@@ -316,7 +303,7 @@ type Subscription {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(GraphQLString).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").description("About Query\nSecond Line").field(fieldDefinition).build()
+        def queryType = newObject().name("Query").description("About Query\nSecond Line").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -336,7 +323,7 @@ type Query {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").description("About field\nsecond").type(GraphQLString).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def queryType = newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -356,7 +343,7 @@ type Query {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").description("").type(GraphQLString).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def queryType = newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -377,7 +364,7 @@ type Query {
                 .build()
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(graphQLEnumType).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def queryType = newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -400,7 +387,7 @@ enum Enum {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(GraphQLString).build()
-        def possibleType = GraphQLObjectType.newObject().name("PossibleType").field(fieldDefinition).build()
+        def possibleType = newObject().name("PossibleType").field(fieldDefinition).build()
         GraphQLUnionType unionType = GraphQLUnionType.newUnionType()
                 .name("Union")
                 .description("About union")
@@ -409,7 +396,7 @@ enum Enum {
                 .build()
         GraphQLFieldDefinition fieldDefinition2 = newFieldDefinition()
                 .name("field").type(unionType).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
+        def queryType = newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -430,10 +417,10 @@ type Query {
     }
 
     def "prints union"() {
-        def possibleType1 = GraphQLObjectType.newObject().name("PossibleType1").field(
+        def possibleType1 = newObject().name("PossibleType1").field(
                 newFieldDefinition().name("field").type(GraphQLString).build()
         ).build()
-        def possibleType2 = GraphQLObjectType.newObject().name("PossibleType2").field(
+        def possibleType2 = newObject().name("PossibleType2").field(
                 newFieldDefinition().name("field").type(GraphQLString).build()
         ).build()
         GraphQLUnionType unionType = GraphQLUnionType.newUnionType()
@@ -444,7 +431,7 @@ type Query {
                 .build()
         GraphQLFieldDefinition fieldDefinition2 = newFieldDefinition()
                 .name("field").type(unionType).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
+        def queryType = newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -478,7 +465,7 @@ type Query {
                 .name("field")
                 .argument(newArgument().name("arg").type(inputType).build())
                 .type(GraphQLString).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
+        def queryType = newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -507,7 +494,7 @@ input Input {
                 .build()
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(graphQLInterfaceType).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def queryType = newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -527,7 +514,7 @@ type Query {
 
     def "prints scalar description as comment"() {
         given:
-        GraphQLScalarType myScalar = new GraphQLScalarType("Scalar", "about scalar", new Coercing() {
+        GraphQLScalarType myScalar = newScalar().name("Scalar").description( "about scalar").coercing(new Coercing() {
             @Override
             Object serialize(Object input) {
                 return null
@@ -543,9 +530,10 @@ type Query {
                 return null
             }
         })
+        .build()
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(myScalar).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def queryType = newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true).includeDirectives(false)).print(schema)
@@ -567,7 +555,7 @@ scalar Scalar
                 .argument(newArgument().name("arg2").type(GraphQLString).build())
                 .argument(newArgument().name("arg3").description("about 3\nsecond line").type(GraphQLString).build())
                 .type(GraphQLString).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
+        def queryType = newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -589,33 +577,13 @@ scalar Scalar
 
     }
 
-    def "prints derived object type"() {
-        given:
-        GraphQLFieldDefinition fieldDefinition = newFieldDefinition().name("field").type(GraphQLString).build()
-        def queryType = new MyGraphQLObjectType("Query", "About Query\nSecond Line", Arrays.asList(fieldDefinition))
-        def schema = GraphQLSchema.newSchema().query(queryType).build()
-
-        when:
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
-
-        then:
-        result == '''"""
-About Query
-Second Line
-"""
-type Query {
-  field: String
-}
-'''
-    }
-
     def "prints type"() {
         given:
         def inputObjectType = GraphQLInputObjectType.newInputObject()
                 .name("inputObjectType")
                 .field(GraphQLInputObjectField.newInputObjectField().name("field").type(GraphQLString).build())
                 .build()
-        def objectType = GraphQLObjectType.newObject()
+        def objectType = newObject()
                 .name("objectType")
                 .field(GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString).build())
                 .build()
@@ -626,7 +594,7 @@ type Query {
                 .name("interfaceType")
                 .field(GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString).build())
                 .build()
-        def objectWithInterface = GraphQLObjectType.newObject()
+        def objectWithInterface = newObject()
                 .name("objectWithInterface")
                 .field(GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString).build())
                 .withInterface(interfaceType)
@@ -645,7 +613,7 @@ type Query {
                 .type(enumType)
                 .build()
 
-        def queryType = GraphQLObjectType.newObject().name("Query").field(field1).field(field2).field(field3).build()
+        def queryType = newObject().name("Query").field(field1).field(field2).field(field3).build()
         def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().typeResolver(interfaceType, { env -> null }).build();
         def schema = GraphQLSchema.newSchema().query(queryType).codeRegistry(codeRegistry).build()
         when:
@@ -680,23 +648,6 @@ input inputObjectType {
 '''
     }
 
-    def "concurrentModificationException should not occur when multiple extended graphQL types are used"() {
-        given:
-        GraphQLFieldDefinition fieldDefinition = newFieldDefinition().name("field").type(GraphQLString).build()
-        def queryType = new MyTestGraphQLObjectType("Query", "test", Arrays.asList(fieldDefinition))
-        def schema = GraphQLSchema.newSchema().query(queryType).build()
-
-        when:
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
-
-        then:
-        result == '''"test"
-type Query {
-  field: String
-}
-'''
-    }
-
     def "arrayIndexOutOfBoundsException should not occur if a field description of only a newline is passed"() {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
@@ -705,7 +656,7 @@ type Query {
                 .type(GraphQLString)
                 .build()
 
-        def queryType = new MyTestGraphQLObjectType("Query", "test", Arrays.asList(fieldDefinition))
+        def queryType = newObject().name("Query").description("test").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
 
         when:
@@ -831,7 +782,7 @@ enum Episode {
   NEWHOPE
 }
 
-"Asteroid"
+"desc"
 scalar Asteroid
 """
     }
@@ -1385,7 +1336,7 @@ type Query {
             @Override
             GraphQLScalarType getScalar(ScalarWiringEnvironment env) {
                 def definition = env.getScalarTypeDefinition()
-                return GraphQLScalarType.newScalar()
+                return newScalar()
                         .name(definition.getName())
                         .definition(definition)
                         .extensionDefinitions(env.getExtensions())
@@ -1681,7 +1632,7 @@ scalar CustomScalar
 
     def "omit unused built-in by default - created programmatically"() {
         given:
-        GraphQLScalarType myScalar = new GraphQLScalarType("RandomScalar", "about scalar", new Coercing() {
+        GraphQLScalarType myScalar = newScalar().name("RandomScalar").description("about scalar").coercing(new Coercing() {
             @Override
             Object serialize(Object input) {
                 return null
@@ -1697,9 +1648,11 @@ scalar CustomScalar
                 return null
             }
         })
+        .build()
+
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("scalarType").type(myScalar).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def queryType = newObject().name("Query").field(fieldDefinition).build()
 
         def schema = GraphQLSchema.newSchema().query(queryType).additionalType(myScalar).build()
 
@@ -1721,7 +1674,7 @@ scalar RandomScalar
 
     def "show unused custom scalars when unused - created programmatically"() {
         given:
-        GraphQLScalarType myScalar = new GraphQLScalarType("Scalar", "about scalar", new Coercing() {
+        GraphQLScalarType myScalar = newScalar().name("Scalar").description("about scalar").coercing(new Coercing() {
             @Override
             Object serialize(Object input) {
                 return null
@@ -1737,9 +1690,11 @@ scalar RandomScalar
                 return null
             }
         })
+        .build()
+
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("someType").type(GraphQLInt).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def queryType = newObject().name("Query").field(fieldDefinition).build()
 
         def schema = GraphQLSchema.newSchema().query(queryType).additionalType(myScalar).build()
 

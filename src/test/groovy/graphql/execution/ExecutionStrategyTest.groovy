@@ -418,7 +418,7 @@ class ExecutionStrategyTest extends Specification {
 
     def "completing a scalar null value for a non null type throws an exception"() {
 
-        GraphQLScalarType NullProducingScalar = new GraphQLScalarType("Custom", "It Can Produce Nulls", new Coercing<Double, Double>() {
+        GraphQLScalarType NullProducingScalar = GraphQLScalarType.newScalar().name("Custom").description("It Can Produce Nulls").coercing(new Coercing<Double, Double>() {
             @Override
             Double serialize(Object input) {
                 if (input == 0xCAFED00Dd) {
@@ -437,6 +437,7 @@ class ExecutionStrategyTest extends Specification {
                 throw new UnsupportedOperationException("Not implemented")
             }
         })
+        .build()
 
 
         ExecutionContext executionContext = buildContext()
