@@ -15,23 +15,41 @@ const BUCKET_NAME = "graphql-java-perf-tests"
 
 const s3Client = new S3Client({region: REGION});
 
+interface JmhResult {
+    benchmark: string // the FQN of the benchmark class + method name
+    mode: string // avgt or thrpt or something else from org.openjdk.jmh.annotations.Mode
+    threads: number
+    forks: number
+    jvm: string
+    jvmArgs: string[]
+    jdkVersion: string
+    vmName: string
+    vmVersion: string
+    primaryMetric: {
+        score: number,
+        scoreError: number
+        scoreConfidence: number[]
+    }
+}
+
 async function run() {
 
-    const startingSha: string | undefined = process.env.sha;
+    const startingSha: string | undefined = process.env.CURRENT_SHA
     if (!startingSha) {
         console.log('no starting sha found');
         return;
     }
     console.log('starting sha', startingSha);
     const prevPerformanceResults = await searchForPrevResultsRecursively(startingSha, 0);
-    if (prevPerformanceResults) {
-        console.log('found previous perf result:', prevPerformanceResults);
-    } else {
+    if (!prevPerformanceResults) {
         console.log('no previous perf results found')
+        return;
+    } else {
+        console.log('found previous perf result:', prevPerformanceResults);
     }
 }
 
-async function searchForPrevResultsRecursively(sha: string, depth: number): Promise<{ data: any, sha: string } | null> {
+async function searchForPrevResultsRecursively(sha: string, depth: number): Promise<{ data: JmhResult[], sha: string } | null> {
     if (depth > 10) {
         console.log('abort: no previous perf results found');
         return null;
@@ -54,7 +72,7 @@ async function searchForPrevResultsRecursively(sha: string, depth: number): Prom
     return null;
 }
 
-async function findPerformanceResults(sha: string): Promise<any> {
+async function findPerformanceResults(sha: string): Promise<JmhResult[] | null> {
     const listInput: ListObjectsV2CommandInput = {
         Bucket: BUCKET_NAME,
         Prefix: "jmh-results/jmh-" + sha
