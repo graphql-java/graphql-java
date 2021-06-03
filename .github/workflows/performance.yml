@@ -79,4 +79,6 @@ jobs:
         env:
           CURRENT_SHA: ${{ github.sha}}
       - run: cdk destroy -f
+        if: always()
+
 

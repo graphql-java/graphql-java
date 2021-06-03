@@ -87,17 +87,22 @@ async function comparePrevResultsWithCurrent(current: PerfResults, prev: PerfRes
 
 function compareTwoBenchmarks(current: JmhResult, prev: JmhResult, regressions: Array<PerformanceRegression>) {
     console.log('checking benchmark ', current.benchmark);
+    console.log('prev', prev.primaryMetric.scoreConfidence);
+    console.log('current', current.primaryMetric.scoreConfidence);
     if (prev.mode === 'avgt') {
-        console.log('prev', prev.primaryMetric.scoreConfidence);
-        console.log('current', current.primaryMetric.scoreConfidence);
         // we compare the prev higher value with the current lower value to make sure we really regressed
         if (prev.primaryMetric.scoreConfidence[1] < current.primaryMetric.scoreConfidence[0]) {
-            regressions.push({message: `${current.benchmark} has regressed: prev ${prev.primaryMetric.scoreConfidence[1]} vs now ${current.primaryMetric.scoreConfidence[0]}`})
+            regressions.push({message: `${current.benchmark} has regressed(avgt): prev ${prev.primaryMetric.scoreConfidence[1]} vs now ${current.primaryMetric.scoreConfidence[0]}`})
         } else {
             console.log('no regression');
         }
     } else if (prev.mode === 'thrpt') {
-        throw new Error(`not implemented benchmark mode ${prev.mode}`);
+        // higher is better, so we compare the lowest prev with the highest current to make sure we have really regressed
+        if (prev.primaryMetric.scoreConfidence[0] > current.primaryMetric.scoreConfidence[1]) {
+            regressions.push({message: `${current.benchmark} has regressed (thrpt): prev ${prev.primaryMetric.scoreConfidence[0]} vs now ${current.primaryMetric.scoreConfidence[1]}`})
+        } else {
+            console.log('no regression');
+        }
     } else {
         throw new Error(`not implemented benchmark mode ${prev.mode}`);
     }
