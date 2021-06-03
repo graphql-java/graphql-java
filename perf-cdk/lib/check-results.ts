@@ -88,9 +88,9 @@ async function comparePrevResultsWithCurrent(current: PerfResults, prev: PerfRes
 function compareTwoBenchmarks(current: JmhResult, prev: JmhResult, regressions: Array<PerformanceRegression>) {
     console.log('checking benchmark ', current.benchmark);
     if (prev.mode === 'avgt') {
+        console.log('prev', prev.primaryMetric.scoreConfidence);
         console.log('current', current.primaryMetric.scoreConfidence);
-        console.log('prev', current.primaryMetric.scoreConfidence);
-        // we compare teh prev higher value with the current lower value to make sure we really regressed
+        // we compare the prev higher value with the current lower value to make sure we really regressed
         if (prev.primaryMetric.scoreConfidence[1] < current.primaryMetric.scoreConfidence[0]) {
             regressions.push({message: `${current.benchmark} has regressed: prev ${prev.primaryMetric.scoreConfidence[1]} vs now ${current.primaryMetric.scoreConfidence[0]}`})
         } else {
