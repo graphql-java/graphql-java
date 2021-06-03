@@ -1,6 +1,7 @@
 package graphql;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -17,7 +18,7 @@ import static graphql.Assert.assertNotNull;
  * {@code
  *     DataFetcher df = new DataFetcher() {
  *        public Object get(DataFetchingEnvironment env) {
- *            GraphQLContext ctx = env.getContext()
+ *            GraphQLContext ctx = env.getGraphqlContext()
  *            User currentUser = ctx.getOrDefault("userKey",new AnonymousUser())
  *            ...
  *        }
@@ -25,7 +26,11 @@ import static graphql.Assert.assertNotNull;
  * }
  * </pre>
  *
- * You can set this up via {@link ExecutionInput.Builder#context(graphql.GraphQLContext.Builder)}
+ * You can set this up via {@link ExecutionInput.Builder#graphQLContext(GraphQLContext)}}
+ *
+ * All keys and values in the context MUST be non null.
+ *
+ * The class is mutable via a thread safe implementation but it is recommended to try to use this class in an immutable way if you can.
  */
 @PublicApi
 @ThreadSafe
@@ -38,42 +43,140 @@ public class GraphQLContext {
         this.map = map;
     }
 
-    public void delete(Object key) {
+    /**
+     * Deletes a key in the context
+     *
+     * @param key the key to delete
+     *
+     * @return this GraphQLContext object
+     */
+    public GraphQLContext delete(Object key) {
         map.remove(assertNotNull(key));
+        return this;
     }
 
+    /**
+     * Returns a value in the context by key
+     *
+     * @param key the key to look up
+     * @param <T> for two
+     *
+     * @return a value or null
+     */
     public <T> T get(Object key) {
         return (T) map.get(assertNotNull(key));
     }
 
+    /**
+     * Returns a value in the context by key
+     *
+     * @param key          the key to look up
+     * @param defaultValue the default value to use if these is no key entry
+     * @param <T>          for two
+     *
+     * @return a value or default value
+     */
     public <T> T getOrDefault(Object key, T defaultValue) {
         return (T) map.getOrDefault(assertNotNull(key), defaultValue);
     }
 
+    /**
+     * Returns a {@link Optional} value in the context by key
+     *
+     * @param key the key to look up
+     * @param <T> for two
+     *
+     * @return a value or an empty optional value
+     */
     public <T> Optional<T> getOrEmpty(Object key) {
         T t = (T) map.get(assertNotNull(key));
         return Optional.ofNullable(t);
     }
 
+    /**
+     * Returns true if the context contains a value for that key
+     *
+     * @param key the key to lookup
+     *
+     * @return true if there is a value for that key
+     */
     public boolean hasKey(Object key) {
         return map.containsKey(assertNotNull(key));
     }
 
-    public void put(Object key, Object value) {
+    /**
+     * Puts a value into the context
+     *
+     * @param key   the key to set
+     * @param value the new value (which not must be null)
+     *
+     * @return this {@link GraphQLContext} object
+     */
+    public GraphQLContext put(Object key, Object value) {
         map.put(assertNotNull(key), assertNotNull(value));
+        return this;
     }
 
-    public void putAll(GraphQLContext context) {
+    /**
+     * Puts all of the values into the context
+     *
+     * @param context the other context to use
+     *
+     * @return this {@link GraphQLContext} object
+     */
+    public GraphQLContext putAll(GraphQLContext context) {
         assertNotNull(context);
         for (Map.Entry<Object, Object> entry : context.map.entrySet()) {
             put(entry.getKey(), entry.getValue());
         }
+        return this;
     }
 
+    /**
+     * @return a stream of entries in the context
+     */
     public Stream<Map.Entry<Object, Object>> stream() {
         return map.entrySet().stream();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        GraphQLContext that = (GraphQLContext) o;
+        return map.equals(that.map);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(map);
+    }
+
+    @Override
+    public String toString() {
+        return map.toString();
+    }
+
+    /**
+     * Creates a new GraphqlContext with the map of context added to it
+     *
+     * @param mapOfContext the map of context value to use
+     *
+     * @return the new GraphqlContext
+     */
+    public static GraphQLContext of(Map<?, Object> mapOfContext) {
+        return new Builder().of(mapOfContext).build();
+    }
+
+    /**
+     * Creates a new GraphqlContext builder
+     *
+     * @return the new builder
+     */
     public static Builder newContext() {
         return new Builder();
     }
@@ -139,6 +242,21 @@ public class GraphQLContext {
                     key4, value4,
                     key5, value5
             );
+        }
+
+        /**
+         * Adds all of the values in the map into the context builder.  All keys and values MUSt be non null
+         *
+         * @param mapOfContext the map to put into context
+         *
+         * @return this builder
+         */
+        public Builder of(Map<?, Object> mapOfContext) {
+            assertNotNull(mapOfContext);
+            for (Map.Entry<?, Object> entry : mapOfContext.entrySet()) {
+                map.put(assertNotNull(entry.getKey()), assertNotNull(entry.getValue()));
+            }
+            return this;
         }
 
         private Builder putImpl(Object... kvs) {

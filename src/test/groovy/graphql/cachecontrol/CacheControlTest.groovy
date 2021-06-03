@@ -2,6 +2,7 @@ package graphql.cachecontrol
 
 
 import graphql.ExecutionResultImpl
+import graphql.GraphQLContext
 import graphql.TestUtil
 import graphql.execution.ResultPath
 import graphql.schema.DataFetcher
@@ -76,16 +77,16 @@ class CacheControlTest extends Specification {
         '''
 
         DataFetcher dfA = { env ->
-            CacheControl cc = env.getContext()
+            CacheControl cc = env.getGraphQlContext().get("cacheControl")
             cc.hint(env, 100)
         } as DataFetcher
         DataFetcher dfB = { env ->
-            CacheControl cc = env.getContext()
+            CacheControl cc = env.getGraphQlContext().get("cacheControl")
             cc.hint(env, 999)
         } as DataFetcher
 
         DataFetcher dfC = { env ->
-            CacheControl cc = env.getContext()
+            CacheControl cc = env.getGraphQlContext().get("cacheControl")
             cc.hint(env, CacheControl.Scope.PRIVATE)
         } as DataFetcher
 
@@ -98,7 +99,7 @@ class CacheControlTest extends Specification {
         def cacheControl = CacheControl.newCacheControl()
         when:
         def er = graphQL.execute({ input ->
-            input.context(cacheControl)
+            input.graphQLContext(GraphQLContext.of(["cacheControl" : cacheControl]))
                     .query(' { levelA { levelB { levelC } } }')
         })
         er = cacheControl.addTo(er)

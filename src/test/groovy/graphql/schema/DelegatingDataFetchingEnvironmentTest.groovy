@@ -1,5 +1,6 @@
 package graphql.schema
 
+import graphql.GraphQLContext
 import spock.lang.Specification
 
 class DelegatingDataFetchingEnvironmentTest extends Specification {
@@ -15,12 +16,17 @@ class DelegatingDataFetchingEnvironmentTest extends Specification {
                 .source(source)
                 .arguments(args)
                 .root(root)
-                .context("context")
+                .graphQLContext(GraphQLContext.of(["key": "context"]))
                 .variables(variables)
                 .build()
 
         when:
         def delegatingDFE = new DelegatingDataFetchingEnvironment(dfe) {
+            @Override
+            GraphQLContext getGraphQlContext() {
+                return GraphQLContext.of(["key": "overriddenContext"])
+            }
+
             @Override
             def getContext() {
                 return "overriddenContext"
@@ -30,6 +36,7 @@ class DelegatingDataFetchingEnvironmentTest extends Specification {
         delegatingDFE.getSource() == source
         delegatingDFE.getRoot() == root
         delegatingDFE.getContext() == "overriddenContext"
+        delegatingDFE.getGraphQlContext().get("key") == "overriddenContext"
         delegatingDFE.getVariables() == variables
         delegatingDFE.getArguments() == args
         delegatingDFE.getArgumentOrDefault("arg1", "x") == "val1"

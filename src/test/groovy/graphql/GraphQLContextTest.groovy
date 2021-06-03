@@ -1,6 +1,7 @@
 package graphql
 
 import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
 import spock.lang.Specification
 
 import java.util.stream.Collectors
@@ -16,7 +17,7 @@ class GraphQLContextTest extends Specification {
     }
 
     int sizeOf(GraphQLContext graphQLContext) {
-        graphQLContext.stream().count();
+        graphQLContext.stream().count()
     }
 
     def "of builder"() {
@@ -78,6 +79,25 @@ class GraphQLContextTest extends Specification {
         context.get("k4") == "v4"
         context.get("k5") == "v5"
         sizeOf(context) == 5
+
+        when:
+        context = GraphQLContext.newContext()
+                .of("k1", "v1")
+                .of("k2", "v2")
+                .of(["k3": "v3"]).build()
+        then:
+        context.get("k1") == "v1"
+        context.get("k2") == "v2"
+        context.get("k3") == "v3"
+        sizeOf(context) == 3
+
+        when:
+        context = GraphQLContext.of(["k1": "v1", "k2": "v2"])
+
+        then:
+        context.get("k1") == "v1"
+        context.get("k2") == "v2"
+        sizeOf(context) == 2
     }
 
     def "put works"() {
@@ -160,15 +180,15 @@ class GraphQLContextTest extends Specification {
             }
         '''
 
-        DataFetcher df = { env ->
-            GraphQLContext context = env.context
+        DataFetcher df = { DataFetchingEnvironment env ->
+            GraphQLContext context = env.graphQlContext
             return context.get("ctx1")
         }
         def graphQL = TestUtil.graphQL(spec, ["Query": ["field": df]]).build()
 
         def context = GraphQLContext.newContext().of("ctx1", "ctx1value").build()
         ExecutionInput input = newExecutionInput().query("{ field }")
-                .context(context).build()
+                .graphQLContext(context).build()
 
         when:
         def executionResult = graphQL.execute(input)

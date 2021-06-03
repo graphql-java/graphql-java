@@ -57,7 +57,7 @@ public class ConcernsExamples {
         UserContext contextForUser = YourGraphqlContextBuilder.getContextForUser(getCurrentUser());
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .context(contextForUser)
+                .graphQLContext(builder -> builder.of("userContext", contextForUser))
                 .build();
 
         ExecutionResult executionResult = graphQL.execute(executionInput);
@@ -70,7 +70,7 @@ public class ConcernsExamples {
         DataFetcher dataFetcher = new DataFetcher() {
             @Override
             public Object get(DataFetchingEnvironment environment) {
-                UserContext userCtx = environment.getContext();
+                UserContext userCtx = environment.getGraphQlContext().get("userContext");
                 Long businessObjId = environment.getArgument("businessObjId");
 
                 return invokeBusinessLayerMethod(userCtx, businessObjId);

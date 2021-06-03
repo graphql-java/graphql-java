@@ -1,5 +1,6 @@
 package graphql.cachecontrol;
 
+import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
@@ -21,7 +22,7 @@ import static graphql.collect.ImmutableKit.map;
  * To best use this class you need to pass a CacheControl object to each {@link graphql.schema.DataFetcher} and have them decide on
  * the caching hint values.
  * <p>
- * The easiest way to do this is create a CacheControl object at query start and pass it in as a "context" object via {@link graphql.ExecutionInput#getContext()} and then have
+ * The easiest way to do this is create a CacheControl object at query start and pass it in as a "context" object via {@link ExecutionInput#getGraphQLContext()} and then have
  * each {@link graphql.schema.DataFetcher} that wants to make cache control hints use that.
  * <p>
  * Then at the end of the query you would call {@link #addTo(graphql.ExecutionResult)} to record the cache control hints into the {@link graphql.ExecutionResult}
