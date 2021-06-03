@@ -62,7 +62,7 @@ public class NQBenchmark {
 
     @Benchmark
     @Warmup(iterations = 2)
-    @Measurement(iterations = 100, time = 10)
+    @Measurement(iterations = 3, time = 10)
     @Threads(1)
     @Fork(3)
     @BenchmarkMode(Mode.AverageTime)

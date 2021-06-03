@@ -156,10 +156,21 @@ async function findPerformanceResults(sha: string): Promise<PerfResults | null> 
     }
     const getResult = await s3Client.send<GetObjectCommandInput, GetObjectCommandOutput>(new GetObjectCommand(getInput))
     const stringResult = await streamToString(getResult.Body);
+    let data: JmhResult[];
+    try {
+        data = JSON.parse(stringResult)
+    } catch (error) {
+        console.log(`invalid JSON. ignoring file ${key}`, error);
+        return null;
+    }
+    if (!data.length || data.length === 0 || !data[0].benchmark) {
+        console.log(`unexpected content. Ignoring file ${key}. content: ${stringResult}`);
+        return null;
+    }
     return {
         fileKey: key,
         sha: sha,
-        data: JSON.parse(stringResult)
+        data
     } as PerfResults;
 }
 
