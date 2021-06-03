@@ -190,4 +190,6 @@ function getParentCommits(sha: string): Promise<string[]> {
     });
 }
 
-run();
+(async function () {
+    await run()
+}())
