@@ -89,14 +89,15 @@ function compareTwoBenchmarks(current: JmhResult, prev: JmhResult, regressions: 
     console.log('checking benchmark ', current.benchmark);
     console.log('prev', prev.primaryMetric.scoreConfidence);
     console.log('current', current.primaryMetric.scoreConfidence);
-    if (prev.mode === 'avgt') {
+    const mode = prev.mode;
+    if (mode === 'avgt') {
         // we compare the prev higher value with the current lower value to make sure we really regressed
         if (prev.primaryMetric.scoreConfidence[1] < current.primaryMetric.scoreConfidence[0]) {
             regressions.push({message: `${current.benchmark} has regressed(avgt): prev ${prev.primaryMetric.scoreConfidence[1]} vs now ${current.primaryMetric.scoreConfidence[0]}`})
         } else {
             console.log('no regression');
         }
-    } else if (prev.mode === 'thrpt') {
+    } else if (mode === 'thrpt') {
         // higher is better, so we compare the lowest prev with the highest current to make sure we have really regressed
         if (prev.primaryMetric.scoreConfidence[0] > current.primaryMetric.scoreConfidence[1]) {
             regressions.push({message: `${current.benchmark} has regressed (thrpt): prev ${prev.primaryMetric.scoreConfidence[0]} vs now ${current.primaryMetric.scoreConfidence[1]}`})
@@ -104,7 +105,7 @@ function compareTwoBenchmarks(current: JmhResult, prev: JmhResult, regressions: 
             console.log('no regression');
         }
     } else {
-        throw new Error(`not implemented benchmark mode ${prev.mode}`);
+        console.log(`ignoring benchmark with mode ${mode}`)
     }
 }
 
