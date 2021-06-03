@@ -190,6 +190,7 @@ function getParentCommits(sha: string): Promise<string[]> {
     });
 }
 
-(async function () {
-    await run()
-}())
+run().catch(error => {
+    console.error("catch error: ", error);
+    process.exitCode = 1;
+})
