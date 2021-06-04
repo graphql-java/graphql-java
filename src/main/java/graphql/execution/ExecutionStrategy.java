@@ -49,6 +49,7 @@ import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static graphql.execution.Async.exceptionallyCompletedFuture;
@@ -296,7 +297,7 @@ public abstract class ExecutionStrategy {
                         return CompletableFuture.completedFuture(result);
                     }
                 })
-                .thenCompose(errorOrValue -> errorOrValue)
+                .thenCompose(Function.identity())
                 .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result));
     }
 
