@@ -81,7 +81,7 @@ class DataFetcherExceptionHandlerTest extends Specification {
             }
 
             @Override
-            CompletionStage<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters params) {
+            CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters params) {
                 def msg = "The thing went " + params.getException().getMessage()
                 def result = DataFetcherExceptionHandlerResult.newResult().error(new CustomError(msg, params.getSourceLocation())).build()
                 return CompletableFuture.supplyAsync({ -> result })
@@ -122,7 +122,7 @@ class DataFetcherExceptionHandlerTest extends Specification {
             }
 
             @Override
-            CompletionStage<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters handlerParameters) {
+            CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters handlerParameters) {
                 throw new RuntimeException("The handler itself went BANG!")
             }
         }
@@ -145,7 +145,7 @@ class DataFetcherExceptionHandlerTest extends Specification {
             }
 
             @Override
-            CompletionStage<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters params) {
+            CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters params) {
                 def result = DataFetcherExceptionHandlerResult.newResult()
                 for (int i = 0; i < 5; i++) {
                     def msg = "$i The thing went " + params.getException().getMessage()

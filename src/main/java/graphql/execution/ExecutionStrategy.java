@@ -355,7 +355,7 @@ public abstract class ExecutionStrategy {
     }
 
     private <T> CompletableFuture<T> asyncHandleException(DataFetcherExceptionHandler handler, DataFetcherExceptionHandlerParameters handlerParameters, ExecutionContext executionContext) {
-        CompletionStage<T> cs = handler.handleException(handlerParameters)
+        return handler.handleException(handlerParameters)
                 .thenApply(handlerResult -> {
                             // the side effect is that we added the returned errors to the execution context
                             // here
@@ -364,7 +364,6 @@ public abstract class ExecutionStrategy {
                             return null;
                         }
                 );
-        return cs.toCompletableFuture();
     }
 
     /**
