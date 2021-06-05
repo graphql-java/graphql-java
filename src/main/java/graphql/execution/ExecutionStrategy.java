@@ -48,7 +48,6 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -311,9 +310,8 @@ public abstract class ExecutionStrategy {
                                                           Object result) {
 
         if (result instanceof DataFetcherResult) {
-            //noinspection unchecked
-            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result;
-            dataFetcherResult.getErrors().forEach(executionContext::addError);
+            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult<?>) result;
+            executionContext.addErrors(dataFetcherResult.getErrors());
 
             Object localContext = dataFetcherResult.getLocalContext();
             if (localContext == null) {
@@ -359,7 +357,7 @@ public abstract class ExecutionStrategy {
                 .thenApply(handlerResult -> {
                             // the side effect is that we added the returned errors to the execution context
                             // here
-                            handlerResult.getErrors().forEach(executionContext::addError);
+                            executionContext.addErrors(handlerResult.getErrors());
                             // and we return null because there is no data for the executed field
                             return null;
                         }
@@ -717,7 +715,6 @@ public abstract class ExecutionStrategy {
         TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getUnwrappedNonNullType());
         logNotSafe.warn("{} got {}", error.getMessage(), result.getClass());
         context.addError(error);
-
     }
 
 

@@ -9,7 +9,6 @@ import graphql.schema.DataFetcher
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionStage
 
 import static graphql.ExecutionInput.newExecutionInput
 

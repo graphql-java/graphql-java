@@ -20,12 +20,12 @@ import graphql.util.FpKit;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -47,8 +47,8 @@ public class ExecutionContext {
     private final Object context;
     private final Object localContext;
     private final Instrumentation instrumentation;
-    private final List<GraphQLError> errors = Collections.synchronizedList(new ArrayList<>());
-    private final Set<ResultPath> errorPaths = new HashSet<>();
+    private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
+    private final Map<ResultPath, GraphQLError> errorPaths = new ConcurrentHashMap<>();
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
     private final Locale locale;
@@ -164,9 +164,10 @@ public class ExecutionContext {
         // field errors should be handled - ie only once per field if its already there for nullability
         // but unclear if its not that error path
         //
-        if (!errorPaths.add(fieldPath)) {
+        if (errorPaths.containsKey(fieldPath)) {
             return;
         }
+        this.errorPaths.put(fieldPath, error);
         this.errors.add(error);
     }
 
@@ -181,9 +182,36 @@ public class ExecutionContext {
         // on how exactly multiple errors should be handled - ie only once per field or not outside the nullability
         // aspect.
         if (error.getPath() != null) {
-            this.errorPaths.add(ResultPath.fromList(error.getPath()));
+            ResultPath path = ResultPath.fromList(error.getPath());
+            this.errorPaths.put(path, error);
         }
         this.errors.add(error);
+    }
+
+    /**
+     * This method will allow you to add errors into the running execution context, without a check
+     * for per field unique-ness
+     *
+     * @param errors the errors to add
+     */
+    public void addErrors(List<GraphQLError> errors) {
+        if (errors.isEmpty()) {
+            return;
+        }
+        List<GraphQLError> newErrors = new ArrayList<>();
+        Map<ResultPath, GraphQLError> newErrorPaths = new HashMap<>();
+        for (GraphQLError error : errors) {
+            // see https://github.com/graphql-java/graphql-java/issues/888 on how the spec is unclear
+            // on how exactly multiple errors should be handled - ie only once per field or not outside the nullability
+            // aspect.
+            if (error.getPath() != null) {
+                ResultPath path = ResultPath.fromList(error.getPath());
+                newErrorPaths.put(path, error);
+            }
+            newErrors.add(error);
+        }
+        this.errorPaths.putAll(newErrorPaths);
+        this.errors.addAll(newErrors);
     }
 
     /**
