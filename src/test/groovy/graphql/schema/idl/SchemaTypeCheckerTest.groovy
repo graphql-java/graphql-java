@@ -8,7 +8,6 @@ import graphql.schema.Coercing
 import graphql.schema.CoercingParseLiteralException
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLScalarType
 import graphql.schema.TypeResolver
 import graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError
 import graphql.schema.idl.errors.DirectiveIllegalLocationError
@@ -19,6 +18,7 @@ import graphql.schema.idl.errors.QueryOperationMissingError
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static graphql.schema.GraphQLScalarType.newScalar
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.DUPLICATED_KEYS_MESSAGE
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_ENUM_MESSAGE
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_LIST_MESSAGE
@@ -94,7 +94,7 @@ class SchemaTypeCheckerTest extends Specification {
 
         NamedWiringFactory wiringFactory = new NamedWiringFactory("InterfaceType")
 
-        def scalesScalar = new GraphQLScalarType("Scales", "", new Coercing() {
+        def scalesScalar = newScalar().name("Scales").coercing(new Coercing() {
             @Override
             Object serialize(Object dataFetcherResult) {
                 return null
@@ -110,7 +110,9 @@ class SchemaTypeCheckerTest extends Specification {
                 return null
             }
         })
-        def aCustomDateScalar = new GraphQLScalarType("ACustomDate", "", new Coercing() {
+        .build()
+
+        def aCustomDateScalar = newScalar().name("ACustomDate").coercing(new Coercing() {
             @Override
             Object serialize(Object dataFetcherResult) {
                 return null
@@ -128,7 +130,8 @@ class SchemaTypeCheckerTest extends Specification {
                 }
                 return null
             }
-        })
+        }).build()
+
         def runtimeBuilder = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(wiringFactory)
                 .scalar(scalesScalar)

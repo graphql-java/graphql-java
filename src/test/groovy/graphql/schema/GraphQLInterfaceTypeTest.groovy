@@ -1,6 +1,5 @@
 package graphql.schema
 
-import graphql.AssertException
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
@@ -11,16 +10,19 @@ import static graphql.schema.GraphQLInterfaceType.newInterface
 
 class GraphQLInterfaceTypeTest extends Specification {
 
-    def "duplicate field definition fails"() {
+    def "duplicate field definition overwrites existing value"() {
         when:
-        // preserve old constructor behavior test
-        new GraphQLInterfaceType("TestInputObjectType", "description",
-                [
+        def interfaceType = newInterface().name("TestInterfaceType")
+                .description("description")
+                .fields([
                         newFieldDefinition().name("NAME").type(GraphQLString).build(),
-                        newFieldDefinition().name("NAME").type(GraphQLString).build()
-                ], new TypeResolverProxy())
+                        newFieldDefinition().name("NAME").type(GraphQLInt).build()
+                ])
+                .typeResolver(new TypeResolverProxy())
+                .build()
         then:
-        thrown(AssertException)
+        interfaceType.getName() == "TestInterfaceType"
+        interfaceType.getFieldDefinition("NAME").getType() == GraphQLInt
     }
 
     def "builder can change existing object into a new one"() {

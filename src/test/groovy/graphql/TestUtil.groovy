@@ -37,6 +37,9 @@ import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLDirective.newDirective
 import static graphql.schema.GraphQLFieldDefinition.Builder
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLScalarType.newScalar
+import static graphql.schema.GraphQLSchema.newSchema
 
 class TestUtil {
 
@@ -45,12 +48,12 @@ class TestUtil {
         GraphQLArgument.Builder fieldArgument = newArgument().name("arg").type(inputType)
         Builder name = newFieldDefinition()
                 .name("name").type(GraphQLString).argument(fieldArgument)
-        GraphQLObjectType queryType = GraphQLObjectType.newObject().name("query").field(name).build()
-        new GraphQLSchema(queryType)
+        GraphQLObjectType queryType = newObject().name("query").field(name).build()
+        newSchema().query(queryType).build()
     }
 
-    static dummySchema = GraphQLSchema.newSchema()
-            .query(GraphQLObjectType.newObject()
+    static dummySchema = newSchema()
+            .query(newObject()
                     .name("QueryType")
                     .field(newFieldDefinition().name("field").type(GraphQLString))
                     .build())
@@ -161,7 +164,7 @@ class TestUtil {
     static RuntimeWiring mockRuntimeWiring = RuntimeWiring.newRuntimeWiring().wiringFactory(mockWiringFactory).build()
 
     static GraphQLScalarType mockScalar(String name) {
-        new GraphQLScalarType(name, name, mockCoercing())
+        newScalar().name(name).description(name).coercing(mockCoercing()).build()
     }
 
     static Coercing mockCoercing() {
@@ -184,12 +187,13 @@ class TestUtil {
     }
 
     static GraphQLScalarType mockScalar(ScalarTypeDefinition definition) {
-        new GraphQLScalarType(
-                definition.getName(),
-                definition.getDescription() == null ? null : definition.getDescription().getContent(),
-                mockCoercing(),
-                definition.getDirectives().stream().map({ mockDirective(it.getName()) }).collect(Collectors.toList()),
-                definition)
+        newScalar()
+            .name(definition.getName())
+            .description(definition.getDescription() == null ? null : definition.getDescription().getContent())
+            .coercing(mockCoercing())
+            .replaceDirectives(definition.getDirectives().stream().map({ mockDirective(it.getName()) }).collect(Collectors.toList()))
+            .definition(definition)
+            .build()
     }
 
     static GraphQLDirective mockDirective(String name) {

@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -68,44 +67,6 @@ public class GraphQLSchema {
     private final ImmutableMap<String, ImmutableList<String>> interfaceNameToObjectTypeNames;
 
     private final String description;
-
-    /**
-     * @param queryType the query type
-     *
-     * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLSchema(GraphQLObjectType queryType) {
-        this(queryType, null, Collections.emptySet());
-    }
-
-    /**
-     * @param queryType       the query type
-     * @param mutationType    the mutation type
-     * @param additionalTypes additional types
-     *
-     * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, Set<GraphQLType> additionalTypes) {
-        this(queryType, mutationType, null, additionalTypes);
-    }
-
-    /**
-     * @param queryType        the query type
-     * @param mutationType     the mutation type
-     * @param subscriptionType the subscription type
-     * @param additionalTypes  additional types
-     *
-     * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes) {
-        this(newSchema().query(queryType).mutation(mutationType).subscription(subscriptionType).additionalTypes(additionalTypes), false);
-    }
 
     @Internal
     private GraphQLSchema(Builder builder, boolean afterTransform) {

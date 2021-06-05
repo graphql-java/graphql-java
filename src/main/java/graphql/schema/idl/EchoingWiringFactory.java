@@ -102,7 +102,7 @@ public class EchoingWiringFactory implements WiringFactory {
     }
 
     public static GraphQLScalarType fakeScalar(String name) {
-        return new GraphQLScalarType(name, name, new Coercing() {
+        return GraphQLScalarType.newScalar().name(name).coercing(new Coercing() {
             @Override
             public Object serialize(Object dataFetcherResult) {
                 return dataFetcherResult;
@@ -117,7 +117,8 @@ public class EchoingWiringFactory implements WiringFactory {
             public Object parseLiteral(Object input) {
                 return input;
             }
-        });
+        })
+        .build();
     }
 }
 

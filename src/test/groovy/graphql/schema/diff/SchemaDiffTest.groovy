@@ -35,22 +35,27 @@ class SchemaDiffTest extends Specification {
 
     private static final TypeResolver NULL_TYPE_RESOLVER = { env -> null }
 
-    static GraphQLScalarType CUSTOM_SCALAR = new GraphQLScalarType("CustomScalar", "CustomScalar", new Coercing() {
-        @Override
-        Object serialize(Object dataFetcherResult) {
-            throw new UnsupportedOperationException("Not implemented")
-        }
+    static GraphQLScalarType CUSTOM_SCALAR = GraphQLScalarType
+            .newScalar()
+            .name("CustomScalar")
+            .description("CustomScalar")
+            .coercing(new Coercing() {
+                @Override
+                Object serialize(Object dataFetcherResult) {
+                    throw new UnsupportedOperationException("Not implemented")
+                }
 
-        @Override
-        Object parseValue(Object input) {
-            throw new UnsupportedOperationException("Not implemented")
-        }
+                @Override
+                Object parseValue(Object input) {
+                    throw new UnsupportedOperationException("Not implemented")
+                }
 
-        @Override
-        Object parseLiteral(Object input) {
-            throw new UnsupportedOperationException("Not implemented")
-        }
-    })
+                @Override
+                Object parseLiteral(Object input) {
+                    throw new UnsupportedOperationException("Not implemented")
+                }
+            })
+            .build()
 
     static RuntimeWiring wireWithNoFetching() {
 

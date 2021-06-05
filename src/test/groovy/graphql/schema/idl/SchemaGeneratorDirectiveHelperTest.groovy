@@ -34,7 +34,7 @@ import static graphql.schema.DataFetcherFactories.wrapDataFetcher
 
 class SchemaGeneratorDirectiveHelperTest extends Specification {
 
-    def customScalarType = new GraphQLScalarType("ScalarType", "", new Coercing() {
+    def customScalarType = GraphQLScalarType.newScalar().name("ScalarType").coercing(new Coercing() {
         @Override
         Object serialize(Object input) throws CoercingSerializeException {
             return input
@@ -50,6 +50,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             return input
         }
     })
+    .build()
 
     def assertCallHierarchy(elementHierarchy, astHierarchy, String name, List<String> l) {
         assert elementHierarchy[name] == l, "unexpected elementHierarchy"

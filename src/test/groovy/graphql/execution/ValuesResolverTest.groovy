@@ -18,7 +18,6 @@ import graphql.language.Value
 import graphql.language.VariableDefinition
 import graphql.language.VariableReference
 import graphql.schema.CoercingParseValueException
-import graphql.schema.GraphQLArgument
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -456,7 +455,7 @@ class ValuesResolverTest extends Specification {
         resolvedVars['bar'] == "barValue"
     }
 
-    def "coerceVariableValues: if variableType is a Non‐Nullable type and value is null, throw a query error"() {
+    def "coerceVariableValues: if variableType is a Non-Nullable type and value is null, throw a query error"() {
         given:
         def schema = TestUtil.schemaWithInputType(nonNull(GraphQLString))
 
@@ -482,7 +481,7 @@ class ValuesResolverTest extends Specification {
                 .name("inputObject")
                 .build()
 
-        def fieldArgument = GraphQLArgument.newArgument().name("arg").type(inputObjectType).defaultValue("hello").build()
+        def fieldArgument = newArgument().name("arg").type(inputObjectType).defaultValue("hello").build()
         def argument = new Argument("arg", NullValue.newNullValue().build())
 
         when:
