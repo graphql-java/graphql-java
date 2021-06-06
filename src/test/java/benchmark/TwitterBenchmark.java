@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import com.github.javafaker.Code;
 
@@ -20,10 +22,16 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
+import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.instrumentation.tracing.TracingInstrumentation;
+import graphql.execution.preparsed.PreparsedDocumentEntry;
+import graphql.execution.preparsed.PreparsedDocumentProvider;
+import graphql.execution.preparsed.persisted.InMemoryPersistedQueryCache;
+import graphql.execution.preparsed.persisted.PersistedQueryCache;
+import graphql.execution.preparsed.persisted.PersistedQuerySupport;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactory;
 import graphql.schema.DataFetcherFactoryEnvironment;
@@ -51,15 +59,19 @@ public class TwitterBenchmark {
   private static final int BREADTH = 150;
   private static final int DEPTH = 150;
 
-  static GraphQL graphQL = buildGraphQL();
   static String query = mkQuery();
+  static Object queryId = "QUERY_ID";
+  static GraphQL graphQL = buildGraphQL();
 
   @Benchmark
   @BenchmarkMode(Mode.Throughput)
   @OutputTimeUnit(TimeUnit.SECONDS)
   public void execute(Blackhole bh) {
-    ExecutionResult result = graphQL.execute(query);
-    bh.consume(result);
+    bh.consume(execute());
+  }
+
+  private static ExecutionResult execute() {
+    return graphQL.execute(query);
   }
 
   public static String mkQuery() {
@@ -118,6 +130,32 @@ public class TwitterBenchmark {
         .codeRegistry(codeReg)
         .build();
 
-    return GraphQL.newGraphQL(graphQLSchema).build();
+    return GraphQL
+        .newGraphQL(graphQLSchema)
+        .preparsedDocumentProvider(
+            new PersistedQuery(
+              InMemoryPersistedQueryCache
+                .newInMemoryPersistedQueryCache()
+                .addQuery(queryId, query)
+                .build()
+            )
+        )
+        .build();
+  }
+
+  static class PersistedQuery extends PersistedQuerySupport {
+    public PersistedQuery(PersistedQueryCache persistedQueryCache) {
+      super(persistedQueryCache);
+    }
+
+    @Override
+    protected Optional<Object> getPersistedQueryId(ExecutionInput executionInput) {
+      return Optional.of(queryId);
+    }
+  }
+
+  public static void main(String[] args) {
+    ExecutionResult result = execute();
+    int i = 0;
   }
 }
