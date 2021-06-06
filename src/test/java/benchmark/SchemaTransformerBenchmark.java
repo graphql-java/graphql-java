@@ -1,0 +1,139 @@
+package benchmark;
+
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
+import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLSchemaElement;
+import graphql.schema.GraphQLTypeVisitor;
+import graphql.schema.GraphQLTypeVisitorStub;
+import graphql.schema.SchemaTransformer;
+import graphql.schema.idl.SchemaGenerator;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Threads;
+import org.openjdk.jmh.annotations.Warmup;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import static com.google.common.io.Resources.getResource;
+
+@State(Scope.Benchmark)
+@BenchmarkMode(Mode.Throughput)
+@Warmup(iterations = 2)
+@Measurement(iterations = 2, timeUnit = TimeUnit.NANOSECONDS)
+public class SchemaTransformerBenchmark {
+
+    @State(Scope.Benchmark)
+    public static class MyState {
+
+        GraphQLSchema schema;
+        GraphQLSchema txSchema;
+
+        GraphQLDirective infoDirective = GraphQLDirective.newDirective()
+                .name("Info")
+                .build();
+        GraphQLTypeVisitor directiveAdder = new GraphQLTypeVisitorStub() {
+            @Override
+            public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                // add directive
+                GraphQLFieldDefinition changedNode = node.transform( builder -> {
+                    builder.withDirective(infoDirective);
+                });
+                return changeNode(context, changedNode);
+            }
+
+            @Override
+            public TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                // add directive info
+                GraphQLObjectType changedNode = node.transform( builder -> {
+                    builder.withDirective(infoDirective);
+                });
+                return changeNode(context, changedNode);
+            }
+        };
+
+        GraphQLTypeVisitor directiveRemover = new GraphQLTypeVisitorStub() {
+            @Override
+            public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                List<GraphQLDirective> filteredDirectives = node.getDirectives().stream()
+                        .filter(d -> !d.getName().equals(infoDirective.getName()))
+                        .collect(Collectors.toList());
+                // remove directive info
+                GraphQLFieldDefinition changedNode = node.transform( builder -> {
+                    builder.replaceDirectives(filteredDirectives);
+                });
+                return changeNode(context, changedNode);
+            }
+
+            @Override
+            public TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                List<GraphQLDirective> filteredDirectives = node.getDirectives().stream()
+                        .filter(d -> !d.getName().equals(infoDirective.getName()))
+                        .collect(Collectors.toList());
+                // remove directive info
+                GraphQLObjectType changedNode = node.transform( builder -> {
+                    builder.replaceDirectives(filteredDirectives);
+                });
+                return changeNode(context, changedNode);
+            }
+        };
+
+        @Setup
+        public void setup() {
+            try {
+                String schemaString = readFromClasspath("large-schema-3.graphqls");
+                schema = SchemaGenerator.createdMockedSchema(schemaString);
+                txSchema = SchemaTransformer.transformSchema(schema, directiveAdder);
+            } catch (Exception e) {
+                System.out.println(e);
+                throw new RuntimeException(e);
+            }
+        }
+
+        private String readFromClasspath(String file) throws IOException {
+            URL url = getResource(file);
+            return Resources.toString(url, Charsets.UTF_8);
+        }
+    }
+
+    @Benchmark
+    @Warmup(iterations = 1)
+    @Measurement(iterations = 1, time = 10)
+    @Threads(1)
+    @Fork(1)
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public GraphQLSchema benchMarkSchemaTransformerAdd(MyState myState) {
+        GraphQLSchema schema = myState.schema;
+        return SchemaTransformer.transformSchema(schema, myState.directiveAdder);
+    }
+
+
+    @Benchmark
+    @Warmup(iterations = 1)
+    @Measurement(iterations = 1, time = 10)
+    @Threads(1)
+    @Fork(1)
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public GraphQLSchema benchMarkSchemaTransformerRemove(MyState myState) {
+        GraphQLSchema schema = myState.txSchema;
+        return SchemaTransformer.transformSchema(schema, myState.directiveRemover);
+    }
+}
