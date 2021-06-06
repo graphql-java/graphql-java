@@ -2,6 +2,7 @@ package graphql.collect;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import graphql.Internal;
 
 import java.util.Collection;
@@ -109,4 +110,16 @@ public final class ImmutableKit {
         return newList.build();
     }
 
+    public static <T> ImmutableSet<T> addToSet(Collection<? extends T> existing, T newValue, T... extraValues) {
+        assertNotNull(existing);
+        assertNotNull(newValue);
+        int expectedSize = existing.size() + 1 + extraValues.length;
+        ImmutableSet.Builder<T> newSet = ImmutableSet.builderWithExpectedSize(expectedSize);
+        newSet.addAll(existing);
+        newSet.add(newValue);
+        for (T extraValue : extraValues) {
+            newSet.add(extraValue);
+        }
+        return newSet.build();
+    }
 }
