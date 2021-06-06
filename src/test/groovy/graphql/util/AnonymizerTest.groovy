@@ -176,15 +176,48 @@ type Object2 {
         type Query {
             foo(myInput: MyInput!): String
             foo2(arg: String = "toBeReplaced"): String
+            foo3(arg: [[String!]!]! = [["defaultValueList"]]): String
+            foo4(arg: Weekend! = SATURDAY): String
+            foo5(arg: MyInput! = { foo2: "default", foo5: SUNDAY, foo6: { foo1: 10 } } ): String
+            foo6: Object
         }
         input MyInput {
             foo1: Int
             foo2: String = "myDefaultValue"
             foo3: Int = 1234
             foo4: Int = 4567 
+            foo5: Weekend = SUNDAY
+            foo6: MyInput
+        }
+        
+        enum Weekend {
+            SATURDAY
+            SUNDAY
+        }
+        
+        type Object implements Iface {
+            id: String
+            # default value must match across hierarchy
+            bar(arg: MyInput = {foo2: "adefault", foo5: SATURDAY}): String
+        }
+        
+        interface Iface {
+            id: String
+           
+            bar(arg: MyInput = {foo2: "adefault", foo5: SATURDAY}): String
         }
         """)
-        def query = 'query myQuery($myVar: String = "someValue"){foo(myInput: {foo1: 8923, foo2: $myVar })}'
+        def query = '''
+        query myQuery($myVar: String = "someValue", 
+                        $varFoo3: [[String!]!]! = [["defaultValueList"]],
+                        $varFoo4: Weekend! = SATURDAY,
+                        $varFoo5: MyInput! = { foo2: "default", foo5: SUNDAY, foo6: { foo1: 10 } }){
+            foo(myInput: {foo1: 8923, foo2: $myVar })
+            foo3(arg: $varFoo3)
+            foo4(arg: $varFoo4)
+            foo5(arg: $varFoo5)
+        }
+        '''
 
         when:
         def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
@@ -192,25 +225,45 @@ type Object2 {
         def newQuery = result.queries[0]
 
         then:
-        newSchema == """schema {
-  query: Object1
-}
-
-type Object1 {
-  field1(argument1: InputObject1!): String
-  field2(argument2: String = "defaultValue2"): String
-}
-
-input InputObject1 {
-  inputField1: Int
-  inputField2: String = "defaultValue1"
-  inputField3: Int = 1
-  inputField4: Int = 2
-}
-"""
-        newQuery == 'query operation($var1:String="stringValue1") {field1(argument1:{foo1:1,foo2:$var1})}'
-
-
+        newSchema == """\
+        schema {
+          query: Object1
+        }
+        
+        interface Interface1 {
+          field7: String
+          field8(argument6: InputObject1 = {inputField2 : "defaultValue5", inputField5 : EnumValue1}): String
+        }
+        
+        type Object1 {
+          field1(argument1: InputObject1!): String
+          field2(argument2: String = "defaultValue2"): String
+          field3(argument3: [[String!]!]! = [["defaultValue3"]]): String
+          field4(argument4: Enum1! = EnumValue1): String
+          field5(argument5: InputObject1! = {inputField2 : "defaultValue4", inputField5 : EnumValue2, inputField6 : {inputField1 : 3}}): String
+          field6: Object2
+        }
+        
+        type Object2 implements Interface1 {
+          field7: String
+          field8(argument6: InputObject1 = {inputField2 : "defaultValue5", inputField5 : EnumValue1}): String
+        }
+        
+        enum Enum1 {
+          EnumValue1
+          EnumValue2
+        }
+        
+        input InputObject1 {
+          inputField1: Int
+          inputField2: String = "defaultValue1"
+          inputField3: Int = 1
+          inputField4: Int = 2
+          inputField5: Enum1 = EnumValue2
+          inputField6: InputObject1
+        }
+        """.stripIndent()
+        newQuery == 'query operation($var1:String="stringValue1",$var2:[[String!]!]!=[["stringValue2"]],$var3:Enum1!=EnumValue1,$var4:InputObject1!={inputField2:"stringValue3",inputField5:EnumValue2,inputField6:{inputField1:2}}) {field1(argument1:{foo1:1,foo2:$var1}) field3(argument3:$var2) field4(argument4:$var3) field5(argument5:$var4)}'
     }
 
     def "query with aliases"() {

@@ -15,19 +15,26 @@ import graphql.analysis.QueryVisitorInlineFragmentEnvironment;
 import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
+import graphql.language.ArrayValue;
 import graphql.language.AstPrinter;
 import graphql.language.AstTransformer;
 import graphql.language.Definition;
 import graphql.language.Document;
+import graphql.language.EnumValue;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.IntValue;
+import graphql.language.ListType;
 import graphql.language.Node;
 import graphql.language.NodeVisitorStub;
+import graphql.language.NonNullType;
+import graphql.language.ObjectField;
+import graphql.language.ObjectValue;
 import graphql.language.OperationDefinition;
 import graphql.language.StringValue;
+import graphql.language.Type;
 import graphql.language.TypeName;
 import graphql.language.Value;
 import graphql.language.VariableDefinition;
@@ -42,9 +49,13 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLImplementingType;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLNamedSchemaElement;
+import graphql.schema.GraphQLNamedType;
+import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
@@ -59,10 +70,12 @@ import graphql.schema.SchemaUtil;
 import graphql.schema.TypeResolver;
 import graphql.schema.idl.DirectiveInfo;
 import graphql.schema.idl.ScalarInfo;
+import graphql.schema.idl.TypeUtil;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -73,6 +86,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLArgument.newArgument;
+import static graphql.schema.GraphQLTypeUtil.unwrapNonNull;
+import static graphql.schema.GraphQLTypeUtil.unwrapNonNullAs;
+import static graphql.schema.GraphQLTypeUtil.unwrapOneAs;
 import static graphql.schema.idl.SchemaGenerator.createdMockedSchema;
 import static graphql.util.TraversalControl.CONTINUE;
 import static graphql.util.TreeTransformerUtil.changeNode;
@@ -130,6 +146,11 @@ public class Anonymizer {
 
         Map<GraphQLNamedSchemaElement, String> newNameMap = recordNewNames(schema);
 
+        // stores a reverse index of anonymized argument name to argument instance
+        // this is to handle cases where the fields on implementing types MUST have the same exact argument and default
+        // value definitions as the fields on the implemented interface. (argument default values must match exactly)
+        Map<String, GraphQLArgument> renamedArgumentsMap = new HashMap<>();
+
         SchemaTransformer schemaTransformer = new SchemaTransformer();
         GraphQLSchema newSchema = schemaTransformer.transform(schema, new GraphQLTypeVisitorStub() {
 
@@ -144,13 +165,20 @@ public class Anonymizer {
             @Override
             public TraversalControl visitGraphQLArgument(GraphQLArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
                 String newName = assertNotNull(newNameMap.get(graphQLArgument));
+
+                if (renamedArgumentsMap.containsKey(newName)) {
+                    return changeNode(context, renamedArgumentsMap.get(newName).transform(b -> {}));
+                }
+
                 GraphQLArgument newElement = graphQLArgument.transform(builder -> {
                     builder.name(newName).description(null).definition(null);
                     if (graphQLArgument.hasSetDefaultValue()) {
                         Value<?> defaultValueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getArgumentDefaultValue(), graphQLArgument.getType());
-                        builder.defaultValueLiteral(replaceDefaultValue(defaultValueLiteral, defaultStringValueCounter, defaultIntValueCounter));
+                        builder.defaultValueLiteral(replaceDefaultValue(defaultValueLiteral, graphQLArgument.getType(), newNameMap, defaultStringValueCounter, defaultIntValueCounter));
                     }
                 });
+
+                renamedArgumentsMap.put(newName, newElement);
                 return changeNode(context, newElement);
             }
 
@@ -228,7 +256,7 @@ public class Anonymizer {
                 Value<?> defaultValue = null;
                 if (graphQLInputObjectField.hasSetDefaultValue()) {
                     defaultValue = ValuesResolver.valueToLiteral(graphQLInputObjectField.getInputFieldDefaultValue(), graphQLInputObjectField.getType());
-                    defaultValue = replaceDefaultValue(defaultValue, defaultStringValueCounter, defaultIntValueCounter);
+                    defaultValue = replaceDefaultValue(defaultValue, graphQLInputObjectField.getType(), newNameMap, defaultStringValueCounter, defaultIntValueCounter);
                 }
 
                 Value<?> finalDefaultValue = defaultValue;
@@ -305,11 +333,41 @@ public class Anonymizer {
         return result;
     }
 
-    private static Value replaceDefaultValue(Value defaultValueLiteral, AtomicInteger defaultStringValueCounter, AtomicInteger defaultIntValueCounter) {
-        if (defaultValueLiteral instanceof StringValue) {
+    private static Value replaceDefaultValue(Value defaultValueLiteral, GraphQLInputType argType, Map<GraphQLNamedSchemaElement, String> newNameMap, AtomicInteger defaultStringValueCounter, AtomicInteger defaultIntValueCounter) {
+        if (defaultValueLiteral instanceof ArrayValue) {
+            List<Value> values = ((ArrayValue) defaultValueLiteral).getValues();
+            ArrayValue.Builder newArrayValueBuilder = ArrayValue.newArrayValue();
+            for (Value value: values) {
+                // [Type!]! -> Type!
+                GraphQLInputType unwrappedInputType = unwrapOneAs(unwrapNonNull(argType));
+                newArrayValueBuilder.value(replaceDefaultValue(value, unwrappedInputType, newNameMap, defaultStringValueCounter, defaultIntValueCounter));
+            }
+            return newArrayValueBuilder.build();
+        } else if (defaultValueLiteral instanceof StringValue) {
             return StringValue.newStringValue("defaultValue" + defaultStringValueCounter.getAndIncrement()).build();
         } else if (defaultValueLiteral instanceof IntValue) {
             return IntValue.newIntValue(BigInteger.valueOf(defaultIntValueCounter.getAndIncrement())).build();
+        } else if (defaultValueLiteral instanceof EnumValue) {
+            GraphQLEnumType enumType = unwrapNonNullAs(argType);
+            GraphQLEnumValueDefinition enumValueDefinition = enumType.getValue(((EnumValue) defaultValueLiteral).getName());
+            String newName = newNameMap.get(enumValueDefinition);
+            return new EnumValue(newName);
+        } else if (defaultValueLiteral instanceof ObjectValue) {
+            GraphQLInputObjectType inputObjectType = unwrapNonNullAs(argType);
+            ObjectValue.Builder newObjectValueBuilder = ObjectValue.newObjectValue();
+            List<ObjectField> objectFields = ((ObjectValue) defaultValueLiteral).getObjectFields();
+            for (ObjectField objectField: objectFields) {
+                String objectFieldName = objectField.getName();
+                Value objectFieldValue = objectField.getValue();
+                GraphQLInputObjectField inputObjectTypeField = inputObjectType.getField(objectFieldName);
+                GraphQLInputType fieldType = unwrapNonNullAs(inputObjectTypeField.getType());
+                ObjectField newObjectField = objectField.transform(builder -> {
+                        builder.name(newNameMap.get(inputObjectTypeField));
+                        builder.value(replaceDefaultValue(objectFieldValue, fieldType, newNameMap, defaultStringValueCounter, defaultIntValueCounter));
+                });
+                newObjectValueBuilder.objectField(newObjectField);
+            }
+            return newObjectValueBuilder.build();
         }
         return defaultValueLiteral;
     }
@@ -606,8 +664,10 @@ public class Anonymizer {
         AtomicInteger intValueCounter = new AtomicInteger(1);
         AstTransformer astTransformer = new AstTransformer();
         AtomicInteger aliasCounter = new AtomicInteger(1);
-        Document newDocument = (Document) astTransformer.transform(document, new NodeVisitorStub() {
+        AtomicInteger defaultStringValueCounter = new AtomicInteger(1);
+        AtomicInteger defaultIntValueCounter = new AtomicInteger(1);
 
+        Document newDocument = (Document) astTransformer.transform(document, new NodeVisitorStub() {
 
             @Override
             public TraversalControl visitStringValue(StringValue node, TraverserContext<Node> context) {
@@ -648,7 +708,26 @@ public class Anonymizer {
             @Override
             public TraversalControl visitVariableDefinition(VariableDefinition node, TraverserContext<Node> context) {
                 String newName = assertNotNull(variableNames.get(node.getName()));
-                return changeNode(context, node.transform(builder -> builder.name(newName)));
+                VariableDefinition newNode = node.transform(builder -> {
+                    builder.name(newName).comments(Collections.emptyList());
+
+                    // convert variable language type to renamed language type
+                    TypeName typeName = TypeUtil.unwrapAll(node.getType());
+                    GraphQLNamedType originalType = schema.getTypeAs(typeName.getName());
+                    // has the type name changed? (standard scalars such as String don't change)
+                    if (newNames.containsKey(originalType)) {
+                        String newTypeName = newNames.get(originalType);
+                        builder.type(replaceTypeName(node.getType(), newTypeName));
+                    }
+
+                    if (node.getDefaultValue() != null) {
+                        Value<?> defaultValueLiteral = node.getDefaultValue();
+                        GraphQLType graphQLType = fromTypeToGraphQLType(node.getType(), schema);
+                        builder.defaultValue(replaceDefaultValue(defaultValueLiteral, (GraphQLInputType) graphQLType, newNames, defaultStringValueCounter, defaultIntValueCounter));
+                    }
+                });
+
+                return changeNode(context, newNode);
             }
 
             @Override
@@ -707,6 +786,38 @@ public class Anonymizer {
 //        SchemaTransformer.transformSchema(schema, visitor);
 //
 //    }
+
+    // converts language [Type!] to [GraphQLType!] using the exact same GraphQLType instance from
+    // the provided schema
+    private static GraphQLType fromTypeToGraphQLType(Type type, GraphQLSchema schema) {
+        if (type instanceof TypeName) {
+            String typeName = ((TypeName) type).getName();
+            GraphQLType graphQLType = schema.getType(typeName);
+            graphql.Assert.assertNotNull(graphQLType, () -> "Schema must contain type " + typeName);
+            return graphQLType;
+        } else if (type instanceof NonNullType) {
+            return GraphQLNonNull.nonNull(fromTypeToGraphQLType(TypeUtil.unwrapOne(type), schema));
+        } else if (type instanceof ListType) {
+            return GraphQLList.list(fromTypeToGraphQLType(TypeUtil.unwrapOne(type), schema));
+        } else {
+            graphql.Assert.assertShouldNeverHappen();
+            return null;
+        }
+    }
+
+    // rename a language type. e.g: [[Character!]!] -> [[NewName!]!]
+    private static Type replaceTypeName(Type type, String newName) {
+        if (type instanceof TypeName) {
+            return TypeName.newTypeName(newName).build();
+        } else if (type instanceof ListType) {
+            return ListType.newListType(replaceTypeName(((ListType) type).getType(), newName)).build();
+        } else if (type instanceof NonNullType) {
+            return NonNullType.newNonNullType(replaceTypeName(((NonNullType) type).getType(), newName)).build();
+        } else {
+            graphql.Assert.assertShouldNeverHappen();
+            return null;
+        }
+    }
 
     private static void assertUniqueOperation(Document document) {
         String operationName = null;
