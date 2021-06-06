@@ -2,6 +2,7 @@ package graphql.util
 
 import graphql.AssertException
 import graphql.TestUtil
+import graphql.schema.idl.DirectiveInfo
 import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
@@ -232,21 +233,21 @@ type Object2 {
         
         interface Interface1 {
           field7: String
-          field8(argument6: InputObject1 = {inputField2 : "defaultValue5", inputField5 : EnumValue1}): String
+          field8(argument6: InputObject1 = {inputField2 : "stringValue5", inputField5 : EnumValue1}): String
         }
         
         type Object1 {
           field1(argument1: InputObject1!): String
-          field2(argument2: String = "defaultValue2"): String
-          field3(argument3: [[String!]!]! = [["defaultValue3"]]): String
+          field2(argument2: String = "stringValue2"): String
+          field3(argument3: [[String!]!]! = [["stringValue3"]]): String
           field4(argument4: Enum1! = EnumValue1): String
-          field5(argument5: InputObject1! = {inputField2 : "defaultValue4", inputField5 : EnumValue2, inputField6 : {inputField1 : 3}}): String
+          field5(argument5: InputObject1! = {inputField2 : "stringValue4", inputField5 : EnumValue2, inputField6 : {inputField1 : 3}}): String
           field6: Object2
         }
         
         type Object2 implements Interface1 {
           field7: String
-          field8(argument6: InputObject1 = {inputField2 : "defaultValue5", inputField5 : EnumValue1}): String
+          field8(argument6: InputObject1 = {inputField2 : "stringValue5", inputField5 : EnumValue1}): String
         }
         
         enum Enum1 {
@@ -256,7 +257,7 @@ type Object2 {
         
         input InputObject1 {
           inputField1: Int
-          inputField2: String = "defaultValue1"
+          inputField2: String = "stringValue1"
           inputField3: Int = 1
           inputField4: Int = 2
           inputField5: Enum1 = EnumValue2
@@ -667,5 +668,93 @@ type Object1 {
   field2: Interface2
 }
 """
+    }
+
+    def "complex schema with directives"() {
+        given:
+        def schema = TestUtil.schema("""
+        directive @key(fields: String! = "sensitive") repeatable on SCHEMA | SCALAR 
+                            | OBJECT 
+                            | FIELD_DEFINITION 
+                            | ARGUMENT_DEFINITION 
+                            | INTERFACE 
+                            | UNION 
+                            | ENUM 
+                            | ENUM_VALUE 
+                            | INPUT_OBJECT 
+                            | INPUT_FIELD_DEFINITION 
+
+        schema @key(fields: "hello") {
+           query: Query
+        }
+
+        type Query @key(fields: "hello2") {
+            pets: Pet @key(fields: "hello3")
+            allPets: AllPets @deprecated(reason: "no money")
+        }
+        
+        enum PetKind @key(fields: "hello4") {
+            FRIENDLY @key(fields: "hello5")
+            NOT_FRIENDLY
+        }
+        
+        interface Pet @key(fields: "hello6") {
+            name: String
+            petKind: PetKind
+        }
+        type Dog implements Pet {
+            name: String 
+            dogField(limit: LimitInput): String
+            petKind: PetKind
+        } 
+        
+        input LimitInput @key(fields: "hello7") {
+            value: Int @key(fields: "hello8")
+        }
+       
+        union AllPets @key(fields: "hello9") = Dog
+        """)
+
+        when:
+        def result = Anonymizer.anonymizeSchema(schema)
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions()
+                .includeDirectives({!DirectiveInfo.isGraphqlSpecifiedDirective(it)}))
+                .print(result)
+
+        then:
+        newSchema == """\
+        schema @Directive1(argument1 : "stringValue2"){
+          query: Object1
+        }
+        
+        directive @Directive1(argument1: String! = "stringValue3") repeatable on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+        
+        interface Interface1 @Directive1(argument1 : "stringValue10") {
+          field2: String
+          field3: Enum1
+        }
+        
+        union Union1 @Directive1(argument1 : "stringValue16") = Object2
+        
+        type Object1 @Directive1(argument1 : "stringValue6") {
+          field1: Interface1 @Directive1(argument1 : "stringValue8")
+          field4: Union1 @deprecated
+        }
+        
+        type Object2 implements Interface1 {
+          field2: String
+          field3: Enum1
+          field5(argument2: InputObject1): String
+        }
+        
+        enum Enum1 @Directive1(argument1 : "stringValue12") {
+          EnumValue1 @Directive1(argument1 : "stringValue14")
+          EnumValue2
+        }
+        
+        input InputObject1 @Directive1(argument1 : "stringValue18") {
+          inputField1: Int @Directive1(argument1 : "stringValue20")
+        }
+        """.stripIndent()
     }
 }

@@ -166,15 +166,23 @@ public class Anonymizer {
             public TraversalControl visitGraphQLArgument(GraphQLArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
                 String newName = assertNotNull(newNameMap.get(graphQLArgument));
 
-                if (renamedArgumentsMap.containsKey(newName)) {
-                    return changeNode(context, renamedArgumentsMap.get(newName).transform(b -> {}));
+                if (context.getParentNode() instanceof GraphQLFieldDefinition) {
+                    // arguments on field definitions must be identical across implementing types and interfaces.
+                    if (renamedArgumentsMap.containsKey(newName)) {
+                        return changeNode(context, renamedArgumentsMap.get(newName).transform(b -> {}));
+                    }
                 }
 
                 GraphQLArgument newElement = graphQLArgument.transform(builder -> {
                     builder.name(newName).description(null).definition(null);
                     if (graphQLArgument.hasSetDefaultValue()) {
                         Value<?> defaultValueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getArgumentDefaultValue(), graphQLArgument.getType());
-                        builder.defaultValueLiteral(replaceDefaultValue(defaultValueLiteral, graphQLArgument.getType(), newNameMap, defaultStringValueCounter, defaultIntValueCounter));
+                        builder.defaultValueLiteral(replaceValue(defaultValueLiteral, graphQLArgument.getType(), newNameMap, defaultStringValueCounter, defaultIntValueCounter));
+                    }
+
+                    if (graphQLArgument.hasSetValue()) {
+                        Value<?> valueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getArgumentValue(), graphQLArgument.getType());
+                        builder.valueLiteral(replaceValue(valueLiteral, graphQLArgument.getType(), newNameMap, defaultStringValueCounter, defaultIntValueCounter));
                     }
                 });
 
@@ -256,7 +264,7 @@ public class Anonymizer {
                 Value<?> defaultValue = null;
                 if (graphQLInputObjectField.hasSetDefaultValue()) {
                     defaultValue = ValuesResolver.valueToLiteral(graphQLInputObjectField.getInputFieldDefaultValue(), graphQLInputObjectField.getType());
-                    defaultValue = replaceDefaultValue(defaultValue, graphQLInputObjectField.getType(), newNameMap, defaultStringValueCounter, defaultIntValueCounter);
+                    defaultValue = replaceValue(defaultValue, graphQLInputObjectField.getType(), newNameMap, defaultStringValueCounter, defaultIntValueCounter);
                 }
 
                 Value<?> finalDefaultValue = defaultValue;
@@ -333,29 +341,29 @@ public class Anonymizer {
         return result;
     }
 
-    private static Value replaceDefaultValue(Value defaultValueLiteral, GraphQLInputType argType, Map<GraphQLNamedSchemaElement, String> newNameMap, AtomicInteger defaultStringValueCounter, AtomicInteger defaultIntValueCounter) {
-        if (defaultValueLiteral instanceof ArrayValue) {
-            List<Value> values = ((ArrayValue) defaultValueLiteral).getValues();
+    private static Value replaceValue(Value valueLiteral, GraphQLInputType argType, Map<GraphQLNamedSchemaElement, String> newNameMap, AtomicInteger defaultStringValueCounter, AtomicInteger defaultIntValueCounter) {
+        if (valueLiteral instanceof ArrayValue) {
+            List<Value> values = ((ArrayValue) valueLiteral).getValues();
             ArrayValue.Builder newArrayValueBuilder = ArrayValue.newArrayValue();
             for (Value value: values) {
                 // [Type!]! -> Type!
                 GraphQLInputType unwrappedInputType = unwrapOneAs(unwrapNonNull(argType));
-                newArrayValueBuilder.value(replaceDefaultValue(value, unwrappedInputType, newNameMap, defaultStringValueCounter, defaultIntValueCounter));
+                newArrayValueBuilder.value(replaceValue(value, unwrappedInputType, newNameMap, defaultStringValueCounter, defaultIntValueCounter));
             }
             return newArrayValueBuilder.build();
-        } else if (defaultValueLiteral instanceof StringValue) {
-            return StringValue.newStringValue("defaultValue" + defaultStringValueCounter.getAndIncrement()).build();
-        } else if (defaultValueLiteral instanceof IntValue) {
+        } else if (valueLiteral instanceof StringValue) {
+            return StringValue.newStringValue("stringValue" + defaultStringValueCounter.getAndIncrement()).build();
+        } else if (valueLiteral instanceof IntValue) {
             return IntValue.newIntValue(BigInteger.valueOf(defaultIntValueCounter.getAndIncrement())).build();
-        } else if (defaultValueLiteral instanceof EnumValue) {
+        } else if (valueLiteral instanceof EnumValue) {
             GraphQLEnumType enumType = unwrapNonNullAs(argType);
-            GraphQLEnumValueDefinition enumValueDefinition = enumType.getValue(((EnumValue) defaultValueLiteral).getName());
+            GraphQLEnumValueDefinition enumValueDefinition = enumType.getValue(((EnumValue) valueLiteral).getName());
             String newName = newNameMap.get(enumValueDefinition);
             return new EnumValue(newName);
-        } else if (defaultValueLiteral instanceof ObjectValue) {
+        } else if (valueLiteral instanceof ObjectValue) {
             GraphQLInputObjectType inputObjectType = unwrapNonNullAs(argType);
             ObjectValue.Builder newObjectValueBuilder = ObjectValue.newObjectValue();
-            List<ObjectField> objectFields = ((ObjectValue) defaultValueLiteral).getObjectFields();
+            List<ObjectField> objectFields = ((ObjectValue) valueLiteral).getObjectFields();
             for (ObjectField objectField: objectFields) {
                 String objectFieldName = objectField.getName();
                 Value objectFieldValue = objectField.getValue();
@@ -363,13 +371,13 @@ public class Anonymizer {
                 GraphQLInputType fieldType = unwrapNonNullAs(inputObjectTypeField.getType());
                 ObjectField newObjectField = objectField.transform(builder -> {
                         builder.name(newNameMap.get(inputObjectTypeField));
-                        builder.value(replaceDefaultValue(objectFieldValue, fieldType, newNameMap, defaultStringValueCounter, defaultIntValueCounter));
+                        builder.value(replaceValue(objectFieldValue, fieldType, newNameMap, defaultStringValueCounter, defaultIntValueCounter));
                 });
                 newObjectValueBuilder.objectField(newObjectField);
             }
             return newObjectValueBuilder.build();
         }
-        return defaultValueLiteral;
+        return valueLiteral;
     }
 
     public static Map<GraphQLNamedSchemaElement, String> recordNewNames(GraphQLSchema schema) {
@@ -387,6 +395,10 @@ public class Anonymizer {
 
         Map<GraphQLNamedSchemaElement, String> newNameMap = new LinkedHashMap<>();
 
+        Map<String, String> directivesOriginalToNewNameMap = new HashMap<>();
+        // DirectiveName.argumentName -> newArgumentName
+        Map<String, String> seenArgumentsOnDirectivesMap = new HashMap<>();
+
         Map<String, List<GraphQLImplementingType>> interfaceToImplementations =
                 new SchemaUtil().groupImplementationsForInterfacesAndObjects(schema);
 
@@ -395,6 +407,18 @@ public class Anonymizer {
             public TraversalControl visitGraphQLArgument(GraphQLArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
                 String curName = graphQLArgument.getName();
                 GraphQLSchemaElement parentNode = context.getParentNode();
+                if (parentNode instanceof GraphQLDirective) {
+                    // if we already went over the argument for this directive name, no need to add new names
+                    if (seenArgumentsOnDirectivesMap.containsKey(((GraphQLDirective) parentNode).getName() + graphQLArgument.getName())) {
+                        newNameMap.put(graphQLArgument, seenArgumentsOnDirectivesMap.get(((GraphQLDirective) parentNode).getName() + graphQLArgument.getName()));
+                        return CONTINUE;
+                    }
+                    String newName = "argument" + argumentCounter.getAndIncrement();
+                    newNameMap.put(graphQLArgument, newName);
+                    seenArgumentsOnDirectivesMap.put(((GraphQLDirective) parentNode).getName() + graphQLArgument.getName(), newName);
+                    return CONTINUE;
+                }
+
                 if (!(parentNode instanceof GraphQLFieldDefinition)) {
                     String newName = "argument" + argumentCounter.getAndIncrement();
                     newNameMap.put(graphQLArgument, newName);
@@ -481,8 +505,16 @@ public class Anonymizer {
                 if (DirectiveInfo.isGraphqlSpecifiedDirective(graphQLDirective)) {
                     return TraversalControl.ABORT;
                 }
+
+                String directiveName = graphQLDirective.getName();
+                if (directivesOriginalToNewNameMap.containsKey(directiveName)) {
+                    newNameMap.put(graphQLDirective, directivesOriginalToNewNameMap.get(directiveName));
+                    return CONTINUE;
+                }
+
                 String newName = "Directive" + directiveCounter.getAndIncrement();
                 newNameMap.put(graphQLDirective, newName);
+                directivesOriginalToNewNameMap.put(directiveName, newName);
                 return CONTINUE;
             }
 
@@ -723,7 +755,7 @@ public class Anonymizer {
                     if (node.getDefaultValue() != null) {
                         Value<?> defaultValueLiteral = node.getDefaultValue();
                         GraphQLType graphQLType = fromTypeToGraphQLType(node.getType(), schema);
-                        builder.defaultValue(replaceDefaultValue(defaultValueLiteral, (GraphQLInputType) graphQLType, newNames, defaultStringValueCounter, defaultIntValueCounter));
+                        builder.defaultValue(replaceValue(defaultValueLiteral, (GraphQLInputType) graphQLType, newNames, defaultStringValueCounter, defaultIntValueCounter));
                     }
                 });
 
