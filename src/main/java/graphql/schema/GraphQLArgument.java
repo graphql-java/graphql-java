@@ -112,6 +112,8 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
 
     /**
      * This is only used for applied directives.
+     *
+     * @return an input value with state for an applied directive
      */
     public @NotNull InputValueWithState getArgumentValue() {
         return value;
@@ -335,9 +337,11 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         }
 
         /**
-         * @param defaultValue
+         * A legacy method that sets a default value into the argument
          *
-         * @return
+         * @param defaultValue a default value
+         *
+         * @return this builder
          *
          * @deprecated use {@link #defaultValueLiteral(Value)} or {@link #defaultValueProgrammatic(Object)}
          */
@@ -350,7 +354,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         /**
          * @param defaultValue can't be null as a `null` is represented a @{@link graphql.language.NullValue} Literal
          *
-         * @return
+         * @return this builder
          */
         public Builder defaultValueLiteral(@NotNull Value defaultValue) {
             this.defaultValue = InputValueWithState.newLiteralValue(defaultValue);
@@ -360,7 +364,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         /**
          * @param defaultValue Can be null to represent null value
          *
-         * @return
+         * @return this builder
          */
         public Builder defaultValueProgrammatic(@Nullable Object defaultValue) {
             this.defaultValue = InputValueWithState.newExternalValue(defaultValue);
@@ -370,7 +374,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         /**
          * Removes the defaultValue to represent a missing default value (which is different from null)
          *
-         * @return
+         * @return this builder
          */
         public Builder clearDefaultValue() {
             this.defaultValue = InputValueWithState.NOT_SET;
@@ -378,9 +382,11 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         }
 
         /**
-         * @param value
+         * A legacy method for setting an arguments value
          *
-         * @return
+         * @param value the argument value
+         *
+         * @return this builder
          *
          * @deprecated use {@link #valueLiteral(Value)} or {@link #valueProgrammatic(Object)}
          */
@@ -391,7 +397,11 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         }
 
         /**
+         * Sets a literal AST value as the arguments value
+         *
          * @param value can't be null as a `null` is represented a @{@link graphql.language.NullValue} Literal
+         *
+         * @return this builder
          */
         public Builder valueLiteral(@NotNull Value value) {
             this.value = InputValueWithState.newLiteralValue(value);
@@ -399,9 +409,9 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         }
 
         /**
-         * @param value
+         * @param value values can be null to represent null value
          *
-         * @return values can be null to represent null value
+         * @return this builder
          */
         public Builder valueProgrammatic(@Nullable Object value) {
             this.value = InputValueWithState.newExternalValue(value);
@@ -411,7 +421,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         /**
          * Removes the value to represent a missing value (which is different from null)
          *
-         * @return
+         * @return this builder
          */
         public Builder clearValue() {
             this.value = InputValueWithState.NOT_SET;

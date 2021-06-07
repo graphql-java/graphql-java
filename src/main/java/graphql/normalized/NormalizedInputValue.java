@@ -21,7 +21,7 @@ public class NormalizedInputValue {
     /**
      * This can be a wrapped type: e.g. [String!]!
      *
-     * @return
+     * @return the type name
      */
     public String getTypeName() {
         return typeName;
@@ -33,7 +33,7 @@ public class NormalizedInputValue {
      * InputObject: the value is a map of field-name to NormalizedInputValue
      * List of Scalar literal or Enum literal or NormalizedInput (or even List of List ..)
      *
-     * @return
+     * @return the value
      */
     public Object getValue() {
         return value;
