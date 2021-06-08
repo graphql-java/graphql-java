@@ -37,6 +37,7 @@ import static com.google.common.io.Resources.getResource;
 @BenchmarkMode(Mode.Throughput)
 @Warmup(iterations = 2)
 @Measurement(iterations = 2, timeUnit = TimeUnit.NANOSECONDS)
+@Fork(3)
 public class SchemaTransformerBenchmark {
 
     @State(Scope.Benchmark)
@@ -113,10 +114,8 @@ public class SchemaTransformerBenchmark {
     }
 
     @Benchmark
-    @Warmup(iterations = 1)
     @Measurement(iterations = 1, time = 10)
     @Threads(1)
-    @Fork(1)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public GraphQLSchema benchMarkSchemaTransformerAdd(MyState myState) {
@@ -126,10 +125,8 @@ public class SchemaTransformerBenchmark {
 
 
     @Benchmark
-    @Warmup(iterations = 1)
     @Measurement(iterations = 1, time = 10)
     @Threads(1)
-    @Fork(1)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public GraphQLSchema benchMarkSchemaTransformerRemove(MyState myState) {
