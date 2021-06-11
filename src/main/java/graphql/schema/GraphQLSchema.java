@@ -221,8 +221,12 @@ public class GraphQLSchema {
      * All types with the provided names.
      * throws {@link graphql.AssertException} when a type name could not be resolved
      *
+     * @param typeNames the type names to get
+     * @param <T>       for two
+     *
      * @return The List of resolved types.
      */
+    @SuppressWarnings("unchecked")
     public <T extends GraphQLType> List<T> getTypes(Collection<String> typeNames) {
         ImmutableList.Builder<T> builder = ImmutableList.builder();
         for (String typeName : typeNames) {

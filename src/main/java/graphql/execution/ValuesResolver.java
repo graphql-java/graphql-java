@@ -95,6 +95,12 @@ public class ValuesResolver {
 
     /**
      * Normalized variables values are Literals with type information. No validation here!
+     *
+     * @param schema              the schema to use
+     * @param variableDefinitions the list of variable definitions
+     * @param rawVariables        the raw variables
+     *
+     * @return a map of the normalised values
      */
     public Map<String, NormalizedInputValue> getNormalizedVariableValues(GraphQLSchema schema,
                                                                          List<VariableDefinition> variableDefinitions,
@@ -132,6 +138,12 @@ public class ValuesResolver {
 
     /**
      * This is not used for validation: the argument literals are all validated and the variables are validated (when coerced)
+     *
+     * @param argumentTypes    the list of argument types
+     * @param arguments        the AST arguments
+     * @param coercedVariables the coerced variables
+     *
+     * @return a map of named argument values
      */
     public Map<String, Object> getArgumentValues(List<GraphQLArgument> argumentTypes,
                                                  List<Argument> arguments,
@@ -142,6 +154,12 @@ public class ValuesResolver {
 
     /**
      * No validation as the arguments are assumed valid
+     *
+     * @param argumentTypes       the list of argument types
+     * @param arguments           the AST arguments
+     * @param normalizedVariables the nomalised variables
+     *
+     * @return a map of named normalised values
      */
     public Map<String, NormalizedInputValue> getNormalizedArgumentValues(List<GraphQLArgument> argumentTypes,
                                                                          List<Argument> arguments,
@@ -179,7 +197,11 @@ public class ValuesResolver {
      *
      * This assumes the value is valid!
      *
-     * @return
+     * @param fieldVisibility     the field visibility to use
+     * @param inputValueWithState the input value
+     * @param type                the type of input value
+     *
+     * @return a value converted to a literal
      */
     public static Value<?> valueToLiteral(@NotNull GraphqlFieldVisibility fieldVisibility, @NotNull InputValueWithState inputValueWithState, @NotNull GraphQLType type) {
         return (Value<?>) valueToLiteral(fieldVisibility, inputValueWithState, type, ValueMode.LITERAL);
@@ -203,7 +225,13 @@ public class ValuesResolver {
 
 
     /**
-     * includes validation
+     * Converts an external value to an internal value
+     *
+     * @param fieldVisibility the field visibility to use
+     * @param externalValue   the input external value
+     * @param type            the type of input value
+     *
+     * @return a value converted to an internal value
      */
     public static Object externalValueToInternalValue(GraphqlFieldVisibility fieldVisibility, Object externalValue, GraphQLInputType type) {
         return new ValuesResolver().externalValueToInternalValue(fieldVisibility, type, externalValue);
@@ -656,6 +684,13 @@ public class ValuesResolver {
 
     /**
      * No validation (it was checked before via ArgumentsOfCorrectType and VariableDefaultValuesOfCorrectType)
+     *
+     * @param fieldVisibility  the field visibility
+     * @param type             the type of the input value
+     * @param inputValue       the AST literal to be changed
+     * @param coercedVariables the coerced variable values
+     *
+     * @return literal converted to an internal value
      */
     public Object literalToInternalValue(GraphqlFieldVisibility fieldVisibility,
                                          GraphQLType type,

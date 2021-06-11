@@ -41,7 +41,7 @@ public class NormalizedQuery {
     /**
      * This is a multimap: the size of it reflects the all the normalized fields
      *
-     * @return
+     * @return an immutable list multi map of field to normalised field
      */
     public ImmutableListMultimap<Field, NormalizedField> getFieldToNormalizedField() {
         return fieldToNormalizedField;
