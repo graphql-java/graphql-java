@@ -153,7 +153,7 @@ public class ExecutionInput {
                 .query(this.query)
                 .operationName(this.operationName)
                 .context(this.context)
-                .graphQLContext(this.graphQLContext)
+                .transfer(this.graphQLContext)
                 .localContext(this.localContext)
                 .root(this.root)
                 .dataLoaderRegistry(this.dataLoaderRegistry)
@@ -282,12 +282,6 @@ public class ExecutionInput {
             return this;
         }
 
-        // hidden on purpose
-        private Builder graphQLContext(GraphQLContext graphQLContext) {
-            this.graphQLContext = graphQLContext;
-            return this;
-        }
-
         /**
          * The legacy context object
          *
@@ -317,6 +311,39 @@ public class ExecutionInput {
             GraphQLContext.Builder builder = GraphQLContext.newContext();
             builder = contextBuilderFunction.apply(builder);
             return context(builder.build());
+        }
+
+        /**
+         * This will give you a builder of {@link GraphQLContext} and any values you set will be copied
+         * into the underlying {@link GraphQLContext} of this execution input
+         *
+         * @param builderFunction a builder function you can use to put values into the context
+         *
+         * @return this builder
+         */
+        public Builder graphQLContext(Consumer<GraphQLContext.Builder> builderFunction) {
+            GraphQLContext.Builder builder = GraphQLContext.newContext();
+            builderFunction.accept(builder);
+            this.graphQLContext.putAll(builder);
+            return this;
+        }
+
+        /**
+         * This will put all the valuyes from the map into the underlying {@link GraphQLContext} of this execution input
+         *
+         * @param mapOfContext a map of values to put in the context
+         *
+         * @return this builder
+         */
+        public Builder graphQLContext(Map<?, Object> mapOfContext) {
+            this.graphQLContext.putAll(mapOfContext);
+            return this;
+        }
+
+        // hidden on purpose
+        private Builder transfer(GraphQLContext graphQLContext) {
+            this.graphQLContext = Assert.assertNotNull(graphQLContext);
+            return this;
         }
 
         public Builder root(Object root) {

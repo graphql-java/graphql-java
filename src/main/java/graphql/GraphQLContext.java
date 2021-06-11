@@ -236,6 +236,14 @@ public class GraphQLContext {
     public static class Builder {
         private final ConcurrentMap<Object, Object> map = new ConcurrentHashMap<>();
 
+        public Builder put(
+                Object key1, Object value1
+        ) {
+            return putImpl(
+                    key1, value1
+            );
+        }
+
         public Builder of(
                 Object key1, Object value1
         ) {
@@ -309,6 +317,17 @@ public class GraphQLContext {
                 map.put(assertNotNull(entry.getKey()), assertNotNull(entry.getValue()));
             }
             return this;
+        }
+
+        /**
+         * Adds all of the values in the map into the context builder.  All keys and values MUST be non null
+         *
+         * @param mapOfContext the map to put into context
+         *
+         * @return this builder
+         */
+        public Builder putAll(Map<?, Object> mapOfContext) {
+            return of(mapOfContext);
         }
 
         /**

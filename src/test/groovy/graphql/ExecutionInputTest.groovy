@@ -26,12 +26,13 @@ class ExecutionInputTest extends Specification {
                 .variables(variables)
                 .root(root)
                 .context(context)
+                .graphQLContext({ it.of(["a": "b"]) })
                 .locale(Locale.GERMAN)
                 .extensions([some: "map"])
                 .build()
         then:
         executionInput.context == context
-        executionInput.graphQLContext != null
+        executionInput.graphQLContext.get("a") == "b"
         executionInput.root == root
         executionInput.variables == variables
         executionInput.dataLoaderRegistry == registry
@@ -39,6 +40,15 @@ class ExecutionInputTest extends Specification {
         executionInput.query == query
         executionInput.locale == Locale.GERMAN
         executionInput.extensions == [some: "map"]
+    }
+
+    def "map context build works"() {
+        when:
+        def executionInput = ExecutionInput.newExecutionInput().query(query)
+                .graphQLContext([a: "b"])
+                .build()
+        then:
+        executionInput.graphQLContext.get("a") == "b"
     }
 
     def "legacy context methods work"() {
@@ -83,6 +93,7 @@ class ExecutionInputTest extends Specification {
                 .extensions([some: "map"])
                 .root(root)
                 .context(context)
+                .graphQLContext({ it.of(["a": "b"]) })
                 .locale(Locale.GERMAN)
                 .build()
         def graphQLContext = executionInputOld.getGraphQLContext()
