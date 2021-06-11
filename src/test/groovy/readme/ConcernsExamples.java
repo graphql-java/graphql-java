@@ -56,9 +56,8 @@ public class ConcernsExamples {
         //
         UserContext contextForUser = YourGraphqlContextBuilder.getContextForUser(getCurrentUser());
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .graphQLContext(builder -> builder.of("userContext", contextForUser))
-                .build();
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().build();
+        executionInput.getGraphQLContext().putAll(context -> context.of("userContext", contextForUser));
 
         ExecutionResult executionResult = graphQL.execute(executionInput);
 

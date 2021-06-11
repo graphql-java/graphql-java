@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
@@ -26,7 +27,7 @@ import static graphql.Assert.assertNotNull;
  * }
  * </pre>
  *
- * You can set this up via {@link ExecutionInput.Builder#graphQLContext(GraphQLContext)}}
+ * You can set this up via {@link ExecutionInput#getGraphQLContext()}
  *
  * All keys and values in the context MUST be non null.
  *
@@ -120,16 +121,54 @@ public class GraphQLContext {
     /**
      * Puts all of the values into the context
      *
+     * @param map the map of values to use
+     *
+     * @return this {@link GraphQLContext} object
+     */
+    public GraphQLContext putAll(Map<?, Object> map) {
+        assertNotNull(map);
+        for (Map.Entry<?, Object> entry : map.entrySet()) {
+            put(entry.getKey(), entry.getValue());
+        }
+        return this;
+    }
+
+    /**
+     * Puts all of the values into the context
+     *
      * @param context the other context to use
      *
      * @return this {@link GraphQLContext} object
      */
     public GraphQLContext putAll(GraphQLContext context) {
         assertNotNull(context);
-        for (Map.Entry<Object, Object> entry : context.map.entrySet()) {
-            put(entry.getKey(), entry.getValue());
-        }
-        return this;
+        return putAll(context.map);
+    }
+
+    /**
+     * Puts all of the values into the context
+     *
+     * @param contextBuilder the other context to use
+     *
+     * @return this {@link GraphQLContext} object
+     */
+    public GraphQLContext putAll(GraphQLContext.Builder contextBuilder) {
+        assertNotNull(contextBuilder);
+        return putAll(contextBuilder.build());
+    }
+
+    /**
+     * Puts all of the values into the context
+     *
+     * @param contextBuilderConsumer a call back to that gives out a builder to use
+     *
+     * @return this {@link GraphQLContext} object
+     */
+    public GraphQLContext putAll(Consumer<GraphQLContext.Builder> contextBuilderConsumer) {
+        assertNotNull(contextBuilderConsumer);
+        Builder builder = newContext();
+        contextBuilderConsumer.accept(builder);
+        return putAll(builder);
     }
 
     /**
@@ -170,6 +209,19 @@ public class GraphQLContext {
      */
     public static GraphQLContext of(Map<?, Object> mapOfContext) {
         return new Builder().of(mapOfContext).build();
+    }
+
+    /**
+     * Creates a new GraphqlContext with the map of context added to it
+     *
+     * @param contextBuilderConsumer a callback that is given a new builder
+     *
+     * @return the new GraphqlContext
+     */
+    public static GraphQLContext of(Consumer<GraphQLContext.Builder> contextBuilderConsumer) {
+        Builder builder = GraphQLContext.newContext();
+        contextBuilderConsumer.accept(builder);
+        return of(builder.map);
     }
 
     /**
@@ -245,7 +297,7 @@ public class GraphQLContext {
         }
 
         /**
-         * Adds all of the values in the map into the context builder.  All keys and values MUSt be non null
+         * Adds all of the values in the map into the context builder.  All keys and values MUST be non null
          *
          * @param mapOfContext the map to put into context
          *
@@ -257,6 +309,30 @@ public class GraphQLContext {
                 map.put(assertNotNull(entry.getKey()), assertNotNull(entry.getValue()));
             }
             return this;
+        }
+
+        /**
+         * Adds all of the values in the map into the context builder.  All keys and values MUST be non null
+         *
+         * @param graphQLContext a previous graphql context
+         *
+         * @return this builder
+         */
+        public Builder of(GraphQLContext graphQLContext) {
+            assertNotNull(graphQLContext);
+            return of(graphQLContext.map);
+        }
+
+        /**
+         * Adds all of the values in the map into the context builder.  All keys and values MUST be non null
+         *
+         * @param graphQLContextBuilder a graphql context builder
+         *
+         * @return this builder
+         */
+        public Builder of(GraphQLContext.Builder graphQLContextBuilder) {
+            assertNotNull(graphQLContextBuilder);
+            return of(graphQLContextBuilder.build());
         }
 
         private Builder putImpl(Object... kvs) {

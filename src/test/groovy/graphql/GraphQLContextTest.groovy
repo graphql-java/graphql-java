@@ -4,6 +4,7 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import spock.lang.Specification
 
+import java.util.function.Consumer
 import java.util.stream.Collectors
 
 import static graphql.ExecutionInput.newExecutionInput
@@ -98,6 +99,13 @@ class GraphQLContextTest extends Specification {
         context.get("k1") == "v1"
         context.get("k2") == "v2"
         sizeOf(context) == 2
+
+        when:
+        context = GraphQLContext.of({ it.of("k1", "v1") } as Consumer<GraphQLContext.Builder>)
+
+        then:
+        context.get("k1") == "v1"
+        sizeOf(context) == 1
     }
 
     def "put works"() {
@@ -116,10 +124,37 @@ class GraphQLContextTest extends Specification {
         def context = buildContext([k1: "v1"])
         def context2 = buildContext([k2: "v2"])
         context.putAll(context2)
+
         then:
         context.get("k1") == "v1"
         context.get("k2") == "v2"
+        sizeOf(context) == 2
 
+        when:
+        context = buildContext([k1: "v1"])
+        context.putAll([k2: "v2"])
+
+        then:
+        context.get("k1") == "v1"
+        context.get("k2") == "v2"
+        sizeOf(context) == 2
+
+        when:
+        context = buildContext([k1: "v1"])
+        context.putAll(GraphQLContext.newContext().of("k2", "v2"))
+
+        then:
+        context.get("k1") == "v1"
+        context.get("k2") == "v2"
+        sizeOf(context) == 2
+
+        when:
+        context = buildContext([k1: "v1"])
+        context.putAll({ it.of([k2: "v2"]) } as Consumer<GraphQLContext.Builder>)
+
+        then:
+        context.get("k1") == "v1"
+        context.get("k2") == "v2"
         sizeOf(context) == 2
     }
 
@@ -186,9 +221,8 @@ class GraphQLContextTest extends Specification {
         }
         def graphQL = TestUtil.graphQL(spec, ["Query": ["field": df]]).build()
 
-        def context = GraphQLContext.newContext().of("ctx1", "ctx1value").build()
-        ExecutionInput input = newExecutionInput().query("{ field }")
-                .graphQLContext(context).build()
+        ExecutionInput input = newExecutionInput().query("{ field }").build()
+        input.getGraphQLContext().putAll([ctx1: "ctx1value"])
 
         when:
         def executionResult = graphQL.execute(input)

@@ -3,7 +3,6 @@ package example.http;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
-import graphql.GraphQLContext;
 import graphql.StarWarsData;
 import graphql.execution.instrumentation.ChainedInstrumentation;
 import graphql.execution.instrumentation.Instrumentation;
@@ -113,11 +112,12 @@ public class HttpMain extends AbstractHandler {
         DataLoaderRegistry dataLoaderRegistry = buildDataLoaderRegistry();
 
 
-        ExecutionInput.Builder executionInput = newExecutionInput()
+        ExecutionInput executionInput = newExecutionInput()
                 .query(parameters.getQuery())
                 .operationName(parameters.getOperationName())
                 .variables(parameters.getVariables())
-                .dataLoaderRegistry(dataLoaderRegistry);
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .build();
 
 
         //
@@ -134,7 +134,7 @@ public class HttpMain extends AbstractHandler {
         Map<String, Object> context = new HashMap<>();
         context.put("YouAppSecurityClearanceLevel", "CodeRed");
         context.put("YouAppExecutingUser", "Dr Nefarious");
-        executionInput.graphQLContext(GraphQLContext.of(context));
+        executionInput.getGraphQLContext().putAll(context);
 
         //
         // you need a schema in order to execute queries
@@ -153,7 +153,7 @@ public class HttpMain extends AbstractHandler {
                 // instrumentation is pluggable
                 .instrumentation(instrumentation)
                 .build();
-        ExecutionResult executionResult = graphQL.execute(executionInput.build());
+        ExecutionResult executionResult = graphQL.execute(executionInput);
 
         returnAsJson(httpResponse, executionResult);
     }

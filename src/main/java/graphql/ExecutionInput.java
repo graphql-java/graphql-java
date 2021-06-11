@@ -205,8 +205,8 @@ public class ExecutionInput {
 
         private String query;
         private String operationName;
-        private Object context = GraphQLContext.newContext().build();
         private GraphQLContext graphQLContext = GraphQLContext.newContext().build();
+        private Object context = graphQLContext; // we make these the same object on purpose - legacy code will get the same object if this change nothing
         private Object localContext;
         private Object root;
         private Map<String, Object> variables = Collections.emptyMap();
@@ -274,11 +274,17 @@ public class ExecutionInput {
          *
          * @return this builder
          *
-         * @deprecated - use {@link #graphQLContext(GraphQLContext)} instead
+         * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
          */
         @Deprecated
         public Builder context(Object context) {
             this.context = context;
+            return this;
+        }
+
+        // hidden on purpose
+        private Builder graphQLContext(GraphQLContext graphQLContext) {
+            this.graphQLContext = graphQLContext;
             return this;
         }
 
@@ -289,7 +295,7 @@ public class ExecutionInput {
          *
          * @return this builder
          *
-         * @deprecated - use {@link #graphQLContext(GraphQLContext.Builder)} instead
+         * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
          */
         @Deprecated
         public Builder context(GraphQLContext.Builder contextBuilder) {
@@ -304,49 +310,13 @@ public class ExecutionInput {
          *
          * @return this builder
          *
-         * @deprecated - use {@link #graphQLContext(UnaryOperator)} instead
+         * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
          */
         @Deprecated
         public Builder context(UnaryOperator<GraphQLContext.Builder> contextBuilderFunction) {
             GraphQLContext.Builder builder = GraphQLContext.newContext();
             builder = contextBuilderFunction.apply(builder);
             return context(builder.build());
-        }
-
-        /**
-         * This allows you to set up your own context object that will be passed to all data fetchers during execution
-         *
-         * @param context the context object to use
-         *
-         * @return this builder
-         */
-        public Builder graphQLContext(GraphQLContext context) {
-            this.graphQLContext = assertNotNull(context, () -> "you MUST provide a non null GraphqlContext");
-            return this;
-        }
-
-        /**
-         * This allows you to set up your own context object that will be passed to all data fetchers during execution
-         *
-         * @param contextBuilder the {@link GraphQLContext.Builder} object to use
-         *
-         * @return this builder
-         */
-        public Builder graphQLContext(GraphQLContext.Builder contextBuilder) {
-            return graphQLContext(contextBuilder.build());
-        }
-
-        /**
-         * This allows you to set up your own context object that will be passed to all data fetchers during execution
-         *
-         * @param contextBuilderFunction as callback give a {@link GraphQLContext.Builder} object to use
-         *
-         * @return this builder
-         */
-        public Builder graphQLContext(UnaryOperator<GraphQLContext.Builder> contextBuilderFunction) {
-            GraphQLContext.Builder builder = GraphQLContext.newContext();
-            builder = contextBuilderFunction.apply(builder);
-            return graphQLContext(builder.build());
         }
 
         public Builder root(Object root) {

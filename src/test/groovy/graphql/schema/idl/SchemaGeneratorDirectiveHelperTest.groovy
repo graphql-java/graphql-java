@@ -2,7 +2,6 @@ package graphql.schema.idl
 
 import graphql.ExecutionInput
 import graphql.GraphQL
-import graphql.GraphQLContext
 import graphql.execution.ValuesResolver
 import graphql.schema.Coercing
 import graphql.schema.CoercingParseLiteralException
@@ -538,9 +537,9 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         def executionInput = ExecutionInput.newExecutionInput()
                 .root(root)
                 .query(query)
-                .graphQLContext(GraphQLContext.of([protectSecrets: true]))
                 .build()
 
+        executionInput.getGraphQLContext().putAll([protectSecrets: true])
         def er = graphQL.execute(executionInput)
 
         then:
@@ -554,8 +553,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         executionInput = ExecutionInput.newExecutionInput()
                 .root(root)
                 .query(query)
-                .graphQLContext(GraphQLContext.of([protectSecrets: false]))
                 .build()
+        executionInput.getGraphQLContext().putAll([protectSecrets: false])
 
         er = graphQL.execute(executionInput)
 
