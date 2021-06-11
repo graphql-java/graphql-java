@@ -537,9 +537,9 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         def executionInput = ExecutionInput.newExecutionInput()
                 .root(root)
                 .query(query)
+                .graphQLContext([protectSecrets: true])
                 .build()
 
-        executionInput.getGraphQLContext().putAll([protectSecrets: true])
         def er = graphQL.execute(executionInput)
 
         then:
@@ -553,8 +553,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         executionInput = ExecutionInput.newExecutionInput()
                 .root(root)
                 .query(query)
+                .graphQLContext([protectSecrets: false])
                 .build()
-        executionInput.getGraphQLContext().putAll([protectSecrets: false])
 
         er = graphQL.execute(executionInput)
 

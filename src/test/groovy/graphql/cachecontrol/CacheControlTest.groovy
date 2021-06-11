@@ -97,8 +97,9 @@ class CacheControlTest extends Specification {
 
         def cacheControl = CacheControl.newCacheControl()
         when:
-        ExecutionInput ei = ExecutionInput.newExecutionInput(' { levelA { levelB { levelC } } }').build()
-        ei.getGraphQLContext().putAll(["cacheControl": cacheControl])
+        ExecutionInput ei = ExecutionInput.newExecutionInput(' { levelA { levelB { levelC } } }')
+                .graphQLContext(["cacheControl": cacheControl])
+                .build()
         def er = graphQL.execute(ei)
         er = cacheControl.addTo(er)
         then:

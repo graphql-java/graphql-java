@@ -112,12 +112,11 @@ public class HttpMain extends AbstractHandler {
         DataLoaderRegistry dataLoaderRegistry = buildDataLoaderRegistry();
 
 
-        ExecutionInput executionInput = newExecutionInput()
+        ExecutionInput.Builder executionInput = newExecutionInput()
                 .query(parameters.getQuery())
                 .operationName(parameters.getOperationName())
                 .variables(parameters.getVariables())
-                .dataLoaderRegistry(dataLoaderRegistry)
-                .build();
+                .dataLoaderRegistry(dataLoaderRegistry);
 
 
         //
@@ -134,7 +133,7 @@ public class HttpMain extends AbstractHandler {
         Map<String, Object> context = new HashMap<>();
         context.put("YouAppSecurityClearanceLevel", "CodeRed");
         context.put("YouAppExecutingUser", "Dr Nefarious");
-        executionInput.getGraphQLContext().putAll(context);
+        executionInput.graphQLContext(context);
 
         //
         // you need a schema in order to execute queries
