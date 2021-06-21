@@ -59,7 +59,7 @@ objectTypeExtensionDefinition :
 ;
 
 implementsInterfaces :
-    IMPLEMENTS '&'? typeName+ |
+    IMPLEMENTS '&'? typeName |
     implementsInterfaces '&' typeName ;
 
 fieldsDefinition : '{' fieldDefinition* '}';

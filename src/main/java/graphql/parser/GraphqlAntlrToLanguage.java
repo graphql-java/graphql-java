@@ -884,9 +884,8 @@ public class GraphqlAntlrToLanguage {
     private List<Type> getImplementz(GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext) {
         List<Type> implementz = new ArrayList<>();
         while (implementsInterfacesContext != null) {
-            List<TypeName> typeNames = map(implementsInterfacesContext.typeName(), this::createTypeName);
-
-            implementz.addAll(0, typeNames);
+            GraphqlParser.TypeNameContext typeName = implementsInterfacesContext.typeName();
+            implementz.add(0, createTypeName(typeName));
             implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
         }
         return implementz;
