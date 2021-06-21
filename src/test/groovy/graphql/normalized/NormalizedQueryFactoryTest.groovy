@@ -1147,6 +1147,51 @@ schema {
         otherArg == new NormalizedInputValue("String", null)
     }
 
+    def "normalized arguments with null variable values"() {
+        given:
+        def schema = """
+        type Query {
+            hello(arg: Arg, otherArg: String): String
+        }
+        input Arg {
+            ids: [ID]
+        }
+        """
+        def graphQLSchema = TestUtil.schema(schema)
+
+        def query = """
+            query nadel_2_MyService_myQuery(\$varIds: [ID], \$otherVar: String) {
+               hello(arg: {ids: \$varIds}, otherArg: \$otherVar)
+            }
+        """
+
+        assertValidQuery(graphQLSchema, query)
+        def document = TestUtil.parseQuery(query)
+        def dependencyGraph = new NormalizedQueryFactory()
+        def variables = [
+                varIds  : null,
+                otherVar: null,
+        ]
+        when:
+        def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, variables)
+
+        then:
+        def topLevelField = tree.getTopLevelFields().get(0)
+        def arg = topLevelField.getNormalizedArgument("arg")
+        def otherArg = topLevelField.getNormalizedArgument("otherArg")
+
+        arg == new NormalizedInputValue(
+                "Arg",
+                [
+                        ids: new NormalizedInputValue(
+                                "[ID]",
+                                null,
+                        ),
+                ]
+        )
+        otherArg == new NormalizedInputValue("String", null)
+    }
+
     def "normalized arguments with lists"() {
         given:
         String schema = """
