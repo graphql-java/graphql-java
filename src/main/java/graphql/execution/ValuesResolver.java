@@ -628,7 +628,12 @@ public class ValuesResolver {
                                            Map<String, NormalizedInputValue> normalizedVariables
     ) {
         if (inputValue instanceof VariableReference) {
-            return normalizedVariables.get(((VariableReference) inputValue).getName()).getValue();
+            String variableName = ((VariableReference) inputValue).getName();
+            if (normalizedVariables.containsKey(variableName)) {
+                return normalizedVariables.get(variableName).getValue();
+            } else {
+                return null;
+            }
         }
 
         if (inputValue instanceof NullValue) {
