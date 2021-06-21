@@ -329,7 +329,7 @@ public class ExecutionInput {
         }
 
         /**
-         * This will put all the valuyes from the map into the underlying {@link GraphQLContext} of this execution input
+         * This will put all the values from the map into the underlying {@link GraphQLContext} of this execution input
          *
          * @param mapOfContext a map of values to put in the context
          *
