@@ -26,6 +26,29 @@ import java.util.function.BiFunction;
 @PublicApi
 public class Parser {
 
+    private static boolean captureIgnoredChars = false;
+
+    /**
+     * By default the Parser will not capture ignored characters.  A static holds this default
+     * value.  Significant memory savings can be made if we do NOT capture ignored characters,
+     * especially in SDL parsing.
+     *
+     * @return the static default value on whether to capture ignored chars
+     */
+    public static boolean getCaptureIgnoredChars() {
+        return captureIgnoredChars;
+    }
+
+    /**
+     * By default the Parser will not capture ignored characters.  A static holds this default
+     * value.  This was not true so this static can be set to true to do the behavior of
+     * version 16.x or before.
+     *
+     * @param flag - whether to capture ignored characters in AST elements or not
+     */
+    public static void setCaptureIgnoredChars(boolean flag) {
+        captureIgnoredChars = flag;
+    }
 
     public static Document parse(String input) {
         return new Parser().parseDocument(input);
@@ -47,29 +70,45 @@ public class Parser {
         return parseDocument(multiSourceReader);
     }
 
+    public Document parseDocument(String input, boolean captureIgnoredChars) throws InvalidSyntaxException {
+        MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
+                .string(input, null)
+                .trackData(true)
+                .build();
+        return parseDocument(multiSourceReader, captureIgnoredChars);
+    }
+
     public Document parseDocument(Reader reader) {
+        return parseDocumentImpl(reader, null);
+    }
+
+    public Document parseDocument(Reader reader, boolean captureIgnoredChars) {
+        return parseDocumentImpl(reader, captureIgnoredChars);
+    }
+
+    public Document parseDocumentImpl(Reader reader, Boolean captureIgnoredChars) {
         BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction = (parser, toLanguage) -> {
             GraphqlParser.DocumentContext documentContext = parser.document();
             Document doc = toLanguage.createDocument(documentContext);
             return new Object[]{documentContext, doc};
         };
-        return (Document) parseImpl(reader, nodeFunction);
+        return (Document) parseImpl(reader, nodeFunction, captureIgnoredChars);
     }
 
     private Value<?> parseValueImpl(String input) {
         BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction = (parser, toLanguage) -> {
             GraphqlParser.ValueContext documentContext = parser.value();
-            Value value = toLanguage.createValue(documentContext);
+            Value<?> value = toLanguage.createValue(documentContext);
             return new Object[]{documentContext, value};
         };
         MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
                 .string(input, null)
                 .trackData(true)
                 .build();
-        return (Value<?>) parseImpl(multiSourceReader, nodeFunction);
+        return (Value<?>) parseImpl(multiSourceReader, nodeFunction, null);
     }
 
-    private Node parseImpl(Reader reader, BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction) throws InvalidSyntaxException {
+    private Node<?> parseImpl(Reader reader, BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction, Boolean captureIgnoredChars) throws InvalidSyntaxException {
         MultiSourceReader multiSourceReader;
         if (reader instanceof MultiSourceReader) {
             multiSourceReader = (MultiSourceReader) reader;
@@ -104,10 +143,14 @@ public class Parser {
         ExtendedBailStrategy bailStrategy = new ExtendedBailStrategy(multiSourceReader);
         parser.setErrorHandler(bailStrategy);
 
+        // preserve old protected call semantics - remove at some point
         GraphqlAntlrToLanguage toLanguage = getAntlrToLanguage(tokens, multiSourceReader);
+        if (toLanguage == null) {
+            toLanguage = getAntlrToLanguage(tokens, multiSourceReader, captureIgnoredChars);
+        }
         Object[] contextAndNode = nodeFunction.apply(parser, toLanguage);
         ParserRuleContext parserRuleContext = (ParserRuleContext) contextAndNode[0];
-        Node node = (Node) contextAndNode[1];
+        Node<?> node = (Node<?>) contextAndNode[1];
 
         Token stop = parserRuleContext.getStop();
         List<Token> allTokens = tokens.getTokens();
@@ -133,8 +176,24 @@ public class Parser {
      * @param multiSourceReader the source of the query document
      *
      * @return a new GraphqlAntlrToLanguage instance
+     *
+     * @deprecated - really should use {@link #getAntlrToLanguage(CommonTokenStream, MultiSourceReader, Boolean)}
      */
+    @Deprecated
     protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
-        return new GraphqlAntlrToLanguage(tokens, multiSourceReader);
+        return null;
+    }
+
+    /**
+     * Allows you to override the ANTLR to AST code.
+     *
+     * @param tokens              the token stream
+     * @param multiSourceReader   the source of the query document
+     * @param captureIgnoredChars - whether ignored characters should be captured in the AST elements
+     *
+     * @return a new GraphqlAntlrToLanguage instance
+     */
+    protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, Boolean captureIgnoredChars) {
+        return new GraphqlAntlrToLanguage(tokens, multiSourceReader, captureIgnoredChars);
     }
 }
