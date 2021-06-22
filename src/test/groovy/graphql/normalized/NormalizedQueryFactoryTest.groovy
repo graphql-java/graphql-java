@@ -1105,14 +1105,14 @@ schema {
         arg3.value == expectedNormalizedArgValue
     }
 
-    def "normalized arguments with absent variable values inside input objects"() {
+    def "arguments with absent variable values inside input objects"() {
         given:
         def schema = """
         type Query {
-            hello(arg: Arg, otherArg: String): String
+            hello(arg: Arg, otherArg: String = "otherValue"): String
         }
         input Arg {
-            ids: [ID]
+            ids: [ID] = ["defaultId"]
         }
         """
         def graphQLSchema = TestUtil.schema(schema)
@@ -1132,29 +1132,23 @@ schema {
 
         then:
         def topLevelField = tree.getTopLevelFields().get(0)
-        def arg = topLevelField.getNormalizedArgument("arg")
-        def otherArg = topLevelField.getNormalizedArgument("otherArg")
 
-        arg == new NormalizedInputValue(
-                "Arg",
-                [
-                        ids: new NormalizedInputValue(
-                                "[ID]",
-                                null,
-                        ),
-                ]
-        )
-        otherArg == new NormalizedInputValue("String", null)
+        def arg = topLevelField.getNormalizedArgument("arg")
+        arg == new NormalizedInputValue("Arg", [:])
+        !topLevelField.normalizedArguments.containsKey("otherArg")
+
+        topLevelField.resolvedArguments.get("arg") == [ids: ["defaultId"]]
+        topLevelField.resolvedArguments.get("otherArg") == "otherValue"
     }
 
     def "normalized arguments with null variable values"() {
         given:
         def schema = """
         type Query {
-            hello(arg: Arg, otherArg: String): String
+            hello(arg: Arg, otherArg: String = "otherValue"): String
         }
         input Arg {
-            ids: [ID]
+            ids: [ID] = ["defaultId"]
         }
         """
         def graphQLSchema = TestUtil.schema(schema)
@@ -1190,6 +1184,9 @@ schema {
                 ]
         )
         otherArg == new NormalizedInputValue("String", null)
+
+        topLevelField.resolvedArguments.get("arg") == [ids: null]
+        topLevelField.resolvedArguments.get("otherArg") == null
     }
 
     def "normalized arguments with lists"() {
