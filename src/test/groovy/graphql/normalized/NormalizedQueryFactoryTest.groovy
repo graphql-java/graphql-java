@@ -1141,7 +1141,7 @@ schema {
         topLevelField.resolvedArguments.get("otherArg") == "otherValue"
     }
 
-    def "normalized arguments with null variable values"() {
+    def "arguments with null variable values"() {
         given:
         def schema = """
         type Query {
