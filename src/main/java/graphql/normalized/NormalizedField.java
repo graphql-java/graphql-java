@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,7 +34,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 public class NormalizedField {
     private final String alias;
     private final ImmutableMap<String, NormalizedInputValue> normalizedArguments;
-    private final ImmutableMap<String, Object> resolvedArguments;
+    private final LinkedHashMap<String, Object> resolvedArguments;
     private final ImmutableList<Argument> astArguments;
 
     // Mutable List on purpose: it is modified after creation
@@ -158,7 +159,7 @@ public class NormalizedField {
         return normalizedArguments;
     }
 
-    public ImmutableMap<String, Object> getResolvedArguments() {
+    public LinkedHashMap<String, Object> getResolvedArguments() {
         return resolvedArguments;
     }
 
@@ -283,7 +284,7 @@ public class NormalizedField {
         private NormalizedField parent;
         private String alias;
         private ImmutableMap<String, NormalizedInputValue> normalizedArguments = ImmutableKit.emptyMap();
-        private ImmutableMap<String, Object> resolvedArguments = ImmutableKit.emptyMap();
+        private LinkedHashMap<String, Object> resolvedArguments = new LinkedHashMap<>();
         private ImmutableList<Argument> astArguments = ImmutableKit.emptyList();
 
         private Builder() {
@@ -323,7 +324,7 @@ public class NormalizedField {
         }
 
         public Builder resolvedArguments(@Nullable Map<String, Object> arguments) {
-            this.resolvedArguments = arguments == null ? ImmutableKit.emptyMap() : ImmutableMap.copyOf(arguments);
+            this.resolvedArguments = arguments == null ? new LinkedHashMap<>() : new LinkedHashMap<>(arguments);
             return this;
         }
 

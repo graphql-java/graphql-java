@@ -1046,7 +1046,7 @@ schema {
     }
 
     private void assertValidQuery(GraphQLSchema graphQLSchema, String query, Map variables = [:]) {
-        GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build();
+        GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build()
         assert graphQL.execute(query, null, variables).errors.size() == 0
     }
 
@@ -1057,8 +1057,8 @@ schema {
             dog(id:ID): Dog 
         }
         type Dog {
-            name:String
-            search(arg1:Input1,arg2: Input1,arg3: Input1): Boolean
+            name: String
+            search(arg1: Input1, arg2: Input1, arg3: Input1): Boolean
         }
         input Input1 {
             foo: String
@@ -1103,7 +1103,90 @@ schema {
         arg2.value == expectedNormalizedArgValue
         arg3.getTypeName() == "Input1"
         arg3.value == expectedNormalizedArgValue
+    }
 
+    def "arguments with absent variable values inside input objects"() {
+        given:
+        def schema = """
+        type Query {
+            hello(arg: Arg, otherArg: String = "otherValue"): String
+        }
+        input Arg {
+            ids: [ID] = ["defaultId"]
+        }
+        """
+        def graphQLSchema = TestUtil.schema(schema)
+
+        def query = """
+        query myQuery(\$varIds: [ID], \$otherVar: String) {
+            hello(arg: {ids: \$varIds}, otherArg: \$otherVar)
+        }
+        """
+
+        assertValidQuery(graphQLSchema, query)
+        def document = TestUtil.parseQuery(query)
+        def dependencyGraph = new NormalizedQueryFactory()
+        def variables = [:]
+        when:
+        def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, variables)
+
+        then:
+        def topLevelField = tree.getTopLevelFields().get(0)
+
+        def arg = topLevelField.getNormalizedArgument("arg")
+        arg == new NormalizedInputValue("Arg", [:])
+        !topLevelField.normalizedArguments.containsKey("otherArg")
+
+        topLevelField.resolvedArguments.get("arg") == [ids: ["defaultId"]]
+        topLevelField.resolvedArguments.get("otherArg") == "otherValue"
+    }
+
+    def "normalized arguments with null variable values"() {
+        given:
+        def schema = """
+        type Query {
+            hello(arg: Arg, otherArg: String = "otherValue"): String
+        }
+        input Arg {
+            ids: [ID] = ["defaultId"]
+        }
+        """
+        def graphQLSchema = TestUtil.schema(schema)
+
+        def query = """
+            query nadel_2_MyService_myQuery(\$varIds: [ID], \$otherVar: String) {
+               hello(arg: {ids: \$varIds}, otherArg: \$otherVar)
+            }
+        """
+
+        assertValidQuery(graphQLSchema, query)
+        def document = TestUtil.parseQuery(query)
+        def dependencyGraph = new NormalizedQueryFactory()
+        def variables = [
+                varIds  : null,
+                otherVar: null,
+        ]
+        when:
+        def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, variables)
+
+        then:
+        def topLevelField = tree.getTopLevelFields().get(0)
+        def arg = topLevelField.getNormalizedArgument("arg")
+        def otherArg = topLevelField.getNormalizedArgument("otherArg")
+
+        arg == new NormalizedInputValue(
+                "Arg",
+                [
+                        ids: new NormalizedInputValue(
+                                "[ID]",
+                                null,
+                        ),
+                ]
+        )
+        otherArg == new NormalizedInputValue("String", null)
+
+        topLevelField.resolvedArguments.get("arg") == [ids: null]
+        topLevelField.resolvedArguments.get("otherArg") == null
     }
 
     def "normalized arguments with lists"() {
@@ -1410,5 +1493,4 @@ schema {
                         'pet_name: [Cat, Dog].name',
         ]
     }
-
 }

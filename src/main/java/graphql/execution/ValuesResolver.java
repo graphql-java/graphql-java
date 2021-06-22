@@ -172,9 +172,15 @@ public class ValuesResolver {
         Map<String, NormalizedInputValue> result = new LinkedHashMap<>();
         Map<String, Argument> argumentMap = argumentMap(arguments);
         for (GraphQLArgument argumentDefinition : argumentTypes) {
-            GraphQLInputType argumentType = argumentDefinition.getType();
             String argumentName = argumentDefinition.getName();
             Argument argument = argumentMap.get(argumentName);
+
+            // If a variable doesn't exist then we can't put it into the result Map
+            if (isVariableAbsent(argument.getValue(), normalizedVariables)) {
+                continue;
+            }
+
+            GraphQLInputType argumentType = argumentDefinition.getType();
             Object value = literalToNormalizedValue(codeRegistry.getFieldVisibility(), argumentType, argument.getValue(), normalizedVariables);
             result.put(argumentName, new NormalizedInputValue(simplePrint(argumentType), value));
         }
@@ -628,7 +634,8 @@ public class ValuesResolver {
                                            Map<String, NormalizedInputValue> normalizedVariables
     ) {
         if (inputValue instanceof VariableReference) {
-            return normalizedVariables.get(((VariableReference) inputValue).getName()).getValue();
+            String varName = ((VariableReference) inputValue).getName();
+            return normalizedVariables.get(varName).getValue();
         }
 
         if (inputValue instanceof NullValue) {
@@ -659,6 +666,11 @@ public class ValuesResolver {
         Map<String, Object> result = new LinkedHashMap<>();
 
         for (ObjectField field : inputObjectLiteral.getObjectFields()) {
+            // If a variable doesn't exist then we can't put it into the result Map
+            if (isVariableAbsent(field.getValue(), normalizedVariables)) {
+                continue;
+            }
+
             GraphQLInputType fieldType = type.getField(field.getName()).getType();
             Object fieldValue = literalToNormalizedValue(fieldVisibility, fieldType, field.getValue(), normalizedVariables);
             result.put(field.getName(), new NormalizedInputValue(simplePrint(fieldType), fieldValue));
@@ -689,7 +701,6 @@ public class ValuesResolver {
      * @param type             the type of the input value
      * @param inputValue       the AST literal to be changed
      * @param coercedVariables the coerced variable values
-     *
      * @return literal converted to an internal value
      */
     public Object literalToInternalValue(GraphqlFieldVisibility fieldVisibility,
@@ -973,4 +984,16 @@ public class ValuesResolver {
         return serialized == null;
     }
 
+    /**
+     * @return true if variable is absent from input, and if value is NOT a variable then false
+     */
+    private static boolean isVariableAbsent(Value value, Map<String, NormalizedInputValue> variables) {
+        if (value instanceof VariableReference) {
+            VariableReference varRef = (VariableReference) value;
+            return !variables.containsKey(varRef.getName());
+        }
+
+        // Not variable, return false
+        return false;
+    }
 }
