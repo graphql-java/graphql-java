@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static graphql.execution.Async.exceptionallyCompletedFuture;
@@ -290,12 +291,12 @@ public abstract class ExecutionStrategy {
                 .handle((result, exception) -> {
                     fetchCtx.onCompleted(result, exception);
                     if (exception != null) {
-                        handleFetchingException(executionContext, environment, exception);
-                        return null;
+                        return handleFetchingException(executionContext, environment, exception);
                     } else {
-                        return result;
+                        return CompletableFuture.completedFuture(result);
                     }
                 })
+                .thenCompose(Function.identity())
                 .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result));
     }
 
@@ -309,9 +310,8 @@ public abstract class ExecutionStrategy {
                                                           Object result) {
 
         if (result instanceof DataFetcherResult) {
-            //noinspection unchecked
-            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result;
-            dataFetcherResult.getErrors().forEach(executionContext::addError);
+            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult<?>) result;
+            executionContext.addErrors(dataFetcherResult.getErrors());
 
             Object localContext = dataFetcherResult.getLocalContext();
             if (localContext == null) {
@@ -333,26 +333,35 @@ public abstract class ExecutionStrategy {
         }
     }
 
-    protected void handleFetchingException(ExecutionContext executionContext,
-                                           DataFetchingEnvironment environment,
-                                           Throwable e) {
+    protected <T> CompletableFuture<T> handleFetchingException(ExecutionContext executionContext,
+                                                               DataFetchingEnvironment environment,
+                                                               Throwable e) {
         DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                 .dataFetchingEnvironment(environment)
                 .exception(e)
                 .build();
 
-        DataFetcherExceptionHandlerResult handlerResult;
         try {
-            handlerResult = dataFetcherExceptionHandler.onException(handlerParameters);
+            return asyncHandleException(dataFetcherExceptionHandler, handlerParameters, executionContext);
         } catch (Exception handlerException) {
             handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                     .dataFetchingEnvironment(environment)
                     .exception(handlerException)
                     .build();
-            handlerResult = new SimpleDataFetcherExceptionHandler().onException(handlerParameters);
+            return asyncHandleException(new SimpleDataFetcherExceptionHandler(), handlerParameters, executionContext);
         }
-        handlerResult.getErrors().forEach(executionContext::addError);
+    }
 
+    private <T> CompletableFuture<T> asyncHandleException(DataFetcherExceptionHandler handler, DataFetcherExceptionHandlerParameters handlerParameters, ExecutionContext executionContext) {
+        return handler.handleException(handlerParameters)
+                .thenApply(handlerResult -> {
+                            // the side effect is that we added the returned errors to the execution context
+                            // here
+                            executionContext.addErrors(handlerResult.getErrors());
+                            // and we return null because there is no data for the executed field
+                            return null;
+                        }
+                );
     }
 
     /**
@@ -706,7 +715,6 @@ public abstract class ExecutionStrategy {
         TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getUnwrappedNonNullType());
         logNotSafe.warn("{} got {}", error.getMessage(), result.getClass());
         context.addError(error);
-
     }
 
 

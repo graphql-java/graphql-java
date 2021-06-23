@@ -7,6 +7,7 @@ import graphql.ExecutionInput;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
+import graphql.collect.ImmutableKit;
 import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -19,13 +20,12 @@ import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import org.dataloader.DataLoaderRegistry;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -47,7 +47,7 @@ public class ExecutionContext {
     private final Object context;
     private final Object localContext;
     private final Instrumentation instrumentation;
-    private final List<GraphQLError> errors = Collections.synchronizedList(new ArrayList<>());
+    private final AtomicReference<ImmutableList<GraphQLError>> errors = new AtomicReference<>(ImmutableKit.emptyList());
     private final Set<ResultPath> errorPaths = new HashSet<>();
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
@@ -74,7 +74,7 @@ public class ExecutionContext {
         this.cacheControl = builder.cacheControl;
         this.locale = builder.locale;
         this.valueUnboxer = builder.valueUnboxer;
-        this.errors.addAll(builder.errors);
+        this.errors.set(builder.errors);
         this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
         queryTree = FpKit.interThreadMemoize(() -> NormalizedQueryFactory.createNormalizedQuery(graphQLSchema, operationDefinition, fragmentsByName, variables));
@@ -159,15 +159,17 @@ public class ExecutionContext {
      * @param fieldPath the field path to put it under
      */
     public void addError(GraphQLError error, ResultPath fieldPath) {
-        //
-        // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability about how per
-        // field errors should be handled - ie only once per field if its already there for nullability
-        // but unclear if its not that error path
-        //
-        if (!errorPaths.add(fieldPath)) {
-            return;
+        synchronized (this) {
+            //
+            // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability about how per
+            // field errors should be handled - ie only once per field if its already there for nullability
+            // but unclear if its not that error path
+            //
+            if (!errorPaths.add(fieldPath)) {
+                return;
+            }
+            this.errors.set(ImmutableKit.addToList(this.errors.get(), error));
         }
-        this.errors.add(error);
     }
 
     /**
@@ -177,20 +179,51 @@ public class ExecutionContext {
      * @param error the error to add
      */
     public void addError(GraphQLError error) {
-        // see https://github.com/graphql-java/graphql-java/issues/888 on how the spec is unclear
-        // on how exactly multiple errors should be handled - ie only once per field or not outside the nullability
-        // aspect.
-        if (error.getPath() != null) {
-            this.errorPaths.add(ResultPath.fromList(error.getPath()));
+        synchronized (this) {
+            // see https://github.com/graphql-java/graphql-java/issues/888 on how the spec is unclear
+            // on how exactly multiple errors should be handled - ie only once per field or not outside the nullability
+            // aspect.
+            if (error.getPath() != null) {
+                ResultPath path = ResultPath.fromList(error.getPath());
+                this.errorPaths.add(path);
+            }
+            this.errors.set(ImmutableKit.addToList(this.errors.get(), error));
         }
-        this.errors.add(error);
+    }
+
+    /**
+     * This method will allow you to add errors into the running execution context, without a check
+     * for per field unique-ness
+     *
+     * @param errors the errors to add
+     */
+    public void addErrors(List<GraphQLError> errors) {
+        if (errors.isEmpty()) {
+            return;
+        }
+        // we are synchronised because we set two fields at once - but we only ever read one of them later
+        // in getErrors so no need for synchronised there.
+        synchronized (this) {
+            Set<ResultPath> newErrorPaths = new HashSet<>();
+            for (GraphQLError error : errors) {
+                // see https://github.com/graphql-java/graphql-java/issues/888 on how the spec is unclear
+                // on how exactly multiple errors should be handled - ie only once per field or not outside the nullability
+                // aspect.
+                if (error.getPath() != null) {
+                    ResultPath path = ResultPath.fromList(error.getPath());
+                    newErrorPaths.add(path);
+                }
+            }
+            this.errorPaths.addAll(newErrorPaths);
+            this.errors.set(ImmutableKit.concatLists(this.errors.get(), errors));
+        }
     }
 
     /**
      * @return the total list of errors for this execution context
      */
     public List<GraphQLError> getErrors() {
-        return ImmutableList.copyOf(errors);
+        return errors.get();
     }
 
     public ExecutionStrategy getQueryStrategy() {
