@@ -53,7 +53,7 @@ public class Parser {
      *
      * @return the static default value on whether to capture ignored chars
      *
-     * @see {@link graphql.language.IgnoredChars}
+     * @see graphql.language.IgnoredChar
      */
     public static boolean getCaptureIgnoredChars() {
         return captureIgnoredChars;
@@ -70,7 +70,7 @@ public class Parser {
      *
      * @param flag - whether to capture ignored characters in AST elements or not
      *
-     * @see {@link graphql.language.IgnoredChars}
+     * @see graphql.language.IgnoredChar
      */
     public static void setCaptureIgnoredChars(boolean flag) {
         captureIgnoredChars = flag;
