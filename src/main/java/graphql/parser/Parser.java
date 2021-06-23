@@ -23,6 +23,22 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.function.BiFunction;
 
+/**
+ * This can parse graphql syntax, both Query syntax and Schema Definition Language (SDL) syntax, into an
+ * Abstract Syntax Tree (AST) represented by a {@link Document}
+ * <p>
+ * You should not generally need to call this class as the {@link graphql.GraphQL} code sets this up for you
+ * but if you are doing specific graphql utilities this class is essential.
+ *
+ * Graphql syntax has a series of characters, such as spaces, new lines and commas that are not considered relevant
+ * to the syntax.  However they can be captured and associated with the AST elements they belong to.
+ *
+ * This costs more memory but for certain use cases (like editors) this maybe be useful.  We have chosen to no capture
+ * ignored characters by default but you can turn this on, either per parse or statically for the whole JVM
+ * via {@link #setCaptureIgnoredChars(boolean)}
+ *
+ * @see graphql.language.IgnoredChar
+ */
 @PublicApi
 public class Parser {
 
@@ -30,10 +46,14 @@ public class Parser {
 
     /**
      * By default the Parser will not capture ignored characters.  A static holds this default
-     * value.  Significant memory savings can be made if we do NOT capture ignored characters,
+     * value in a JVM wide basis.
+     *
+     * Significant memory savings can be made if we do NOT capture ignored characters,
      * especially in SDL parsing.
      *
      * @return the static default value on whether to capture ignored chars
+     *
+     * @see {@link graphql.language.IgnoredChars}
      */
     public static boolean getCaptureIgnoredChars() {
         return captureIgnoredChars;
@@ -41,27 +61,70 @@ public class Parser {
 
     /**
      * By default the Parser will not capture ignored characters.  A static holds this default
-     * value.  This was not true so this static can be set to true to do the behavior of
-     * version 16.x or before.
+     * value in a JVM wide basis.
+     *
+     * Significant memory savings can be made if we do NOT capture ignored characters,
+     * especially in SDL parsing.  So we have set this to false by default.
+     *
+     * This static can be set to true to allow the behavior of version 16.x or before.
      *
      * @param flag - whether to capture ignored characters in AST elements or not
+     *
+     * @see {@link graphql.language.IgnoredChars}
      */
     public static void setCaptureIgnoredChars(boolean flag) {
         captureIgnoredChars = flag;
     }
 
-    public static Document parse(String input) {
+    /**
+     * Parses a string input into a graphql AST {@link Document}
+     *
+     * @param input the input to parse
+     *
+     * @return an AST {@link Document}
+     *
+     * @throws InvalidSyntaxException if the input is not valid graphql syntax
+     */
+    public static Document parse(String input) throws InvalidSyntaxException {
         return new Parser().parseDocument(input);
     }
 
-    public static Value<?> parseValue(String input) {
+    /**
+     * Parses a string input into a graphql AST {@link Value}
+     *
+     * @param input the input to parse
+     *
+     * @return an AST {@link Value}
+     *
+     * @throws InvalidSyntaxException if the input is not valid graphql syntax
+     */
+    public static Value<?> parseValue(String input) throws InvalidSyntaxException {
         return new Parser().parseValueImpl(input);
     }
 
+    /**
+     * Parses a string input into a graphql AST {@link Document}
+     *
+     * @param input the input to parse
+     *
+     * @return an AST {@link Document}
+     *
+     * @throws InvalidSyntaxException if the input is not valid graphql syntax
+     */
     public Document parseDocument(String input) throws InvalidSyntaxException {
         return parseDocument(input, null);
     }
 
+    /**
+     * Parses a string input into a graphql AST {@link Document}
+     *
+     * @param input      the input to parse
+     * @param sourceName - the name to attribute to the input text in {@link SourceLocation#getSourceName()}
+     *
+     * @return an AST {@link Document}
+     *
+     * @throws InvalidSyntaxException if the input is not valid graphql syntax
+     */
     public Document parseDocument(String input, String sourceName) throws InvalidSyntaxException {
         MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
                 .string(input, sourceName)
@@ -70,6 +133,17 @@ public class Parser {
         return parseDocument(multiSourceReader);
     }
 
+    /**
+     * Parses a string input into a graphql AST {@link Document}
+     *
+     * @param input               the input to parse
+     * @param captureIgnoredChars whether to capture characters that are otherwise ignored in graphql syntax against
+     *                            each AST element
+     *
+     * @return an AST {@link Document}
+     *
+     * @throws InvalidSyntaxException if the input is not valid graphql syntax
+     */
     public Document parseDocument(String input, boolean captureIgnoredChars) throws InvalidSyntaxException {
         MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
                 .string(input, null)
@@ -78,15 +152,35 @@ public class Parser {
         return parseDocument(multiSourceReader, captureIgnoredChars);
     }
 
-    public Document parseDocument(Reader reader) {
+    /**
+     * Parses reader  input into a graphql AST {@link Document}
+     *
+     * @param reader the reader input to parse
+     *
+     * @return an AST {@link Document}
+     *
+     * @throws InvalidSyntaxException if the input is not valid graphql syntax
+     */
+    public Document parseDocument(Reader reader) throws InvalidSyntaxException {
         return parseDocumentImpl(reader, null);
     }
 
-    public Document parseDocument(Reader reader, boolean captureIgnoredChars) {
+    /**
+     * Parses reader  input into a graphql AST {@link Document}
+     *
+     * @param reader              the reader input to parse
+     * @param captureIgnoredChars whether to capture characters that are otherwise ignored in graphql syntax against
+     *                            each AST element
+     *
+     * @return an AST {@link Document}
+     *
+     * @throws InvalidSyntaxException if the input is not valid graphql syntax
+     */
+    public Document parseDocument(Reader reader, boolean captureIgnoredChars) throws InvalidSyntaxException {
         return parseDocumentImpl(reader, captureIgnoredChars);
     }
 
-    public Document parseDocumentImpl(Reader reader, Boolean captureIgnoredChars) {
+    private Document parseDocumentImpl(Reader reader, Boolean captureIgnoredChars) throws InvalidSyntaxException {
         BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction = (parser, toLanguage) -> {
             GraphqlParser.DocumentContext documentContext = parser.document();
             Document doc = toLanguage.createDocument(documentContext);
@@ -95,7 +189,7 @@ public class Parser {
         return (Document) parseImpl(reader, nodeFunction, captureIgnoredChars);
     }
 
-    private Value<?> parseValueImpl(String input) {
+    private Value<?> parseValueImpl(String input) throws InvalidSyntaxException {
         BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction = (parser, toLanguage) -> {
             GraphqlParser.ValueContext documentContext = parser.value();
             Value<?> value = toLanguage.createValue(documentContext);
