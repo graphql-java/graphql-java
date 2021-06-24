@@ -1325,9 +1325,8 @@ schema {
         '''
         assertValidQuery(graphQLSchema, query)
         Document document = TestUtil.parseQuery(query)
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
         when:
-        def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, [:])
+        def tree = NormalizedQueryFactory.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, [:])
 
         then:
         tree.normalizedFieldToMergedField.size() == 3
@@ -1383,9 +1382,8 @@ schema {
         '''
         assertValidQuery(graphQLSchema, query)
         Document document = TestUtil.parseQuery(query)
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
         when:
-        def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, [:])
+        def tree = NormalizedQueryFactory.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, [:])
         println String.join("\n", printTree(tree))
 
         then:
@@ -1424,9 +1422,8 @@ schema {
         '''
         assertValidQuery(graphQLSchema, query)
         Document document = TestUtil.parseQuery(query)
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
         when:
-        def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, [:])
+        def tree = NormalizedQueryFactory.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, [:])
         println String.join("\n", printTree(tree))
 
         then:
@@ -1477,9 +1474,8 @@ schema {
         def variables = ["true": Boolean.TRUE, "false": Boolean.FALSE]
         assertValidQuery(graphQLSchema, query, variables)
         Document document = TestUtil.parseQuery(query)
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
         when:
-        def tree = dependencyGraph.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, variables)
+        def tree = NormalizedQueryFactory.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, variables)
         println String.join("\n", printTree(tree))
         def printedTree = printTree(tree)
 
