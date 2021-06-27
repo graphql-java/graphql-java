@@ -237,7 +237,7 @@ public class PreNormalizedQueryFactory {
                     possibleObjects,
                     level,
                     normalizedField,
-                    normalizedField.getIncludeCondition()
+                    new SingleFieldCondition()
             );
         }
         return new CollectFieldResult(new LinkedHashSet<>(subFields.values()), mergedFieldByNormalizedField.build());
@@ -251,8 +251,9 @@ public class PreNormalizedQueryFactory {
         ImmutableListMultimap.Builder<PreNormalizedField, Field> normalizedFieldToAstFields = ImmutableListMultimap.builder();
         Set<GraphQLObjectType> possibleObjects = new LinkedHashSet<>();
         possibleObjects.add(rootType);
-        PreNormalizedField.IncludeCondition includeCondition = PreNormalizedField.DEFAULT_CONDITION;
-        this.collectFromSelectionSet(parameters, operationDefinition.getSelectionSet(), subFields, normalizedFieldToAstFields, possibleObjects, 1, null, includeCondition);
+        IncludeCondition includeCondition = IncludeCondition.DEFAULT_CONDITION;
+        SingleFieldCondition singleFieldCondition = new SingleFieldCondition();
+        this.collectFromSelectionSet(parameters, operationDefinition.getSelectionSet(), subFields, normalizedFieldToAstFields, possibleObjects, 1, null, singleFieldCondition);
         return new CollectFieldResult(subFields.values(), normalizedFieldToAstFields.build());
     }
 
@@ -264,7 +265,7 @@ public class PreNormalizedQueryFactory {
                                          Set<GraphQLObjectType> possibleObjects,
                                          int level,
                                          PreNormalizedField parent,
-                                         PreNormalizedField.IncludeCondition includeCondition) {
+                                         SingleFieldCondition includeCondition) {
 
         for (Selection<?> selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
@@ -284,11 +285,11 @@ public class PreNormalizedQueryFactory {
                                        Set<GraphQLObjectType> possibleObjects,
                                        int level,
                                        PreNormalizedField parent,
-                                       PreNormalizedField.IncludeCondition includeCondition) {
+                                       SingleFieldCondition includeCondition) {
         if (!shouldInclude(fragmentSpread.getDirectives())) {
             return;
         }
-        PreNormalizedField.IncludeCondition newIncludeCondition = updateIncludeCondition(includeCondition, fragmentSpread.getDirectives());
+        SingleFieldCondition newIncludeCondition = updateIncludeCondition(includeCondition, fragmentSpread.getDirectives());
         FragmentDefinition fragmentDefinition = assertNotNull(parameters.getFragmentsByName().get(fragmentSpread.getName()));
 
         if (!shouldInclude(fragmentDefinition.getDirectives())) {
@@ -307,11 +308,11 @@ public class PreNormalizedQueryFactory {
                                        Set<GraphQLObjectType> possibleObjects,
                                        int level,
                                        PreNormalizedField parent,
-                                       PreNormalizedField.IncludeCondition includeCondition) {
+                                       SingleFieldCondition includeCondition) {
         if (!shouldInclude(inlineFragment.getDirectives())) {
             return;
         }
-        PreNormalizedField.IncludeCondition newIncludeCondition = updateIncludeCondition(includeCondition, inlineFragment.getDirectives());
+        SingleFieldCondition newIncludeCondition = updateIncludeCondition(includeCondition, inlineFragment.getDirectives());
         Set<GraphQLObjectType> newPossibleObjects = possibleObjects;
 
         if (inlineFragment.getTypeCondition() != null) {
@@ -329,14 +330,14 @@ public class PreNormalizedQueryFactory {
                               Set<GraphQLObjectType> objectTypes,
                               int level,
                               PreNormalizedField parent,
-                              PreNormalizedField.IncludeCondition includeCondition) {
+                              SingleFieldCondition includeCondition) {
         if (!shouldInclude(field.getDirectives())) {
             return;
         }
         if (objectTypes.size() == 0) {
             return;
         }
-        PreNormalizedField.IncludeCondition newIncludeCondition = updateIncludeCondition(includeCondition, field.getDirectives());
+        SingleFieldCondition newFieldCondition = updateIncludeCondition(includeCondition, field.getDirectives());
         String resultKey = field.getResultKey();
         String fieldName = field.getName();
         GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(parameters.getGraphQLSchema(), objectTypes.iterator().next(), fieldName);
@@ -347,7 +348,7 @@ public class PreNormalizedQueryFactory {
             if (matchingNF != null) {
                 matchingNF.addObjectTypeNames(map(objectTypes, GraphQLObjectType::getName));
                 normalizedFieldToMergedField.put(matchingNF, field);
-                matchingNF.getIncludeCondition().add(newIncludeCondition);
+                matchingNF.getIncludeCondition().addField(newFieldCondition);
                 return;
             }
         }
@@ -363,7 +364,7 @@ public class PreNormalizedQueryFactory {
                 .fieldName(fieldName)
                 .level(level)
                 .parent(parent)
-                .includeCondition(newIncludeCondition)
+                .includeCondition(new IncludeCondition(newFieldCondition))
                 .build();
 
         result.put(resultKey, normalizedField);
@@ -442,23 +443,23 @@ public class PreNormalizedQueryFactory {
 
     }
 
-    private PreNormalizedField.IncludeCondition updateIncludeCondition(PreNormalizedField.IncludeCondition includeCondition, List<Directive> directives) {
+    private SingleFieldCondition updateIncludeCondition(SingleFieldCondition singleFieldCondition, List<Directive> directives) {
         Directive skipDirective = NodeUtil.findNodeByName(directives, SkipDirective.getName());
-        List<String> varNames = new ArrayList<>(includeCondition.getVarNames());
+        SingleFieldCondition result = new SingleFieldCondition(singleFieldCondition.getVarNames());
         if (skipDirective != null) {
             String skipVarName = getVariableName(skipDirective);
             if (skipVarName != null) {
-                varNames.add(skipVarName);
+                result.addSkipVar(skipVarName);
             }
         }
         Directive includeDirective = NodeUtil.findNodeByName(directives, IncludeDirective.getName());
         if (includeDirective != null) {
             String includeVarName = getVariableName(includeDirective);
             if (includeVarName != null) {
-                varNames.add(includeVarName);
+                result.addIncludeVar(includeVarName);
             }
         }
-        return new PreNormalizedField.IncludeCondition(varNames);
+        return result;
     }
 
     public boolean shouldInclude(List<Directive> directives) {

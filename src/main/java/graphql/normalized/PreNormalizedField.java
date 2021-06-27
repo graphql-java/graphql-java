@@ -15,7 +15,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -35,23 +34,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 @Internal
 @Mutable
 public class PreNormalizedField {
-    public static class IncludeCondition {
-        private final List<String> varNames;
 
-        public IncludeCondition(List<String> varNames) {
-            this.varNames = varNames;
-        }
-
-        public List<String> getVarNames() {
-            return varNames;
-        }
-
-        public void add(IncludeCondition includeCondition) {
-            this.varNames.addAll(includeCondition.varNames);
-        }
-    }
-
-    public static final IncludeCondition DEFAULT_CONDITION = new IncludeCondition(Collections.emptyList());
     private final String alias;
     private final ImmutableMap<String, PreNormalizedInputValue> normalizedArguments;
     private final ImmutableList<Argument> astArguments;
@@ -215,7 +198,7 @@ public class PreNormalizedField {
         if (getAlias() != null) {
             result.append(getAlias()).append(": ");
         }
-        return result + objectTypeNamesToString() + "." + fieldName + "(includeCondition:" + includeCondition.varNames + ")";
+        return result + objectTypeNamesToString() + "." + fieldName + "(includeCondition:" + includeCondition + ")";
     }
 
     public String objectTypeNamesToString() {
@@ -305,7 +288,7 @@ public class PreNormalizedField {
         private ImmutableMap<String, PreNormalizedInputValue> normalizedArguments = ImmutableKit.emptyMap();
         private LinkedHashMap<String, Object> resolvedArguments = new LinkedHashMap<>();
         private ImmutableList<Argument> astArguments = ImmutableKit.emptyList();
-        private IncludeCondition includeCondition;
+        private IncludeCondition includeCondition = IncludeCondition.DEFAULT_CONDITION;
 
         private Builder() {
 

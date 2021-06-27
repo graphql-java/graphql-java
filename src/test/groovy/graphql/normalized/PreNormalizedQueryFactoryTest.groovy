@@ -78,8 +78,11 @@ class PreNormalizedQueryFactoryTest extends Specification {
 
         String query = '''
       query($var1: Boolean!,$var2: Boolean!,$var3: Boolean!, $var4: Boolean!){
-        ...{ 
+        ...@skip(if:$var3) { 
           hello @skip(if:$var1) @include(if:$var2)
+          ... @include(if:$var4) {
+            hello    
+          }
         }
         ...{ 
           hello @skip(if:$var3) @include(if:$var4)
