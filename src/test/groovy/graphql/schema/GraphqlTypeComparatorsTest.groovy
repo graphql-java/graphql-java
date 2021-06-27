@@ -38,7 +38,7 @@ class GraphqlTypeComparatorsTest extends Specification {
             
             union XUnion = Foo | Bar
             
-            type Foo implements YInterface, XInterface, ZInterface {
+            type Foo implements YInterface & XInterface & ZInterface {
                 zField : String
                 yField : String
                 xField : String

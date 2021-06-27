@@ -29,7 +29,7 @@ class SchemaParserTest extends Specification {
                 is_bar : Boolean
             }     
 
-            type Baz implements Foo, Goo {
+            type Baz implements Foo & Goo {
                 is_foo : Boolean
                 is_goo : Boolean
                 is_baz : Boolean

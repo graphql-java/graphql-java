@@ -177,7 +177,7 @@ TWO @second,
     def "object schema"() {
         given:
         def input = """
-type TypeName implements Impl1 Impl2 @typeDirective(a1:\$v1) {
+type TypeName implements Impl1 & Impl2 @typeDirective(a1:\$v1) {
 one: Number
 two: Number @second
 cmd(arg1:[Number]=[1] arg2:String @secondArg(cool:true)): Function
@@ -577,12 +577,6 @@ input Gun {
             bar : String
             baz : String
         }
-    
-        type Foo2 implements Bar Baz {
-            bar : String
-            baz : String
-        }
-        
 """
         when:
         def document = new Parser().parseDocument(input)
@@ -593,13 +587,6 @@ input Gun {
         typeDef.getImplements().size() == 2
         (typeDef.getImplements()[0] as TypeName).getName() == 'Bar'
         (typeDef.getImplements()[1] as TypeName).getName() == 'Baz'
-
-        then:
-        ObjectTypeDefinition typeDef2 = document.definitions[3] as ObjectTypeDefinition
-        typeDef2.getName() == 'Foo2'
-        typeDef2.getImplements().size() == 2
-        (typeDef2.getImplements()[0] as TypeName).getName() == 'Bar'
-        (typeDef2.getImplements()[1] as TypeName).getName() == 'Baz'
     }
 
     def "object type extensions"() {

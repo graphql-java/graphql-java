@@ -403,21 +403,21 @@ class TypeDefinitionRegistryTest extends Specification {
               id: String!
             }
 
-            type Dog implements Animal, Mammal {
+            type Dog implements Animal & Mammal {
               id: String!
             }
 
-            type Duck implements Animal, Mammal {
+            type Duck implements Animal & Mammal {
               id: String!
             }
             
             union Platypus = Duck | Turtle
 
-            type Cat implements Animal, Mammal {
+            type Cat implements Animal & Mammal {
               id: String!
             }
 
-            type Turtle implements Animal, Reptile {
+            type Turtle implements Animal & Reptile {
               id: String!
             }
 
