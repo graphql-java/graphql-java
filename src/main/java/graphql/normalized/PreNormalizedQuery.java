@@ -1,11 +1,13 @@
 package graphql.normalized;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.MergedField;
 import graphql.execution.ResultPath;
 import graphql.language.Field;
+import graphql.language.VariableDefinition;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLFieldsContainer;
 
@@ -19,15 +21,18 @@ public class PreNormalizedQuery {
     private final ImmutableListMultimap<Field, PreNormalizedField> fieldToPreNormalizedField;
     private final Map<PreNormalizedField, MergedField> PreNormalizedFieldToMergedField;
     private final ImmutableListMultimap<FieldCoordinates, PreNormalizedField> coordinatesToPreNormalizedFields;
+    private final ImmutableList<VariableDefinition> variableDefinitions;
 
     public PreNormalizedQuery(List<PreNormalizedField> topLevelFields,
                               ImmutableListMultimap<Field, PreNormalizedField> fieldToPreNormalizedField,
                               Map<PreNormalizedField, MergedField> PreNormalizedFieldToMergedField,
-                              ImmutableListMultimap<FieldCoordinates, PreNormalizedField> coordinatesToPreNormalizedFields) {
+                              ImmutableListMultimap<FieldCoordinates, PreNormalizedField> coordinatesToPreNormalizedFields,
+                              ImmutableList<VariableDefinition> variableDefinitions) {
         this.topLevelFields = topLevelFields;
         this.fieldToPreNormalizedField = fieldToPreNormalizedField;
         this.PreNormalizedFieldToMergedField = PreNormalizedFieldToMergedField;
         this.coordinatesToPreNormalizedFields = coordinatesToPreNormalizedFields;
+        this.variableDefinitions = variableDefinitions;
     }
 
     public ImmutableListMultimap<FieldCoordinates, PreNormalizedField> getCoordinatesToPreNormalizedFields() {
@@ -36,6 +41,10 @@ public class PreNormalizedQuery {
 
     public List<PreNormalizedField> getTopLevelFields() {
         return topLevelFields;
+    }
+
+    public ImmutableList<VariableDefinition> getVariableDefinitions() {
+        return variableDefinitions;
     }
 
     /**

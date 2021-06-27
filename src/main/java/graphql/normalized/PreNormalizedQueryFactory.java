@@ -113,15 +113,14 @@ public class PreNormalizedQueryFactory {
                                                               Document document,
                                                               String operationName) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
-        return new PreNormalizedQueryFactory().createNormalizedQueryImpl(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName);
+        return new PreNormalizedQueryFactory().createPreNormalizedQueryImpl(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName);
     }
 
 
-    private PreNormalizedQuery createNormalizedQueryImpl(GraphQLSchema graphQLSchema,
-                                                         OperationDefinition operationDefinition,
-                                                         Map<String, FragmentDefinition> fragments
+    private PreNormalizedQuery createPreNormalizedQueryImpl(GraphQLSchema graphQLSchema,
+                                                            OperationDefinition operationDefinition,
+                                                            Map<String, FragmentDefinition> fragments
     ) {
-
         FieldCollectorNormalizedQueryParams parameters = FieldCollectorNormalizedQueryParams
                 .newParameters()
                 .fragments(fragments)
@@ -152,7 +151,12 @@ public class PreNormalizedQueryFactory {
                     1);
 
         }
-        return new PreNormalizedQuery(new ArrayList<>(collectFromOperationResult.children), fieldToNormalizedField.build(), normalizedFieldToMergedField.build(), coordinatesToNormalizedFields.build());
+        return new PreNormalizedQuery(
+                new ArrayList<>(collectFromOperationResult.children),
+                fieldToNormalizedField.build(),
+                normalizedFieldToMergedField.build(),
+                coordinatesToNormalizedFields.build(),
+                ImmutableList.copyOf(operationDefinition.getVariableDefinitions()));
     }
 
 
@@ -343,12 +347,12 @@ public class PreNormalizedQueryFactory {
             if (matchingNF != null) {
                 matchingNF.addObjectTypeNames(map(objectTypes, GraphQLObjectType::getName));
                 normalizedFieldToMergedField.put(matchingNF, field);
+                matchingNF.getIncludeCondition().add(newIncludeCondition);
                 return;
             }
         }
         // this means we have no existing NF
         Map<String, PreNormalizedInputValue> normalizedArgumentValues = emptyMap();
-        // we ne
 //        normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getNormalizedVariableValues());
         ImmutableList<String> objectTypeNames = map(objectTypes, GraphQLObjectType::getName);
         PreNormalizedField normalizedField = PreNormalizedField.newPreNormalizedField()
@@ -443,12 +447,16 @@ public class PreNormalizedQueryFactory {
         List<String> varNames = new ArrayList<>(includeCondition.getVarNames());
         if (skipDirective != null) {
             String skipVarName = getVariableName(skipDirective);
-            varNames.add(skipVarName);
+            if (skipVarName != null) {
+                varNames.add(skipVarName);
+            }
         }
         Directive includeDirective = NodeUtil.findNodeByName(directives, IncludeDirective.getName());
         if (includeDirective != null) {
             String includeVarName = getVariableName(includeDirective);
-            varNames.add(includeVarName);
+            if (includeVarName != null) {
+                varNames.add(includeVarName);
+            }
         }
         return new PreNormalizedField.IncludeCondition(varNames);
     }

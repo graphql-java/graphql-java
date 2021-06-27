@@ -3,6 +3,7 @@ package graphql.normalized;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
+import graphql.Mutable;
 import graphql.collect.ImmutableKit;
 import graphql.language.Argument;
 import graphql.schema.GraphQLFieldDefinition;
@@ -32,6 +33,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
  * Intentionally Mutable
  */
 @Internal
+@Mutable
 public class PreNormalizedField {
     public static class IncludeCondition {
         private final List<String> varNames;
@@ -42,6 +44,10 @@ public class PreNormalizedField {
 
         public List<String> getVarNames() {
             return varNames;
+        }
+
+        public void add(IncludeCondition includeCondition) {
+            this.varNames.addAll(includeCondition.varNames);
         }
     }
 
