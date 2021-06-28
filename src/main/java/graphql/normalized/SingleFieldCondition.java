@@ -28,6 +28,10 @@ public class SingleFieldCondition {
         this.varNames = new ArrayList<>(varNames);
     }
 
+    public SingleFieldCondition copy() {
+        return new SingleFieldCondition(new ArrayList<>(this.varNames));
+    }
+
     public SingleFieldCondition() {
         this.varNames = new ArrayList<>();
     }

@@ -1,9 +1,9 @@
 package graphql.normalized
 
-
 import graphql.ParseAndValidate
 import graphql.TestUtil
 import graphql.language.Document
+import graphql.language.VariableReference
 import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
 import graphql.util.TraversalControl
@@ -12,6 +12,9 @@ import graphql.util.TraverserContext
 import graphql.util.TraverserVisitorStub
 import graphql.validation.ValidationError
 import spock.lang.Specification
+
+import static graphql.language.AstPrinter.printAst
+import static graphql.parser.Parser.parseValue
 
 class PreNormalizedQueryFactoryTest extends Specification {
 
@@ -130,6 +133,93 @@ class PreNormalizedQueryFactoryTest extends Specification {
         println String.join("\n", tree)
         then:
         true
+    }
+
+    def "normalized arguments with lists"() {
+        given:
+        String schema = """
+        type Query{ 
+            search(arg1:[ID!], arg2:[[Input1]], arg3: [Input1]): Boolean
+        }
+        input Input1 {
+            foo: String
+            input2: Input2
+        }
+        input Input2 {
+            bar: Int
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = '''
+            query($var1: [Input1], $var2: ID!){
+                search(arg1:["1",$var2], arg2: [[{foo: "foo1", input2: {bar: 123}},{foo: "foo2", input2: {bar: 456}}]], arg3: $var1) 
+            }
+        '''
+
+        assertValidQuery(graphQLSchema, query)
+        Document document = TestUtil.parseQuery(query)
+        when:
+        def tree = PreNormalizedQueryFactory.createPreNormalizedQuery(graphQLSchema, document, null)
+        def topLevelField = tree.getTopLevelFields().get(0)
+        def arg1 = topLevelField.getNormalizedArgument("arg1")
+        def arg2 = topLevelField.getNormalizedArgument("arg2")
+        def arg3 = topLevelField.getNormalizedArgument("arg3")
+
+        then:
+        arg1.typeName == "[ID!]"
+        arg1.value.collect { printAst(it) } == ['"1"', '$var2']
+        arg2.typeName == "[[Input1]]"
+        arg2.value == [[
+                               [foo: new NormalizedInputValue("String", parseValue('"foo1"')), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", parseValue("123"))])],
+                               [foo: new NormalizedInputValue("String", parseValue('"foo2"')), input2: new NormalizedInputValue("Input2", [bar: new NormalizedInputValue("Int", parseValue("456"))])]
+                       ]]
+
+        arg3.getTypeName() == "[Input1]"
+        arg3.value instanceof VariableReference
+        (arg3.value as VariableReference).name == 'var1'
+
+
+    }
+
+    def "normalized arguments with lists 2"() {
+        given:
+        String schema = """
+        type Query{ 
+            search(arg1:[[Input1]] ,arg2:[[ID!]!]): Boolean
+        }
+        input Input1 {
+            foo: String
+            input2: Input2
+        }
+        input Input2 {
+            bar: Int
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = '''
+            query($var1: [Input1], $var2: [ID!]!){
+                search(arg1: [$var1],arg2:[["1"],$var2] ) 
+            }
+        '''
+
+        assertValidQuery(graphQLSchema, query)
+        Document document = TestUtil.parseQuery(query)
+        when:
+        def tree = PreNormalizedQueryFactory.createPreNormalizedQuery(graphQLSchema, document, null)
+        def topLevelField = tree.getTopLevelFields().get(0)
+        def arg1 = topLevelField.getNormalizedArgument("arg1")
+        def arg2 = topLevelField.getNormalizedArgument("arg2")
+
+        then:
+        arg1.typeName == "[[Input1]]"
+        arg1.value instanceof List
+        (arg1.value as List).size() == 1
+        (arg1.value[0] as VariableReference).name == 'var1'
+
+        arg2.typeName == "[[ID!]!]"
+        arg2.value.collect { outer -> outer.collect { printAst(it) } } == [['"1"'], ['$var2']]
     }
 
 

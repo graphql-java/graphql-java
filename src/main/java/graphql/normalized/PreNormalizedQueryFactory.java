@@ -353,8 +353,8 @@ public class PreNormalizedQueryFactory {
             }
         }
         // this means we have no existing NF
-        Map<String, PreNormalizedInputValue> normalizedArgumentValues = emptyMap();
-//        normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getNormalizedVariableValues());
+        Map<String, NormalizedInputValue> normalizedArgumentValues = emptyMap();
+        normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), null);
         ImmutableList<String> objectTypeNames = map(objectTypes, GraphQLObjectType::getName);
         PreNormalizedField normalizedField = PreNormalizedField.newPreNormalizedField()
                 .alias(field.getAlias())
@@ -445,7 +445,7 @@ public class PreNormalizedQueryFactory {
 
     private SingleFieldCondition updateIncludeCondition(SingleFieldCondition singleFieldCondition, List<Directive> directives) {
         Directive skipDirective = NodeUtil.findNodeByName(directives, SkipDirective.getName());
-        SingleFieldCondition result = new SingleFieldCondition(singleFieldCondition.getVarNames());
+        SingleFieldCondition result = singleFieldCondition.copy();
         if (skipDirective != null) {
             String skipVarName = getVariableName(skipDirective);
             if (skipVarName != null) {

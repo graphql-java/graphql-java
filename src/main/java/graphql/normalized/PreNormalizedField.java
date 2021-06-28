@@ -36,7 +36,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 public class PreNormalizedField {
 
     private final String alias;
-    private final ImmutableMap<String, PreNormalizedInputValue> normalizedArguments;
+    private final ImmutableMap<String, NormalizedInputValue> normalizedArguments;
     private final ImmutableList<Argument> astArguments;
 
     // Mutable List on purpose: it is modified after creation
@@ -154,11 +154,11 @@ public class PreNormalizedField {
         return astArguments;
     }
 
-    public PreNormalizedInputValue getNormalizedArgument(String name) {
+    public NormalizedInputValue getNormalizedArgument(String name) {
         return normalizedArguments.get(name);
     }
 
-    public ImmutableMap<String, PreNormalizedInputValue> getNormalizedArguments() {
+    public ImmutableMap<String, NormalizedInputValue> getNormalizedArguments() {
         return normalizedArguments;
     }
 
@@ -285,7 +285,7 @@ public class PreNormalizedField {
         private int level;
         private PreNormalizedField parent;
         private String alias;
-        private ImmutableMap<String, PreNormalizedInputValue> normalizedArguments = ImmutableKit.emptyMap();
+        private ImmutableMap<String, NormalizedInputValue> normalizedArguments = ImmutableKit.emptyMap();
         private LinkedHashMap<String, Object> resolvedArguments = new LinkedHashMap<>();
         private ImmutableList<Argument> astArguments = ImmutableKit.emptyList();
         private IncludeCondition includeCondition = IncludeCondition.DEFAULT_CONDITION;
@@ -320,7 +320,7 @@ public class PreNormalizedField {
             return this;
         }
 
-        public Builder normalizedArguments(@Nullable Map<String, PreNormalizedInputValue> arguments) {
+        public Builder normalizedArguments(@Nullable Map<String, NormalizedInputValue> arguments) {
             this.normalizedArguments = arguments == null ? ImmutableKit.emptyMap() : ImmutableMap.copyOf(arguments);
             return this;
         }

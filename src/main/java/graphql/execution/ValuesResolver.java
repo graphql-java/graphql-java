@@ -157,13 +157,13 @@ public class ValuesResolver {
      *
      * @param argumentTypes       the list of argument types
      * @param arguments           the AST arguments
-     * @param normalizedVariables the nomalised variables
+     * @param normalizedVariables the nomalised variables if null
      *
      * @return a map of named normalised values
      */
     public Map<String, NormalizedInputValue> getNormalizedArgumentValues(List<GraphQLArgument> argumentTypes,
                                                                          List<Argument> arguments,
-                                                                         Map<String, NormalizedInputValue> normalizedVariables) {
+                                                                         @Nullable Map<String, NormalizedInputValue> normalizedVariables) {
         GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().fieldVisibility(DEFAULT_FIELD_VISIBILITY).build();
         if (argumentTypes.isEmpty()) {
             return Collections.emptyMap();
@@ -175,6 +175,11 @@ public class ValuesResolver {
             String argumentName = argumentDefinition.getName();
             Argument argument = argumentMap.get(argumentName);
 
+            if (isUnresolvedVariableReference(argument.getValue(), normalizedVariables)) {
+                GraphQLInputType argumentType = argumentDefinition.getType();
+                result.put(argumentName, new NormalizedInputValue(simplePrint(argumentType), argument.getValue()));
+                continue;
+            }
             // If a variable doesn't exist then we can't put it into the result Map
             if (isVariableAbsent(argument.getValue(), normalizedVariables)) {
                 continue;
@@ -631,10 +636,13 @@ public class ValuesResolver {
     public Object literalToNormalizedValue(GraphqlFieldVisibility fieldVisibility,
                                            GraphQLType type,
                                            Value inputValue,
-                                           Map<String, NormalizedInputValue> normalizedVariables
+                                           @Nullable Map<String, NormalizedInputValue> normalizedVariables
     ) {
         if (inputValue instanceof VariableReference) {
             String varName = ((VariableReference) inputValue).getName();
+            if (normalizedVariables == null) {
+                return inputValue;
+            }
             return normalizedVariables.get(varName).getValue();
         }
 
@@ -662,10 +670,15 @@ public class ValuesResolver {
     private Object literalToNormalizedValueForInputObject(GraphqlFieldVisibility fieldVisibility,
                                                           GraphQLInputObjectType type,
                                                           ObjectValue inputObjectLiteral,
-                                                          Map<String, NormalizedInputValue> normalizedVariables) {
+                                                          @Nullable Map<String, NormalizedInputValue> normalizedVariables) {
         Map<String, Object> result = new LinkedHashMap<>();
 
         for (ObjectField field : inputObjectLiteral.getObjectFields()) {
+            if (isUnresolvedVariableReference(field.getValue(), normalizedVariables)) {
+                GraphQLInputType fieldType = type.getField(field.getName()).getType();
+                result.put(field.getName(), new NormalizedInputValue(simplePrint(fieldType), field.getValue()));
+                continue;
+            }
             // If a variable doesn't exist then we can't put it into the result Map
             if (isVariableAbsent(field.getValue(), normalizedVariables)) {
                 continue;
@@ -681,7 +694,7 @@ public class ValuesResolver {
     private List<Object> literalToNormalizedValueForList(GraphqlFieldVisibility fieldVisibility,
                                                          GraphQLList type,
                                                          Value value,
-                                                         Map<String, NormalizedInputValue> normalizedVariables) {
+                                                         @Nullable Map<String, NormalizedInputValue> normalizedVariables) {
         if (value instanceof ArrayValue) {
             List<Object> result = new ArrayList<>();
             for (Value valueInArray : ((ArrayValue) value).getValues()) {
@@ -701,6 +714,7 @@ public class ValuesResolver {
      * @param type             the type of the input value
      * @param inputValue       the AST literal to be changed
      * @param coercedVariables the coerced variable values
+     *
      * @return literal converted to an internal value
      */
     public Object literalToInternalValue(GraphqlFieldVisibility fieldVisibility,
@@ -987,13 +1001,23 @@ public class ValuesResolver {
     /**
      * @return true if variable is absent from input, and if value is NOT a variable then false
      */
-    private static boolean isVariableAbsent(Value value, Map<String, NormalizedInputValue> variables) {
+    private static boolean isVariableAbsent(Value value, @Nullable Map<String, NormalizedInputValue> variables) {
+        if (variables == null) {
+            return false;
+        }
         if (value instanceof VariableReference) {
             VariableReference varRef = (VariableReference) value;
             return !variables.containsKey(varRef.getName());
         }
 
         // Not variable, return false
+        return false;
+    }
+
+    private static boolean isUnresolvedVariableReference(Value value, @Nullable Map<String, NormalizedInputValue> variables) {
+        if (value instanceof VariableReference) {
+            return variables == null;
+        }
         return false;
     }
 }
