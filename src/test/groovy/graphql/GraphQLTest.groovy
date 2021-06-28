@@ -1357,4 +1357,39 @@ many lines''']
         def e = thrown(InvalidSchemaException)
         e.message.contains("Invalid argument 'arg' for applied directive of name 'cached'")
     }
+
+    def "skipped top level field"() {
+        given:
+        def sdl = 'type Query { hello : String } '
+
+        def schema = TestUtil.schema(sdl)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        when:
+        def er = graphQL.execute("{hello @skip(if:true)}")
+        then:
+        er.data == [:]
+        er.errors.isEmpty()
+
+    }
+
+    def "skip causes empty subselection "() {
+        given:
+        def sdl = '''
+        type Query { 
+            hello : Hello 
+        }
+        type Hello {
+            world: String
+        }
+        '''
+
+        def schema = TestUtil.schema(sdl, [Query: [hello: new StaticDataFetcher("dummy")]])
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        when:
+        def er = graphQL.execute("{hello{world @skip(if:true)}}")
+        then:
+        er.data == [hello: [:]]
+        er.errors.isEmpty()
+
+    }
 }
