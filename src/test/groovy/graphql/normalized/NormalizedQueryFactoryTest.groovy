@@ -1489,4 +1489,27 @@ schema {
                         'pet_name: [Cat, Dog].name',
         ]
     }
+
+    def "missing argument"() {
+        given:
+        String schema = """
+        type Query {
+            hello(arg: String): String
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = '''{hello} '''
+        assertValidQuery(graphQLSchema, query)
+        Document document = TestUtil.parseQuery(query)
+        when:
+        def tree = NormalizedQueryFactory.createNormalizedQueryWithRawVariables(graphQLSchema, document, null, [:])
+        println String.join("\n", printTree(tree))
+        def printedTree = printTree(tree)
+
+
+        then:
+        printedTree == ['Query.hello']
+        tree.getTopLevelFields().get(0).getNormalizedArguments().isEmpty()
+    }
 }

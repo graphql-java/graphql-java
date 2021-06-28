@@ -1,10 +1,12 @@
 package graphql.normalized;
 
+import graphql.Assert;
 import graphql.Internal;
 import graphql.Mutable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Mutable
 @Internal
@@ -37,6 +39,16 @@ public class IncludeCondition {
 
     public boolean isAlwaysTrue() {
         return singleFieldConditions.size() == 1 && singleFieldConditions.get(0).isAlwaysTrue();
+    }
+
+    public boolean evaluate(Map<String, Object> coercedVariables) {
+        Assert.assertTrue(singleFieldConditions.size() > 0, () -> "Expect at least on single file condition");
+        for (SingleFieldCondition singleFieldCondition : singleFieldConditions) {
+            if (singleFieldCondition.evaluate(coercedVariables)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

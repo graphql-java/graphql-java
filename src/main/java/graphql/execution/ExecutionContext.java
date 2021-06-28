@@ -15,6 +15,8 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.normalized.NormalizedQuery;
 import graphql.normalized.NormalizedQueryFactory;
+import graphql.normalized.PreNormalizedQuery;
+import graphql.normalized.PreNormalizedQueryFactory;
 import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import org.dataloader.DataLoaderRegistry;
@@ -55,6 +57,7 @@ public class ExecutionContext {
     private final ValueUnboxer valueUnboxer;
     private final ExecutionInput executionInput;
     private final Supplier<NormalizedQuery> queryTree;
+    private final Supplier<PreNormalizedQuery> preNormalizedQuerySupplier;
 
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
@@ -78,6 +81,7 @@ public class ExecutionContext {
         this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
         queryTree = FpKit.interThreadMemoize(() -> NormalizedQueryFactory.createNormalizedQuery(graphQLSchema, operationDefinition, fragmentsByName, variables));
+        preNormalizedQuerySupplier = FpKit.interThreadMemoize(() -> PreNormalizedQueryFactory.createPreNormalizedQuery(graphQLSchema, document, executionInput.getOperationName()));
     }
 
 
@@ -207,6 +211,10 @@ public class ExecutionContext {
 
     public Supplier<NormalizedQuery> getNormalizedQueryTree() {
         return queryTree;
+    }
+
+    public Supplier<PreNormalizedQuery> getPreNormalizedQuery() {
+        return preNormalizedQuerySupplier;
     }
 
     /**

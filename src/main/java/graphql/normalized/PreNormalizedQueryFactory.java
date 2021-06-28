@@ -49,7 +49,6 @@ import java.util.Set;
 import static graphql.Assert.assertNotNull;
 import static graphql.Directives.IncludeDirective;
 import static graphql.Directives.SkipDirective;
-import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.collect.ImmutableKit.map;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
@@ -251,7 +250,6 @@ public class PreNormalizedQueryFactory {
         ImmutableListMultimap.Builder<PreNormalizedField, Field> normalizedFieldToAstFields = ImmutableListMultimap.builder();
         Set<GraphQLObjectType> possibleObjects = new LinkedHashSet<>();
         possibleObjects.add(rootType);
-        IncludeCondition includeCondition = IncludeCondition.DEFAULT_CONDITION;
         SingleFieldCondition singleFieldCondition = new SingleFieldCondition();
         this.collectFromSelectionSet(parameters, operationDefinition.getSelectionSet(), subFields, normalizedFieldToAstFields, possibleObjects, 1, null, singleFieldCondition);
         return new CollectFieldResult(subFields.values(), normalizedFieldToAstFields.build());
@@ -361,8 +359,7 @@ public class PreNormalizedQueryFactory {
             }
         }
         // this means we have no existing NF
-        Map<String, NormalizedInputValue> normalizedArgumentValues = emptyMap();
-        normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), null);
+        Map<String, NormalizedInputValue> normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), null);
         ImmutableList<String> objectTypeNames = map(objectTypes, GraphQLObjectType::getName);
         PreNormalizedField normalizedField = PreNormalizedField.newPreNormalizedField()
                 .alias(field.getAlias())

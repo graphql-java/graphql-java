@@ -4,7 +4,11 @@ import graphql.Internal;
 import graphql.Mutable;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Objects;
+
+import static graphql.Assert.assertNotNull;
+import static java.lang.String.format;
 
 @Mutable
 @Internal
@@ -67,6 +71,23 @@ public class SingleFieldCondition {
 
     public boolean isAlwaysTrue() {
         return varNames.size() == 0;
+    }
+
+    public boolean evaluate(Map<String, Object> coercedVariables) {
+        for (Object var : varNames) {
+            if (var instanceof Not) {
+                boolean b = (boolean) assertNotNull(coercedVariables.get(((Not) var).varName), () -> format("Expect variable with name %s", ((Not) var).varName));
+                if (b) {
+                    return false;
+                }
+            } else {
+                boolean b = (boolean) assertNotNull(coercedVariables.get((String) var), () -> format("Expect variable with name %s", var));
+                if (!b) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     @Override

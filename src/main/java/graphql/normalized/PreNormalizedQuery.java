@@ -5,12 +5,15 @@ import com.google.common.collect.ImmutableListMultimap;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.MergedField;
+import graphql.execution.MergedSelectionSet;
 import graphql.execution.ResultPath;
 import graphql.language.Field;
 import graphql.language.VariableDefinition;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLObjectType;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,7 +22,7 @@ public class PreNormalizedQuery {
 
     private final List<PreNormalizedField> topLevelFields;
     private final ImmutableListMultimap<Field, PreNormalizedField> fieldToPreNormalizedField;
-    private final Map<PreNormalizedField, MergedField> PreNormalizedFieldToMergedField;
+    private final Map<PreNormalizedField, MergedField> preNormalizedFieldToMergedField;
     private final ImmutableListMultimap<FieldCoordinates, PreNormalizedField> coordinatesToPreNormalizedFields;
     private final ImmutableList<VariableDefinition> variableDefinitions;
 
@@ -30,7 +33,7 @@ public class PreNormalizedQuery {
                               ImmutableList<VariableDefinition> variableDefinitions) {
         this.topLevelFields = topLevelFields;
         this.fieldToPreNormalizedField = fieldToPreNormalizedField;
-        this.PreNormalizedFieldToMergedField = PreNormalizedFieldToMergedField;
+        this.preNormalizedFieldToMergedField = PreNormalizedFieldToMergedField;
         this.coordinatesToPreNormalizedFields = coordinatesToPreNormalizedFields;
         this.variableDefinitions = variableDefinitions;
     }
@@ -61,11 +64,11 @@ public class PreNormalizedQuery {
     }
 
     public Map<PreNormalizedField, MergedField> getPreNormalizedFieldToMergedField() {
-        return PreNormalizedFieldToMergedField;
+        return preNormalizedFieldToMergedField;
     }
 
     public MergedField getMergedField(PreNormalizedField PreNormalizedField) {
-        return PreNormalizedFieldToMergedField.get(PreNormalizedField);
+        return preNormalizedFieldToMergedField.get(PreNormalizedField);
     }
 
     public PreNormalizedField getPreNormalizedField(MergedField mergedField, GraphQLFieldsContainer fieldsContainer, ResultPath resultPath) {
@@ -79,6 +82,28 @@ public class PreNormalizedQuery {
             }
         }
         return Assert.assertShouldNeverHappen("normalized field not found");
+    }
+
+    public MergedSelectionSet getSubSelection(MergedField mergedField,
+                                              GraphQLObjectType objectType,
+                                              ResultPath resultPath,
+                                              GraphQLObjectType resolvedChildType,
+                                              Map<String, Object> coercedVariables) {
+        PreNormalizedField normalizedField = getPreNormalizedField(mergedField, objectType, resultPath);
+
+        Map<String, MergedField> subFieldsMap = new LinkedHashMap<>();
+        for (PreNormalizedField child : normalizedField.getChildren()) {
+            // only add child if the type matches
+            if (!child.getObjectTypeNames().contains(resolvedChildType.getName())) {
+                continue;
+            }
+            if (!child.getIncludeCondition().evaluate(coercedVariables)) {
+                continue;
+            }
+            MergedField newMergedField = preNormalizedFieldToMergedField.get(child);
+            subFieldsMap.put(child.getResultKey(), newMergedField);
+        }
+        return MergedSelectionSet.newMergedSelectionSet().subFields(subFieldsMap).build();
     }
 
 

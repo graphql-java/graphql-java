@@ -22,6 +22,7 @@ import graphql.language.Argument;
 import graphql.language.Field;
 import graphql.normalized.NormalizedField;
 import graphql.normalized.NormalizedQuery;
+import graphql.normalized.PreNormalizedQuery;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -52,7 +53,6 @@ import java.util.function.Supplier;
 
 import static graphql.execution.Async.exceptionallyCompletedFuture;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
-import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.FieldValueInfo.CompleteValueType.ENUM;
 import static graphql.execution.FieldValueInfo.CompleteValueType.LIST;
 import static graphql.execution.FieldValueInfo.CompleteValueType.NULL;
@@ -638,15 +638,17 @@ public abstract class ExecutionStrategy {
      */
     protected CompletableFuture<ExecutionResult> completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
-
-        FieldCollectorParameters collectorParameters = newParameters()
-                .schema(executionContext.getGraphQLSchema())
-                .objectType(resolvedObjectType)
-                .fragments(executionContext.getFragmentsByName())
-                .variables(executionContext.getVariables())
-                .build();
-
-        MergedSelectionSet subFields = fieldCollector.collectFields(collectorParameters, parameters.getField());
+//
+//        FieldCollectorParameters collectorParameters = newParameters()
+//                .schema(executionContext.getGraphQLSchema())
+//                .objectType(resolvedObjectType)
+//                .fragments(executionContext.getFragmentsByName())
+//                .variables(executionContext.getVariables())
+//                .build();
+//
+//        MergedSelectionSet subFields = fieldCollector.collectFields(collectorParameters, parameters.getField());
+        PreNormalizedQuery preNormalizedQuery = executionContext.getPreNormalizedQuery().get();
+        MergedSelectionSet subFields = preNormalizedQuery.getSubSelection(executionStepInfo.getField(), executionStepInfo.getObjectType(), executionStepInfo.getPath(), resolvedObjectType, executionContext.getVariables());
 
         ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(resolvedObjectType);
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, newExecutionStepInfo);

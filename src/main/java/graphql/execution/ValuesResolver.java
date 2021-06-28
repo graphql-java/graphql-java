@@ -174,7 +174,9 @@ public class ValuesResolver {
         for (GraphQLArgument argumentDefinition : argumentTypes) {
             String argumentName = argumentDefinition.getName();
             Argument argument = argumentMap.get(argumentName);
-
+            if (argument == null) {
+                continue;
+            }
             if (isUnresolvedVariableReference(argument.getValue(), normalizedVariables)) {
                 GraphQLInputType argumentType = argumentDefinition.getType();
                 result.put(argumentName, new NormalizedInputValue(simplePrint(argumentType), argument.getValue()));

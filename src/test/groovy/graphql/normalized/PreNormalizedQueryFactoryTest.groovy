@@ -68,15 +68,16 @@ class PreNormalizedQueryFactoryTest extends Specification {
         def printedTree = printTree(preNormalizedQuery)
         println String.join("\n", printedTree)
         then:
-        printedTree == ['Query.pets',
-                        'cat_yes_1: Cat.name',
-                        'cat_yes_2: Cat.name',
-                        'dog_yes_1: Dog.name',
-                        'dog_yes_2: Dog.name',
-                        'pet_name: [Cat, Dog].name',
+        printedTree == ['Query.pets (includeCondition:[[]])',
+                        'cat_not: Cat.name (includeCondition:[[!var1]])',
+                        'cat_yes_1: Cat.name (includeCondition:[[]])',
+                        'cat_yes_2: Cat.name (includeCondition:[[!var2]])',
+                        'dog_no: Dog.name (includeCondition:[[!var3, var4, var1, !var2]])',
+                        'dog_yes_1: Dog.name (includeCondition:[[!var3, var4, var1]])',
+                        'dog_yes_2: Dog.name (includeCondition:[[!var3, var4, var1, !var2]])',
+                        'not: [Cat, Dog].name (includeCondition:[[!var1]])',
+                        'pet_name: [Cat, Dog].name (includeCondition:[[!var2]])'
         ]
-
-        true
     }
 
     def "merged field with different skip include"() {
@@ -228,6 +229,29 @@ class PreNormalizedQueryFactoryTest extends Specification {
 
         arg2.typeName == "[[ID!]!]"
         arg2.value.collect { outer -> outer.collect { printAst(it) } } == [['"1"'], ['$var2']]
+    }
+
+    def "missing argument"() {
+        given:
+        String schema = """
+        type Query {
+            hello(arg: String): String
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = '''{hello} '''
+        assertValidQuery(graphQLSchema, query)
+        Document document = TestUtil.parseQuery(query)
+        when:
+        def tree = PreNormalizedQueryFactory.createPreNormalizedQuery(graphQLSchema, document, null)
+        println String.join("\n", printTree(tree))
+        def printedTree = printTree(tree)
+
+
+        then:
+        printedTree == ['Query.hello (includeCondition:[[]])']
+        tree.getTopLevelFields().get(0).getNormalizedArguments().isEmpty()
     }
 
 
