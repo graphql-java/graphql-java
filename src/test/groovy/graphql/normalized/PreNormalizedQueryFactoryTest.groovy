@@ -65,9 +65,17 @@ class PreNormalizedQueryFactoryTest extends Specification {
         Document document = TestUtil.parseQuery(query)
         when:
         def preNormalizedQuery = PreNormalizedQueryFactory.createPreNormalizedQuery(graphQLSchema, document, null)
-        def tree = printTree(preNormalizedQuery)
-        println String.join("\n", tree)
+        def printedTree = printTree(preNormalizedQuery)
+        println String.join("\n", printedTree)
         then:
+        printedTree == ['Query.pets',
+                        'cat_yes_1: Cat.name',
+                        'cat_yes_2: Cat.name',
+                        'dog_yes_1: Dog.name',
+                        'dog_yes_2: Dog.name',
+                        'pet_name: [Cat, Dog].name',
+        ]
+
         true
     }
 

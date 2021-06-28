@@ -3,13 +3,13 @@ package graphql.normalized;
 import graphql.Internal;
 import graphql.Mutable;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Objects;
 
 @Mutable
 @Internal
 public class SingleFieldCondition {
-    private final List<Object> varNames;
+    private final LinkedHashSet<Object> varNames;
 
     private static class Not {
         String varName;
@@ -22,21 +22,38 @@ public class SingleFieldCondition {
         public String toString() {
             return "!" + varName;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Not not = (Not) o;
+            return Objects.equals(varName, not.varName);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(varName);
+        }
     }
 
-    public SingleFieldCondition(List<Object> varNames) {
-        this.varNames = new ArrayList<>(varNames);
+    public SingleFieldCondition(LinkedHashSet<Object> varNames) {
+        this.varNames = new LinkedHashSet<>(varNames);
     }
 
     public SingleFieldCondition copy() {
-        return new SingleFieldCondition(new ArrayList<>(this.varNames));
+        return new SingleFieldCondition(new LinkedHashSet<>(this.varNames));
     }
 
     public SingleFieldCondition() {
-        this.varNames = new ArrayList<>();
+        this.varNames = new LinkedHashSet<>();
     }
 
-    public List<Object> getVarNames() {
+    public LinkedHashSet<Object> getVarNames() {
         return varNames;
     }
 
@@ -46,6 +63,10 @@ public class SingleFieldCondition {
 
     public void addIncludeVar(String varName) {
         this.varNames.add(varName);
+    }
+
+    public boolean isAlwaysTrue() {
+        return varNames.size() == 0;
     }
 
     @Override

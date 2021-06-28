@@ -348,7 +348,15 @@ public class PreNormalizedQueryFactory {
             if (matchingNF != null) {
                 matchingNF.addObjectTypeNames(map(objectTypes, GraphQLObjectType::getName));
                 normalizedFieldToMergedField.put(matchingNF, field);
-                matchingNF.getIncludeCondition().addField(newFieldCondition);
+
+                if (matchingNF.getIncludeCondition().isAlwaysTrue()) {
+                    return;
+                }
+                if (newFieldCondition.isAlwaysTrue()) {
+                    matchingNF.getIncludeCondition().alwaysTrue();
+                } else {
+                    matchingNF.getIncludeCondition().addField(newFieldCondition);
+                }
                 return;
             }
         }

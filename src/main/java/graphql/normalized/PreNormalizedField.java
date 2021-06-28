@@ -198,7 +198,7 @@ public class PreNormalizedField {
         if (getAlias() != null) {
             result.append(getAlias()).append(": ");
         }
-        return result + objectTypeNamesToString() + "." + fieldName + "(includeCondition:" + includeCondition + ")";
+        return result + objectTypeNamesToString() + "." + fieldName + " (includeCondition:" + includeCondition + ")";
     }
 
     public String objectTypeNamesToString() {
