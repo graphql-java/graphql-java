@@ -59,6 +59,6 @@ public class UnicodeUtil {
 
     private static boolean isValidUnicodeCodePoint(Integer value) {
         // TODO: Add bad surrogate checks
-        return value < MAX_UNICODE_CODE_POINT;
+        return value <= MAX_UNICODE_CODE_POINT;
     }
 }
