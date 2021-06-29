@@ -48,20 +48,14 @@ public class ApolloPersistedQuerySupport extends PersistedQuerySupport {
         Map<String, Object> extensions = executionInput.getExtensions();
         Map<String, Object> persistedQuery = (Map<String, Object>) extensions.get("persistedQuery");
         if (persistedQuery != null) {
-            String sha256Hash = persistedQuery.get("sha256Hash").toString();
-            String query = executionInput.getQuery();
-            if (query != null && (!query.isEmpty() && !query.equals(PERSISTED_QUERY_MARKER))) {
-                if (!isValidPersistedQueryId(sha256Hash, executionInput)) {
-                    throw new PersistedQueryIdInvalid(sha256Hash);
-                }
-            } else {
-                return Optional.ofNullable(sha256Hash);
-            }
+            Object sha256Hash = persistedQuery.get("sha256Hash");
+            return Optional.ofNullable(sha256Hash);
         }
         return Optional.empty();
     }
 
-    protected boolean isValidPersistedQueryId(String id, ExecutionInput executionInput) {
+    @Override
+    protected boolean persistedQueryIdIsInvalid(Object persistedQueryId, ExecutionInput executionInput) {
         String query = executionInput.getQuery();
         MessageDigest messageDigest;
         try {
@@ -72,6 +66,6 @@ public class ApolloPersistedQuerySupport extends PersistedQuerySupport {
 
         BigInteger bigInteger = new BigInteger(1, messageDigest.digest(query.getBytes(StandardCharsets.UTF_8)));
         String calculatedChecksum = String.format("%064x", bigInteger);
-        return calculatedChecksum.equalsIgnoreCase(id);
+        return !calculatedChecksum.equalsIgnoreCase(persistedQueryId.toString());
     }
 }

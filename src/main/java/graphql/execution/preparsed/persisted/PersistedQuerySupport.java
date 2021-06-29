@@ -48,6 +48,10 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
                     if (queryText == null || queryText.trim().length() == 0) {
                         throw new PersistedQueryNotFound(persistedQueryId);
                     }
+                    // validate the queryText hash before returning to the cache which we assume will set it
+                    if (persistedQueryIdIsInvalid(persistedQueryId, executionInput)) {
+                        throw new PersistedQueryIdInvalid(persistedQueryId);
+                    }
                     ExecutionInput newEI = executionInput.transform(builder -> builder.query(queryText));
                     return parseAndValidateFunction.apply(newEI);
                 });
@@ -64,14 +68,20 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
      * up the persisted query in the cache.
      *
      * @param executionInput the execution input
+     *
      * @return an optional id of the persisted query
      */
     abstract protected Optional<Object> getPersistedQueryId(ExecutionInput executionInput);
+
+    protected boolean persistedQueryIdIsInvalid(Object persistedQueryId, ExecutionInput executionInput) {
+        return false;
+    }
 
     /**
      * Allows you to customize the graphql error that is sent back on a missing persistend query
      *
      * @param persistedQueryError the missing persistent query exception
+     *
      * @return a PreparsedDocumentEntry that holds an error
      */
     protected PreparsedDocumentEntry mkMissingError(PersistedQueryError persistedQueryError) {
