@@ -174,6 +174,9 @@ public class ValuesResolver {
         for (GraphQLArgument argumentDefinition : argumentTypes) {
             String argumentName = argumentDefinition.getName();
             Argument argument = argumentMap.get(argumentName);
+            if (argument == null) {
+                continue;
+            }
 
             // If a variable doesn't exist then we can't put it into the result Map
             if (isVariableAbsent(argument.getValue(), normalizedVariables)) {

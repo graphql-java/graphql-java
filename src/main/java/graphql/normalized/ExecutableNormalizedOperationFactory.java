@@ -50,39 +50,39 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 
 @Internal
-public class NormalizedQueryFactory {
+public class ExecutableNormalizedOperationFactory {
 
     private final ValuesResolver valuesResolver = new ValuesResolver();
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
-    public static NormalizedQuery createNormalizedQuery(GraphQLSchema graphQLSchema,
-                                                        Document document,
-                                                        String operationName,
-                                                        Map<String, Object> coercedVariableValues) {
+    public static ExecutableNormalizedOperation createExecutableNormalizedOperation(GraphQLSchema graphQLSchema,
+                                                                                    Document document,
+                                                                                    String operationName,
+                                                                                    Map<String, Object> coercedVariableValues) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
-        return new NormalizedQueryFactory().createNormalizedQueryImpl(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, coercedVariableValues, null);
+        return new ExecutableNormalizedOperationFactory().createNormalizedQueryImpl(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, coercedVariableValues, null);
     }
 
 
-    public static NormalizedQuery createNormalizedQuery(GraphQLSchema graphQLSchema,
-                                                        OperationDefinition operationDefinition,
-                                                        Map<String, FragmentDefinition> fragments,
-                                                        Map<String, Object> coercedVariableValues) {
-        return new NormalizedQueryFactory().createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coercedVariableValues, null);
+    public static ExecutableNormalizedOperation createExecutableNormalizedOperation(GraphQLSchema graphQLSchema,
+                                                                                    OperationDefinition operationDefinition,
+                                                                                    Map<String, FragmentDefinition> fragments,
+                                                                                    Map<String, Object> coercedVariableValues) {
+        return new ExecutableNormalizedOperationFactory().createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coercedVariableValues, null);
     }
 
-    public static NormalizedQuery createNormalizedQueryWithRawVariables(GraphQLSchema graphQLSchema,
-                                                                        Document document,
-                                                                        String operationName,
-                                                                        Map<String, Object> rawVariables) {
+    public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(GraphQLSchema graphQLSchema,
+                                                                                                    Document document,
+                                                                                                    String operationName,
+                                                                                                    Map<String, Object> rawVariables) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
-        return new NormalizedQueryFactory().createNormalizedQueryImplWithRawVariables(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, rawVariables);
+        return new ExecutableNormalizedOperationFactory().createExecutableNormalizedOperationImplWithRawVariables(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, rawVariables);
     }
 
-    private NormalizedQuery createNormalizedQueryImplWithRawVariables(GraphQLSchema graphQLSchema,
-                                                                      OperationDefinition operationDefinition,
-                                                                      Map<String, FragmentDefinition> fragments,
-                                                                      Map<String, Object> rawVariables
+    private ExecutableNormalizedOperation createExecutableNormalizedOperationImplWithRawVariables(GraphQLSchema graphQLSchema,
+                                                                                                  OperationDefinition operationDefinition,
+                                                                                                  Map<String, FragmentDefinition> fragments,
+                                                                                                  Map<String, Object> rawVariables
     ) {
 
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
@@ -94,11 +94,11 @@ public class NormalizedQueryFactory {
     /**
      * Creates a new Normalized query tree for the provided query
      */
-    private NormalizedQuery createNormalizedQueryImpl(GraphQLSchema graphQLSchema,
-                                                      OperationDefinition operationDefinition,
-                                                      Map<String, FragmentDefinition> fragments,
-                                                      Map<String, Object> coercedVariableValues,
-                                                      @Nullable Map<String, NormalizedInputValue> normalizedVariableValues) {
+    private ExecutableNormalizedOperation createNormalizedQueryImpl(GraphQLSchema graphQLSchema,
+                                                                    OperationDefinition operationDefinition,
+                                                                    Map<String, FragmentDefinition> fragments,
+                                                                    Map<String, Object> coercedVariableValues,
+                                                                    @Nullable Map<String, NormalizedInputValue> normalizedVariableValues) {
 
 
         FieldCollectorNormalizedQueryParams parameters = FieldCollectorNormalizedQueryParams
@@ -113,11 +113,11 @@ public class NormalizedQueryFactory {
 
         CollectFieldResult collectFromOperationResult = collectFromOperation(parameters, operationDefinition, rootType);
 
-        ImmutableListMultimap.Builder<Field, NormalizedField> fieldToNormalizedField = ImmutableListMultimap.builder();
-        ImmutableMap.Builder<NormalizedField, MergedField> normalizedFieldToMergedField = ImmutableMap.builder();
-        ImmutableListMultimap.Builder<FieldCoordinates, NormalizedField> coordinatesToNormalizedFields = ImmutableListMultimap.builder();
+        ImmutableListMultimap.Builder<Field, ExecutableNormalizedField> fieldToNormalizedField = ImmutableListMultimap.builder();
+        ImmutableMap.Builder<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField = ImmutableMap.builder();
+        ImmutableListMultimap.Builder<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields = ImmutableListMultimap.builder();
 
-        for (NormalizedField topLevel : collectFromOperationResult.children) {
+        for (ExecutableNormalizedField topLevel : collectFromOperationResult.children) {
             ImmutableList<Field> mergedField = collectFromOperationResult.normalizedFieldToAstFields.get(topLevel);
             normalizedFieldToMergedField.put(topLevel, MergedField.newMergedField(mergedField).build());
             updateFieldToNFMap(topLevel, mergedField, fieldToNormalizedField);
@@ -132,19 +132,19 @@ public class NormalizedQueryFactory {
                     1);
 
         }
-        return new NormalizedQuery(new ArrayList<>(collectFromOperationResult.children), fieldToNormalizedField.build(), normalizedFieldToMergedField.build(), coordinatesToNormalizedFields.build());
+        return new ExecutableNormalizedOperation(new ArrayList<>(collectFromOperationResult.children), fieldToNormalizedField.build(), normalizedFieldToMergedField.build(), coordinatesToNormalizedFields.build());
     }
 
 
-    private void buildFieldWithChildren(NormalizedField field,
+    private void buildFieldWithChildren(ExecutableNormalizedField field,
                                         ImmutableList<Field> mergedField,
                                         FieldCollectorNormalizedQueryParams fieldCollectorNormalizedQueryParams,
-                                        ImmutableListMultimap.Builder<Field, NormalizedField> fieldNormalizedField,
-                                        ImmutableMap.Builder<NormalizedField, MergedField> normalizedFieldToMergedField,
-                                        ImmutableListMultimap.Builder<FieldCoordinates, NormalizedField> coordinatesToNormalizedFields,
+                                        ImmutableListMultimap.Builder<Field, ExecutableNormalizedField> fieldNormalizedField,
+                                        ImmutableMap.Builder<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField,
+                                        ImmutableListMultimap.Builder<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields,
                                         int curLevel) {
         CollectFieldResult nextLevel = collectFromMergedField(fieldCollectorNormalizedQueryParams, field, mergedField, curLevel + 1);
-        for (NormalizedField child : nextLevel.children) {
+        for (ExecutableNormalizedField child : nextLevel.children) {
 
             field.addChild(child);
             ImmutableList<Field> mergedFieldForChild = nextLevel.normalizedFieldToAstFields.get(child);
@@ -162,15 +162,15 @@ public class NormalizedQueryFactory {
         }
     }
 
-    private void updateFieldToNFMap(NormalizedField normalizedField,
+    private void updateFieldToNFMap(ExecutableNormalizedField executableNormalizedField,
                                     ImmutableList<Field> mergedField,
-                                    ImmutableListMultimap.Builder<Field, NormalizedField> fieldToNormalizedField) {
+                                    ImmutableListMultimap.Builder<Field, ExecutableNormalizedField> fieldToNormalizedField) {
         for (Field astField : mergedField) {
-            fieldToNormalizedField.put(astField, normalizedField);
+            fieldToNormalizedField.put(astField, executableNormalizedField);
         }
     }
 
-    private void updateCoordinatedToNFMap(ImmutableListMultimap.Builder<FieldCoordinates, NormalizedField> coordinatesToNormalizedFields, NormalizedField topLevel) {
+    private void updateCoordinatedToNFMap(ImmutableListMultimap.Builder<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields, ExecutableNormalizedField topLevel) {
         for (String objectType : topLevel.getObjectTypeNames()) {
             FieldCoordinates coordinates = FieldCoordinates.coordinates(objectType, topLevel.getFieldName());
             coordinatesToNormalizedFields.put(coordinates, topLevel);
@@ -179,10 +179,10 @@ public class NormalizedQueryFactory {
 
 
     public static class CollectFieldResult {
-        private final Collection<NormalizedField> children;
-        private final ImmutableListMultimap<NormalizedField, Field> normalizedFieldToAstFields;
+        private final Collection<ExecutableNormalizedField> children;
+        private final ImmutableListMultimap<ExecutableNormalizedField, Field> normalizedFieldToAstFields;
 
-        public CollectFieldResult(Collection<NormalizedField> children, ImmutableListMultimap<NormalizedField, Field> normalizedFieldToAstFields) {
+        public CollectFieldResult(Collection<ExecutableNormalizedField> children, ImmutableListMultimap<ExecutableNormalizedField, Field> normalizedFieldToAstFields) {
             this.children = children;
             this.normalizedFieldToAstFields = normalizedFieldToAstFields;
         }
@@ -190,17 +190,17 @@ public class NormalizedQueryFactory {
 
 
     public CollectFieldResult collectFromMergedField(FieldCollectorNormalizedQueryParams parameters,
-                                                     NormalizedField normalizedField,
+                                                     ExecutableNormalizedField executableNormalizedField,
                                                      ImmutableList<Field> mergedField,
                                                      int level) {
-        GraphQLUnmodifiedType fieldType = unwrapAll(normalizedField.getType(parameters.getGraphQLSchema()));
+        GraphQLUnmodifiedType fieldType = unwrapAll(executableNormalizedField.getType(parameters.getGraphQLSchema()));
         // if not composite we don't have any selectionSet because it is a Scalar or enum
         if (!(fieldType instanceof GraphQLCompositeType)) {
             return new CollectFieldResult(Collections.emptyList(), ImmutableListMultimap.of());
         }
 
-        Multimap<String, NormalizedField> subFields = LinkedHashMultimap.create();
-        ImmutableListMultimap.Builder<NormalizedField, Field> mergedFieldByNormalizedField = ImmutableListMultimap.builder();
+        Multimap<String, ExecutableNormalizedField> subFields = LinkedHashMultimap.create();
+        ImmutableListMultimap.Builder<ExecutableNormalizedField, Field> mergedFieldByNormalizedField = ImmutableListMultimap.builder();
         Set<GraphQLObjectType> possibleObjects = resolvePossibleObjects((GraphQLCompositeType) fieldType, parameters.getGraphQLSchema());
         for (Field field : mergedField) {
             if (field.getSelectionSet() == null) {
@@ -212,7 +212,7 @@ public class NormalizedQueryFactory {
                     mergedFieldByNormalizedField,
                     possibleObjects,
                     level,
-                    normalizedField);
+                    executableNormalizedField);
         }
         return new CollectFieldResult(new LinkedHashSet<>(subFields.values()), mergedFieldByNormalizedField.build());
     }
@@ -221,8 +221,8 @@ public class NormalizedQueryFactory {
                                                    OperationDefinition operationDefinition,
                                                    GraphQLObjectType rootType) {
 
-        Multimap<String, NormalizedField> subFields = LinkedHashMultimap.create();
-        ImmutableListMultimap.Builder<NormalizedField, Field> normalizedFieldToAstFields = ImmutableListMultimap.builder();
+        Multimap<String, ExecutableNormalizedField> subFields = LinkedHashMultimap.create();
+        ImmutableListMultimap.Builder<ExecutableNormalizedField, Field> normalizedFieldToAstFields = ImmutableListMultimap.builder();
         Set<GraphQLObjectType> possibleObjects = new LinkedHashSet<>();
         possibleObjects.add(rootType);
         this.collectFromSelectionSet(parameters, operationDefinition.getSelectionSet(), subFields, normalizedFieldToAstFields, possibleObjects, 1, null);
@@ -232,11 +232,11 @@ public class NormalizedQueryFactory {
 
     private void collectFromSelectionSet(FieldCollectorNormalizedQueryParams parameters,
                                          SelectionSet selectionSet,
-                                         Multimap<String, NormalizedField> result,
-                                         ImmutableListMultimap.Builder<NormalizedField, Field> mergedFieldByNormalizedField,
+                                         Multimap<String, ExecutableNormalizedField> result,
+                                         ImmutableListMultimap.Builder<ExecutableNormalizedField, Field> mergedFieldByNormalizedField,
                                          Set<GraphQLObjectType> possibleObjects,
                                          int level,
-                                         NormalizedField parent) {
+                                         ExecutableNormalizedField parent) {
 
         for (Selection<?> selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
@@ -250,12 +250,12 @@ public class NormalizedQueryFactory {
     }
 
     private void collectFragmentSpread(FieldCollectorNormalizedQueryParams parameters,
-                                       Multimap<String, NormalizedField> result,
-                                       ImmutableListMultimap.Builder<NormalizedField, Field> mergedFieldByNormalizedField,
+                                       Multimap<String, ExecutableNormalizedField> result,
+                                       ImmutableListMultimap.Builder<ExecutableNormalizedField, Field> mergedFieldByNormalizedField,
                                        FragmentSpread fragmentSpread,
                                        Set<GraphQLObjectType> possibleObjects,
                                        int level,
-                                       NormalizedField parent) {
+                                       ExecutableNormalizedField parent) {
         if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), fragmentSpread.getDirectives())) {
             return;
         }
@@ -270,11 +270,11 @@ public class NormalizedQueryFactory {
     }
 
     private void collectInlineFragment(FieldCollectorNormalizedQueryParams parameters,
-                                       Multimap<String, NormalizedField> result,
-                                       ImmutableListMultimap.Builder<NormalizedField, Field> mergedFieldByNormalizedField,
+                                       Multimap<String, ExecutableNormalizedField> result,
+                                       ImmutableListMultimap.Builder<ExecutableNormalizedField, Field> mergedFieldByNormalizedField,
                                        InlineFragment inlineFragment,
                                        Set<GraphQLObjectType> possibleObjects,
-                                       int level, NormalizedField parent) {
+                                       int level, ExecutableNormalizedField parent) {
         if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), inlineFragment.getDirectives())) {
             return;
         }
@@ -289,12 +289,12 @@ public class NormalizedQueryFactory {
     }
 
     private void collectField(FieldCollectorNormalizedQueryParams parameters,
-                              Multimap<String, NormalizedField> result,
-                              ImmutableListMultimap.Builder<NormalizedField, Field> normalizedFieldToMergedField,
+                              Multimap<String, ExecutableNormalizedField> result,
+                              ImmutableListMultimap.Builder<ExecutableNormalizedField, Field> normalizedFieldToMergedField,
                               Field field,
                               Set<GraphQLObjectType> objectTypes,
                               int level,
-                              NormalizedField parent) {
+                              ExecutableNormalizedField parent) {
         if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), field.getDirectives())) {
             return;
         }
@@ -307,8 +307,8 @@ public class NormalizedQueryFactory {
         GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(parameters.getGraphQLSchema(), objectTypes.iterator().next(), fieldName);
 
         if (result.containsKey(resultKey)) {
-            Collection<NormalizedField> existingNFs = result.get(resultKey);
-            NormalizedField matchingNF = findMatchingNF(parameters.getGraphQLSchema(), existingNFs, fieldDefinition, field.getArguments());
+            Collection<ExecutableNormalizedField> existingNFs = result.get(resultKey);
+            ExecutableNormalizedField matchingNF = findMatchingNF(parameters.getGraphQLSchema(), existingNFs, fieldDefinition, field.getArguments());
             if (matchingNF != null) {
                 matchingNF.addObjectTypeNames(map(objectTypes, GraphQLObjectType::getName));
                 normalizedFieldToMergedField.put(matchingNF, field);
@@ -322,7 +322,7 @@ public class NormalizedQueryFactory {
             normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getNormalizedVariableValues());
         }
         ImmutableList<String> objectTypeNames = map(objectTypes, GraphQLObjectType::getName);
-        NormalizedField normalizedField = NormalizedField.newNormalizedField()
+        ExecutableNormalizedField executableNormalizedField = ExecutableNormalizedField.newNormalizedField()
                 .alias(field.getAlias())
                 .resolvedArguments(argumentValues)
                 .normalizedArguments(normalizedArgumentValues)
@@ -333,12 +333,12 @@ public class NormalizedQueryFactory {
                 .parent(parent)
                 .build();
 
-        result.put(resultKey, normalizedField);
-        normalizedFieldToMergedField.put(normalizedField, field);
+        result.put(resultKey, executableNormalizedField);
+        normalizedFieldToMergedField.put(executableNormalizedField, field);
     }
 
-    private NormalizedField findMatchingNF(GraphQLSchema schema, Collection<NormalizedField> normalizedFields, GraphQLFieldDefinition fieldDefinition, List<Argument> arguments) {
-        for (NormalizedField nf : normalizedFields) {
+    private ExecutableNormalizedField findMatchingNF(GraphQLSchema schema, Collection<ExecutableNormalizedField> executableNormalizedFields, GraphQLFieldDefinition fieldDefinition, List<Argument> arguments) {
+        for (ExecutableNormalizedField nf : executableNormalizedFields) {
             GraphQLFieldDefinition nfFieldDefinition = nf.getOneFieldDefinition(schema);
             // same field name
             if (!nfFieldDefinition.getName().equals(fieldDefinition.getName())) {
