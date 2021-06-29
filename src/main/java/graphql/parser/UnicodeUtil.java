@@ -11,6 +11,8 @@ import java.io.StringWriter;
  */
 @Internal
 public class UnicodeUtil {
+    public static int MAX_UNICODE_CODE_POINT = 0x10FFFF;
+
     public static int parseAndWriteUnicode(StringWriter writer, String string, int i) {
         // Unicode characters can either be:
         //  - four hex characters in the form \\u597D, or
@@ -23,29 +25,40 @@ public class UnicodeUtil {
             writer.write(codepoint);
             return i + 4;
             // TODO error checking of invalid values
-        }
+        } else {
+            // Any number of hex characters e.g. \\u{1F37A}, which allows code points outside the Basic Multilingual Plane (BMP)
+            int startIx = i + 2;
+            int endIndexExclusive = startIx;
+            do {
+                if (endIndexExclusive + 1 >= string.length()) {
+                    throw new RuntimeException("invalid unicode encoding");
+                }
+            } while (string.charAt(++endIndexExclusive) != '}');
 
-        // Any number of hex characters e.g. \\u{1F37A}, which allows code points outside the Basic Multilingual Plane (BMP)
-        int startIx = i + 2;
-        int endIndexExclusive = startIx;
-        do {
-            if (endIndexExclusive + 1 >= string.length()) {
-                throw new RuntimeException("invalid unicode encoding");
+            String hexStr = string.substring(startIx, endIndexExclusive);
+            Integer hexValue = Integer.parseInt(hexStr, 16);
+            if (isValidUnicodeCodePoint(hexValue)) {
+                char[] chars = Character.toChars(hexValue);
+                try {
+                    writer.write(chars);
+                } catch (IOException e) {
+                    return Assert.assertShouldNeverHappen();
+                }
+                return endIndexExclusive;
+            } else {
+                throw new RuntimeException("invalid unicode code point");
             }
-        } while (string.charAt(++endIndexExclusive) != '}');
-
-        String hexStr = string.substring(startIx, endIndexExclusive);
-        char[] chars = Character.toChars(Integer.parseInt(hexStr, 16));
-        try {
-            writer.write(chars);
-        } catch (IOException e) {
-            return Assert.assertShouldNeverHappen();
         }
-        return endIndexExclusive;
+//        Assert.assertShouldNeverHappen();
         // TODO error checking of invalid values
     }
 
     private static boolean isNotBracedEscape(String string, int i) {
         return string.charAt(i + 1) != '{';
+    }
+
+    private static boolean isValidUnicodeCodePoint(Integer value) {
+        // TODO: Add bad surrogate checks
+        return value < MAX_UNICODE_CODE_POINT;
     }
 }

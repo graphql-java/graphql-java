@@ -4,6 +4,7 @@ import graphql.language.Document
 import graphql.language.Field
 import graphql.language.OperationDefinition
 import graphql.language.StringValue
+import graphql.schema.validation.InvalidSchemaException
 import spock.lang.Ignore
 import spock.lang.Specification
 
@@ -110,7 +111,6 @@ class UnicodeUtilParserTest extends Specification {
         false
     }
 
-    @Ignore
     def "invalid unicode code point"() {
         def input = '''
               {
@@ -122,8 +122,8 @@ class UnicodeUtilParserTest extends Specification {
         Document document = Parser.parse(input)
 
         then:
-        // TODO: Raise exception
-        false
+        Exception e = thrown(Exception)
+        e.message == "invalid unicode code point"
     }
 
     @Ignore
@@ -151,7 +151,7 @@ class UnicodeUtilParserTest extends Specification {
         String parsed = StringValueParsing.parseSingleQuotedString(input)
 
         then:
-        // TODO: Discuss whether to raise exception
+        // TODO: Discuss whether to raise exception. How do we want to treat leading zeroes?
         false
     }
 
@@ -169,6 +169,7 @@ class UnicodeUtilParserTest extends Specification {
         a GraphQL document and is {Ignored}.
     */
     @Ignore
+    // TODO: BOM was previously implemented. Do we want to change the prior implementation?
     def "byte order mark to be ignored" () {
         // The Byte Order Mark indicates a Unicode stream, and whether the stream is high-endian or low-endian
         given:
