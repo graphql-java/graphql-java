@@ -30,7 +30,9 @@ public class StringValueParsing {
         String[] lines = rawValue.split("\\n");
         Integer commonIndent = null;
         for (int i = 0; i < lines.length; i++) {
-            if (i == 0) continue;
+            if (i == 0) {
+                continue;
+            }
             String line = lines[i];
             int length = line.length();
             int indent = leadingWhitespace(line);
@@ -44,7 +46,9 @@ public class StringValueParsing {
         if (commonIndent != null) {
             for (int i = 0; i < lineList.size(); i++) {
                 String line = lineList.get(i);
-                if (i == 0) continue;
+                if (i == 0) {
+                    continue;
+                }
                 if (line.length() > commonIndent) {
                     line = line.substring(commonIndent);
                     lineList.set(i, line);
@@ -135,10 +139,7 @@ public class StringValueParsing {
                     writer.write('\t');
                     continue;
                 case 'u':
-                    String hexStr = string.substring(i + 1, i + 5);
-                    int codepoint = Integer.parseInt(hexStr, 16);
-                    i += 4;
-                    writer.write(codepoint);
+                    i = UnicodeUtil.parseAndWriteUnicode(writer, string, i);
                     continue;
                 default:
                     Assert.assertShouldNeverHappen();

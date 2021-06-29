@@ -23,7 +23,6 @@ class UnicodeUtilParserTest extends Specification {
 
     // With this RFC, code points outside the Basic Multilingual Plane can be parsed. For example, emojis
     // Previously emojis could only be parsed with surrogate pairs. Now they can be parsed with the code point directly
-    @Ignore
     def "parsing beer stein as escaped unicode"() {
         given:
         def input = '''"\\u{1F37A} hello"'''
@@ -35,7 +34,6 @@ class UnicodeUtilParserTest extends Specification {
         parsed == '''🍺 hello''' // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
     }
 
-    @Ignore
     def "parsing beer mug non escaped"() {
         given:
         def input = '''"🍺 hello"'''
@@ -47,7 +45,6 @@ class UnicodeUtilParserTest extends Specification {
         parsed == '''🍺 hello''' // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
     }
 
-    @Ignore
     def "allow braced escaped unicode"() {
         def input = '''
               {
@@ -74,7 +71,6 @@ class UnicodeUtilParserTest extends Specification {
         avoided as a variable-width unicode escape sequence is a clearer way to encode
         such code points.
     */
-    @Ignore
     def "allow surrogate pairs escaped unicode"() {
         def input = '''
               {

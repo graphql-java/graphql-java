@@ -120,12 +120,12 @@ fragment BlockStringCharacter:
 ExtendedSourceCharacter;
 
 fragment StringCharacter:
-([\u0009\u0020\u0021] | [\u0023-\u005b] | [\u005d-\u{10FFFF}]) |  // this is SoureCharacter without '"' and '\'
+([\u0009\u0020\u0021] | [\u0023-\u005b] | [\u005d-\u{10FFFF}]) |  // this is SourceCharacter without '"' and '\'
 '\\u' EscapedUnicode  |
 '\\' EscapedCharacter;
 
 fragment EscapedCharacter :  ["\\/bfnrt];
-fragment EscapedUnicode : Hex Hex Hex Hex;
+fragment EscapedUnicode : Hex Hex Hex Hex | '{' Hex+ '}';
 fragment Hex : [0-9a-fA-F];
 
 
