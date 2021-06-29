@@ -14,8 +14,8 @@ import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
-import graphql.normalized.NormalizedQuery;
-import graphql.normalized.NormalizedQueryFactory;
+import graphql.normalized.ExecutableNormalizedOperation;
+import graphql.normalized.ExecutableNormalizedOperationFactory;
 import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import org.dataloader.DataLoaderRegistry;
@@ -54,7 +54,7 @@ public class ExecutionContext {
     private final Locale locale;
     private final ValueUnboxer valueUnboxer;
     private final ExecutionInput executionInput;
-    private final Supplier<NormalizedQuery> queryTree;
+    private final Supplier<ExecutableNormalizedOperation> queryTree;
 
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
@@ -77,7 +77,7 @@ public class ExecutionContext {
         this.errors.set(builder.errors);
         this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
-        queryTree = FpKit.interThreadMemoize(() -> NormalizedQueryFactory.createNormalizedQuery(graphQLSchema, operationDefinition, fragmentsByName, variables));
+        queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, variables));
     }
 
 
@@ -238,7 +238,7 @@ public class ExecutionContext {
         return subscriptionStrategy;
     }
 
-    public Supplier<NormalizedQuery> getNormalizedQueryTree() {
+    public Supplier<ExecutableNormalizedOperation> getNormalizedQueryTree() {
         return queryTree;
     }
 

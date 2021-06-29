@@ -7,7 +7,7 @@ import graphql.language.Document
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
-class NormalizedQueryToAstCompilerTest extends Specification {
+class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
 
     def "test"() {
         String sdl = """
@@ -89,7 +89,7 @@ class NormalizedQueryToAstCompilerTest extends Specification {
         """
         def fields = createNormalizedFields(sdl, query)
         when:
-        def document = NormalizedQueryToAstCompiler.compileToDocument(fields)
+        def document = ExecutableNormalizedOperationToAstCompiler.compileToDocument(fields)
         then:
         AstPrinter.printAst(document) == '''query {
   ... on Query {
@@ -179,7 +179,7 @@ class NormalizedQueryToAstCompilerTest extends Specification {
         '''
         def fields = createNormalizedFields(sdl, query)
         when:
-        def document = NormalizedQueryToAstCompiler.compileToDocument(fields)
+        def document = ExecutableNormalizedOperationToAstCompiler.compileToDocument(fields)
         then:
         AstPrinter.printAst(document) == '''query {
   ... on Query {
@@ -225,7 +225,7 @@ class NormalizedQueryToAstCompilerTest extends Specification {
         '''
         def fields = createNormalizedFields(sdl, query)
         when:
-        def document = NormalizedQueryToAstCompiler.compileToDocument(fields)
+        def document = ExecutableNormalizedOperationToAstCompiler.compileToDocument(fields)
         then:
         AstPrinter.printAst(document) == '''query {
   ... on Query {
@@ -236,13 +236,13 @@ class NormalizedQueryToAstCompilerTest extends Specification {
     }
 
 
-    private List<NormalizedField> createNormalizedFields(String sld, String query) {
+    private List<ExecutableNormalizedField> createNormalizedFields(String sld, String query) {
         GraphQLSchema schema = TestUtil.schema(sld)
         assertValidQuery(schema, query)
         Document originalDocument = TestUtil.parseQuery(query)
 
-        NormalizedQueryFactory dependencyGraph = new NormalizedQueryFactory();
-        def tree = dependencyGraph.createNormalizedQueryWithRawVariables(schema, originalDocument, null, [:])
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, originalDocument, null, [:])
         return tree.getTopLevelFields()
     }
 

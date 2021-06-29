@@ -31,7 +31,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
  * Intentionally Mutable
  */
 @Internal
-public class NormalizedField {
+public class ExecutableNormalizedField {
     private final String alias;
     private final ImmutableMap<String, NormalizedInputValue> normalizedArguments;
     private final LinkedHashMap<String, Object> resolvedArguments;
@@ -39,14 +39,14 @@ public class NormalizedField {
 
     // Mutable List on purpose: it is modified after creation
     private final LinkedHashSet<String> objectTypeNames;
-    private final ArrayList<NormalizedField> children;
-    private NormalizedField parent;
+    private final ArrayList<ExecutableNormalizedField> children;
+    private ExecutableNormalizedField parent;
 
     private final String fieldName;
     private final int level;
 
 
-    private NormalizedField(Builder builder) {
+    private ExecutableNormalizedField(Builder builder) {
         this.alias = builder.alias;
         this.resolvedArguments = builder.resolvedArguments;
         this.normalizedArguments = builder.normalizedArguments;
@@ -110,8 +110,8 @@ public class NormalizedField {
         this.objectTypeNames.addAll(objectTypeNames);
     }
 
-    public void addChild(NormalizedField normalizedField) {
-        this.children.add(normalizedField);
+    public void addChild(ExecutableNormalizedField executableNormalizedField) {
+        this.children.add(executableNormalizedField);
     }
 
     public void clearChildren() {
@@ -174,7 +174,7 @@ public class NormalizedField {
     }
 
 
-    public NormalizedField transform(Consumer<Builder> builderConsumer) {
+    public ExecutableNormalizedField transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
         return builder.build();
@@ -212,7 +212,7 @@ public class NormalizedField {
 
     public List<String> getListOfResultKeys() {
         LinkedList<String> list = new LinkedList<>();
-        NormalizedField current = this;
+        ExecutableNormalizedField current = this;
         while (current != null) {
             list.addFirst(current.getResultKey());
             current = current.parent;
@@ -220,7 +220,7 @@ public class NormalizedField {
         return list;
     }
 
-    public List<NormalizedField> getChildren() {
+    public List<ExecutableNormalizedField> getChildren() {
         return children;
     }
 
@@ -228,11 +228,11 @@ public class NormalizedField {
         return level;
     }
 
-    public NormalizedField getParent() {
+    public ExecutableNormalizedField getParent() {
         return parent;
     }
 
-    public void replaceParent(NormalizedField newParent) {
+    public void replaceParent(ExecutableNormalizedField newParent) {
         this.parent = newParent;
     }
 
@@ -243,12 +243,12 @@ public class NormalizedField {
                 objectTypeNamesToString() + "." + fieldName +
                 ", alias=" + alias +
                 ", level=" + level +
-                ", children=" + children.stream().map(NormalizedField::toString).collect(Collectors.joining("\n")) +
+                ", children=" + children.stream().map(ExecutableNormalizedField::toString).collect(Collectors.joining("\n")) +
                 '}';
     }
 
-    public List<NormalizedField> getChildren(int includingRelativeLevel) {
-        List<NormalizedField> result = new ArrayList<>();
+    public List<ExecutableNormalizedField> getChildren(int includingRelativeLevel) {
+        List<ExecutableNormalizedField> result = new ArrayList<>();
         assertTrue(includingRelativeLevel >= 1, () -> "relative level must be >= 1");
 
         this.getChildren().forEach(child -> {
@@ -257,14 +257,14 @@ public class NormalizedField {
         return result;
     }
 
-    public void traverseSubTree(Consumer<NormalizedField> consumer) {
+    public void traverseSubTree(Consumer<ExecutableNormalizedField> consumer) {
         this.getChildren().forEach(child -> {
             traverseImpl(child, consumer, 1, Integer.MAX_VALUE);
         });
     }
 
-    private void traverseImpl(NormalizedField root,
-                              Consumer<NormalizedField> consumer,
+    private void traverseImpl(ExecutableNormalizedField root,
+                              Consumer<ExecutableNormalizedField> consumer,
                               int curRelativeLevel,
                               int abortAfter) {
         if (curRelativeLevel > abortAfter) {
@@ -279,9 +279,9 @@ public class NormalizedField {
     public static class Builder {
         private LinkedHashSet<String> objectTypeNames = new LinkedHashSet<>();
         private String fieldName;
-        private ArrayList<NormalizedField> children = new ArrayList<>();
+        private ArrayList<ExecutableNormalizedField> children = new ArrayList<>();
         private int level;
-        private NormalizedField parent;
+        private ExecutableNormalizedField parent;
         private String alias;
         private ImmutableMap<String, NormalizedInputValue> normalizedArguments = ImmutableKit.emptyMap();
         private LinkedHashMap<String, Object> resolvedArguments = new LinkedHashMap<>();
@@ -291,7 +291,7 @@ public class NormalizedField {
 
         }
 
-        private Builder(NormalizedField existing) {
+        private Builder(ExecutableNormalizedField existing) {
             this.alias = existing.alias;
             this.normalizedArguments = existing.normalizedArguments;
             this.astArguments = existing.astArguments;
@@ -340,7 +340,7 @@ public class NormalizedField {
         }
 
 
-        public Builder children(List<NormalizedField> children) {
+        public Builder children(List<ExecutableNormalizedField> children) {
             this.children.clear();
             this.children.addAll(children);
             return this;
@@ -351,13 +351,13 @@ public class NormalizedField {
             return this;
         }
 
-        public Builder parent(NormalizedField parent) {
+        public Builder parent(ExecutableNormalizedField parent) {
             this.parent = parent;
             return this;
         }
 
-        public NormalizedField build() {
-            return new NormalizedField(this);
+        public ExecutableNormalizedField build() {
+            return new ExecutableNormalizedField(this);
         }
 
 

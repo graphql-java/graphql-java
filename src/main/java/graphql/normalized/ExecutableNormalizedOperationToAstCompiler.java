@@ -30,9 +30,9 @@ import static graphql.language.SelectionSet.newSelectionSet;
 import static graphql.language.TypeName.newTypeName;
 
 @Internal
-public class NormalizedQueryToAstCompiler {
+public class ExecutableNormalizedOperationToAstCompiler {
 
-    public static Document compileToDocument(List<NormalizedField> topLevelFields) {
+    public static Document compileToDocument(List<ExecutableNormalizedField> topLevelFields) {
         List<Selection<?>> selections = selectionsForNormalizedFields(topLevelFields);
         SelectionSet selectionSet = newSelectionSet(selections).build();
         Document document = Document.newDocument().definition(newOperationDefinition()
@@ -43,29 +43,29 @@ public class NormalizedQueryToAstCompiler {
         return document;
     }
 
-    private static List<Selection<?>> selectionsForNormalizedFields(List<NormalizedField> normalizedFields) {
+    private static List<Selection<?>> selectionsForNormalizedFields(List<ExecutableNormalizedField> executableNormalizedFields) {
         ImmutableList.Builder<Selection<?>> result = ImmutableList.builder();
-        for (NormalizedField nf : normalizedFields) {
+        for (ExecutableNormalizedField nf : executableNormalizedFields) {
             result.addAll(selectionForNormalizedField(nf));
         }
         return result.build();
     }
 
-    private static List<Selection<?>> selectionForNormalizedField(NormalizedField normalizedField) {
+    private static List<Selection<?>> selectionForNormalizedField(ExecutableNormalizedField executableNormalizedField) {
         List<Selection<?>> result = new ArrayList<>();
-        for (String objectType : normalizedField.getObjectTypeNames()) {
+        for (String objectType : executableNormalizedField.getObjectTypeNames()) {
             TypeName typeName = newTypeName(objectType).build();
-            List<Selection<?>> subSelections = selectionsForNormalizedFields(normalizedField.getChildren());
+            List<Selection<?>> subSelections = selectionsForNormalizedFields(executableNormalizedField.getChildren());
             SelectionSet selectionSet = null;
             if (subSelections.size() > 0) {
                 selectionSet = newSelectionSet()
                         .selections(subSelections)
                         .build();
             }
-            List<Argument> arguments = createArguments(normalizedField);
+            List<Argument> arguments = createArguments(executableNormalizedField);
             Field field = newField()
-                    .name(normalizedField.getFieldName())
-                    .alias(normalizedField.getAlias())
+                    .name(executableNormalizedField.getFieldName())
+                    .alias(executableNormalizedField.getAlias())
                     .selectionSet(selectionSet)
                     .arguments(arguments)
                     .build();
@@ -82,9 +82,9 @@ public class NormalizedQueryToAstCompiler {
         return newSelectionSet().selection(field).build();
     }
 
-    private static List<Argument> createArguments(NormalizedField normalizedField) {
+    private static List<Argument> createArguments(ExecutableNormalizedField executableNormalizedField) {
         ImmutableList.Builder<Argument> result = ImmutableList.builder();
-        ImmutableMap<String, NormalizedInputValue> normalizedArguments = normalizedField.getNormalizedArguments();
+        ImmutableMap<String, NormalizedInputValue> normalizedArguments = executableNormalizedField.getNormalizedArguments();
         for (String argName : normalizedArguments.keySet()) {
             Argument argument = newArgument()
                     .name(argName)
@@ -98,7 +98,7 @@ public class NormalizedQueryToAstCompiler {
     private static Value<?> argValue(Object value) {
         if (value instanceof List) {
             ArrayValue.Builder arrayValue = ArrayValue.newArrayValue();
-            arrayValue.values(map((List<Object>) value, NormalizedQueryToAstCompiler::argValue));
+            arrayValue.values(map((List<Object>) value, ExecutableNormalizedOperationToAstCompiler::argValue));
             return arrayValue.build();
         }
         if (value instanceof Map) {
