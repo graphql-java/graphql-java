@@ -4,6 +4,7 @@ import graphql.language.Document
 import graphql.language.Field
 import graphql.language.OperationDefinition
 import graphql.language.StringValue
+import spock.lang.Ignore
 import spock.lang.Specification
 
 class UnicodeUtilParserTest extends Specification {
@@ -22,6 +23,7 @@ class UnicodeUtilParserTest extends Specification {
 
     // With this RFC, code points outside the Basic Multilingual Plane can be parsed. For example, emojis
     // Previously emojis could only be parsed with surrogate pairs. Now they can be parsed with the code point directly
+    @Ignore
     def "parsing beer stein as escaped unicode"() {
         given:
         def input = '''"\\u{1F37A} hello"'''
@@ -33,6 +35,7 @@ class UnicodeUtilParserTest extends Specification {
         parsed == '''🍺 hello''' // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
     }
 
+    @Ignore
     def "parsing beer mug non escaped"() {
         given:
         def input = '''"🍺 hello"'''
@@ -44,6 +47,7 @@ class UnicodeUtilParserTest extends Specification {
         parsed == '''🍺 hello''' // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
     }
 
+    @Ignore
     def "allow braced escaped unicode"() {
         def input = '''
               {
@@ -65,11 +69,12 @@ class UnicodeUtilParserTest extends Specification {
         From the RFC:
         For legacy reasons, a *supplementary character* may be escaped by two
         fixed-width unicode escape sequences forming a *surrogate pair*. For example
-        the input `"\uD83D\uDCA9"` is a valid {StringValue} which represents the same
-        Unicode text as `"\u{1F4A9}"`. While this legacy form is allowed, it should be
+        the input `"\\uD83D\\uDCA9"` is a valid {StringValue} which represents the same
+        Unicode text as `"\\u{1F4A9}"`. While this legacy form is allowed, it should be
         avoided as a variable-width unicode escape sequence is a clearer way to encode
         such code points.
     */
+    @Ignore
     def "allow surrogate pairs escaped unicode"() {
         def input = '''
               {
@@ -93,6 +98,7 @@ class UnicodeUtilParserTest extends Specification {
         * Assert {trailingValue} is >= 0xDC00 and <= 0xDFFF (a *Trailing Surrogate*).
         * Return ({leadingValue} - 0xD800) × 0x400 + ({trailingValue} - 0xDC00) + 0x10000.
      */
+    @Ignore
     def "invalid surrogate pair"() {
         def input = '''
               {
@@ -108,6 +114,7 @@ class UnicodeUtilParserTest extends Specification {
         false
     }
 
+    @Ignore
     def "invalid unicode code point"() {
         def input = '''
               {
@@ -123,6 +130,7 @@ class UnicodeUtilParserTest extends Specification {
         false
     }
 
+    @Ignore
     def "invalid unpaired surrogate" () {
         def input = '''
               {
@@ -138,6 +146,7 @@ class UnicodeUtilParserTest extends Specification {
         false
     }
 
+    @Ignore
     def "invalid code point - too long" () {
         given:
         def input = '''"\\u{000000000}"'''
@@ -163,6 +172,7 @@ class UnicodeUtilParserTest extends Specification {
         As files are often concatenated, a *Byte Order Mark* may appear anywhere within
         a GraphQL document and is {Ignored}.
     */
+    @Ignore
     def "byte order mark to be ignored" () {
         // The Byte Order Mark indicates a Unicode stream, and whether the stream is high-endian or low-endian
         given:
@@ -176,6 +186,7 @@ class UnicodeUtilParserTest extends Specification {
     }
 
     // TODO: How do we want to handle control characters?
+    @Ignore
     def "escapes zero byte" () {
         // TODO: This is a test case from the JS implementation. Do we want to implement this case?
         given:
