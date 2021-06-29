@@ -3,6 +3,10 @@ package graphql.execution.preparsed.persisted;
 import graphql.ExecutionInput;
 import graphql.PublicApi;
 
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.Optional;
 
@@ -32,6 +36,8 @@ import java.util.Optional;
 @PublicApi
 public class ApolloPersistedQuerySupport extends PersistedQuerySupport {
 
+    private static final String CHECKSUM_TYPE = "SHA-256";
+
     public ApolloPersistedQuerySupport(PersistedQueryCache persistedQueryCache) {
         super(persistedQueryCache);
     }
@@ -42,9 +48,30 @@ public class ApolloPersistedQuerySupport extends PersistedQuerySupport {
         Map<String, Object> extensions = executionInput.getExtensions();
         Map<String, Object> persistedQuery = (Map<String, Object>) extensions.get("persistedQuery");
         if (persistedQuery != null) {
-            Object sha256Hash = persistedQuery.get("sha256Hash");
-            return Optional.ofNullable(sha256Hash);
+            String sha256Hash = persistedQuery.get("sha256Hash").toString();
+            String query = executionInput.getQuery();
+            if (query != null && (!query.isEmpty() && !query.equals(PERSISTED_QUERY_MARKER))) {
+                if (!isValidPersistedQueryId(sha256Hash, executionInput)) {
+                    throw new PersistedQueryIdInvalid(sha256Hash);
+                }
+            } else {
+                return Optional.ofNullable(sha256Hash);
+            }
         }
         return Optional.empty();
+    }
+
+    protected boolean isValidPersistedQueryId(String id, ExecutionInput executionInput) {
+        String query = executionInput.getQuery();
+        MessageDigest messageDigest;
+        try {
+            messageDigest = MessageDigest.getInstance(CHECKSUM_TYPE);
+        } catch (NoSuchAlgorithmException e) {
+            return false;
+        }
+
+        BigInteger bigInteger = new BigInteger(1, messageDigest.digest(query.getBytes(StandardCharsets.UTF_8)));
+        String calculatedChecksum = String.format("%064x", bigInteger);
+        return calculatedChecksum.equalsIgnoreCase(id);
     }
 }

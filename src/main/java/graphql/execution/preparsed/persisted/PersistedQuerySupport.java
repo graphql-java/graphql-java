@@ -54,7 +54,7 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
             }
             // ok there is no query id - we assume the query is indeed ready to go as is - ie its not a persisted query
             return parseAndValidateFunction.apply(executionInput);
-        } catch (PersistedQueryNotFound e) {
+        } catch (PersistedQueryError e) {
             return mkMissingError(e);
         }
     }
@@ -71,13 +71,13 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
     /**
      * Allows you to customize the graphql error that is sent back on a missing persistend query
      *
-     * @param persistedQueryNotFound the missing persistent query exception
+     * @param persistedQueryError the missing persistent query exception
      * @return a PreparsedDocumentEntry that holds an error
      */
-    protected PreparsedDocumentEntry mkMissingError(PersistedQueryNotFound persistedQueryNotFound) {
+    protected PreparsedDocumentEntry mkMissingError(PersistedQueryError persistedQueryError) {
         GraphQLError gqlError = GraphqlErrorBuilder.newError()
-                .errorType(persistedQueryNotFound).message(persistedQueryNotFound.getMessage())
-                .extensions(persistedQueryNotFound.getExtensions()).build();
+                .errorType(persistedQueryError).message(persistedQueryError.getMessage())
+                .extensions(persistedQueryError.getExtensions()).build();
         return new PreparsedDocumentEntry(gqlError);
     }
 }
