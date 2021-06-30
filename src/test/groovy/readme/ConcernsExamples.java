@@ -3,9 +3,12 @@ package readme;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import graphql.GraphQLContext;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLSchema;
+
+import java.util.concurrent.ConcurrentMap;
 
 import static graphql.StarWarsSchema.queryType;
 
