@@ -38,9 +38,9 @@ import static graphql.Assert.assertNotNull;
 @SuppressWarnings("unchecked")
 public class GraphQLContext {
 
-    protected final ConcurrentMap<Object, Object> map;
+    private final ConcurrentMap<Object, Object> map;
 
-    protected GraphQLContext(ConcurrentMap<Object, Object> map) {
+    private GraphQLContext(ConcurrentMap<Object, Object> map) {
         this.map = map;
     }
 
