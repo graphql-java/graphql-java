@@ -55,8 +55,7 @@ public class ApolloPersistedQuerySupport extends PersistedQuerySupport {
     }
 
     @Override
-    protected boolean persistedQueryIdIsInvalid(Object persistedQueryId, ExecutionInput executionInput) {
-        String query = executionInput.getQuery();
+    protected boolean persistedQueryIdIsInvalid(Object persistedQueryId, String queryText) {
         MessageDigest messageDigest;
         try {
             messageDigest = MessageDigest.getInstance(CHECKSUM_TYPE);
@@ -64,7 +63,7 @@ public class ApolloPersistedQuerySupport extends PersistedQuerySupport {
             return false;
         }
 
-        BigInteger bigInteger = new BigInteger(1, messageDigest.digest(query.getBytes(StandardCharsets.UTF_8)));
+        BigInteger bigInteger = new BigInteger(1, messageDigest.digest(queryText.getBytes(StandardCharsets.UTF_8)));
         String calculatedChecksum = String.format("%064x", bigInteger);
         return !calculatedChecksum.equalsIgnoreCase(persistedQueryId.toString());
     }

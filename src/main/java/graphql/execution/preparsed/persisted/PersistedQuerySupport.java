@@ -49,7 +49,7 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
                         throw new PersistedQueryNotFound(persistedQueryId);
                     }
                     // validate the queryText hash before returning to the cache which we assume will set it
-                    if (persistedQueryIdIsInvalid(persistedQueryId, executionInput)) {
+                    if (persistedQueryIdIsInvalid(persistedQueryId, queryText)) {
                         throw new PersistedQueryIdInvalid(persistedQueryId);
                     }
                     ExecutionInput newEI = executionInput.transform(builder -> builder.query(queryText));
@@ -73,7 +73,7 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
      */
     abstract protected Optional<Object> getPersistedQueryId(ExecutionInput executionInput);
 
-    protected boolean persistedQueryIdIsInvalid(Object persistedQueryId, ExecutionInput executionInput) {
+    protected boolean persistedQueryIdIsInvalid(Object persistedQueryId, String queryText) {
         return false;
     }
 
