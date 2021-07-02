@@ -95,7 +95,6 @@ dependencies {
     testImplementation group: 'junit', name: 'junit', version: '4.12'
     testImplementation 'org.spockframework:spock-core:2.0-groovy-3.0'
     testImplementation 'org.codehaus.groovy:groovy:3.0.8'
-    testImplementation 'org.codehaus.groovy:groovy-json:3.0.8'
     testImplementation 'cglib:cglib-nodep:3.3.0'
     testImplementation 'org.objenesis:objenesis:2.1'
     testImplementation 'com.google.code.gson:gson:2.8.0'
