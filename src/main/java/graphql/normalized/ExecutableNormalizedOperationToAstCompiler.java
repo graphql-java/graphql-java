@@ -2,6 +2,7 @@ package graphql.normalized;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.Assert;
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -11,12 +12,16 @@ import graphql.language.InlineFragment;
 import graphql.language.NullValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
+import graphql.language.OperationDefinition;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
 import graphql.language.TypeName;
 import graphql.language.Value;
+import graphql.schema.GraphQLSchema;
+import graphql.util.FpKit;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,23 +29,45 @@ import static graphql.collect.ImmutableKit.map;
 import static graphql.language.Argument.newArgument;
 import static graphql.language.Field.newField;
 import static graphql.language.InlineFragment.newInlineFragment;
+import static graphql.language.OperationDefinition.Operation.MUTATION;
 import static graphql.language.OperationDefinition.Operation.QUERY;
-import static graphql.language.OperationDefinition.newOperationDefinition;
+import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
 import static graphql.language.SelectionSet.newSelectionSet;
 import static graphql.language.TypeName.newTypeName;
 
 @Internal
 public class ExecutableNormalizedOperationToAstCompiler {
-
-    public static Document compileToDocument(List<ExecutableNormalizedField> topLevelFields) {
+    public static Document compileToDocument(GraphQLSchema schema, List<ExecutableNormalizedField> topLevelFields) {
         List<Selection<?>> selections = selectionsForNormalizedFields(topLevelFields);
-        SelectionSet selectionSet = newSelectionSet(selections).build();
-        Document document = Document.newDocument().definition(newOperationDefinition()
-                .operation(QUERY)
-                .selectionSet(selectionSet)
-                .build())
-                .build();
-        return document;
+
+        Map<OperationDefinition.Operation, ImmutableList<Selection<?>>> selectionsByOperationKind = FpKit.groupingBy(selections, (selection) -> {
+            if (!(selection instanceof InlineFragment)) {
+                throw Assert.<RuntimeException>assertShouldNeverHappen("Top level selection must be an inline fragment");
+            }
+
+            InlineFragment fragment = (InlineFragment) selection;
+            String operationTypeName = fragment.getTypeCondition().getName();
+            if (schema.getQueryType().getName().equals(operationTypeName)) {
+                return QUERY;
+            } else if (schema.isSupportingMutations() && schema.getMutationType().getName().equals(operationTypeName)) {
+                return MUTATION;
+            } else if (schema.isSupportingSubscriptions() && schema.getSubscriptionType().getName().equals(operationTypeName)) {
+                return SUBSCRIPTION;
+            } else {
+                throw Assert.<RuntimeException>assertShouldNeverHappen("Top level field type condition '%s' is not one of the operation kinds", operationTypeName);
+            }
+        });
+
+        Document.Builder documentBuilder = Document.newDocument();
+        selectionsByOperationKind.forEach((operationKind, operationSelections) -> {
+            SelectionSet operationSelectionSet = new SelectionSet(operationSelections);
+            documentBuilder.definition(OperationDefinition.newOperationDefinition()
+                    .operation(operationKind)
+                    .selectionSet(operationSelectionSet)
+                    .build());
+        });
+
+        return documentBuilder.build();
     }
 
     private static List<Selection<?>> selectionsForNormalizedFields(List<ExecutableNormalizedField> executableNormalizedFields) {
