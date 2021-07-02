@@ -3,7 +3,6 @@ import java.text.SimpleDateFormat
 plugins {
     id 'java'
     id 'java-library'
-    id 'maven'
     id 'maven-publish'
     id 'antlr'
     id 'signing'
@@ -298,10 +297,3 @@ signing {
 tasks.withType(PublishToMavenRepository) {
     dependsOn build
 }
-
-
-task myWrapper(type: Wrapper) {
-    gradleVersion = '6.6.1'
-    distributionUrl = "https://services.gradle.org/distributions/gradle-${gradleVersion}-all.zip"
-}
-
