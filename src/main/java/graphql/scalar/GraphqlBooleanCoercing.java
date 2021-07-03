@@ -22,7 +22,14 @@ public class GraphqlBooleanCoercing implements Coercing<Boolean, Boolean> {
         if (input instanceof Boolean) {
             return (Boolean) input;
         } else if (input instanceof String) {
-            return Boolean.parseBoolean((String) input);
+            String lStr = ((String) input).toLowerCase();
+            if (lStr.equals("true")) {
+                return true;
+            }
+            if (lStr.equals("false")) {
+                return false;
+            }
+            return null;
         } else if (isNumberIsh(input)) {
             BigDecimal value;
             try {
