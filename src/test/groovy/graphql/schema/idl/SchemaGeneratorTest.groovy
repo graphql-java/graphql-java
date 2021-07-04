@@ -981,6 +981,7 @@ class SchemaGeneratorTest extends Specification {
         type Query {
             foo: MyScalar
         }
+        "My scalar has a specifiedBy url"
         scalar MyScalar @specifiedBy(url: "myUrl.example")
         """
         when:
@@ -989,6 +990,7 @@ class SchemaGeneratorTest extends Specification {
 
         then:
         scalar.getSpecifiedByUrl() == "myUrl.example"
+        scalar.getDescription() == "My scalar has a specifiedBy url"
     }
 
     def "specifiedBy requires an url "() {
