@@ -3,6 +3,7 @@ package graphql.schema.idl
 
 import graphql.TestUtil
 import graphql.introspection.Introspection
+import graphql.language.Node
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLDirectiveContainer
@@ -1258,8 +1259,8 @@ class SchemaGeneratorTest extends Specification {
         def schema = schema(spec)
         schema.getType("Query") instanceof GraphQLObjectType
         GraphQLObjectType query = schema.getType("Query") as GraphQLObjectType
-        Object arg1 = printAst(query.getFieldDefinition("field").getArgument("arg1").argumentDefaultValue.value)
-        Object arg2 = printAst(query.getFieldDefinition("field").getArgument("arg2").argumentDefaultValue.value)
+        Object arg1 = printAst(query.getFieldDefinition("field").getArgument("arg1").argumentDefaultValue.value as Node)
+        Object arg2 = printAst(query.getFieldDefinition("field").getArgument("arg2").argumentDefaultValue.value as Node)
 
         expect:
         arg1 == "10"
@@ -1334,7 +1335,7 @@ class SchemaGeneratorTest extends Specification {
 
         directive.arguments[argIndex].name == argName
         directive.arguments[argIndex].type == argType
-        printAst(directive.arguments[argIndex].argumentValue.value) == argValue
+        printAst(directive.arguments[argIndex].argumentValue.value as Node) == argValue
 
         // arguments are sorted
         where:
@@ -1416,7 +1417,7 @@ class SchemaGeneratorTest extends Specification {
         def schema = schema(spec)
         schema.getType("Query") instanceof GraphQLObjectType
         GraphQLObjectType query = schema.getType("Query") as GraphQLObjectType
-        String arg = printAst(query.getFieldDefinition("field").getArgument("arg").argumentDefaultValue.value)
+        String arg = printAst(query.getFieldDefinition("field").getArgument("arg").argumentDefaultValue.value as Node)
 
         expect:
         arg == '{str : "string", num : 100}'
@@ -1656,7 +1657,7 @@ class SchemaGeneratorTest extends Specification {
         def directiveArg = intDirective.getArgument("inception")
         directiveArg.name == "inception"
         directiveArg.type == GraphQLBoolean
-        printAst(directiveArg.argumentValue.value) == "true"
+        printAst(directiveArg.argumentValue.value as Node) == "true"
         directiveArg.argumentDefaultValue.value == null
     }
 
@@ -1695,7 +1696,7 @@ class SchemaGeneratorTest extends Specification {
                 Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION,
         )
         directive.getArgument("knownArg").type == GraphQLString
-        printAst(directive.getArgument("knownArg").argumentDefaultValue.value) == '"defaultValue"'
+        printAst(directive.getArgument("knownArg").argumentDefaultValue.value as Node) == '"defaultValue"'
     }
 
     def "directive definitions don't have to provide default values"() {
@@ -1723,8 +1724,8 @@ class SchemaGeneratorTest extends Specification {
 
         def directiveTest2 = schema.getDirective("test2")
         GraphQLNonNull.nonNull(GraphQLBoolean).isEqualTo(directiveTest2.getArgument("include").type)
-        printAst(directiveTest2.getArgument("include").argumentValue.value) == "true"
-        printAst(directiveTest2.getArgument("include").argumentDefaultValue.value) == "true"
+        printAst(directiveTest2.getArgument("include").argumentValue.value as Node) == "true"
+        printAst(directiveTest2.getArgument("include").argumentDefaultValue.value as Node) == "true"
 
     }
 
@@ -1750,12 +1751,12 @@ class SchemaGeneratorTest extends Specification {
         then:
         def directive = schema.getObjectType("Query").getFieldDefinition("f").getDirective("testDirective")
         directive.getArgument("knownArg1").type == GraphQLString
-        printAst(directive.getArgument("knownArg1").argumentValue.value) == '"overrideVal1"'
-        printAst(directive.getArgument("knownArg1").argumentDefaultValue.value) == '"defaultValue1"'
+        printAst(directive.getArgument("knownArg1").argumentValue.value as Node) == '"overrideVal1"'
+        printAst(directive.getArgument("knownArg1").argumentDefaultValue.value as Node) == '"defaultValue1"'
 
         directive.getArgument("knownArg2").type == GraphQLInt
-        printAst(directive.getArgument("knownArg2").argumentValue.value) == "666"
-        printAst(directive.getArgument("knownArg2").argumentDefaultValue.value) == "666"
+        printAst(directive.getArgument("knownArg2").argumentValue.value as Node) == "666"
+        printAst(directive.getArgument("knownArg2").argumentDefaultValue.value as Node) == "666"
 
         directive.getArgument("knownArg3").type == GraphQLString
         directive.getArgument("knownArg3").argumentValue.value == null
@@ -1784,8 +1785,8 @@ class SchemaGeneratorTest extends Specification {
         def directive = f1.getDirective("deprecated")
         directive.name == "deprecated"
         directive.getArgument("reason").type == GraphQLString
-        printAst(directive.getArgument("reason").argumentValue.value) == '"No longer supported"'
-        printAst(directive.getArgument("reason").argumentDefaultValue.value) == '"No longer supported"'
+        printAst(directive.getArgument("reason").argumentValue.value as Node) == '"No longer supported"'
+        printAst(directive.getArgument("reason").argumentDefaultValue.value as Node) == '"No longer supported"'
         directive.validLocations().collect { it.name() } == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
 
         when:
@@ -1797,8 +1798,8 @@ class SchemaGeneratorTest extends Specification {
         def directive2 = f2.getDirective("deprecated")
         directive2.name == "deprecated"
         directive2.getArgument("reason").type == GraphQLString
-        printAst(directive2.getArgument("reason").argumentValue.value) == '"Just because"'
-        printAst(directive2.getArgument("reason").argumentDefaultValue.value) == '"No longer supported"'
+        printAst(directive2.getArgument("reason").argumentValue.value as Node) == '"Just because"'
+        printAst(directive2.getArgument("reason").argumentDefaultValue.value as Node) == '"No longer supported"'
         directive2.validLocations().collect { it.name() } == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
 
     }
@@ -1912,7 +1913,7 @@ class SchemaGeneratorTest extends Specification {
         def queryType = schema.getObjectType("Query")
         def fieldWithEnum = queryType.getFieldDefinition("fieldWithEnum")
         def arg = fieldWithEnum.getArgument("arg")
-        printAst(arg.argumentDefaultValue.value) == '{value : ONE}'
+        printAst(arg.argumentDefaultValue.value as Node) == '{value : ONE}'
     }
 
     def "extensions are captured into runtime objects"() {
@@ -2176,7 +2177,7 @@ class SchemaGeneratorTest extends Specification {
         then:
         directive != null
         GraphQLTypeUtil.simplePrint(directive.getArgument("enumArguments").getType()) == "[SomeEnum!]"
-        printAst(directive.getArgument("enumArguments").getArgumentDefaultValue().value) == "[]"
+        printAst(directive.getArgument("enumArguments").getArgumentDefaultValue().value as Node) == "[]"
     }
 
     def "scalar used as output is not in additional types"() {
@@ -2298,5 +2299,42 @@ class SchemaGeneratorTest extends Specification {
         def inputType = schema.getType("ArgInput") as GraphQLInputObjectType
         def listOfEnumValues = inputType.getFieldDefinitions().collect({ it.getName() })
         listOfEnumValues.sort() == ["fieldA", "fieldB"]
+    }
+
+    def "shows that issue 2238 and 2290 - recursive input types on directives - has been fixed"() {
+        def sdl1 = '''
+        directive @test(arg: Recursive) on OBJECT
+
+        input Recursive {
+          deeper: Recursive
+          name: String
+        }
+        type Test @test(arg: { deeper: {name: "test"}}){
+          field: String
+        }
+        type Query {
+            test : Test
+        }
+        '''
+        when:
+        GraphQLSchema schema = TestUtil.schema(sdl1)
+        then:
+        schema != null
+
+        def sdl2 = '''
+        input MyInput {
+          a: String
+          b: MyInput
+        }
+        directive @myDirective(x: MyInput) on FIELD_DEFINITION
+        type Query {
+          f: String @myDirective(x: {b: {a:"yada"}})
+        }
+        '''
+
+        when:
+        schema = TestUtil.schema(sdl2)
+        then:
+        schema != null
     }
 }
