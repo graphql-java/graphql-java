@@ -2,6 +2,7 @@ package graphql.schema
 
 import graphql.AssertException
 import graphql.TestUtil
+import graphql.language.Node
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
@@ -179,6 +180,9 @@ class GraphQLDirectiveTest extends Specification {
     }
 
     static boolean assertDirectiveContainer(GraphQLDirectiveContainer container) {
+        assert container.hasDirective("d1")
+        assert container.hasDirective("dr")
+        assert !container.hasDirective("non existent")
         assert container.getDirectives().collect({ it.name }) == ["d1", "dr", "dr"]
         assert container.getDirective("d1").name == "d1"
         assert container.getDirectivesByName().keySet() == ["d1"] as Set
@@ -189,7 +193,7 @@ class GraphQLDirectiveTest extends Specification {
 
         assert container.getDirectives("d1").size() == 1
         assert container.getDirectives("dr").size() == 2
-        assert container.getDirectives("dr").collect({ printAst(it.getArgument("arg").argumentValue.value) }) == ['"a1"', '"a2"']
+        assert container.getDirectives("dr").collect({ printAst(it.getArgument("arg").argumentValue.value as Node) }) == ['"a1"', '"a2"']
 
         try {
             container.getDirective("dr")
