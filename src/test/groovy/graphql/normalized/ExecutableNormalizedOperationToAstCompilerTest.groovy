@@ -4,8 +4,14 @@ import graphql.GraphQL
 import graphql.TestUtil
 import graphql.language.AstPrinter
 import graphql.language.Document
+import graphql.language.OperationDefinition
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
+
+import static graphql.language.OperationDefinition.Operation.MUTATION
+import static graphql.language.OperationDefinition.Operation.QUERY
+import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION
+import static graphql.normalized.ExecutableNormalizedOperationToAstCompiler.compileToDocument
 
 class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
     def "test"() {
@@ -88,7 +94,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, fields)
+        def document = compileToDocument(QUERY, fields)
         then:
         AstPrinter.printAst(document) == '''query {
   ... on Query {
@@ -179,7 +185,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, fields)
+        def document = compileToDocument(QUERY, fields)
         then:
         AstPrinter.printAst(document) == '''query {
   ... on Query {
@@ -226,7 +232,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, fields)
+        def document = compileToDocument(QUERY, fields)
         then:
         AstPrinter.printAst(document) == '''query {
   ... on Query {
@@ -257,7 +263,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, fields)
+        def document = compileToDocument(MUTATION, fields)
         then:
         AstPrinter.printAst(document) == '''mutation {
   ... on Mutation {
@@ -267,12 +273,9 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
 '''
     }
 
-    def "test different operation kinds together"() {
+    def "test subscriptions"() {
         def sdl = '''
         type Query {
-            foo1(arg: I): String
-        }
-        type Mutation {
             foo1(arg: I): String
         }
         type Subscription {
@@ -282,42 +285,18 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
             arg1: String
         }
         '''
-        def mutationQuery = '''mutation {
-            foo1(arg: { arg1: "Mutation" })
-            foo2: foo1(arg: { arg1: "Mutation2" })
-        }
-        '''
-        def subscriptionQuery = '''subscription {
-            foo1(arg: { arg1: "Subscription" })
-        }
-        '''
-        def query = '''query {
-            foo1(arg: { arg1: "Query" })
+        def query = '''subscription {
+            foo1(arg: {
+             arg1: "Subscription"
+            })
         }
         '''
         GraphQLSchema schema = TestUtil.schema(sdl)
-        def queryFields = createNormalizedFields(schema, query)
-        def mutationFields = createNormalizedFields(schema, mutationQuery)
-        def subscriptionFields = createNormalizedFields(schema, subscriptionQuery)
+        def fields = createNormalizedFields(schema, query)
         when:
-        def document = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, queryFields + mutationFields + subscriptionFields)
+        def document = compileToDocument(SUBSCRIPTION, fields)
         then:
-        AstPrinter.printAst(document) == '''query {
-  ... on Query {
-    foo1(arg: {arg1 : "Query"})
-  }
-}
-
-mutation {
-  ... on Mutation {
-    foo1(arg: {arg1 : "Mutation"})
-  }
-  ... on Mutation {
-    foo2: foo1(arg: {arg1 : "Mutation2"})
-  }
-}
-
-subscription {
+        AstPrinter.printAst(document) == '''subscription {
   ... on Subscription {
     foo1(arg: {arg1 : "Subscription"})
   }
