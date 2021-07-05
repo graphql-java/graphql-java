@@ -111,6 +111,62 @@ public class GraphQL {
     }
 
     /**
+     * @return the schema backing this {@link GraphQL} instance
+     */
+    public GraphQLSchema getGraphQLSchema() {
+        return graphQLSchema;
+    }
+
+    /**
+     * @return the execution strategy used for queries in this {@link GraphQL} instance
+     */
+    public ExecutionStrategy getQueryStrategy() {
+        return queryStrategy;
+    }
+
+    /**
+     * @return the execution strategy used for mutation in this {@link GraphQL} instance
+     */
+    public ExecutionStrategy getMutationStrategy() {
+        return mutationStrategy;
+    }
+
+    /**
+     * @return the execution strategy used for subscriptions in this {@link GraphQL} instance
+     */
+    public ExecutionStrategy getSubscriptionStrategy() {
+        return subscriptionStrategy;
+    }
+
+    /**
+     * @return the provider of execution ids for this {@link GraphQL} instance
+     */
+    public ExecutionIdProvider getIdProvider() {
+        return idProvider;
+    }
+
+    /**
+     * @return the Instrumentation for this {@link GraphQL} instance, if any
+     */
+    public Instrumentation getInstrumentation() {
+        return instrumentation;
+    }
+
+    /**
+     * @return the PreparsedDocumentProvider for this {@link GraphQL} instance
+     */
+    public PreparsedDocumentProvider getPreparsedDocumentProvider() {
+        return preparsedDocumentProvider;
+    }
+
+    /**
+     * @return the ValueUnboxer for this {@link GraphQL} instance
+     */
+    public ValueUnboxer getValueUnboxer() {
+        return valueUnboxer;
+    }
+
+    /**
      * Helps you build a GraphQL object ready to execute queries
      *
      * @param graphQLSchema the schema to use
