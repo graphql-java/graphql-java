@@ -4,6 +4,7 @@ package graphql.execution;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.ExecutionInput;
+import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
@@ -45,6 +46,7 @@ public class ExecutionContext {
     private final ImmutableMapWithNullValues<String, Object> variables;
     private final Object root;
     private final Object context;
+    private final GraphQLContext graphQLContext;
     private final Object localContext;
     private final Instrumentation instrumentation;
     private final AtomicReference<ImmutableList<GraphQLError>> errors = new AtomicReference<>(ImmutableKit.emptyList());
@@ -68,6 +70,7 @@ public class ExecutionContext {
         this.document = builder.document;
         this.operationDefinition = builder.operationDefinition;
         this.context = builder.context;
+        this.graphQLContext = builder.graphQLContext;
         this.root = builder.root;
         this.instrumentation = builder.instrumentation;
         this.dataLoaderRegistry = builder.dataLoaderRegistry;
@@ -117,9 +120,19 @@ public class ExecutionContext {
         return variables;
     }
 
-    @SuppressWarnings("unchecked")
+    /**
+     * @return the legacy context
+     *
+     * @deprecated use {@link #getGraphQLContext()} instead
+     */
+    @Deprecated
+    @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
     public <T> T getContext() {
         return (T) context;
+    }
+
+    public GraphQLContext getGraphQLContext() {
+        return graphQLContext;
     }
 
     @SuppressWarnings("unchecked")

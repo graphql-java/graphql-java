@@ -3,9 +3,12 @@ package readme;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import graphql.GraphQLContext;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLSchema;
+
+import java.util.concurrent.ConcurrentMap;
 
 import static graphql.StarWarsSchema.queryType;
 
@@ -57,7 +60,7 @@ public class ConcernsExamples {
         UserContext contextForUser = YourGraphqlContextBuilder.getContextForUser(getCurrentUser());
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .context(contextForUser)
+                .graphQLContext(context -> context.put("userContext", contextForUser))
                 .build();
 
         ExecutionResult executionResult = graphQL.execute(executionInput);
@@ -70,7 +73,7 @@ public class ConcernsExamples {
         DataFetcher dataFetcher = new DataFetcher() {
             @Override
             public Object get(DataFetchingEnvironment environment) {
-                UserContext userCtx = environment.getContext();
+                UserContext userCtx = environment.getGraphQlContext().get("userContext");
                 Long businessObjId = environment.getArgument("businessObjId");
 
                 return invokeBusinessLayerMethod(userCtx, businessObjId);

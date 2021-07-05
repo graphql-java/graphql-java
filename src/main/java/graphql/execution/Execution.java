@@ -83,6 +83,7 @@ public class Execution {
                 .mutationStrategy(mutationStrategy)
                 .subscriptionStrategy(subscriptionStrategy)
                 .context(executionInput.getContext())
+                .graphQLContext(executionInput.getGraphQLContext())
                 .localContext(executionInput.getLocalContext())
                 .root(executionInput.getRoot())
                 .fragmentsByName(fragmentsByName)

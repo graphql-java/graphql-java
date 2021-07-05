@@ -3,6 +3,7 @@ package graphql.execution
 import graphql.Assert
 import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionResult
+import graphql.GraphQLContext
 import graphql.GraphqlErrorBuilder
 import graphql.Scalars
 import graphql.SerializationError
@@ -70,6 +71,7 @@ class ExecutionStrategyTest extends Specification {
                 .subscriptionStrategy(executionStrategy)
                 .variables(variables)
                 .context("context")
+                .graphQLContext(GraphQLContext.newContext().of("key","context").build())
                 .root("root")
                 .dataLoaderRegistry(new DataLoaderRegistry())
                 .locale(Locale.getDefault())
@@ -517,6 +519,7 @@ class ExecutionStrategyTest extends Specification {
         environment.fieldDefinition == fieldDefinition
         environment.graphQLSchema == schema
         environment.context == "context"
+        environment.graphQlContext.get("key") == "context"
         environment.source == "source"
         environment.fields == [field]
         environment.root == "root"
