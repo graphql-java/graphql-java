@@ -1,6 +1,7 @@
 package graphql;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -72,6 +73,23 @@ public class GraphQLContext {
 
     public Stream<Map.Entry<Object, Object>> stream() {
         return map.entrySet().stream();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof GraphQLContext)) {
+            return false;
+        }
+        GraphQLContext that = (GraphQLContext) o;
+        return Objects.equals(map, that.map);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(map);
     }
 
     public static Builder newContext() {
