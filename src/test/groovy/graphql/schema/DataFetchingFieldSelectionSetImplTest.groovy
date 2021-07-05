@@ -555,11 +555,11 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         def selectedFields = petSelectionSet.getFields("name")
         selectedFields.size() == 2
-        assertTheyAreExpected(selectedFields, ["Lead.material"])
+        assertTheyAreExpected(selectedFields, ["[Bird, Cat, Dog].name", "aliasedName:Dog.name"])
 
-        selectedFields = petSelectionSet.getFields()
-        selectedFields.size() == 2
-        assertTheyAreExpected(selectedFields, ["Lead.material"])
+        def getFields = petSelectionSet.getFields()
+        getFields.size() == 2
+        assertTheyAreExpected(getFields, ["[Bird, Cat, Dog].name", "aliasedName:Dog.name"])
 
         def byResultKey = petSelectionSet.getFieldsGroupedByResultKey()
         byResultKey.size() == 2

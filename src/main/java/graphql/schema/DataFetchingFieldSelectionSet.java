@@ -148,7 +148,7 @@ public interface DataFetchingFieldSelectionSet {
      * <p>
      * The fields are guaranteed to be in pre-order as they appear in the query.
      * <p>
-     * A selected field (or its parent) may have an alias - and hence is a unique field in the returned list.  It may
+     * A selected field may have an alias - and hence is a unique field in the returned list.  It may
      * have the same field names as others in the list but when you also consider the alias then it is indeed unique
      * because it would be another entry in the graphql result.
      *
@@ -162,7 +162,7 @@ public interface DataFetchingFieldSelectionSet {
      * <p>
      * The fields are guaranteed to be in pre-order as they appear in the query.
      * <p>
-     * A selected field (or its parent) may have an alias - and hence is a unique field in the returned list.  It may
+     * A selected field may have an alias - and hence is a unique field in the returned list.  It may
      * have the same field names as others in the list but when you also consider the alias then it is indeed unique
      * because it would be another entry in the graphql result.
      *
@@ -179,7 +179,7 @@ public interface DataFetchingFieldSelectionSet {
      * <p>
      * The fields are guaranteed to be in pre-order as they appear in the query.
      * <p>
-     * A selected field (or its parent) may have an alias - and hence is a unique field in the returned list.  It may
+     * A selected field may have an alias - and hence is a unique field in the returned list.  It may
      * have the same field names as others in the list but when you also consider the alias then it is indeed unique
      * because it would be another entry in the graphql result.
      *
