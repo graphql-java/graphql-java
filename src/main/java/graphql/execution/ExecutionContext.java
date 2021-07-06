@@ -121,6 +121,7 @@ public class ExecutionContext {
     }
 
     /**
+     * @param <T> for two
      * @return the legacy context
      *
      * @deprecated use {@link #getGraphQLContext()} instead
