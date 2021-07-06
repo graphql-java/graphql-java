@@ -152,14 +152,7 @@ public class Execution {
 
         CompletableFuture<ExecutionResult> result;
         try {
-            ExecutionStrategy executionStrategy;
-            if (operation == OperationDefinition.Operation.MUTATION) {
-                executionStrategy = executionContext.getMutationStrategy();
-            } else if (operation == SUBSCRIPTION) {
-                executionStrategy = executionContext.getSubscriptionStrategy();
-            } else {
-                executionStrategy = executionContext.getQueryStrategy();
-            }
+            ExecutionStrategy executionStrategy = executionContext.getStrategy(operation);
             if (logNotSafe.isDebugEnabled()) {
                 logNotSafe.debug("Executing '{}' query operation: '{}' using '{}' execution strategy", executionContext.getExecutionId(), operation, executionStrategy.getClass().getName());
             }
