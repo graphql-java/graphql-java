@@ -239,9 +239,7 @@ public class ExecutionContext {
         return errors.get();
     }
 
-    public ExecutionStrategy getQueryStrategy() {
-        return queryStrategy;
-    }
+    public ExecutionStrategy getQueryStrategy() { return queryStrategy; }
 
     public ExecutionStrategy getMutationStrategy() {
         return mutationStrategy;
@@ -249,6 +247,16 @@ public class ExecutionContext {
 
     public ExecutionStrategy getSubscriptionStrategy() {
         return subscriptionStrategy;
+    }
+
+    public ExecutionStrategy getStrategy(OperationDefinition.Operation operation) {
+        if (operation == OperationDefinition.Operation.MUTATION) {
+            return getMutationStrategy();
+        } else if (operation == OperationDefinition.Operation.SUBSCRIPTION) {
+            return getSubscriptionStrategy();
+        } else {
+            return getQueryStrategy();
+        }
     }
 
     public Supplier<ExecutableNormalizedOperation> getNormalizedQueryTree() {
