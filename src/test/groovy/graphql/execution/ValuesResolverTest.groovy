@@ -131,6 +131,30 @@ class ValuesResolverTest extends Specification {
 
     }
 
+    def "getVariableValues: list value gets resolved to a list when the type is a List"() {
+        given:
+        def schema = TestUtil.schemaWithInputType(list(GraphQLString))
+        VariableDefinition variableDefinition = new VariableDefinition("variable", new ListType(new TypeName("String")))
+        List<String> value = ["hello","world"]
+        when:
+        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], [variable: value])
+        then:
+        resolvedValues['variable'] == ['hello','world']
+
+    }
+
+    def "getVariableValues: array value gets resolved to a list when the type is a List"() {
+        given:
+        def schema = TestUtil.schemaWithInputType(list(GraphQLString))
+        VariableDefinition variableDefinition = new VariableDefinition("variable", new ListType(new TypeName("String")))
+        String[] value = ["hello","world"] as String[]
+        when:
+        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], [variable: value])
+        then:
+        resolvedValues['variable'] == ['hello','world']
+
+    }
+
 
     def "getArgumentValues: resolves argument with variable reference"() {
         given:

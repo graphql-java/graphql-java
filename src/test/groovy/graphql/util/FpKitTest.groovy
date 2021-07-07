@@ -64,4 +64,19 @@ class FpKitTest extends Specification {
         memoVal1 == 3
         memoVal2 == 3
     }
+
+    def "is array to list works"() {
+        def birdArr = ["Parrot", "Cockatiel", "Pigeon"] as String[]
+
+        when:
+        def optional = FpKit.isArrayToList(birdArr)
+        then:
+        optional.isPresent()
+        optional.get() == ["Parrot", "Cockatiel", "Pigeon"]
+
+        when:
+        optional = FpKit.isArrayToList(["Parrot", "Cockatiel", "Pigeon"])
+        then:
+        !optional.isPresent()
+    }
 }

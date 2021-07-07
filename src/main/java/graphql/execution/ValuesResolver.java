@@ -49,6 +49,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
@@ -315,7 +316,9 @@ public class ValuesResolver {
     /**
      * No validation
      */
+    @SuppressWarnings("unchecked")
     private Object externalValueToLiteralForList(GraphqlFieldVisibility fieldVisibility, GraphQLList listType, Object value, ValueMode valueMode) {
+        value = mayBeArrayToIterable(value);
         if (value instanceof Iterable) {
             List result = new ArrayList<>();
             for (Object val : (Iterable) value) {
@@ -620,6 +623,7 @@ public class ValuesResolver {
                                                      GraphQLList graphQLList,
                                                      Object value
     ) throws CoercingParseValueException, NonNullableValueCoercedAsNullException {
+        value = mayBeArrayToIterable(value);
         if (value instanceof Iterable) {
             List<Object> result = new ArrayList<>();
             for (Object val : (Iterable) value) {
@@ -704,6 +708,7 @@ public class ValuesResolver {
      * @param type             the type of the input value
      * @param inputValue       the AST literal to be changed
      * @param coercedVariables the coerced variable values
+     *
      * @return literal converted to an internal value
      */
     public Object literalToInternalValue(GraphqlFieldVisibility fieldVisibility,
@@ -950,11 +955,11 @@ public class ValuesResolver {
     }
 
     @SuppressWarnings("rawtypes")
-    private static Value<?> handleListLegacy(Object _value, GraphQLList type) {
+    private static Value<?> handleListLegacy(Object value, GraphQLList type) {
         GraphQLType itemType = type.getWrappedType();
-        boolean isIterable = _value instanceof Iterable;
-        if (isIterable || (_value != null && _value.getClass().isArray())) {
-            Iterable<?> iterable = isIterable ? (Iterable<?>) _value : FpKit.toCollection(_value);
+        value = mayBeArrayToIterable(value);
+        if (value instanceof Iterable) {
+            Iterable<?> iterable = (Iterable<?>) value;
             List<Value> valuesNodes = new ArrayList<>();
             for (Object item : iterable) {
                 Value<?> itemNode = valueToLiteralLegacy(item, itemType);
@@ -964,7 +969,7 @@ public class ValuesResolver {
             }
             return ArrayValue.newArrayValue().values(valuesNodes).build();
         }
-        return valueToLiteralLegacy(_value, itemType);
+        return valueToLiteralLegacy(value, itemType);
     }
 
     private static Value<?> handleNonNullLegacy(Object _value, GraphQLNonNull type) {
@@ -999,4 +1004,21 @@ public class ValuesResolver {
         // Not variable, return false
         return false;
     }
+
+    /**
+     * Turn it an array into an Iterable so later code cna cope with it
+     *
+     * @param value an object value
+     *
+     * @return if its an array it become a Iterable otherwise leave it alone
+     */
+    private static Object mayBeArrayToIterable(Object value) {
+        // handle java arrays as input
+        Optional<List<Object>> arrayList = FpKit.isArrayToList(value);
+        if (arrayList.isPresent()) {
+            value = arrayList.get();
+        }
+        return value;
+    }
+
 }

@@ -35,10 +35,10 @@ public class FpKit {
     // From a list of named things, get a map of them by name, merging them according to the merge function
     public static <T> Map<String, T> getByName(List<T> namedObjects, Function<T, String> nameFn, BinaryOperator<T> mergeFunc) {
         return namedObjects.stream().collect(Collectors.toMap(
-            nameFn,
-            identity(),
-            mergeFunc,
-            LinkedHashMap::new)
+                nameFn,
+                identity(),
+                mergeFunc,
+                LinkedHashMap::new)
         );
     }
 
@@ -49,10 +49,10 @@ public class FpKit {
 
     public static <T, NewKey> Map<NewKey, T> groupingByUniqueKey(Collection<T> list, Function<T, NewKey> keyFunction) {
         return list.stream().collect(Collectors.toMap(
-            keyFunction,
-            identity(),
-            throwingMerger(),
-            LinkedHashMap::new)
+                keyFunction,
+                identity(),
+                throwingMerger(),
+                LinkedHashMap::new)
         );
     }
 
@@ -79,16 +79,16 @@ public class FpKit {
      *
      * @param iterableResult the result object
      * @param <T>            the type of thing
+     *
      * @return an Iterable from that object
+     *
      * @throws java.lang.ClassCastException if its not an Iterable
      */
     @SuppressWarnings("unchecked")
     public static <T> Collection<T> toCollection(Object iterableResult) {
-        if (iterableResult.getClass().isArray()) {
-            List<Object> collect = IntStream.range(0, Array.getLength(iterableResult))
-                .mapToObj(i -> Array.get(iterableResult, i))
-                .collect(Collectors.toList());
-            return (List<T>) collect;
+        Optional<List<T>> arrayBasedCollection = isArrayToList(iterableResult);
+        if (arrayBasedCollection.isPresent()) {
+            return arrayBasedCollection.get();
         }
         if (iterableResult instanceof Collection) {
             return (Collection<T>) iterableResult;
@@ -100,6 +100,25 @@ public class FpKit {
             list.add(iterator.next());
         }
         return list;
+    }
+
+    /**
+     * Converts an array value into an List otherwise it says its not present
+     *
+     * @param possibleArray the possible array
+     * @param <T>           for two
+     *
+     * @return an optional list if its an array otherwise empty
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Optional<List<T>> isArrayToList(Object possibleArray) {
+        if (possibleArray != null && possibleArray.getClass().isArray()) {
+            List<Object> collect = IntStream.range(0, Array.getLength(possibleArray))
+                    .mapToObj(i -> Array.get(possibleArray, i))
+                    .collect(Collectors.toList());
+            return Optional.of((List<T>) collect);
+        }
+        return Optional.empty();
     }
 
     public static boolean isIterable(Object result) {
@@ -174,6 +193,7 @@ public class FpKit {
      * @param l   the list onto which to append the element
      * @param t   the element to append
      * @param <T> the type of elements of the list
+     *
      * @return a <strong>new</strong> list composed of the first list elements and the new element
      */
     public static <T> List<T> concat(List<T> l, T t) {
@@ -186,6 +206,7 @@ public class FpKit {
      * @param l1  the first list to concatenate
      * @param l2  the second list to concatenate
      * @param <T> the type of element of the lists
+     *
      * @return a <strong>new</strong> list composed of the two concatenated lists elements
      */
     public static <T> List<T> concat(List<T> l1, List<T> l2) {
@@ -228,15 +249,15 @@ public class FpKit {
 
     public static <T> List<T> flatList(List<List<T>> listLists) {
         return listLists.stream()
-            .flatMap(List::stream)
-            .collect(ImmutableList.toImmutableList());
+                .flatMap(List::stream)
+                .collect(ImmutableList.toImmutableList());
     }
 
     public static <T> Optional<T> findOne(Collection<T> list, Predicate<T> filter) {
         return list
-            .stream()
-            .filter(filter)
-            .findFirst();
+                .stream()
+                .filter(filter)
+                .findFirst();
     }
 
     public static <T> T findOneOrNull(List<T> list, Predicate<T> filter) {
@@ -264,6 +285,7 @@ public class FpKit {
      *
      * @param <K> for Key
      * @param <V> for Value
+     *
      * @return a function that allocates a list
      */
     public static <K, V> Function<K, List<V>> newList() {
@@ -278,6 +300,7 @@ public class FpKit {
      *
      * @param delegate the supplier to delegate to
      * @param <T>      for two
+     *
      * @return a supplier that will memoize values in the context of the current thread
      */
     public static <T> Supplier<T> intraThreadMemoize(Supplier<T> delegate) {
@@ -291,6 +314,7 @@ public class FpKit {
      *
      * @param delegate the supplier to delegate to
      * @param <T>      for two
+     *
      * @return a supplier that will memoize values in the context of the all the threads
      */
     public static <T> Supplier<T> interThreadMemoize(Supplier<T> delegate) {
