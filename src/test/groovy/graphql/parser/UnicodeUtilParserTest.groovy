@@ -4,26 +4,22 @@ import graphql.language.Document
 import graphql.language.Field
 import graphql.language.OperationDefinition
 import graphql.language.StringValue
-import graphql.schema.validation.InvalidSchemaException
-import spock.lang.Ignore
 import spock.lang.Specification
 
 class UnicodeUtilParserTest extends Specification {
     /*
-        Implements RFC to support full Unicode
-        Original RFC https://github.com/graphql/graphql-spec/issues/687
-        RFC spec text https://github.com/graphql/graphql-spec/pull/849
-        RFC JS implementation https://github.com/graphql/graphql-js/pull/3117
+        Implements RFC to support full Unicode https://github.com/graphql/graphql-spec/pull/849
 
-        TL;DR
-        Previously, valid SourceCharacters included Unicode scalar values up to and including U+FFFF - the Basic Multilingual Plane (BMP)
-        Now this is changing to incorporate all Unicode scalar values
-        Assert {value} is a within the *Unicode scalar value* range (>= 0x0000 and <= 0xD7FF or >= 0xE000 and <= 0x10FFFF).
-        Practically this means you can have your beer emoji (U+1F37A) in queries as \\u{1F37A}
+        Key changes
+        * SourceCharacters now include all Unicode scalar values. Previously only included up to U+FFFF (Basic Multilingual Plane).
+        * SourceCharacters now include control characters. Previously certain control characters were excluded.
+        * Surrogate pair validation added.
+
+        Note that "unescaped" Unicode characters such as 🍺 are handled by ANTLR grammar.
+        "Escaped" Unicode characters such as \\u{1F37A} are handled by StringValueParsing.
     */
 
-    // With this RFC, code points outside the Basic Multilingual Plane can be parsed. For example, emojis
-    // Previously emojis could only be parsed with surrogate pairs. Now they can be parsed with the code point directly
+    // With this RFC, escaped code points outside the Basic Multilingual Plane (e.g. emojis) can be parsed.
     def "parsing beer stein as escaped unicode"() {
         given:
         def input = '''"\\u{1F37A} hello"'''
@@ -35,7 +31,7 @@ class UnicodeUtilParserTest extends Specification {
         parsed == '''🍺 hello''' // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
     }
 
-    def "parsing beer mug non escaped"() {
+    def "parsing beer stein without escaping"() {
         given:
         def input = '''"🍺 hello"'''
 
@@ -47,6 +43,7 @@ class UnicodeUtilParserTest extends Specification {
     }
 
     def "allow braced escaped unicode"() {
+        given:
         def input = '''
               {
               foo(arg: "\\u{1F37A}")
@@ -60,7 +57,7 @@ class UnicodeUtilParserTest extends Specification {
         def argValue = field.arguments[0].value as StringValue
 
         then:
-        argValue.getValue() == "🍺"
+        argValue.getValue() == "🍺" // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
     }
 
     /*
@@ -73,6 +70,7 @@ class UnicodeUtilParserTest extends Specification {
         such code points.
     */
     def "allow surrogate pairs escaped unicode"() {
+        given:
         def input = '''
               {
               foo(arg: "\\ud83c\\udf7a")
@@ -86,114 +84,176 @@ class UnicodeUtilParserTest extends Specification {
         def argValue = field.arguments[0].value as StringValue
 
         then:
-        argValue.getValue() == "🍺"
+        argValue.getValue() == "🍺" // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
     }
 
     /*
-        From the RFC:
+        Valid surrogate pair combinations (from the RFC):
         * If {leadingValue} is >= 0xD800 and <= 0xDBFF (a *Leading Surrogate*):
         * Assert {trailingValue} is >= 0xDC00 and <= 0xDFFF (a *Trailing Surrogate*).
-        * Return ({leadingValue} - 0xD800) × 0x400 + ({trailingValue} - 0xDC00) + 0x10000.
      */
-    @Ignore
-    def "invalid surrogate pair"() {
-        def input = '''
-              {
-              foo(arg: "\\uD83D\\uDBFF")
-               }
-        '''
-
-        when:
-        Document document = Parser.parse(input)
-
-        then:
-        // TODO: Raise exception
-        false
-    }
-
-    def "invalid unicode code point"() {
-        def input = '''
-              {
-              foo(arg: "\\u{fffffff}")
-               }
-        '''
-
-        when:
-        Document document = Parser.parse(input)
-
-        then:
-        Exception e = thrown(Exception)
-        e.message == "invalid unicode code point"
-    }
-
-    @Ignore
-    def "invalid unpaired surrogate" () {
-        def input = '''
-              {
-              foo(arg: "\\uD83D")
-               }
-        '''
-
-        when:
-        Document document = Parser.parse(input)
-
-        then:
-        // TODO: Discuss whether to raise exception
-        false
-    }
-
-    @Ignore
-    def "invalid code point - too long" () {
+    def "invalid surrogate pair - no trailing value"() {
         given:
-        def input = '''"\\u{000000000}"'''
+        def input = '''"\\uD83D hello"'''
+
+        when:
+        StringValueParsing.parseSingleQuotedString(input)
+
+        then:
+        RuntimeException e = thrown(RuntimeException)
+        e.message == "Invalid unicode"
+    }
+
+    def "invalid surrogate pair - end of string"() {
+        given:
+        def input = '''"\\uD83D"'''
+
+        when:
+        StringValueParsing.parseSingleQuotedString(input)
+
+        then:
+        RuntimeException e = thrown(RuntimeException)
+        e.message == "Invalid unicode"
+    }
+
+    def "invalid surrogate pair - invalid trailing value"() {
+        given:
+        def input = '''"\\uD83D\\uDBFF"'''
+
+        when:
+        StringValueParsing.parseSingleQuotedString(input)
+
+        then:
+        RuntimeException e = thrown(RuntimeException)
+        e.message == "Invalid unicode"
+    }
+
+    def "invalid surrogate pair - no leading value"() {
+        given:
+        def input = '''"\\uDC00"'''
+
+        when:
+        StringValueParsing.parseSingleQuotedString(input)
+
+        then:
+        RuntimeException e = thrown(RuntimeException)
+        e.message == "Invalid unicode"
+    }
+
+    def "invalid surrogate pair - invalid leading value"() {
+        given:
+        def input = '''"\\uD700\\uDC00"'''
+
+        when:
+        StringValueParsing.parseSingleQuotedString(input)
+
+        then:
+        RuntimeException e = thrown(RuntimeException)
+        e.message == "Invalid unicode"
+    }
+
+    def "valid surrogate pair - leading code with braces"() {
+        given:
+        def input = '''"hello \\u{d83c}\\udf7a"'''
 
         when:
         String parsed = StringValueParsing.parseSingleQuotedString(input)
 
         then:
-        // TODO: Discuss whether to raise exception. How do we want to treat leading zeroes?
-        false
+        parsed == '''hello 🍺''' // contains the beer icon U+1F37 A : http://www.charbase.com/1f37a-unicode-beer-mug
     }
 
-    /*
-        From the RFC
-        **Byte order mark**
-
-        UnicodeBOM :: "Byte Order Mark (U+FEFF)"
-
-        The *Byte Order Mark* is a special Unicode code point which may appear at the
-        beginning of a file which programs may use to determine the fact that the text
-        stream is Unicode, and what specific encoding has been used.
-
-        As files are often concatenated, a *Byte Order Mark* may appear anywhere within
-        a GraphQL document and is {Ignored}.
-    */
-    @Ignore
-    // TODO: BOM was previously implemented. Do we want to change the prior implementation?
-    def "byte order mark to be ignored" () {
-        // The Byte Order Mark indicates a Unicode stream, and whether the stream is high-endian or low-endian
+    def "valid surrogate pair - trailing code with braces"() {
         given:
-        def input = '''"hello \\uFEFF\\u4F60\\u597D"'''
+        def input = '''"hello \\ud83c\\u{df7a}"'''
 
         when:
         String parsed = StringValueParsing.parseSingleQuotedString(input)
 
         then:
-        parsed == '''hello 你好'''
+        parsed == '''hello 🍺''' // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
     }
 
-    // TODO: How do we want to handle control characters?
-    @Ignore
-    def "escapes zero byte" () {
-        // TODO: This is a test case from the JS implementation. Do we want to implement this case?
+    def "valid surrogate pair - leading and trailing code with braces"() {
         given:
-        def input = '''"\\x00"'''
+        def input = '''"hello \\u{d83c}\\u{df7a}"'''
 
         when:
         String parsed = StringValueParsing.parseSingleQuotedString(input)
 
         then:
-        parsed == '''\\u0000'''
+        parsed == '''hello 🍺''' // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
+    }
+
+    def "invalid surrogate pair - invalid trailing code without unicode escape 1"() {
+        given:
+        def input = '''"hello \\u{d83c}{df7a}"'''
+
+        when:
+        StringValueParsing.parseSingleQuotedString(input)
+
+        then:
+        RuntimeException e = thrown(RuntimeException)
+        e.message == "Invalid unicode"
+    }
+
+    def "invalid surrogate pair - invalid trailing code without unicode escape 2"() {
+        given:
+        def input = '''"hello \\u{d83c}df7a"'''
+
+        when:
+        StringValueParsing.parseSingleQuotedString(input)
+
+        then:
+        RuntimeException e = thrown(RuntimeException)
+        e.message == "Invalid unicode"
+    }
+
+    def "invalid surrogate pair - invalid leading code"() {
+        given:
+        def input = '''"hello d83c\\u{df7a}"'''
+
+        when:
+        StringValueParsing.parseSingleQuotedString(input)
+
+        then:
+        RuntimeException e = thrown(RuntimeException)
+        e.message == "Invalid unicode"
+    }
+
+    def "invalid surrogate pair - invalid leading value with braces"() {
+        given:
+        def input = '''"\\u{5B57}\\uDC00"'''
+
+        when:
+        StringValueParsing.parseSingleQuotedString(input)
+
+        then:
+        RuntimeException e = thrown(RuntimeException)
+        e.message == "Invalid unicode"
+    }
+
+    def "invalid surrogate pair - invalid trailing value with braces"() {
+        given:
+        def input = '''"\\uD83D\\u{DBFF}"'''
+
+        when:
+        StringValueParsing.parseSingleQuotedString(input)
+
+        then:
+        RuntimeException e = thrown(RuntimeException)
+        e.message == "Invalid unicode"
+    }
+
+    def "invalid unicode code point - value is too high"() {
+        given:
+        def input = '''"\\u{fffffff}"'''
+
+        when:
+        StringValueParsing.parseSingleQuotedString(input)
+
+        then:
+        RuntimeException e = thrown(RuntimeException)
+        e.message == "Invalid unicode"
     }
 }
-
