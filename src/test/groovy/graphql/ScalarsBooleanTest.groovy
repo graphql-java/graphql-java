@@ -50,8 +50,6 @@ class ScalarsBooleanTest extends Specification {
         "false"                      | false
         "true"                       | true
         "True"                       | true
-        "some value not true"        | false
-        ""                           | false
         0                            | false
         1                            | true
         -1                           | true
@@ -70,8 +68,14 @@ class ScalarsBooleanTest extends Specification {
         thrown(CoercingSerializeException)
 
         where:
-        value        | _
-        new Object() | _
+        value                 | _
+        new Object()          | _
+        "some value not true" | _
+        ""                    | _
+        "T"                   | _
+        "t"                   | _
+        "F"                   | _
+        "f"                   | _
     }
 
     @Unroll

@@ -268,7 +268,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         then:
 
         allFieldsViaAsterAster.size() == 14
-        allFields.size() == 28
+        allFields.size() == 14
         def allFieldsViaAsterAsterSorted = new ArrayList<>(allFieldsViaAsterAster).sort({ sf -> sf.qualifiedName })
         def allFieldsSorted = new ArrayList<>(allFields).sort({ sf -> sf.qualifiedName })
 
@@ -288,8 +288,8 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
                 "nodes/summary",
                 "totalCount"
         ]
-        allFieldsViaAsterAsterSorted.collect({ sf -> sf.qualifiedName }).toUnique() == expectedFieldNames
-        allFieldsSorted.collect({ sf -> sf.qualifiedName }).toUnique() == expectedFieldNames
+        allFieldsViaAsterAsterSorted.collect({ sf -> sf.qualifiedName }) == expectedFieldNames
+        allFieldsSorted.collect({ sf -> sf.qualifiedName }) == expectedFieldNames
 
         when:
         def expectedFullyQualifiedFieldNames = [
@@ -309,8 +309,8 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
                 "ThingConnection.totalCount"
         ]
         then:
-        allFieldsViaAsterAsterSorted.collect({ sf -> sf.fullyQualifiedName }).toUnique() == expectedFullyQualifiedFieldNames
-        allFieldsSorted.collect({ sf -> sf.fullyQualifiedName }).toUnique() == expectedFullyQualifiedFieldNames
+        allFieldsViaAsterAsterSorted.collect({ sf -> sf.fullyQualifiedName }) == expectedFullyQualifiedFieldNames
+        allFieldsSorted.collect({ sf -> sf.fullyQualifiedName }) == expectedFullyQualifiedFieldNames
 
     }
 
@@ -344,8 +344,8 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         ]
 
         then:
-        fieldsGlob.collect({ field -> field.qualifiedName }).toUnique() == expectedFieldName
-        fields.collect({ field -> field.qualifiedName }).toUnique() == expectedFieldName
+        fieldsGlob.collect({ field -> field.qualifiedName }) == expectedFieldName
+        fields.collect({ field -> field.qualifiedName }) == expectedFieldName
     }
 
     def petSDL = '''
@@ -555,6 +555,11 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         def selectedFields = petSelectionSet.getFields("name")
         selectedFields.size() == 2
+        assertTheyAreExpected(selectedFields, ["[Bird, Cat, Dog].name", "aliasedName:Dog.name"])
+
+        def getFields = petSelectionSet.getFields()
+        getFields.size() == 2
+        assertTheyAreExpected(getFields, ["[Bird, Cat, Dog].name", "aliasedName:Dog.name"])
 
         def byResultKey = petSelectionSet.getFieldsGroupedByResultKey()
         byResultKey.size() == 2
@@ -810,8 +815,8 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def selectedFields = leadSelectionSet.getFields()
 
         then:
-        selectedFields.size() == 2
-        assertTheyAreExpected(selectedFields, ["Lead.material", "Lead.material"])
+        selectedFields.size() == 1
+        assertTheyAreExpected(selectedFields, ["Lead.material"])
 
         when:
         selectedFields = leadSelectionSet.getFields("material")

@@ -23,6 +23,7 @@ public class ResolveType {
                     .value(source)
                     .argumentValues(arguments)
                     .context(executionContext.getContext())
+                    .graphQLContext(executionContext.getGraphQLContext())
                     .schema(executionContext.getGraphQLSchema()).build();
             resolvedType = resolveTypeForInterface(resolutionParams);
 
@@ -33,6 +34,7 @@ public class ResolveType {
                     .value(source)
                     .argumentValues(arguments)
                     .context(executionContext.getContext())
+                    .graphQLContext(executionContext.getGraphQLContext())
                     .schema(executionContext.getGraphQLSchema()).build();
             resolvedType = resolveTypeForUnion(resolutionParams);
         } else {

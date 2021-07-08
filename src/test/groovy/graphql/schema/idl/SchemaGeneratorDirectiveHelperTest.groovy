@@ -496,8 +496,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 }
                 contextMap.put(key, true)
 
-                DataFetcher wrapper = { dfEnv ->
-                    def flag = dfEnv.getContext()['protectSecrets']
+                DataFetcher wrapper = { DataFetchingEnvironment dfEnv ->
+                    def flag = dfEnv.getGraphQlContext().get('protectSecrets')
                     if (flag == null || flag == false) {
                         return originalFetcher.get(dfEnv)
                     }
@@ -538,7 +538,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         def executionInput = ExecutionInput.newExecutionInput()
                 .root(root)
                 .query(query)
-                .context([protectSecrets: true])
+                .graphQLContext([protectSecrets: true])
                 .build()
 
         def er = graphQL.execute(executionInput)
@@ -554,7 +554,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         executionInput = ExecutionInput.newExecutionInput()
                 .root(root)
                 .query(query)
-                .context([protectSecrets: false])
+                .graphQLContext([protectSecrets: false])
                 .build()
 
         er = graphQL.execute(executionInput)

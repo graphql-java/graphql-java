@@ -5,9 +5,9 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.io.Resources;
 import graphql.language.Document;
 import graphql.language.Field;
-import graphql.normalized.NormalizedField;
-import graphql.normalized.NormalizedQuery;
-import graphql.normalized.NormalizedQueryFactory;
+import graphql.normalized.ExecutableNormalizedField;
+import graphql.normalized.ExecutableNormalizedOperation;
+import graphql.normalized.ExecutableNormalizedOperationFactory;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaGenerator;
@@ -76,18 +76,18 @@ public class NQBenchmark2 {
     @Fork(3)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public NormalizedQuery benchMarkAvgTime(MyState myState) throws ExecutionException, InterruptedException {
-        NormalizedQuery normalizedQuery = NormalizedQueryFactory.createNormalizedQuery(myState.schema, myState.document, null, Collections.emptyMap());
+    public ExecutableNormalizedOperation benchMarkAvgTime(MyState myState) throws ExecutionException, InterruptedException {
+        ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(myState.schema, myState.document, null, Collections.emptyMap());
 //        System.out.println("fields size:" + normalizedQuery.getFieldToNormalizedField().size());
-        return normalizedQuery;
+        return executableNormalizedOperation;
     }
 
     public static void main(String[] args) {
         MyState myState = new MyState();
         myState.setup();
-        NormalizedQuery normalizedQuery = NormalizedQueryFactory.createNormalizedQuery(myState.schema, myState.document, null, Collections.emptyMap());
+        ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(myState.schema, myState.document, null, Collections.emptyMap());
 //        System.out.println(printTree(normalizedQuery));
-        ImmutableListMultimap<Field, NormalizedField> fieldToNormalizedField = normalizedQuery.getFieldToNormalizedField();
+        ImmutableListMultimap<Field, ExecutableNormalizedField> fieldToNormalizedField = executableNormalizedOperation.getFieldToNormalizedField();
         System.out.println(fieldToNormalizedField.size());
 //        for (Field field : fieldToNormalizedField.keySet()) {
 //            System.out.println("field" + field);
@@ -102,13 +102,13 @@ public class NQBenchmark2 {
 //        System.out.println("fields size:" + normalizedQuery.getFieldToNormalizedField().size());
     }
 
-    static List<String> printTree(NormalizedQuery queryExecutionTree) {
+    static List<String> printTree(ExecutableNormalizedOperation queryExecutionTree) {
         List<String> result = new ArrayList<>();
-        Traverser<NormalizedField> traverser = Traverser.depthFirst(NormalizedField::getChildren);
-        traverser.traverse(queryExecutionTree.getTopLevelFields(), new TraverserVisitorStub<NormalizedField>() {
+        Traverser<ExecutableNormalizedField> traverser = Traverser.depthFirst(ExecutableNormalizedField::getChildren);
+        traverser.traverse(queryExecutionTree.getTopLevelFields(), new TraverserVisitorStub<ExecutableNormalizedField>() {
             @Override
-            public TraversalControl enter(TraverserContext<NormalizedField> context) {
-                NormalizedField queryExecutionField = context.thisNode();
+            public TraversalControl enter(TraverserContext<ExecutableNormalizedField> context) {
+                ExecutableNormalizedField queryExecutionField = context.thisNode();
                 result.add(queryExecutionField.printDetails());
                 return TraversalControl.CONTINUE;
             }

@@ -24,7 +24,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
-import graphql.normalized.NormalizedField;
+import graphql.normalized.ExecutableNormalizedField;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingFieldSelectionSet;
@@ -250,7 +250,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
         QueryDirectivesImpl queryDirectives = new QueryDirectivesImpl(fields, executionContext.getGraphQLSchema(), executionContext.getVariables());
 
-        Supplier<NormalizedField> normalizedFieldSupplier = getNormalizedField(executionContext, parameters, parameters::getExecutionStepInfo);
+        Supplier<ExecutableNormalizedField> normalizedFieldSupplier = getNormalizedField(executionContext, parameters, parameters::getExecutionStepInfo);
 
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext.getGraphQLSchema(), fieldType, normalizedFieldSupplier);

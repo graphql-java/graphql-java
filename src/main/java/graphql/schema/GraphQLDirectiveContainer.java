@@ -55,6 +55,17 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
     GraphQLDirective getDirective(String directiveName);
 
     /**
+     * This will return true if the element has a directive (repeatable or non repeatable) with the specified name
+     *
+     * @param directiveName the name of the directive
+     *
+     * @return true if there is a directive on this element with that name
+     */
+    default boolean hasDirective(String directiveName) {
+        return getAllDirectivesByName().containsKey(directiveName);
+    }
+
+    /**
      * Returns all of the directives with the provided name, including repeatable and non repeatable directives.
      *
      * @param directiveName the name of the directives to retrieve

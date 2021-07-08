@@ -244,7 +244,7 @@ class GraphQLTest extends Specification {
         def expected = [field2: 'value2']
 
         when:
-        def executionInput = newExecutionInput().query(query).operationName('Query2').context(null).variables([:])
+        def executionInput = newExecutionInput().query(query).operationName('Query2').variables([:])
         def result = GraphQL.newGraphQL(schema).build().execute(executionInput)
 
         then:

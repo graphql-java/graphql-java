@@ -21,6 +21,7 @@ public class ExecutionInput {
     private final String query;
     private final String operationName;
     private final Object context;
+    private final GraphQLContext graphQLContext;
     private final Object localContext;
     private final Object root;
     private final Map<String, Object> variables;
@@ -36,6 +37,7 @@ public class ExecutionInput {
         this.query = assertNotNull(builder.query, () -> "query can't be null");
         this.operationName = builder.operationName;
         this.context = builder.context;
+        this.graphQLContext = assertNotNull(builder.graphQLContext);
         this.root = builder.root;
         this.variables = builder.variables;
         this.dataLoaderRegistry = builder.dataLoaderRegistry;
@@ -61,10 +63,23 @@ public class ExecutionInput {
     }
 
     /**
+     * The legacy context object has been deprecated in favour of the more shareable
+     * {@link #getGraphQLContext()}
+     *
      * @return the context object to pass to all data fetchers
+     *
+     * @deprecated - use {@link #getGraphQLContext()}
      */
+    @Deprecated
     public Object getContext() {
         return context;
+    }
+
+    /**
+     * @return the shared {@link GraphQLContext} object to pass to all data fetchers
+     */
+    public GraphQLContext getGraphQLContext() {
+        return graphQLContext;
     }
 
     /**
@@ -130,6 +145,7 @@ public class ExecutionInput {
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new ExecutionInput object based on calling build on that builder
      */
     public ExecutionInput transform(Consumer<Builder> builderConsumer) {
@@ -137,6 +153,7 @@ public class ExecutionInput {
                 .query(this.query)
                 .operationName(this.operationName)
                 .context(this.context)
+                .transfer(this.graphQLContext)
                 .localContext(this.localContext)
                 .root(this.root)
                 .dataLoaderRegistry(this.dataLoaderRegistry)
@@ -157,6 +174,7 @@ public class ExecutionInput {
                 "query='" + query + '\'' +
                 ", operationName='" + operationName + '\'' +
                 ", context=" + context +
+                ", graphQLContext=" + graphQLContext +
                 ", root=" + root +
                 ", variables=" + variables +
                 ", dataLoaderRegistry=" + dataLoaderRegistry +
@@ -176,6 +194,7 @@ public class ExecutionInput {
      * Creates a new builder of ExecutionInput objects with the given query
      *
      * @param query the query to execute
+     *
      * @return a new builder of ExecutionInput objects
      */
     public static Builder newExecutionInput(String query) {
@@ -186,7 +205,8 @@ public class ExecutionInput {
 
         private String query;
         private String operationName;
-        private Object context = GraphQLContext.newContext().build();
+        private GraphQLContext graphQLContext = GraphQLContext.newContext().build();
+        private Object context = graphQLContext; // we make these the same object on purpose - legacy code will get the same object if this change nothing
         private Object localContext;
         private Object root;
         private Map<String, Object> variables = Collections.emptyMap();
@@ -214,6 +234,7 @@ public class ExecutionInput {
          * A default one will be assigned, but you can set your own.
          *
          * @param executionId an execution id object
+         *
          * @return this builder
          */
         public Builder executionId(ExecutionId executionId) {
@@ -226,6 +247,7 @@ public class ExecutionInput {
          * Sets the locale to use for this operation
          *
          * @param locale the locale to use
+         *
          * @return this builder
          */
         public Builder locale(Locale locale) {
@@ -237,6 +259,7 @@ public class ExecutionInput {
          * Sets initial localContext in root data fetchers
          *
          * @param localContext the local context to use
+         *
          * @return this builder
          */
         public Builder localContext(Object localContext) {
@@ -245,25 +268,82 @@ public class ExecutionInput {
         }
 
         /**
-         * By default you will get a {@link GraphQLContext} object but you can set your own.
+         * The legacy context object
          *
          * @param context the context object to use
+         *
          * @return this builder
+         *
+         * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
          */
+        @Deprecated
         public Builder context(Object context) {
             this.context = context;
             return this;
         }
 
+        /**
+         * The legacy context object
+         *
+         * @param contextBuilder the context builder object to use
+         *
+         * @return this builder
+         *
+         * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
+         */
+        @Deprecated
         public Builder context(GraphQLContext.Builder contextBuilder) {
             this.context = contextBuilder.build();
             return this;
         }
 
+        /**
+         * The legacy context object
+         *
+         * @param contextBuilderFunction the context builder function to use
+         *
+         * @return this builder
+         *
+         * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
+         */
+        @Deprecated
         public Builder context(UnaryOperator<GraphQLContext.Builder> contextBuilderFunction) {
             GraphQLContext.Builder builder = GraphQLContext.newContext();
             builder = contextBuilderFunction.apply(builder);
             return context(builder.build());
+        }
+
+        /**
+         * This will give you a builder of {@link GraphQLContext} and any values you set will be copied
+         * into the underlying {@link GraphQLContext} of this execution input
+         *
+         * @param builderFunction a builder function you can use to put values into the context
+         *
+         * @return this builder
+         */
+        public Builder graphQLContext(Consumer<GraphQLContext.Builder> builderFunction) {
+            GraphQLContext.Builder builder = GraphQLContext.newContext();
+            builderFunction.accept(builder);
+            this.graphQLContext.putAll(builder);
+            return this;
+        }
+
+        /**
+         * This will put all the values from the map into the underlying {@link GraphQLContext} of this execution input
+         *
+         * @param mapOfContext a map of values to put in the context
+         *
+         * @return this builder
+         */
+        public Builder graphQLContext(Map<?, Object> mapOfContext) {
+            this.graphQLContext.putAll(mapOfContext);
+            return this;
+        }
+
+        // hidden on purpose
+        private Builder transfer(GraphQLContext graphQLContext) {
+            this.graphQLContext = Assert.assertNotNull(graphQLContext);
+            return this;
         }
 
         public Builder root(Object root) {
@@ -287,6 +367,7 @@ public class ExecutionInput {
          * instances as this will create unexpected results.
          *
          * @param dataLoaderRegistry a registry of {@link org.dataloader.DataLoader}s
+         *
          * @return this builder
          */
         public Builder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {

@@ -540,7 +540,9 @@ public class SchemaGeneratorHelper {
         }
 
         if (!ScalarInfo.isGraphqlSpecifiedScalar(scalar)) {
+            String description = getScalarDesc(scalar,typeDefinition);
             scalar = scalar.transform(builder -> builder
+                    .description(description)
                     .definition(typeDefinition)
                     .comparatorRegistry(buildCtx.getComparatorRegistry())
                     .specifiedByUrl(getSpecifiedByUrl(typeDefinition, extensions))
@@ -554,6 +556,18 @@ public class SchemaGeneratorHelper {
                     ));
         }
         return scalar;
+    }
+
+    private String getScalarDesc(GraphQLScalarType scalar, ScalarTypeDefinition typeDefinition) {
+        if (scalar.getDescription() != null ) {
+            if (!scalar.getDescription().trim().isEmpty()) {
+                return scalar.getDescription();
+            }
+        }
+        if (typeDefinition.getDescription() != null) {
+            return typeDefinition.getDescription().getContent();
+        }
+        return "";
     }
 
     String getSpecifiedByUrl(ScalarTypeDefinition scalarTypeDefinition, List<ScalarTypeExtensionDefinition> extensions) {
