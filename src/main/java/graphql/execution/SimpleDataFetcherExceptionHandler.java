@@ -37,8 +37,10 @@ public class SimpleDataFetcherExceptionHandler implements DataFetcherExceptionHa
      * @return the suitable exception
      */
     protected Throwable unwrap(Throwable exception) {
-        if (exception instanceof CompletionException) {
-            return exception.getCause();
+        if (exception.getCause() != null) {
+            if (exception instanceof CompletionException) {
+                return exception.getCause();
+            }
         }
         return exception;
     }
