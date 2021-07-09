@@ -983,4 +983,24 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         !type.getIgnoredChars().getLeft().isEmpty()
         !type.getIgnoredChars().getRight().isEmpty()
     }
+
+    def "source locations are on by default but can be turned off"() {
+        when:
+        def options = ParserOptions.getDefaultParserOptions()
+
+        def document = new Parser().parseDocument("{ f }")
+        then:
+        options.isCaptureSourceLocation()
+        document.getSourceLocation() == new SourceLocation(1, 1)
+        document.getDefinitions()[0].getSourceLocation() == new SourceLocation(1, 1)
+
+        when:
+        options = ParserOptions.newParserOptions().captureSourceLocation(false).build()
+        document = new Parser().parseDocument("{ f }", options)
+
+        then:
+        !options.isCaptureSourceLocation()
+        document.getSourceLocation() == SourceLocation.EMPTY
+        document.getDefinitions()[0].getSourceLocation() == SourceLocation.EMPTY
+    }
 }
