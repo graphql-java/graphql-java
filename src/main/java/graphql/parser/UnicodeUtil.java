@@ -33,12 +33,10 @@ public class UnicodeUtil {
         Integer codePoint = Integer.parseInt(hexStr, 16);
 
         if (isTrailingSurrogateValue(codePoint)) {
-            // A trailing surrogate value must be preceded with a leading surrogate value
-            throw new RuntimeException("Invalid unicode");
+            throw new InvalidSyntaxException(null, "Invalid unicode - trailing surrogate must be preceded with a leading surrogate -", null, string.substring(i - 1, continueIndex + 1), null);
         } else if (isLeadingSurrogateValue(codePoint)) {
-            // A leading surrogate value must be followed by a trailing surrogate value
             if (!isEscapedUnicode(string, continueIndex + 1)) {
-                throw new RuntimeException("Invalid unicode");
+                throw new InvalidSyntaxException(null, "Invalid unicode - leading surrogate must be followed by a trailing surrogate -", null, string.substring(i - 1, continueIndex + 1), null);
             }
 
             // Shift parser ahead to 'u' in second escaped Unicode character
@@ -47,21 +45,21 @@ public class UnicodeUtil {
             int trailingEndIndexExclusive = getEndIndexExclusive(string, i);
             String trailingHexStr = string.substring(trailingStartIndex, trailingEndIndexExclusive);
             Integer trailingCodePoint = Integer.parseInt(trailingHexStr, 16);
+            continueIndex = isBracedEscape(string, i) ? trailingEndIndexExclusive : trailingEndIndexExclusive - 1;
 
             if (isTrailingSurrogateValue(trailingCodePoint)) {
                 writeCodePoint(writer, codePoint);
                 writeCodePoint(writer, trailingCodePoint);
-                continueIndex = isBracedEscape(string, i) ? trailingEndIndexExclusive : trailingEndIndexExclusive - 1;
                 return continueIndex;
             }
 
-            throw new RuntimeException("Invalid unicode");
+            throw new InvalidSyntaxException(null, "Invalid unicode - leading surrogate must be followed by a trailing surrogate -", null, string.substring(i - 1, continueIndex + 1), null);
         } else if (isValidUnicodeCodePoint(codePoint)) {
             writeCodePoint(writer, codePoint);
             return continueIndex;
         }
 
-        throw new RuntimeException("Invalid unicode");
+        throw new InvalidSyntaxException(null, "Invalid unicode - not a valid code point -", null, string.substring(i - 1, continueIndex + 1), null);
     }
 
     private static int getEndIndexExclusive(String string, int i) {
@@ -74,7 +72,7 @@ public class UnicodeUtil {
         int endIndexExclusive = i + 2;
         do {
             if (endIndexExclusive + 1 >= string.length()) {
-                throw new RuntimeException("Invalid unicode");
+                throw new InvalidSyntaxException(null, "Invalid unicode - incorrectly formatted escape -", null, string.substring(i - 1, endIndexExclusive), null);
             }
         } while (string.charAt(++endIndexExclusive) != '}');
 
@@ -87,7 +85,7 @@ public class UnicodeUtil {
 
     private static boolean isEscapedUnicode(String string, int index) {
         if (index + 1 >= string.length()) {
-            throw new RuntimeException("Invalid unicode");
+            return false;
         }
         return string.charAt(index) == '\\' && string.charAt(index + 1) == 'u';
     }
