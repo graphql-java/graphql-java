@@ -11,7 +11,6 @@ import graphql.execution.ExecutionId
 import graphql.execution.ExecutionIdProvider
 import graphql.execution.ExecutionStrategyParameters
 import graphql.execution.MissingRootTypeException
-import graphql.execution.batched.BatchedExecutionStrategy
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.SimpleInstrumentation
@@ -789,79 +788,6 @@ class GraphQLTest extends Specification {
         instrumentationName    | instrumentation
         'max query depth'      | new MaxQueryDepthInstrumentation(10)
         'max query complexity' | new MaxQueryComplexityInstrumentation(10)
-    }
-
-
-    def "batched execution with non batched DataFetcher returning CompletableFuture"() {
-        given:
-        GraphQLObjectType foo = newObject()
-                .name("Foo")
-                .withInterface(typeRef("Node"))
-                .field(
-                        { field ->
-                            field
-                                    .name("id")
-                                    .type(Scalars.GraphQLID)
-                        } as UnaryOperator)
-                .build()
-
-        GraphQLInterfaceType node = GraphQLInterfaceType.newInterface()
-                .name("Node")
-                .field(
-                        { field ->
-                            field
-                                    .name("id")
-                                    .type(Scalars.GraphQLID)
-                        } as UnaryOperator)
-                .typeResolver(
-                        {
-                            env ->
-                                if (env.getObject() instanceof CompletableFuture) {
-                                    throw new RuntimeException("This seems bad!")
-                                }
-
-                                return foo
-                        })
-                .build()
-
-        GraphQLObjectType query = newObject()
-                .name("RootQuery")
-                .field(
-                        { field ->
-                            field
-                                    .name("node")
-                                    .dataFetcher(
-                                            { env ->
-                                                CompletableFuture.supplyAsync({ ->
-                                                    Map<String, String> map = new HashMap<>()
-                                                    map.put("id", "abc")
-
-                                                    return map
-                                                })
-                                            })
-                                    .type(node)
-                        } as UnaryOperator)
-                .build()
-
-        GraphQLSchema schema = newSchema()
-                .query(query)
-                .additionalType(foo)
-                .build()
-
-        GraphQL graphQL = GraphQL.newGraphQL(schema)
-                .queryExecutionStrategy(new BatchedExecutionStrategy())
-                .mutationExecutionStrategy(new BatchedExecutionStrategy())
-                .build()
-
-        ExecutionInput executionInput = newExecutionInput()
-                .query("{node {id}}")
-                .build()
-        when:
-        def result = graphQL
-                .execute(executionInput)
-
-        then:
-        result.getData() == [node: [id: "abc"]]
     }
 
     class CaptureStrategy extends AsyncExecutionStrategy {

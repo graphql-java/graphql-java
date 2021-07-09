@@ -10,7 +10,6 @@ import graphql.execution.AsyncSerialExecutionStrategy
 import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionStrategyParameters
 import graphql.execution.ExecutorServiceExecutionStrategy
-import graphql.execution.batched.BatchedExecutionStrategy
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.SimpleInstrumentation
@@ -185,7 +184,6 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         executionStrategyName              | executionStrategy                                               || _
         "AsyncExecutionStrategy"           | new AsyncSerialExecutionStrategy()                              || _
         "AsyncSerialExecutionStrategy"     | new AsyncSerialExecutionStrategy()                              || _
-        "BatchedExecutionStrategy"         | new BatchedExecutionStrategy()                                  || _
         "ExecutorServiceExecutionStrategy" | new ExecutorServiceExecutionStrategy(ForkJoinPool.commonPool()) || _
     }
 
