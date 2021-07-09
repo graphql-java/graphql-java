@@ -729,7 +729,9 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         def input = "{,\r me\n\t} ,\n"
 
         when:
-        Document document = new Parser().parseDocument(input, true)
+        def captureIgnoredCharsTRUE = ParserOptions.newParserOptions().captureIgnoredChars(true).build()
+
+        Document document = new Parser().parseDocument(input, captureIgnoredCharsTRUE)
         def field = (document.definitions[0] as OperationDefinition).selectionSet.selections[0]
         then:
         field.getIgnoredChars().getLeft().size() == 3
@@ -848,8 +850,8 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         parser = new Parser() {
 
             @Override
-            protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, Boolean captureIgnoredChars) {
-                return new GraphqlAntlrToLanguage(tokens, multiSourceReader, captureIgnoredChars) {
+            protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions) {
+                return new GraphqlAntlrToLanguage(tokens, multiSourceReader, parserOptions) {
                     @Override
                     protected void addCommonData(NodeBuilder nodeBuilder, ParserRuleContext parserRuleContext) {
                         super.addCommonData(nodeBuilder, parserRuleContext)
@@ -942,8 +944,12 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
             s : String
             }
         '''
+
+        def captureIgnoredCharsFALSE = ParserOptions.newParserOptions().captureIgnoredChars(false).build()
+        def captureIgnoredCharsTRUE = ParserOptions.newParserOptions().captureIgnoredChars(true).build()
+
         when: "explicitly off"
-        def doc = new Parser().parseDocument(s, false)
+        def doc = new Parser().parseDocument(s, captureIgnoredCharsFALSE)
         def type = doc.getDefinitionsOfType(ObjectTypeDefinition)[0]
         then:
         type.getIgnoredChars() == IgnoredChars.EMPTY
@@ -954,10 +960,11 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
 
         then:
         type.getIgnoredChars() == IgnoredChars.EMPTY
-        !Parser.getCaptureIgnoredChars()
+        !ParserOptions.getDefaultParserOptions().isCaptureIgnoredChars()
 
         when: "explicitly on"
-        doc = new Parser().parseDocument(s, true)
+
+        doc = new Parser().parseDocument(s, captureIgnoredCharsTRUE)
         type = doc.getDefinitionsOfType(ObjectTypeDefinition)[0]
 
         then:
@@ -967,7 +974,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
 
 
         when: "implicitly on if the static is set"
-        Parser.setCaptureIgnoredChars(true)
+        ParserOptions.setDefaultParserOptions(captureIgnoredCharsTRUE)
         doc = new Parser().parseDocument(s)
         type = doc.getDefinitionsOfType(ObjectTypeDefinition)[0]
 

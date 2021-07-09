@@ -86,17 +86,17 @@ public class GraphqlAntlrToLanguage {
     private static final int CHANNEL_IGNORED_CHARS = 3;
     private final CommonTokenStream tokens;
     private final MultiSourceReader multiSourceReader;
-    private final boolean captureIgnoredChars;
+    private final ParserOptions parserOptions;
 
 
     public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
         this(tokens, multiSourceReader, null);
     }
 
-    public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, Boolean captureIgnoredChars) {
+    public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions) {
         this.tokens = tokens;
         this.multiSourceReader = multiSourceReader;
-        this.captureIgnoredChars = captureIgnoredChars == null ? Parser.getCaptureIgnoredChars() : captureIgnoredChars;
+        this.parserOptions = parserOptions == null ? ParserOptions.getDefaultParserOptions() : parserOptions;
     }
 
     //MARKER START: Here GraphqlOperation.g4 specific methods begin
@@ -780,7 +780,7 @@ public class GraphqlAntlrToLanguage {
     }
 
     private void addIgnoredChars(ParserRuleContext ctx, NodeBuilder nodeBuilder) {
-        if (!captureIgnoredChars) {
+        if (!parserOptions.isCaptureIgnoredChars()) {
             return;
         }
         Token start = ctx.getStart();

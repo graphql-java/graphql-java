@@ -35,46 +35,12 @@ import java.util.function.BiFunction;
  *
  * This costs more memory but for certain use cases (like editors) this maybe be useful.  We have chosen to no capture
  * ignored characters by default but you can turn this on, either per parse or statically for the whole JVM
- * via {@link #setCaptureIgnoredChars(boolean)}
+ * via {@link ParserOptions#setDefaultParserOptions(ParserOptions)} ()}}
  *
  * @see graphql.language.IgnoredChar
  */
 @PublicApi
 public class Parser {
-
-    private static boolean captureIgnoredChars = false;
-
-    /**
-     * By default the Parser will not capture ignored characters.  A static holds this default
-     * value in a JVM wide basis.
-     *
-     * Significant memory savings can be made if we do NOT capture ignored characters,
-     * especially in SDL parsing.
-     *
-     * @return the static default value on whether to capture ignored chars
-     *
-     * @see graphql.language.IgnoredChar
-     */
-    public static boolean getCaptureIgnoredChars() {
-        return captureIgnoredChars;
-    }
-
-    /**
-     * By default the Parser will not capture ignored characters.  A static holds this default
-     * value in a JVM wide basis.
-     *
-     * Significant memory savings can be made if we do NOT capture ignored characters,
-     * especially in SDL parsing.  So we have set this to false by default.
-     *
-     * This static can be set to true to allow the behavior of version 16.x or before.
-     *
-     * @param flag - whether to capture ignored characters in AST elements or not
-     *
-     * @see graphql.language.IgnoredChar
-     */
-    public static void setCaptureIgnoredChars(boolean flag) {
-        captureIgnoredChars = flag;
-    }
 
     /**
      * Parses a string input into a graphql AST {@link Document}
@@ -112,7 +78,7 @@ public class Parser {
      * @throws InvalidSyntaxException if the input is not valid graphql syntax
      */
     public Document parseDocument(String input) throws InvalidSyntaxException {
-        return parseDocument(input, null);
+        return parseDocument(input, (ParserOptions) null);
     }
 
     /**
@@ -136,20 +102,19 @@ public class Parser {
     /**
      * Parses a string input into a graphql AST {@link Document}
      *
-     * @param input               the input to parse
-     * @param captureIgnoredChars whether to capture characters that are otherwise ignored in graphql syntax against
-     *                            each AST element
+     * @param input         the input to parse
+     * @param parserOptions the parser options
      *
      * @return an AST {@link Document}
      *
      * @throws InvalidSyntaxException if the input is not valid graphql syntax
      */
-    public Document parseDocument(String input, boolean captureIgnoredChars) throws InvalidSyntaxException {
+    public Document parseDocument(String input, ParserOptions parserOptions) throws InvalidSyntaxException {
         MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
                 .string(input, null)
                 .trackData(true)
                 .build();
-        return parseDocument(multiSourceReader, captureIgnoredChars);
+        return parseDocument(multiSourceReader, parserOptions);
     }
 
     /**
@@ -168,25 +133,24 @@ public class Parser {
     /**
      * Parses reader  input into a graphql AST {@link Document}
      *
-     * @param reader              the reader input to parse
-     * @param captureIgnoredChars whether to capture characters that are otherwise ignored in graphql syntax against
-     *                            each AST element
+     * @param reader        the reader input to parse
+     * @param parserOptions the parser options
      *
      * @return an AST {@link Document}
      *
      * @throws InvalidSyntaxException if the input is not valid graphql syntax
      */
-    public Document parseDocument(Reader reader, boolean captureIgnoredChars) throws InvalidSyntaxException {
-        return parseDocumentImpl(reader, captureIgnoredChars);
+    public Document parseDocument(Reader reader, ParserOptions parserOptions) throws InvalidSyntaxException {
+        return parseDocumentImpl(reader, parserOptions);
     }
 
-    private Document parseDocumentImpl(Reader reader, Boolean captureIgnoredChars) throws InvalidSyntaxException {
+    private Document parseDocumentImpl(Reader reader, ParserOptions parserOptions) throws InvalidSyntaxException {
         BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction = (parser, toLanguage) -> {
             GraphqlParser.DocumentContext documentContext = parser.document();
             Document doc = toLanguage.createDocument(documentContext);
             return new Object[]{documentContext, doc};
         };
-        return (Document) parseImpl(reader, nodeFunction, captureIgnoredChars);
+        return (Document) parseImpl(reader, nodeFunction, parserOptions);
     }
 
     private Value<?> parseValueImpl(String input) throws InvalidSyntaxException {
@@ -202,7 +166,7 @@ public class Parser {
         return (Value<?>) parseImpl(multiSourceReader, nodeFunction, null);
     }
 
-    private Node<?> parseImpl(Reader reader, BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction, Boolean captureIgnoredChars) throws InvalidSyntaxException {
+    private Node<?> parseImpl(Reader reader, BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction, ParserOptions parserOptions) throws InvalidSyntaxException {
         MultiSourceReader multiSourceReader;
         if (reader instanceof MultiSourceReader) {
             multiSourceReader = (MultiSourceReader) reader;
@@ -240,7 +204,7 @@ public class Parser {
         // preserve old protected call semantics - remove at some point
         GraphqlAntlrToLanguage toLanguage = getAntlrToLanguage(tokens, multiSourceReader);
         if (toLanguage == null) {
-            toLanguage = getAntlrToLanguage(tokens, multiSourceReader, captureIgnoredChars);
+            toLanguage = getAntlrToLanguage(tokens, multiSourceReader, parserOptions);
         }
         Object[] contextAndNode = nodeFunction.apply(parser, toLanguage);
         ParserRuleContext parserRuleContext = (ParserRuleContext) contextAndNode[0];
@@ -271,7 +235,7 @@ public class Parser {
      *
      * @return a new GraphqlAntlrToLanguage instance
      *
-     * @deprecated - really should use {@link #getAntlrToLanguage(CommonTokenStream, MultiSourceReader, Boolean)}
+     * @deprecated - really should use {@link #getAntlrToLanguage(CommonTokenStream, MultiSourceReader, ParserOptions)}
      */
     @Deprecated
     protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
@@ -281,13 +245,13 @@ public class Parser {
     /**
      * Allows you to override the ANTLR to AST code.
      *
-     * @param tokens              the token stream
-     * @param multiSourceReader   the source of the query document
-     * @param captureIgnoredChars - whether ignored characters should be captured in the AST elements
+     * @param tokens            the token stream
+     * @param multiSourceReader the source of the query document
+     * @param parserOptions     - the parser options
      *
      * @return a new GraphqlAntlrToLanguage instance
      */
-    protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, Boolean captureIgnoredChars) {
-        return new GraphqlAntlrToLanguage(tokens, multiSourceReader, captureIgnoredChars);
+    protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions) {
+        return new GraphqlAntlrToLanguage(tokens, multiSourceReader, parserOptions);
     }
 }
