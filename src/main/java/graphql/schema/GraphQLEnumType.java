@@ -9,6 +9,7 @@ import graphql.PublicApi;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.EnumValue;
+import graphql.language.Value;
 import graphql.util.FpKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -47,35 +48,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     public static final String CHILD_VALUES = "values";
     public static final String CHILD_DIRECTIVES = "directives";
 
-
-    /**
-     * @param name        the name
-     * @param description the description
-     * @param values      the values
-     *
-     * @deprecated use the {@link #newEnum()}  builder pattern instead, as this constructor will be made private in a future version.
-     */
     @Internal
-    @Deprecated
-    public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values) {
-        this(name, description, values, emptyList(), null);
-    }
-
-    /**
-     * @param name        the name
-     * @param description the description
-     * @param values      the values
-     * @param directives  the directives on this type element
-     * @param definition  the AST definition
-     *
-     * @deprecated use the {@link #newEnum()}  builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values, List<GraphQLDirective> directives, EnumTypeDefinition definition) {
-        this(name, description, values, directives, definition, emptyList());
-    }
-
     private GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values, List<GraphQLDirective> directives, EnumTypeDefinition definition, List<EnumTypeExtensionDefinition> extensionDefinitions) {
         assertValidName(name);
         assertNotNull(directives, () -> "directives cannot be null");
@@ -120,6 +93,14 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
             );
         }
         return enumValueDefinition.getValue();
+    }
+
+    @Internal
+    public Value valueToLiteral(Object input) {
+        GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(input.toString());
+        assertNotNull(enumValueDefinition, () -> "Invalid input for Enum '" + name + "'. No value found for name '" + input + "'");
+        return EnumValue.newEnumValue(enumValueDefinition.getName()).build();
+
     }
 
     public List<GraphQLEnumValueDefinition> getValues() {
@@ -307,7 +288,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
             this.definition = existing.getDefinition();
             this.extensionDefinitions = existing.getExtensionDefinitions();
             this.values.putAll(getByName(existing.getValues(), GraphQLEnumValueDefinition::getName));
-            DirectivesUtil.enforceAddAll(this.directives,existing.getDirectives());
+            DirectivesUtil.enforceAddAll(this.directives, existing.getDirectives());
         }
 
         @Override

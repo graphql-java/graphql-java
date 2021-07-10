@@ -35,6 +35,7 @@ import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLSchema.newSchema
 import static graphql.schema.GraphQLTypeReference.typeRef
 
 class SchemaUtilTest extends Specification {
@@ -136,9 +137,9 @@ class SchemaUtilTest extends Specification {
                 .name("PersonService")
                 .field(field)
                 .build()
-        def schema = new GraphQLSchema(PersonService, null, Collections.singleton(PersonInputType))
+
         when:
-        new SchemaUtil().replaceTypeReferences(schema)
+        newSchema().query(PersonService).additionalType(PersonInputType).build()
         then:
         thrown(ClassCastException)
     }
@@ -195,7 +196,7 @@ class SchemaUtilTest extends Specification {
         final GraphQLObjectType mutation = newObject().name("mutation").field(systemWithArgsForMutation)
                 .build()
 
-        GraphQLSchema.newSchema().query(queryType).mutation(mutation).build()
+        newSchema().query(queryType).mutation(mutation).build()
 
         then:
 

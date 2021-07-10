@@ -56,40 +56,8 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_INTERFACES = "interfaces";
 
-
-    /**
-     * @param name             the name
-     * @param description      the description
-     * @param fieldDefinitions the fields
-     * @param typeResolver     the type resolver function
-     *
-     * @deprecated use the {@link #newInterface()} builder pattern instead, as this constructor will be made private in a future version.
-     */
     @Internal
-    @Deprecated
-    public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver) {
-        this(name, description, fieldDefinitions, typeResolver, emptyList(), null);
-    }
-
-    /**
-     * @param name             the name
-     * @param description      the description
-     * @param fieldDefinitions the fields
-     * @param typeResolver     the type resolver function
-     * @param directives       the directives on this type element
-     * @param definition       the AST definition
-     *
-     * @deprecated use the {@link #newInterface()} builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver, List<GraphQLDirective> directives, InterfaceTypeDefinition definition) {
-        this(name, description, fieldDefinitions, typeResolver, directives, definition, emptyList(), emptyList(), asIsOrder());
-    }
-
-    @Internal
-    @Deprecated
-    public GraphQLInterfaceType(String name,
+    private GraphQLInterfaceType(String name,
                                 String description,
                                 List<GraphQLFieldDefinition> fieldDefinitions,
                                 TypeResolver typeResolver, List<GraphQLDirective> directives,

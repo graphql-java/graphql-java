@@ -1,10 +1,5 @@
 package graphql.execution;
 
-import static java.lang.String.format;
-
-import java.util.Collections;
-import java.util.List;
-
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.GraphQLException;
@@ -14,6 +9,11 @@ import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
+
+import java.util.Collections;
+import java.util.List;
+
+import static java.lang.String.format;
 
 /**
  * This is thrown if a non nullable value is coerced to a null value
@@ -42,9 +42,21 @@ public class NonNullableValueCoercedAsNullException extends GraphQLException imp
         this.path = path;
     }
 
+    public NonNullableValueCoercedAsNullException(String fieldName, List<Object> path, GraphQLType graphQLType) {
+        super(format("Field '%s' has coerced Null value for NonNull type '%s'",
+                fieldName, GraphQLTypeUtil.simplePrint(graphQLType)));
+        this.path = path;
+    }
+
     public NonNullableValueCoercedAsNullException(GraphQLInputObjectField inputTypeField) {
         super(format("Input field '%s' has coerced Null value for NonNull type '%s'",
                 inputTypeField.getName(), GraphQLTypeUtil.simplePrint(inputTypeField.getType())));
+    }
+
+    public NonNullableValueCoercedAsNullException(GraphQLInputObjectField inputTypeField, List<Object> path) {
+        super(format("Input field '%s' has coerced Null value for NonNull type '%s'",
+                inputTypeField.getName(), GraphQLTypeUtil.simplePrint(inputTypeField.getType())));
+        this.path = path;
     }
 
     @Override

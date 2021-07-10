@@ -50,37 +50,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
     public static final String CHILD_TYPES = "types";
     public static final String CHILD_DIRECTIVES = "directives";
 
-
-    /**
-     * @param name         the name
-     * @param description  the description
-     * @param types        the possible types
-     * @param typeResolver the type resolver function
-     *
-     * @deprecated use the {@link #newUnionType()} builder pattern instead, as this constructor will be made private in a future version.
-     */
     @Internal
-    @Deprecated
-    public GraphQLUnionType(String name, String description, List<GraphQLNamedOutputType> types, TypeResolver typeResolver) {
-        this(name, description, types, typeResolver, emptyList(), null);
-    }
-
-    /**
-     * @param name         the name
-     * @param description  the description
-     * @param types        the possible types
-     * @param typeResolver the type resolver function
-     * @param directives   the directives on this type element
-     * @param definition   the AST definition
-     *
-     * @deprecated use the {@link #newUnionType()} builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLUnionType(String name, String description, List<GraphQLNamedOutputType> types, TypeResolver typeResolver, List<GraphQLDirective> directives, UnionTypeDefinition definition) {
-        this(name, description, types, typeResolver, directives, definition, emptyList());
-    }
-
     private GraphQLUnionType(String name, String description, List<GraphQLNamedOutputType> types, TypeResolver typeResolver, List<GraphQLDirective> directives, UnionTypeDefinition definition, List<UnionTypeExtensionDefinition> extensionDefinitions) {
         assertValidName(name);
         assertNotNull(types, () -> "types can't be null");

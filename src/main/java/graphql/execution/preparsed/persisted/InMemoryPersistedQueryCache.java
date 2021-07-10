@@ -32,7 +32,14 @@ public class InMemoryPersistedQueryCache implements PersistedQueryCache {
             if (v != null) {
                 return v;
             }
-            String queryText = knownQueries.get(persistedQueryId);
+
+            //get the query from the execution input. Make sure it's not null, empty or the APQ marker.
+            // if it is, fallback to the known queries.
+            String queryText = executionInput.getQuery();
+            if (queryText == null || queryText.isEmpty() || queryText.equals(PersistedQuerySupport.PERSISTED_QUERY_MARKER)) {
+                queryText = knownQueries.get(persistedQueryId);
+            }
+
             if (queryText == null) {
                 throw new PersistedQueryNotFound(persistedQueryId);
             }

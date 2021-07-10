@@ -27,12 +27,9 @@ public class BlockedFields implements GraphqlFieldVisibility {
 
     /**
      * @param patterns the blocked field patterns
-     *
-     * @deprecated use the {@link #newBlock()} builder pattern instead, as this constructor will be made private in a future version.
      */
     @Internal
-    @Deprecated
-    public BlockedFields(List<Pattern> patterns) {
+    private BlockedFields(List<Pattern> patterns) {
         this.patterns = patterns;
     }
 

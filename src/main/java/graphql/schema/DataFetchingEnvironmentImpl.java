@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import com.google.common.collect.ImmutableMap;
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.cachecontrol.CacheControl;
 import graphql.collect.ImmutableKit;
@@ -30,6 +31,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Object source;
     private final Supplier<Map<String, Object>> arguments;
     private final Object context;
+    private final GraphQLContext graphQLContext;
     private final Object localContext;
     private final Object root;
     private final GraphQLFieldDefinition fieldDefinition;
@@ -53,6 +55,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.source = builder.source;
         this.arguments = builder.arguments == null ? Collections::emptyMap : builder.arguments;
         this.context = builder.context;
+        this.graphQLContext = builder.graphQLContext;
         this.localContext = builder.localContext;
         this.root = builder.root;
         this.fieldDefinition = builder.fieldDefinition;
@@ -87,6 +90,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     public static Builder newDataFetchingEnvironment(ExecutionContext executionContext) {
         return new Builder()
                 .context(executionContext.getContext())
+                .graphQLContext(executionContext.getGraphQLContext())
                 .root(executionContext.getRoot())
                 .graphQLSchema(executionContext.getGraphQLSchema())
                 .fragmentsByName(executionContext.getFragmentsByName())
@@ -127,6 +131,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public <T> T getContext() {
         return (T) context;
+    }
+
+    @Override
+    public GraphQLContext getGraphQlContext() {
+        return graphQLContext;
     }
 
     @Override
@@ -245,6 +254,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
         private Object source;
         private Object context;
+        private GraphQLContext graphQLContext;
         private Object localContext;
         private Object root;
         private GraphQLFieldDefinition fieldDefinition;
@@ -269,6 +279,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.source = env.source;
             this.arguments = env.arguments;
             this.context = env.context;
+            this.graphQLContext = env.graphQLContext;
             this.localContext = env.localContext;
             this.root = env.root;
             this.fieldDefinition = env.fieldDefinition;
@@ -306,8 +317,14 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             return this;
         }
 
+        @Deprecated
         public Builder context(Object context) {
             this.context = context;
+            return this;
+        }
+
+        public Builder graphQLContext(GraphQLContext context) {
+            this.graphQLContext = context;
             return this;
         }
 

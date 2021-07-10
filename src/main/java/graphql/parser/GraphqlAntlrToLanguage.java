@@ -86,11 +86,17 @@ public class GraphqlAntlrToLanguage {
     private static final int CHANNEL_IGNORED_CHARS = 3;
     private final CommonTokenStream tokens;
     private final MultiSourceReader multiSourceReader;
+    private final boolean captureIgnoredChars;
 
 
     public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
+        this(tokens, multiSourceReader, null);
+    }
+
+    public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, Boolean captureIgnoredChars) {
         this.tokens = tokens;
         this.multiSourceReader = multiSourceReader;
+        this.captureIgnoredChars = captureIgnoredChars == null ? Parser.getCaptureIgnoredChars() : captureIgnoredChars;
     }
 
     //MARKER START: Here GraphqlOperation.g4 specific methods begin
@@ -774,6 +780,9 @@ public class GraphqlAntlrToLanguage {
     }
 
     private void addIgnoredChars(ParserRuleContext ctx, NodeBuilder nodeBuilder) {
+        if (!captureIgnoredChars) {
+            return;
+        }
         Token start = ctx.getStart();
         int tokenStartIndex = start.getTokenIndex();
         List<Token> leftChannel = tokens.getHiddenTokensToLeft(tokenStartIndex, CHANNEL_IGNORED_CHARS);
@@ -884,9 +893,8 @@ public class GraphqlAntlrToLanguage {
     private List<Type> getImplementz(GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext) {
         List<Type> implementz = new ArrayList<>();
         while (implementsInterfacesContext != null) {
-            List<TypeName> typeNames = map(implementsInterfacesContext.typeName(), this::createTypeName);
-
-            implementz.addAll(0, typeNames);
+            GraphqlParser.TypeNameContext typeName = implementsInterfacesContext.typeName();
+            implementz.add(0, createTypeName(typeName));
             implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
         }
         return implementz;

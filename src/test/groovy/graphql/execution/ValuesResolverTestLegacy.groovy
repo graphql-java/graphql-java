@@ -1,35 +1,36 @@
 package graphql.language
 
+
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectType
 import spock.lang.Specification
 
-import static AstValueHelper.astFromValue
 import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLID
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.execution.ValuesResolver.valueToLiteralLegacy
 import static graphql.language.BooleanValue.newBooleanValue
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
 
-class AstValueHelperTest extends Specification {
+class ValuesResolverTestLegacy extends Specification {
 
     def 'converts boolean values to ASTs'() {
         expect:
-        astFromValue(true, GraphQLBoolean).isEqualTo(newBooleanValue(true).build())
+        valueToLiteralLegacy(true, GraphQLBoolean).isEqualTo(newBooleanValue(true).build())
 
-        astFromValue(false, GraphQLBoolean).isEqualTo(newBooleanValue(false).build())
+        valueToLiteralLegacy(false, GraphQLBoolean).isEqualTo(newBooleanValue(false).build())
 
-        astFromValue(null, GraphQLBoolean) == null
+        valueToLiteralLegacy(null, GraphQLBoolean) == null
 
-        astFromValue(0, GraphQLBoolean).isEqualTo(newBooleanValue(false).build())
+        valueToLiteralLegacy(0, GraphQLBoolean).isEqualTo(newBooleanValue(false).build())
 
-        astFromValue(1, GraphQLBoolean).isEqualTo(newBooleanValue(true).build())
+        valueToLiteralLegacy(1, GraphQLBoolean).isEqualTo(newBooleanValue(true).build())
 
         def NonNullBoolean = nonNull(GraphQLBoolean)
-        astFromValue(0, NonNullBoolean).isEqualTo(newBooleanValue(false).build())
+        valueToLiteralLegacy(0, NonNullBoolean).isEqualTo(newBooleanValue(false).build())
     }
 
     BigInteger bigInt(int i) {
@@ -38,60 +39,60 @@ class AstValueHelperTest extends Specification {
 
     def 'converts Int values to Int ASTs'() {
         expect:
-        astFromValue(123.0, GraphQLInt).isEqualTo(IntValue.newIntValue(bigInt(123)).build())
+        valueToLiteralLegacy(123.0, GraphQLInt).isEqualTo(IntValue.newIntValue(bigInt(123)).build())
 
-        astFromValue(1e4, GraphQLInt).isEqualTo(IntValue.newIntValue(bigInt(10000)).build())
+        valueToLiteralLegacy(1e4, GraphQLInt).isEqualTo(IntValue.newIntValue(bigInt(10000)).build())
     }
 
     def 'converts Float values to Int/Float ASTs'() {
         expect:
-        astFromValue(123.0, GraphQLFloat).isEqualTo(FloatValue.newFloatValue(123.0).build())
+        valueToLiteralLegacy(123.0, GraphQLFloat).isEqualTo(FloatValue.newFloatValue(123.0).build())
 
-        astFromValue(123.5, GraphQLFloat).isEqualTo(FloatValue.newFloatValue(123.5).build())
+        valueToLiteralLegacy(123.5, GraphQLFloat).isEqualTo(FloatValue.newFloatValue(123.5).build())
 
-        astFromValue(1e4, GraphQLFloat).isEqualTo(FloatValue.newFloatValue(10000.0).build())
+        valueToLiteralLegacy(1e4, GraphQLFloat).isEqualTo(FloatValue.newFloatValue(10000.0).build())
 
-        astFromValue(1e40, GraphQLFloat).isEqualTo(FloatValue.newFloatValue(1.0e40).build())
+        valueToLiteralLegacy(1e40, GraphQLFloat).isEqualTo(FloatValue.newFloatValue(1.0e40).build())
     }
 
 
     def 'converts String values to String ASTs'() {
         expect:
-        astFromValue('hello', GraphQLString).isEqualTo(new StringValue('hello'))
+        valueToLiteralLegacy('hello', GraphQLString).isEqualTo(new StringValue('hello'))
 
-        astFromValue('VALUE', GraphQLString).isEqualTo(new StringValue('VALUE'))
+        valueToLiteralLegacy('VALUE', GraphQLString).isEqualTo(new StringValue('VALUE'))
 
-        astFromValue('VA\n\t\f\r\b\\LUE', GraphQLString).isEqualTo(new StringValue('VA\n\t\f\r\b\\LUE'))
+        valueToLiteralLegacy('VA\n\t\f\r\b\\LUE', GraphQLString).isEqualTo(new StringValue('VA\n\t\f\r\b\\LUE'))
 
-        astFromValue('VA\\L\"UE', GraphQLString).isEqualTo(new StringValue('VA\\L\"UE'))
+        valueToLiteralLegacy('VA\\L\"UE', GraphQLString).isEqualTo(new StringValue('VA\\L\"UE'))
 
-        astFromValue(123, GraphQLString).isEqualTo(new StringValue('123'))
+        valueToLiteralLegacy(123, GraphQLString).isEqualTo(new StringValue('123'))
 
-        astFromValue(false, GraphQLString).isEqualTo(new StringValue('false'))
+        valueToLiteralLegacy(false, GraphQLString).isEqualTo(new StringValue('false'))
 
-        astFromValue(null, GraphQLString) == null
+        valueToLiteralLegacy(null, GraphQLString) == null
     }
 
     def 'converts ID values to Int/String ASTs'() {
         expect:
-        astFromValue('hello', GraphQLID).isEqualTo(new StringValue('hello'))
+        valueToLiteralLegacy('hello', GraphQLID).isEqualTo(new StringValue('hello'))
 
-        astFromValue('VALUE', GraphQLID).isEqualTo(new StringValue('VALUE'))
+        valueToLiteralLegacy('VALUE', GraphQLID).isEqualTo(new StringValue('VALUE'))
 
         // Note: EnumValues cannot contain non-identifier characters
-        astFromValue('VA\nLUE', GraphQLID).isEqualTo(new StringValue('VA\nLUE'))
+        valueToLiteralLegacy('VA\nLUE', GraphQLID).isEqualTo(new StringValue('VA\nLUE'))
 
         // Note: IntValues are used when possible.
-        astFromValue(123, GraphQLID).isEqualTo(new IntValue(bigInt(123)))
+        valueToLiteralLegacy(123, GraphQLID).isEqualTo(new IntValue(bigInt(123)))
 
-        astFromValue(null, GraphQLID) == null
+        valueToLiteralLegacy(null, GraphQLID) == null
     }
 
 
     def 'does not converts NonNull values to NullValue'() {
         expect:
         def NonNullBoolean = nonNull(GraphQLBoolean)
-        astFromValue(null, NonNullBoolean) == null
+        valueToLiteralLegacy(null, NonNullBoolean) == null
     }
 
     def complexValue = { someArbitrary: 'complexValue' }
@@ -105,26 +106,26 @@ class AstValueHelperTest extends Specification {
 
     def 'converts string values to Enum ASTs if possible'() {
         expect:
-        astFromValue('HELLO', myEnum).isEqualTo(new EnumValue('HELLO'))
+        valueToLiteralLegacy('HELLO', myEnum).isEqualTo(new EnumValue('HELLO'))
 
-        astFromValue(complexValue, myEnum).isEqualTo(new EnumValue('COMPLEX'))
+        valueToLiteralLegacy(complexValue, myEnum).isEqualTo(new EnumValue('COMPLEX'))
     }
 
     def 'converts array values to List ASTs'() {
         expect:
-        astFromValue(['FOO', 'BAR'], list(GraphQLString)).isEqualTo(
+        valueToLiteralLegacy(['FOO', 'BAR'], list(GraphQLString)).isEqualTo(
                 new ArrayValue([new StringValue('FOO'), new StringValue('BAR')])
         )
 
 
-        astFromValue(['HELLO', 'GOODBYE'], list(myEnum)).isEqualTo(
+        valueToLiteralLegacy(['HELLO', 'GOODBYE'], list(myEnum)).isEqualTo(
                 new ArrayValue([new EnumValue('HELLO'), new EnumValue('GOODBYE')])
         )
     }
 
     def 'converts list singletons'() {
         expect:
-        astFromValue('FOO', list(GraphQLString)).isEqualTo(
+        valueToLiteralLegacy('FOO', list(GraphQLString)).isEqualTo(
                 new StringValue('FOO')
         )
     }
@@ -133,6 +134,7 @@ class AstValueHelperTest extends Specification {
         def foo = 3
         def bar = "HELLO"
     }
+
     class SomePojoWithFields {
         public float foo = 3
         public String bar = "HELLO"
@@ -147,19 +149,19 @@ class AstValueHelperTest extends Specification {
                 .build()
         expect:
 
-        astFromValue([foo: 3, bar: 'HELLO'], inputObj).isEqualTo(
+        valueToLiteralLegacy([foo: 3, bar: 'HELLO'], inputObj).isEqualTo(
                 new ObjectValue([new ObjectField("foo", new IntValue(bigInt(3))),
                                  new ObjectField("bar", new EnumValue('HELLO')),
                 ])
         )
 
-        astFromValue(new SomePojo(), inputObj).isEqualTo(
+        valueToLiteralLegacy(new SomePojo(), inputObj).isEqualTo(
                 new ObjectValue([new ObjectField("foo", new IntValue(bigInt(3))),
                                  new ObjectField("bar", new EnumValue('HELLO')),
                 ])
         )
 
-        astFromValue(new SomePojoWithFields(), inputObj).isEqualTo(
+        valueToLiteralLegacy(new SomePojoWithFields(), inputObj).isEqualTo(
                 new ObjectValue([new ObjectField("foo", new IntValue(bigInt(3))),
                                  new ObjectField("bar", new EnumValue('HELLO')),
                 ])
@@ -176,23 +178,10 @@ class AstValueHelperTest extends Specification {
                 .field({ f -> f.name("bar").type(myEnum) })
                 .build()
 
-        astFromValue([foo: null], inputObj).isEqualTo(
+        valueToLiteralLegacy([foo: null], inputObj).isEqualTo(
                 new ObjectValue([new ObjectField("foo", null)])
         )
     }
 
-    def 'parse ast literals'() {
-        expect:
-        AstValueHelper.valueFromAst(valueLiteral) in expectedValue
-
-        where:
-        valueLiteral                                  | expectedValue
-        '"s"'                                         | StringValue.class
-        'true'                                        | BooleanValue.class
-        '666'                                         | IntValue.class
-        '666.6'                                       | FloatValue.class
-        '["A", "B", "C"]'                             | ArrayValue.class
-        '{string : "s", integer : 1, boolean : true}' | ObjectValue.class
-    }
 
 }

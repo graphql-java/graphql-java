@@ -20,8 +20,8 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldParamete
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.Field;
-import graphql.normalized.NormalizedField;
-import graphql.normalized.NormalizedQueryTree;
+import graphql.normalized.ExecutableNormalizedField;
+import graphql.normalized.ExecutableNormalizedOperation;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static graphql.execution.Async.exceptionallyCompletedFuture;
@@ -154,7 +155,9 @@ public abstract class ExecutionStrategy {
      *
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
+     *
      * @return a promise to an {@link ExecutionResult}
+     *
      * @throws NonNullableFieldWasNullException in the future if a non null field resolves to a null value
      */
     public abstract CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException;
@@ -170,7 +173,9 @@ public abstract class ExecutionStrategy {
      *
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
+     *
      * @return a promise to an {@link ExecutionResult}
+     *
      * @throws NonNullableFieldWasNullException in the future if a non null field resolves to a null value
      */
     protected CompletableFuture<ExecutionResult> resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
@@ -188,7 +193,9 @@ public abstract class ExecutionStrategy {
      *
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
+     *
      * @return a promise to a {@link FieldValueInfo}
+     *
      * @throws NonNullableFieldWasNullException in the {@link FieldValueInfo#getFieldValue()} future if a non null field resolves to a null value
      */
     protected CompletableFuture<FieldValueInfo> resolveFieldWithInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
@@ -220,7 +227,9 @@ public abstract class ExecutionStrategy {
      *
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
+     *
      * @return a promise to a fetched object
+     *
      * @throws NonNullableFieldWasNullException in the future if a non null field resolves to a null value
      */
     protected CompletableFuture<FetchedValue> fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
@@ -236,10 +245,10 @@ public abstract class ExecutionStrategy {
                 () -> createExecutionStepInfo(executionContext, parameters, fieldDef, parentType));
         Supplier<Map<String, Object>> argumentValues = () -> executionStepInfo.get().getArguments();
 
-        Supplier<NormalizedField> normalizedFieldSupplier = getNormalizedField(executionContext, parameters, executionStepInfo);
+        Supplier<ExecutableNormalizedField> normalizedFieldSupplier = getNormalizedField(executionContext, parameters, executionStepInfo);
 
         // DataFetchingFieldSelectionSet and QueryDirectives is a supplier of sorts - eg a lazy pattern
-        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(fieldType, normalizedFieldSupplier);
+        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext.getGraphQLSchema(), fieldType, normalizedFieldSupplier);
         QueryDirectives queryDirectives = new QueryDirectivesImpl(field, executionContext.getGraphQLSchema(), executionContext.getVariables());
 
 
@@ -282,28 +291,27 @@ public abstract class ExecutionStrategy {
                 .handle((result, exception) -> {
                     fetchCtx.onCompleted(result, exception);
                     if (exception != null) {
-                        handleFetchingException(executionContext, environment, exception);
-                        return null;
+                        return handleFetchingException(executionContext, environment, exception);
                     } else {
-                        return result;
+                        return CompletableFuture.completedFuture(result);
                     }
                 })
+                .thenCompose(Function.identity())
                 .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result));
     }
 
-    protected Supplier<NormalizedField> getNormalizedField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Supplier<ExecutionStepInfo> executionStepInfo) {
-        Supplier<NormalizedQueryTree> normalizedQuery = executionContext.getNormalizedQueryTree();
+    protected Supplier<ExecutableNormalizedField> getNormalizedField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Supplier<ExecutionStepInfo> executionStepInfo) {
+        Supplier<ExecutableNormalizedOperation> normalizedQuery = executionContext.getNormalizedQueryTree();
         return () -> normalizedQuery.get().getNormalizedField(parameters.getField(), executionStepInfo.get().getObjectType(), executionStepInfo.get().getPath());
     }
 
     protected FetchedValue unboxPossibleDataFetcherResult(ExecutionContext executionContext,
-                                                ExecutionStrategyParameters parameters,
-                                                Object result) {
+                                                          ExecutionStrategyParameters parameters,
+                                                          Object result) {
 
         if (result instanceof DataFetcherResult) {
-            //noinspection unchecked
-            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result;
-            dataFetcherResult.getErrors().forEach(executionContext::addError);
+            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult<?>) result;
+            executionContext.addErrors(dataFetcherResult.getErrors());
 
             Object localContext = dataFetcherResult.getLocalContext();
             if (localContext == null) {
@@ -325,26 +333,35 @@ public abstract class ExecutionStrategy {
         }
     }
 
-    protected void handleFetchingException(ExecutionContext executionContext,
-                                         DataFetchingEnvironment environment,
-                                         Throwable e) {
+    protected <T> CompletableFuture<T> handleFetchingException(ExecutionContext executionContext,
+                                                               DataFetchingEnvironment environment,
+                                                               Throwable e) {
         DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                 .dataFetchingEnvironment(environment)
                 .exception(e)
                 .build();
 
-        DataFetcherExceptionHandlerResult handlerResult;
         try {
-            handlerResult = dataFetcherExceptionHandler.onException(handlerParameters);
+            return asyncHandleException(dataFetcherExceptionHandler, handlerParameters, executionContext);
         } catch (Exception handlerException) {
             handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                     .dataFetchingEnvironment(environment)
                     .exception(handlerException)
                     .build();
-            handlerResult = new SimpleDataFetcherExceptionHandler().onException(handlerParameters);
+            return asyncHandleException(new SimpleDataFetcherExceptionHandler(), handlerParameters, executionContext);
         }
-        handlerResult.getErrors().forEach(executionContext::addError);
+    }
 
+    private <T> CompletableFuture<T> asyncHandleException(DataFetcherExceptionHandler handler, DataFetcherExceptionHandlerParameters handlerParameters, ExecutionContext executionContext) {
+        return handler.handleException(handlerParameters)
+                .thenApply(handlerResult -> {
+                            // the side effect is that we added the returned errors to the execution context
+                            // here
+                            executionContext.addErrors(handlerResult.getErrors());
+                            // and we return null because there is no data for the executed field
+                            return null;
+                        }
+                );
     }
 
     /**
@@ -359,7 +376,9 @@ public abstract class ExecutionStrategy {
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param fetchedValue     the fetched raw value
+     *
      * @return a {@link FieldValueInfo}
+     *
      * @throws NonNullableFieldWasNullException in the {@link FieldValueInfo#getFieldValue()} future if a non null field resolves to a null value
      */
     protected FieldValueInfo completeField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, FetchedValue fetchedValue) {
@@ -407,7 +426,9 @@ public abstract class ExecutionStrategy {
      *
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
+     *
      * @return a {@link FieldValueInfo}
+     *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected FieldValueInfo completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
@@ -468,6 +489,7 @@ public abstract class ExecutionStrategy {
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param result           the result to complete, raw result
+     *
      * @return a {@link FieldValueInfo}
      */
     protected FieldValueInfo completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object result) {
@@ -490,6 +512,7 @@ public abstract class ExecutionStrategy {
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param iterableValues   the values to complete, can't be null
+     *
      * @return a {@link FieldValueInfo}
      */
     protected FieldValueInfo completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Iterable<Object> iterableValues) {
@@ -563,6 +586,7 @@ public abstract class ExecutionStrategy {
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param scalarType       the type of the scalar
      * @param result           the result to be coerced
+     *
      * @return a promise to an {@link ExecutionResult}
      */
     protected CompletableFuture<ExecutionResult> completeValueForScalar(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLScalarType scalarType, Object result) {
@@ -593,6 +617,7 @@ public abstract class ExecutionStrategy {
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param enumType         the type of the enum
      * @param result           the result to be coerced
+     *
      * @return a promise to an {@link ExecutionResult}
      */
     protected CompletableFuture<ExecutionResult> completeValueForEnum(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLEnumType enumType, Object result) {
@@ -617,6 +642,7 @@ public abstract class ExecutionStrategy {
      * @param parameters         contains the parameters holding the fields to be executed and source object
      * @param resolvedObjectType the resolved object type
      * @param result             the result to be coerced
+     *
      * @return a promise to an {@link ExecutionResult}
      */
     protected CompletableFuture<ExecutionResult> completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
@@ -661,7 +687,9 @@ public abstract class ExecutionStrategy {
      * Converts an object that is known to should be an Iterable into one
      *
      * @param result the result object
+     *
      * @return an Iterable from that object
+     *
      * @throws java.lang.ClassCastException if its not an Iterable
      */
     protected Iterable<Object> toIterable(Object result) {
@@ -687,7 +715,6 @@ public abstract class ExecutionStrategy {
         TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getUnwrappedNonNullType());
         logNotSafe.warn("{} got {}", error.getMessage(), result.getClass());
         context.addError(error);
-
     }
 
 
@@ -697,6 +724,7 @@ public abstract class ExecutionStrategy {
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param field            the field to find the definition of
+     *
      * @return a {@link GraphQLFieldDefinition}
      */
     protected GraphQLFieldDefinition getFieldDef(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Field field) {
@@ -710,6 +738,7 @@ public abstract class ExecutionStrategy {
      * @param schema     the schema in play
      * @param parentType the parent type of the field
      * @param field      the field to find the definition of
+     *
      * @return a {@link GraphQLFieldDefinition}
      */
     protected GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLObjectType parentType, Field field) {
@@ -727,6 +756,7 @@ public abstract class ExecutionStrategy {
      *
      * @param e this indicates that a null value was returned for a non null field, which needs to cause the parent field
      *          to become null OR continue on as an exception
+     *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected void assertNonNullFieldPrecondition(NonNullableFieldWasNullException e) throws NonNullableFieldWasNullException {
@@ -774,6 +804,7 @@ public abstract class ExecutionStrategy {
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param fieldDefinition  the field definition to build type info for
      * @param fieldContainer   the field container
+     *
      * @return a new type info
      */
     protected ExecutionStepInfo createExecutionStepInfo(ExecutionContext executionContext,

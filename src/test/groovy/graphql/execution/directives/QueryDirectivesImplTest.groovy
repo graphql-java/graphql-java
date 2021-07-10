@@ -4,6 +4,8 @@ import graphql.TestUtil
 import graphql.execution.MergedField
 import spock.lang.Specification
 
+import static graphql.language.AstPrinter.printAst
+
 class QueryDirectivesImplTest extends Specification {
 
     def sdl = '''
@@ -43,11 +45,11 @@ class QueryDirectivesImplTest extends Specification {
         result[0].getName() == "cached"
         result[1].getName() == "cached"
 
-        result[0].getArgument("forMillis").getValue() == 99 // defaults
-        result[0].getArgument("forMillis").getDefaultValue() == 99
+        result[0].getArgument("forMillis").getArgumentValue().value == 99 // defaults
+        printAst(result[0].getArgument("forMillis").getArgumentDefaultValue().getValue()) == "99"
 
-        result[1].getArgument("forMillis").getValue() == 10
-        result[1].getArgument("forMillis").getDefaultValue() == 99
+        result[1].getArgument("forMillis").getArgumentValue().value == 10
+        printAst(result[1].getArgument("forMillis").getArgumentDefaultValue().getValue()) == "99"
 
         // the prototypical other properties are copied ok
         result[0].validLocations().collect({ it.name() }).sort() == ["FIELD", "QUERY"]

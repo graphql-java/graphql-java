@@ -1,6 +1,6 @@
 package graphql.schema.idl
 
-import graphql.Scalars
+
 import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
 import graphql.schema.Coercing
@@ -58,7 +58,7 @@ class WiringFactoryTest extends Specification {
 
         @Override
         GraphQLScalarType getScalar(ScalarWiringEnvironment environment) {
-            return new GraphQLScalarType(name, "Custom scalar", new Coercing() {
+            return GraphQLScalarType.newScalar().name(name).description("Custom scalar").coercing(new Coercing() {
                 @Override
                 Object serialize(Object input) {
                     throw new UnsupportedOperationException("Not implemented")
@@ -74,6 +74,7 @@ class WiringFactoryTest extends Specification {
                     throw new UnsupportedOperationException("Not implemented")
                 }
             })
+            .build()
         }
 
         @Override
@@ -206,7 +207,6 @@ class WiringFactoryTest extends Specification {
 
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(combinedWiringFactory)
-                .scalar(Scalars.GraphQLLong)
                 .build()
 
         def schema = TestUtil.schema(spec, wiring)

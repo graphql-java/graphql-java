@@ -3,7 +3,6 @@ package graphql.introspection;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.language.Argument;
-import graphql.language.AstValueHelper;
 import graphql.language.Description;
 import graphql.language.Directive;
 import graphql.language.DirectiveDefinition;
@@ -28,6 +27,7 @@ import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
+import graphql.parser.Parser;
 import graphql.schema.idl.ScalarInfo;
 
 import java.util.ArrayList;
@@ -51,6 +51,7 @@ public class IntrospectionResultToSchema {
      * Returns a IDL Document that represents the schema as defined by the introspection execution result
      *
      * @param introspectionResult the result of an introspection query on a schema
+     *
      * @return a IDL Document of the schema
      */
     public Document createSchemaDefinition(ExecutionResult introspectionResult) {
@@ -67,6 +68,7 @@ public class IntrospectionResultToSchema {
      * Returns a IDL Document that represents the schema as defined by the introspection result map
      *
      * @param introspectionResult the result of an introspection query on a schema
+     *
      * @return a IDL Document of the schema
      */
     @SuppressWarnings("unchecked")
@@ -108,7 +110,9 @@ public class IntrospectionResultToSchema {
         List<Map<String, Object>> types = (List<Map<String, Object>>) schema.get("types");
         for (Map<String, Object> type : types) {
             TypeDefinition typeDefinition = createTypeDefinition(type);
-            if (typeDefinition == null) continue;
+            if (typeDefinition == null) {
+                continue;
+            }
             document.definition(typeDefinition);
         }
 
@@ -163,7 +167,9 @@ public class IntrospectionResultToSchema {
     private TypeDefinition createTypeDefinition(Map<String, Object> type) {
         String kind = (String) type.get("kind");
         String name = (String) type.get("name");
-        if (name.startsWith("__")) return null;
+        if (name.startsWith("__")) {
+            return null;
+        }
         switch (kind) {
             case "INTERFACE":
                 return createInterface(type);
@@ -329,8 +335,8 @@ public class IntrospectionResultToSchema {
 
             String valueLiteral = (String) arg.get("defaultValue");
             if (valueLiteral != null) {
-                Value defaultValue = AstValueHelper.valueFromAst(valueLiteral);
-                inputValueDefinition.defaultValue(defaultValue);
+                Value<?> value = Parser.parseValue(valueLiteral);
+                inputValueDefinition.defaultValue(value);
             }
             result.add(inputValueDefinition.build());
         }
@@ -370,5 +376,6 @@ public class IntrospectionResultToSchema {
             return new Description(description, null, false);
         }
     }
+
 
 }

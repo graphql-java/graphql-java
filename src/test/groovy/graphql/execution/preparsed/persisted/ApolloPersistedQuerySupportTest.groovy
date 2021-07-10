@@ -12,9 +12,13 @@ import static graphql.language.AstPrinter.printAstCompact
 
 class ApolloPersistedQuerySupportTest extends Specification {
 
+    def hashOne = "761cd68b4afb3a824091884dd6cb759b5d068102c293af5a0bc2023bbf8fdb9f"
+    def hashTwo = "6e0a57aac0c8280588155e6d93436ad313e4c441b4e356703bdc297e32123d8f"
+
     def knownQueries = [
-            "hash123": "query { oneTwoThree }",
-            "hash456": "query { fourFiveSix }"
+            (hashOne): "query { oneTwoThree }",
+            (hashTwo): "query { fourFiveSix }",
+            badHash  : "query { fourFiveSix }"
     ]
 
     // this cache will do a lookup, make the call back on miss and otherwise return cached values. And it
@@ -57,28 +61,27 @@ class ApolloPersistedQuerySupportTest extends Specification {
     }
 
     def "will call the callback on cache miss and then not after initial caching"() {
-
         CacheImplementation persistedQueryCache = new CacheImplementation()
         def apolloSupport = new ApolloPersistedQuerySupport(persistedQueryCache)
 
         when:
-        def ei = mkEI("hash123", PERSISTED_QUERY_MARKER)
+        def ei = mkEI(hashOne, PERSISTED_QUERY_MARKER)
         def documentEntry = apolloSupport.getDocument(ei, engineParser)
         def doc = documentEntry.getDocument()
         then:
         printAstCompact(doc) == "query {oneTwoThree}"
-        persistedQueryCache.keyCount["hash123"] == 1
-        persistedQueryCache.parseCount["hash123"] == 1
+        persistedQueryCache.keyCount[hashOne] == 1
+        persistedQueryCache.parseCount[hashOne] == 1
 
         when:
-        ei = mkEI("hash123", PERSISTED_QUERY_MARKER)
+        ei = mkEI(hashOne, PERSISTED_QUERY_MARKER)
         documentEntry = apolloSupport.getDocument(ei, engineParser)
         doc = documentEntry.getDocument()
 
         then:
         printAstCompact(doc) == "query {oneTwoThree}"
-        persistedQueryCache.keyCount["hash123"] == 2
-        persistedQueryCache.parseCount["hash123"] == 1 // only compiled once cause we had it
+        persistedQueryCache.keyCount[hashOne] == 2
+        persistedQueryCache.parseCount[hashOne] == 1 // only compiled once cause we had it
     }
 
     def "will act as a normal query if there and no hash id present"() {
@@ -101,13 +104,13 @@ class ApolloPersistedQuerySupportTest extends Specification {
         def apolloSupport = new ApolloPersistedQuerySupport(persistedQueryCache)
 
         when:
-        def ei = mkEI("hash123", "query {normal}")
+        def ei = mkEI(hashOne, "query {normal}")
         def documentEntry = apolloSupport.getDocument(ei, engineParser)
         def doc = documentEntry.getDocument()
         then:
         printAstCompact(doc) == "query {oneTwoThree}"
-        persistedQueryCache.keyCount["hash123"] == 1
-        persistedQueryCache.parseCount["hash123"] == 1
+        persistedQueryCache.keyCount[hashOne] == 1
+        persistedQueryCache.parseCount[hashOne] == 1
 
     }
 
@@ -133,14 +136,14 @@ class ApolloPersistedQuerySupportTest extends Specification {
         def apolloSupport = new ApolloPersistedQuerySupport(persistedQueryCache)
 
         when:
-        def ei = mkEI("hash123", PERSISTED_QUERY_MARKER)
+        def ei = mkEI(hashOne, PERSISTED_QUERY_MARKER)
         def documentEntry = apolloSupport.getDocument(ei, engineParser)
         def doc = documentEntry.getDocument()
         then:
         printAstCompact(doc) == "query {oneTwoThree}"
 
         when:
-        ei = mkEI("hash456", PERSISTED_QUERY_MARKER)
+        ei = mkEI(hashTwo, PERSISTED_QUERY_MARKER)
         documentEntry = apolloSupport.getDocument(ei, engineParser)
         doc = documentEntry.getDocument()
         then:
@@ -151,5 +154,19 @@ class ApolloPersistedQuerySupportTest extends Specification {
         documentEntry = apolloSupport.getDocument(ei, engineParser)
         then:
         documentEntry.hasErrors()
+    }
+
+    def "will have error if the calculated sha hash of the query does not match the persistedQueryId"() {
+        def cache = new CacheImplementation()
+        def apolloSupport = new ApolloPersistedQuerySupport(cache)
+        when:
+        def ei = mkEI("badHash", PERSISTED_QUERY_MARKER)
+        def docEntry = apolloSupport.getDocument(ei, engineParser)
+        then:
+        docEntry.getDocument() == null
+        def error = docEntry.getErrors()[0]
+        error.message == "PersistedQueryIdInvalid"
+        error.errorType.toString() == "PersistedQueryIdInvalid"
+        error.getExtensions()["persistedQueryId"] == "badHash"
     }
 }

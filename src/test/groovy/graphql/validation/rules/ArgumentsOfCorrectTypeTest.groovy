@@ -18,8 +18,8 @@ import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
-import static graphql.Scalars.GraphQLBigDecimal
 import static graphql.Scalars.GraphQLBoolean
+import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.StarWarsSchema.starWarsSchema
 
@@ -37,7 +37,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         given:
         def variableReference = new VariableReference("ref")
         def argumentLiteral = new Argument("arg", variableReference)
-        def graphQLArgument = new GraphQLArgument("arg", GraphQLBigDecimal)
+        def graphQLArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLInt).build()
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
         when:
         argumentsOfCorrectType.checkArgument(argumentLiteral)
@@ -49,7 +49,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         given:
         def stringValue = new StringValue("string")
         def argumentLiteral = new Argument("arg", stringValue)
-        def graphQLArgument = new GraphQLArgument("arg", GraphQLBoolean)
+        def graphQLArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLBoolean).build()
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
         when:
         argumentsOfCorrectType.checkArgument(argumentLiteral)
@@ -64,7 +64,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         given:
         def objectValue = new ObjectValue([new ObjectField("foo", new StringValue("string"))])
         def argumentLiteral = new Argument("arg", objectValue)
-        def graphQLArgument = new GraphQLArgument("arg", GraphQLInputObjectType.newInputObject().name("ArgumentObjectType").field(GraphQLInputObjectField.newInputObjectField().name("foo").type(GraphQLBoolean)).build())
+        def graphQLArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLInputObjectType.newInputObject().name("ArgumentObjectType").field(GraphQLInputObjectField.newInputObjectField().name("foo").type(GraphQLBoolean)).build()).build()
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
         argumentsOfCorrectType.validationContext.getSchema() >> starWarsSchema
@@ -84,7 +84,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         def invalidValue = new ObjectValue([new ObjectField("foo", new StringValue("string"))])
         def arrayValue = new ArrayValue([validValue, invalidValue])
         def argumentLiteral = new Argument("arg", arrayValue)
-        def graphQLArgument = new GraphQLArgument("arg", GraphQLList.list(GraphQLInputObjectType.newInputObject().name("ArgumentObjectType").field(GraphQLInputObjectField.newInputObjectField().name("foo").type(GraphQLBoolean)).build()))
+        def graphQLArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLList.list(GraphQLInputObjectType.newInputObject().name("ArgumentObjectType").field(GraphQLInputObjectField.newInputObjectField().name("foo").type(GraphQLBoolean)).build())).build()
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
         argumentsOfCorrectType.validationContext.getSchema() >> starWarsSchema
@@ -105,7 +105,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         def invalidValue = new ObjectValue([new ObjectField("foo", new ArrayValue([new BooleanValue(true), new StringValue('string')]))])
         def arrayValue = new ArrayValue([invalidValue, validValue])
         def argumentLiteral = new Argument("arg", arrayValue)
-        def graphQLArgument = new GraphQLArgument("arg", GraphQLList.list(GraphQLInputObjectType.newInputObject().name("ArgumentObjectType").field(GraphQLInputObjectField.newInputObjectField().name("foo").type(GraphQLList.list(GraphQLBoolean))).build()))
+        def graphQLArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLList.list(GraphQLInputObjectType.newInputObject().name("ArgumentObjectType").field(GraphQLInputObjectField.newInputObjectField().name("foo").type(GraphQLList.list(GraphQLBoolean))).build())).build()
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
         argumentsOfCorrectType.validationContext.getSchema() >> starWarsSchema
@@ -126,7 +126,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         def invalidValue = new StringValue("string")
         def arrayValue = new ArrayValue([validValue, invalidValue])
         def argumentLiteral = new Argument("arg", arrayValue)
-        def graphQLArgument = new GraphQLArgument("arg", GraphQLList.list(GraphQLBoolean))
+        def graphQLArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLList.list(GraphQLBoolean)).build()
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
         when:
@@ -142,12 +142,12 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         given:
         def objectValue = new ObjectValue([new ObjectField("foo", new StringValue("string"))])
         def argumentLiteral = new Argument("arg", objectValue)
-        def graphQLArgument = new GraphQLArgument("arg", GraphQLInputObjectType.newInputObject().name("ArgumentObjectType")
+        def graphQLArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLInputObjectType.newInputObject().name("ArgumentObjectType")
                 .field(GraphQLInputObjectField.newInputObjectField()
                         .name("foo").type(GraphQLNonNull.nonNull(GraphQLString)))
                 .field(GraphQLInputObjectField.newInputObjectField()
                         .name("bar").type(GraphQLNonNull.nonNull(GraphQLString)))
-                .build())
+                .build()).build()
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
         argumentsOfCorrectType.validationContext.getSchema() >> starWarsSchema
@@ -165,12 +165,12 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         given:
         def objectValue = new StringValue("string")
         def argumentLiteral = new Argument("arg", objectValue)
-        def graphQLArgument = new GraphQLArgument("arg", GraphQLInputObjectType.newInputObject().name("ArgumentObjectType")
+        def graphQLArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLInputObjectType.newInputObject().name("ArgumentObjectType")
                 .field(GraphQLInputObjectField.newInputObjectField()
                         .name("foo").type(GraphQLNonNull.nonNull(GraphQLString)))
                 .field(GraphQLInputObjectField.newInputObjectField()
                         .name("bar").type(GraphQLNonNull.nonNull(GraphQLString)))
-                .build())
+                .build()).build()
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
         when:
@@ -186,12 +186,12 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         given:
         def objectValue = new ObjectValue([new ObjectField("foo", new StringValue("string")), new ObjectField("bar", NullValue.newNullValue().build())])
         def argumentLiteral = new Argument("arg", objectValue)
-        def graphQLArgument = new GraphQLArgument("arg", GraphQLInputObjectType.newInputObject().name("ArgumentObjectType")
+        def graphQLArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLInputObjectType.newInputObject().name("ArgumentObjectType")
                 .field(GraphQLInputObjectField.newInputObjectField()
                         .name("foo").type(GraphQLNonNull.nonNull(GraphQLString)))
                 .field(GraphQLInputObjectField.newInputObjectField()
                         .name("bar").type(GraphQLNonNull.nonNull(GraphQLString)))
-                .build())
+                .build()).build()
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
         argumentsOfCorrectType.validationContext.getSchema() >> starWarsSchema
@@ -209,12 +209,12 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         given:
         def objectValue = new ObjectValue([new ObjectField("foo", new StringValue("string")), new ObjectField("bar", new StringValue("string")), new ObjectField("fooBar", new BooleanValue(true))])
         def argumentLiteral = new Argument("arg", objectValue)
-        def graphQLArgument = new GraphQLArgument("arg", GraphQLInputObjectType.newInputObject().name("ArgumentObjectType")
+        def graphQLArgument = GraphQLArgument.newArgument().name("arg").type(GraphQLInputObjectType.newInputObject().name("ArgumentObjectType")
                 .field(GraphQLInputObjectField.newInputObjectField()
                         .name("foo").type(GraphQLNonNull.nonNull(GraphQLString)))
                 .field(GraphQLInputObjectField.newInputObjectField()
                         .name("bar").type(GraphQLNonNull.nonNull(GraphQLString)))
-                .build())
+                .build()).build()
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
         argumentsOfCorrectType.validationContext.getSchema() >> starWarsSchema

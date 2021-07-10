@@ -2,20 +2,22 @@ package graphql.schema;
 
 
 import graphql.DirectivesUtil;
-import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
+import graphql.language.Value;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.execution.ValuesResolver.getInputValueImpl;
 
 /**
  * This defines an argument that can be supplied to a graphql field (via {@link graphql.schema.GraphQLFieldDefinition}.
@@ -43,8 +45,10 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     private final String description;
     private final String deprecationReason;
     private final GraphQLInputType originalType;
-    private final Object value;
-    private final Object defaultValue;
+
+    private final InputValueWithState defaultValue;
+    private final InputValueWithState value;
+
     private final InputValueDefinition definition;
     private final DirectivesUtil.DirectivesHolder directives;
 
@@ -53,49 +57,15 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_TYPE = "type";
 
-    private static final Object DEFAULT_VALUE_SENTINEL = new Object() {
-    };
 
-    /**
-     * @param name         the arg name
-     * @param description  the arg description
-     * @param type         the arg type
-     * @param defaultValue the default value
-     *
-     * @deprecated use the {@link #newArgument()} builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue) {
-        this(name, description, type, defaultValue, null);
-    }
-
-    /**
-     * @param name the arg name
-     * @param type the arg type
-     *
-     * @deprecated use the {@link #newArgument()} builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLArgument(String name, GraphQLInputType type) {
-        this(name, null, type, DEFAULT_VALUE_SENTINEL, null);
-    }
-
-    /**
-     * @param name         the arg name
-     * @param description  the arg description
-     * @param type         the arg type
-     * @param defaultValue the default value
-     * @param definition   the AST definition
-     *
-     * @deprecated use the {@link #newArgument()} builder pattern instead, as this constructor will be made private in a future version.
-     */
-    public GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, InputValueDefinition definition) {
-        this(name, description, type, defaultValue, null, definition, Collections.emptyList(), null);
-    }
-
-    private GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, Object value, InputValueDefinition definition, List<GraphQLDirective> directives, String deprecationReason) {
+    private GraphQLArgument(String name,
+                            String description,
+                            GraphQLInputType type,
+                            InputValueWithState defaultValue,
+                            InputValueWithState value,
+                            InputValueDefinition definition,
+                            List<GraphQLDirective> directives,
+                            String deprecationReason) {
         assertValidName(name);
         assertNotNull(type, () -> "type can't be null");
         this.name = name;
@@ -123,28 +93,70 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     }
 
     /**
-     * An argument has a default value when it represents the logical argument structure that a {@link graphql.schema.GraphQLFieldDefinition}
-     * can have and it can also have a default value when used in a schema definition language (SDL) where the
-     * default value comes via the directive definition.
+     * The default value of this argument.
      *
-     * @return the default value of an argument
+     * @return a {@link InputValueWithState} that represents the arguments default value
      */
-    public Object getDefaultValue() {
-        return defaultValue == DEFAULT_VALUE_SENTINEL ? null : defaultValue;
+    public @NotNull InputValueWithState getArgumentDefaultValue() {
+        return defaultValue;
     }
 
     public boolean hasSetDefaultValue() {
-        return defaultValue != DEFAULT_VALUE_SENTINEL;
+        return defaultValue.isSet();
+    }
+
+    public boolean hasSetValue() {
+        return value.isSet();
+    }
+
+
+    /**
+     * This is only used for applied directives.
+     *
+     * @return an input value with state for an applied directive
+     */
+    public @NotNull InputValueWithState getArgumentValue() {
+        return value;
     }
 
     /**
-     * An argument ONLY has a value when its used in a schema definition language (SDL) context as the arguments to SDL directives.  The method
-     * should not be called in a query context, but rather the AST / variables map should be used to obtain an arguments value.
+     * This static helper method will give out a java value based on the semantics captured
+     * in the {@link InputValueWithState} from {@link GraphQLArgument#getArgumentValue()}
      *
-     * @return the argument value
+     * Note : You MUST only call this on a {@link GraphQLArgument} that is part of a fully formed schema.  We need
+     * all of the types to be resolved in order for this work correctly.
+     *
+     * Note: This method will return null if the value is not set or explicitly set to null.  If you you to know the difference
+     * when "not set" and "set to null" then you cant use this method.  Rather you should use {@link GraphQLArgument#getArgumentValue()}
+     * and use the {@link InputValueWithState#isNotSet()} methods to decide how to handle those values.
+     *
+     * @param argument the fully formed {@link GraphQLArgument}
+     * @param <T>      the type you want it cast as
+     *
+     * @return a value of type T which is the java value of the argument
      */
-    public Object getValue() {
-        return value;
+    public static <T> T getArgumentValue(GraphQLArgument argument) {
+        return getInputValueImpl(argument.getType(), argument.getArgumentValue());
+    }
+
+    /**
+     * This static helper method will give out a java value based on the semantics captured
+     * in the {@link InputValueWithState} from {@link GraphQLArgument#getArgumentDefaultValue()}
+     *
+     * Note : You MUST only call this on a {@link GraphQLArgument} that is part of a fully formed schema.  We need
+     * all of the types to be resolved in order for this work correctly.
+     *
+     * Note: This method will return null if the value is not set or explicitly set to null.  If you you to know the difference
+     * when "not set" and "set to null" then you cant use this method.  Rather you should use {@link GraphQLArgument#getArgumentDefaultValue()}
+     * and use the {@link InputValueWithState#isNotSet()} methods to decide how to handle those values.
+     *
+     * @param argument the fully formed {@link GraphQLArgument}
+     * @param <T>      the type you want it cast as
+     *
+     * @return a value of type T which is the java value of the argument default
+     */
+    public static <T> T getArgumentDefaultValue(GraphQLArgument argument) {
+        return getInputValueImpl(argument.getType(), argument.getArgumentDefaultValue());
     }
 
     public String getDescription() {
@@ -270,11 +282,12 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     public static class Builder extends GraphqlTypeBuilder {
 
         private GraphQLInputType type;
-        private Object defaultValue = DEFAULT_VALUE_SENTINEL;
-        private Object value;
+        private InputValueWithState defaultValue = InputValueWithState.NOT_SET;
+        private InputValueWithState value = InputValueWithState.NOT_SET;
         private String deprecationReason;
         private InputValueDefinition definition;
         private final List<GraphQLDirective> directives = new ArrayList<>();
+
 
         public Builder() {
         }
@@ -282,7 +295,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         public Builder(GraphQLArgument existing) {
             this.name = existing.getName();
             this.type = existing.originalType;
-            this.value = existing.getValue();
+            this.value = existing.getArgumentValue();
             this.defaultValue = existing.defaultValue;
             this.description = existing.getDescription();
             this.definition = existing.getDefinition();
@@ -323,13 +336,95 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
             return this;
         }
 
+        /**
+         * A legacy method that sets a default value into the argument
+         *
+         * @param defaultValue a default value
+         *
+         * @return this builder
+         *
+         * @deprecated use {@link #defaultValueLiteral(Value)} or {@link #defaultValueProgrammatic(Object)}
+         */
+        @Deprecated
         public Builder defaultValue(Object defaultValue) {
-            this.defaultValue = defaultValue;
+            this.defaultValue = InputValueWithState.newInternalValue(defaultValue);
             return this;
         }
 
-        public Builder value(Object value) {
-            this.value = value;
+        /**
+         * @param defaultValue can't be null as a `null` is represented a @{@link graphql.language.NullValue} Literal
+         *
+         * @return this builder
+         */
+        public Builder defaultValueLiteral(@NotNull Value defaultValue) {
+            this.defaultValue = InputValueWithState.newLiteralValue(defaultValue);
+            return this;
+        }
+
+        /**
+         * @param defaultValue Can be null to represent null value
+         *
+         * @return this builder
+         */
+        public Builder defaultValueProgrammatic(@Nullable Object defaultValue) {
+            this.defaultValue = InputValueWithState.newExternalValue(defaultValue);
+            return this;
+        }
+
+        /**
+         * Removes the defaultValue to represent a missing default value (which is different from null)
+         *
+         * @return this builder
+         */
+        public Builder clearDefaultValue() {
+            this.defaultValue = InputValueWithState.NOT_SET;
+            return this;
+        }
+
+        /**
+         * A legacy method for setting an arguments value
+         *
+         * @param value the argument value
+         *
+         * @return this builder
+         *
+         * @deprecated use {@link #valueLiteral(Value)} or {@link #valueProgrammatic(Object)}
+         */
+        @Deprecated
+        public Builder value(@Nullable Object value) {
+            this.value = InputValueWithState.newInternalValue(value);
+            return this;
+        }
+
+        /**
+         * Sets a literal AST value as the arguments value
+         *
+         * @param value can't be null as a `null` is represented a @{@link graphql.language.NullValue} Literal
+         *
+         * @return this builder
+         */
+        public Builder valueLiteral(@NotNull Value value) {
+            this.value = InputValueWithState.newLiteralValue(value);
+            return this;
+        }
+
+        /**
+         * @param value values can be null to represent null value
+         *
+         * @return this builder
+         */
+        public Builder valueProgrammatic(@Nullable Object value) {
+            this.value = InputValueWithState.newExternalValue(value);
+            return this;
+        }
+
+        /**
+         * Removes the value to represent a missing value (which is different from null)
+         *
+         * @return this builder
+         */
+        public Builder clearValue() {
+            this.value = InputValueWithState.NOT_SET;
             return this;
         }
 
@@ -371,6 +466,8 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
 
 
         public GraphQLArgument build() {
+            assertNotNull(type, () -> "type can't be null");
+
             return new GraphQLArgument(
                     name,
                     description,

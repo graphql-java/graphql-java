@@ -1,6 +1,5 @@
 package graphql.schema
 
-import graphql.AssertException
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
@@ -10,19 +9,6 @@ import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
 
 class GraphQLInputObjectTypeTest extends Specification {
-
-    def "duplicate field definition fails"() {
-        when:
-        // preserve old constructor behavior test
-        new GraphQLInputObjectType("TestInputObjectType", "description",
-                [
-                        newInputObjectField().name("NAME").type(GraphQLString).build(),
-                        newInputObjectField().name("NAME").type(GraphQLString).build()
-                ])
-        then:
-        thrown(AssertException)
-    }
-
 
     def "duplicate field definition overwrites"() {
         when:

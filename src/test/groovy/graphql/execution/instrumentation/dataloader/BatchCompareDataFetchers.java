@@ -1,11 +1,9 @@
 package graphql.execution.instrumentation.dataloader;
 
-import graphql.execution.batched.Batched;
 import graphql.execution.instrumentation.dataloader.models.Department;
 import graphql.execution.instrumentation.dataloader.models.Product;
 import graphql.execution.instrumentation.dataloader.models.Shop;
 import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
 import org.dataloader.BatchLoader;
 import org.dataloader.DataLoader;
 
@@ -84,14 +82,6 @@ public class BatchCompareDataFetchers {
         return departmentsResult;
     }
 
-    public DataFetcher<List<List<Department>>> departmentsForShopsBatchedDataFetcher = new DataFetcher<List<List<Department>>>() {
-        @Override
-        @Batched
-        public List<List<Department>> get(DataFetchingEnvironment environment) {
-            List<Shop> shops = environment.getSource();
-            return getDepartmentsForShops(shops);
-        }
-    };
 
     private BatchLoader<String, List<Department>> departmentsForShopsBatchLoader = ids -> maybeAsyncWithSleep(() -> {
         System.out.println("ids" + ids);
@@ -139,15 +129,6 @@ public class BatchCompareDataFetchers {
         System.out.println("getProductsForDepartments batch: " + departments);
         return departments.stream().map(BatchCompareDataFetchers::getProductsForDepartment).collect(Collectors.toList());
     }
-
-    public DataFetcher<List<List<Product>>> productsForDepartmentsBatchedDataFetcher = new DataFetcher<List<List<Product>>>() {
-        @Override
-        @Batched
-        public List<List<Product>> get(DataFetchingEnvironment environment) {
-            List<Department> departments = environment.getSource();
-            return getProductsForDepartments(departments);
-        }
-    };
 
     private BatchLoader<String, List<Product>> productsForDepartmentsBatchLoader = ids -> maybeAsyncWithSleep(() -> {
         productsForDepartmentsBatchLoaderCounter.incrementAndGet();

@@ -12,7 +12,6 @@ import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.DataFetcherExceptionHandlerResult;
 import graphql.execution.ExecutionStrategy;
-import graphql.execution.ExecutorServiceExecutionStrategy;
 import graphql.language.SourceLocation;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -28,10 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import static graphql.StarWarsSchema.queryType;
 
@@ -138,22 +133,6 @@ public class ExecutionExamples {
                 .mutationExecutionStrategy(new AsyncSerialExecutionStrategy())
                 .build();
         //::/FigureG
-    }
-
-    private void exampleExecutorServiceExecutionStrategy() {
-        //::FigureH
-        ExecutorService executorService = new ThreadPoolExecutor(
-                2, /* core pool size 2 thread */
-                2, /* max pool size 2 thread */
-                30, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(),
-                new ThreadPoolExecutor.CallerRunsPolicy());
-
-        GraphQL graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
-                .queryExecutionStrategy(new ExecutorServiceExecutionStrategy(executorService))
-                .mutationExecutionStrategy(new AsyncSerialExecutionStrategy())
-                .build();
-        //::/FigureH
     }
 
     private void exceptionHandler() {

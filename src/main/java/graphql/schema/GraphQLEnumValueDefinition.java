@@ -16,7 +16,6 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
-import static java.util.Collections.emptyList;
 
 /**
  * A graphql enumeration type has a limited set of values and this defines one of those unique values
@@ -37,48 +36,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
 
     public static final String CHILD_DIRECTIVES = "directives";
 
-    /**
-     * @param name        the name
-     * @param description the description
-     * @param value       the value
-     *
-     * @deprecated use the {@link #newEnumValueDefinition()}   builder pattern instead, as this constructor will be made private in a future version.
-     */
     @Internal
-    @Deprecated
-    public GraphQLEnumValueDefinition(String name, String description, Object value) {
-        this(name, description, value, null, emptyList());
-    }
-
-    /**
-     * @param name              the name
-     * @param description       the description
-     * @param value             the value
-     * @param deprecationReason the deprecation reasons
-     *
-     * @deprecated use the {@link #newEnumValueDefinition()}   builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLEnumValueDefinition(String name, String description, Object value, String deprecationReason) {
-        this(name, description, value, deprecationReason, emptyList());
-    }
-
-    /**
-     * @param name              the name
-     * @param description       the description
-     * @param value             the value
-     * @param deprecationReason the deprecation reasons
-     * @param directives        the directives on this type element
-     *
-     * @deprecated use the {@link #newEnumValueDefinition()}   builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLEnumValueDefinition(String name, String description, Object value, String deprecationReason, List<GraphQLDirective> directives) {
-        this(name, description, value, deprecationReason, directives, null);
-    }
-
     private GraphQLEnumValueDefinition(String name, String description, Object value, String deprecationReason, List<GraphQLDirective> directives, EnumValueDefinition definition) {
         assertValidName(name);
         assertNotNull(directives, () -> "directives cannot be null");

@@ -746,7 +746,7 @@
                     "name": "SecurityAdvisoryOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"UPDATED_AT\",direction:\"DESC\"}"
+                  "defaultValue": "{field:UPDATED_AT,direction:DESC}"
                 },
                 {
                   "name": "identifier",
@@ -870,7 +870,7 @@
                     "name": "SecurityVulnerabilityOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"UPDATED_AT\",direction:\"DESC\"}"
+                  "defaultValue": "{field:UPDATED_AT,direction:DESC}"
                 },
                 {
                   "name": "ecosystem",
@@ -2839,7 +2839,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"OWNER\", \"COLLABORATOR\"]"
+                  "defaultValue": "[OWNER, COLLABORATOR]"
                 },
                 {
                   "name": "ownerAffiliations",
@@ -2853,7 +2853,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"OWNER\", \"COLLABORATOR\"]"
+                  "defaultValue": "[OWNER, COLLABORATOR]"
                 },
                 {
                   "name": "isLocked",
@@ -3288,7 +3288,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"OWNER\", \"COLLABORATOR\"]"
+                  "defaultValue": "[OWNER, COLLABORATOR]"
                 },
                 {
                   "name": "ownerAffiliations",
@@ -3302,7 +3302,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"OWNER\", \"COLLABORATOR\"]"
+                  "defaultValue": "[OWNER, COLLABORATOR]"
                 },
                 {
                   "name": "isLocked",
@@ -3752,7 +3752,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"OWNER\", \"COLLABORATOR\", \"ORGANIZATION_MEMBER\"]"
+                  "defaultValue": "[OWNER, COLLABORATOR, ORGANIZATION_MEMBER]"
                 },
                 {
                   "name": "ownerAffiliations",
@@ -3766,7 +3766,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"OWNER\", \"COLLABORATOR\"]"
+                  "defaultValue": "[OWNER, COLLABORATOR]"
                 },
                 {
                   "name": "isLocked",
@@ -4500,7 +4500,7 @@
                     "name": "DeploymentOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"CREATED_AT\",direction:\"ASC\"}"
+                  "defaultValue": "{field:CREATED_AT,direction:ASC}"
                 },
                 {
                   "name": "after",
@@ -4647,7 +4647,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"OWNER\", \"COLLABORATOR\"]"
+                  "defaultValue": "[OWNER, COLLABORATOR]"
                 },
                 {
                   "name": "ownerAffiliations",
@@ -4661,7 +4661,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"OWNER\", \"COLLABORATOR\"]"
+                  "defaultValue": "[OWNER, COLLABORATOR]"
                 },
                 {
                   "name": "isLocked",
@@ -6989,7 +6989,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"ARCHIVED\", \"NOT_ARCHIVED\"]"
+                  "defaultValue": "[ARCHIVED, NOT_ARCHIVED]"
                 }
               ],
               "type": {
@@ -7442,7 +7442,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"ARCHIVED\", \"NOT_ARCHIVED\"]"
+                  "defaultValue": "[ARCHIVED, NOT_ARCHIVED]"
                 }
               ],
               "type": {
@@ -8544,7 +8544,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"ARCHIVED\", \"NOT_ARCHIVED\"]"
+                  "defaultValue": "[ARCHIVED, NOT_ARCHIVED]"
                 }
               ],
               "type": {
@@ -12055,7 +12055,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"ARCHIVED\", \"NOT_ARCHIVED\"]"
+                  "defaultValue": "[ARCHIVED, NOT_ARCHIVED]"
                 }
               ],
               "type": {
@@ -14316,7 +14316,7 @@
                     "name": "UserStatusOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"UPDATED_AT\",direction:\"DESC\"}"
+                  "defaultValue": "{field:UPDATED_AT,direction:DESC}"
                 }
               ],
               "type": {
@@ -14703,7 +14703,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"OWNER\", \"COLLABORATOR\"]"
+                  "defaultValue": "[OWNER, COLLABORATOR]"
                 },
                 {
                   "name": "ownerAffiliations",
@@ -14717,7 +14717,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"OWNER\", \"COLLABORATOR\"]"
+                  "defaultValue": "[OWNER, COLLABORATOR]"
                 },
                 {
                   "name": "isLocked",
@@ -14972,7 +14972,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"OWNER\", \"COLLABORATOR\"]"
+                  "defaultValue": "[OWNER, COLLABORATOR]"
                 },
                 {
                   "name": "ownerAffiliations",
@@ -14986,7 +14986,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"OWNER\", \"COLLABORATOR\"]"
+                  "defaultValue": "[OWNER, COLLABORATOR]"
                 },
                 {
                   "name": "isLocked",
@@ -15636,7 +15636,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"OWNER\", \"COLLABORATOR\"]"
+                  "defaultValue": "[OWNER, COLLABORATOR]"
                 },
                 {
                   "name": "ownerAffiliations",
@@ -15650,7 +15650,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"OWNER\", \"COLLABORATOR\"]"
+                  "defaultValue": "[OWNER, COLLABORATOR]"
                 },
                 {
                   "name": "isLocked",
@@ -15751,7 +15751,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"OWNER\", \"COLLABORATOR\"]"
+                  "defaultValue": "[OWNER, COLLABORATOR]"
                 },
                 {
                   "name": "ownerAffiliations",
@@ -15765,7 +15765,7 @@
                       "ofType": null
                     }
                   },
-                  "defaultValue": "[\"OWNER\", \"COLLABORATOR\"]"
+                  "defaultValue": "[OWNER, COLLABORATOR]"
                 },
                 {
                   "name": "isLocked",
@@ -16245,7 +16245,7 @@
                     "name": "UserStatusOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"UPDATED_AT\",direction:\"DESC\"}"
+                  "defaultValue": "{field:UPDATED_AT,direction:DESC}"
                 }
               ],
               "type": {
@@ -22221,7 +22221,7 @@
                     "name": "PullRequestOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"CREATED_AT\",direction:\"ASC\"}"
+                  "defaultValue": "{field:CREATED_AT,direction:ASC}"
                 }
               ],
               "type": {
@@ -22502,7 +22502,7 @@
                     "name": "DeploymentOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"CREATED_AT\",direction:\"ASC\"}"
+                  "defaultValue": "{field:CREATED_AT,direction:ASC}"
                 },
                 {
                   "name": "after",
@@ -27735,7 +27735,7 @@
                     "name": "UserStatusOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"UPDATED_AT\",direction:\"DESC\"}"
+                  "defaultValue": "{field:UPDATED_AT,direction:DESC}"
                 }
               ],
               "type": {
@@ -41686,7 +41686,7 @@
                     "name": "SecurityVulnerabilityOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"UPDATED_AT\",direction:\"DESC\"}"
+                  "defaultValue": "{field:UPDATED_AT,direction:DESC}"
                 },
                 {
                   "name": "ecosystem",
@@ -42745,7 +42745,7 @@
                     "name": "ContributionOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"OCCURRED_AT\",direction:\"DESC\"}"
+                  "defaultValue": "{field:OCCURRED_AT,direction:DESC}"
                 }
               ],
               "type": {
@@ -42970,7 +42970,7 @@
                     "name": "ContributionOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"OCCURRED_AT\",direction:\"DESC\"}"
+                  "defaultValue": "{field:OCCURRED_AT,direction:DESC}"
                 }
               ],
               "type": {
@@ -43092,7 +43092,7 @@
                     "name": "ContributionOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"OCCURRED_AT\",direction:\"DESC\"}"
+                  "defaultValue": "{field:OCCURRED_AT,direction:DESC}"
                 }
               ],
               "type": {
@@ -43204,7 +43204,7 @@
                     "name": "ContributionOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"OCCURRED_AT\",direction:\"DESC\"}"
+                  "defaultValue": "{field:OCCURRED_AT,direction:DESC}"
                 }
               ],
               "type": {
@@ -45151,7 +45151,7 @@
                     "name": "ContributionOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"OCCURRED_AT\",direction:\"DESC\"}"
+                  "defaultValue": "{field:OCCURRED_AT,direction:DESC}"
                 }
               ],
               "type": {
@@ -45245,7 +45245,7 @@
                     "name": "CommitContributionOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"OCCURRED_AT\",direction:\"DESC\"}"
+                  "defaultValue": "{field:OCCURRED_AT,direction:DESC}"
                 }
               ],
               "type": {
@@ -45790,7 +45790,7 @@
                     "name": "ContributionOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"OCCURRED_AT\",direction:\"DESC\"}"
+                  "defaultValue": "{field:OCCURRED_AT,direction:DESC}"
                 }
               ],
               "type": {
@@ -45884,7 +45884,7 @@
                     "name": "ContributionOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"OCCURRED_AT\",direction:\"DESC\"}"
+                  "defaultValue": "{field:OCCURRED_AT,direction:DESC}"
                 }
               ],
               "type": {

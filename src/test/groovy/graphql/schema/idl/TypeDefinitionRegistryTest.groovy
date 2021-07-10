@@ -325,6 +325,18 @@ class TypeDefinitionRegistryTest extends Specification {
         !registry.isInterfaceOrUnion(type("Scalar"))
     }
 
+    def "test object type or interface detection"() {
+
+        when:
+        def registry = parse(commonSpec)
+
+        then:
+        registry.isObjectTypeOrInterface(type("Type"))
+        registry.isObjectTypeOrInterface(type("Interface"))
+        !registry.isObjectTypeOrInterface(type("Union"))
+        !registry.isObjectTypeOrInterface(type("Scalar"))
+    }
+
     def "test object type detection"() {
 
         when:
@@ -379,14 +391,22 @@ class TypeDefinitionRegistryTest extends Specification {
             type Type4 implements NotThatInterface {
                 name : String
             }
+
+            interface Type5 implements Interface {
+                name : String
+            }
+
+            interface Type6 implements NotThatInterface {
+                name : String
+            }
         '''
         when:
         def registry = parse(spec)
         def interfaceDef = registry.getType("Interface", InterfaceTypeDefinition.class).get()
-        def objectTypeDefinitions = registry.getAllImplementationsOf(interfaceDef)
-        def names = objectTypeDefinitions.collect { it.getName() }
+        def implementingTypeDefinitions = registry.getAllImplementationsOf(interfaceDef)
+        def names = implementingTypeDefinitions.collect { it.getName() }
         then:
-        names == ["Type1", "Type2", "Type3"]
+        names == ["Type1", "Type2", "Type3", "Type5"]
     }
 
     def animalia = '''
@@ -397,27 +417,39 @@ class TypeDefinitionRegistryTest extends Specification {
 
             interface Mammal {
               id: String!
+              mother: Mammal!
+              offspring: [Mammal!]!
             }
 
             interface Reptile {
               id: String!
             }
 
-            type Dog implements Animal, Mammal {
+            interface Canine implements Animal & Mammal {
+              id: String!
+              mother: Canine!
+              offspring: [Canine!]!
+            }
+
+            type Dog implements Animal & Mammal & Canine {
+              id: String!
+              mother: Dog!
+              offspring: [Dog!]!
+            }
+
+            type Duck implements Animal {
               id: String!
             }
 
-            type Duck implements Animal, Mammal {
-              id: String!
-            }
-            
             union Platypus = Duck | Turtle
 
-            type Cat implements Animal, Mammal {
+            type Cat implements Animal & Mammal {
               id: String!
+              mother: Cat!
+              offspring: [Cat!]!
             }
 
-            type Turtle implements Animal, Reptile {
+            type Turtle implements Animal & Reptile {
               id: String!
             }
 
@@ -429,6 +461,7 @@ class TypeDefinitionRegistryTest extends Specification {
         def registry = parse(animalia)
 
         then:
+        registry.isPossibleType(type("Mammal"), type("Canine"))
         registry.isPossibleType(type("Mammal"), type("Dog"))
         registry.isPossibleType(type("Mammal"), type("Cat"))
         !registry.isPossibleType(type("Mammal"), type("Turtle"))
@@ -437,6 +470,7 @@ class TypeDefinitionRegistryTest extends Specification {
         !registry.isPossibleType(type("Reptile"), type("Cat"))
         registry.isPossibleType(type("Reptile"), type("Turtle"))
 
+        registry.isPossibleType(type("Animal"), type("Canine"))
         registry.isPossibleType(type("Animal"), type("Dog"))
         registry.isPossibleType(type("Animal"), type("Cat"))
         registry.isPossibleType(type("Animal"), type("Turtle"))
@@ -455,7 +489,12 @@ class TypeDefinitionRegistryTest extends Specification {
 
         then:
         registry.isSubTypeOf(type("Mammal"), type("Mammal"))
+        registry.isSubTypeOf(type("Canine"), type("Animal"))
+        registry.isSubTypeOf(type("Canine"), type("Mammal"))
+        registry.isSubTypeOf(type("Canine"), type("Canine"))
+        registry.isSubTypeOf(type("Dog"), type("Animal"))
         registry.isSubTypeOf(type("Dog"), type("Mammal"))
+        registry.isSubTypeOf(type("Dog"), type("Canine"))
 
         registry.isSubTypeOf(type("Turtle"), type("Animal"))
         !registry.isSubTypeOf(type("Turtle"), type("Mammal"))
@@ -465,9 +504,12 @@ class TypeDefinitionRegistryTest extends Specification {
 
         registry.isSubTypeOf(listType("Mammal"), listType("Mammal"))
         !registry.isSubTypeOf(listType("Mammal"), type("Mammal")) // but not if they aren't both lists
+        registry.isSubTypeOf(listType("Canine"), listType("Mammal"))
+        registry.isSubTypeOf(listType("Canine"), listType("Animal"))
 
         // unwraps all the way down
         registry.isSubTypeOf(listType(nonNullType(listType(type("Dog")))), listType(nonNullType(listType(type("Mammal")))))
+        registry.isSubTypeOf(listType(nonNullType(listType(type("Canine")))), listType(nonNullType(listType(type("Mammal")))))
         !registry.isSubTypeOf(listType(nonNullType(listType(type("Turtle")))), listType(nonNullType(listType(type("Mammal")))))
 
     }

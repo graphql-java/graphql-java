@@ -804,7 +804,7 @@
                     "name": "NoteOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"TITLE\",direction:\"ASC\"}"
+                  "defaultValue": "{field:TITLE,direction:ASC}"
                 }
               ],
               "type": {
@@ -2095,7 +2095,7 @@
                     "name": "ContributorOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"CONTRIBUTED_AT\",direction:\"ASC\"}"
+                  "defaultValue": "{field:CONTRIBUTED_AT,direction:ASC}"
                 }
               ],
               "type": {
@@ -2718,7 +2718,7 @@
                     "name": "NoteOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"TITLE\",direction:\"ASC\"}"
+                  "defaultValue": "{field:TITLE,direction:ASC}"
                 }
               ],
               "type": {
@@ -4489,7 +4489,7 @@
                     "name": "ContributorOrder",
                     "ofType": null
                   },
-                  "defaultValue": "{field:\"CONTRIBUTED_AT\",direction:\"ASC\"}"
+                  "defaultValue": "{field:CONTRIBUTED_AT,direction:ASC}"
                 }
               ],
               "type": {

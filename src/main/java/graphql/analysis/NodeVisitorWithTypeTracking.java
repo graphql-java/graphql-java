@@ -236,7 +236,8 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
     @Override
     protected TraversalControl visitValue(Value<?> value, TraverserContext<Node> context) {
         if (context.getParentNode() instanceof VariableDefinition) {
-            return TraversalControl.CONTINUE;
+            visitVariableDefinition(((VariableDefinition) context.getParentNode()), context);
+            return TraversalControl.ABORT;
         }
 
         QueryVisitorFieldArgumentEnvironment fieldArgEnv = context.getVarFromParents(QueryVisitorFieldArgumentEnvironment.class);

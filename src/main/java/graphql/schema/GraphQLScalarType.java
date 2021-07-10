@@ -48,35 +48,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
     public static final String CHILD_DIRECTIVES = "directives";
 
-
-    /**
-     * @param name        the name
-     * @param description the description
-     * @param coercing    the coercing function
-     *
-     * @deprecated use the {@link #newScalar()} builder pattern instead, as this constructor will be made private in a future version.
-     */
     @Internal
-    @Deprecated
-    public GraphQLScalarType(String name, String description, Coercing coercing) {
-        this(name, description, coercing, emptyList(), null);
-    }
-
-    /**
-     * @param name        the name
-     * @param description the description
-     * @param coercing    the coercing function
-     * @param directives  the directives on this type element
-     * @param definition  the AST definition
-     *
-     * @deprecated use the {@link #newScalar()} builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLScalarType(String name, String description, Coercing coercing, List<GraphQLDirective> directives, ScalarTypeDefinition definition) {
-        this(name, description, coercing, directives, definition, emptyList(), null);
-    }
-
     private GraphQLScalarType(String name,
                               String description,
                               Coercing coercing,

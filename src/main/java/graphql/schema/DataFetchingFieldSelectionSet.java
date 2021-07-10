@@ -147,6 +147,10 @@ public interface DataFetchingFieldSelectionSet {
      * This will return all selected fields.
      * <p>
      * The fields are guaranteed to be in pre-order as they appear in the query.
+     * <p>
+     * A selected field may have an alias - and hence is a unique field in the returned list.  It may
+     * have the same field names as others in the list but when you also consider the alias then it is indeed unique
+     * because it would be another entry in the graphql result.
      *
      * @return a list of all selected fields or empty list if none match
      */
@@ -157,6 +161,10 @@ public interface DataFetchingFieldSelectionSet {
      * of the field being fetched.
      * <p>
      * The fields are guaranteed to be in pre-order as they appear in the query.
+     * <p>
+     * A selected field may have an alias - and hence is a unique field in the returned list.  It may
+     * have the same field names as others in the list but when you also consider the alias then it is indeed unique
+     * because it would be another entry in the graphql result.
      *
      * @return a list of all selected immediate child fields or empty list if none match
      */
@@ -170,6 +178,10 @@ public interface DataFetchingFieldSelectionSet {
      * match an invoice field with child fields that start with 'customer'.
      * <p>
      * The fields are guaranteed to be in pre-order as they appear in the query.
+     * <p>
+     * A selected field may have an alias - and hence is a unique field in the returned list.  It may
+     * have the same field names as others in the list but when you also consider the alias then it is indeed unique
+     * because it would be another entry in the graphql result.
      *
      * @param fieldGlobPattern  the glob pattern to match fields against
      * @param fieldGlobPatterns optionally more glob pattern to match fields against

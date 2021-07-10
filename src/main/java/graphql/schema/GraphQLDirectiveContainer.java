@@ -1,16 +1,10 @@
 package graphql.schema;
 
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import graphql.PublicApi;
 
 import java.util.List;
 import java.util.Map;
 
-import static graphql.DirectivesUtil.allDirectivesByName;
-import static graphql.DirectivesUtil.nonRepeatableDirectivesByName;
-import static graphql.DirectivesUtil.nonRepeatedDirectiveByNameWithAssert;
 import static java.util.Collections.emptyList;
 
 /**
@@ -59,6 +53,17 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @return the directive or null if there is not one with that name
      */
     GraphQLDirective getDirective(String directiveName);
+
+    /**
+     * This will return true if the element has a directive (repeatable or non repeatable) with the specified name
+     *
+     * @param directiveName the name of the directive
+     *
+     * @return true if there is a directive on this element with that name
+     */
+    default boolean hasDirective(String directiveName) {
+        return getAllDirectivesByName().containsKey(directiveName);
+    }
 
     /**
      * Returns all of the directives with the provided name, including repeatable and non repeatable directives.

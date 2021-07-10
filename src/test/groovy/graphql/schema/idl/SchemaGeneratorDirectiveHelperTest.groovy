@@ -2,6 +2,7 @@ package graphql.schema.idl
 
 import graphql.ExecutionInput
 import graphql.GraphQL
+import graphql.execution.ValuesResolver
 import graphql.schema.Coercing
 import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
@@ -33,7 +34,7 @@ import static graphql.schema.DataFetcherFactories.wrapDataFetcher
 
 class SchemaGeneratorDirectiveHelperTest extends Specification {
 
-    def customScalarType = new GraphQLScalarType("ScalarType", "", new Coercing() {
+    def customScalarType = GraphQLScalarType.newScalar().name("ScalarType").coercing(new Coercing() {
         @Override
         Object serialize(Object input) throws CoercingSerializeException {
             return input
@@ -49,6 +50,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             return input
         }
     })
+    .build()
 
     def assertCallHierarchy(elementHierarchy, astHierarchy, String name, List<String> l) {
         assert elementHierarchy[name] == l, "unexpected elementHierarchy"
@@ -140,7 +142,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 fieldDefinitions[name] = environment.getFieldDefinition()?.getName()
 
                 GraphQLDirective directive = environment.getDirective()
-                String target = directive.getArgument("target").getValue()
+                def arg = directive.getArgument("target")
+                String target = ValuesResolver.valueToInternalValue(arg.getArgumentValue(), arg.getType())
                 assert name == target, " The target $target is not equal to the object name $name"
                 return element
             }
@@ -493,8 +496,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 }
                 contextMap.put(key, true)
 
-                DataFetcher wrapper = { dfEnv ->
-                    def flag = dfEnv.getContext()['protectSecrets']
+                DataFetcher wrapper = { DataFetchingEnvironment dfEnv ->
+                    def flag = dfEnv.getGraphQlContext().get('protectSecrets')
                     if (flag == null || flag == false) {
                         return originalFetcher.get(dfEnv)
                     }
@@ -535,7 +538,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         def executionInput = ExecutionInput.newExecutionInput()
                 .root(root)
                 .query(query)
-                .context([protectSecrets: true])
+                .graphQLContext([protectSecrets: true])
                 .build()
 
         def er = graphQL.execute(executionInput)
@@ -551,7 +554,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         executionInput = ExecutionInput.newExecutionInput()
                 .root(root)
                 .query(query)
-                .context([protectSecrets: false])
+                .graphQLContext([protectSecrets: false])
                 .build()
 
         er = graphQL.execute(executionInput)

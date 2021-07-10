@@ -2,14 +2,17 @@ package graphql.parser;
 
 
 import graphql.GraphQLException;
-import graphql.Internal;
 import graphql.InvalidSyntaxError;
+import graphql.PublicApi;
 import graphql.language.SourceLocation;
 
 import java.util.Collections;
 import java.util.List;
 
-@Internal
+/**
+ * This exception is thrown by the {@link Parser} if the graphql syntax is not valid
+ */
+@PublicApi
 public class InvalidSyntaxException extends GraphQLException {
 
     private final String message;

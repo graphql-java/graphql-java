@@ -15,10 +15,11 @@ import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
 import graphql.schema.visibility.GraphqlFieldVisibility;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -66,44 +67,6 @@ public class GraphQLSchema {
     private final ImmutableMap<String, ImmutableList<String>> interfaceNameToObjectTypeNames;
 
     private final String description;
-
-    /**
-     * @param queryType the query type
-     *
-     * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLSchema(GraphQLObjectType queryType) {
-        this(queryType, null, Collections.emptySet());
-    }
-
-    /**
-     * @param queryType       the query type
-     * @param mutationType    the mutation type
-     * @param additionalTypes additional types
-     *
-     * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, Set<GraphQLType> additionalTypes) {
-        this(queryType, mutationType, null, additionalTypes);
-    }
-
-    /**
-     * @param queryType        the query type
-     * @param mutationType     the mutation type
-     * @param subscriptionType the subscription type
-     * @param additionalTypes  additional types
-     *
-     * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
-     */
-    @Internal
-    @Deprecated
-    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes) {
-        this(newSchema().query(queryType).mutation(mutationType).subscription(subscriptionType).additionalTypes(additionalTypes), false);
-    }
 
     @Internal
     private GraphQLSchema(Builder builder, boolean afterTransform) {
@@ -250,8 +213,26 @@ public class GraphQLSchema {
      *
      * @return the type
      */
-    public GraphQLType getType(String typeName) {
+    public @Nullable GraphQLType getType(@NotNull String typeName) {
         return typeMap.get(typeName);
+    }
+
+    /**
+     * All types with the provided names.
+     * throws {@link graphql.AssertException} when a type name could not be resolved
+     *
+     * @param typeNames the type names to get
+     * @param <T>       for two
+     *
+     * @return The List of resolved types.
+     */
+    @SuppressWarnings("unchecked")
+    public <T extends GraphQLType> List<T> getTypes(Collection<String> typeNames) {
+        ImmutableList.Builder<T> builder = ImmutableList.builder();
+        for (String typeName : typeNames) {
+            builder.add((T) assertNotNull(typeMap.get(typeName), () -> String.format("No type found for name %s", typeName)));
+        }
+        return builder.build();
     }
 
     /**
