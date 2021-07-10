@@ -46,6 +46,7 @@ import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.MISSIN
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.MUST_BE_VALID_ENUM_VALUE_MESSAGE;
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.NOT_A_VALID_SCALAR_LITERAL_MESSAGE;
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.UNKNOWN_FIELDS_MESSAGE;
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -113,7 +114,7 @@ class ArgValueOfAllowedTypeChecker {
     }
 
     private void addValidationError(List<GraphQLError> errors, String message, Object... args) {
-        errors.add(new DirectiveIllegalArgumentTypeError(element, elementName, directive.getName(), argument.getName(), String.format(message, args)));
+        errors.add(new DirectiveIllegalArgumentTypeError(element, elementName, directive.getName(), argument.getName(), format(message, args)));
     }
 
     private void checkArgValueMatchesAllowedTypeName(List<GraphQLError> errors, Value<?> instanceValue, Type<?> allowedArgType) {
@@ -123,7 +124,7 @@ class ArgValueOfAllowedTypeChecker {
 
         String allowedTypeName = ((TypeName) allowedArgType).getName();
         TypeDefinition<?> allowedTypeDefinition = typeRegistry.getType(allowedTypeName)
-                .orElseThrow(() -> new AssertException("Directive unknown argument type '%s'. This should have been validated before."));
+                .orElseThrow(() -> new AssertException(format("Directive unknown argument type '%s'. This should have been validated before.", allowedTypeName)));
 
         if (allowedTypeDefinition instanceof ScalarTypeDefinition) {
             checkArgValueMatchesAllowedScalar(errors, instanceValue, allowedTypeName);
