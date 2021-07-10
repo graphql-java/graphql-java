@@ -739,6 +739,33 @@ class SchemaTypeCheckerTest extends Specification {
         result.isEmpty()
     }
 
+    def "order of interface args does not matter"() {
+        def spec = """
+            interface InterfaceType {
+                fieldA(arg1 : String, arg2 : Int) : String
+            }
+
+            type BaseType {
+                fieldX : Int
+            }
+
+            extend type BaseType implements InterfaceType {
+                fieldA(arg2 : Int, arg1 : String) : String
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.isEmpty()
+    }
+
+
     def "test field arguments on object cannot contain additional required arguments"() {
         def spec = """
             interface InterfaceType {
