@@ -1,7 +1,6 @@
 package graphql.execution.instrumentation.dataloader
 
 import graphql.ExecutionInput
-
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.TestUtil
@@ -9,13 +8,11 @@ import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.AsyncSerialExecutionStrategy
 import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionStrategyParameters
-import graphql.execution.ExecutorServiceExecutionStrategy
-import graphql.execution.batched.BatchedExecutionStrategy
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.SimpleInstrumentation
-import graphql.schema.DataFetcher
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
+import graphql.schema.DataFetcher
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderRegistry
@@ -24,7 +21,6 @@ import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
-import java.util.concurrent.ForkJoinPool
 
 import static graphql.ExecutionInput.newExecutionInput
 import static graphql.StarWarsSchema.starWarsSchema
@@ -182,11 +178,9 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         er.data == expectedQueryData
 
         where:
-        executionStrategyName              | executionStrategy                                               || _
-        "AsyncExecutionStrategy"           | new AsyncSerialExecutionStrategy()                              || _
-        "AsyncSerialExecutionStrategy"     | new AsyncSerialExecutionStrategy()                              || _
-        "BatchedExecutionStrategy"         | new BatchedExecutionStrategy()                                  || _
-        "ExecutorServiceExecutionStrategy" | new ExecutorServiceExecutionStrategy(ForkJoinPool.commonPool()) || _
+        executionStrategyName          | executionStrategy                  || _
+        "AsyncExecutionStrategy"       | new AsyncSerialExecutionStrategy() || _
+        "AsyncSerialExecutionStrategy" | new AsyncSerialExecutionStrategy() || _
     }
 
     def "basic batch loading is possible via instrumentation interception of Execution Strategies"() {
