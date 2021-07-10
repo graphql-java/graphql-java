@@ -112,16 +112,17 @@ public class SchemaGeneratorHelper {
 
         private final Map<String, GraphQLOutputType> outputGTypes = new LinkedHashMap<>();
         private final Map<String, GraphQLInputType> inputGTypes = new LinkedHashMap<>();
-        private final Map<String, Object> directiveBehaviourContext = new LinkedHashMap<>();
         private final Set<GraphQLDirective> directives = new LinkedHashSet<>();
         private final GraphQLCodeRegistry.Builder codeRegistry;
         public final Map<String, OperationTypeDefinition> operationTypeDefs;
+        public final SchemaGenerator.Options options;
 
-        BuildContext(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring, Map<String, OperationTypeDefinition> operationTypeDefinitions) {
+        BuildContext(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring, Map<String, OperationTypeDefinition> operationTypeDefinitions, SchemaGenerator.Options options) {
             this.typeRegistry = typeRegistry;
             this.wiring = wiring;
             this.codeRegistry = GraphQLCodeRegistry.newCodeRegistry(wiring.getCodeRegistry());
             this.operationTypeDefs = operationTypeDefinitions;
+            this.options = options;
         }
 
         public TypeDefinitionRegistry getTypeRegistry() {
@@ -204,9 +205,12 @@ public class SchemaGeneratorHelper {
     }
 
 
-    String buildDescription(Node<?> node, Description description) {
+    String buildDescription(BuildContext buildContext, Node<?> node, Description description) {
         if (description != null) {
             return description.getContent();
+        }
+        if (!buildContext.options.isUseCommentsAsDescription()) {
+            return null;
         }
         List<Comment> comments = node.getComments();
         List<String> lines = new ArrayList<>();
@@ -259,7 +263,7 @@ public class SchemaGeneratorHelper {
                                            GraphqlTypeComparatorRegistry comparatorRegistry) {
         GraphQLDirective.Builder builder = GraphQLDirective.newDirective()
                 .name(directive.getName())
-                .description(buildDescription(directive, null))
+                .description(buildDescription(buildCtx, directive, null))
                 .comparatorRegistry(comparatorRegistry)
                 .validLocations(directiveLocation);
 
@@ -330,7 +334,7 @@ public class SchemaGeneratorHelper {
                 .name(directiveDefinition.getName())
                 .definition(directiveDefinition)
                 .repeatable(directiveDefinition.isRepeatable())
-                .description(buildDescription(directiveDefinition, directiveDefinition.getDescription()));
+                .description(buildDescription(buildCtx, directiveDefinition, directiveDefinition.getDescription()));
 
 
         List<DirectiveLocation> locations = buildLocations(directiveDefinition);
@@ -358,7 +362,7 @@ public class SchemaGeneratorHelper {
             builder.valueLiteral(arg.getDefaultValue());
             builder.defaultValueLiteral(arg.getDefaultValue());
         }
-        builder.description(buildDescription(arg, arg.getDescription()));
+        builder.description(buildDescription(buildCtx, arg, arg.getDescription()));
         return builder.build();
     }
 
@@ -399,7 +403,7 @@ public class SchemaGeneratorHelper {
         GraphQLInputObjectType.Builder builder = GraphQLInputObjectType.newInputObject();
         builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
-        builder.description(buildDescription(typeDefinition, typeDefinition.getDescription()));
+        builder.description(buildDescription(buildCtx, typeDefinition, typeDefinition.getDescription()));
         builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
         List<InputObjectTypeExtensionDefinition> extensions = inputObjectTypeExtensions(typeDefinition, buildCtx);
@@ -431,7 +435,7 @@ public class SchemaGeneratorHelper {
         GraphQLInputObjectField.Builder fieldBuilder = GraphQLInputObjectField.newInputObjectField();
         fieldBuilder.definition(fieldDef);
         fieldBuilder.name(fieldDef.getName());
-        fieldBuilder.description(buildDescription(fieldDef, fieldDef.getDescription()));
+        fieldBuilder.description(buildDescription(buildCtx, fieldDef, fieldDef.getDescription()));
         fieldBuilder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
         fieldBuilder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
@@ -460,7 +464,7 @@ public class SchemaGeneratorHelper {
         GraphQLEnumType.Builder builder = GraphQLEnumType.newEnum();
         builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
-        builder.description(buildDescription(typeDefinition, typeDefinition.getDescription()));
+        builder.description(buildDescription(buildCtx, typeDefinition, typeDefinition.getDescription()));
         builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
         List<EnumTypeExtensionDefinition> extensions = enumTypeExtensions(typeDefinition, buildCtx);
@@ -495,7 +499,7 @@ public class SchemaGeneratorHelper {
                                                       EnumTypeDefinition typeDefinition,
                                                       EnumValuesProvider enumValuesProvider,
                                                       EnumValueDefinition evd) {
-        String description = buildDescription(evd, evd.getDescription());
+        String description = buildDescription(buildCtx, evd, evd.getDescription());
         String deprecation = buildDeprecationReason(evd.getDirectives());
 
         Object value;
@@ -540,7 +544,7 @@ public class SchemaGeneratorHelper {
         }
 
         if (!ScalarInfo.isGraphqlSpecifiedScalar(scalar)) {
-            String description = getScalarDesc(scalar,typeDefinition);
+            String description = getScalarDesc(scalar, typeDefinition);
             scalar = scalar.transform(builder -> builder
                     .description(description)
                     .definition(typeDefinition)
@@ -559,7 +563,7 @@ public class SchemaGeneratorHelper {
     }
 
     private String getScalarDesc(GraphQLScalarType scalar, ScalarTypeDefinition typeDefinition) {
-        if (scalar.getDescription() != null ) {
+        if (scalar.getDescription() != null) {
             if (!scalar.getDescription().trim().isEmpty()) {
                 return scalar.getDescription();
             }
@@ -689,7 +693,7 @@ public class SchemaGeneratorHelper {
         GraphQLInterfaceType.Builder builder = GraphQLInterfaceType.newInterface();
         builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
-        builder.description(buildDescription(typeDefinition, typeDefinition.getDescription()));
+        builder.description(buildDescription(buildCtx, typeDefinition, typeDefinition.getDescription()));
         builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
         List<InterfaceTypeExtensionDefinition> extensions = interfaceTypeExtensions(typeDefinition, buildCtx);
@@ -729,7 +733,7 @@ public class SchemaGeneratorHelper {
         GraphQLObjectType.Builder builder = GraphQLObjectType.newObject();
         builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
-        builder.description(buildDescription(typeDefinition, typeDefinition.getDescription()));
+        builder.description(buildDescription(buildCtx, typeDefinition, typeDefinition.getDescription()));
         builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
         List<ObjectTypeExtensionDefinition> extensions = objectTypeExtensions(typeDefinition, buildCtx);
@@ -792,7 +796,7 @@ public class SchemaGeneratorHelper {
         GraphQLUnionType.Builder builder = GraphQLUnionType.newUnionType();
         builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
-        builder.description(buildDescription(typeDefinition, typeDefinition.getDescription()));
+        builder.description(buildDescription(buildCtx, typeDefinition, typeDefinition.getDescription()));
         builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
         List<UnionTypeExtensionDefinition> extensions = unionTypeExtensions(typeDefinition, buildCtx);
@@ -887,7 +891,7 @@ public class SchemaGeneratorHelper {
         GraphQLFieldDefinition.Builder builder = GraphQLFieldDefinition.newFieldDefinition();
         builder.definition(fieldDef);
         builder.name(fieldDef.getName());
-        builder.description(buildDescription(fieldDef, fieldDef.getDescription()));
+        builder.description(buildDescription(buildCtx, fieldDef, fieldDef.getDescription()));
         builder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
         builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
@@ -962,7 +966,7 @@ public class SchemaGeneratorHelper {
         GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
         builder.definition(valueDefinition);
         builder.name(valueDefinition.getName());
-        builder.description(buildDescription(valueDefinition, valueDefinition.getDescription()));
+        builder.description(buildDescription(buildCtx, valueDefinition, valueDefinition.getDescription()));
         builder.deprecate(buildDeprecationReason(valueDefinition.getDirectives()));
         builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
