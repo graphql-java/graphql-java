@@ -518,7 +518,7 @@ public class GraphQL {
         }
         String queryString = executionInput.getQuery();
         String operationName = executionInput.getOperationName();
-        Object context = executionInput.getContext();
+        Object context = executionInput.getGraphQLContext();
         return executionInput.transform(builder -> builder.executionId(idProvider.provide(queryString, operationName, context)));
     }
 

@@ -11,6 +11,7 @@ import graphql.language.InlineFragment;
 import graphql.language.NullValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
+import graphql.language.OperationDefinition;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
 import graphql.language.TypeName;
@@ -24,23 +25,21 @@ import static graphql.collect.ImmutableKit.map;
 import static graphql.language.Argument.newArgument;
 import static graphql.language.Field.newField;
 import static graphql.language.InlineFragment.newInlineFragment;
-import static graphql.language.OperationDefinition.Operation.QUERY;
-import static graphql.language.OperationDefinition.newOperationDefinition;
 import static graphql.language.SelectionSet.newSelectionSet;
 import static graphql.language.TypeName.newTypeName;
 
 @Internal
 public class ExecutableNormalizedOperationToAstCompiler {
-
-    public static Document compileToDocument(List<ExecutableNormalizedField> topLevelFields) {
+    public static Document compileToDocument(OperationDefinition.Operation operationKind, List<ExecutableNormalizedField> topLevelFields) {
         List<Selection<?>> selections = selectionsForNormalizedFields(topLevelFields);
-        SelectionSet selectionSet = newSelectionSet(selections).build();
-        Document document = Document.newDocument().definition(newOperationDefinition()
-                .operation(QUERY)
-                .selectionSet(selectionSet)
-                .build())
+        SelectionSet selectionSet = new SelectionSet(selections);
+
+        return Document.newDocument()
+                .definition(OperationDefinition.newOperationDefinition()
+                        .operation(operationKind)
+                        .selectionSet(selectionSet)
+                        .build())
                 .build();
-        return document;
     }
 
     private static List<Selection<?>> selectionsForNormalizedFields(List<ExecutableNormalizedField> executableNormalizedFields) {

@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.collect.ImmutableMapWithNullValues;
 import graphql.schema.GraphQLInterfaceType;
@@ -18,16 +19,17 @@ public class TypeResolutionParameters {
     private final ImmutableMapWithNullValues<String, Object> argumentValues;
     private final GraphQLSchema schema;
     private final Object context;
+    private final GraphQLContext graphQLContext;
 
-    private TypeResolutionParameters(GraphQLInterfaceType graphQLInterfaceType, GraphQLUnionType graphQLUnionType,
-                                     MergedField field, Object value, ImmutableMapWithNullValues<String, Object> argumentValues, GraphQLSchema schema, final Object context) {
-        this.graphQLInterfaceType = graphQLInterfaceType;
-        this.graphQLUnionType = graphQLUnionType;
-        this.field = field;
-        this.value = value;
-        this.argumentValues = argumentValues;
-        this.schema = schema;
-        this.context = context;
+    private TypeResolutionParameters(Builder builder) {
+        this.graphQLInterfaceType = builder.graphQLInterfaceType;
+        this.graphQLUnionType = builder.graphQLUnionType;
+        this.field = builder.field;
+        this.value = builder.value;
+        this.argumentValues = builder.argumentValues;
+        this.schema = builder.schema;
+        this.context = builder.context;
+        this.graphQLContext = builder.graphQLContext;
     }
 
     public GraphQLInterfaceType getGraphQLInterfaceType() {
@@ -58,8 +60,18 @@ public class TypeResolutionParameters {
         return new Builder();
     }
 
+    /**
+     * @return the legacy context object
+     *
+     * @deprecated use {@link #getGraphQLContext()} instead
+     */
+    @Deprecated
     public Object getContext() {
         return context;
+    }
+
+    public GraphQLContext getGraphQLContext() {
+        return graphQLContext;
     }
 
     public static class Builder {
@@ -71,6 +83,7 @@ public class TypeResolutionParameters {
         private ImmutableMapWithNullValues<String, Object> argumentValues;
         private GraphQLSchema schema;
         private Object context;
+        private GraphQLContext graphQLContext;
 
         public Builder field(MergedField field) {
             this.field = field;
@@ -102,13 +115,19 @@ public class TypeResolutionParameters {
             return this;
         }
 
+        @Deprecated
         public Builder context(Object context) {
             this.context = context;
             return this;
         }
 
+        public Builder graphQLContext(GraphQLContext context) {
+            this.graphQLContext = context;
+            return this;
+        }
+
         public TypeResolutionParameters build() {
-            return new TypeResolutionParameters(graphQLInterfaceType, graphQLUnionType, field, value, argumentValues, schema, context);
+            return new TypeResolutionParameters(this);
         }
     }
 }

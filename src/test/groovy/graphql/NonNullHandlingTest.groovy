@@ -2,7 +2,6 @@ package graphql
 
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.AsyncSerialExecutionStrategy
-import graphql.execution.ExecutorServiceExecutionStrategy
 import graphql.schema.GraphQLOutputType
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
@@ -14,7 +13,6 @@ import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
-import static java.util.concurrent.ForkJoinPool.commonPool
 
 /**
  * A set of tests to show how non null field handling correctly bubble up or not
@@ -49,20 +47,20 @@ class NonNullHandlingTest extends Specification {
         GraphQLOutputType parentType = newObject()
                 .name("currentType")
                 .field(newFieldDefinition().name("nullChild")
-                .type(nonNull(GraphQLString)))
+                        .type(nonNull(GraphQLString)))
                 .field(newFieldDefinition().name("nonNullChild")
-                .type(nonNull(GraphQLString)))
+                        .type(nonNull(GraphQLString)))
                 .build()
 
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("RootQueryType")
                         .field(newFieldDefinition()
-                        .name("parent")
-                        .type(parentType) // nullable parent
-                        .dataFetcher({ env -> new SimpleObject() })
+                                .name("parent")
+                                .type(parentType) // nullable parent
+                                .dataFetcher({ env -> new SimpleObject() })
 
-                ))
+                        ))
                 .build()
 
         def query = """
@@ -88,7 +86,6 @@ class NonNullHandlingTest extends Specification {
         where:
 
         strategyName  | executionStrategy
-        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
         'async'       | new AsyncExecutionStrategy()
         'asyncSerial' | new AsyncSerialExecutionStrategy()
     }
@@ -104,21 +101,21 @@ class NonNullHandlingTest extends Specification {
         GraphQLOutputType parentType = newObject()
                 .name("currentType")
                 .field(newFieldDefinition().name("nullChild")
-                .type(nonNull(GraphQLString)))
+                        .type(nonNull(GraphQLString)))
                 .field(newFieldDefinition().name("nonNullChild")
-                .type(nonNull(GraphQLString)))
+                        .type(nonNull(GraphQLString)))
                 .build()
 
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("RootQueryType")
                         .field(
-                        newFieldDefinition()
-                                .name("parent")
-                                .type(nonNull(parentType)) // non nullable parent
-                                .dataFetcher({ env -> new SimpleObject() })
+                                newFieldDefinition()
+                                        .name("parent")
+                                        .type(nonNull(parentType)) // non nullable parent
+                                        .dataFetcher({ env -> new SimpleObject() })
 
-                ))
+                        ))
                 .build()
 
         def query = """
@@ -158,29 +155,29 @@ class NonNullHandlingTest extends Specification {
         GraphQLOutputType parentType = newObject()
                 .name("parentType")
                 .field(newFieldDefinition().name("nullChild")
-                .type(nonNull(GraphQLString)))
+                        .type(nonNull(GraphQLString)))
                 .field(newFieldDefinition().name("nonNullChild")
-                .type(nonNull(GraphQLString)))
+                        .type(nonNull(GraphQLString)))
                 .build()
 
         GraphQLOutputType topType = newObject()
                 .name("topType")
                 .field(newFieldDefinition().name("nullParent")
-                .type(nonNull(parentType)))
+                        .type(nonNull(parentType)))
                 .field(newFieldDefinition().name("nonNullParent")
-                .type(nonNull(parentType)))
+                        .type(nonNull(parentType)))
                 .build()
 
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("RootQueryType")
                         .field(
-                        newFieldDefinition()
-                                .name("top")
-                                .type(topType) // nullable grand parent
-                                .dataFetcher({ env -> new ContainingObject() })
+                                newFieldDefinition()
+                                        .name("top")
+                                        .type(topType) // nullable grand parent
+                                        .dataFetcher({ env -> new ContainingObject() })
 
-                ))
+                        ))
                 .build()
 
         def query = """
@@ -209,7 +206,6 @@ class NonNullHandlingTest extends Specification {
         where:
 
         strategyName  | executionStrategy
-        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
         'async'       | new AsyncExecutionStrategy()
         'asyncSerial' | new AsyncSerialExecutionStrategy()
 
@@ -224,29 +220,29 @@ class NonNullHandlingTest extends Specification {
         GraphQLOutputType parentType = newObject()
                 .name("parentType")
                 .field(newFieldDefinition().name("nullChild")
-                .type(nonNull(GraphQLString)))
+                        .type(nonNull(GraphQLString)))
                 .field(newFieldDefinition().name("nonNullChild")
-                .type(nonNull(GraphQLString)))
+                        .type(nonNull(GraphQLString)))
                 .build()
 
         GraphQLOutputType topType = newObject()
                 .name("topType")
                 .field(newFieldDefinition().name("nullParent")
-                .type(nonNull(parentType)))
+                        .type(nonNull(parentType)))
                 .field(newFieldDefinition().name("nonNullParent")
-                .type(nonNull(parentType)))
+                        .type(nonNull(parentType)))
                 .build()
 
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("RootQueryType")
                         .field(
-                        newFieldDefinition()
-                                .name("top")
-                                .type(nonNull(topType)) // non nullable grand parent
-                                .dataFetcher({ env -> new ContainingObject() })
+                                newFieldDefinition()
+                                        .name("top")
+                                        .type(nonNull(topType)) // non nullable grand parent
+                                        .dataFetcher({ env -> new ContainingObject() })
 
-                ))
+                        ))
                 .build()
 
         def query = """
@@ -275,7 +271,6 @@ class NonNullHandlingTest extends Specification {
         where:
 
         strategyName  | executionStrategy
-        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
         'async'       | new AsyncExecutionStrategy()
         'asyncSerial' | new AsyncSerialExecutionStrategy()
 
@@ -290,27 +285,27 @@ class NonNullHandlingTest extends Specification {
         GraphQLOutputType parentType = newObject()
                 .name("parentType")
                 .field(newFieldDefinition().name("nonNullListWithNull")
-                .type(nonNull(list(nonNull(GraphQLString)))))
+                        .type(nonNull(list(nonNull(GraphQLString)))))
                 .build()
 
         GraphQLOutputType topType = newObject()
                 .name("topType")
                 .field(newFieldDefinition().name("nullParent")
-                .type(nonNull(parentType)))
+                        .type(nonNull(parentType)))
                 .field(newFieldDefinition().name("nonNullParent")
-                .type(nonNull(parentType)))
+                        .type(nonNull(parentType)))
                 .build()
 
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("RootQueryType")
                         .field(
-                        newFieldDefinition()
-                                .name("top")
-                                .type(nonNull(topType)) // non nullable grand parent
-                                .dataFetcher({ env -> new ContainingObject() })
+                                newFieldDefinition()
+                                        .name("top")
+                                        .type(nonNull(topType)) // non nullable grand parent
+                                        .dataFetcher({ env -> new ContainingObject() })
 
-                ))
+                        ))
                 .build()
 
         def query = """
@@ -353,27 +348,27 @@ class NonNullHandlingTest extends Specification {
         GraphQLOutputType parentType = newObject()
                 .name("parentType")
                 .field(newFieldDefinition().name("nullableListWithNull")
-                .type(list(nonNull(GraphQLString))))
+                        .type(list(nonNull(GraphQLString))))
                 .build()
 
         GraphQLOutputType topType = newObject()
                 .name("topType")
                 .field(newFieldDefinition().name("nullParent")
-                .type(nonNull(parentType)))
+                        .type(nonNull(parentType)))
                 .field(newFieldDefinition().name("nonNullParent")
-                .type(nonNull(parentType)))
+                        .type(nonNull(parentType)))
                 .build()
 
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("RootQueryType")
                         .field(
-                        newFieldDefinition()
-                                .name("top")
-                                .type(nonNull(topType)) // non nullable grand parent
-                                .dataFetcher({ env -> new ContainingObject() })
+                                newFieldDefinition()
+                                        .name("top")
+                                        .type(nonNull(topType)) // non nullable grand parent
+                                        .dataFetcher({ env -> new ContainingObject() })
 
-                ))
+                        ))
                 .build()
 
         def query = """
@@ -401,7 +396,6 @@ class NonNullHandlingTest extends Specification {
         where:
 
         strategyName  | executionStrategy
-        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
         'async'       | new AsyncExecutionStrategy()
         'asyncSerial' | new AsyncSerialExecutionStrategy()
     }

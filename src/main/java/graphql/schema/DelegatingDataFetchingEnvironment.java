@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
 import graphql.execution.ExecutionId;
@@ -60,6 +61,11 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
 
     public <T> T getContext() {
         return delegateEnvironment.getContext();
+    }
+
+    @Override
+    public GraphQLContext getGraphQlContext() {
+        return delegateEnvironment.getGraphQlContext();
     }
 
     public <T> T getLocalContext() {

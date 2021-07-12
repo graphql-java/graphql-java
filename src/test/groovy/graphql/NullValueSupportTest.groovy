@@ -70,7 +70,7 @@ class NullValueSupportTest extends Specification {
         when:
 
         def executionInput = newExecutionInput().query(queryStr)
-                .operationName("mutate").context("ctx").variables(variables)
+                .operationName("mutate").variables(variables)
                 .build()
         def result = graphQL.execute(executionInput)
 
@@ -174,7 +174,7 @@ class NullValueSupportTest extends Specification {
         ExecutionResult result = null
         try {
             def executionInput = newExecutionInput().query(queryStr)
-                    .operationName("mutate").context("ctx").variables(variables)
+                    .operationName("mutate").variables(variables)
                     .build()
             result = graphQL.execute(executionInput)
         } catch (GraphQLException e) {
@@ -218,7 +218,7 @@ class NullValueSupportTest extends Specification {
 
         when:
         def executionInput = newExecutionInput().query(queryStr)
-                .operationName("mutate").context("ctx").variables(variables)
+                .operationName("mutate").variables(variables)
                 .build()
         def executionResult = graphQL.execute(executionInput)
 
@@ -308,7 +308,7 @@ class NullValueSupportTest extends Specification {
 
         when:
         def executionInput = newExecutionInput().query(queryStr)
-                .operationName(null).context("ctx").variables([:])
+                .operationName(null).variables([:])
                 .build()
         def result = graphQL.execute(executionInput)
         assert result.errors.isEmpty(): "Unexpected query errors : ${result.errors}"

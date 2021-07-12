@@ -256,7 +256,7 @@ public class GraphQL {
     private CompletableFuture<ExecutionResult> execute(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
         String query = executionInput.getQuery();
         String operationName = executionInput.getOperationName();
-        Object context = executionInput.getContext();
+        Object context = executionInput.getGraphQLContext();
 
         Execution execution = new Execution();
         ExecutionId executionId = idProvider.provide(query, operationName, context);

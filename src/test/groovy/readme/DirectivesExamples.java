@@ -83,7 +83,7 @@ public class DirectivesExamples {
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
-                .context(authCtx)
+                .graphQLContext(builder -> builder.put("authCtx", authCtx))
                 .build();
     }
 

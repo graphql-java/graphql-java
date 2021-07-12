@@ -3,6 +3,7 @@ package graphql.execution;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.ExecutionInput;
+import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -34,6 +35,7 @@ public class ExecutionContextBuilder {
     ExecutionStrategy mutationStrategy;
     ExecutionStrategy subscriptionStrategy;
     Object context;
+    GraphQLContext graphQLContext;
     Object root;
     Document document;
     OperationDefinition operationDefinition;
@@ -79,6 +81,7 @@ public class ExecutionContextBuilder {
         mutationStrategy = other.getMutationStrategy();
         subscriptionStrategy = other.getSubscriptionStrategy();
         context = other.getContext();
+        graphQLContext = other.getGraphQLContext();
         localContext = other.getLocalContext();
         root = other.getRoot();
         document = other.getDocument();
@@ -130,6 +133,11 @@ public class ExecutionContextBuilder {
 
     public ExecutionContextBuilder context(Object context) {
         this.context = context;
+        return this;
+    }
+
+    public ExecutionContextBuilder graphQLContext(GraphQLContext context) {
+        this.graphQLContext = context;
         return this;
     }
 
