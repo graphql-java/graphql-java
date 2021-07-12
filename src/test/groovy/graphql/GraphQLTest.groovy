@@ -4,6 +4,7 @@ import graphql.analysis.MaxQueryComplexityInstrumentation
 import graphql.analysis.MaxQueryDepthInstrumentation
 import graphql.collect.ImmutableKit
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.AsyncSerialExecutionStrategy
 import graphql.execution.DataFetcherExceptionHandler
 import graphql.execution.DataFetcherResult
 import graphql.execution.ExecutionContext
@@ -11,10 +12,13 @@ import graphql.execution.ExecutionId
 import graphql.execution.ExecutionIdProvider
 import graphql.execution.ExecutionStrategyParameters
 import graphql.execution.MissingRootTypeException
+import graphql.execution.SubscriptionExecutionStrategy
+import graphql.execution.ValueUnboxer
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation
+import graphql.execution.preparsed.NoOpPreparsedDocumentProvider
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -1282,5 +1286,20 @@ many lines''']
         then:
         def e = thrown(InvalidSchemaException)
         e.message.contains("Invalid argument 'arg' for applied directive of name 'cached'")
+    }
+
+    def "getters work as expected"() {
+        Instrumentation instrumentation = new SimpleInstrumentation()
+        when:
+        def graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).instrumentation(instrumentation).build()
+        then:
+        graphQL.getGraphQLSchema() == StarWarsSchema.starWarsSchema
+        graphQL.getIdProvider() == ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDER
+        graphQL.getValueUnboxer() == ValueUnboxer.DEFAULT
+        graphQL.getPreparsedDocumentProvider() == NoOpPreparsedDocumentProvider.INSTANCE
+        graphQL.getInstrumentation() instanceof ChainedInstrumentation
+        graphQL.getQueryStrategy() instanceof AsyncExecutionStrategy
+        graphQL.getMutationStrategy() instanceof AsyncSerialExecutionStrategy
+        graphQL.getSubscriptionStrategy() instanceof SubscriptionExecutionStrategy
     }
 }
