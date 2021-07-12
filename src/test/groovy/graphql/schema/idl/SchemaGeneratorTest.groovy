@@ -2355,4 +2355,88 @@ class SchemaGeneratorTest extends Specification {
         then:
         schema.getType("MyType") instanceof GraphQLScalarType
     }
+
+    def "1498 - order of arguments should not matter"() {
+        def sdl = '''
+            input TimelineDimensionPredicate {
+                s : String
+            }
+            
+            input TimelineDimension {
+                d : String
+            }
+            
+            type TimelineEntriesGroup {
+                e : String
+            }
+            
+            interface Timeline {
+               id: ID!
+                entryGroups(groupBy: [TimelineDimension!]!, filter: TimelineDimensionPredicate): [TimelineEntriesGroup!]!
+            }
+
+            type ActualSalesTimeline implements Timeline {
+                id: ID!
+                entryGroups(groupBy: [TimelineDimension!]!, filter: TimelineDimensionPredicate): [TimelineEntriesGroup!]!
+            }
+            
+            type Query {
+                salesTimeLine : Timeline
+            }
+        '''
+
+        when:
+        def schema = TestUtil.schema(sdl)
+        then:
+        assert1498Shape(schema)
+
+        when: "The arg order has been rearranged"
+        sdl = '''
+            input TimelineDimensionPredicate {
+                s : String
+            }
+            
+            input TimelineDimension {
+                d : String
+            }
+            
+            type TimelineEntriesGroup {
+                e : String
+            }
+            
+            interface Timeline {
+               id: ID!
+                entryGroups(filter: TimelineDimensionPredicate, groupBy: [TimelineDimension!]!): [TimelineEntriesGroup!]!
+            }
+
+            type ActualSalesTimeline implements Timeline {
+                id: ID!
+                entryGroups(groupBy: [TimelineDimension!]!, filter: TimelineDimensionPredicate): [TimelineEntriesGroup!]!
+            }
+            
+            type Query {
+                salesTimeLine : Timeline
+            }
+        '''
+
+        schema = TestUtil.schema(sdl)
+        then:
+        assert1498Shape(schema)
+
+    }
+
+    static boolean assert1498Shape(GraphQLSchema schema) {
+        def actualSalesTL = schema.getObjectType("ActualSalesTimeline")
+        def entryGroupsField = actualSalesTL.getField("entryGroups")
+        def groupByArg = entryGroupsField.getArgument("groupBy")
+        def filterArg = entryGroupsField.getArgument("filter")
+
+        GraphQLInputObjectType groupArgType = GraphQLTypeUtil.unwrapAllAs(groupByArg.getType())
+        assert groupArgType.name == "TimelineDimension"
+
+        GraphQLInputObjectType filterArgType = GraphQLTypeUtil.unwrapAllAs(filterArg.getType())
+        assert filterArgType.name == "TimelineDimensionPredicate"
+        true
+    }
+
 }
