@@ -2338,6 +2338,24 @@ class SchemaGeneratorTest extends Specification {
         schema != null
     }
 
+    def "custom scalars can be used in schema generation as directive args"() {
+        def sdl = '''
+            directive @test(arg: MyType) on OBJECT
+            scalar MyType
+            type Test @test(arg: { some: "data" }){
+                field: String
+            }
+            type Query {
+                field: Test
+            }
+        '''
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring().scalar(TestUtil.mockScalar("MyType")).build()
+        when:
+        def schema = TestUtil.schema(sdl, runtimeWiring)
+        then:
+        schema.getType("MyType") instanceof GraphQLScalarType
+    }
+
     def "1498 - order of arguments should not matter"() {
         def sdl = '''
             input TimelineDimensionPredicate {
