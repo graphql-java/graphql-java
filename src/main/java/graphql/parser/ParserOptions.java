@@ -61,8 +61,6 @@ public class ParserOptions {
      * especially in SDL parsing.  So we have set this to false by default.
      *
      * @return true if ignored chars are captured in AST nodes
-     *
-     * @see graphql.language.IgnoredChar
      */
     public boolean isCaptureIgnoredChars() {
         return captureIgnoredChars;
@@ -105,4 +103,5 @@ public class ParserOptions {
         }
 
     }
+
 }
