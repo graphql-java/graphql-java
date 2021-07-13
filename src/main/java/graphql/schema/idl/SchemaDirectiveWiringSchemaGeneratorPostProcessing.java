@@ -43,15 +43,26 @@ class SchemaDirectiveWiringSchemaGeneratorPostProcessing implements SchemaGenera
 
     @Override
     public GraphQLSchema process(GraphQLSchema originalSchema) {
-        GraphQLSchema newSchema = SchemaTransformer.transformSchema(originalSchema, new Visitor());
-        return newSchema.transform(builder -> {
-            // they could have changed the code registry so rebuild it
-            GraphQLCodeRegistry codeRegistry = this.codeRegistryBuilder.build();
-            builder.codeRegistry(codeRegistry);
-        });
+        codeRegistryBuilder.trackChanges();
+        Visitor visitor = new Visitor();
+        GraphQLSchema newSchema = SchemaTransformer.transformSchema(originalSchema, visitor);
+        if (visitor.schemaChanged() || codeRegistryBuilder.hasChanged()) {
+            return newSchema.transform(builder -> {
+                // they could have changed the code registry so rebuild it
+                GraphQLCodeRegistry codeRegistry = this.codeRegistryBuilder.build();
+                builder.codeRegistry(codeRegistry);
+            });
+        }
+        return newSchema;
     }
 
     public class Visitor extends GraphQLTypeVisitorStub {
+
+        private boolean schemaChanged = false;
+
+        public boolean schemaChanged() {
+            return schemaChanged;
+        }
 
         private SchemaGeneratorDirectiveHelper.Parameters mkBehaviourParams() {
             return new SchemaGeneratorDirectiveHelper.Parameters(typeRegistry, runtimeWiring, directiveBehaviourContext, codeRegistryBuilder);
@@ -60,6 +71,7 @@ class SchemaDirectiveWiringSchemaGeneratorPostProcessing implements SchemaGenera
         private TraversalControl changOrContinue(GraphQLSchemaElement node, GraphQLSchemaElement newNode, TraverserContext<GraphQLSchemaElement> context) {
             if (node != newNode) {
                 TreeTransformerUtil.changeNode(context, newNode);
+                schemaChanged = true;
             }
             return CONTINUE;
         }
