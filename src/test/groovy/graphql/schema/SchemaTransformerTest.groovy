@@ -692,4 +692,23 @@ type Query {
         then:
         newFoo.getFieldDefinition("changed") != null
     }
+
+    def "if nothing changes in the schema transformer, we return the same object"() {
+
+        def schema = TestUtil.schema("type Query { f : String }")
+
+        def fieldChanger = new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node,
+                                                         TraverserContext<GraphQLSchemaElement> context) {
+                return TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        def newSchema = SchemaTransformer.transformSchema(schema, fieldChanger)
+        then:
+        newSchema == schema
+    }
 }
