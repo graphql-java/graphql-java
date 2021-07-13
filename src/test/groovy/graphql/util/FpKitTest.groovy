@@ -10,6 +10,10 @@ class FpKitTest extends Specification {
     class IterableThing implements Iterable {
         Iterable delegate
 
+        IterableThing(Iterable delegate) {
+            this.delegate = delegate
+        }
+
         @Override
         Iterator iterator() {
             return delegate.iterator()
@@ -39,7 +43,7 @@ class FpKitTest extends Specification {
         actual == expected
 
         when:
-        IterableThing iterableThing = new IterableThing(delegate: ["a", "b", "c"])
+        IterableThing iterableThing = new IterableThing(["a", "b", "c"])
         actual = FpKit.toCollection(iterableThing)
         then:
         actual == expected
