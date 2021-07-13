@@ -58,7 +58,8 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
         } else {
             this.breadcrumbs = ImmutableList.<Breadcrumb<T>>builderWithExpectedSize(parent.getBreadcrumbs().size() + 1)
                     .add(new Breadcrumb<>(this.parent.thisNode(), this.location))
-                    .addAll(parent.getBreadcrumbs()).build();
+                    .addAll(parent.getBreadcrumbs())
+                    .build();
 
         }
     }
