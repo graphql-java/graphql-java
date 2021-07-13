@@ -2439,4 +2439,23 @@ class SchemaGeneratorTest extends Specification {
         true
     }
 
+
+    def "comments as descriptions disabled"() {
+        def sdl = '''
+        type Query {
+            # Comment
+            test : String
+            "Description"
+            test2: String
+        }
+        '''
+        when:
+        def registry = new SchemaParser().parse(sdl)
+        def options = defaultOptions().useCommentsAsDescriptions(false)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        schema.getQueryType().getFieldDefinition("test").getDescription() == null
+        schema.getQueryType().getFieldDefinition("test2").getDescription() == "Description"
+    }
 }
