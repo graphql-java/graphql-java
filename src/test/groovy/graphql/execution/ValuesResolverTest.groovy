@@ -115,8 +115,7 @@ class ValuesResolverTest extends Specification {
         def obj = new Person('a', 123)
         resolver.coerceVariableValues(schema, [variableDefinition], [variable: obj])
         then:
-        def e = thrown(CoercingParseValueException)
-//        e.path == ["variable"]
+        thrown(CoercingParseValueException)
     }
 
     def "getVariableValues: simple value gets resolved to a list when the type is a List"() {
@@ -180,7 +179,7 @@ class ValuesResolverTest extends Specification {
 
         when:
         def variables = [:]
-        def values = resolver.getArgumentValues([fieldArgument], [argument], variables)
+        def values = resolver.getArgumentValues([fieldArgument], [argument], variables as Map<String, Object>)
 
         then:
         values['arg'] == 'hello'
@@ -418,8 +417,7 @@ class ValuesResolverTest extends Specification {
         resolver.coerceVariableValues(schema, [variableDefinition], [variable: inputValue])
 
         then:
-        def e = thrown(GraphQLException)
-//        e.path == ["variable", "requiredField"]
+        thrown(GraphQLException)
 
         where:
         inputValue                        | _
@@ -510,7 +508,7 @@ class ValuesResolverTest extends Specification {
 
         when:
         def variables = [:]
-        def values = resolver.getArgumentValues([fieldArgument], [argument], variables)
+        def values = resolver.getArgumentValues([fieldArgument], [argument], variables as Map<String, Object>)
 
         then:
         values['arg'] == null

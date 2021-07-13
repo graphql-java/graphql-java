@@ -21,7 +21,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.Collections.singletonList;
@@ -86,14 +85,10 @@ public class FpKit {
      */
     @SuppressWarnings("unchecked")
     public static <T> Collection<T> toCollection(Object iterableResult) {
-        Optional<List<T>> arrayBasedCollection = isArrayToList(iterableResult);
-        if (arrayBasedCollection.isPresent()) {
-            return arrayBasedCollection.get();
-        }
         if (iterableResult instanceof Collection) {
             return (Collection<T>) iterableResult;
         }
-        Iterable<T> iterable = (Iterable<T>) iterableResult;
+        Iterable<T> iterable = toIterable(iterableResult);
         Iterator<T> iterator = iterable.iterator();
         List<T> list = new ArrayList<>();
         while (iterator.hasNext()) {
@@ -103,22 +98,23 @@ public class FpKit {
     }
 
     /**
-     * Converts an array value into an List otherwise it says its not present
+     * Converts a value into an list if its really a collection or array of things
+     * else it turns it into a singleton list containing that one value
      *
-     * @param possibleArray the possible array
-     * @param <T>           for two
+     * @param possibleIterable the possible
+     * @param <T>              for two
      *
-     * @return an optional list if its an array otherwise empty
+     * @return an list one way or another
      */
     @SuppressWarnings("unchecked")
-    public static <T> Optional<List<T>> isArrayToList(Object possibleArray) {
-        if (possibleArray != null && possibleArray.getClass().isArray()) {
-            List<Object> collect = IntStream.range(0, Array.getLength(possibleArray))
-                    .mapToObj(i -> Array.get(possibleArray, i))
-                    .collect(Collectors.toList());
-            return Optional.of((List<T>) collect);
+    public static <T> List<T> toListOrSingletonList(Object possibleIterable) {
+        if (possibleIterable instanceof List) {
+            return (List<T>) possibleIterable;
         }
-        return Optional.empty();
+        if (isIterable(possibleIterable)) {
+            return ImmutableList.copyOf(toIterable(possibleIterable));
+        }
+        return ImmutableList.of((T) possibleIterable);
     }
 
     public static boolean isIterable(Object result) {

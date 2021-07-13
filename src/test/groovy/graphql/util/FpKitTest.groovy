@@ -65,18 +65,32 @@ class FpKitTest extends Specification {
         memoVal2 == 3
     }
 
-    def "is array to list works"() {
+    def "toListOrSingletonList works"() {
         def birdArr = ["Parrot", "Cockatiel", "Pigeon"] as String[]
 
         when:
-        def optional = FpKit.isArrayToList(birdArr)
+        def l = FpKit.toListOrSingletonList(birdArr)
         then:
-        optional.isPresent()
-        optional.get() == ["Parrot", "Cockatiel", "Pigeon"]
+        l == ["Parrot", "Cockatiel", "Pigeon"]
 
         when:
-        optional = FpKit.isArrayToList(["Parrot", "Cockatiel", "Pigeon"])
+        l = FpKit.toListOrSingletonList(["Parrot", "Cockatiel", "Pigeon"])
         then:
-        !optional.isPresent()
+        l == ["Parrot", "Cockatiel", "Pigeon"]
+
+        when:
+        l = FpKit.toListOrSingletonList(["Parrot", "Cockatiel", "Pigeon"].stream())
+        then:
+        l == ["Parrot", "Cockatiel", "Pigeon"]
+
+        when:
+        l = FpKit.toListOrSingletonList(["Parrot", "Cockatiel", "Pigeon"].stream().iterator())
+        then:
+        l == ["Parrot", "Cockatiel", "Pigeon"]
+
+        when:
+        l = FpKit.toListOrSingletonList("Parrot")
+        then:
+        l == ["Parrot"]
     }
 }
