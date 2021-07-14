@@ -6,7 +6,7 @@ import graphql.language.OperationDefinition
 import graphql.language.StringValue
 import spock.lang.Specification
 
-class UnicodeUtilParserTest extends Specification {
+class StringValueParsingUnicodeTest extends Specification {
     /**
      * Implements RFC to support full Unicode https://github.com/graphql/graphql-spec/pull/849
      *
@@ -42,24 +42,6 @@ class UnicodeUtilParserTest extends Specification {
         parsed == '''🍺 hello''' // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
     }
 
-    def "allow braced escaped unicode"() {
-        given:
-        def input = '''
-              {
-              foo(arg: "\\u{1F37A}")
-               }
-        '''
-
-        when:
-        Document document = Parser.parse(input)
-        OperationDefinition operationDefinition = (document.definitions[0] as OperationDefinition)
-        def field = operationDefinition.getSelectionSet().getSelections()[0] as Field
-        def argValue = field.arguments[0].value as StringValue
-
-        then:
-        argValue.getValue() == "🍺" // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
-    }
-
     /**
      * From the RFC:
      * For legacy reasons, a *supplementary character* may be escaped by two
@@ -68,27 +50,8 @@ class UnicodeUtilParserTest extends Specification {
      * Unicode text as `"\\u{1F4A9}"`. While this legacy form is allowed, it should be
      * avoided as a variable-width unicode escape sequence is a clearer way to encode
      * such code points.
-     */
-    def "allow surrogate pairs escaped unicode"() {
-        given:
-        def input = '''
-              {
-              foo(arg: "\\ud83c\\udf7a")
-               }
-        '''
-
-        when:
-        Document document = Parser.parse(input)
-        OperationDefinition operationDefinition = (document.definitions[0] as OperationDefinition)
-        def field = operationDefinition.getSelectionSet().getSelections()[0] as Field
-        def argValue = field.arguments[0].value as StringValue
-
-        then:
-        argValue.getValue() == "🍺" // contains the beer icon U+1F37 A : http://www.charbase.com/1f37a-unicode-beer-mug
-    }
-
-    /**
-     * Valid surrogate pair combinations (from the RFC):
+     *
+     * Valid surrogate pair combinations:
      * + If {leadingValue} is >= 0xD800 and <= 0xDBFF (a *Leading Surrogate*):
      * + Assert {trailingValue} is >= 0xDC00 and <= 0xDFFF (a *Trailing Surrogate*).
      */
