@@ -953,9 +953,9 @@ public class SchemaGeneratorHelper {
                     if (dataFetcher == null) {
                         dataFetcher = wiringFactory.getDefaultDataFetcher(wiringEnvironment);
                         if (dataFetcher == null) {
-                            DataFetcherFactory<?> codeRegistryDDF = codeRegistry.getDefaultDataFetcherFactory();
-                            if (codeRegistryDDF != null) {
-                                return codeRegistryDDF;
+                            DataFetcherFactory<?> codeRegistryDFF = codeRegistry.getDefaultDataFetcherFactory();
+                            if (codeRegistryDFF != null) {
+                                return codeRegistryDFF;
                             }
                             dataFetcher = dataFetcherOfLastResort(wiringEnvironment);
                         }
