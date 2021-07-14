@@ -182,6 +182,31 @@ class GraphQLTest extends Specification {
         errors[0].locations == [new SourceLocation(1, 8)]
     }
 
+    def "query with invalid Unicode surrogate in argument - no trailing value"() {
+        given:
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .field(newFieldDefinition()
+                                .name("field")
+                                .type(GraphQLString)
+                                .argument(newArgument()
+                                        .name("arg")
+                                        .type(GraphQLNonNull.nonNull(GraphQLString))))
+                        .build()
+        ).build()
+
+        when:
+        // Invalid Unicode character - leading surrogate value without trailing surrogate value
+        def errors = GraphQL.newGraphQL(schema).build().execute('{ hello(arg:"\\ud83c") }').errors
+
+        then:
+        errors.size() == 1
+        errors[0].errorType == ErrorType.InvalidSyntax
+        errors[0].message == "Invalid Syntax : Invalid unicode - leading surrogate must be followed by a trailing surrogate - offending token '\\ud83c' at line 1 column 13"
+        errors[0].locations == [new SourceLocation(1, 13)]
+    }
+
     def "non null argument is missing"() {
         given:
         GraphQLSchema schema = newSchema().query(

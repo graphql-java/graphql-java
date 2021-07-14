@@ -760,13 +760,14 @@ public class GraphqlAntlrToLanguage {
         return assertShouldNeverHappen();
     }
 
-    static String quotedString(TerminalNode terminalNode) {
+    protected String quotedString(TerminalNode terminalNode) {
         boolean multiLine = terminalNode.getText().startsWith("\"\"\"");
         String strText = terminalNode.getText();
+        SourceLocation sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, terminalNode);
         if (multiLine) {
             return parseTripleQuotedString(strText);
         } else {
-            return parseSingleQuotedString(strText);
+            return parseSingleQuotedString(strText, sourceLocation);
         }
     }
 
@@ -839,12 +840,12 @@ public class GraphqlAntlrToLanguage {
         }
         String content = terminalNode.getText();
         boolean multiLine = content.startsWith("\"\"\"");
+        SourceLocation sourceLocation = getSourceLocation(descriptionCtx);
         if (multiLine) {
             content = parseTripleQuotedString(content);
         } else {
-            content = parseSingleQuotedString(content);
+            content = parseSingleQuotedString(content, sourceLocation);
         }
-        SourceLocation sourceLocation = getSourceLocation(descriptionCtx);
         return new Description(content, sourceLocation, multiLine);
     }
 
