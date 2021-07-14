@@ -50,7 +50,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             return input
         }
     })
-    .build()
+            .build()
 
     def assertCallHierarchy(elementHierarchy, astHierarchy, String name, List<String> l) {
         assert elementHierarchy[name] == l, "unexpected elementHierarchy"
@@ -924,26 +924,50 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             }
         }
 
+        def wiringFactory = new WiringFactory() {
+            @Override
+            boolean providesSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
+                true
+            }
+
+            @Override
+            SchemaDirectiveWiring getSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
+                return generalWiring
+            }
+        }
+
+        when: "Its via a hard coded wiring"
         def runtimeWiring = RuntimeWiring.newRuntimeWiring()
                 .directiveWiring(generalWiring)
                 .build()
-
-        when:
-        def schema = schema(sdl, runtimeWiring)
+        def graphqlSchema = schema(sdl, runtimeWiring)
 
         then:
+        assert directiveWiringAsserts(graphqlSchema)
+
+        when: "It via a wiring factory"
+        runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .wiringFactory(wiringFactory)
+                .build()
+        graphqlSchema = schema(sdl, runtimeWiring)
+
+        then:
+        assert directiveWiringAsserts(graphqlSchema)
+    }
+
+    static def directiveWiringAsserts(schema) {
         def queryType = schema.getObjectType("yreuQ")
-        queryType != null
+        assert queryType != null
 
         def fld = queryType.getFieldDefinition("dleif")
-        fld != null
+        assert fld != null
 
         def arg = fld.getArgument("gra")
-        arg != null
+        assert arg != null
+        true
     }
 
-    def reverse(String s) {
+    static def reverse(String s) {
         new StringBuilder(s).reverse().toString()
     }
-
 }
