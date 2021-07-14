@@ -148,4 +148,8 @@ public class StringValueParsing {
         }
         return writer.toString();
     }
+
+    public static String parseSingleQuotedString(String string) {
+        return parseSingleQuotedString(string, null);
+    }
 }
