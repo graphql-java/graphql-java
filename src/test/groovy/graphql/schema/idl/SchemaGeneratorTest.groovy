@@ -4,7 +4,12 @@ package graphql.schema.idl
 import graphql.TestUtil
 import graphql.introspection.Introspection
 import graphql.language.Node
+import graphql.schema.DataFetcher
+import graphql.schema.DataFetcherFactory
+import graphql.schema.DataFetcherFactoryEnvironment
+import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLEnumType
@@ -36,16 +41,18 @@ import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.language.AstPrinter.printAst
+import static graphql.schema.GraphQLCodeRegistry.newCodeRegistry
 import static graphql.schema.idl.SchemaGenerator.Options.defaultOptions
+import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class SchemaGeneratorTest extends Specification {
 
-    def newRuntimeWiring() {
+    static def newRuntimeWiring() {
         return RuntimeWiring.newRuntimeWiring()
                 .comparatorRegistry(GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY)
     }
 
-    GraphQLSchema schema(String sdl) {
+    static GraphQLSchema schema(String sdl) {
         def runtimeWiringAsIs = newRuntimeWiring()
                 .comparatorRegistry(GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY)
                 .wiringFactory(TestUtil.mockWiringFactory)
@@ -53,21 +60,12 @@ class SchemaGeneratorTest extends Specification {
         return schema(sdl, runtimeWiringAsIs)
     }
 
-    GraphQLSchema schema(String sdl, RuntimeWiring runtimeWiring) {
+    static GraphQLSchema schema(String sdl, RuntimeWiring runtimeWiring) {
         return TestUtil.schema(sdl, runtimeWiring)
     }
 
 
-    GraphQLType unwrap1Layer(GraphQLType type) {
-        if (type instanceof GraphQLNonNull) {
-            type = (type as GraphQLNonNull).wrappedType
-        } else if (type instanceof GraphQLList) {
-            type = (type as GraphQLList).wrappedType
-        }
-        type
-    }
-
-    GraphQLType unwrap(GraphQLType type) {
+    static GraphQLType unwrap(GraphQLType type) {
         while (true) {
             if (type instanceof GraphQLNonNull) {
                 type = (type as GraphQLNonNull).wrappedType
@@ -80,7 +78,7 @@ class SchemaGeneratorTest extends Specification {
         type
     }
 
-    void commonSchemaAsserts(GraphQLSchema schema) {
+    static void commonSchemaAsserts(GraphQLSchema schema) {
         assert schema.getQueryType().name == "Query"
         assert schema.getMutationType().name == "Mutation"
 
@@ -905,7 +903,7 @@ class SchemaGeneratorTest extends Specification {
 
         when:
         def mapEnumProvider = new MapEnumValuesProvider([A: 11, B: 12, C: 13])
-        def enumTypeWiring = TypeRuntimeWiring.newTypeWiring("Enum").enumValues(mapEnumProvider).build()
+        def enumTypeWiring = newTypeWiring("Enum").enumValues(mapEnumProvider).build()
         def wiring = RuntimeWiring.newRuntimeWiring().type(enumTypeWiring).build()
         def schema = TestUtil.schema(spec, wiring)
         GraphQLEnumType graphQLEnumType = schema.getType("Enum") as GraphQLEnumType
@@ -1801,6 +1799,38 @@ class SchemaGeneratorTest extends Specification {
         printAst(directive2.getArgument("reason").argumentValue.value as Node) == '"Just because"'
         printAst(directive2.getArgument("reason").argumentDefaultValue.value as Node) == '"No longer supported"'
         directive2.validLocations().collect { it.name() } == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
+
+    }
+
+    def "code registry default data fetcher is respected"() {
+        def sdl = '''
+            type Query {
+                field :  String
+            }
+        '''
+
+        DataFetcher df = { DataFetchingEnvironment env ->
+            env.getFieldDefinition().getName().reverse()
+        }
+
+        DataFetcherFactory dff = new DataFetcherFactory() {
+            @Override
+            DataFetcher get(DataFetcherFactoryEnvironment environment) {
+                return df
+            }
+        }
+
+        GraphQLCodeRegistry codeRegistry = newCodeRegistry()
+                .defaultDataFetcher(dff).build()
+
+        def runtimeWiring = newRuntimeWiring().codeRegistry(codeRegistry).build()
+
+        def graphQL = TestUtil.graphQL(sdl, runtimeWiring).build()
+        when:
+        def er = graphQL.execute('{ field }')
+        then:
+        er.errors.isEmpty()
+        er.data["field"] == "dleif"
 
     }
 

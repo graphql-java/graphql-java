@@ -227,6 +227,13 @@ public class GraphQLCodeRegistry {
         }
 
         /**
+         * @return the default data fetcher facttory associated with this code registry
+         */
+        public DataFetcherFactory<?> getDefaultDataFetcherFactory() {
+            return defaultDataFetcherFactory;
+        }
+
+        /**
          * Returns true if the code registry contained a data fetcher at the specified co-ordinates
          *
          * @param coordinates the field coordinates

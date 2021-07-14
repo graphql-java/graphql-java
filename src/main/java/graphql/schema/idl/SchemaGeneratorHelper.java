@@ -915,22 +915,23 @@ public class SchemaGeneratorHelper {
         // if they have already wired in a fetcher - then leave it alone
         FieldCoordinates coordinates = FieldCoordinates.coordinates(parentType.getName(), fieldDefinition.getName());
         if (!buildCtx.getCodeRegistry().hasDataFetcher(coordinates)) {
-            DataFetcherFactory dataFetcherFactory = buildDataFetcherFactory(buildCtx, parentType, fieldDef, fieldType, Arrays.asList(directives));
+            DataFetcherFactory<?> dataFetcherFactory = buildDataFetcherFactory(buildCtx, parentType, fieldDef, fieldType, Arrays.asList(directives));
             buildCtx.getCodeRegistry().dataFetcher(coordinates, dataFetcherFactory);
         }
         return fieldDefinition;
     }
 
-    private DataFetcherFactory buildDataFetcherFactory(BuildContext buildCtx,
-                                                       TypeDefinition parentType,
-                                                       FieldDefinition fieldDef,
-                                                       GraphQLOutputType fieldType,
-                                                       List<GraphQLDirective> directives) {
+    private DataFetcherFactory<?> buildDataFetcherFactory(BuildContext buildCtx,
+                                                          TypeDefinition<?> parentType,
+                                                          FieldDefinition fieldDef,
+                                                          GraphQLOutputType fieldType,
+                                                          List<GraphQLDirective> directives) {
         String fieldName = fieldDef.getName();
         String parentTypeName = parentType.getName();
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
         RuntimeWiring runtimeWiring = buildCtx.getWiring();
         WiringFactory wiringFactory = runtimeWiring.getWiringFactory();
+        GraphQLCodeRegistry.Builder codeRegistry = buildCtx.getCodeRegistry();
 
         FieldWiringEnvironment wiringEnvironment = new FieldWiringEnvironment(typeRegistry, parentType, fieldDef, fieldType, directives);
 
@@ -952,6 +953,10 @@ public class SchemaGeneratorHelper {
                     if (dataFetcher == null) {
                         dataFetcher = wiringFactory.getDefaultDataFetcher(wiringEnvironment);
                         if (dataFetcher == null) {
+                            DataFetcherFactory<?> codeRegistryDDF = codeRegistry.getDefaultDataFetcherFactory();
+                            if (codeRegistryDDF != null) {
+                                return codeRegistryDDF;
+                            }
                             dataFetcher = dataFetcherOfLastResort(wiringEnvironment);
                         }
                     }

@@ -25,7 +25,7 @@ public class DataFetcherFactoryEnvironment {
         return new Builder();
     }
 
-    static class Builder {
+    public static class Builder {
         GraphQLFieldDefinition fieldDefinition;
 
         public Builder fieldDefinition(GraphQLFieldDefinition fieldDefinition) {
