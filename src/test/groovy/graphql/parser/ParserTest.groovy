@@ -1012,4 +1012,36 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         then:
         argValue.getValue() == "🍺" // contains the beer icon U+1F37 A : http://www.charbase.com/1f37a-unicode-beer-mug
     }
+
+    def "invalid surrogate pair - no trailing value"() {
+        given:
+        def input = '''
+              {
+              foo(arg: "\\ud83c")
+               }
+        '''
+
+        when:
+        Parser.parse(input)
+
+        then:
+        InvalidSyntaxException e = thrown(InvalidSyntaxException)
+        e.message == "Invalid Syntax : Invalid unicode - leading surrogate must be followed by a trailing surrogate - offending token '\\ud83c' at line 3 column 24"
+    }
+
+    def "invalid surrogate pair - no leading value"() {
+        given:
+        def input = '''
+              {
+              foo(arg: "\\uDC00")
+               }
+        '''
+
+        when:
+        Parser.parse(input)
+
+        then:
+        InvalidSyntaxException e = thrown(InvalidSyntaxException)
+        e.message == "Invalid Syntax : Invalid unicode - trailing surrogate must be preceded with a leading surrogate - offending token '\\uDC00' at line 3 column 24"
+    }
 }
