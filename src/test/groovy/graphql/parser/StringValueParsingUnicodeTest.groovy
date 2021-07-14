@@ -25,7 +25,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\u{1F37A} hello"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         parsed == '''🍺 hello''' // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
@@ -36,7 +36,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"🍺 hello"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         parsed == '''🍺 hello''' // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
@@ -60,7 +60,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\uD83D hello"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
@@ -72,7 +72,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\uD83D"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
@@ -84,7 +84,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\uD83D\\uDBFF"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
@@ -96,7 +96,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\uDC00"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
@@ -108,7 +108,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\uD700\\uDC00"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
@@ -120,7 +120,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello \\u{d83c}\\udf7a"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         parsed == '''hello 🍺''' // contains the beer icon U+1F37 A : http://www.charbase.com/1f37a-unicode-beer-mug
@@ -131,7 +131,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello \\ud83c\\u{df7a}"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         parsed == '''hello 🍺''' // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
@@ -142,7 +142,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello \\u{d83c}\\u{df7a}"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         parsed == '''hello 🍺''' // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
@@ -153,7 +153,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello \\u{d83c}\\"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
@@ -165,7 +165,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello \\u{d83c}\\u"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
@@ -177,7 +177,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello \\u{d83c}\\u{df7a"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
@@ -189,7 +189,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello \\u{d83c}{df7a}"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
@@ -201,7 +201,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello \\u{d83c}df7a"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
@@ -213,7 +213,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello d83c\\u{df7a}"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
@@ -225,7 +225,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\u{5B57}\\uDC00"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
@@ -237,7 +237,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\uD83D\\u{DBFF}"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
@@ -249,7 +249,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\u{fffffff}"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(input, null)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)

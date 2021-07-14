@@ -2,6 +2,7 @@ package graphql.parser;
 
 import graphql.Assert;
 import graphql.Internal;
+import graphql.language.SourceLocation;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -102,7 +103,7 @@ public class StringValueParsing {
         return leadingWhitespace(str) == str.length();
     }
 
-    public static String parseSingleQuotedString(String string) {
+    public static String parseSingleQuotedString(String string, SourceLocation sourceLocation) {
         StringWriter writer = new StringWriter(string.length() - 2);
         int end = string.length() - 1;
         for (int i = 1; i < end; i++) {
@@ -139,7 +140,7 @@ public class StringValueParsing {
                     writer.write('\t');
                     continue;
                 case 'u':
-                    i = UnicodeUtil.parseAndWriteUnicode(writer, string, i);
+                    i = UnicodeUtil.parseAndWriteUnicode(writer, string, i, sourceLocation);
                     continue;
                 default:
                     Assert.assertShouldNeverHappen();
