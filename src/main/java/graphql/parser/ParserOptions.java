@@ -9,7 +9,10 @@ import graphql.PublicApi;
 @PublicApi
 public class ParserOptions {
 
-    private static ParserOptions defaultJvmParserOptions = newParserOptions().captureIgnoredChars(false).build();
+    private static ParserOptions defaultJvmParserOptions = newParserOptions()
+            .captureIgnoredChars(false)
+            .captureSourceLocation(true)
+            .build();
 
     /**
      * By default the Parser will not capture ignored characters.  A static holds this default
@@ -21,6 +24,7 @@ public class ParserOptions {
      * @return the static default value on whether to capture ignored chars
      *
      * @see graphql.language.IgnoredChar
+     * @see graphql.language.SourceLocation
      */
     public static ParserOptions getDefaultParserOptions() {
         return defaultJvmParserOptions;
@@ -38,15 +42,18 @@ public class ParserOptions {
      * @param options - the new default JVM parser options
      *
      * @see graphql.language.IgnoredChar
+     * @see graphql.language.SourceLocation
      */
     public static void setDefaultParserOptions(ParserOptions options) {
         defaultJvmParserOptions = Assert.assertNotNull(options);
     }
 
     private final boolean captureIgnoredChars;
+    private final boolean captureSourceLocation;
 
     private ParserOptions(Builder builder) {
         this.captureIgnoredChars = builder.captureIgnoredChars;
+        this.captureSourceLocation = builder.captureSourceLocation;
     }
 
     /**
@@ -59,6 +66,19 @@ public class ParserOptions {
         return captureIgnoredChars;
     }
 
+
+    /**
+     * Memory savings can be made if we do NOT set {@link graphql.language.SourceLocation}s
+     * on AST nodes,  especially in SDL parsing.
+     *
+     * @return true if {@link graphql.language.SourceLocation}s are captured in AST nodes
+     *
+     * @see graphql.language.SourceLocation
+     */
+    public boolean isCaptureSourceLocation() {
+        return captureSourceLocation;
+    }
+
     public static Builder newParserOptions() {
         return new Builder();
     }
@@ -66,9 +86,15 @@ public class ParserOptions {
     public static class Builder {
 
         private boolean captureIgnoredChars = false;
+        private boolean captureSourceLocation = true;
 
         public Builder captureIgnoredChars(boolean captureIgnoredChars) {
             this.captureIgnoredChars = captureIgnoredChars;
+            return this;
+        }
+
+        public Builder captureSourceLocation(boolean captureSourceLocation) {
+            this.captureSourceLocation = captureSourceLocation;
             return this;
         }
 

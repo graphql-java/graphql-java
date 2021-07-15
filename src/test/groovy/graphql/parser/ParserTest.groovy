@@ -1051,4 +1051,24 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
         e.message == "Invalid Syntax : Invalid unicode - trailing surrogate must be preceded with a leading surrogate - offending token '\\uDC00' at line 3 column 24"
     }
+
+    def "source locations are on by default but can be turned off"() {
+        when:
+        def options = ParserOptions.getDefaultParserOptions()
+
+        def document = new Parser().parseDocument("{ f }")
+        then:
+        options.isCaptureSourceLocation()
+        document.getSourceLocation() == new SourceLocation(1, 1)
+        document.getDefinitions()[0].getSourceLocation() == new SourceLocation(1, 1)
+
+        when:
+        options = ParserOptions.newParserOptions().captureSourceLocation(false).build()
+        document = new Parser().parseDocument("{ f }", options)
+
+        then:
+        !options.isCaptureSourceLocation()
+        document.getSourceLocation() == SourceLocation.EMPTY
+        document.getDefinitions()[0].getSourceLocation() == SourceLocation.EMPTY
+    }
 }
