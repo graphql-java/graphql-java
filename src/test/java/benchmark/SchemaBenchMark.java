@@ -33,12 +33,19 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 3, time = 10, batchSize = 4)
 public class SchemaBenchMark {
 
-    static String largeSDL = createResourceSDL("large-schema-1.graphqls");
+    static String largeSDL = createResourceSDL("large-schema-3.graphqls");
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.SECONDS)
+    @OutputTimeUnit(TimeUnit.MINUTES)
     public void benchMarkLargeSchemaCreate(Blackhole blackhole) {
+        blackhole.consume(createSchema(largeSDL));
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public void benchMarkLargeSchemaCreateAvgTime(Blackhole blackhole) {
         blackhole.consume(createSchema(largeSDL));
     }
 
@@ -59,7 +66,8 @@ public class SchemaBenchMark {
     }
 
     @SuppressWarnings("InfiniteLoopStatement")
-    public static void main(String[] args) {
+    /// make this a main method if you want to run it in JProfiler etc..
+    public static void mainXXX(String[] args) {
         int i = 0;
         while (true) {
             createSchema(largeSDL);
