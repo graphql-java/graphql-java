@@ -1,9 +1,17 @@
-package graphql.schema
+package graphql.schema.impl
 
 import graphql.AssertException
 import graphql.DirectivesUtil
 import graphql.NestedInputSchema
 import graphql.introspection.Introspection
+import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLInputObjectType
+import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLType
+import graphql.schema.GraphQLTypeReference
+import graphql.schema.GraphQLUnionType
+import graphql.schema.impl.SchemaUtil
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean

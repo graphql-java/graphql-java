@@ -26,7 +26,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.schema.GraphQLSchemaElementAdapter.SCHEMA_ELEMENT_ADAPTER;
 import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChildrenContainer;
-import static graphql.schema.StronglyConnectedComponentsTopologicallySorted.getStronglyConnectedComponentsTopologicallySorted;
+import static graphql.schema.impl.StronglyConnectedComponentsTopologicallySorted.getStronglyConnectedComponentsTopologicallySorted;
 import static graphql.util.NodeZipper.ModificationType.REPLACE;
 import static graphql.util.TraversalControl.CONTINUE;
 import static java.lang.String.format;

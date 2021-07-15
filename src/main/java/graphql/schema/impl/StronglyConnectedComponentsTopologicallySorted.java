@@ -1,7 +1,9 @@
-package graphql.schema;
+package graphql.schema.impl;
 
 import graphql.Assert;
 import graphql.Internal;
+import graphql.schema.GraphQLNamedType;
+import graphql.schema.GraphQLSchemaElement;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;

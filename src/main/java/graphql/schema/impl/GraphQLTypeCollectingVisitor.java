@@ -1,12 +1,26 @@
-package graphql.schema;
+package graphql.schema.impl;
 
+import com.google.common.collect.ImmutableMap;
 import graphql.AssertException;
 import graphql.Internal;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNamedType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLScalarType;
+import graphql.schema.GraphQLSchemaElement;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeReference;
+import graphql.schema.GraphQLTypeVisitorStub;
+import graphql.schema.GraphQLUnionType;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static java.lang.String.format;
 
@@ -109,7 +123,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
         }
     }
 
-    public Map<String, GraphQLNamedType> getResult() {
-        return result;
+    public ImmutableMap<String, GraphQLNamedType> getResult() {
+        return ImmutableMap.copyOf(new TreeMap<>(result));
     }
 }
