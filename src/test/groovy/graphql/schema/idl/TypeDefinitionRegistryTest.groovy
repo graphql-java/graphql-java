@@ -16,6 +16,7 @@ import graphql.language.ScalarTypeDefinition
 import graphql.language.ScalarTypeExtensionDefinition
 import graphql.language.SchemaDefinition
 import graphql.language.Type
+import graphql.language.TypeDefinition
 import graphql.language.TypeName
 import graphql.language.UnionTypeDefinition
 import graphql.language.UnionTypeExtensionDefinition
@@ -26,9 +27,10 @@ import spock.lang.Unroll
 
 class TypeDefinitionRegistryTest extends Specification {
 
-    TypeDefinitionRegistry parse(String spec) {
+    static TypeDefinitionRegistry parse(String spec) {
         new SchemaParser().parse(spec)
     }
+
 
     def "test default scalars are locked in"() {
 
@@ -931,4 +933,69 @@ class TypeDefinitionRegistryTest extends Specification {
         error.isPresent()
         error.get().getMessage().contains("tried to redefine existing 'bar' type")
     }
+
+    def "can be serialized and hence cacheable"() {
+        def sdl = '''
+            "the schema"
+            schema {
+                query : Q
+            }
+            
+            "the query type"
+            type Q {
+                field( arg : String! = "default") : FieldType @deprecated(reason : "no good")
+            }
+            
+            interface FieldType {
+                f : UnionType
+            }
+            
+            type FieldTypeImpl implements FieldType {
+                f : UnionType
+            }
+            
+            union UnionType = Foo | Bar
+            
+            type Foo {
+                foo : String
+            }
+
+            type Bar {
+                bar : String
+            }
+        '''
+        def registryOut = new SchemaParser().parse(sdl)
+
+        when:
+
+        TypeDefinitionRegistry registryIn = serialise(registryOut)
+
+        then:
+        TypeDefinition typeIn = registryIn.getType(typeName).get()
+        TypeDefinition typeOut = registryOut.getType(typeName).get()
+        typeIn.isEqualTo(typeOut)
+
+        where:
+        typeName        | _
+        "Q"             | _
+        "FieldType"     | _
+        "FieldTypeImpl" | _
+        "UnionType"     | _
+        "Foo"           | _
+        "Bar"           | _
+    }
+
+    static TypeDefinitionRegistry serialise(TypeDefinitionRegistry registryOut) {
+        ByteArrayOutputStream baOS = new ByteArrayOutputStream()
+        ObjectOutputStream oos = new ObjectOutputStream(baOS)
+
+        oos.writeObject(registryOut)
+
+        ByteArrayInputStream baIS = new ByteArrayInputStream(baOS.toByteArray())
+        ObjectInputStream ois = new ObjectInputStream(baIS)
+
+        ois.readObject() as TypeDefinitionRegistry
+    }
+
+
 }

@@ -984,6 +984,74 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         !type.getIgnoredChars().getRight().isEmpty()
     }
 
+    def "allow braced escaped unicode"() {
+        given:
+        def input = '''
+              {
+              foo(arg: "\\u{1F37A}")
+               }
+        '''
+
+        when:
+        Document document = Parser.parse(input)
+        OperationDefinition operationDefinition = (document.definitions[0] as OperationDefinition)
+        def field = operationDefinition.getSelectionSet().getSelections()[0] as Field
+        def argValue = field.arguments[0].value as StringValue
+
+        then:
+        argValue.getValue() == "🍺" // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
+    }
+
+    def "allow surrogate pairs escaped unicode"() {
+        given:
+        def input = '''
+              {
+              foo(arg: "\\ud83c\\udf7a")
+               }
+        '''
+
+        when:
+        Document document = Parser.parse(input)
+        OperationDefinition operationDefinition = (document.definitions[0] as OperationDefinition)
+        def field = operationDefinition.getSelectionSet().getSelections()[0] as Field
+        def argValue = field.arguments[0].value as StringValue
+
+        then:
+        argValue.getValue() == "🍺" // contains the beer icon U+1F37 A : http://www.charbase.com/1f37a-unicode-beer-mug
+    }
+
+    def "invalid surrogate pair - no trailing value"() {
+        given:
+        def input = '''
+              {
+              foo(arg: "\\ud83c")
+               }
+        '''
+
+        when:
+        Parser.parse(input)
+
+        then:
+        InvalidSyntaxException e = thrown(InvalidSyntaxException)
+        e.message == "Invalid Syntax : Invalid unicode - leading surrogate must be followed by a trailing surrogate - offending token '\\ud83c' at line 3 column 24"
+    }
+
+    def "invalid surrogate pair - no leading value"() {
+        given:
+        def input = '''
+              {
+              foo(arg: "\\uDC00")
+               }
+        '''
+
+        when:
+        Parser.parse(input)
+
+        then:
+        InvalidSyntaxException e = thrown(InvalidSyntaxException)
+        e.message == "Invalid Syntax : Invalid unicode - trailing surrogate must be preceded with a leading surrogate - offending token '\\uDC00' at line 3 column 24"
+    }
+
     def "source locations are on by default but can be turned off"() {
         when:
         def options = ParserOptions.getDefaultParserOptions()

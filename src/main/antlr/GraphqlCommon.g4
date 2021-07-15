@@ -117,31 +117,29 @@ StringValue:
 
 fragment BlockStringCharacter:
 '\\"""'|
-ExtendedSourceCharacter;
+SourceCharacter;
 
+// this is SourceCharacter without
+// \u000a New line
+// \u000d Carriage return
+// \u0022 '"'
+// \u005c '\'
 fragment StringCharacter:
-([\u0009\u0020\u0021] | [\u0023-\u005b] | [\u005d-\u{10FFFF}]) |  // this is SoureCharacter without '"' and '\'
+([\u0000-\u0009] | [\u000b\u000c\u000e-\u0021] | [\u0023-\u005b] | [\u005d-\ud7ff] | [\ue000-\u{10ffff}]) |
 '\\u' EscapedUnicode  |
 '\\' EscapedCharacter;
 
 fragment EscapedCharacter :  ["\\/bfnrt];
-fragment EscapedUnicode : Hex Hex Hex Hex;
+fragment EscapedUnicode : Hex Hex Hex Hex | '{' Hex+ '}';
 fragment Hex : [0-9a-fA-F];
 
+// this is the spec definition. Excludes surrogate leading and trailing values.
+fragment SourceCharacter : [\u0000-\ud7ff] | [\ue000-\u{10ffff}];
 
-// this is currently not covered by the spec because we allow all unicode chars
-// u0009 = \t Horizontal tab
-// u000a = \n line feed
-// u000d = \r carriage return
-// u0020 = space
-fragment ExtendedSourceCharacter :[\u0009\u000A\u000D\u0020-\u{10FFFF}];
-fragment ExtendedSourceCharacterWithoutLineFeed :[\u0009\u0020-\u{10FFFF}];
+// CommentChar
+fragment SourceCharacterWithoutLineFeed : [\u0000-\u0009] | [\u000b\u000c\u000e-\ud7ff] | [\ue000-\u{10ffff}];
 
-// this is the spec definition
-// fragment SourceCharacter :[\u0009\u000A\u000D\u0020-\uFFFF];
-
-
-Comment: '#' ExtendedSourceCharacterWithoutLineFeed* -> channel(2);
+Comment: '#' SourceCharacterWithoutLineFeed* -> channel(2);
 
 LF: [\n] -> channel(3);
 CR: [\r] -> channel(3);
