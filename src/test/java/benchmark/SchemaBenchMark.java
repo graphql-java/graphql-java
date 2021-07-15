@@ -66,7 +66,8 @@ public class SchemaBenchMark {
     }
 
     @SuppressWarnings("InfiniteLoopStatement")
-    public static void main(String[] args) {
+    /// make this a main method if you want to run it in JProfiler etc..
+    public static void mainXXX(String[] args) {
         int i = 0;
         while (true) {
             createSchema(largeSDL);
