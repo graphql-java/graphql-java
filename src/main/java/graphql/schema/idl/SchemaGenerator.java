@@ -115,10 +115,18 @@ public class SchemaGenerator {
         GraphQLSchema graphQLSchema = schemaBuilder.build();
 
         List<SchemaGeneratorPostProcessing> schemaTransformers = new ArrayList<>();
-        // handle directive wiring AFTER the schema has been built and hence type references are resolved at callback time
-        schemaTransformers.add(
-                new SchemaDirectiveWiringSchemaGeneratorPostProcessing(buildCtx.getTypeRegistry(), buildCtx.getWiring(), buildCtx.getCodeRegistry())
-        );
+        // we check if there are any SchemaDirectiveWiring's in play and if there are
+        // we add this to enable them.  By not adding it always, we save unnecessary
+        // schema build traversals
+        if (buildCtx.isDirectiveWiringRequired()) {
+            // handle directive wiring AFTER the schema has been built and hence type references are resolved at callback time
+            schemaTransformers.add(
+                    new SchemaDirectiveWiringSchemaGeneratorPostProcessing(
+                            buildCtx.getTypeRegistry(),
+                            buildCtx.getWiring(),
+                            buildCtx.getCodeRegistry())
+            );
+        }
         schemaTransformers.addAll(buildCtx.getWiring().getSchemaGeneratorPostProcessings());
 
         for (SchemaGeneratorPostProcessing postProcessing : schemaTransformers) {
