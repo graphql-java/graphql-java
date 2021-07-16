@@ -22,6 +22,7 @@ import graphql.schema.GraphqlElementParentTree;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +36,34 @@ import static graphql.collect.ImmutableKit.map;
 @SuppressWarnings("DuplicatedCode")
 @Internal
 public class SchemaGeneratorDirectiveHelper {
+
+    /**
+     * This will return true if something in the RuntimeWiring requires a {@link SchemaDirectiveWiring}.  This is to allow
+     * a shortcut to decide that that we dont need ANY SchemaDirectiveWiring post processing
+     *
+     * @param directiveContainer the element that has directives
+     * @param typeRegistry       the type registry
+     * @param runtimeWiring      the runtime wiring
+     * @param <T>                for two
+     *
+     * @return true if something in the RuntimeWiring requires a {@link SchemaDirectiveWiring}
+     */
+    public static <T extends GraphQLDirectiveContainer> boolean schemaDirectiveWiringIsRequired(T directiveContainer, TypeDefinitionRegistry typeRegistry, RuntimeWiring runtimeWiring) {
+
+        WiringFactory wiringFactory = runtimeWiring.getWiringFactory();
+
+        Map<String, SchemaDirectiveWiring> registeredWiring = runtimeWiring.getRegisteredDirectiveWiring();
+        List<SchemaDirectiveWiring> otherWiring = runtimeWiring.getDirectiveWiring();
+        boolean thereAreSome = !registeredWiring.isEmpty() || !otherWiring.isEmpty();
+        if (thereAreSome) {
+            return true;
+        }
+
+        Parameters params = new Parameters(typeRegistry, runtimeWiring, new HashMap<>(), null);
+        SchemaDirectiveWiringEnvironment<T> env = new SchemaDirectiveWiringEnvironmentImpl<>(directiveContainer, directiveContainer.getDirectives(), null, params);
+        // do they dynamically provide a wiring for this element?
+        return wiringFactory.providesSchemaDirectiveWiring(env);
+    }
 
     static class Parameters {
         private final TypeDefinitionRegistry typeRegistry;
@@ -355,5 +384,4 @@ public class SchemaGeneratorDirectiveHelper {
         }
         return false;
     }
-
 }
