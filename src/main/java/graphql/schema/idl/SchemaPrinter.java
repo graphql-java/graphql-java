@@ -53,6 +53,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.google.common.base.Predicates.not;
 import static graphql.Directives.DeprecatedDirective;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
@@ -77,6 +78,12 @@ public class SchemaPrinter {
             .name("deprecated")
             .validLocations(FIELD_DEFINITION, ENUM_VALUE, ARGUMENT_DEFINITION, INPUT_FIELD_DEFINITION)
             .build();
+
+    /**
+     * This predicate excludes all directives which are specified bt the GraphQL Specification.
+     * Printing these directives is optional.
+     */
+    public static final Predicate<GraphQLDirective> ExcludeGraphQLSpecifiedDirectivesPredicate = not(DirectiveInfo::isGraphqlSpecifiedDirective);
 
     /**
      * Options to use when printing a schema
@@ -985,7 +992,10 @@ public class SchemaPrinter {
 
     private void printMultiLineDescription(PrintWriter out, String prefix, List<String> lines) {
         out.printf("%s\"\"\"\n", prefix);
-        lines.forEach(l -> out.printf("%s%s\n", prefix, l));
+        lines.forEach(l -> {
+            String escapedTripleQuotes = l.replaceAll("\"\"\"", "\\\\\"\"\"");
+            out.printf("%s%s\n", prefix, escapedTripleQuotes);
+        });
         out.printf("%s\"\"\"\n", prefix);
     }
 
