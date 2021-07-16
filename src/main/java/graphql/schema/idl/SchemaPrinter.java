@@ -945,6 +945,10 @@ public class SchemaPrinter {
         return sw.toString();
     }
 
+    public String print(GraphQLDirective graphQLDirective) {
+        return directiveDefinition(graphQLDirective);
+    }
+
     private void printType(PrintWriter out, List<GraphQLType> typesAsList, Class<?>
             typeClazz, GraphqlFieldVisibility visibility) {
         typesAsList.stream()

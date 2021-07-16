@@ -41,12 +41,12 @@ import java.util.stream.Collectors
 
 class SDLParserTest extends Specification {
 
-    boolean isEqual(Node node1, Node node2) {
-        return new AstComparator().isEqual(node1, node2)
+    static boolean isEqual(Node node1, Node node2) {
+        return AstComparator.isEqual(node1, node2)
     }
 
-    boolean isEqual(List<Node> node1, List<Node> node2) {
-        return new AstComparator().isEqual(node1, node2)
+    static boolean isEqual(List<Node> node1, List<Node> node2) {
+        return AstComparator.isEqual(node1, node2)
     }
 
 
@@ -135,7 +135,7 @@ fieldName(arg1:SomeType={one:1} @argDirective(a1:\$v1)):[Elm] @fieldDirective(co
         field.directive(new Directive("fieldDirective", [new Argument("cool", new BooleanValue(true))]))
 
         def defaultValue = ObjectValue.newObjectValue()
-        defaultValue.objectField(new ObjectField("one", new IntValue(1)))
+        defaultValue.objectField(new ObjectField("one", new IntValue(BigInteger.valueOf(1))))
 
         def arg1 = InputValueDefinition.newInputValueDefinition().name("arg1").type(new TypeName("SomeType")).defaultValue(defaultValue.build())
         arg1.directive(new Directive("argDirective", [new Argument("a1", new VariableReference("v1"))]))
@@ -198,7 +198,7 @@ cmd(arg1:[Number]=[1] arg2:String @secondArg(cool:true)): Function
         def cmdField = FieldDefinition.newFieldDefinition().name("cmd").type(new TypeName("Function"))
         cmdField.inputValueDefinition(new InputValueDefinition("arg1",
                 new ListType(new TypeName("Number")),
-                new ArrayValue([new IntValue(1)])))
+                new ArrayValue([new IntValue(BigInteger.valueOf(1))])))
         def arg2 = InputValueDefinition.newInputValueDefinition().name("arg2").type(new TypeName("String"))
         arg2.directive(new Directive("secondArg", [new Argument("cool", new BooleanValue(true))]))
         cmdField.inputValueDefinition(arg2.build())
@@ -271,7 +271,7 @@ three: [Number] @three
         schema.directive(new Directive("d2"))
         schema.inputValueDefinition(new InputValueDefinition("one", new TypeName("Number")))
 
-        def two = InputValueDefinition.newInputValueDefinition().name("two").type(new TypeName("Number")).defaultValue(new IntValue(1))
+        def two = InputValueDefinition.newInputValueDefinition().name("two").type(new TypeName("Number")).defaultValue(new IntValue(BigInteger.valueOf(1)))
         two.directive(new Directive("two"))
         schema.inputValueDefinition(two.build())
 
@@ -336,7 +336,7 @@ withArgs(arg1:[Number]=[1] arg2:String @secondArg(cool:true)): Function
         def withArgs = FieldDefinition.newFieldDefinition().name("withArgs").type(new TypeName("Function"))
         withArgs.inputValueDefinition(new InputValueDefinition("arg1",
                 new ListType(new TypeName("Number")),
-                new ArrayValue([new IntValue(1)])))
+                new ArrayValue([new IntValue(BigInteger.valueOf(1))])))
 
         def arg2 = InputValueDefinition.newInputValueDefinition().name("arg2").type(new TypeName("String"))
         arg2.directive(new Directive("secondArg", [new Argument("cool", new BooleanValue(true))]))
@@ -360,7 +360,7 @@ directive @DirectiveName(arg1:String arg2:Int=23) on FIELD | QUERY
         and: "expected schema"
         def schema = DirectiveDefinition.newDirectiveDefinition().name("DirectiveName")
         schema.inputValueDefinition(new InputValueDefinition("arg1", new TypeName("String")))
-        schema.inputValueDefinition(new InputValueDefinition("arg2", new TypeName("Int"), new IntValue(23)))
+        schema.inputValueDefinition(new InputValueDefinition("arg2", new TypeName("Int"), new IntValue(BigInteger.valueOf(23))))
         schema.directiveLocation(new DirectiveLocation("FIELD"))
         schema.directiveLocation(new DirectiveLocation("QUERY"))
         schema.repeatable(false)
@@ -382,7 +382,7 @@ directive @DirectiveName(arg1:String arg2:Int=23) repeatable on FIELD | QUERY
         and: "expected schema"
         def schema = DirectiveDefinition.newDirectiveDefinition().name("DirectiveName")
         schema.inputValueDefinition(new InputValueDefinition("arg1", new TypeName("String")))
-        schema.inputValueDefinition(new InputValueDefinition("arg2", new TypeName("Int"), new IntValue(23)))
+        schema.inputValueDefinition(new InputValueDefinition("arg2", new TypeName("Int"), new IntValue(BigInteger.valueOf(23))))
         schema.directiveLocation(new DirectiveLocation("FIELD"))
         schema.directiveLocation(new DirectiveLocation("QUERY"))
         schema.repeatable(true)
@@ -396,7 +396,7 @@ directive @DirectiveName(arg1:String arg2:Int=23) repeatable on FIELD | QUERY
     }
 
 
-    List<String> commentContent(List<Comment> comments) {
+    static List<String> commentContent(List<Comment> comments) {
         comments.stream().map { c -> c.content }.collect(Collectors.toList())
     }
 
@@ -804,7 +804,7 @@ input Gun {
 
         when:
         def defaultDoc = new Parser().parseDocument(input)
-        def namedDocNull = new Parser().parseDocument(input, null)
+        def namedDocNull = new Parser().parseDocument(input, (String) null)
         def namedDoc = new Parser().parseDocument(input, sourceName)
 
         then:

@@ -1893,6 +1893,21 @@ type MyQuery {
 """
     }
 
+    def "allow printing of just directives"() {
+        def sdl = """
+            directive @foo on FIELD_DEFINITION
+            type Query { anything: String @foo }
+        """
+        def schema = TestUtil.schema(sdl)
+        def directive = schema.getDirective("foo");
+
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeDirectives(true)).print(directive)
+
+        then:
+        result == """directive @foo on FIELD_DEFINITION"""
+    }
+
     def "description printing escapes triple quotes"() {
         def descriptionWithTripleQuote = 'Hello """ \n World """ """';
         def field = newFieldDefinition().name("hello").type(GraphQLString).build()

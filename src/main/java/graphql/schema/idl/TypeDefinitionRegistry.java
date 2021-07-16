@@ -28,6 +28,7 @@ import graphql.schema.idl.errors.SchemaRedefinitionError;
 import graphql.schema.idl.errors.TypeRedefinitionError;
 import graphql.util.FpKit;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -47,7 +48,7 @@ import static java.util.Optional.ofNullable;
  * a graphql schema definition file via {@link SchemaParser#parse(String)}
  */
 @PublicApi
-public class TypeDefinitionRegistry {
+public class TypeDefinitionRegistry implements Serializable {
 
     private final Map<String, List<ObjectTypeExtensionDefinition>> objectTypeExtensions = new LinkedHashMap<>();
     private final Map<String, List<InterfaceTypeExtensionDefinition>> interfaceTypeExtensions = new LinkedHashMap<>();
@@ -418,7 +419,7 @@ public class TypeDefinitionRegistry {
         return types.containsKey(name) || ScalarInfo.GRAPHQL_SPECIFICATION_SCALARS_DEFINITIONS.containsKey(name) || scalarTypes.containsKey(name) || objectTypeExtensions.containsKey(name);
     }
 
-    public Optional<TypeDefinition> getType(Type type) {
+    public Optional<TypeDefinition>     getType(Type type) {
         String typeName = TypeInfo.typeInfo(type).getName();
         return getType(typeName);
     }

@@ -10,6 +10,10 @@ class FpKitTest extends Specification {
     class IterableThing implements Iterable {
         Iterable delegate
 
+        IterableThing(Iterable delegate) {
+            this.delegate = delegate
+        }
+
         @Override
         Iterator iterator() {
             return delegate.iterator()
@@ -39,7 +43,7 @@ class FpKitTest extends Specification {
         actual == expected
 
         when:
-        IterableThing iterableThing = new IterableThing(delegate: ["a", "b", "c"])
+        IterableThing iterableThing = new IterableThing(["a", "b", "c"])
         actual = FpKit.toCollection(iterableThing)
         then:
         actual == expected
@@ -63,5 +67,34 @@ class FpKitTest extends Specification {
 
         memoVal1 == 3
         memoVal2 == 3
+    }
+
+    def "toListOrSingletonList works"() {
+        def birdArr = ["Parrot", "Cockatiel", "Pigeon"] as String[]
+
+        when:
+        def l = FpKit.toListOrSingletonList(birdArr)
+        then:
+        l == ["Parrot", "Cockatiel", "Pigeon"]
+
+        when:
+        l = FpKit.toListOrSingletonList(["Parrot", "Cockatiel", "Pigeon"])
+        then:
+        l == ["Parrot", "Cockatiel", "Pigeon"]
+
+        when:
+        l = FpKit.toListOrSingletonList(["Parrot", "Cockatiel", "Pigeon"].stream())
+        then:
+        l == ["Parrot", "Cockatiel", "Pigeon"]
+
+        when:
+        l = FpKit.toListOrSingletonList(["Parrot", "Cockatiel", "Pigeon"].stream().iterator())
+        then:
+        l == ["Parrot", "Cockatiel", "Pigeon"]
+
+        when:
+        l = FpKit.toListOrSingletonList("Parrot")
+        then:
+        l == ["Parrot"]
     }
 }

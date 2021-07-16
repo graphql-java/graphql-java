@@ -23,6 +23,7 @@ public class SchemaGenerator {
 
     private final SchemaTypeChecker typeChecker = new SchemaTypeChecker();
     private final SchemaGeneratorHelper schemaGeneratorHelper = new SchemaGeneratorHelper();
+
     public SchemaGenerator() {
     }
 
@@ -81,11 +82,14 @@ public class SchemaGenerator {
 
         Map<String, OperationTypeDefinition> operationTypeDefinitions = SchemaExtensionsChecker.gatherOperationDefs(typeRegistry);
 
-        return makeExecutableSchemaImpl(typeRegistryCopy, wiring, operationTypeDefinitions);
+        return makeExecutableSchemaImpl(typeRegistryCopy, wiring, operationTypeDefinitions, options);
     }
 
-    private GraphQLSchema makeExecutableSchemaImpl(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring, Map<String, OperationTypeDefinition> operationTypeDefinitions) {
-        SchemaGeneratorHelper.BuildContext buildCtx = new SchemaGeneratorHelper.BuildContext(typeRegistry, wiring, operationTypeDefinitions);
+    private GraphQLSchema makeExecutableSchemaImpl(TypeDefinitionRegistry typeRegistry,
+                                                   RuntimeWiring wiring,
+                                                   Map<String, OperationTypeDefinition> operationTypeDefinitions,
+                                                   Options options) {
+        SchemaGeneratorHelper.BuildContext buildCtx = new SchemaGeneratorHelper.BuildContext(typeRegistry, wiring, operationTypeDefinitions, options);
 
         GraphQLSchema.Builder schemaBuilder = GraphQLSchema.newSchema();
 
@@ -105,16 +109,24 @@ public class SchemaGenerator {
         schemaBuilder.codeRegistry(codeRegistry);
 
         buildCtx.getTypeRegistry().schemaDefinition().ifPresent(schemaDefinition -> {
-            String description = schemaGeneratorHelper.buildDescription(schemaDefinition, schemaDefinition.getDescription());
+            String description = schemaGeneratorHelper.buildDescription(buildCtx, schemaDefinition, schemaDefinition.getDescription());
             schemaBuilder.description(description);
         });
         GraphQLSchema graphQLSchema = schemaBuilder.build();
 
         List<SchemaGeneratorPostProcessing> schemaTransformers = new ArrayList<>();
-        // handle directive wiring AFTER the schema has been built and hence type references are resolved at callback time
-        schemaTransformers.add(
-                new SchemaDirectiveWiringSchemaGeneratorPostProcessing(buildCtx.getTypeRegistry(), buildCtx.getWiring(), buildCtx.getCodeRegistry())
-        );
+        // we check if there are any SchemaDirectiveWiring's in play and if there are
+        // we add this to enable them.  By not adding it always, we save unnecessary
+        // schema build traversals
+        if (buildCtx.isDirectiveWiringRequired()) {
+            // handle directive wiring AFTER the schema has been built and hence type references are resolved at callback time
+            schemaTransformers.add(
+                    new SchemaDirectiveWiringSchemaGeneratorPostProcessing(
+                            buildCtx.getTypeRegistry(),
+                            buildCtx.getWiring(),
+                            buildCtx.getCodeRegistry())
+            );
+        }
         schemaTransformers.addAll(buildCtx.getWiring().getSchemaGeneratorPostProcessings());
 
         for (SchemaGeneratorPostProcessing postProcessing : schemaTransformers) {
@@ -127,12 +139,22 @@ public class SchemaGenerator {
      * These options control how the schema generation works
      */
     public static class Options {
+        private final boolean useCommentsAsDescription;
 
-        Options() {
+        Options(boolean useCommentsAsDescription) {
+            this.useCommentsAsDescription = useCommentsAsDescription;
+        }
+
+        public boolean isUseCommentsAsDescription() {
+            return useCommentsAsDescription;
         }
 
         public static Options defaultOptions() {
-            return new Options();
+            return new Options(true);
+        }
+
+        public Options useCommentsAsDescriptions(boolean useCommentsAsDescription) {
+            return new Options(useCommentsAsDescription);
         }
     }
 }

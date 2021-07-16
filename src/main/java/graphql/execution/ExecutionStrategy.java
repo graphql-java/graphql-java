@@ -693,7 +693,7 @@ public abstract class ExecutionStrategy {
      * @throws java.lang.ClassCastException if its not an Iterable
      */
     protected Iterable<Object> toIterable(Object result) {
-        return FpKit.toCollection(result);
+        return FpKit.toIterable(result);
     }
 
     protected GraphQLObjectType resolveType(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLType fieldType) {
