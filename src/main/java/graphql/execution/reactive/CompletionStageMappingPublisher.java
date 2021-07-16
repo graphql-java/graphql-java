@@ -36,6 +36,14 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
         this.mapper = mapper;
     }
 
+    public Publisher<U> getUpstreamPublisher() {
+        return upstreamPublisher;
+    }
+
+    public Function<U, CompletionStage<D>> getMapper() {
+        return mapper;
+    }
+
     @Override
     public void subscribe(Subscriber<? super D> downstreamSubscriber) {
         upstreamPublisher.subscribe(new Subscriber<U>() {
