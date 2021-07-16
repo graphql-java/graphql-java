@@ -1804,7 +1804,7 @@ class SchemaGeneratorTest extends Specification {
 
     }
 
-    def "@fetch directive is respected"() {
+    def "@fetch directive is respected if added"() {
         def spec = """             
 
             directive @fetch(from : String!) on FIELD_DEFINITION
@@ -1815,7 +1815,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def wiring = RuntimeWiring.newRuntimeWiring().build()
+        def wiring = RuntimeWiring.newRuntimeWiring().directiveWiring(new FetchSchemaDirectiveWiring()).build()
         def schema = schema(spec, wiring)
 
         GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType

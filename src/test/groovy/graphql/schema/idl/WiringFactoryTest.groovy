@@ -74,7 +74,7 @@ class WiringFactoryTest extends Specification {
                     throw new UnsupportedOperationException("Not implemented")
                 }
             })
-            .build()
+                    .build()
         }
 
         @Override
@@ -305,7 +305,7 @@ class WiringFactoryTest extends Specification {
         wiringFactory.fields == ["id", "homePlanet"]
     }
 
-    def "@fetch directive is respected by default data fetcher wiring"() {
+    def "@fetch directive is respected by default data fetcher wiring if added"() {
         def spec = """
 
             directive @fetch(from : String!) on FIELD_DEFINITION              
@@ -320,6 +320,7 @@ class WiringFactoryTest extends Specification {
         }
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(wiringFactory)
+                .directiveWiring(new FetchSchemaDirectiveWiring())
                 .build()
 
         def schema = TestUtil.schema(spec, wiring)
