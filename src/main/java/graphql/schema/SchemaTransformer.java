@@ -27,6 +27,7 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.schema.GraphQLSchemaElementAdapter.SCHEMA_ELEMENT_ADAPTER;
 import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChildrenContainer;
 import static graphql.schema.StronglyConnectedComponentsTopologicallySorted.getStronglyConnectedComponentsTopologicallySorted;
+import static graphql.util.NodeZipper.ModificationType.DELETE;
 import static graphql.util.NodeZipper.ModificationType.REPLACE;
 import static graphql.util.TraversalControl.CONTINUE;
 import static java.lang.String.format;
@@ -246,6 +247,9 @@ public class SchemaTransformer {
             public TraversalControl backRef(TraverserContext<GraphQLSchemaElement> context) {
                 NodeZipper<GraphQLSchemaElement> zipper = zipperByOriginalNode.get(context.thisNode());
                 breadcrumbsByZipper.get(zipper).add(context.getBreadcrumbs());
+                if (zipper.getModificationType() == DELETE) {
+                    return CONTINUE;
+                }
                 visitor.visitBackRef(context);
                 List<GraphQLSchemaElement> reverseDependenciesForCurNode = reverseDependencies.get(zipper.getCurNode());
                 assertNotNull(reverseDependenciesForCurNode);
