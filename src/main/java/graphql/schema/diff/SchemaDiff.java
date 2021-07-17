@@ -324,6 +324,7 @@ public class SchemaDiff {
         Map<String, Type> oldMemberTypes = sortedMap(oldDef.getMemberTypes(), SchemaDiff::getTypeName);
         Map<String, Type> newMemberTypes = sortedMap(newDef.getMemberTypes(), SchemaDiff::getTypeName);
 
+
         for (Map.Entry<String, Type> entry : oldMemberTypes.entrySet()) {
             String oldMemberTypeName = entry.getKey();
             if (!newMemberTypes.containsKey(oldMemberTypeName)) {
@@ -334,6 +335,9 @@ public class SchemaDiff {
                         .components(oldMemberTypeName)
                         .reasonMsg("The new API does not contain union member type '%s'", oldMemberTypeName)
                         .build());
+            } else {
+                // check type which is in the old and the new Union def
+                checkType(ctx, entry.getValue(), newMemberTypes.get(oldMemberTypeName));
             }
         }
         for (Map.Entry<String, Type> entry : newMemberTypes.entrySet()) {
