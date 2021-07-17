@@ -15,7 +15,6 @@ import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
 import static graphql.schema.GraphQLTypeReference.typeRef
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
-import static graphql.util.TreeTransformerUtil.deleteNode
 
 class SchemaTransformerTest extends Specification {
 
@@ -691,5 +690,58 @@ type Query {
         def newFoo = newSchema.getQueryType().getFieldDefinition("foo").getType() as GraphQLObjectType
         then:
         newFoo.getFieldDefinition("changed") != null
+    }
+
+    def "delete type which is references twice"() {
+        def sdl = '''
+            type Query {
+                u1: U1
+                u2: U2
+            }
+            union U1 = A | ToDel 
+            union U2 = B | ToDel
+            type A {
+                a: String
+            }
+            type B {
+                a: String
+            }
+            type ToDel {
+                a: String
+            }
+            
+        '''
+        def schema = TestUtil.schema(sdl)
+
+        when:
+        GraphQLSchema newSchema = new SchemaTransformer().transform(schema, new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getName().equals('ToDel')) {
+                    return deleteNode(context)
+                }
+                return TraversalControl.CONTINUE
+            }
+        })
+        then:
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
+        printer.print(newSchema) == '''union U1 = A
+
+union U2 = B
+
+type A {
+  a: String
+}
+
+type B {
+  a: String
+}
+
+type Query {
+  u1: U1
+  u2: U2
+}
+'''
     }
 }
