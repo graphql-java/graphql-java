@@ -1926,4 +1926,28 @@ type Query {
 }
 '''
     }
+
+    def "directive with optional values"() {
+        def sdl = """
+            directive @foo(note:String) on FIELD_DEFINITION
+            type Query { 
+                anything: String @foo 
+                anything2: String @foo(note: "foo")
+            }
+        """
+        def schema = TestUtil.schema(sdl)
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeDirectives(ExcludeGraphQLSpecifiedDirectivesPredicate)).print(schema)
+
+
+        then:
+        result == """directive @foo(note: String) on FIELD_DEFINITION
+
+type Query {
+  anything: String @foo
+  anything2: String @foo(note : "foo")
+}
+"""
+    }
+
 }
