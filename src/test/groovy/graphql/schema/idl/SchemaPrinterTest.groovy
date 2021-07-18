@@ -42,6 +42,7 @@ import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLScalarType.newScalar
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
+import static graphql.schema.idl.SchemaPrinter.ExcludeGraphQLSpecifiedDirectivesPredicate
 import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
 
 class SchemaPrinterTest extends Specification {
@@ -75,7 +76,7 @@ class SchemaPrinterTest extends Specification {
             throw new UnsupportedOperationException("Not implemented")
         }
     })
-    .build()
+            .build()
 
     def resolver = new TypeResolver() {
 
@@ -514,7 +515,7 @@ type Query {
 
     def "prints scalar description as comment"() {
         given:
-        GraphQLScalarType myScalar = newScalar().name("Scalar").description( "about scalar").coercing(new Coercing() {
+        GraphQLScalarType myScalar = newScalar().name("Scalar").description("about scalar").coercing(new Coercing() {
             @Override
             Object serialize(Object input) {
                 return null
@@ -530,7 +531,7 @@ type Query {
                 return null
             }
         })
-        .build()
+                .build()
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(myScalar).build()
         def queryType = newObject().name("Query").field(fieldDefinition).build()
@@ -1648,7 +1649,7 @@ scalar CustomScalar
                 return null
             }
         })
-        .build()
+                .build()
 
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("scalarType").type(myScalar).build()
@@ -1690,7 +1691,7 @@ scalar RandomScalar
                 return null
             }
         })
-        .build()
+                .build()
 
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("someType").type(GraphQLInt).build()
@@ -1905,6 +1906,48 @@ type MyQuery {
 
         then:
         result == """directive @foo on FIELD_DEFINITION"""
+    }
+
+    def "description printing escapes triple quotes"() {
+        def descriptionWithTripleQuote = 'Hello """ \n World """ """';
+        def field = newFieldDefinition().name("hello").type(GraphQLString).build()
+        def queryType = newObject().name("Query").field(field).description(descriptionWithTripleQuote).build()
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeDirectives(ExcludeGraphQLSpecifiedDirectivesPredicate)).print(schema)
+
+        then:
+        result == '''"""
+Hello \\""" 
+ World \\""" \\"""
+"""
+type Query {
+  hello: String
+}
+'''
+    }
+
+    def "directive with optional values"() {
+        def sdl = """
+            directive @foo(note:String) on FIELD_DEFINITION
+            type Query { 
+                anything: String @foo 
+                anything2: String @foo(note: "foo")
+            }
+        """
+        def schema = TestUtil.schema(sdl)
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeDirectives(ExcludeGraphQLSpecifiedDirectivesPredicate)).print(schema)
+
+
+        then:
+        result == """directive @foo(note: String) on FIELD_DEFINITION
+
+type Query {
+  anything: String @foo
+  anything2: String @foo(note : "foo")
+}
+"""
     }
 
 }

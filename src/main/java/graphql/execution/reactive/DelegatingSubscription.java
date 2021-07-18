@@ -25,4 +25,12 @@ public class DelegatingSubscription implements Subscription {
     public void cancel() {
         upstreamSubscription.cancel();
     }
+
+    /**
+     * Get instance of upstreamSubscription
+     * @return {@link Subscription}
+     */
+    public Subscription getUpstreamSubscription() {
+        return upstreamSubscription;
+    }
 }

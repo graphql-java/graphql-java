@@ -16,16 +16,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static graphql.util.TreeTransformerUtil.changeNode;
 
 /**
- * This will produce signature query documents that can be used say for logging.
+ * This will produce signature and privacy safe query documents that can be used for query categorisation and logging.
  */
 @PublicApi
 public class AstSignature {
 
     /**
      * This can produce a "signature" canonical AST that conforms to the algorithm as outlined
-     *  <a href="https://github.com/apollographql/apollo-server/blob/master/packages/apollo-engine-reporting/src/signature.ts">here</a>
+     *  <a href="https://github.com/apollographql/apollo-tooling/blob/master/packages/apollo-graphql/src/operationId.ts">here</a>
      * which removes excess operations, removes any field aliases, hides literal values and sorts the result into a canonical
-     * query
+     * query.
+     *
+     * A signature says two queries with the same signature can be thought of as the same query.  For example
+     * a tracing system will want a canonical signature for queries to group them.
      *
      * @param document      the document to make a signature query from
      * @param operationName the name of the operation to do it for (since only one query can be run at a time)
@@ -35,12 +38,35 @@ public class AstSignature {
     public Document signatureQuery(Document document, String operationName) {
         return sortAST(
                 removeAliases(
-                        hideLiterals(
+                        hideLiterals(true,
                                 dropUnusedQueryDefinitions(document, operationName)))
         );
     }
 
-    private Document hideLiterals(Document document) {
+    /**
+     * This can produce a "privacy safe" AST that some what conforms to the algorithm as outlined
+     *  <a href="https://github.com/apollographql/apollo-tooling/blob/master/packages/apollo-graphql/src/operationId.ts">here</a>
+     * which removes excess operations, removes any field aliases, hides some literal values and sorts the result.
+     *
+     * This is not a signature.  For example object literal structures are retained like `{ a : "", b : 0}` which means
+     * you can infer what was asked for but not what the values are.  This differs from {@link AstSignature#signatureQuery(Document, String)}
+     * which collapses literals to create more canonical signatures.  A privacy safe Query is useful for logging say to show
+     * what shapes was asked for without revealing what data was provided
+     *
+     * @param document      the document to make a privacy safe query from
+     * @param operationName the name of the operation to do it for (since only one query can be run at a time)
+     *
+     * @return the privacy safe query in document form
+     */
+    public Document privacySafeQuery(Document document, String operationName) {
+        return sortAST(
+                removeAliases(
+                        hideLiterals(false,
+                                dropUnusedQueryDefinitions(document, operationName)))
+        );
+    }
+
+    private Document hideLiterals(boolean signatureMode, Document document) {
         final Map<String, String> variableRemapping = new HashMap<>();
         final AtomicInteger variableCount = new AtomicInteger();
 
@@ -67,12 +93,18 @@ public class AstSignature {
 
             @Override
             public TraversalControl visitArrayValue(ArrayValue node, TraverserContext<Node> context) {
-                return changeNode(context, node.transform(builder -> builder.values(Collections.emptyList())));
+                if (signatureMode) {
+                    return changeNode(context, node.transform(builder -> builder.values(Collections.emptyList())));
+                }
+                return TraversalControl.CONTINUE;
             }
 
             @Override
             public TraversalControl visitObjectValue(ObjectValue node, TraverserContext<Node> context) {
-                return changeNode(context, node.transform(builder -> builder.objectFields(Collections.emptyList())));
+                if (signatureMode) {
+                    return changeNode(context, node.transform(builder -> builder.objectFields(Collections.emptyList())));
+                }
+                return TraversalControl.CONTINUE;
             }
 
             @Override
@@ -147,7 +179,7 @@ public class AstSignature {
 
     private Document transformDoc(Document document, NodeVisitorStub visitor) {
         AstTransformer astTransformer = new AstTransformer();
-        Node newDoc = astTransformer.transform(document, visitor);
+        Node<?> newDoc = astTransformer.transform(document, visitor);
         return (Document) newDoc;
     }
 
