@@ -4,6 +4,7 @@ import graphql.ExecutionResult;
 import graphql.Internal;
 import graphql.PublicApi;
 import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
 
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
@@ -19,8 +20,11 @@ import java.util.function.Function;
  * }
  * </pre>
  */
+@SuppressWarnings("ReactiveStreamsPublisherImplementation")
 @PublicApi
-public class SubscriptionPublisher extends CompletionStageMappingPublisher<ExecutionResult, Object> {
+public class SubscriptionPublisher implements Publisher<ExecutionResult> {
+
+    private final CompletionStageMappingPublisher<ExecutionResult, Object> mappingPublisher;
 
     /**
      * Subscription consuming code is not expected to create instances of this class
@@ -29,16 +33,20 @@ public class SubscriptionPublisher extends CompletionStageMappingPublisher<Execu
      * @param mapper            a mapper that turns object into promises to execution results which are then published on this stream
      */
     @Internal
-    public SubscriptionPublisher(Publisher<Object> upstreamPublisher, Function<Object, CompletionStage<ExecutionResult>> mapper) {
-        super(upstreamPublisher, mapper);
+    public  SubscriptionPublisher(Publisher<Object> upstreamPublisher, Function<Object, CompletionStage<ExecutionResult>> mapper) {
+        mappingPublisher = new CompletionStageMappingPublisher<>(upstreamPublisher, mapper);
     }
 
     /**
      * @return the underlying Publisher that was providing raw objects to the subscription field, whose published values are then mapped
      * to execution results
      */
-    @Override
     public Publisher<Object> getUpstreamPublisher() {
-        return super.getUpstreamPublisher();
+        return mappingPublisher.getUpstreamPublisher();
+    }
+
+    @Override
+    public void subscribe(Subscriber<? super ExecutionResult> subscriber) {
+        mappingPublisher.subscribe(subscriber);
     }
 }
