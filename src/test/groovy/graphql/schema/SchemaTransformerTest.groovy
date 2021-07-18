@@ -709,6 +709,6 @@ type Query {
         when:
         def newSchema = SchemaTransformer.transformSchema(schema, fieldChanger)
         then:
-        newSchema == schema
+        newSchema === schema
     }
 }
