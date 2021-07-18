@@ -14,6 +14,7 @@ import graphql.execution.pubsub.Message
 import graphql.execution.pubsub.ReactiveStreamsMessagePublisher
 import graphql.execution.pubsub.ReactiveStreamsObjectPublisher
 import graphql.execution.pubsub.RxJavaMessagePublisher
+import graphql.execution.reactive.SubscriptionPublisher
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.PropertyDataFetcher
@@ -61,7 +62,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         return TestUtil.graphQL(idl, runtimeWiring).subscriptionExecutionStrategy(new SubscriptionExecutionStrategy()).build()
     }
 
-    GraphQLError mkError(String message) {
+    static GraphQLError mkError(String message) {
         GraphqlErrorBuilder.newError().message(message).build()
     }
 
@@ -99,6 +100,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         msgStream.subscribe(capturingSubscriber)
 
         then:
+        msgStream instanceof SubscriptionPublisher
         Awaitility.await().untilTrue(capturingSubscriber.isDone())
 
         def messages = capturingSubscriber.events

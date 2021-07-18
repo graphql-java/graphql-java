@@ -20,6 +20,7 @@ import java.util.function.Function;
  * @param <D> the down stream type
  * @param <U> the up stream type to be mapped to
  */
+@SuppressWarnings("ReactiveStreamsPublisherImplementation")
 @Internal
 public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
     private final Publisher<U> upstreamPublisher;
@@ -49,6 +50,7 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
         return upstreamPublisher;
     }
 
+    @SuppressWarnings("ReactiveStreamsSubscriberImplementation")
     @Internal
     public class CompletionStageSubscriber implements Subscriber<U> {
         private final Subscriber<? super D> downstreamSubscriber;
