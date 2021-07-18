@@ -1,6 +1,7 @@
 package graphql.schema.impl;
 
 import graphql.Assert;
+import graphql.Internal;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLDirective;
@@ -31,6 +32,11 @@ import graphql.util.TraverserContext;
 
 import java.util.List;
 
+/**
+ * A delegating type visitor that allows you to call N visitors in a list
+ * and always continues via {@link TraversalControl#CONTINUE}
+ */
+@Internal
 public class MultiReadOnlyGraphQLTypeVisitor implements GraphQLTypeVisitor {
 
     private final List<GraphQLTypeVisitor> visitors;

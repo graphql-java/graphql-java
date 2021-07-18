@@ -50,7 +50,9 @@ class SchemaUtilTest extends Specification {
 
     def "collectAllTypes"() {
         when:
-        Map<String, GraphQLType> types = new SchemaUtil().allTypes(starWarsSchema, Collections.emptySet(), false)
+        def collectingVisitor = new GraphQLTypeCollectingVisitor()
+        SchemaUtil.visitPartiallySchema(starWarsSchema, collectingVisitor)
+        Map<String, GraphQLType> types = collectingVisitor.getResult()
         then:
         types.size() == 17
         types == [(droidType.name)                        : droidType,
@@ -74,7 +76,9 @@ class SchemaUtilTest extends Specification {
 
     def "collectAllTypesNestedInput"() {
         when:
-        Map<String, GraphQLType> types = new SchemaUtil().allTypes(NestedInputSchema.createSchema(), Collections.emptySet(), false)
+        def collectingVisitor = new GraphQLTypeCollectingVisitor()
+        SchemaUtil.visitPartiallySchema(NestedInputSchema.createSchema(), collectingVisitor)
+        Map<String, GraphQLType> types = collectingVisitor.getResult()
         Map<String, GraphQLType> expected =
 
                 [(NestedInputSchema.rootType().name)     : NestedInputSchema.rootType(),
@@ -97,7 +101,10 @@ class SchemaUtilTest extends Specification {
 
     def "collect all types defined in directives"() {
         when:
-        Map<String, GraphQLType> types = new SchemaUtil().allTypes(SchemaWithReferences, Collections.emptySet(), false)
+        def collectingVisitor = new GraphQLTypeCollectingVisitor()
+        SchemaUtil.visitPartiallySchema(SchemaWithReferences, collectingVisitor)
+        Map<String, GraphQLType> types = collectingVisitor.getResult()
+
         then:
         types.size() == 30
         types.containsValue(UnionDirectiveInput)
@@ -114,13 +121,13 @@ class SchemaUtilTest extends Specification {
 
     def "group all types by implemented interface"() {
         when:
-        Map<String, List<GraphQLObjectType>> byInterface = new SchemaUtil().groupImplementations(starWarsSchema)
+        Map<String, List<GraphQLObjectType>> byInterface = SchemaUtil.groupInterfaceImplementationsByName(starWarsSchema.getAllTypesAsList())
 
         then:
         byInterface.size() == 1
         byInterface[characterInterface.getName()].size() == 2
         byInterface == [
-                (characterInterface.getName()): [ droidType, humanType]
+                (characterInterface.getName()): [droidType, humanType]
         ]
     }
 
@@ -129,16 +136,16 @@ class SchemaUtilTest extends Specification {
         GraphQLInputObjectType PersonInputType = newInputObject()
                 .name("Person")
                 .field(newInputObjectField()
-                .name("name")
-                .type(GraphQLString))
+                        .name("name")
+                        .type(GraphQLString))
                 .build()
 
         GraphQLFieldDefinition field = newFieldDefinition()
                 .name("find")
                 .type(typeRef("Person"))
                 .argument(newArgument()
-                .name("ssn")
-                .type(GraphQLString))
+                        .name("ssn")
+                        .type(GraphQLString))
                 .build()
 
         GraphQLObjectType PersonService = newObject()

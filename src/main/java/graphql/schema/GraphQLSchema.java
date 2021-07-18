@@ -53,7 +53,7 @@ public class GraphQLSchema {
     private final GraphQLObjectType subscriptionType;
     private final GraphQLObjectType introspectionSchemaType;
     private final ImmutableSet<GraphQLType> additionalTypes;
-    private final GraphQLFieldDefinition intospectionSchemaField;
+    private final GraphQLFieldDefinition introspectionSchemaField;
     private final GraphQLFieldDefinition introspectionTypeField;
     // we don't allow modification of "__typename" - its a scalar
     private final GraphQLFieldDefinition __typename = Introspection.TypeNameMetaFieldDef;
@@ -61,14 +61,13 @@ public class GraphQLSchema {
     private final DirectivesUtil.DirectivesHolder schemaDirectives;
     private final SchemaDefinition definition;
     private final ImmutableList<SchemaExtensionDefinition> extensionDefinitions;
+    private final String description;
 
     private final GraphQLCodeRegistry codeRegistry;
 
     private final ImmutableMap<String, GraphQLNamedType> typeMap;
     private final ImmutableMap<String, ImmutableList<GraphQLObjectType>> interfaceNameToObjectTypes;
     private final ImmutableMap<String, ImmutableList<String>> interfaceNameToObjectTypeNames;
-
-    private final String description;
 
     /*
      * This constructs partial GraphQL schema object which has has the schema (query / mutation / subscription) trees
@@ -84,13 +83,12 @@ public class GraphQLSchema {
         assertNotNull(builder.additionalDirectives, () -> "directives can't be null");
         assertNotNull(builder.codeRegistry, () -> "codeRegistry can't be null");
 
-
         this.queryType = builder.queryType;
         this.mutationType = builder.mutationType;
         this.subscriptionType = builder.subscriptionType;
         this.additionalTypes = ImmutableSet.copyOf(builder.additionalTypes);
         this.introspectionSchemaType = builder.introspectionSchemaType;
-        this.intospectionSchemaField = Introspection.buildSchemaField(builder.introspectionSchemaType);
+        this.introspectionSchemaField = Introspection.buildSchemaField(builder.introspectionSchemaType);
         this.introspectionTypeField = Introspection.buildTypeField(builder.introspectionSchemaType);
         this.directives = new DirectivesUtil.DirectivesHolder(builder.additionalDirectives);
         this.schemaDirectives = new DirectivesUtil.DirectivesHolder(builder.schemaDirectives);
@@ -110,14 +108,15 @@ public class GraphQLSchema {
      */
     @Internal
     public GraphQLSchema(GraphQLSchema partiallyBuiltSchema,
-                         GraphQLCodeRegistry codeRegistry, ImmutableMap<String, GraphQLNamedType> typeMap,
+                         GraphQLCodeRegistry codeRegistry,
+                         ImmutableMap<String, GraphQLNamedType> typeMap,
                          ImmutableMap<String, ImmutableList<GraphQLObjectType>> interfaceNameToObjectTypes) {
         this.queryType = partiallyBuiltSchema.queryType;
         this.mutationType = partiallyBuiltSchema.mutationType;
         this.subscriptionType = partiallyBuiltSchema.subscriptionType;
         this.additionalTypes = ImmutableSet.copyOf(partiallyBuiltSchema.additionalTypes);
         this.introspectionSchemaType = partiallyBuiltSchema.introspectionSchemaType;
-        this.intospectionSchemaField = Introspection.buildSchemaField(partiallyBuiltSchema.introspectionSchemaType);
+        this.introspectionSchemaField = Introspection.buildSchemaField(partiallyBuiltSchema.introspectionSchemaType);
         this.introspectionTypeField = Introspection.buildTypeField(partiallyBuiltSchema.introspectionSchemaType);
         this.directives = partiallyBuiltSchema.directives;
         this.schemaDirectives = partiallyBuiltSchema.schemaDirectives;
@@ -129,61 +128,6 @@ public class GraphQLSchema {
         this.interfaceNameToObjectTypes = interfaceNameToObjectTypes;
         interfaceNameToObjectTypeNames = buildInterfacesToObjectName(interfaceNameToObjectTypes);
     }
-
-    // THIS WILL BE REMOVED
-    @Internal
-    private GraphQLSchema(Builder builder, boolean afterTransform) {
-        assertNotNull(builder.additionalTypes, () -> "additionalTypes can't be null");
-        assertNotNull(builder.queryType, () -> "queryType can't be null");
-        assertNotNull(builder.additionalDirectives, () -> "directives can't be null");
-        assertNotNull(builder.codeRegistry, () -> "codeRegistry can't be null");
-
-
-        this.queryType = builder.queryType;
-        this.mutationType = builder.mutationType;
-        this.subscriptionType = builder.subscriptionType;
-        this.additionalTypes = ImmutableSet.copyOf(builder.additionalTypes);
-        this.introspectionSchemaType = builder.introspectionSchemaType;
-        this.intospectionSchemaField = Introspection.buildSchemaField(builder.introspectionSchemaType);
-        this.introspectionTypeField = Introspection.buildTypeField(builder.introspectionSchemaType);
-        this.directives = new DirectivesUtil.DirectivesHolder(builder.additionalDirectives);
-        this.schemaDirectives = new DirectivesUtil.DirectivesHolder(builder.schemaDirectives);
-        this.definition = builder.definition;
-        this.extensionDefinitions = nonNullCopyOf(builder.extensionDefinitions);
-        this.codeRegistry = builder.codeRegistry;
-        // sorted by type name
-        SchemaUtil schemaUtil = new SchemaUtil();
-        this.typeMap = ImmutableMap.copyOf(schemaUtil.allTypes(this, additionalTypes, afterTransform));
-        this.interfaceNameToObjectTypes = buildInterfacesToObjectTypes(schemaUtil.groupImplementations(this));
-        this.interfaceNameToObjectTypeNames = buildInterfacesToObjectName(interfaceNameToObjectTypes);
-        this.description = builder.description;
-    }
-
-    // This can be removed once we no longer extract legacy code from types such as data fetchers but for now
-    // we need it to make an efficient copy that does not walk the types twice
-
-    // THIS WILL BE REMOVED
-    @Internal
-    private GraphQLSchema(GraphQLSchema otherSchema, GraphQLCodeRegistry codeRegistry) {
-        this.queryType = otherSchema.queryType;
-        this.mutationType = otherSchema.mutationType;
-        this.subscriptionType = otherSchema.subscriptionType;
-        this.introspectionSchemaType = otherSchema.introspectionSchemaType;
-        this.additionalTypes = otherSchema.additionalTypes;
-        this.intospectionSchemaField = otherSchema.intospectionSchemaField;
-        this.introspectionTypeField = otherSchema.introspectionTypeField;
-        this.directives = otherSchema.directives;
-        this.schemaDirectives = otherSchema.schemaDirectives;
-        this.definition = otherSchema.definition;
-        this.extensionDefinitions = nonNullCopyOf(otherSchema.extensionDefinitions);
-        this.codeRegistry = codeRegistry;
-
-        this.typeMap = otherSchema.typeMap;
-        this.interfaceNameToObjectTypes = otherSchema.interfaceNameToObjectTypes;
-        this.interfaceNameToObjectTypeNames = otherSchema.interfaceNameToObjectTypeNames;
-        this.description = otherSchema.description;
-    }
-
 
     /**
      * @return a new schema builder
@@ -250,7 +194,7 @@ public class GraphQLSchema {
      * @return the special system field called "__schema"
      */
     public GraphQLFieldDefinition getIntrospectionSchemaFieldDefinition() {
-        return intospectionSchemaField;
+        return introspectionSchemaField;
     }
 
     /**
@@ -564,18 +508,16 @@ public class GraphQLSchema {
         private GraphQLObjectType introspectionSchemaType = Introspection.__Schema;
         private GraphQLObjectType subscriptionType;
         private GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().build();
-        private Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
         private SchemaDefinition definition;
         private List<SchemaExtensionDefinition> extensionDefinitions;
         private String description;
 
         // we default these in
-        private Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>(
+        private final Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>(
                 asList(Directives.IncludeDirective, Directives.SkipDirective)
         );
-        private List<GraphQLDirective> schemaDirectives = new ArrayList<>();
-
-        private SchemaUtil schemaUtil = new SchemaUtil();
+        private final Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
+        private final List<GraphQLDirective> schemaDirectives = new ArrayList<>();
 
         public Builder query(GraphQLObjectType.Builder builder) {
             return query(builder.build());
@@ -742,10 +684,10 @@ public class GraphQLSchema {
          * @return the built schema
          */
         public GraphQLSchema build() {
-            return buildImpl(false);
+            return buildImpl();
         }
 
-        GraphQLSchema buildImpl(boolean afterTransform) {
+        private GraphQLSchema buildImpl() {
             assertNotNull(additionalTypes, () -> "additionalTypes can't be null");
             assertNotNull(additionalDirectives, () -> "additionalDirectives can't be null");
 
@@ -767,31 +709,17 @@ public class GraphQLSchema {
             GraphQLTypeCollectingVisitor typeCollectingVisitor = new GraphQLTypeCollectingVisitor();
             SchemaUtil.visitPartiallySchema(partiallyBuiltSchema, codeRegistryVisitor, typeCollectingVisitor);
 
+            codeRegistry = extractedDataFetchers.build();
             ImmutableMap<String, GraphQLNamedType> allTypes = typeCollectingVisitor.getResult();
             List<GraphQLNamedType> allTypesAsList = getAllTypesAsList(allTypes);
-            codeRegistry = extractedDataFetchers.build();
 
-            ImmutableMap<String, List<GraphQLObjectType>> groupedImplementations = schemaUtil.groupInterfaceImplementationsByName(allTypesAsList);
+            ImmutableMap<String, List<GraphQLObjectType>> groupedImplementations = SchemaUtil.groupInterfaceImplementationsByName(allTypesAsList);
             ImmutableMap<String, ImmutableList<GraphQLObjectType>> interfaceNameToObjectTypes = buildInterfacesToObjectTypes(groupedImplementations);
 
+            // this is now build however its contained types are still to be mutated by type reference replacement
             final GraphQLSchema finalSchema = new GraphQLSchema(partiallyBuiltSchema, codeRegistry, allTypes, interfaceNameToObjectTypes);
-            schemaUtil.replaceTypeReferences(finalSchema);
-            if (true) {
-                return validateSchema(finalSchema);
-            }
-            //
-            // This is is the old code here.  Its not reachable but here
-            // to show you it.  I will clean it up of course along with constructors
-            // we dont need
-            //
-
-            // grab the legacy code things from types
-            final GraphQLSchema tempSchema = new GraphQLSchema(this, afterTransform);
-            codeRegistry = codeRegistry.transform(codeRegistryBuilder -> schemaUtil.extractCodeFromTypes(codeRegistryBuilder, tempSchema));
-
-            GraphQLSchema graphQLSchema = new GraphQLSchema(tempSchema, codeRegistry);
-            schemaUtil.replaceTypeReferences(graphQLSchema);
-            return validateSchema(graphQLSchema);
+            SchemaUtil.replaceTypeReferences(finalSchema);
+            return validateSchema(finalSchema);
         }
 
         private GraphQLSchema validateSchema(GraphQLSchema graphQLSchema) {

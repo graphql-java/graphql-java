@@ -26,7 +26,6 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.schema.GraphQLSchemaElementAdapter.SCHEMA_ELEMENT_ADAPTER;
 import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChildrenContainer;
-import static graphql.schema.StronglyConnectedComponentsTopologicallySorted.getStronglyConnectedComponentsTopologicallySorted;
 import static graphql.util.NodeZipper.ModificationType.DELETE;
 import static graphql.schema.impl.StronglyConnectedComponentsTopologicallySorted.getStronglyConnectedComponentsTopologicallySorted;
 import static graphql.util.NodeZipper.ModificationType.REPLACE;
@@ -545,7 +544,7 @@ public class SchemaTransformer {
                     .withSchemaDirectives(this.schemaDirectives)
                     .codeRegistry(codeRegistry.build())
                     .description(schema.getDescription())
-                    .buildImpl(true);
+                    .build();
         }
     }
 }
