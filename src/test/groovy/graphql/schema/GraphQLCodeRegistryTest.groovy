@@ -345,4 +345,50 @@ class GraphQLCodeRegistryTest extends Specification {
         codeRegistry.getDataFetcher(userCoords, userFieldDef) == dfUser
 
     }
+
+    def "builder can track changes - internal methods"() {
+        DataFetcher<?> dfSystem = { env -> "system" }
+        DataFetcher<?> dfUser = { env -> "user" }
+        def systemFieldDef = newFieldDefinition().name("__system").type(GraphQLInt).build()
+        def userFieldDef = newFieldDefinition().name("field").type(GraphQLInt).build()
+        def systemCoords = FieldCoordinates.systemCoordinates(systemFieldDef.name)
+        def userCoords = FieldCoordinates.coordinates("User", userFieldDef.name)
+
+        when:
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+        then:
+        !codeRegistry.hasChanged()
+
+        when:
+        codeRegistry.dataFetcher(systemCoords, dfSystem)
+        codeRegistry.dataFetcher(userCoords, dfUser)
+        then:
+        codeRegistry.hasChanged()
+
+        when:
+        codeRegistry.trackChanges()
+        then:
+        !codeRegistry.hasChanged()
+
+        when:
+        codeRegistry.clearDataFetchers()
+        then:
+        codeRegistry.hasChanged()
+
+        when:
+        def newCodeRegistry = GraphQLCodeRegistry.newCodeRegistry(codeRegistry.build())
+        then:
+        !newCodeRegistry.hasChanged()
+
+        when:
+        newCodeRegistry = GraphQLCodeRegistry.newCodeRegistry(codeRegistry.build())
+        then:
+        !newCodeRegistry.hasChanged()
+
+        when:
+        newCodeRegistry.dataFetcher(systemCoords, dfSystem as DataFetcher)
+        newCodeRegistry.dataFetcher(userCoords, dfUser as DataFetcher)
+        then:
+        newCodeRegistry.hasChanged()
+    }
 }

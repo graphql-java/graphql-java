@@ -27,6 +27,7 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.schema.GraphQLSchemaElementAdapter.SCHEMA_ELEMENT_ADAPTER;
 import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChildrenContainer;
 import static graphql.schema.StronglyConnectedComponentsTopologicallySorted.getStronglyConnectedComponentsTopologicallySorted;
+import static graphql.util.NodeZipper.ModificationType.DELETE;
 import static graphql.util.NodeZipper.ModificationType.REPLACE;
 import static graphql.util.TraversalControl.CONTINUE;
 import static java.lang.String.format;
@@ -139,7 +140,7 @@ public class SchemaTransformer {
         final Map<String, GraphQLTypeReference> typeReferences = new LinkedHashMap<>();
 
         // first pass - general transformation
-        traverseAndTransform(dummyRoot, changedTypes, typeReferences, visitor, codeRegistry);
+        boolean schemaChanged = traverseAndTransform(dummyRoot, changedTypes, typeReferences, visitor, codeRegistry);
 
         // if we have changed any named elements AND we have type references referring to them then
         // we need to make a second pass to replace these type references to the new names
@@ -151,9 +152,13 @@ public class SchemaTransformer {
         }
 
         if (schema != null) {
-            GraphQLSchema graphQLSchema = dummyRoot.rebuildSchema(codeRegistry);
-            if (postTransformation != null) {
-                graphQLSchema = graphQLSchema.transform(postTransformation);
+
+            GraphQLSchema graphQLSchema = schema;
+            if (schemaChanged || codeRegistry.hasChanged()) {
+                graphQLSchema = dummyRoot.rebuildSchema(codeRegistry);
+                if (postTransformation != null) {
+                    graphQLSchema = graphQLSchema.transform(postTransformation);
+                }
             }
             return graphQLSchema;
         } else {
@@ -176,7 +181,7 @@ public class SchemaTransformer {
         traverseAndTransform(dummyRoot, new HashMap<>(), new HashMap<>(), typeRefVisitor, codeRegistry);
     }
 
-    private void traverseAndTransform(DummyRoot dummyRoot, Map<String, GraphQLNamedType> changedTypes, Map<String, GraphQLTypeReference> typeReferences, GraphQLTypeVisitor visitor, GraphQLCodeRegistry.Builder codeRegistry) {
+    private boolean traverseAndTransform(DummyRoot dummyRoot, Map<String, GraphQLNamedType> changedTypes, Map<String, GraphQLTypeReference> typeReferences, GraphQLTypeVisitor visitor, GraphQLCodeRegistry.Builder codeRegistry) {
         List<NodeZipper<GraphQLSchemaElement>> zippers = new LinkedList<>();
         Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByNodeAfterTraversing = new LinkedHashMap<>();
         Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByOriginalNode = new LinkedHashMap<>();
@@ -246,6 +251,9 @@ public class SchemaTransformer {
             public TraversalControl backRef(TraverserContext<GraphQLSchemaElement> context) {
                 NodeZipper<GraphQLSchemaElement> zipper = zipperByOriginalNode.get(context.thisNode());
                 breadcrumbsByZipper.get(zipper).add(context.getBreadcrumbs());
+                if (zipper.getModificationType() == DELETE) {
+                    return CONTINUE;
+                }
                 visitor.visitBackRef(context);
                 List<GraphQLSchemaElement> reverseDependenciesForCurNode = reverseDependencies.get(zipper.getCurNode());
                 assertNotNull(reverseDependenciesForCurNode);
@@ -264,16 +272,16 @@ public class SchemaTransformer {
 
         List<List<GraphQLSchemaElement>> stronglyConnectedTopologicallySorted = getStronglyConnectedComponentsTopologicallySorted(reverseDependencies, typeRefReverseDependencies);
 
-        zipUpToDummyRoot(zippers, stronglyConnectedTopologicallySorted, breadcrumbsByZipper, zipperByNodeAfterTraversing);
+        return zipUpToDummyRoot(zippers, stronglyConnectedTopologicallySorted, breadcrumbsByZipper, zipperByNodeAfterTraversing);
     }
 
 
-    private void zipUpToDummyRoot(List<NodeZipper<GraphQLSchemaElement>> zippers,
-                                  List<List<GraphQLSchemaElement>> stronglyConnectedTopologicallySorted,
-                                  Map<NodeZipper<GraphQLSchemaElement>, List<List<Breadcrumb<GraphQLSchemaElement>>>> breadcrumbsByZipper,
-                                  Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> nodeToZipper) {
+    private boolean zipUpToDummyRoot(List<NodeZipper<GraphQLSchemaElement>> zippers,
+                                     List<List<GraphQLSchemaElement>> stronglyConnectedTopologicallySorted,
+                                     Map<NodeZipper<GraphQLSchemaElement>, List<List<Breadcrumb<GraphQLSchemaElement>>>> breadcrumbsByZipper,
+                                     Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> nodeToZipper) {
         if (zippers.size() == 0) {
-            return;
+            return false;
         }
         Set<NodeZipper<GraphQLSchemaElement>> curZippers = new LinkedHashSet<>(zippers);
 
@@ -327,8 +335,8 @@ public class SchemaTransformer {
                 breadcrumbsByZipper.put(newZipper, breadcrumbsForOriginalParent);
 
             }
-
         }
+        return true;
     }
 
     private Map<NodeZipper<GraphQLSchemaElement>, List<Breadcrumb<GraphQLSchemaElement>>> zipperWithSameParent(GraphQLSchemaElement parent,

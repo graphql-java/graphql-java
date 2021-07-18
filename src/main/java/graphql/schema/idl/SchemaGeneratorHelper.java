@@ -38,6 +38,7 @@ import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLDirectiveContainer;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLFieldDefinition;
@@ -116,6 +117,7 @@ public class SchemaGeneratorHelper {
         private final GraphQLCodeRegistry.Builder codeRegistry;
         public final Map<String, OperationTypeDefinition> operationTypeDefs;
         public final SchemaGenerator.Options options;
+        public boolean directiveWiringRequired;
 
         BuildContext(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring, Map<String, OperationTypeDefinition> operationTypeDefinitions, SchemaGenerator.Options options) {
             this.typeRegistry = typeRegistry;
@@ -123,6 +125,11 @@ public class SchemaGeneratorHelper {
             this.codeRegistry = GraphQLCodeRegistry.newCodeRegistry(wiring.getCodeRegistry());
             this.operationTypeDefs = operationTypeDefinitions;
             this.options = options;
+            directiveWiringRequired = false;
+        }
+
+        public boolean isDirectiveWiringRequired() {
+            return directiveWiringRequired;
         }
 
         public TypeDefinitionRegistry getTypeRegistry() {
@@ -428,7 +435,7 @@ public class SchemaGeneratorHelper {
             }
         }));
 
-        return builder.build();
+        return directivesObserve(buildCtx,builder.build());
     }
 
     private GraphQLInputObjectField buildInputField(BuildContext buildCtx, InputValueDefinition fieldDef) {
@@ -457,7 +464,7 @@ public class SchemaGeneratorHelper {
                         buildCtx.getComparatorRegistry())
         );
 
-        return fieldBuilder.build();
+        return directivesObserve(buildCtx,fieldBuilder.build());
     }
 
     GraphQLEnumType buildEnumType(BuildContext buildCtx, EnumTypeDefinition typeDefinition) {
@@ -492,7 +499,7 @@ public class SchemaGeneratorHelper {
                         buildCtx.getComparatorRegistry())
         );
 
-        return builder.build();
+        return directivesObserve(buildCtx, builder.build());
     }
 
     private GraphQLEnumValueDefinition buildEnumValue(BuildContext buildCtx,
@@ -510,7 +517,7 @@ public class SchemaGeneratorHelper {
         } else {
             value = evd.getName();
         }
-        return newEnumValueDefinition()
+        GraphQLEnumValueDefinition enumValueDefinition = newEnumValueDefinition()
                 .name(evd.getName())
                 .value(value)
                 .description(description)
@@ -526,6 +533,7 @@ public class SchemaGeneratorHelper {
                                 buildCtx.getComparatorRegistry())
                 )
                 .build();
+        return directivesObserve(buildCtx,enumValueDefinition);
     }
 
     GraphQLScalarType buildScalar(BuildContext buildCtx, ScalarTypeDefinition typeDefinition) {
@@ -559,7 +567,7 @@ public class SchemaGeneratorHelper {
                             buildCtx.getComparatorRegistry())
                     ));
         }
-        return scalar;
+        return directivesObserve(buildCtx,scalar);
     }
 
     private String getScalarDesc(GraphQLScalarType scalar, ScalarTypeDefinition typeDefinition) {
@@ -726,7 +734,7 @@ public class SchemaGeneratorHelper {
             TypeResolver typeResolver = getTypeResolverForInterface(buildCtx, typeDefinition);
             buildCtx.getCodeRegistry().typeResolver(interfaceType, typeResolver);
         }
-        return interfaceType;
+        return directivesObserve(buildCtx,interfaceType);
     }
 
     GraphQLObjectType buildObjectType(BuildContext buildCtx, ObjectTypeDefinition typeDefinition) {
@@ -761,7 +769,7 @@ public class SchemaGeneratorHelper {
 
         buildObjectTypeInterfaces(buildCtx, typeDefinition, builder, extensions);
 
-        return builder.build();
+        return directivesObserve(buildCtx,builder.build());
     }
 
     private void buildObjectTypeInterfaces(BuildContext buildCtx,
@@ -837,7 +845,7 @@ public class SchemaGeneratorHelper {
             TypeResolver typeResolver = getTypeResolverForUnion(buildCtx, typeDefinition);
             buildCtx.getCodeRegistry().typeResolver(unionType, typeResolver);
         }
-        return unionType;
+        return directivesObserve(buildCtx,unionType);
     }
 
     /**
@@ -918,7 +926,7 @@ public class SchemaGeneratorHelper {
             DataFetcherFactory<?> dataFetcherFactory = buildDataFetcherFactory(buildCtx, parentType, fieldDef, fieldType, Arrays.asList(directives));
             buildCtx.getCodeRegistry().dataFetcher(coordinates, dataFetcherFactory);
         }
-        return fieldDefinition;
+        return directivesObserve(buildCtx,fieldDefinition);
     }
 
     private DataFetcherFactory<?> buildDataFetcherFactory(BuildContext buildCtx,
@@ -991,7 +999,7 @@ public class SchemaGeneratorHelper {
                         buildCtx.getComparatorRegistry())
         );
 
-        return builder.build();
+        return directivesObserve(buildCtx,builder.build());
     }
 
     void buildOperations(BuildContext buildCtx, GraphQLSchema.Builder schemaBuilder) {
@@ -1186,4 +1194,13 @@ public class SchemaGeneratorHelper {
                 .map(TypeDefinition::getDirectives).filter(Objects::nonNull)
                 .<Directive>flatMap(List::stream).collect(Collectors.toList());
     }
+
+    private <T extends GraphQLDirectiveContainer> T directivesObserve(BuildContext buildCtx, T directiveContainer) {
+        if (! buildCtx.directiveWiringRequired) {
+            boolean requiresWiring = SchemaGeneratorDirectiveHelper.schemaDirectiveWiringIsRequired(directiveContainer, buildCtx.getTypeRegistry(), buildCtx.getWiring());
+            buildCtx.directiveWiringRequired = buildCtx.directiveWiringRequired | requiresWiring;
+        }
+        return directiveContainer;
+    }
+
 }

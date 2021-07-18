@@ -1802,39 +1802,7 @@ class SchemaGeneratorTest extends Specification {
 
     }
 
-    def "code registry default data fetcher is respected"() {
-        def sdl = '''
-            type Query {
-                field :  String
-            }
-        '''
-
-        DataFetcher df = { DataFetchingEnvironment env ->
-            env.getFieldDefinition().getName().reverse()
-        }
-
-        DataFetcherFactory dff = new DataFetcherFactory() {
-            @Override
-            DataFetcher get(DataFetcherFactoryEnvironment environment) {
-                return df
-            }
-        }
-
-        GraphQLCodeRegistry codeRegistry = newCodeRegistry()
-                .defaultDataFetcher(dff).build()
-
-        def runtimeWiring = newRuntimeWiring().codeRegistry(codeRegistry).build()
-
-        def graphQL = TestUtil.graphQL(sdl, runtimeWiring).build()
-        when:
-        def er = graphQL.execute('{ field }')
-        then:
-        er.errors.isEmpty()
-        er.data["field"] == "dleif"
-
-    }
-
-    def "@fetch directive is respected"() {
+    def "@fetch directive is respected if added"() {
         def spec = """             
 
             directive @fetch(from : String!) on FIELD_DEFINITION
@@ -1845,7 +1813,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def wiring = RuntimeWiring.newRuntimeWiring().build()
+        def wiring = RuntimeWiring.newRuntimeWiring().directiveWiring(new FetchSchemaDirectiveWiring()).build()
         def schema = schema(spec, wiring)
 
         GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
@@ -2366,6 +2334,38 @@ class SchemaGeneratorTest extends Specification {
         schema = TestUtil.schema(sdl2)
         then:
         schema != null
+    }
+
+    def "code registry default data fetcher is respected"() {
+        def sdl = '''
+            type Query {
+                field :  String
+            }
+        '''
+
+        DataFetcher df = { DataFetchingEnvironment env ->
+            env.getFieldDefinition().getName().reverse()
+        }
+
+        DataFetcherFactory dff = new DataFetcherFactory() {
+            @Override
+            DataFetcher get(DataFetcherFactoryEnvironment environment) {
+                return df
+            }
+        }
+
+        GraphQLCodeRegistry codeRegistry = newCodeRegistry()
+                .defaultDataFetcher(dff).build()
+
+        def runtimeWiring = newRuntimeWiring().codeRegistry(codeRegistry).build()
+
+        def graphQL = TestUtil.graphQL(sdl, runtimeWiring).build()
+        when:
+        def er = graphQL.execute('{ field }')
+        then:
+        er.errors.isEmpty()
+        er.data["field"] == "dleif"
+
     }
 
     def "custom scalars can be used in schema generation as directive args"() {

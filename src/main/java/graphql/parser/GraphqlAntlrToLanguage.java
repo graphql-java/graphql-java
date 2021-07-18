@@ -760,13 +760,14 @@ public class GraphqlAntlrToLanguage {
         return assertShouldNeverHappen();
     }
 
-    static String quotedString(TerminalNode terminalNode) {
+    protected String quotedString(TerminalNode terminalNode) {
         boolean multiLine = terminalNode.getText().startsWith("\"\"\"");
         String strText = terminalNode.getText();
+        SourceLocation sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, terminalNode);
         if (multiLine) {
             return parseTripleQuotedString(strText);
         } else {
-            return parseSingleQuotedString(strText);
+            return parseSingleQuotedString(strText, sourceLocation);
         }
     }
 
@@ -839,21 +840,25 @@ public class GraphqlAntlrToLanguage {
         }
         String content = terminalNode.getText();
         boolean multiLine = content.startsWith("\"\"\"");
+        SourceLocation sourceLocation = getSourceLocation(descriptionCtx);
         if (multiLine) {
             content = parseTripleQuotedString(content);
         } else {
-            content = parseSingleQuotedString(content);
+            content = parseSingleQuotedString(content, sourceLocation);
         }
-        SourceLocation sourceLocation = getSourceLocation(descriptionCtx);
         return new Description(content, sourceLocation, multiLine);
-    }
-
-    protected SourceLocation getSourceLocation(Token token) {
-        return AntlrHelper.createSourceLocation(multiSourceReader, token);
     }
 
     protected SourceLocation getSourceLocation(ParserRuleContext parserRuleContext) {
         return getSourceLocation(parserRuleContext.getStart());
+    }
+
+    protected SourceLocation getSourceLocation(Token token) {
+        if (parserOptions.isCaptureSourceLocation()) {
+            return AntlrHelper.createSourceLocation(multiSourceReader, token);
+        } else {
+            return SourceLocation.EMPTY;
+        }
     }
 
     protected List<Comment> getComments(ParserRuleContext ctx) {
@@ -884,7 +889,12 @@ public class GraphqlAntlrToLanguage {
             int column = refTok.getCharPositionInLine();
             // graphql spec says line numbers start at 1
             int line = sourceAndLine.getLine() + 1;
-            comments.add(new Comment(text, new SourceLocation(line, column, sourceAndLine.getSourceName())));
+
+            SourceLocation sourceLocation = SourceLocation.EMPTY;
+            if (parserOptions.isCaptureSourceLocation()) {
+                sourceLocation = new SourceLocation(line, column, sourceAndLine.getSourceName());
+            }
+            comments.add(new Comment(text, sourceLocation));
         }
         return comments.build();
     }

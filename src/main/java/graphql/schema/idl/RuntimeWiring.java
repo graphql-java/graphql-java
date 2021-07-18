@@ -138,8 +138,6 @@ public class RuntimeWiring {
 
         private Builder() {
             ScalarInfo.GRAPHQL_SPECIFICATION_SCALARS.forEach(this::scalar);
-            // we give this out by default
-            registeredDirectiveWiring.put(FetchSchemaDirectiveWiring.FETCH, new FetchSchemaDirectiveWiring());
         }
 
         /**
