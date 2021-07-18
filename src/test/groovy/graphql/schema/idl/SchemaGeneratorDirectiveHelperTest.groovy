@@ -52,7 +52,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
     })
             .build()
 
-    def assertCallHierarchy(elementHierarchy, astHierarchy, String name, List<String> l) {
+    static def assertCallHierarchy(elementHierarchy, astHierarchy, String name, List<String> l) {
         assert elementHierarchy[name] == l, "unexpected elementHierarchy"
         assert astHierarchy[name] == l, "unexpected astHierarchy"
         true
