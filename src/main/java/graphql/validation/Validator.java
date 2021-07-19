@@ -21,6 +21,7 @@ import graphql.validation.rules.OverlappingFieldsCanBeMerged;
 import graphql.validation.rules.PossibleFragmentSpreads;
 import graphql.validation.rules.ProvidedNonNullArguments;
 import graphql.validation.rules.ScalarLeafs;
+import graphql.validation.rules.SingleSubscriptionFieldOnly;
 import graphql.validation.rules.UniqueArgumentNamesRule;
 import graphql.validation.rules.UniqueDirectiveNamesPerLocation;
 import graphql.validation.rules.UniqueFragmentNames;
@@ -115,6 +116,9 @@ public class Validator {
 
         UniqueVariableNamesRule uniqueVariableNamesRule = new UniqueVariableNamesRule(validationContext, validationErrorCollector);
         rules.add(uniqueVariableNamesRule);
+
+        SingleSubscriptionFieldOnly singleSubscriptionFieldOnly = new SingleSubscriptionFieldOnly(validationContext, validationErrorCollector);
+        rules.add(singleSubscriptionFieldOnly);
 
         return rules;
     }
