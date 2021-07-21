@@ -137,7 +137,7 @@ public class GraphQLSchema {
      * a constructor aimed at the simple builder - the type tree can be taken as is!
      */
     @Internal
-    public GraphQLSchema(SimpleBuilder builder) {
+    public GraphQLSchema(BuilderWithoutTypes builder) {
         assertNotNull(builder.codeRegistry, () -> "codeRegistry can't be null");
 
         GraphQLSchema existingSchema = builder.existingSchema;
@@ -504,15 +504,15 @@ public class GraphQLSchema {
     }
 
     /**
-     * This helps you transform the current GraphQLSchema object into another one by starting a simple builder that only allows you to change
+     * This helps you transform the current GraphQLSchema object into another one by using a builder that only allows you to change
      * simple values and does not involve changing the complex schema type graph.
      *
-     * @param builderConsumer the consumer code that will be given a simple builder to transform
+     * @param builderConsumer the consumer code that will be given a builder to transform
      *
-     * @return a new GraphQLSchema object based on calling built on that simple builder
+     * @return a new GraphQLSchema object based on calling built on that builder
      */
-    public GraphQLSchema simpleTransform(Consumer<SimpleBuilder> builderConsumer) {
-        SimpleBuilder builder = new SimpleBuilder(this);
+    public GraphQLSchema transformWithoutTypes(Consumer<BuilderWithoutTypes> builderConsumer) {
+        BuilderWithoutTypes builder = new BuilderWithoutTypes(this);
         builderConsumer.accept(builder);
         return builder.build();
     }
@@ -548,27 +548,27 @@ public class GraphQLSchema {
                 .description(existingSchema.getDescription());
     }
 
-    public static class SimpleBuilder {
+    public static class BuilderWithoutTypes {
         private GraphQLCodeRegistry codeRegistry;
         private String description;
         private final GraphQLSchema existingSchema;
 
-        private SimpleBuilder(GraphQLSchema existingSchema) {
+        private BuilderWithoutTypes(GraphQLSchema existingSchema) {
             this.existingSchema = existingSchema;
             this.codeRegistry = existingSchema.codeRegistry;
             this.description = existingSchema.description;
         }
 
-        public SimpleBuilder codeRegistry(GraphQLCodeRegistry codeRegistry) {
+        public BuilderWithoutTypes codeRegistry(GraphQLCodeRegistry codeRegistry) {
             this.codeRegistry = Assert.assertNotNull(codeRegistry);
             return this;
         }
 
-        public SimpleBuilder codeRegistry(GraphQLCodeRegistry.Builder codeRegistryBuilder) {
+        public BuilderWithoutTypes codeRegistry(GraphQLCodeRegistry.Builder codeRegistryBuilder) {
             return codeRegistry(codeRegistryBuilder.build());
         }
 
-        public SimpleBuilder description(String description) {
+        public BuilderWithoutTypes description(String description) {
             this.description = description;
             return this;
         }

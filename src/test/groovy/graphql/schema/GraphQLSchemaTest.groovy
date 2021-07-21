@@ -214,7 +214,7 @@ class GraphQLSchemaTest extends Specification {
         dogType.getName() == "Dog"
     }
 
-    def "cheap simple builder transformation works"() {
+    def "cheap transform without types transformation works"() {
 
         def sdl = '''
         "a schema involving pets"
@@ -251,7 +251,7 @@ class GraphQLSchemaTest extends Specification {
 
         when:
         def newRegistry = originalCodeRegistry.transform({ bld -> bld.clearDataFetchers() })
-        def newSchema = originalSchema.simpleTransform({
+        def newSchema = originalSchema.transformWithoutTypes({
             it.description("A new home for pets").codeRegistry(newRegistry)
         })
 
