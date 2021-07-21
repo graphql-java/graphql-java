@@ -2488,4 +2488,38 @@ class SchemaGeneratorTest extends Specification {
         schema.getQueryType().getFieldDefinition("test").getDescription() == null
         schema.getQueryType().getFieldDefinition("test2").getDescription() == "Description"
     }
+
+    def "ast definition capture can be disabled"() {
+        def sdl = '''
+        type Query {
+            test : String
+        }
+        
+        extend type Query {
+            test2 : Int
+        }
+        '''
+        when:
+        def registry = new SchemaParser().parse(sdl)
+        def options = defaultOptions().captureAstDefinitions(false)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        schema.getQueryType().getDefinition() == null
+        schema.getQueryType().getExtensionDefinitions() == []
+        schema.getQueryType().getFieldDefinition("test").getDefinition() == null
+
+        when:
+        registry = new SchemaParser().parse(sdl)
+        options = defaultOptions() // default is to capture them
+        schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        options.isCaptureAstDefinitions()
+        schema.getQueryType().getDefinition() != null
+        schema.getQueryType().getExtensionDefinitions().size() == 1
+        schema.getQueryType().getFieldDefinition("test").getDefinition() != null
+    }
+
+
 }
