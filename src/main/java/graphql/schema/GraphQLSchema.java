@@ -4,6 +4,7 @@ package graphql.schema;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import graphql.Assert;
 import graphql.Directives;
 import graphql.DirectivesUtil;
 import graphql.Internal;
@@ -107,57 +108,30 @@ public class GraphQLSchema {
      * but its otherwise complete
      */
     @Internal
-    public GraphQLSchema(GraphQLSchema partiallyBuiltSchema,
+    public GraphQLSchema(GraphQLSchema existingSchema,
                          GraphQLCodeRegistry codeRegistry,
+                         String description,
                          ImmutableMap<String, GraphQLNamedType> typeMap,
-                         ImmutableMap<String, ImmutableList<GraphQLObjectType>> interfaceNameToObjectTypes) {
-        this.queryType = partiallyBuiltSchema.queryType;
-        this.mutationType = partiallyBuiltSchema.mutationType;
-        this.subscriptionType = partiallyBuiltSchema.subscriptionType;
-        this.additionalTypes = ImmutableSet.copyOf(partiallyBuiltSchema.additionalTypes);
-        this.introspectionSchemaType = partiallyBuiltSchema.introspectionSchemaType;
-        this.introspectionSchemaField = Introspection.buildSchemaField(partiallyBuiltSchema.introspectionSchemaType);
-        this.introspectionTypeField = Introspection.buildTypeField(partiallyBuiltSchema.introspectionSchemaType);
-        this.directives = partiallyBuiltSchema.directives;
-        this.schemaDirectives = partiallyBuiltSchema.schemaDirectives;
-        this.definition = partiallyBuiltSchema.definition;
-        this.extensionDefinitions = partiallyBuiltSchema.extensionDefinitions;
-        this.description = partiallyBuiltSchema.description;
+                         ImmutableMap<String, ImmutableList<GraphQLObjectType>> interfaceNameToObjectTypes
+    ) {
+        assertNotNull(codeRegistry, () -> "codeRegistry can't be null");
+
+        this.queryType = existingSchema.queryType;
+        this.mutationType = existingSchema.mutationType;
+        this.subscriptionType = existingSchema.subscriptionType;
+        this.additionalTypes = ImmutableSet.copyOf(existingSchema.additionalTypes);
+        this.introspectionSchemaType = existingSchema.introspectionSchemaType;
+        this.introspectionSchemaField = Introspection.buildSchemaField(existingSchema.introspectionSchemaType);
+        this.introspectionTypeField = Introspection.buildTypeField(existingSchema.introspectionSchemaType);
+        this.directives = existingSchema.directives;
+        this.schemaDirectives = existingSchema.schemaDirectives;
+        this.definition = existingSchema.definition;
+        this.extensionDefinitions = existingSchema.extensionDefinitions;
+        this.description = description;
         this.codeRegistry = codeRegistry;
         this.typeMap = typeMap;
         this.interfaceNameToObjectTypes = interfaceNameToObjectTypes;
-        interfaceNameToObjectTypeNames = buildInterfacesToObjectName(interfaceNameToObjectTypes);
-    }
-
-    /**
-     * @return a new schema builder
-     */
-    public static Builder newSchema() {
-        return new Builder();
-    }
-
-    /**
-     * This allows you to build a schema from an existing schema.  It copies everything from the existing
-     * schema and then allows you to replace them.
-     *
-     * @param existingSchema the existing schema
-     *
-     * @return a new schema builder
-     */
-    public static Builder newSchema(GraphQLSchema existingSchema) {
-        return new Builder()
-                .query(existingSchema.getQueryType())
-                .mutation(existingSchema.getMutationType())
-                .subscription(existingSchema.getSubscriptionType())
-                .introspectionSchemaType(existingSchema.getIntrospectionSchemaType())
-                .codeRegistry(existingSchema.getCodeRegistry())
-                .clearAdditionalTypes()
-                .clearDirectives()
-                .additionalDirectives(new LinkedHashSet<>(existingSchema.getDirectives()))
-                .clearSchemaDirectives()
-                .withSchemaDirectives(schemaDirectivesArray(existingSchema))
-                .additionalTypes(existingSchema.additionalTypes)
-                .description(existingSchema.getDescription());
+        this.interfaceNameToObjectTypeNames = buildInterfacesToObjectName(interfaceNameToObjectTypes);
     }
 
     private static GraphQLDirective[] schemaDirectivesArray(GraphQLSchema existingSchema) {
@@ -494,12 +468,87 @@ public class GraphQLSchema {
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
      *
-     * @return a new GraphQLSchema object based on calling build on that builder
+     * @return a new GraphQLSchema object based on calling built on that builder
      */
     public GraphQLSchema transform(Consumer<Builder> builderConsumer) {
         Builder builder = newSchema(this);
         builderConsumer.accept(builder);
         return builder.build();
+    }
+
+    /**
+     * This helps you transform the current GraphQLSchema object into another one by starting a simple builderthat only allows you to change
+     * simple values and does not involve changing the complex schema type graph.
+     *
+     * @param builderConsumer the consumer code that will be given a simple builder to transform
+     *
+     * @return a new GraphQLSchema object based on calling built on that simple builder
+     */
+    public GraphQLSchema simpleTransform(Consumer<SimpleBuilder> builderConsumer) {
+        SimpleBuilder builder = new SimpleBuilder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
+    /**
+     * @return a new schema builder
+     */
+    public static Builder newSchema() {
+        return new Builder();
+    }
+
+    /**
+     * This allows you to build a schema from an existing schema.  It copies everything from the existing
+     * schema and then allows you to replace them.
+     *
+     * @param existingSchema the existing schema
+     *
+     * @return a new schema builder
+     */
+    public static Builder newSchema(GraphQLSchema existingSchema) {
+        return new Builder()
+                .query(existingSchema.getQueryType())
+                .mutation(existingSchema.getMutationType())
+                .subscription(existingSchema.getSubscriptionType())
+                .introspectionSchemaType(existingSchema.getIntrospectionSchemaType())
+                .codeRegistry(existingSchema.getCodeRegistry())
+                .clearAdditionalTypes()
+                .clearDirectives()
+                .additionalDirectives(new LinkedHashSet<>(existingSchema.getDirectives()))
+                .clearSchemaDirectives()
+                .withSchemaDirectives(schemaDirectivesArray(existingSchema))
+                .additionalTypes(existingSchema.additionalTypes)
+                .description(existingSchema.getDescription());
+    }
+
+    public static class SimpleBuilder {
+        private GraphQLCodeRegistry codeRegistry;
+        private String description;
+        private final GraphQLSchema originalSchema;
+
+        private SimpleBuilder(GraphQLSchema schema) {
+            originalSchema = schema;
+            codeRegistry = schema.codeRegistry;
+            description = schema.description;
+        }
+
+        public SimpleBuilder codeRegistry(GraphQLCodeRegistry codeRegistry) {
+            this.codeRegistry = Assert.assertNotNull(codeRegistry);
+            return this;
+        }
+
+        public SimpleBuilder codeRegistry(GraphQLCodeRegistry.Builder codeRegistryBuilder) {
+            return codeRegistry(codeRegistryBuilder.build());
+        }
+
+        public SimpleBuilder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public GraphQLSchema build() {
+            return new GraphQLSchema(originalSchema, codeRegistry, description, originalSchema.typeMap, originalSchema.interfaceNameToObjectTypes);
+        }
     }
 
     public static class Builder {
@@ -717,7 +766,7 @@ public class GraphQLSchema {
             ImmutableMap<String, ImmutableList<GraphQLObjectType>> interfaceNameToObjectTypes = buildInterfacesToObjectTypes(groupedImplementations);
 
             // this is now build however its contained types are still to be mutated by type reference replacement
-            final GraphQLSchema finalSchema = new GraphQLSchema(partiallyBuiltSchema, codeRegistry, allTypes, interfaceNameToObjectTypes);
+            final GraphQLSchema finalSchema = new GraphQLSchema(partiallyBuiltSchema, codeRegistry, partiallyBuiltSchema.description, allTypes, interfaceNameToObjectTypes);
             SchemaUtil.replaceTypeReferences(finalSchema);
             return validateSchema(finalSchema);
         }
