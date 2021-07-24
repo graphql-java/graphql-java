@@ -288,27 +288,31 @@ public class SchemaTransformer {
 
         for (int i = stronglyConnectedTopologicallySorted.size() - 1; i >= 0; i--) {
             List<GraphQLSchemaElement> scc = stronglyConnectedTopologicallySorted.get(i);
-            boolean sccChanged = false;
-            List<GraphQLSchemaElement> unchangedSccElements = new ArrayList<>();
-            for (GraphQLSchemaElement element : scc) {
-                Map<NodeZipper<GraphQLSchemaElement>, Breadcrumb<GraphQLSchemaElement>> zipperWithSameParent = zipperWithSameParent(element, curZippers, breadcrumbsByZipper, false);
-                if (zipperWithSameParent.size() > 0) {
-                    sccChanged = true;
-                } else {
-                    unchangedSccElements.add(element);
+            // performance relevant: we avoid calling zipperWithSameParent twice
+            // for SCC of size one.
+            if (scc.size() > 1) {
+                boolean sccChanged = false;
+                List<GraphQLSchemaElement> unchangedSccElements = new ArrayList<>();
+                for (GraphQLSchemaElement element : scc) {
+                    Map<NodeZipper<GraphQLSchemaElement>, Breadcrumb<GraphQLSchemaElement>> zipperWithSameParent = zipperWithSameParent(element, curZippers, breadcrumbsByZipper, false);
+                    if (zipperWithSameParent.size() > 0) {
+                        sccChanged = true;
+                    } else {
+                        unchangedSccElements.add(element);
+                    }
                 }
-            }
-            if (!sccChanged) {
-                continue;
-            }
-            // we need to change all elements inside the current SCC
-            for (GraphQLSchemaElement element : unchangedSccElements) {
-                NodeZipper<GraphQLSchemaElement> originalZipper = nodeToZipper.get(element);
-                List<List<Breadcrumb<GraphQLSchemaElement>>> breadcrumbsForOriginalParent = breadcrumbsByZipper.get(originalZipper);
-                NodeZipper<GraphQLSchemaElement> newZipper = originalZipper.withNewNode(element.copy());
-                curZippers.add(newZipper);
-                nodeToZipper.put(element, newZipper);
-                breadcrumbsByZipper.put(newZipper, breadcrumbsForOriginalParent);
+                if (!sccChanged) {
+                    continue;
+                }
+                // we need to change all elements inside the current SCC
+                for (GraphQLSchemaElement element : unchangedSccElements) {
+                    NodeZipper<GraphQLSchemaElement> originalZipper = nodeToZipper.get(element);
+                    List<List<Breadcrumb<GraphQLSchemaElement>>> breadcrumbsForOriginalParent = breadcrumbsByZipper.get(originalZipper);
+                    NodeZipper<GraphQLSchemaElement> newZipper = originalZipper.withNewNode(element.copy());
+                    curZippers.add(newZipper);
+                    nodeToZipper.put(element, newZipper);
+                    breadcrumbsByZipper.put(newZipper, breadcrumbsForOriginalParent);
+                }
             }
             for (int j = scc.size() - 1; j >= 0; j--) {
                 GraphQLSchemaElement element = scc.get(j);
