@@ -594,7 +594,6 @@ type Query {
             }
         })
         then:
-        println new SchemaPrinter().print(newType)
         newType.getName() == "FOO"
         newType.getFieldDefinition("FOO") != null
         newType.getFieldDefinition("BAR") != null
