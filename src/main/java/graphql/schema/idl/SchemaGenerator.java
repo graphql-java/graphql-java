@@ -140,21 +140,48 @@ public class SchemaGenerator {
      */
     public static class Options {
         private final boolean useCommentsAsDescription;
+        private final boolean captureAstDefinitions;
 
-        Options(boolean useCommentsAsDescription) {
+        Options(boolean useCommentsAsDescription, boolean captureAstDefinitions) {
             this.useCommentsAsDescription = useCommentsAsDescription;
+            this.captureAstDefinitions = captureAstDefinitions;
         }
 
         public boolean isUseCommentsAsDescription() {
             return useCommentsAsDescription;
         }
 
-        public static Options defaultOptions() {
-            return new Options(true);
+        public boolean isCaptureAstDefinitions() {
+            return captureAstDefinitions;
         }
 
+        public static Options defaultOptions() {
+            return new Options(true, true);
+        }
+
+        /**
+         * This controls whether # comments can be used as descriptions in the built schema.  For specification legacy reasons
+         * # comments used to be used as schema element descriptions.  The specification has since clarified this and "" quoted string
+         * descriptions are the sanctioned way to make scheme element descriptions.
+         *
+         * @param useCommentsAsDescription the flag to control whether comments can be used as schema element descriptions
+         *
+         * @return a new Options object
+         */
         public Options useCommentsAsDescriptions(boolean useCommentsAsDescription) {
-            return new Options(useCommentsAsDescription);
+            return new Options(useCommentsAsDescription, captureAstDefinitions);
+        }
+
+        /**
+         * Memory can be saved if the original AST definitions are not associated with the built runtime types.  However
+         * some tooling may require them.
+         *
+         * @param captureAstDefinitions the flag on whether to capture AST definitions
+         *
+         * @return a new Options object
+         */
+        public Options captureAstDefinitions(boolean captureAstDefinitions) {
+            return new Options(useCommentsAsDescription, captureAstDefinitions);
         }
     }
 }
