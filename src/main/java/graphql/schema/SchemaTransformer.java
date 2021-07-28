@@ -294,6 +294,12 @@ public class SchemaTransformer {
                 boolean sccChanged = false;
                 List<GraphQLSchemaElement> unchangedSccElements = new ArrayList<>();
                 for (GraphQLSchemaElement element : scc) {
+                    // if the current element itself has a zipper it is changed
+                    if (curZippers.contains(nodeToZipper.get(element))) {
+                        sccChanged = true;
+                        continue;
+                    }
+                    // if the current element is changed via "moveUp" it is changed
                     Map<NodeZipper<GraphQLSchemaElement>, Breadcrumb<GraphQLSchemaElement>> zipperWithSameParent = zipperWithSameParent(element, curZippers, breadcrumbsByZipper, false);
                     if (zipperWithSameParent.size() > 0) {
                         sccChanged = true;

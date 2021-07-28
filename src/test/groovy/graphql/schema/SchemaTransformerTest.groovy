@@ -762,4 +762,33 @@ type Query {
         then:
         newSchema === schema
     }
+
+    def "__Field can be changed"() {
+        // this is a test when only
+        // one element inside a scc is changed
+        def schema = TestUtil.schema("type Query { f : String }")
+
+        def fieldChanger = new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.name == "__Field") {
+                    return changeNode(context, node.transform({ it.name("__FieldChanged") }))
+                }
+                return TraversalControl.CONTINUE;
+            }
+        }
+
+        when:
+        def newSchema = SchemaTransformer.transformSchema(schema, fieldChanger)
+        then:
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
+        printer.print(newSchema) == '''type Query {
+  f: String
+}
+'''
+        newSchema.getObjectType("__FieldChanged") != null
+        newSchema.getObjectType("__Field") == null
+
+    }
 }
