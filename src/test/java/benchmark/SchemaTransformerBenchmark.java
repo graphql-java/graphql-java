@@ -34,10 +34,12 @@ import java.util.stream.Collectors;
 import static com.google.common.io.Resources.getResource;
 
 @State(Scope.Benchmark)
-@BenchmarkMode(Mode.Throughput)
-@Warmup(iterations = 2)
-@Measurement(iterations = 2, timeUnit = TimeUnit.NANOSECONDS)
+@BenchmarkMode(Mode.AverageTime)
+@Threads(1)
+@Warmup(iterations = 2, time = 5)
+@Measurement(iterations = 3, time = 10)
 @Fork(3)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class SchemaTransformerBenchmark {
 
     @State(Scope.Benchmark)
@@ -114,10 +116,6 @@ public class SchemaTransformerBenchmark {
     }
 
     @Benchmark
-    @Measurement(iterations = 1, time = 10)
-    @Threads(1)
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public GraphQLSchema benchMarkSchemaTransformerAdd(MyState myState) {
         GraphQLSchema schema = myState.schema;
         return SchemaTransformer.transformSchema(schema, myState.directiveAdder);
@@ -125,10 +123,6 @@ public class SchemaTransformerBenchmark {
 
 
     @Benchmark
-    @Measurement(iterations = 1, time = 10)
-    @Threads(1)
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public GraphQLSchema benchMarkSchemaTransformerRemove(MyState myState) {
         GraphQLSchema schema = myState.txSchema;
         return SchemaTransformer.transformSchema(schema, myState.directiveRemover);
