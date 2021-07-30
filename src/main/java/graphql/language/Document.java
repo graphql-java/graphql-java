@@ -2,6 +2,7 @@ package graphql.language;
 
 
 import com.google.common.collect.ImmutableList;
+import graphql.Assert;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
@@ -11,6 +12,7 @@ import graphql.util.TraverserContext;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -57,6 +59,40 @@ public class Document extends AbstractNode<Document> {
                 .filter(d -> definitionClass.isAssignableFrom(d.getClass()))
                 .map(definitionClass::cast)
                 .collect(ImmutableList.toImmutableList());
+    }
+
+    /**
+     * Returns the first of the specific type.  It uses {@link java.lang.Class#isAssignableFrom(Class)} for the test.
+     *
+     * This is useful when you have generated a document in code and KNOW there is only one definition in it
+     *
+     * @param definitionClass the definition class
+     * @param <T>             the type of definition
+     *
+     * @return an optional definition which will be empty of there are none
+     */
+    public <T extends Definition> Optional<T> getFirstDefinitionOfType(Class<T> definitionClass) {
+        return definitions.stream()
+                .filter(d -> definitionClass.isAssignableFrom(d.getClass()))
+                .map(definitionClass::cast)
+                .findFirst();
+    }
+
+    /**
+     * This will allow you to find a {@link OperationDefinition} with the specified name
+     * in the document
+     *
+     * @param name the name of the operation to find
+     *
+     * @return an optional {@link OperationDefinition}
+     */
+    public Optional<OperationDefinition> getOperationDefinition(String name) {
+        Assert.assertNotNull(name);
+        return definitions.stream()
+                .filter(d -> OperationDefinition.class.isAssignableFrom(d.getClass()))
+                .map(OperationDefinition.class::cast)
+                .filter(opDef -> name.equals(opDef.getName()))
+                .findFirst();
     }
 
     @Override
@@ -141,7 +177,7 @@ public class Document extends AbstractNode<Document> {
         }
 
         public Builder definition(Definition definition) {
-            this.definitions = ImmutableKit.addToList(definitions,definition);
+            this.definitions = ImmutableKit.addToList(definitions, definition);
             return this;
         }
 
