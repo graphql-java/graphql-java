@@ -264,7 +264,7 @@ type Object2 {
           inputField6: InputObject1
         }
         """.stripIndent()
-        newQuery == 'query operation($var1:String="stringValue1",$var2:[[String!]!]!=[["stringValue2"]],$var3:Enum1!=EnumValue1,$var4:InputObject1!={inputField2:"stringValue3",inputField5:EnumValue2,inputField6:{inputField1:2}}) {field1(argument1:{foo1:1,foo2:$var1}) field3(argument3:$var2) field4(argument4:$var3) field5(argument5:$var4)}'
+        newQuery == 'query operation($var1:String="stringValue1",$var2:[[String!]!]!=[["stringValue2"]],$var3:Enum1!=EnumValue1,$var4:InputObject1!={inputField2:"stringValue3",inputField5:EnumValue2,inputField6:{inputField1:2}}) {field1(argument1:{inputField1:1,inputField2:$var1}) field3(argument3:$var2) field4(argument4:$var3) field5(argument5:$var4)}'
     }
 
     def "query with aliases"() {
@@ -840,10 +840,10 @@ type Object2 {
             foo: Foo
         }
         type Foo {
-            bar: String
+            bar(barArg: String): String
         }
         """)
-        def query = 'query($myVar: String = "myDefaultValue"){foo @whatever(myArg: $myVar) {bar @whatever(myArg: "secret3") }}'
+        def query = 'query($myVar: String = "myDefaultValue"){foo @whatever(myArg: $myVar) {bar(barArg: "barArgValue") @whatever(myArg: "secret3") }}'
 
         when:
         def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
@@ -862,10 +862,10 @@ type Object1 {
 }
 
 type Object2 {
-  field2: String
+  field2(argument2: String): String
 }
 """
-        newQuery == 'query ($var1:String="stringValue2") {field1 @Directive1(argument1:$var1) {field2 @Directive1(argument1:"stringValue1")}}'
+        newQuery == 'query ($var1:String="stringValue3") {field1 @Directive1(argument1:$var1) {field2(argument2:"stringValue2") @Directive1(argument1:"stringValue1")}}'
 
     }
 }
