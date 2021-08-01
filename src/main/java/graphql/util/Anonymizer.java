@@ -19,6 +19,7 @@ import graphql.language.ArrayValue;
 import graphql.language.AstPrinter;
 import graphql.language.AstTransformer;
 import graphql.language.Definition;
+import graphql.language.Directive;
 import graphql.language.Document;
 import graphql.language.EnumValue;
 import graphql.language.Field;
@@ -66,11 +67,11 @@ import graphql.schema.GraphQLTypeVisitor;
 import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.SchemaTransformer;
-import graphql.schema.impl.SchemaUtil;
 import graphql.schema.TypeResolver;
 import graphql.schema.idl.DirectiveInfo;
 import graphql.schema.idl.ScalarInfo;
 import graphql.schema.idl.TypeUtil;
+import graphql.schema.impl.SchemaUtil;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -92,6 +93,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOneAs;
 import static graphql.schema.idl.SchemaGenerator.createdMockedSchema;
 import static graphql.util.TraversalControl.CONTINUE;
 import static graphql.util.TreeTransformerUtil.changeNode;
+import static java.lang.String.format;
 
 /**
  * Util class which converts schemas and optionally queries
@@ -144,7 +146,7 @@ public class Anonymizer {
         AtomicInteger defaultStringValueCounter = new AtomicInteger(1);
         AtomicInteger defaultIntValueCounter = new AtomicInteger(1);
 
-        Map<GraphQLNamedSchemaElement, String> newNameMap = recordNewNames(schema);
+        Map<GraphQLNamedSchemaElement, String> newNameMap = recordNewNamesForSchema(schema);
 
         // stores a reverse index of anonymized argument name to argument instance
         // this is to handle cases where the fields on implementing types MUST have the same exact argument and default
@@ -169,7 +171,8 @@ public class Anonymizer {
                 if (context.getParentNode() instanceof GraphQLFieldDefinition) {
                     // arguments on field definitions must be identical across implementing types and interfaces.
                     if (renamedArgumentsMap.containsKey(newName)) {
-                        return changeNode(context, renamedArgumentsMap.get(newName).transform(b -> {}));
+                        return changeNode(context, renamedArgumentsMap.get(newName).transform(b -> {
+                        }));
                     }
                 }
 
@@ -345,7 +348,7 @@ public class Anonymizer {
         if (valueLiteral instanceof ArrayValue) {
             List<Value> values = ((ArrayValue) valueLiteral).getValues();
             ArrayValue.Builder newArrayValueBuilder = ArrayValue.newArrayValue();
-            for (Value value: values) {
+            for (Value value : values) {
                 // [Type!]! -> Type!
                 GraphQLInputType unwrappedInputType = unwrapOneAs(unwrapNonNull(argType));
                 newArrayValueBuilder.value(replaceValue(value, unwrappedInputType, newNameMap, defaultStringValueCounter, defaultIntValueCounter));
@@ -364,14 +367,14 @@ public class Anonymizer {
             GraphQLInputObjectType inputObjectType = unwrapNonNullAs(argType);
             ObjectValue.Builder newObjectValueBuilder = ObjectValue.newObjectValue();
             List<ObjectField> objectFields = ((ObjectValue) valueLiteral).getObjectFields();
-            for (ObjectField objectField: objectFields) {
+            for (ObjectField objectField : objectFields) {
                 String objectFieldName = objectField.getName();
                 Value objectFieldValue = objectField.getValue();
                 GraphQLInputObjectField inputObjectTypeField = inputObjectType.getField(objectFieldName);
                 GraphQLInputType fieldType = unwrapNonNullAs(inputObjectTypeField.getType());
                 ObjectField newObjectField = objectField.transform(builder -> {
-                        builder.name(newNameMap.get(inputObjectTypeField));
-                        builder.value(replaceValue(objectFieldValue, fieldType, newNameMap, defaultStringValueCounter, defaultIntValueCounter));
+                    builder.name(newNameMap.get(inputObjectTypeField));
+                    builder.value(replaceValue(objectFieldValue, fieldType, newNameMap, defaultStringValueCounter, defaultIntValueCounter));
                 });
                 newObjectValueBuilder.objectField(newObjectField);
             }
@@ -380,7 +383,7 @@ public class Anonymizer {
         return valueLiteral;
     }
 
-    public static Map<GraphQLNamedSchemaElement, String> recordNewNames(GraphQLSchema schema) {
+    public static Map<GraphQLNamedSchemaElement, String> recordNewNamesForSchema(GraphQLSchema schema) {
         AtomicInteger objectCounter = new AtomicInteger(1);
         AtomicInteger inputObjectCounter = new AtomicInteger(1);
         AtomicInteger inputObjectFieldCounter = new AtomicInteger(1);
@@ -638,7 +641,7 @@ public class Anonymizer {
     private static String rewriteQuery(String query, GraphQLSchema schema, Map<GraphQLNamedSchemaElement, String> newNames, Map<String, Object> variables) {
         AtomicInteger fragmentCounter = new AtomicInteger(1);
         AtomicInteger variableCounter = new AtomicInteger(1);
-        Map<Node, String> nodeToNewName = new LinkedHashMap<>();
+        Map<Node, String> astNodeToNewName = new LinkedHashMap<>();
         Map<String, String> variableNames = new LinkedHashMap<>();
         Document document = new Parser().parseDocument(query);
         assertUniqueOperation(document);
@@ -651,7 +654,34 @@ public class Anonymizer {
                     return;
                 }
                 String newName = assertNotNull(newNames.get(queryVisitorFieldEnvironment.getFieldDefinition()));
-                nodeToNewName.put(queryVisitorFieldEnvironment.getField(), newName);
+                Field field = queryVisitorFieldEnvironment.getField();
+                astNodeToNewName.put(field, newName);
+
+                List<Directive> directives = field.getDirectives();
+                for (Directive directive : directives) {
+                    // this is a directive definition
+                    GraphQLDirective directiveDefinition = assertNotNull(schema.getDirective(directive.getName()), () -> format("%s directive definition not found ", directive.getName()));
+                    String directiveName = directiveDefinition.getName();
+                    String newDirectiveName = assertNotNull(newNames.get(directiveDefinition), () -> format("No new name found for directive %s", directiveName));
+                    astNodeToNewName.put(directive, newDirectiveName);
+
+                    for (Argument argument : directive.getArguments()) {
+                        GraphQLArgument argumentDefinition = directiveDefinition.getArgument(argument.getName());
+                        String newArgumentName = assertNotNull(newNames.get(argumentDefinition), () -> format("%s no new name found for directive argument %s %s", directiveName, argument.getName()));
+                        astNodeToNewName.put(argument, newArgumentName);
+                        visitDirectiveArgumentValues(directive, argument.getValue());
+                    }
+                }
+            }
+
+            private void visitDirectiveArgumentValues(Directive directive, Value value) {
+                if (value instanceof VariableReference) {
+                    String name = ((VariableReference) value).getName();
+                    if (!variableNames.containsKey(name)) {
+                        String newName = "var" + variableCounter.getAndIncrement();
+                        variableNames.put(name, newName);
+                    }
+                }
             }
 
             @Override
@@ -675,19 +705,19 @@ public class Anonymizer {
             public void visitFragmentSpread(QueryVisitorFragmentSpreadEnvironment queryVisitorFragmentSpreadEnvironment) {
                 FragmentDefinition fragmentDefinition = queryVisitorFragmentSpreadEnvironment.getFragmentDefinition();
                 String newName;
-                if (!nodeToNewName.containsKey(fragmentDefinition)) {
+                if (!astNodeToNewName.containsKey(fragmentDefinition)) {
                     newName = "Fragment" + fragmentCounter.getAndIncrement();
-                    nodeToNewName.put(fragmentDefinition, newName);
+                    astNodeToNewName.put(fragmentDefinition, newName);
                 } else {
-                    newName = nodeToNewName.get(fragmentDefinition);
+                    newName = astNodeToNewName.get(fragmentDefinition);
                 }
-                nodeToNewName.put(queryVisitorFragmentSpreadEnvironment.getFragmentSpread(), newName);
+                astNodeToNewName.put(queryVisitorFragmentSpreadEnvironment.getFragmentSpread(), newName);
             }
 
             @Override
             public TraversalControl visitArgument(QueryVisitorFieldArgumentEnvironment environment) {
                 String newName = assertNotNull(newNames.get(environment.getGraphQLArgument()));
-                nodeToNewName.put(environment.getArgument(), newName);
+                astNodeToNewName.put(environment.getArgument(), newName);
                 return CONTINUE;
             }
         });
@@ -700,6 +730,12 @@ public class Anonymizer {
         AtomicInteger defaultIntValueCounter = new AtomicInteger(1);
 
         Document newDocument = (Document) astTransformer.transform(document, new NodeVisitorStub() {
+
+            @Override
+            public TraversalControl visitDirective(Directive directive, TraverserContext<Node> context) {
+                String newName = assertNotNull(astNodeToNewName.get(directive));
+                return changeNode(context, directive.transform(builder -> builder.name(newName)));
+            }
 
             @Override
             public TraversalControl visitStringValue(StringValue node, TraverserContext<Node> context) {
@@ -731,7 +767,7 @@ public class Anonymizer {
                 if (node.getName().equals(Introspection.TypeNameMetaFieldDef.getName())) {
                     newName = Introspection.TypeNameMetaFieldDef.getName();
                 } else {
-                    newName = assertNotNull(nodeToNewName.get(node));
+                    newName = assertNotNull(astNodeToNewName.get(node));
                 }
                 String finalNewAlias = newAlias;
                 return changeNode(context, node.transform(builder -> builder.name(newName).alias(finalNewAlias)));
@@ -764,13 +800,13 @@ public class Anonymizer {
 
             @Override
             public TraversalControl visitVariableReference(VariableReference node, TraverserContext<Node> context) {
-                String newName = assertNotNull(variableNames.get(node.getName()));
+                String newName = assertNotNull(variableNames.get(node.getName()), () -> format("No new variable name found for %s", node.getName()));
                 return changeNode(context, node.transform(builder -> builder.name(newName)));
             }
 
             @Override
             public TraversalControl visitFragmentDefinition(FragmentDefinition node, TraverserContext<Node> context) {
-                String newName = assertNotNull(nodeToNewName.get(node));
+                String newName = assertNotNull(astNodeToNewName.get(node));
                 GraphQLType currentCondition = assertNotNull(schema.getType(node.getTypeCondition().getName()));
                 String newCondition = newNames.get(currentCondition);
                 return changeNode(context, node.transform(builder -> builder.name(newName).typeCondition(new TypeName(newCondition))));
@@ -785,39 +821,18 @@ public class Anonymizer {
 
             @Override
             public TraversalControl visitFragmentSpread(FragmentSpread node, TraverserContext<Node> context) {
-                String newName = assertNotNull(nodeToNewName.get(node));
+                String newName = assertNotNull(astNodeToNewName.get(node));
                 return changeNode(context, node.transform(builder -> builder.name(newName)));
             }
 
             @Override
             public TraversalControl visitArgument(Argument node, TraverserContext<Node> context) {
-                String newName = assertNotNull(nodeToNewName.get(node));
+                String newName = assertNotNull(astNodeToNewName.get(node));
                 return changeNode(context, node.transform(builder -> builder.name(newName)));
             }
         });
         return AstPrinter.printAstCompact(newDocument);
     }
-
-//    private void findAllTheSameFields(GraphQLSchema schema) {
-//        Map<GraphQLFieldDefinition, Collection<GraphQLFieldDefinition>> sameFields = new LinkedHashMap<>();
-//
-//        GraphQLTypeVisitor visitor = new GraphQLTypeVisitorStub() {
-//            @Override
-//            public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition graphQLFieldDefinition, TraverserContext<GraphQLSchemaElement> context) {
-//                String curName = graphQLFieldDefinition.getName();
-//                GraphQLImplementingType parentNode = (GraphQLImplementingType) context.getParentNode();
-//                List<GraphQLNamedOutputType> interfaces = parentNode.getInterfaces();
-//                List<GraphQLFieldDefinition> matchingInterfaceFieldDefinitions = getMatchingInterfaceFieldDefinitions(curName, interfaces);
-//                if (matchingInterfaceFieldDefinitions.size() > 0) {
-//                    sameFields.put(graphQLFieldDefinition, matchingInterfaceFieldDefinitions);
-//                }
-//            }
-//
-//        };
-//
-//        SchemaTransformer.transformSchema(schema, visitor);
-//
-//    }
 
     // converts language [Type!] to [GraphQLType!] using the exact same GraphQLType instance from
     // the provided schema

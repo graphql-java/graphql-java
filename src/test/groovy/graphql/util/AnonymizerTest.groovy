@@ -757,4 +757,115 @@ type Object1 {
         }
         """.stripIndent()
     }
+
+    def "query with directives"() {
+        given:
+        def schema = TestUtil.schema("""
+        directive @whatever(myArg: String = "secret") on FIELD 
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            bar: String
+        }
+        """)
+        def query = 'query{foo @whatever {bar @whatever }}'
+
+        when:
+        def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(SchemaPrinter.ExcludeGraphQLSpecifiedDirectivesPredicate)).print(result.schema)
+        def newQuery = result.queries[0]
+
+        then:
+        newSchema == """schema {
+  query: Object1
+}
+
+directive @Directive1(argument1: String = "stringValue1") on FIELD
+
+type Object1 {
+  field1: Object2
+}
+
+type Object2 {
+  field2: String
+}
+"""
+        newQuery == "query {field1 @Directive1 {field2 @Directive1}}"
+
+    }
+
+    def "query with directives with arguments"() {
+        given:
+        def schema = TestUtil.schema("""
+        directive @whatever(myArg: String = "secret") on FIELD 
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            bar: String
+        }
+        """)
+        def query = 'query{foo @whatever(myArg: "secret2") {bar @whatever(myArg: "secret3") }}'
+
+        when:
+        def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(SchemaPrinter.ExcludeGraphQLSpecifiedDirectivesPredicate)).print(result.schema)
+        def newQuery = result.queries[0]
+
+        then:
+        newSchema == """schema {
+  query: Object1
+}
+
+directive @Directive1(argument1: String = "stringValue1") on FIELD
+
+type Object1 {
+  field1: Object2
+}
+
+type Object2 {
+  field2: String
+}
+"""
+        newQuery == 'query {field1 @Directive1(argument1:"stringValue2") {field2 @Directive1(argument1:"stringValue1")}}'
+
+    }
+
+    def "query with directives with arguments and variables"() {
+        given:
+        def schema = TestUtil.schema("""
+        directive @whatever(myArg: String = "secret") on FIELD 
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            bar: String
+        }
+        """)
+        def query = 'query($myVar: String = "myDefaultValue"){foo @whatever(myArg: $myVar) {bar @whatever(myArg: "secret3") }}'
+
+        when:
+        def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(SchemaPrinter.ExcludeGraphQLSpecifiedDirectivesPredicate)).print(result.schema)
+        def newQuery = result.queries[0]
+
+        then:
+        newSchema == """schema {
+  query: Object1
+}
+
+directive @Directive1(argument1: String = "stringValue1") on FIELD
+
+type Object1 {
+  field1: Object2
+}
+
+type Object2 {
+  field2: String
+}
+"""
+        newQuery == 'query ($var1:String="stringValue2") {field1 @Directive1(argument1:$var1) {field2 @Directive1(argument1:"stringValue1")}}'
+
+    }
 }
