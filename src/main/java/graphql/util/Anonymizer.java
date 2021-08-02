@@ -741,17 +741,6 @@ public class Anonymizer {
                 return changeNode(context, directive.transform(builder -> builder.name(newName)));
             }
 
-//            @Override
-//            public TraversalControl visitStringValue(StringValue node, TraverserContext<Node> context) {
-//                return changeNode(context, node.transform(builder -> builder.value("stringValue" + stringValueCounter.getAndIncrement())));
-//            }
-//
-//            @Override
-//            public TraversalControl visitIntValue(IntValue node, TraverserContext<Node> context) {
-//                return changeNode(context, node.transform(builder -> builder.value(BigInteger.valueOf(intValueCounter.getAndIncrement()))));
-//            }
-//
-
             @Override
             public TraversalControl visitOperationDefinition(OperationDefinition node, TraverserContext<Node> context) {
                 if (node.getName() != null) {
