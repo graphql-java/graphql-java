@@ -134,6 +134,10 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
 
     private List<Conflict> findConflicts(Map<String, Set<FieldAndType>> fieldMap) {
+        /**
+         * The algorithm implemented here is not the one from the Spec, but is based on
+         * https://tech.xing.com/graphql-overlapping-fields-can-be-merged-fast-ea6e92e0a01
+         */
         List<Conflict> result = new ArrayList<>();
         sameResponseShapeByName(fieldMap, emptyList(), result);
         sameForCommonParentsByName(fieldMap, emptyList(), result);
