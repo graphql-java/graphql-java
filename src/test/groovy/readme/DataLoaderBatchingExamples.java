@@ -12,11 +12,10 @@ import org.dataloader.BatchLoader;
 import org.dataloader.BatchLoaderContextProvider;
 import org.dataloader.BatchLoaderEnvironment;
 import org.dataloader.BatchLoaderWithContext;
+import org.dataloader.CacheMap;
 import org.dataloader.DataLoader;
-import org.dataloader.DataLoaderFactory;
 import org.dataloader.DataLoaderOptions;
 import org.dataloader.DataLoaderRegistry;
-import org.dataloader.ValueCache;
 
 import java.util.List;
 import java.util.Map;
@@ -106,7 +105,7 @@ public class DataLoaderBatchingExamples {
         //
         // Since data loaders are stateful, they are created per execution request.
         //
-        DataLoader<String, Object> characterDataLoader = DataLoaderFactory.newDataLoader(characterBatchLoader);
+        DataLoader<String, Object> characterDataLoader = DataLoader.newDataLoader(characterBatchLoader);
 
         //
         // DataLoaderRegistry is a place to register all data loaders in that needs to be dispatched together
@@ -131,19 +130,18 @@ public class DataLoaderBatchingExamples {
             return false;
         }
 
-        public CompletableFuture<Object> getValue(String key) {
+        public Object getValue(String key) {
             return null;
         }
 
-        public CompletableFuture<Object> setValue(String key, Object value) {
+        public CacheMap<String, Object> setValue(String key, Object value) {
             return null;
         }
 
-        public CompletableFuture<Void> clearKey(String key) {
-            return null;
+        public void clearKey(String key) {
         }
 
-        public CompletableFuture<Void> clearAll() {
+        public CacheMap<String, Object> clearAll() {
             return null;
         }
     }
@@ -159,31 +157,39 @@ public class DataLoaderBatchingExamples {
 
     private void changeCachingSolutionOfDataLoader() {
 
-        ValueCache<String, Object> crossRequestValueCache = new ValueCache<String, Object>() {
+        CacheMap<String, Object> crossRequestCacheMap = new CacheMap<String, Object>() {
             @Override
-            public CompletableFuture<Object> get(String key) {
+            public boolean containsKey(String key) {
+                return redisIntegration.containsKey(key);
+            }
+
+            @Override
+            public Object get(String key) {
                 return redisIntegration.getValue(key);
             }
 
             @Override
-            public CompletableFuture<Object> set(String key, Object value) {
-                return redisIntegration.setValue(key, value);
+            public CacheMap<String, Object> set(String key, Object value) {
+                redisIntegration.setValue(key, value);
+                return this;
             }
 
             @Override
-            public CompletableFuture<Void> delete(String key) {
-                return redisIntegration.clearKey(key);
+            public CacheMap<String, Object> delete(String key) {
+                redisIntegration.clearKey(key);
+                return this;
             }
 
             @Override
-            public CompletableFuture<Void> clear() {
-                return redisIntegration.clearAll();
+            public CacheMap<String, Object> clear() {
+                redisIntegration.clearAll();
+                return this;
             }
         };
 
-        DataLoaderOptions options = DataLoaderOptions.newOptions().setValueCache(crossRequestValueCache);
+        DataLoaderOptions options = DataLoaderOptions.newOptions().setCacheMap(crossRequestCacheMap);
 
-        DataLoader<String, Object> dataLoader = DataLoaderFactory.newDataLoader(batchLoader, options);
+        DataLoader<String, Object> dataLoader = DataLoader.newDataLoader(batchLoader, options);
     }
 
     private void doNotUseAsyncInYouDataFetcher() {
@@ -195,7 +201,7 @@ public class DataLoaderBatchingExamples {
             }
         };
 
-        DataLoader<String, Object> characterDataLoader = DataLoaderFactory.newDataLoader(batchLoader);
+        DataLoader<String, Object> characterDataLoader = DataLoader.newDataLoader(batchLoader);
 
         // .... later in your data fetcher
 
@@ -223,7 +229,7 @@ public class DataLoaderBatchingExamples {
             }
         };
 
-        DataLoader<String, Object> characterDataLoader = DataLoaderFactory.newDataLoader(batchLoader);
+        DataLoader<String, Object> characterDataLoader = DataLoader.newDataLoader(batchLoader);
 
         // .... later in your data fetcher
 
@@ -271,7 +277,7 @@ public class DataLoaderBatchingExamples {
         // this creates an overall context for the dataloader
         //
         DataLoaderOptions loaderOptions = DataLoaderOptions.newOptions().setBatchLoaderContextProvider(contextProvider);
-        DataLoader<String, Object> characterDataLoader = DataLoaderFactory.newDataLoader(batchLoaderWithCtx, loaderOptions);
+        DataLoader<String, Object> characterDataLoader = DataLoader.newDataLoader(batchLoaderWithCtx, loaderOptions);
 
         // .... later in your data fetcher
 
