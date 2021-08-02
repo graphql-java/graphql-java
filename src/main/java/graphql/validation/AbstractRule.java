@@ -18,6 +18,7 @@ import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static graphql.validation.ValidationError.newValidationError;
@@ -51,7 +52,7 @@ public class AbstractRule {
         return validationUtil;
     }
 
-    public void addError(ValidationErrorType validationErrorType, List<? extends Node<?>> locations, String description) {
+    public void addError(ValidationErrorType validationErrorType, Collection<? extends Node<?>> locations, String description) {
         List<SourceLocation> locationList = new ArrayList<>();
         for (Node<?> node : locations) {
             locationList.add(node.getSourceLocation());

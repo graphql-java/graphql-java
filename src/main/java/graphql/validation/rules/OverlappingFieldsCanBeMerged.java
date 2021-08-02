@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static graphql.collect.ImmutableKit.addToList;
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.schema.GraphQLTypeUtil.isEnum;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
@@ -52,6 +54,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
     private final Set<Set<FieldAndType>> sameResponseShapeChecked = new LinkedHashSet<>();
     private final Set<Set<FieldAndType>> sameForCommonParentsChecked = new LinkedHashSet<>();
+    private final Set<Set<Field>> conflictsReported = new LinkedHashSet<>();
 
     public OverlappingFieldsCanBeMerged(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
@@ -64,6 +67,12 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         collectFields(fieldMap, selectionSet, getValidationContext().getOutputType(), visitedFragmentSpreads);
         List<Conflict> conflicts = findConflicts(fieldMap);
         for (Conflict conflict : conflicts) {
+            if (conflictsReported.contains(conflict.fields)) {
+                continue;
+            }
+            conflictsReported.add(conflict.fields);
+            // each error contains a reference to the current querypath via validationContext.getQueryPath()
+            // queryPath is null for the first selection set
             addError(FieldsConflict, conflict.fields, conflict.reason);
         }
     }
@@ -126,24 +135,25 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
     private List<Conflict> findConflicts(Map<String, Set<FieldAndType>> fieldMap) {
         List<Conflict> result = new ArrayList<>();
-        sameResponseShapeByName(fieldMap, result);
-        sameForCommonParentsByName(fieldMap, result);
+        sameResponseShapeByName(fieldMap, emptyList(), result);
+        sameForCommonParentsByName(fieldMap, emptyList(), result);
         return result;
     }
 
-    private void sameResponseShapeByName(Map<String, Set<FieldAndType>> fieldMap, List<Conflict> conflictsResult) {
+    private void sameResponseShapeByName(Map<String, Set<FieldAndType>> fieldMap, ImmutableList<String> currentPath, List<Conflict> conflictsResult) {
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
             if (sameResponseShapeChecked.contains(entry.getValue())) {
                 continue;
             }
+            ImmutableList<String> newPath = addToList(currentPath, entry.getKey());
             sameResponseShapeChecked.add(entry.getValue());
-            Conflict conflict = requireSameOutputTypeShape(entry.getKey(), entry.getValue());
+            Conflict conflict = requireSameOutputTypeShape(newPath, entry.getValue());
             if (conflict != null) {
                 conflictsResult.add(conflict);
                 continue;
             }
             Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(entry.getValue());
-            sameResponseShapeByName(subSelections, conflictsResult);
+            sameResponseShapeByName(subSelections, newPath, conflictsResult);
         }
     }
 
@@ -158,21 +168,22 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         return fieldMap;
     }
 
-    private void sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap, List<Conflict> conflictsResult) {
+    private void sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap, ImmutableList<String> currentPath, List<Conflict> conflictsResult) {
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
             List<Set<FieldAndType>> groups = groupByCommonParents(entry.getValue());
+            ImmutableList<String> newPath = addToList(currentPath, entry.getKey());
             for (Set<FieldAndType> group : groups) {
                 if (sameForCommonParentsChecked.contains(group)) {
                     continue;
                 }
                 sameForCommonParentsChecked.add(group);
-                Conflict conflict = requireSameNameAndArguments(entry.getKey(), group);
+                Conflict conflict = requireSameNameAndArguments(newPath, group);
                 if (conflict != null) {
                     conflictsResult.add(conflict);
                     continue;
                 }
                 Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(group);
-                sameForCommonParentsByName(subSelections, conflictsResult);
+                sameForCommonParentsByName(subSelections, newPath, conflictsResult);
             }
         }
     }
@@ -197,7 +208,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         return type instanceof GraphQLInterfaceType || type instanceof GraphQLUnionType;
     }
 
-    private Conflict requireSameNameAndArguments(String responseName, Set<FieldAndType> fieldAndTypes) {
+    private Conflict requireSameNameAndArguments(ImmutableList<String> path, Set<FieldAndType> fieldAndTypes) {
         if (fieldAndTypes.size() <= 1) {
             return null;
         }
@@ -213,16 +224,20 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
                 continue;
             }
             if (!field.getName().equals(name)) {
-                String reason = format("%s: %s and %s are different fields", responseName, name, field.getName());
-                return new Conflict(responseName, reason, fields);
+                String reason = format("%s: %s and %s are different fields", pathToString(path), name, field.getName());
+                return new Conflict(reason, fields);
             }
             if (!sameArguments(field.getArguments(), arguments)) {
-                String reason = format("%s: they have differing arguments", responseName);
-                return new Conflict(responseName, reason, fields);
+                String reason = format("%s: they have differing arguments", pathToString(path));
+                return new Conflict(reason, fields);
             }
 
         }
         return null;
+    }
+
+    private String pathToString(ImmutableList<String> path) {
+        return String.join("/", path);
     }
 
     private boolean sameArguments(List<Argument> arguments1, List<Argument> arguments2) {
@@ -251,7 +266,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
 
-    private Conflict requireSameOutputTypeShape(String responseName, Set<FieldAndType> fieldAndTypes) {
+    private Conflict requireSameOutputTypeShape(ImmutableList<String> path, Set<FieldAndType> fieldAndTypes) {
         if (fieldAndTypes.size() <= 1) {
             return null;
         }
@@ -268,14 +283,14 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             while (true) {
                 if (isNonNull(typeA) || isNonNull(typeB)) {
                     if (isNullable(typeA) || isNullable(typeB)) {
-                        String reason = format("%s: fields have different nullability shapes", responseName);
-                        return new Conflict(responseName, reason, fields);
+                        String reason = format("%s: fields have different nullability shapes", pathToString(path));
+                        return new Conflict(reason, fields);
                     }
                 }
                 if (isList(typeA) || isList(typeB)) {
                     if (!isList(typeA) || !isList(typeB)) {
-                        String reason = format("%s: fields have different list shapes", responseName);
-                        return new Conflict(responseName, reason, fields);
+                        String reason = format("%s: fields have different list shapes", pathToString(path));
+                        return new Conflict(reason, fields);
                     }
                 }
                 if (isNotWrapped(typeA) && isNotWrapped(typeB)) {
@@ -286,23 +301,23 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             }
             if (isScalar(typeA) || isScalar(typeB)) {
                 if (!sameType(typeA, typeB)) {
-                    return mkNotSameTypeError(responseName, fields, typeA, typeB);
+                    return mkNotSameTypeError(path, fields, typeA, typeB);
                 }
             }
             if (isEnum(typeA) || isEnum(typeB)) {
                 if (!sameType(typeA, typeB)) {
-                    return mkNotSameTypeError(responseName, fields, typeA, typeB);
+                    return mkNotSameTypeError(path, fields, typeA, typeB);
                 }
             }
         }
         return null;
     }
 
-    private Conflict mkNotSameTypeError(String responseName, List<Field> fields, GraphQLType typeA, GraphQLType typeB) {
+    private Conflict mkNotSameTypeError(ImmutableList<String> path, List<Field> fields, GraphQLType typeA, GraphQLType typeB) {
         String name1 = typeA != null ? simplePrint(typeA) : "null";
         String name2 = typeB != null ? simplePrint(typeB) : "null";
-        String reason = format("%s: they return differing types %s and %s", responseName, name1, name2);
-        return new Conflict(responseName, reason, fields);
+        String reason = format("%s: they return differing types %s and %s", pathToString(path), name1, name2);
+        return new Conflict(reason, fields);
     }
 
 
@@ -355,19 +370,11 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
     private static class Conflict {
-        final String responseName;
         final String reason;
-        final List<Field> fields = new ArrayList<>();
+        final Set<Field> fields = new LinkedHashSet<>();
 
-        public Conflict(String responseName, String reason, Field field1, Field field2) {
-            this.responseName = responseName;
-            this.reason = reason;
-            this.fields.add(field1);
-            this.fields.add(field2);
-        }
 
-        public Conflict(String responseName, String reason, List<Field> fields) {
-            this.responseName = responseName;
+        public Conflict(String reason, List<Field> fields) {
             this.reason = reason;
             this.fields.addAll(fields);
         }

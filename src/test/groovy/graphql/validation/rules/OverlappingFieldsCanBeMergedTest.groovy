@@ -470,16 +470,11 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         traverse(query, schema)
 
         then:
-        errorCollector.getErrors().size() == 2
+        errorCollector.getErrors().size() == 1
 
         errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: x: a and b are different fields @ 'f1'"
         errorCollector.getErrors()[0].locations == [new SourceLocation(18, 13), new SourceLocation(21, 13)]
 
-        errorCollector.getErrors()[1].message == "Validation error of type FieldsConflict: x: b and a are different fields @ 'f2'"
-        errorCollector.getErrors()[1].locations == [new SourceLocation(18, 13), new SourceLocation(14, 17)]
-
-        errorCollector.getErrors()[2].message == "Validation error of type FieldsConflict: x: b and c are different fields @ 'f3'"
-        errorCollector.getErrors()[2].locations == [new SourceLocation(21, 13), new SourceLocation(14, 17)]
     }
 
 
@@ -508,8 +503,8 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field: (x: a and b are different fields)"
-        errorCollector.getErrors()[0].locations.size() == 4
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field/x: a and b are different fields"
+        errorCollector.getErrors()[0].locations.size() == 2
     }
 
     def 'deep conflict with multiple issues'() {
@@ -541,9 +536,12 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         traverse(query, schema)
 
         then:
-        errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field: (x: a and b are different fields, y: c and d are different fields)"
-        errorCollector.getErrors()[0].locations.size() == 6
+        errorCollector.getErrors().size() == 2
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field/x: a and b are different fields"
+        errorCollector.getErrors()[0].locations.size() == 2
+
+        errorCollector.getErrors()[1].message == "Validation error of type FieldsConflict: field/y: c and d are different fields"
+        errorCollector.getErrors()[1].locations.size() == 2
     }
 
     def 'very deep conflict'() {
@@ -581,8 +579,8 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field: (deepField: (x: a and b are different fields))"
-        errorCollector.getErrors()[0].locations.size() == 6
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field/deepField/x: a and b are different fields"
+        errorCollector.getErrors()[0].locations.size() == 2
     }
 
     def 'reports deep conflict to nearest common ancestor'() {
@@ -623,8 +621,8 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: deepField: (x: a and b are different fields) @ 'field'"
-        errorCollector.getErrors()[0].locations.size() == 4
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: deepField/x: a and b are different fields @ 'field'"
+        errorCollector.getErrors()[0].locations.size() == 2
     }
 
 
