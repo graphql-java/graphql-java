@@ -58,6 +58,7 @@ public class InstrumentationExecutionParameters {
     }
 
     /**
+     * @param <T> for two
      * @return the legacy context
      *
      * @deprecated use {@link #getGraphQLContext()} instead

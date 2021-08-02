@@ -24,11 +24,11 @@ import java.util.concurrent.CompletionStage;
 
 import static graphql.ExecutionInput.newExecutionInput;
 
-@SuppressWarnings({"unused", "Convert2Lambda", "ConstantConditions", "ClassCanBeStatic"})
+@SuppressWarnings({"unused", "Convert2Lambda", "ClassCanBeStatic"})
 public class DataLoaderBatchingExamples {
 
 
-    class StarWarsCharacter {
+    static class StarWarsCharacter {
         List<String> getFriendIds() {
             return null;
         }
@@ -59,7 +59,7 @@ public class DataLoaderBatchingExamples {
         // use this data loader in the data fetchers associated with characters and put them into
         // the graphql schema (not shown)
         //
-        DataFetcher heroDataFetcher = new DataFetcher() {
+        DataFetcher<?> heroDataFetcher = new DataFetcher<Object>() {
             @Override
             public Object get(DataFetchingEnvironment environment) {
                 DataLoader<String, Object> dataLoader = environment.getDataLoader("character");
@@ -67,7 +67,7 @@ public class DataLoaderBatchingExamples {
             }
         };
 
-        DataFetcher friendsDataFetcher = new DataFetcher() {
+        DataFetcher<?> friendsDataFetcher = new DataFetcher<Object>() {
             @Override
             public Object get(DataFetchingEnvironment environment) {
                 StarWarsCharacter starWarsCharacter = environment.getSource();
@@ -124,7 +124,7 @@ public class DataLoaderBatchingExamples {
         ExecutionResult executionResult = graphQL.execute(executionInput);
     }
 
-    class Redis {
+    static class Redis {
 
         public boolean containsKey(String key) {
             return false;
@@ -205,7 +205,7 @@ public class DataLoaderBatchingExamples {
 
         // .... later in your data fetcher
 
-        DataFetcher dataFetcherThatCallsTheDataLoader = new DataFetcher() {
+        DataFetcher<?> dataFetcherThatCallsTheDataLoader = new DataFetcher<Object>() {
             @Override
             public Object get(DataFetchingEnvironment environment) {
                 //
@@ -233,7 +233,7 @@ public class DataLoaderBatchingExamples {
 
         // .... later in your data fetcher
 
-        DataFetcher dataFetcherThatCallsTheDataLoader = new DataFetcher() {
+        DataFetcher<?> dataFetcherThatCallsTheDataLoader = new DataFetcher<Object>() {
             @Override
             public Object get(DataFetchingEnvironment environment) {
                 //
@@ -281,7 +281,7 @@ public class DataLoaderBatchingExamples {
 
         // .... later in your data fetcher
 
-        DataFetcher dataFetcherThatCallsTheDataLoader = new DataFetcher() {
+        DataFetcher<?> dataFetcherThatCallsTheDataLoader = new DataFetcher<Object>() {
             @Override
             public Object get(DataFetchingEnvironment environment) {
                 String argId = environment.getArgument("id");

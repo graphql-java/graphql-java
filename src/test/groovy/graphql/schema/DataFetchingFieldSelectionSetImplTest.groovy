@@ -827,17 +827,55 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
     }
 
-    Comparator<SelectedField> byName() {
-        { o1, o2 -> o1.getQualifiedName().compareTo(o2.getQualifiedName()) }
+    def "issue 2381 - selected fields can work in mutations"() {
+        def sdl = '''
+            type Query {
+                f :String
+            }
+            
+            type Mutation {
+                mutate : SomeType
+            }
+            
+            type SomeType {
+                selectedFieldNames : [String]
+                b : String
+                c : String
+            }
+        '''
+        DataFetcher mutationDF = { DataFetchingEnvironment env ->
+            def selectedFields = env.getSelectionSet().getImmediateFields()
+
+            def fieldNames = selectedFields.collect { it.getName() }
+            return ["selectedFieldNames": fieldNames]
+        }
+        def schema = TestUtil.schema(sdl, [Mutation: ["mutate": mutationDF]])
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        when:
+        def er = graphQL.execute('''mutation M { 
+            mutate {
+                selectedFieldNames
+                b
+                c
+            }
+        }''')
+        then:
+        er.errors.isEmpty()
+        er.data["mutate"]["selectedFieldNames"] == ["selectedFieldNames","b","c"]
     }
 
-    void assertTheyAreExpected(List<SelectedField> selectedFields, List<String> expected) {
+    static Comparator<SelectedField> byName() {
+        { o1, o2 -> (o1.getQualifiedName() <=> o2.getQualifiedName()) }
+    }
+
+    static void assertTheyAreExpected(List<SelectedField> selectedFields, List<String> expected) {
         def names = selectedFields.collect({ sf -> mkSpecialName(sf) })
         names.sort()
         assert names == expected, "Not the right selected fields"
     }
 
-    String mkSpecialName(SelectedField selectedField) {
+    static String mkSpecialName(SelectedField selectedField) {
         def names = selectedField.getObjectTypeNames()
         (selectedField.getAlias() == null ? "" : selectedField.getAlias() + ":") + (names.size() > 1 ? names.toString() : names.get(0)) + "." + selectedField.getName()
     }

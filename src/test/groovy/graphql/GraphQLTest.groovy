@@ -4,6 +4,7 @@ import graphql.analysis.MaxQueryComplexityInstrumentation
 import graphql.analysis.MaxQueryDepthInstrumentation
 import graphql.collect.ImmutableKit
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.AsyncSerialExecutionStrategy
 import graphql.execution.DataFetcherExceptionHandler
 import graphql.execution.DataFetcherResult
 import graphql.execution.ExecutionContext
@@ -11,10 +12,13 @@ import graphql.execution.ExecutionId
 import graphql.execution.ExecutionIdProvider
 import graphql.execution.ExecutionStrategyParameters
 import graphql.execution.MissingRootTypeException
+import graphql.execution.SubscriptionExecutionStrategy
+import graphql.execution.ValueUnboxer
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation
+import graphql.execution.preparsed.NoOpPreparsedDocumentProvider
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -176,6 +180,31 @@ class GraphQLTest extends Specification {
         errors.size() == 1
         errors[0].errorType == ErrorType.InvalidSyntax
         errors[0].locations == [new SourceLocation(1, 8)]
+    }
+
+    def "query with invalid Unicode surrogate in argument - no trailing value"() {
+        given:
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .field(newFieldDefinition()
+                                .name("field")
+                                .type(GraphQLString)
+                                .argument(newArgument()
+                                        .name("arg")
+                                        .type(GraphQLNonNull.nonNull(GraphQLString))))
+                        .build()
+        ).build()
+
+        when:
+        // Invalid Unicode character - leading surrogate value without trailing surrogate value
+        def errors = GraphQL.newGraphQL(schema).build().execute('{ hello(arg:"\\ud83c") }').errors
+
+        then:
+        errors.size() == 1
+        errors[0].errorType == ErrorType.InvalidSyntax
+        errors[0].message == "Invalid Syntax : Invalid unicode - leading surrogate must be followed by a trailing surrogate - offending token '\\ud83c' at line 1 column 13"
+        errors[0].locations == [new SourceLocation(1, 13)]
     }
 
     def "non null argument is missing"() {
@@ -1282,5 +1311,20 @@ many lines''']
         then:
         def e = thrown(InvalidSchemaException)
         e.message.contains("Invalid argument 'arg' for applied directive of name 'cached'")
+    }
+
+    def "getters work as expected"() {
+        Instrumentation instrumentation = new SimpleInstrumentation()
+        when:
+        def graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).instrumentation(instrumentation).build()
+        then:
+        graphQL.getGraphQLSchema() == StarWarsSchema.starWarsSchema
+        graphQL.getIdProvider() == ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDER
+        graphQL.getValueUnboxer() == ValueUnboxer.DEFAULT
+        graphQL.getPreparsedDocumentProvider() == NoOpPreparsedDocumentProvider.INSTANCE
+        graphQL.getInstrumentation() instanceof ChainedInstrumentation
+        graphQL.getQueryStrategy() instanceof AsyncExecutionStrategy
+        graphQL.getMutationStrategy() instanceof AsyncSerialExecutionStrategy
+        graphQL.getSubscriptionStrategy() instanceof SubscriptionExecutionStrategy
     }
 }

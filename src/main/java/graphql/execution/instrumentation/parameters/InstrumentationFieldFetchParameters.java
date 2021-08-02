@@ -6,7 +6,6 @@ import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.GraphQLFieldDefinition;
 
 /**
  * Parameters sent to {@link Instrumentation} methods
@@ -17,7 +16,7 @@ public class InstrumentationFieldFetchParameters extends InstrumentationFieldPar
     private final ExecutionStrategyParameters executionStrategyParameters;
     private final boolean trivialDataFetcher;
 
-    public InstrumentationFieldFetchParameters(ExecutionContext getExecutionContext, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment, ExecutionStrategyParameters executionStrategyParameters, boolean trivialDataFetcher) {
+    public InstrumentationFieldFetchParameters(ExecutionContext getExecutionContext, DataFetchingEnvironment environment, ExecutionStrategyParameters executionStrategyParameters, boolean trivialDataFetcher) {
         super(getExecutionContext, environment::getExecutionStepInfo);
         this.environment = environment;
         this.executionStrategyParameters = executionStrategyParameters;

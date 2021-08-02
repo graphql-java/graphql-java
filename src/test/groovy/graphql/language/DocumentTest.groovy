@@ -43,4 +43,50 @@ class DocumentTest extends Specification {
 
         expected == actual
     }
+
+    def "can give back one definition"() {
+        def doc = TestUtil.parseQuery('''
+            query foo {
+                field
+            }
+
+            query bar {
+                field
+            }
+            
+            type Query {
+                a : String
+            }
+            
+        ''')
+
+        when:
+        def definition = doc.getFirstDefinitionOfType(OperationDefinition.class)
+        then:
+        definition.isPresent()
+
+        when:
+        def operationDefinition = definition.get()
+        then:
+        operationDefinition instanceof OperationDefinition
+        operationDefinition.getName() == "foo"
+
+
+        when:
+        definition = doc.getOperationDefinition("bar")
+        then:
+        definition.isPresent()
+
+        when:
+        operationDefinition = definition.get()
+        then:
+        operationDefinition instanceof OperationDefinition
+        operationDefinition.getName() == "bar"
+
+        when:
+        definition = doc.getOperationDefinition("baz")
+        then:
+        !definition.isPresent()
+
+    }
 }

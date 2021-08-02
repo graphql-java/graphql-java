@@ -264,7 +264,7 @@ type Object2 {
           inputField6: InputObject1
         }
         """.stripIndent()
-        newQuery == 'query operation($var1:String="stringValue1",$var2:[[String!]!]!=[["stringValue2"]],$var3:Enum1!=EnumValue1,$var4:InputObject1!={inputField2:"stringValue3",inputField5:EnumValue2,inputField6:{inputField1:2}}) {field1(argument1:{foo1:1,foo2:$var1}) field3(argument3:$var2) field4(argument4:$var3) field5(argument5:$var4)}'
+        newQuery == 'query operation($var1:String="stringValue1",$var2:[[String!]!]!=[["stringValue2"]],$var3:Enum1!=EnumValue1,$var4:InputObject1!={inputField2:"stringValue3",inputField5:EnumValue2,inputField6:{inputField1:2}}) {field1(argument1:{inputField1:1,inputField2:$var1}) field3(argument3:$var2) field4(argument4:$var3) field5(argument5:$var4)}'
     }
 
     def "query with aliases"() {
@@ -756,5 +756,116 @@ type Object1 {
           inputField1: Int @Directive1(argument1 : "stringValue20")
         }
         """.stripIndent()
+    }
+
+    def "query with directives"() {
+        given:
+        def schema = TestUtil.schema("""
+        directive @whatever(myArg: String = "secret") on FIELD 
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            bar: String
+        }
+        """)
+        def query = 'query{foo @whatever {bar @whatever }}'
+
+        when:
+        def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(SchemaPrinter.ExcludeGraphQLSpecifiedDirectivesPredicate)).print(result.schema)
+        def newQuery = result.queries[0]
+
+        then:
+        newSchema == """schema {
+  query: Object1
+}
+
+directive @Directive1(argument1: String = "stringValue1") on FIELD
+
+type Object1 {
+  field1: Object2
+}
+
+type Object2 {
+  field2: String
+}
+"""
+        newQuery == "query {field1 @Directive1 {field2 @Directive1}}"
+
+    }
+
+    def "query with directives with arguments"() {
+        given:
+        def schema = TestUtil.schema("""
+        directive @whatever(myArg: String = "secret") on FIELD 
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            bar: String
+        }
+        """)
+        def query = 'query{foo @whatever(myArg: "secret2") {bar @whatever(myArg: "secret3") }}'
+
+        when:
+        def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(SchemaPrinter.ExcludeGraphQLSpecifiedDirectivesPredicate)).print(result.schema)
+        def newQuery = result.queries[0]
+
+        then:
+        newSchema == """schema {
+  query: Object1
+}
+
+directive @Directive1(argument1: String = "stringValue1") on FIELD
+
+type Object1 {
+  field1: Object2
+}
+
+type Object2 {
+  field2: String
+}
+"""
+        newQuery == 'query {field1 @Directive1(argument1:"stringValue2") {field2 @Directive1(argument1:"stringValue1")}}'
+
+    }
+
+    def "query with directives with arguments and variables"() {
+        given:
+        def schema = TestUtil.schema("""
+        directive @whatever(myArg: String = "secret") on FIELD 
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            bar(barArg: String): String
+        }
+        """)
+        def query = 'query($myVar: String = "myDefaultValue"){foo @whatever(myArg: $myVar) {bar(barArg: "barArgValue") @whatever(myArg: "secret3") }}'
+
+        when:
+        def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(SchemaPrinter.ExcludeGraphQLSpecifiedDirectivesPredicate)).print(result.schema)
+        def newQuery = result.queries[0]
+
+        then:
+        newSchema == """schema {
+  query: Object1
+}
+
+directive @Directive1(argument1: String = "stringValue1") on FIELD
+
+type Object1 {
+  field1: Object2
+}
+
+type Object2 {
+  field2(argument2: String): String
+}
+"""
+        newQuery == 'query ($var1:String="stringValue3") {field1 @Directive1(argument1:$var1) {field2(argument2:"stringValue2") @Directive1(argument1:"stringValue1")}}'
+
     }
 }

@@ -269,7 +269,7 @@ public abstract class ExecutionStrategy {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
-        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment, parameters, dataFetcher instanceof TrivialDataFetcher);
+        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, environment, parameters, dataFetcher instanceof TrivialDataFetcher);
         InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParams);
 
         CompletableFuture<Object> fetchedValue;
@@ -693,7 +693,7 @@ public abstract class ExecutionStrategy {
      * @throws java.lang.ClassCastException if its not an Iterable
      */
     protected Iterable<Object> toIterable(Object result) {
-        return FpKit.toCollection(result);
+        return FpKit.toIterable(result);
     }
 
     protected GraphQLObjectType resolveType(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLType fieldType) {

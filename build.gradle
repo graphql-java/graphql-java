@@ -242,7 +242,7 @@ publishing {
                 //
                 // We are removing here guava because the classes we want to use is "shaded" into the jar itself
                 // via the shadowJar task
-                Node pomNode = asNode()
+                def pomNode = asNode()
                 pomNode.dependencies.'*'.findAll() {
                     it.artifactId.text() == 'antlr4' || it.artifactId.text() == 'guava'
                 }.each() {

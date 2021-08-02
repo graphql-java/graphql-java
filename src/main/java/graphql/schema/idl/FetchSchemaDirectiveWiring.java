@@ -16,10 +16,13 @@ import static graphql.schema.FieldCoordinates.coordinates;
 
 /**
  * This adds ' @fetch(from : "otherName") ' support so you can rename what property is read for a given field
+ *
+ * @deprecated This support introduces a non standard directive and has interfere with some implementations.  This is no longer
+ * installed default and will be removed in a future version
  */
 @Internal
+@Deprecated
 public class FetchSchemaDirectiveWiring implements SchemaDirectiveWiring {
-
     public static final String FETCH = "fetch";
 
     @Override

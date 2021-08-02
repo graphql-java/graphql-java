@@ -4,7 +4,12 @@ package graphql.schema.idl
 import graphql.TestUtil
 import graphql.introspection.Introspection
 import graphql.language.Node
+import graphql.schema.DataFetcher
+import graphql.schema.DataFetcherFactory
+import graphql.schema.DataFetcherFactoryEnvironment
+import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLEnumType
@@ -36,16 +41,18 @@ import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.language.AstPrinter.printAst
+import static graphql.schema.GraphQLCodeRegistry.newCodeRegistry
 import static graphql.schema.idl.SchemaGenerator.Options.defaultOptions
+import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class SchemaGeneratorTest extends Specification {
 
-    def newRuntimeWiring() {
+    static def newRuntimeWiring() {
         return RuntimeWiring.newRuntimeWiring()
                 .comparatorRegistry(GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY)
     }
 
-    GraphQLSchema schema(String sdl) {
+    static GraphQLSchema schema(String sdl) {
         def runtimeWiringAsIs = newRuntimeWiring()
                 .comparatorRegistry(GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY)
                 .wiringFactory(TestUtil.mockWiringFactory)
@@ -53,21 +60,12 @@ class SchemaGeneratorTest extends Specification {
         return schema(sdl, runtimeWiringAsIs)
     }
 
-    GraphQLSchema schema(String sdl, RuntimeWiring runtimeWiring) {
+    static GraphQLSchema schema(String sdl, RuntimeWiring runtimeWiring) {
         return TestUtil.schema(sdl, runtimeWiring)
     }
 
 
-    GraphQLType unwrap1Layer(GraphQLType type) {
-        if (type instanceof GraphQLNonNull) {
-            type = (type as GraphQLNonNull).wrappedType
-        } else if (type instanceof GraphQLList) {
-            type = (type as GraphQLList).wrappedType
-        }
-        type
-    }
-
-    GraphQLType unwrap(GraphQLType type) {
+    static GraphQLType unwrap(GraphQLType type) {
         while (true) {
             if (type instanceof GraphQLNonNull) {
                 type = (type as GraphQLNonNull).wrappedType
@@ -80,7 +78,7 @@ class SchemaGeneratorTest extends Specification {
         type
     }
 
-    void commonSchemaAsserts(GraphQLSchema schema) {
+    static void commonSchemaAsserts(GraphQLSchema schema) {
         assert schema.getQueryType().name == "Query"
         assert schema.getMutationType().name == "Mutation"
 
@@ -905,7 +903,7 @@ class SchemaGeneratorTest extends Specification {
 
         when:
         def mapEnumProvider = new MapEnumValuesProvider([A: 11, B: 12, C: 13])
-        def enumTypeWiring = TypeRuntimeWiring.newTypeWiring("Enum").enumValues(mapEnumProvider).build()
+        def enumTypeWiring = newTypeWiring("Enum").enumValues(mapEnumProvider).build()
         def wiring = RuntimeWiring.newRuntimeWiring().type(enumTypeWiring).build()
         def schema = TestUtil.schema(spec, wiring)
         GraphQLEnumType graphQLEnumType = schema.getType("Enum") as GraphQLEnumType
@@ -1804,7 +1802,7 @@ class SchemaGeneratorTest extends Specification {
 
     }
 
-    def "@fetch directive is respected"() {
+    def "@fetch directive is respected if added"() {
         def spec = """             
 
             directive @fetch(from : String!) on FIELD_DEFINITION
@@ -1815,7 +1813,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def wiring = RuntimeWiring.newRuntimeWiring().build()
+        def wiring = RuntimeWiring.newRuntimeWiring().directiveWiring(new FetchSchemaDirectiveWiring()).build()
         def schema = schema(spec, wiring)
 
         GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
@@ -2337,4 +2335,191 @@ class SchemaGeneratorTest extends Specification {
         then:
         schema != null
     }
+
+    def "code registry default data fetcher is respected"() {
+        def sdl = '''
+            type Query {
+                field :  String
+            }
+        '''
+
+        DataFetcher df = { DataFetchingEnvironment env ->
+            env.getFieldDefinition().getName().reverse()
+        }
+
+        DataFetcherFactory dff = new DataFetcherFactory() {
+            @Override
+            DataFetcher get(DataFetcherFactoryEnvironment environment) {
+                return df
+            }
+        }
+
+        GraphQLCodeRegistry codeRegistry = newCodeRegistry()
+                .defaultDataFetcher(dff).build()
+
+        def runtimeWiring = newRuntimeWiring().codeRegistry(codeRegistry).build()
+
+        def graphQL = TestUtil.graphQL(sdl, runtimeWiring).build()
+        when:
+        def er = graphQL.execute('{ field }')
+        then:
+        er.errors.isEmpty()
+        er.data["field"] == "dleif"
+
+    }
+
+    def "custom scalars can be used in schema generation as directive args"() {
+        def sdl = '''
+            directive @test(arg: MyType) on OBJECT
+            scalar MyType
+            type Test @test(arg: { some: "data" }){
+                field: String
+            }
+            type Query {
+                field: Test
+            }
+        '''
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring().scalar(TestUtil.mockScalar("MyType")).build()
+        when:
+        def schema = TestUtil.schema(sdl, runtimeWiring)
+        then:
+        schema.getType("MyType") instanceof GraphQLScalarType
+    }
+
+    def "1498 - order of arguments should not matter"() {
+        def sdl = '''
+            input TimelineDimensionPredicate {
+                s : String
+            }
+            
+            input TimelineDimension {
+                d : String
+            }
+            
+            type TimelineEntriesGroup {
+                e : String
+            }
+            
+            interface Timeline {
+               id: ID!
+                entryGroups(groupBy: [TimelineDimension!]!, filter: TimelineDimensionPredicate): [TimelineEntriesGroup!]!
+            }
+
+            type ActualSalesTimeline implements Timeline {
+                id: ID!
+                entryGroups(groupBy: [TimelineDimension!]!, filter: TimelineDimensionPredicate): [TimelineEntriesGroup!]!
+            }
+            
+            type Query {
+                salesTimeLine : Timeline
+            }
+        '''
+
+        when:
+        def schema = TestUtil.schema(sdl)
+        then:
+        assert1498Shape(schema)
+
+        when: "The arg order has been rearranged"
+        sdl = '''
+            input TimelineDimensionPredicate {
+                s : String
+            }
+            
+            input TimelineDimension {
+                d : String
+            }
+            
+            type TimelineEntriesGroup {
+                e : String
+            }
+            
+            interface Timeline {
+               id: ID!
+                entryGroups(filter: TimelineDimensionPredicate, groupBy: [TimelineDimension!]!): [TimelineEntriesGroup!]!
+            }
+
+            type ActualSalesTimeline implements Timeline {
+                id: ID!
+                entryGroups(groupBy: [TimelineDimension!]!, filter: TimelineDimensionPredicate): [TimelineEntriesGroup!]!
+            }
+            
+            type Query {
+                salesTimeLine : Timeline
+            }
+        '''
+
+        schema = TestUtil.schema(sdl)
+        then:
+        assert1498Shape(schema)
+
+    }
+
+    static boolean assert1498Shape(GraphQLSchema schema) {
+        def actualSalesTL = schema.getObjectType("ActualSalesTimeline")
+        def entryGroupsField = actualSalesTL.getField("entryGroups")
+        def groupByArg = entryGroupsField.getArgument("groupBy")
+        def filterArg = entryGroupsField.getArgument("filter")
+
+        GraphQLInputObjectType groupArgType = GraphQLTypeUtil.unwrapAllAs(groupByArg.getType())
+        assert groupArgType.name == "TimelineDimension"
+
+        GraphQLInputObjectType filterArgType = GraphQLTypeUtil.unwrapAllAs(filterArg.getType())
+        assert filterArgType.name == "TimelineDimensionPredicate"
+        true
+    }
+
+
+    def "comments as descriptions disabled"() {
+        def sdl = '''
+        type Query {
+            # Comment
+            test : String
+            "Description"
+            test2: String
+        }
+        '''
+        when:
+        def registry = new SchemaParser().parse(sdl)
+        def options = defaultOptions().useCommentsAsDescriptions(false)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        schema.getQueryType().getFieldDefinition("test").getDescription() == null
+        schema.getQueryType().getFieldDefinition("test2").getDescription() == "Description"
+    }
+
+    def "ast definition capture can be disabled"() {
+        def sdl = '''
+        type Query {
+            test : String
+        }
+        
+        extend type Query {
+            test2 : Int
+        }
+        '''
+        when:
+        def registry = new SchemaParser().parse(sdl)
+        def options = defaultOptions().captureAstDefinitions(false)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        schema.getQueryType().getDefinition() == null
+        schema.getQueryType().getExtensionDefinitions() == []
+        schema.getQueryType().getFieldDefinition("test").getDefinition() == null
+
+        when:
+        registry = new SchemaParser().parse(sdl)
+        options = defaultOptions() // default is to capture them
+        schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        options.isCaptureAstDefinitions()
+        schema.getQueryType().getDefinition() != null
+        schema.getQueryType().getExtensionDefinitions().size() == 1
+        schema.getQueryType().getFieldDefinition("test").getDefinition() != null
+    }
+
+
 }
