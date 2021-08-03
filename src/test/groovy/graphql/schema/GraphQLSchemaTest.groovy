@@ -272,4 +272,56 @@ class GraphQLSchemaTest extends Specification {
         newDF !== nameDF
         newDF instanceof PropertyDataFetcher // defaulted in
     }
+
+    def "can get by field co-ordinate"() {
+        when:
+        def fieldDef = starWarsSchema.getFieldDefinition(FieldCoordinates.coordinates("QueryType", "hero"))
+
+        then:
+        fieldDef.name == "hero"
+        (fieldDef.type as GraphQLInterfaceType).getName() == "Character"
+
+        when:
+        fieldDef = starWarsSchema.getFieldDefinition(FieldCoordinates.coordinates("X", "hero"))
+
+        then:
+        fieldDef == null
+
+        when:
+        fieldDef = starWarsSchema.getFieldDefinition(FieldCoordinates.coordinates("QueryType", "X"))
+
+        then:
+        fieldDef == null
+
+        when:
+        starWarsSchema.getFieldDefinition(FieldCoordinates.coordinates("Episode", "JEDI"))
+
+        then:
+        thrown(AssertException)
+
+        when:
+        fieldDef = starWarsSchema.getFieldDefinition(FieldCoordinates.systemCoordinates("__typename"))
+
+        then:
+        fieldDef == starWarsSchema.getIntrospectionTypenameFieldDefinition()
+
+        when:
+        fieldDef = starWarsSchema.getFieldDefinition(FieldCoordinates.systemCoordinates("__type"))
+
+        then:
+        fieldDef == starWarsSchema.getIntrospectionTypeFieldDefinition()
+
+        when:
+        fieldDef = starWarsSchema.getFieldDefinition(FieldCoordinates.systemCoordinates("__schema"))
+
+        then:
+        fieldDef == starWarsSchema.getIntrospectionSchemaFieldDefinition()
+
+        when:
+        starWarsSchema.getFieldDefinition(FieldCoordinates.systemCoordinates("__junk"))
+
+        then:
+        thrown(AssertException)
+
+    }
 }
