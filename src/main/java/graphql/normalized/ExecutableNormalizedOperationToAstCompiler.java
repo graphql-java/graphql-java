@@ -18,6 +18,7 @@ import graphql.language.TypeName;
 import graphql.language.Value;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,16 +45,33 @@ public class ExecutableNormalizedOperationToAstCompiler {
 
     private static List<Selection<?>> selectionsForNormalizedFields(List<ExecutableNormalizedField> executableNormalizedFields) {
         ImmutableList.Builder<Selection<?>> result = ImmutableList.builder();
+
+        Map<String, List<Field>> overallGroupedFields = new LinkedHashMap<>();
         for (ExecutableNormalizedField nf : executableNormalizedFields) {
-            result.addAll(selectionForNormalizedField(nf));
+            Map<String, List<Field>> groupFieldsForChild = selectionForNormalizedField(nf);
+
+            groupFieldsForChild.forEach((objectTypeName, fields) -> {
+                List<Field> fieldList = overallGroupedFields.computeIfAbsent(objectTypeName, ignored -> new ArrayList<>());
+                fieldList.addAll(fields);
+            });
+
         }
+
+        overallGroupedFields.forEach((objectTypeName, fields) -> {
+            TypeName typeName = newTypeName(objectTypeName).build();
+            InlineFragment inlineFragment = newInlineFragment().
+                    typeCondition(typeName)
+                    .selectionSet(selectionSet(fields))
+                    .build();
+            result.add(inlineFragment);
+        });
+
         return result.build();
     }
 
-    private static List<Selection<?>> selectionForNormalizedField(ExecutableNormalizedField executableNormalizedField) {
-        List<Selection<?>> result = new ArrayList<>();
-        for (String objectType : executableNormalizedField.getObjectTypeNames()) {
-            TypeName typeName = newTypeName(objectType).build();
+    private static Map<String, List<Field>> selectionForNormalizedField(ExecutableNormalizedField executableNormalizedField) {
+        Map<String, List<Field>> groupedFields = new LinkedHashMap<>();
+        for (String objectTypeName : executableNormalizedField.getObjectTypeNames()) {
             List<Selection<?>> subSelections = selectionsForNormalizedFields(executableNormalizedField.getChildren());
             SelectionSet selectionSet = null;
             if (subSelections.size() > 0) {
@@ -68,17 +86,14 @@ public class ExecutableNormalizedOperationToAstCompiler {
                     .selectionSet(selectionSet)
                     .arguments(arguments)
                     .build();
-            InlineFragment inlineFragment = newInlineFragment().
-                    typeCondition(typeName)
-                    .selectionSet(selectionSet(field))
-                    .build();
-            result.add(inlineFragment);
+
+            groupedFields.computeIfAbsent(objectTypeName, ignored -> new ArrayList<>()).add(field);
         }
-        return result;
+        return groupedFields;
     }
 
-    private static SelectionSet selectionSet(Field field) {
-        return newSelectionSet().selection(field).build();
+    private static SelectionSet selectionSet(List<Field> fields) {
+        return newSelectionSet().selections(fields).build();
     }
 
     private static List<Argument> createArguments(ExecutableNormalizedField executableNormalizedField) {
