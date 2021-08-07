@@ -722,5 +722,70 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
     }
 
+    def "valid diverging fields with the same parent type on deeper level"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Pet {
+          name: String
+          dogBreed: String
+         breed: String
+          friends: [Pet]
+
+        }
+        type Cat implements Pet {
+          catBreed: String
+         breed: String
+          name : String
+          friends: [Pet]
+
+        }
+        ''')
+        /**
+         * Here F1 and F2 are allowed to diverge (backed by different field definitions) because the parent fields have
+         * different concrete parent: P1 has Dog, P2 has Cat.
+         */
+        def query = '''
+{
+  pets {
+    ... on Dog {
+       friends { #P1
+         name
+         ... on Dog {
+            breed: dogBreed #F1
+         }
+       }
+    }
+    ... on Cat {
+     friends {  #P2
+        name
+        ... on Dog {
+          breed #F2
+        }
+       }
+    }
+    ... on Pet {
+      friends { 
+        name
+       }
+    }
+  }
+}
+        '''
+        when:
+        traverse(query, schema)
+
+
+        then:
+        errorCollector.getErrors().size() == 0
+    }
+
 
 }
