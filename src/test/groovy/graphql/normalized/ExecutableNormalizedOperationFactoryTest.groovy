@@ -1526,11 +1526,15 @@ schema {
         def printedTree = printTreeWithLevelInfo(tree, schema)
 
         then:
-        printedTree == ['Query.pets',
-                        '[Dog, Cat].friends',
-                        '[Cat, Dog].name',
-                        'breed: Dog.dogBreed',
-                        'Dog.breed']
+        printedTree == ['-Query.pets: [Pet]',
+                        '--Dog.friends: [Pet]',
+                        '---[Cat, Dog].name: String',
+                        '---breed: Dog.dogBreed: String',
+                        '--Cat.friends: [Pet]',
+                        '---[Cat, Dog].name: String',
+                        '---catFriendsName: [Cat, Dog].name: String',
+                        '---Dog.breed: String'
+        ]
     }
 
 
