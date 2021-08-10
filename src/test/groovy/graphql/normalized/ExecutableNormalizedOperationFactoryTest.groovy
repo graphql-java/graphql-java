@@ -8,12 +8,15 @@ import graphql.language.Field
 import graphql.language.FragmentDefinition
 import graphql.language.OperationDefinition
 import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLTypeUtil
 import graphql.util.TraversalControl
 import graphql.util.Traverser
 import graphql.util.TraverserContext
 import graphql.util.TraverserVisitorStub
+import spock.lang.Ignore
 import spock.lang.Specification
 
+import static graphql.TestUtil.schema
 import static graphql.language.AstPrinter.printAst
 import static graphql.parser.Parser.parseValue
 import static graphql.schema.FieldCoordinates.coordinates
@@ -647,6 +650,24 @@ type Dog implements Animal{
             TraversalControl enter(TraverserContext<ExecutableNormalizedField> context) {
                 ExecutableNormalizedField queryExecutionField = context.thisNode();
                 result << queryExecutionField.printDetails()
+                return TraversalControl.CONTINUE;
+            }
+        });
+        result
+    }
+
+    List<String> printTreeWithLevelInfo(ExecutableNormalizedOperation queryExecutionTree, GraphQLSchema schema) {
+        def result = []
+        Traverser<ExecutableNormalizedField> traverser = Traverser.depthFirst({ it.getChildren() });
+        traverser.traverse(queryExecutionTree.getTopLevelFields(), new TraverserVisitorStub<ExecutableNormalizedField>() {
+            @Override
+            TraversalControl enter(TraverserContext<ExecutableNormalizedField> context) {
+                ExecutableNormalizedField queryExecutionField = context.thisNode();
+                String prefix = ""
+                for (int i = 1; i <= queryExecutionField.getLevel(); i++) {
+                    prefix += "-"
+                }
+                result << (prefix + queryExecutionField.printDetails() + ": " + GraphQLTypeUtil.simplePrint(queryExecutionField.getType(schema)))
                 return TraversalControl.CONTINUE;
             }
         });
@@ -1388,6 +1409,11 @@ schema {
         def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, [:])
         println String.join("\n", printTree(tree))
 
+        /**
+         * This is a test for two fields with the same key (friend),
+         * but backed by two different fields (Cat.dogFriend,Dog.dogFriend)
+         * which end up being two different NormalizedField
+         */
         then:
         tree.normalizedFieldToMergedField.size() == 5
         tree.fieldToNormalizedField.size() == 7
@@ -1433,6 +1459,80 @@ schema {
         tree.normalizedFieldToMergedField.size() == 2
         tree.fieldToNormalizedField.size() == 3
     }
+
+    @Ignore
+    def "diverging fields with the same parent type on deeper level"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Pet {
+          name: String
+          dogBreed: String
+         breed: String
+          friends: [Pet]
+
+        }
+        type Cat implements Pet {
+          catBreed: String
+         breed: String
+          name : String
+          friends: [Pet]
+
+        }
+        ''')
+        /**
+         * Here F1 and F2 are allowed to diverge (backed by different field definitions) because the parent fields have
+         * different concrete parent: P1 has Dog, P2 has Cat.
+         */
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+               friends { #P1
+                 name
+                 ... on Dog {
+                    breed: dogBreed #F1
+                 }
+               }
+            }
+            ... on Cat {
+             friends {  #P2
+                catFriendsName: name
+                ... on Dog {
+                  breed #F2
+                }
+               }
+            }
+            ... on Pet {
+              friends { 
+                name
+               }
+            }
+          }
+        }
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['Query.pets',
+                        '[Dog, Cat].friends',
+                        '[Cat, Dog].name',
+                        'breed: Dog.dogBreed',
+                        'Dog.breed']
+    }
+
 
     def "skip/include is respected"() {
         given:
