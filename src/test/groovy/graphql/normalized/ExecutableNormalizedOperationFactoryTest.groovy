@@ -13,7 +13,6 @@ import graphql.util.TraversalControl
 import graphql.util.Traverser
 import graphql.util.TraverserContext
 import graphql.util.TraverserVisitorStub
-import spock.lang.Ignore
 import spock.lang.Specification
 
 import static graphql.TestUtil.schema
@@ -843,7 +842,7 @@ type Dog implements Animal{
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
         def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
-        def printedTree = printTree(tree)
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
         printedTree == ['Query.pet',
@@ -1053,17 +1052,20 @@ schema {
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
         def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
-        def printedTree = printTree(tree)
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
-        printedTree == ['Mutation.createAnimal',
-                        'Query.animal',
-                        '[Bird, Cat, Dog].name',
-                        'otherName: [Bird, Cat, Dog].name',
-                        '[Cat, Bird].friends',
-                        'Friend.isCatOwner',
-                        'Friend.isBirdOwner',
-                        'Friend.name']
+        printedTree == ['-Mutation.createAnimal: Query',
+                        '--Query.animal: Animal',
+                        '---[Bird, Cat, Dog].name: String',
+                        '---Cat.name: String',
+                        '---Dog.name: String',
+                        '---otherName: [Bird, Cat, Dog].name: String',
+                        '---Cat.friends: [Friend]',
+                        '----Friend.isCatOwner: Boolean',
+                        '---Bird.friends: [Friend]',
+                        '----Friend.isBirdOwner: Boolean',
+                        '----Friend.name: String']
     }
 
     private void assertValidQuery(GraphQLSchema graphQLSchema, String query, Map variables = [:]) {
@@ -1453,14 +1455,15 @@ schema {
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
         when:
         def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, [:])
-        println String.join("\n", printTree(tree))
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         then:
-        tree.normalizedFieldToMergedField.size() == 2
-        tree.fieldToNormalizedField.size() == 3
+        printedTree == ['-Query.pets: Pet',
+                        '--Cat.name: String',
+                        '--Dog.name: String'
+        ]
     }
 
-    @Ignore
     def "diverging fields with the same parent type on deeper level"() {
         given:
         def schema = schema('''
@@ -1531,9 +1534,9 @@ schema {
                         '---[Cat, Dog].name: String',
                         '---breed: Dog.dogBreed: String',
                         '--Cat.friends: [Pet]',
-                        '---[Cat, Dog].name: String',
                         '---catFriendsName: [Cat, Dog].name: String',
-                        '---Dog.breed: String'
+                        '---Dog.breed: String',
+                        '---[Cat, Dog].name: String'
         ]
     }
 
