@@ -1608,6 +1608,122 @@ schema {
         ]
     }
 
+    def "subselection different with different concrete parents"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Pet {
+          name: String
+          dogBreed: String
+         breed: String
+          friends: [Pet]
+
+        }
+        type Cat implements Pet {
+          catBreed: String
+         breed: String
+          name : String
+          friends: [Pet]
+
+        }
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+               friends { #P1
+                 name
+               }
+            }
+            ... on Cat {
+             friends {  
+                otherName: name
+               }
+            }
+            friends {
+                breed
+            }
+          }
+        }
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [Pet]',
+                        '--Dog.friends: [Pet]',
+                        '---[Cat, Dog].name: String',
+                        '---[Cat, Dog].breed: String',
+                        '--Cat.friends: [Pet]',
+                        '---otherName: [Cat, Dog].name: String',
+                        '---[Cat, Dog].breed: String',
+        ]
+    }
+
+
+    def "diverging non-composite fields"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Pet {
+          name: String
+          dogBreed: String
+          breed: String
+          friends: [Pet]
+
+        }
+        type Cat implements Pet {
+          catBreed: String
+         breed: String
+          name : String
+          friends: [Pet]
+
+        }
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+                breed: dogBreed
+            }
+            ... on Cat {
+                breed: catBreed
+            }
+          }
+        }
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [Pet]',
+                        '--breed: Dog.dogBreed: String',
+                        '--breed: Cat.catBreed: String'
+        ]
+    }
+
 
     def "skip/include is respected"() {
         given:

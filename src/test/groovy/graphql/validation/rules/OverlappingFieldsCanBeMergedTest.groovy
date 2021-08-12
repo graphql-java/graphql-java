@@ -787,5 +787,115 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         errorCollector.getErrors().size() == 0
     }
 
+    def "children of diverging fields still need to have same response shape"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Pet {
+          name: String
+          age: Int
+          dogBreed: String
+         breed: String
+          friends: [Pet]
+
+        }
+        type Cat implements Pet {
+          catBreed: String
+          breed: String
+          height: Float
+          name : String
+          friends: [Pet]
+
+        }
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+               friends {
+                 ... on Dog {
+                    conflict: age
+                 }
+               }
+            }
+            ... on Cat {
+             friends { 
+                ... on Cat {
+                  conflict: height 
+                }
+               }
+            }
+          }
+        }
+        '''
+        when:
+        traverse(query, schema)
+
+
+        then:
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: friends/conflict: they return differing types Int and Float @ 'pets'"
+    }
+
+
+    def "subselection of fields with different concrete parent can be different "() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Pet {
+          name: String
+          age: Int
+          dogBreed: String
+         breed: String
+          friends: [Pet]
+
+        }
+        type Cat implements Pet {
+          catBreed: String
+          breed: String
+          height: Float
+          name : String
+          friends: [Pet]
+
+        }
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+               friends {
+                name
+               }
+            }
+            ... on Cat {
+             friends { 
+                  breed
+               }
+            }
+          }
+        }
+        '''
+        when:
+        traverse(query, schema)
+
+
+        then:
+        errorCollector.getErrors().size() == 0
+    }
+
 
 }
