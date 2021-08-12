@@ -109,20 +109,24 @@ type Dog implements Animal{
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
         def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
-        def printedTree = printTree(tree)
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
-        printedTree == ['Query.animal',
-                        '[Bird, Cat, Dog].name',
-                        'otherName: [Bird, Cat, Dog].name',
-                        '[Cat, Bird].friends',
-                        'Friend.isCatOwner',
-                        'Friend.pets',
-                        'Dog.name',
-                        'Cat.breed',
-                        'Friend.isBirdOwner',
-                        'Friend.name']
-
+        printedTree == ['-Query.animal: Animal',
+                        '--[Bird, Cat, Dog].name: String',
+                        '--Cat.name: String',
+                        '--Dog.name: String',
+                        '--otherName: [Bird, Cat, Dog].name: String',
+                        '--Cat.friends: [Friend]',
+                        '---Friend.isCatOwner: Boolean',
+                        '---Friend.pets: [Pet]',
+                        '----Dog.name: String',
+                        '--Bird.friends: [Friend]',
+                        '---Friend.isBirdOwner: Boolean',
+                        '---Friend.name: String',
+                        '---Friend.pets: [Pet]',
+                        '----Cat.breed: String'
+        ]
     }
 
     def "test2"() {
@@ -193,14 +197,20 @@ type Dog implements Animal{
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
         def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
-        def printedTree = printTree(tree)
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
-        printedTree == ['Query.a',
-                        'myAlias: [A1, A2].b',
-                        '[B1, B2].leaf',
-                        '[A1, A2].b',
-                        '[B1, B2].leaf']
+        printedTree == ['-Query.a: A',
+                        '--myAlias: [A1, A2].b: B',
+                        '---[B1, B2].leaf: String',
+                        '--A1.b: B',
+                        '---B1.leaf: String',
+                        '---B2.leaf: String',
+                        '--A2.b: B',
+                        '---B2.leaf: String'
+        ]
+
+
     }
 
     def "test3"() {
@@ -268,14 +278,16 @@ type Dog implements Animal{
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
         def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
-        def printedTree = printTree(tree)
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
-        printedTree == ['Query.object',
-                        'Object.someValue',
-                        'Query.a',
-                        'A1.b',
-                        '[B1, B2].leaf']
+        printedTree == ['-Query.object: Object',
+                        '--Object.someValue: String',
+                        '-Query.a: [A]',
+                        '--A1.b: B',
+                        '---B1.leaf: String',
+                        '---B2.leaf: String'
+        ]
 
     }
 
@@ -474,13 +486,17 @@ type Dog implements Animal{
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
         def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
-        def printedTree = printTree(tree)
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
-        printedTree == ['Query.a',
-                        '[A1, A2, A3].b',
-                        'A2.otherField',
-                        '[A2, A3].b']
+        printedTree == ['-Query.a: [A]',
+                        '--[A1, A2, A3].b: String',
+                        '--A1.b: String',
+                        '--A2.b: String',
+                        '--A2.otherField: A',
+                        '---A2.b: String',
+                        '---A3.b: String'
+        ]
 
     }
 
@@ -845,8 +861,8 @@ type Dog implements Animal{
         def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
-        printedTree == ['Query.pet',
-                        '[Dog, Cat].name'];
+        printedTree == ['-Query.pet: Pet',
+                        '--[Dog, Cat].name: String'];
     }
 
     def "same result key but different field"() {

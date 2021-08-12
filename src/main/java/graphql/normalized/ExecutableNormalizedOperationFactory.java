@@ -30,6 +30,7 @@ import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
 import org.jetbrains.annotations.Nullable;
@@ -53,6 +54,7 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.util.FpKit.filterSet;
 import static graphql.util.FpKit.groupingBy;
+import static java.util.Collections.singletonList;
 
 @Internal
 public class ExecutableNormalizedOperationFactory {
@@ -217,7 +219,7 @@ public class ExecutableNormalizedOperationFactory {
 
         Set<GraphQLObjectType> possibleObjects = resolvePossibleObjects((GraphQLCompositeType) fieldType, parameters.getGraphQLSchema());
 
-        Map<Field, CollectedField> collectedFields = new LinkedHashMap<>();
+        List<CollectedField> collectedFields = new ArrayList<>();
         for (FieldAndAstParent fieldAndAstParent : mergedField) {
             if (fieldAndAstParent.field.getSelectionSet() == null) {
                 continue;
@@ -230,8 +232,8 @@ public class ExecutableNormalizedOperationFactory {
             );
         }
         Map<String, List<CollectedField>> fieldsByName = new LinkedHashMap<>();
-        for (Field field : collectedFields.keySet()) {
-            fieldsByName.computeIfAbsent(field.getResultKey(), ignored -> new ArrayList<>()).add(collectedFields.get(field));
+        for (CollectedField collectedField : collectedFields) {
+            fieldsByName.computeIfAbsent(collectedField.field.getResultKey(), ignored -> new ArrayList<>()).add(collectedField);
         }
         List<ExecutableNormalizedField> resultNFs = new ArrayList<>();
         ImmutableListMultimap.Builder<ExecutableNormalizedField, FieldAndAstParent> normalizedFieldToAstFields = ImmutableListMultimap.builder();
@@ -248,12 +250,12 @@ public class ExecutableNormalizedOperationFactory {
 
         Set<GraphQLObjectType> possibleObjects = new LinkedHashSet<>();
         possibleObjects.add(rootType);
-        Map<Field, CollectedField> collectedFields = new LinkedHashMap<>();
+        List<CollectedField> collectedFields = new ArrayList<>();
         collectFromSelectionSet2(parameters, operationDefinition.getSelectionSet(), collectedFields, rootType, possibleObjects);
         // group by result key
         Map<String, List<CollectedField>> fieldsByName = new LinkedHashMap<>();
-        for (Field field : collectedFields.keySet()) {
-            fieldsByName.computeIfAbsent(field.getResultKey(), ignored -> new ArrayList<>()).add(collectedFields.get(field));
+        for (CollectedField collectedField : collectedFields) {
+            fieldsByName.computeIfAbsent(collectedField.field.getResultKey(), ignored -> new ArrayList<>()).add(collectedField);
         }
         List<ExecutableNormalizedField> resultNFs = new ArrayList<>();
         ImmutableListMultimap.Builder<ExecutableNormalizedField, FieldAndAstParent> normalizedFieldToAstFields = ImmutableListMultimap.builder();
@@ -271,13 +273,16 @@ public class ExecutableNormalizedOperationFactory {
                            ExecutableNormalizedField parent) {
         for (String resultKey : fieldsByName.keySet()) {
             List<CollectedField> fieldsWithSameResultKey = fieldsByName.get(resultKey);
-            List<Set<CollectedField>> commonParentsGroups = groupByCommonParents(fieldsWithSameResultKey);
-            for (Set<CollectedField> sameParents : commonParentsGroups) {
+            List<CollectedFieldGroup> commonParentsGroups = groupByCommonParents(fieldsWithSameResultKey);
+            for (CollectedFieldGroup sameParents : commonParentsGroups) {
                 ExecutableNormalizedField nf = createNF(parameters, sameParents, level, parent);
                 if (nf == null) {
                     continue;
                 }
-                for (CollectedField collectedField : sameParents) {
+                for (CollectedField collectedField : sameParents.concreteFields) {
+                    normalizedFieldToAstFields.put(nf, new FieldAndAstParent(collectedField.field, collectedField.astTypeCondition));
+                }
+                for (CollectedField collectedField : sameParents.abstractFields) {
                     normalizedFieldToAstFields.put(nf, new FieldAndAstParent(collectedField.field, collectedField.astTypeCondition));
                 }
                 resultNFs.add(nf);
@@ -286,18 +291,27 @@ public class ExecutableNormalizedOperationFactory {
     }
 
     private ExecutableNormalizedField createNF(FieldCollectorNormalizedQueryParams parameters,
-                                               Set<CollectedField> collectedFields,
+                                               CollectedFieldGroup collectedFieldGroup,
                                                int level,
                                                ExecutableNormalizedField parent) {
-
-        Set<GraphQLObjectType> objectTypes = new LinkedHashSet<>(collectedFields.iterator().next().objectTypes);
-        for (CollectedField collectedField : collectedFields) {
-            objectTypes.retainAll(collectedField.objectTypes);
+        Field field;
+        Set<GraphQLObjectType> objectTypes = new LinkedHashSet<>();
+        if (collectedFieldGroup.concreteFields.size() > 0) {
+            field = collectedFieldGroup.concreteFields.iterator().next().field;
+            for (CollectedField concreteField : collectedFieldGroup.concreteFields) {
+                objectTypes.addAll(concreteField.objectTypes);
+            }
+        } else {
+            field = collectedFieldGroup.abstractFields.iterator().next().field;
+            for (CollectedField collectedField : collectedFieldGroup.abstractFields) {
+                objectTypes.addAll(collectedField.objectTypes);
+            }
         }
+
+        // ... then the intersection is generated with the abstract types
         if (objectTypes.size() == 0) {
             return null;
         }
-        Field field = collectedFields.iterator().next().field;
         String fieldName = field.getName();
         GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(parameters.getGraphQLSchema(), objectTypes.iterator().next(), fieldName);
 
@@ -334,18 +348,28 @@ public class ExecutableNormalizedOperationFactory {
 //        normalizedFieldToMergedField.put(executableNormalizedField, field);
     }
 
-    private List<Set<CollectedField>> groupByCommonParents(Collection<CollectedField> fields) {
+    private static class CollectedFieldGroup {
+        Set<CollectedField> concreteFields;
+        Set<CollectedField> abstractFields;
+
+        public CollectedFieldGroup(Set<CollectedField> concreteFields, Set<CollectedField> abstractFields) {
+            this.concreteFields = concreteFields;
+            this.abstractFields = abstractFields;
+        }
+    }
+
+    private List<CollectedFieldGroup> groupByCommonParents(Collection<CollectedField> fields) {
         Set<CollectedField> abstractTypes = filterSet(fields, fieldAndType -> isInterfaceOrUnion(fieldAndType.astTypeCondition));
         Set<CollectedField> concreteTypes = filterSet(fields, fieldAndType -> isObjectType(fieldAndType.astTypeCondition));
         if (concreteTypes.isEmpty()) {
-            return Collections.singletonList(abstractTypes);
+            CollectedFieldGroup collectedFieldGroup = new CollectedFieldGroup(concreteTypes, abstractTypes);
+            return singletonList(collectedFieldGroup);
         }
         Map<GraphQLType, ImmutableList<CollectedField>> groupsByConcreteParent = groupingBy(concreteTypes, fieldAndType -> fieldAndType.astTypeCondition);
-        List<Set<CollectedField>> result = new ArrayList<>();
+        List<CollectedFieldGroup> result = new ArrayList<>();
         for (ImmutableList<CollectedField> concreteGroup : groupsByConcreteParent.values()) {
-            Set<CollectedField> oneResultGroup = new LinkedHashSet<>(concreteGroup);
-            oneResultGroup.addAll(abstractTypes);
-            result.add(oneResultGroup);
+            CollectedFieldGroup collectedFieldGroup = new CollectedFieldGroup(new LinkedHashSet<>(concreteGroup), abstractTypes);
+            result.add(collectedFieldGroup);
         }
         return result;
     }
@@ -372,7 +396,7 @@ public class ExecutableNormalizedOperationFactory {
 
     private void collectFromSelectionSet2(FieldCollectorNormalizedQueryParams parameters,
                                           SelectionSet selectionSet,
-                                          Map<Field, CollectedField> result,
+                                          List<CollectedField> result,
                                           GraphQLCompositeType astTypeCondition,
                                           Set<GraphQLObjectType> possibleObjects
     ) {
@@ -398,10 +422,18 @@ public class ExecutableNormalizedOperationFactory {
             this.objectTypes = objectTypes;
             this.astTypeCondition = astTypeCondition;
         }
+
+        public boolean isAbstract() {
+            return GraphQLTypeUtil.isInterfaceOrUnion(astTypeCondition);
+        }
+
+        public boolean isConcrete() {
+            return GraphQLTypeUtil.isObjectType(astTypeCondition);
+        }
     }
 
     private void collectFragmentSpread2(FieldCollectorNormalizedQueryParams parameters,
-                                        Map<Field, CollectedField> result,
+                                        List<CollectedField> result,
                                         FragmentSpread fragmentSpread,
                                         Set<GraphQLObjectType> possibleObjects,
                                         GraphQLCompositeType astTypeCondition
@@ -421,7 +453,7 @@ public class ExecutableNormalizedOperationFactory {
 
 
     private void collectInlineFragment2(FieldCollectorNormalizedQueryParams parameters,
-                                        Map<Field, CollectedField> result,
+                                        List<CollectedField> result,
                                         InlineFragment inlineFragment,
                                         Set<GraphQLObjectType> possibleObjects,
                                         GraphQLCompositeType astTypeCondition
@@ -441,7 +473,7 @@ public class ExecutableNormalizedOperationFactory {
     }
 
     private void collectField2(FieldCollectorNormalizedQueryParams parameters,
-                               Map<Field, CollectedField> result,
+                               List<CollectedField> result,
                                Field field,
                                Set<GraphQLObjectType> possibleObjectTypes,
                                GraphQLCompositeType astTypeCondition
@@ -453,7 +485,7 @@ public class ExecutableNormalizedOperationFactory {
         if (possibleObjectTypes.size() == 0) {
             return;
         }
-        result.put(field, new CollectedField(field, possibleObjectTypes, astTypeCondition));
+        result.add(new CollectedField(field, possibleObjectTypes, astTypeCondition));
     }
 
 //    private void collectFragmentSpread(FieldCollectorNormalizedQueryParams parameters,
