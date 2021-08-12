@@ -113,9 +113,9 @@ type Dog implements Animal{
 
         expect:
         printedTree == ['-Query.animal: Animal',
+                        '--Bird.name: String',
                         '--Cat.name: String',
                         '--Dog.name: String',
-                        '--Bird.name: String',
                         '--otherName: [Bird, Cat, Dog].name: String',
                         '--Cat.friends: [Friend]',
                         '---Friend.isCatOwner: Boolean',
@@ -664,9 +664,7 @@ type Dog implements Animal{
 
         expect:
         printedTree == ['-Query.pet: Pet',
-                        '--Dog.name: String',
-                        '--Cat.name: String',
-                        '--Bird.name: String'
+                        '--[Cat,Dog,Bird].name: String'
         ]
     }
 
@@ -1721,6 +1719,89 @@ schema {
         printedTree == ['-Query.pets: [Pet]',
                         '--breed: Dog.dogBreed: String',
                         '--breed: Cat.catBreed: String'
+        ]
+    }
+
+    def "different children for different Interfaces"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        
+        interface Mammal implements Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Turtle implements Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Mammal & Pet {
+          name: String
+          dogBreed: String
+          breed: String
+          friends: [Pet]
+        }
+        type Cat implements Mammal & Pet {
+          catBreed: String
+         breed: String
+          name : String
+          friends: [Pet]
+        }
+        ''')
+        def query = '''
+        {
+          pets {
+          ... on Cat { 
+              friends {
+               catFriendName: name  
+              }
+            }
+            ... on Dog { 
+              friends {
+               dogFriendName: name  
+              }
+            }
+            ... on Mammal {
+                friends {
+                    name
+                }
+            }
+            ... on Pet {
+                friends {
+                    breed
+                }
+            }
+          }
+        }
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [Pet]',
+                        '--Cat.friends: [Pet]',
+                        '---catFriendName: [Cat, Dog, Turtle].name: String',
+                        '---[Cat, Dog, Turtle].name: String',
+                        '---[Cat, Dog, Turtle].breed: String',
+                        '--Dog.friends: [Pet]',
+                        '---dogFriendName: [Cat, Dog, Turtle].name: String',
+                        '---[Cat, Dog, Turtle].name: String',
+                        '---[Cat, Dog, Turtle].breed: String',
+                        '--Turtle.friends: [Pet]',
+                        '---[Cat, Dog, Turtle].breed: String'
         ]
     }
 
