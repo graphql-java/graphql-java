@@ -54,6 +54,7 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.util.FpKit.filterSet;
 import static graphql.util.FpKit.groupingBy;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 
 @Internal
@@ -224,10 +225,12 @@ public class ExecutableNormalizedOperationFactory {
             if (fieldAndAstParent.field.getSelectionSet() == null) {
                 continue;
             }
+            GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(parameters.getGraphQLSchema(), fieldAndAstParent.astParentType, fieldAndAstParent.field.getName());
+            GraphQLUnmodifiedType astParentType = unwrapAll(fieldDefinition.getType());
             this.collectFromSelectionSet2(parameters,
                     fieldAndAstParent.field.getSelectionSet(),
                     collectedFields,
-                    fieldAndAstParent.astParentType,
+                    (GraphQLCompositeType) astParentType,
                     possibleObjects
             );
         }
@@ -367,9 +370,25 @@ public class ExecutableNormalizedOperationFactory {
         }
         Map<GraphQLType, ImmutableList<CollectedField>> groupsByConcreteParent = groupingBy(concreteTypes, fieldAndType -> fieldAndType.astTypeCondition);
         List<CollectedFieldGroup> result = new ArrayList<>();
+        Set<GraphQLObjectType> allObjectFromConcreteTypes = new LinkedHashSet<>();
         for (ImmutableList<CollectedField> concreteGroup : groupsByConcreteParent.values()) {
+            for (CollectedField collectedField : concreteGroup) {
+                allObjectFromConcreteTypes.addAll(collectedField.objectTypes);
+            }
             CollectedFieldGroup collectedFieldGroup = new CollectedFieldGroup(new LinkedHashSet<>(concreteGroup), abstractTypes);
             result.add(collectedFieldGroup);
+        }
+        // checking if there are object types left which are not covered by concrete types
+        Set<GraphQLObjectType> allObjectFromAbstractTypes = new LinkedHashSet<>();
+        for (CollectedField collectedField : abstractTypes) {
+            allObjectFromAbstractTypes.addAll(collectedField.objectTypes);
+        }
+        allObjectFromAbstractTypes.removeAll(allObjectFromConcreteTypes);
+        if (allObjectFromAbstractTypes.size() > 0) {
+            for (CollectedField collectedField : abstractTypes) {
+                collectedField.objectTypes = allObjectFromAbstractTypes;
+            }
+            result.add(new CollectedFieldGroup(emptySet(), abstractTypes));
         }
         return result;
     }

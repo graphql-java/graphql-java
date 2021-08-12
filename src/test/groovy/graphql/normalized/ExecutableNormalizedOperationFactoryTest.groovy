@@ -113,9 +113,9 @@ type Dog implements Animal{
 
         expect:
         printedTree == ['-Query.animal: Animal',
-                        '--[Bird, Cat, Dog].name: String',
                         '--Cat.name: String',
                         '--Dog.name: String',
+                        '--Bird.name: String',
                         '--otherName: [Bird, Cat, Dog].name: String',
                         '--Cat.friends: [Friend]',
                         '---Friend.isCatOwner: Boolean',
@@ -490,9 +490,9 @@ type Dog implements Animal{
 
         expect:
         printedTree == ['-Query.a: [A]',
-                        '--[A1, A2, A3].b: String',
                         '--A1.b: String',
                         '--A2.b: String',
+                        '--A3.b: String',
                         '--A2.otherField: A',
                         '---A2.b: String',
                         '---A3.b: String'
@@ -616,6 +616,58 @@ type Dog implements Animal{
                         'Foo.subFoo',
                         'Foo.moreFoos',
                         'Foo.subFoo']
+    }
+
+    def "query with fragment and type condition"() {
+        def graphQLSchema = TestUtil.schema("""
+            type Query {
+                pet(qualifier : String) : Pet
+            }
+            interface Pet {
+                name(nameArg : String) : String
+            }
+            
+            type Dog implements Pet {
+                name(nameArg : String) : String
+            }
+
+            type Bird implements Pet {
+                name(nameArg : String) : String
+            }
+            
+            type Cat implements Pet {
+                name(nameArg : String) : String
+            }
+        """)
+        def query = """
+        {
+            pet {
+                name
+                ... on Dog {
+                    name
+                }
+                ... CatFrag
+            }
+         }
+         
+        fragment CatFrag on Cat {
+            name
+        }
+            """
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
+
+        expect:
+        printedTree == ['-Query.pet: Pet',
+                        '--Dog.name: String',
+                        '--Cat.name: String',
+                        '--Bird.name: String'
+        ]
     }
 
     def "query with interface in between"() {
@@ -1073,9 +1125,9 @@ schema {
         expect:
         printedTree == ['-Mutation.createAnimal: Query',
                         '--Query.animal: Animal',
-                        '---[Bird, Cat, Dog].name: String',
                         '---Cat.name: String',
                         '---Dog.name: String',
+                        '---Bird.name: String',
                         '---otherName: [Bird, Cat, Dog].name: String',
                         '---Cat.friends: [Friend]',
                         '----Friend.isCatOwner: Boolean',
