@@ -1852,6 +1852,163 @@ schema {
         ]
     }
 
+    def "fields are merged together on multiple level"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Pet {
+          name: String
+          dogBreed: String
+          breed: String
+          friends: [Pet]
+
+        }
+        type Cat implements Pet {
+          catBreed: String
+         breed: String
+          name : String
+          friends: [Pet]
+
+        }
+
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+               friends { 
+                 ... on Dog {
+                    friends {
+                       name 
+                    }
+                 }
+                 ... on Cat {
+                    friends {
+                       name 
+                    }
+                 }
+               }
+            }
+            ... on Cat {
+             friends {  
+                 ... on Dog {
+                    friends {
+                       name 
+                    }
+                 }
+                 ... on Cat {
+                    friends {
+                       name 
+                    }
+                 }
+               }
+            }
+          }
+        }
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [Pet]',
+                        '--[Dog, Cat].friends: [Pet]',
+                        '---[Dog, Cat].friends: [Pet]',
+                        '----[Cat, Dog].name: String'
+        ]
+    }
+
+    def "fields are not merged together because of different arguments on deeper level"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name(arg:String): String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Pet {
+          name(arg:String): String
+          dogBreed: String
+          breed: String
+          friends: [Pet]
+
+        }
+        type Cat implements Pet {
+          catBreed: String
+         breed: String
+          name(arg:String) : String
+          friends: [Pet]
+
+        }
+
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+               friends { 
+                 ... on Dog {
+                    friends {
+                       name 
+                    }
+                 }
+                 ... on Cat {
+                    friends {
+                       name 
+                    }
+                 }
+               }
+            }
+            ... on Cat {
+             friends {  
+                 ... on Dog {
+                    friends {
+                       name 
+                    }
+                 }
+                 ... on Cat {
+                    friends {
+                       name(arg: "not-be-merged")
+                    }
+                 }
+               }
+            }
+          }
+        }
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [Pet]',
+                        '--Dog.friends: [Pet]',
+                        '---[Dog, Cat].friends: [Pet]',
+                        '----[Cat, Dog].name: String',
+                        '--Cat.friends: [Pet]',
+                        '---Dog.friends: [Pet]',
+                        '----[Cat, Dog].name: String',
+                        '---Cat.friends: [Pet]',
+                        '----[Cat, Dog].name: String'
+        ]
+    }
+
 
     def "skip/include is respected"() {
         given:
