@@ -136,7 +136,6 @@ public class ExecutableNormalizedOperationFactory {
 
         }
         for (FieldCollectorNormalizedQueryParams.PossibleMerger possibleMerger : parameters.possibleMergerList) {
-            System.out.println(possibleMerger);
             List<ExecutableNormalizedField> childrenWithSameResultKey = possibleMerger.parent.getChildrenWithSameResultKey(possibleMerger.resultKey);
             ENFMerger.merge(possibleMerger.parent, childrenWithSameResultKey);
         }

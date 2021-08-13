@@ -1,6 +1,5 @@
 package graphql.normalized;
 
-import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.AstComparator;
@@ -116,35 +115,6 @@ public class ENFMerger {
         }
         if (!sameArguments(one.getAstArguments(), two.getAstArguments())) {
             return false;
-        }
-        return true;
-    }
-
-    private static boolean compareOneWithASet(Set<ExecutableNormalizedField> fields) {
-        if (fields.size() == 1) {
-            return true;
-        }
-        ExecutableNormalizedField first = fields.iterator().next();
-        Set<String> objectTypeNames = first.getObjectTypeNames();
-        String alias = first.getAlias();
-        String fieldName = first.getFieldName();
-        ImmutableList<Argument> arguments = first.getAstArguments();
-        Iterator<ExecutableNormalizedField> iterator = fields.iterator();
-        iterator.next();
-        while (iterator.hasNext()) {
-            ExecutableNormalizedField field = iterator.next();
-            if (!field.getObjectTypeNames().equals(objectTypeNames)) {
-                return false;
-            }
-            if (!Objects.equals(alias, field.getAlias())) {
-                return false;
-            }
-            if (!Objects.equals(fieldName, field.getFieldName())) {
-                return false;
-            }
-            if (!sameArguments(arguments, field.getAstArguments())) {
-                return false;
-            }
         }
         return true;
     }
