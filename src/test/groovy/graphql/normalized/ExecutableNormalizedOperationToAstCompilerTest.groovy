@@ -108,17 +108,13 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         otherName: name
         friends {
           ... on Friend {
-            isCatOwner
+            isBirdOwner
+            name
             pets {
-              ... on Dog {
-                name
-              }
               ... on Cat {
                 breed
               }
             }
-            isBirdOwner
-            name
           }
         }
       }
@@ -133,12 +129,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
               ... on Dog {
                 name
               }
-              ... on Cat {
-                breed
-              }
             }
-            isBirdOwner
-            name
           }
         }
       }

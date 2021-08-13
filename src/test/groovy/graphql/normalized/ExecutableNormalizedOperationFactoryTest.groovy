@@ -113,9 +113,7 @@ type Dog implements Animal{
 
         expect:
         printedTree == ['-Query.animal: Animal',
-                        '--Bird.name: String',
-                        '--Cat.name: String',
-                        '--Dog.name: String',
+                        '--[Bird, Cat, Dog].name: String',
                         '--otherName: [Bird, Cat, Dog].name: String',
                         '--Cat.friends: [Friend]',
                         '---Friend.isCatOwner: Boolean',
@@ -204,8 +202,7 @@ type Dog implements Animal{
                         '--myAlias: [A1, A2].b: B',
                         '---[B1, B2].leaf: String',
                         '--A1.b: B',
-                        '---B1.leaf: String',
-                        '---B2.leaf: String',
+                        '---[B1, B2].leaf: String',
                         '--A2.b: B',
                         '---B2.leaf: String'
         ]
@@ -285,8 +282,7 @@ type Dog implements Animal{
                         '--Object.someValue: String',
                         '-Query.a: [A]',
                         '--A1.b: B',
-                        '---B1.leaf: String',
-                        '---B2.leaf: String'
+                        '---[B1, B2].leaf: String'
         ]
 
     }
@@ -490,12 +486,9 @@ type Dog implements Animal{
 
         expect:
         printedTree == ['-Query.a: [A]',
-                        '--A1.b: String',
-                        '--A2.b: String',
-                        '--A3.b: String',
+                        '--[A1, A2, A3].b: String',
                         '--A2.otherField: A',
-                        '---A2.b: String',
-                        '---A3.b: String'
+                        '---[A2, A3].b: String'
         ]
 
     }
@@ -664,7 +657,7 @@ type Dog implements Animal{
 
         expect:
         printedTree == ['-Query.pet: Pet',
-                        '--[Cat,Dog,Bird].name: String'
+                        '--[Bird, Cat, Dog].name: String'
         ]
     }
 
@@ -1123,9 +1116,7 @@ schema {
         expect:
         printedTree == ['-Mutation.createAnimal: Query',
                         '--Query.animal: Animal',
-                        '---Cat.name: String',
-                        '---Dog.name: String',
-                        '---Bird.name: String',
+                        '---[Bird, Cat, Dog].name: String',
                         '---otherName: [Bird, Cat, Dog].name: String',
                         '---Cat.friends: [Friend]',
                         '----Friend.isCatOwner: Boolean',
@@ -1512,7 +1503,7 @@ schema {
                     name(arg: "foo")
               }
                 ... on Dog {
-                    name(arg: "foo")
+                    name(arg: "fooOther")
               }
           }}
         '''
@@ -1802,6 +1793,62 @@ schema {
                         '---[Cat, Dog, Turtle].breed: String',
                         '--Turtle.friends: [Pet]',
                         '---[Cat, Dog, Turtle].breed: String'
+        ]
+    }
+
+    def "diverging fields with Union as parent type"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [DogOrCat]
+        }
+        type Dog {
+          name: String
+          dogBreed: String
+          breed: String
+          friends: [DogOrCat]
+        }
+        type Cat {
+          catBreed: String
+          breed: String
+          name : String
+          friends: [DogOrCat]
+        }
+        union DogOrCat = Dog | Cat
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+               friends { #P1
+                 ... on Dog {
+                    breed: dogBreed #F1
+                 }
+               }
+            }
+            ... on Cat {
+             friends {  #P2
+                ... on Dog {
+                  breed #F2
+                }
+               }
+            }
+          }
+        }
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [DogOrCat]',
+                        '--Dog.friends: [DogOrCat]',
+                        '---breed: Dog.dogBreed: String',
+                        '--Cat.friends: [DogOrCat]',
+                        '---Dog.breed: String'
         ]
     }
 

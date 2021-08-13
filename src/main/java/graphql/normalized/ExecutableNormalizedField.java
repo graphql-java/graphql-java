@@ -9,6 +9,7 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
+import graphql.util.FpKit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -110,13 +111,17 @@ public class ExecutableNormalizedField {
         this.objectTypeNames.addAll(objectTypeNames);
     }
 
+    public void setObjectTypeNames(Collection<String> objectTypeNames) {
+        this.objectTypeNames.clear();
+        this.objectTypeNames.addAll(objectTypeNames);
+    }
+
     public void addChild(ExecutableNormalizedField executableNormalizedField) {
         this.children.add(executableNormalizedField);
     }
 
     public void clearChildren() {
         this.children.clear();
-        ;
     }
 
     /**
@@ -222,6 +227,10 @@ public class ExecutableNormalizedField {
 
     public List<ExecutableNormalizedField> getChildren() {
         return children;
+    }
+
+    public List<ExecutableNormalizedField> getChildrenWithSameResultKey(String resultKey) {
+        return FpKit.filterList(children, child -> child.getResultKey().equals(resultKey));
     }
 
     public int getLevel() {

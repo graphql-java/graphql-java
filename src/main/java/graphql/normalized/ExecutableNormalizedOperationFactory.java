@@ -135,6 +135,11 @@ public class ExecutableNormalizedOperationFactory {
                     1);
 
         }
+        for (FieldCollectorNormalizedQueryParams.PossibleMerger possibleMerger : parameters.possibleMergerList) {
+            System.out.println(possibleMerger);
+            List<ExecutableNormalizedField> childrenWithSameResultKey = possibleMerger.parent.getChildrenWithSameResultKey(possibleMerger.resultKey);
+            ENFMerger.merge(possibleMerger.parent, childrenWithSameResultKey);
+        }
         return new ExecutableNormalizedOperation(new ArrayList<>(collectFromOperationResult.children), fieldToNormalizedField.build(), normalizedFieldToMergedField.build(), coordinatesToNormalizedFields.build());
     }
 
@@ -163,6 +168,8 @@ public class ExecutableNormalizedOperationFactory {
                     normalizedFieldToMergedField,
                     coordinatesToNormalizedFields,
                     curLevel + 1);
+
+
         }
     }
 
@@ -272,18 +279,18 @@ public class ExecutableNormalizedOperationFactory {
         for (String resultKey : fieldsByName.keySet()) {
             List<CollectedField> fieldsWithSameResultKey = fieldsByName.get(resultKey);
             List<CollectedFieldGroup> commonParentsGroups = groupByCommonParents(fieldsWithSameResultKey);
-            for (CollectedFieldGroup sameParents : commonParentsGroups) {
-                ExecutableNormalizedField nf = createNF(parameters, sameParents, level, parent);
+            for (CollectedFieldGroup fieldGroup : commonParentsGroups) {
+                ExecutableNormalizedField nf = createNF(parameters, fieldGroup, level, parent);
                 if (nf == null) {
                     continue;
                 }
-                for (CollectedField collectedField : sameParents.fields) {
+                for (CollectedField collectedField : fieldGroup.fields) {
                     normalizedFieldToAstFields.put(nf, new FieldAndAstParent(collectedField.field, collectedField.astTypeCondition));
                 }
-//                for (CollectedField collectedField : sameParents.abstractFields) {
-//                    normalizedFieldToAstFields.put(nf, new FieldAndAstParent(collectedField.field, collectedField.astTypeCondition));
-//                }
                 resultNFs.add(nf);
+            }
+            if (commonParentsGroups.size() > 1) {
+                parameters.addPossibleMergers(parent, resultKey);
             }
         }
     }
@@ -294,21 +301,7 @@ public class ExecutableNormalizedOperationFactory {
                                                ExecutableNormalizedField parent) {
         Field field;
         Set<GraphQLObjectType> objectTypes = collectedFieldGroup.objectTypes;
-//        if (collectedFieldGroup.concreteFields.size() > 0) {
         field = collectedFieldGroup.fields.iterator().next().field;
-//        for (CollectedField concreteField : collectedFieldGroup.fields) {
-//            objectTypes.addAll(concreteField.objectTypes);
-//        }
-//        } else {
-//            field = collectedFieldGroup.abstractFields.iterator().next().field;
-//            for (CollectedField collectedField : collectedFieldGroup.abstractFields) {
-//                objectTypes.addAll(collectedField.objectTypes);
-//            }
-//        }
-
-//        if (objectTypes.size() == 0) {
-//            return null;
-//        }
         String fieldName = field.getName();
         GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(parameters.getGraphQLSchema(), objectTypes.iterator().next(), fieldName);
 
@@ -329,9 +322,7 @@ public class ExecutableNormalizedOperationFactory {
                 .parent(parent)
                 .build();
 
-//        result.put(resultKey, executableNormalizedField);
         return executableNormalizedField;
-//        normalizedFieldToMergedField.put(executableNormalizedField, field);
     }
 
     private static class CollectedFieldGroup {
@@ -342,13 +333,6 @@ public class ExecutableNormalizedOperationFactory {
             this.fields = fields;
             this.objectTypes = objectTypes;
         }
-        //        Set<CollectedField> concreteFields;
-//        Set<CollectedField> abstractFields;
-//
-//        public CollectedFieldGroup(Set<CollectedField> concreteFields, Set<CollectedField> abstractFields) {
-//            this.concreteFields = concreteFields;
-//            this.abstractFields = abstractFields;
-//        }
     }
 
     private List<CollectedFieldGroup> groupByCommonParents(Collection<CollectedField> fields) {
@@ -363,39 +347,9 @@ public class ExecutableNormalizedOperationFactory {
         List<CollectedFieldGroup> result = new ArrayList<>();
         for (GraphQLObjectType objectType : allRelevantObjects) {
             Set<CollectedField> relevantFields = filterSet(fields, field -> field.objectTypes.contains(objectType));
-
             result.add(new CollectedFieldGroup(relevantFields, singleton(objectType)));
         }
         return result;
-//        Set<CollectedField> abstractTypes = filterSet(fields, fieldAndType -> isInterfaceOrUnion(fieldAndType.astTypeCondition));
-//        Set<CollectedField> concreteTypes = filterSet(fields, fieldAndType -> isObjectType(fieldAndType.astTypeCondition));
-//        if (concreteTypes.isEmpty()) {
-//            CollectedFieldGroup collectedFieldGroup = new CollectedFieldGroup(concreteTypes, abstractTypes);
-//            return singletonList(collectedFieldGroup);
-//        }
-//        Map<GraphQLType, ImmutableList<CollectedField>> groupsByConcreteParent = groupingBy(concreteTypes, fieldAndType -> fieldAndType.astTypeCondition);
-//        List<CollectedFieldGroup> result = new ArrayList<>();
-//        Set<GraphQLObjectType> allObjectFromConcreteTypes = new LinkedHashSet<>();
-//        for (ImmutableList<CollectedField> concreteGroup : groupsByConcreteParent.values()) {
-//            for (CollectedField collectedField : concreteGroup) {
-//                allObjectFromConcreteTypes.addAll(collectedField.objectTypes);
-//            }
-//            CollectedFieldGroup collectedFieldGroup = new CollectedFieldGroup(new LinkedHashSet<>(concreteGroup), abstractTypes);
-//            result.add(collectedFieldGroup);
-//        }
-//        // checking if there are object types left which are not covered by concrete types
-//        Set<GraphQLObjectType> allObjectFromAbstractTypes = new LinkedHashSet<>();
-//        for (CollectedField collectedField : abstractTypes) {
-//            allObjectFromAbstractTypes.addAll(collectedField.objectTypes);
-//        }
-//        allObjectFromAbstractTypes.removeAll(allObjectFromConcreteTypes);
-//        if (allObjectFromAbstractTypes.size() > 0) {
-//            for (CollectedField collectedField : abstractTypes) {
-//                collectedField.objectTypes = allObjectFromAbstractTypes;
-//            }
-//            result.add(new CollectedFieldGroup(emptySet(), abstractTypes));
-//        }
-//        return result;
     }
 
 
