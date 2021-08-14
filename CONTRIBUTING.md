@@ -11,17 +11,17 @@ In order to achieve that we have a strong focus on maintainability and high test
 
 - We expect new or modified unit test for every change (written in [Spock](http://spockframework.org/)).
 
-- Your code should be formatted with our IntelliJ [graphql-java-code-style](graphql-java-code-style.xml). 
+- Your code should be formatted with our IntelliJ [graphql-java-code-style](graphql-java-code-style.xml).
 
-- We don't add a new dependency to graphql-java: dependency conflicts will make adaption of graphql-java harder for users, 
+- We don't add a new dependency to graphql-java: dependency conflicts will make adaption of graphql-java harder for users,
 therefore we avoid adding any new dependency.
 
 - graphql-java has a strict focus on executing a GraphQL request, this means JSON parsing, http communication, databases
 access etc is out of scope.
 
 
-If you have any question please consider asking in our spectrum chat https://spectrum.chat/graphql-java. For bug reports or specific code related topics create a new issue.
+If you have any question please consider asking in our [Discussions](https://github.com/graphql-java/graphql-java/discussions). For bug reports or specific code related topics create a new issue.
 
-Thanks! 
-  
+Thanks!
+
 
