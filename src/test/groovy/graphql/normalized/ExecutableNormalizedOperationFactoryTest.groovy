@@ -1852,6 +1852,46 @@ schema {
         ]
     }
 
+    def "union fields are not merged"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [DogOrCat]
+        }
+        type Dog {
+          name: String
+        }
+        type Cat {
+          name: String
+        }
+        union DogOrCat = Dog | Cat
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+                name
+            }
+            ... on Cat {
+                name
+            }
+          }
+        }
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [DogOrCat]',
+                        '--Dog.name: String',
+                        '--Cat.name: String'
+        ]
+    }
+
     def "fields are merged together on multiple level"() {
         given:
         def schema = schema('''

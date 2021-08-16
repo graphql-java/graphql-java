@@ -195,6 +195,10 @@ public class ExecutableNormalizedField {
         return objectTypeNames;
     }
 
+    public String getSingleObjectTypeName() {
+        return objectTypeNames.iterator().next();
+    }
+
     public GraphQLObjectType getOneObjectType(GraphQLSchema schema) {
         return (GraphQLObjectType) schema.getType(objectTypeNames.iterator().next());
     }

@@ -137,7 +137,7 @@ public class ExecutableNormalizedOperationFactory {
         }
         for (FieldCollectorNormalizedQueryParams.PossibleMerger possibleMerger : parameters.possibleMergerList) {
             List<ExecutableNormalizedField> childrenWithSameResultKey = possibleMerger.parent.getChildrenWithSameResultKey(possibleMerger.resultKey);
-            ENFMerger.merge(possibleMerger.parent, childrenWithSameResultKey);
+            ENFMerger.merge(possibleMerger.parent, childrenWithSameResultKey, graphQLSchema);
         }
         return new ExecutableNormalizedOperation(new ArrayList<>(collectFromOperationResult.children), fieldToNormalizedField.build(), normalizedFieldToMergedField.build(), coordinatesToNormalizedFields.build());
     }

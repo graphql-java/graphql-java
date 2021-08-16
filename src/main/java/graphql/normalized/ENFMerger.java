@@ -3,6 +3,9 @@ package graphql.normalized;
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.AstComparator;
+import graphql.schema.GraphQLNamedOutputType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLSchema;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -14,7 +17,7 @@ import java.util.Set;
 @Internal
 public class ENFMerger {
 
-    public static void merge(ExecutableNormalizedField parent, List<ExecutableNormalizedField> childrenWithSameResultKey) {
+    public static void merge(ExecutableNormalizedField parent, List<ExecutableNormalizedField> childrenWithSameResultKey, GraphQLSchema schema) {
         // they have all the same result key
         // we can only merge the fields if they have the same field name + arguments + all children are the same
         List<Set<ExecutableNormalizedField>> possibleGroupsToMerge = new ArrayList<>();
@@ -23,7 +26,10 @@ public class ENFMerger {
             overPossibleGroups:
             for (Set<ExecutableNormalizedField> group : possibleGroupsToMerge) {
                 for (ExecutableNormalizedField fieldInGroup : group) {
-                    if (field.getFieldName().equals(fieldInGroup.getFieldName()) && sameArguments(field.getAstArguments(), fieldInGroup.getAstArguments())) {
+                    if (field.getFieldName().equals(fieldInGroup.getFieldName()) &&
+                            sameArguments(field.getAstArguments(), fieldInGroup.getAstArguments())
+                            && isPartOfTheSameHierarchy(field, fieldInGroup, schema)
+                    ) {
                         addToGroup = true;
                         group.add(field);
                         continue overPossibleGroups;
@@ -56,6 +62,18 @@ public class ENFMerger {
                 first.setObjectTypeNames(mergedObjects);
             }
         }
+    }
+
+    private static boolean isPartOfTheSameHierarchy(ExecutableNormalizedField fieldOne, ExecutableNormalizedField fieldTwo, GraphQLSchema schema) {
+        // we can get away with only checking one of the object names, because all object names in one ENF are guaranteed to be part of
+        // the same hierarchy
+        String firstObject = fieldOne.getSingleObjectTypeName();
+        String secondObject = fieldTwo.getSingleObjectTypeName();
+        GraphQLObjectType objectTypeOne = schema.getObjectType(firstObject);
+        GraphQLObjectType objectTypeTwo = schema.getObjectType(firstObject);
+        List<GraphQLNamedOutputType> interfacesOne = objectTypeOne.getInterfaces();
+        List<GraphQLNamedOutputType> interfacesTwo = objectTypeTwo.getInterfaces();
+        return interfacesOne.stream().anyMatch(interfacesTwo::contains);
     }
 
 
