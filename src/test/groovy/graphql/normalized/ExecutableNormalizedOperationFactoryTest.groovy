@@ -592,7 +592,7 @@ type Dog implements Animal{
         """
         GraphQLSchema graphQLSchema = TestUtil.schema(schema)
 
-        def query = """operation X_28 { issues {
+        def query = """query X_28 { issues {
                     authors {
                        friends {
                             friends {
