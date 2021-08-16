@@ -14,20 +14,28 @@ import java.util.Map;
 
 @Internal
 public class ExecutableNormalizedOperation {
-
+    private final String operationName;
     private final List<ExecutableNormalizedField> topLevelFields;
     private final ImmutableListMultimap<Field, ExecutableNormalizedField> fieldToNormalizedField;
     private final Map<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField;
     private final ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields;
 
-    public ExecutableNormalizedOperation(List<ExecutableNormalizedField> topLevelFields,
-                                         ImmutableListMultimap<Field, ExecutableNormalizedField> fieldToNormalizedField,
-                                         Map<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField,
-                                         ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields) {
+    public ExecutableNormalizedOperation(
+            String operationName,
+            List<ExecutableNormalizedField> topLevelFields,
+            ImmutableListMultimap<Field, ExecutableNormalizedField> fieldToNormalizedField,
+            Map<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField,
+            ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields
+    ) {
+        this.operationName = operationName;
         this.topLevelFields = topLevelFields;
         this.fieldToNormalizedField = fieldToNormalizedField;
         this.normalizedFieldToMergedField = normalizedFieldToMergedField;
         this.coordinatesToNormalizedFields = coordinatesToNormalizedFields;
+    }
+
+    public String getOperationName() {
+        return operationName;
     }
 
     public ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> getCoordinatesToNormalizedFields() {
@@ -71,6 +79,4 @@ public class ExecutableNormalizedOperation {
         }
         return Assert.assertShouldNeverHappen("normalized field not found");
     }
-
-
 }

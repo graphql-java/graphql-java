@@ -97,7 +97,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(QUERY, fields)
+        def document = compileToDocument(QUERY, null, fields)
         def printed = AstPrinter.printAst(document)
         then:
         printed == '''query {
@@ -200,7 +200,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(QUERY, fields)
+        def document = compileToDocument(QUERY, null, fields)
         then:
         AstPrinter.printAst(document) == '''query {
   ... on Query {
@@ -227,20 +227,46 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def sdl = '''
         type Query {
             foo1(arg: String): String
-            foo2(a:Int ,b: Boolean, c: Float): String
+            foo2(a: Int, b: Boolean, c: Float): String
         }
         '''
         def query = ''' {
             foo1(arg: "hello")
-            foo2(a: 123,b: true, c: 123.45)
+            foo2(a: 123, b: true, c: 123.45)
         }
         '''
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(QUERY, fields)
+        def document = compileToDocument(QUERY, null, fields)
         then:
         AstPrinter.printAst(document) == '''query {
+  ... on Query {
+    foo1(arg: "hello")
+    foo2(a: 123, b: true, c: 123.45)
+  }
+}
+'''
+    }
+
+    def "sets operation name"() {
+        def sdl = '''
+        type Query {
+            foo1(arg: String): String
+            foo2(a: Int,b: Boolean, c: Float): String
+        }
+        '''
+        def query = ''' {
+            foo1(arg: "hello")
+            foo2(a: 123, b: true, c: 123.45)
+        }
+        '''
+        GraphQLSchema schema = TestUtil.schema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def document = compileToDocument(QUERY, "My_Op23", fields)
+        then:
+        AstPrinter.printAst(document) == '''query My_Op23 {
   ... on Query {
     foo1(arg: "hello")
     foo2(a: 123, b: true, c: 123.45)
@@ -283,7 +309,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(QUERY, fields)
+        def document = compileToDocument(QUERY, null, fields)
         then:
         AstPrinter.printAst(document) == '''query {
   ... on Query {
@@ -314,7 +340,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(MUTATION, fields)
+        def document = compileToDocument(MUTATION, null, fields)
         then:
         AstPrinter.printAst(document) == '''mutation {
   ... on Mutation {
@@ -345,7 +371,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(SUBSCRIPTION, fields)
+        def document = compileToDocument(SUBSCRIPTION, null, fields)
         then:
         AstPrinter.printAst(document) == '''subscription {
   ... on Subscription {

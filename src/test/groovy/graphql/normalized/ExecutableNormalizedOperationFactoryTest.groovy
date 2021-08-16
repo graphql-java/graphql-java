@@ -113,6 +113,7 @@ type Dog implements Animal{
         def printedTree = printTree(tree)
 
         expect:
+        tree.operationName == null
         printedTree == ['Query.animal',
                         '[Bird, Cat, Dog].name',
                         'otherName: [Bird, Cat, Dog].name',
@@ -567,6 +568,51 @@ type Dog implements Animal{
         def printedTree = printTree(tree)
 
         expect:
+        printedTree == ['Query.issues',
+                        'Issue.authors',
+                        'User.friends',
+                        'User.friends',
+                        'User.name']
+
+    }
+
+    def "parses operation name"() {
+        String schema = """
+        type Query {
+            issues: [Issue]
+        }
+
+        type Issue {
+            authors: [User]
+        }
+        type User {
+            name: String
+            friends: [User]
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        def query = """operation X_28 { issues {
+                    authors {
+                       friends {
+                            friends {
+                                name
+                            }
+                       } 
+                   }
+                }}
+                """
+
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
+        def printedTree = printTree(tree)
+
+        expect:
+        tree.operationName == "X_28"
         printedTree == ['Query.issues',
                         'Issue.authors',
                         'User.friends',

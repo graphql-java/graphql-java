@@ -31,12 +31,17 @@ import static graphql.language.TypeName.newTypeName;
 
 @Internal
 public class ExecutableNormalizedOperationToAstCompiler {
-    public static Document compileToDocument(OperationDefinition.Operation operationKind, List<ExecutableNormalizedField> topLevelFields) {
+    public static Document compileToDocument(
+            OperationDefinition.Operation operationKind,
+            String operationName,
+            List<ExecutableNormalizedField> topLevelFields
+    ) {
         List<Selection<?>> selections = selectionsForNormalizedFields(topLevelFields);
         SelectionSet selectionSet = new SelectionSet(selections);
 
         return Document.newDocument()
                 .definition(OperationDefinition.newOperationDefinition()
+                        .name(operationName)
                         .operation(operationKind)
                         .selectionSet(selectionSet)
                         .build())
