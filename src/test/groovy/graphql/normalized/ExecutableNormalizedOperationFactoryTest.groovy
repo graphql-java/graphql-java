@@ -1892,6 +1892,92 @@ schema {
         ]
     }
 
+    def "union fields which are shared in an interface are merged"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [DogOrCat]
+        }
+        interface Pet {
+            name: String
+        }  
+        type Dog implements Pet{
+          name: String
+        }
+        type Cat implements Pet{
+          name: String
+        }
+        union DogOrCat = Dog | Cat
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+                name
+            }
+            ... on Cat {
+                name
+            }
+          }
+        }
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [DogOrCat]',
+                        '--[Dog, Cat].name: String'
+        ]
+    }
+
+    def "fields which don't come from a shared interface are not merged"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+            name: String
+        }
+        type Dog implements Pet{
+          name: String
+          breed: String
+        }
+        
+        type Cat implements Pet{
+          name: String
+          breed: String
+        }
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+                breed
+            }
+            ... on Cat {
+                breed
+            }
+        }}
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [Pet]',
+                        '--Dog.breed: String',
+                        '--Cat.breed: String'
+        ]
+    }
+
     def "fields are merged together on multiple level"() {
         given:
         def schema = schema('''

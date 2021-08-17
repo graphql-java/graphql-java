@@ -3,7 +3,7 @@ package graphql.normalized;
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.AstComparator;
-import graphql.schema.GraphQLNamedOutputType;
+import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 @Internal
@@ -28,7 +29,7 @@ public class ENFMerger {
                 for (ExecutableNormalizedField fieldInGroup : group) {
                     if (field.getFieldName().equals(fieldInGroup.getFieldName()) &&
                             sameArguments(field.getAstArguments(), fieldInGroup.getAstArguments())
-                            && isPartOfTheSameHierarchy(field, fieldInGroup, schema)
+                            && isFieldInSharedInterface(field, fieldInGroup, schema)
                     ) {
                         addToGroup = true;
                         group.add(field);
@@ -64,16 +65,27 @@ public class ENFMerger {
         }
     }
 
-    private static boolean isPartOfTheSameHierarchy(ExecutableNormalizedField fieldOne, ExecutableNormalizedField fieldTwo, GraphQLSchema schema) {
-        // we can get away with only checking one of the object names, because all object names in one ENF are guaranteed to be part of
-        // the same hierarchy
+    private static boolean isFieldInSharedInterface(ExecutableNormalizedField fieldOne, ExecutableNormalizedField fieldTwo, GraphQLSchema schema) {
+        /**
+         * we can get away with only checking one of the object names, because all object names in one ENF are guaranteed to be the same field.
+         * This comes from how the ENFs are created in the factory before.
+         */
         String firstObject = fieldOne.getSingleObjectTypeName();
         String secondObject = fieldTwo.getSingleObjectTypeName();
+        // we know that the field names are the same, therefore we can just take the first one
+        String fieldName = fieldOne.getFieldName();
+
         GraphQLObjectType objectTypeOne = schema.getObjectType(firstObject);
-        GraphQLObjectType objectTypeTwo = schema.getObjectType(firstObject);
-        List<GraphQLNamedOutputType> interfacesOne = objectTypeOne.getInterfaces();
-        List<GraphQLNamedOutputType> interfacesTwo = objectTypeTwo.getInterfaces();
-        return interfacesOne.stream().anyMatch(interfacesTwo::contains);
+        GraphQLObjectType objectTypeTwo = schema.getObjectType(secondObject);
+        List<GraphQLInterfaceType> interfacesOne = (List) objectTypeOne.getInterfaces();
+        List<GraphQLInterfaceType> interfacesTwo = (List) objectTypeTwo.getInterfaces();
+
+        Optional<GraphQLInterfaceType> firstInterfaceFound = interfacesOne.stream().filter(singleInterface -> singleInterface.getFieldDefinition(fieldName) != null).findFirst();
+        Optional<GraphQLInterfaceType> secondInterfaceFound = interfacesTwo.stream().filter(singleInterface -> singleInterface.getFieldDefinition(fieldName) != null).findFirst();
+        if (!firstInterfaceFound.isPresent() || !secondInterfaceFound.isPresent()) {
+            return false;
+        }
+        return firstInterfaceFound.get().getName().equals(secondInterfaceFound.get().getName());
     }
 
 
