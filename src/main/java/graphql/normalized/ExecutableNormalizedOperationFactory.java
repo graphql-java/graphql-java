@@ -99,8 +99,6 @@ public class ExecutableNormalizedOperationFactory {
                                                                     Map<String, FragmentDefinition> fragments,
                                                                     Map<String, Object> coercedVariableValues,
                                                                     @Nullable Map<String, NormalizedInputValue> normalizedVariableValues) {
-
-
         FieldCollectorNormalizedQueryParams parameters = FieldCollectorNormalizedQueryParams
                 .newParameters()
                 .fragments(fragments)
@@ -132,7 +130,14 @@ public class ExecutableNormalizedOperationFactory {
                     1);
 
         }
-        return new ExecutableNormalizedOperation(new ArrayList<>(collectFromOperationResult.children), fieldToNormalizedField.build(), normalizedFieldToMergedField.build(), coordinatesToNormalizedFields.build());
+        return new ExecutableNormalizedOperation(
+                operationDefinition.getOperation(),
+                operationDefinition.getName(),
+                new ArrayList<>(collectFromOperationResult.children),
+                fieldToNormalizedField.build(),
+                normalizedFieldToMergedField.build(),
+                coordinatesToNormalizedFields.build()
+        );
     }
 
 
