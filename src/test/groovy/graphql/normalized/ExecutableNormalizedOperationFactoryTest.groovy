@@ -113,6 +113,7 @@ type Dog implements Animal{
         def printedTree = printTree(tree)
 
         expect:
+        tree.operation == OperationDefinition.Operation.QUERY
         tree.operationName == null
         printedTree == ['Query.animal',
                         '[Bird, Cat, Dog].name',
@@ -612,6 +613,7 @@ type Dog implements Animal{
         def printedTree = printTree(tree)
 
         expect:
+        tree.operation == OperationDefinition.Operation.QUERY
         tree.operationName == "X_28"
         printedTree == ['Query.issues',
                         'Issue.authors',
@@ -1102,6 +1104,7 @@ schema {
         def printedTree = printTree(tree)
 
         expect:
+        tree.operation == OperationDefinition.Operation.MUTATION
         printedTree == ['Mutation.createAnimal',
                         'Query.animal',
                         '[Bird, Cat, Dog].name',

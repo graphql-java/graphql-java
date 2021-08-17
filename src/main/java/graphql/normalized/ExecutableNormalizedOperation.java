@@ -6,6 +6,7 @@ import graphql.Internal;
 import graphql.execution.MergedField;
 import graphql.execution.ResultPath;
 import graphql.language.Field;
+import graphql.language.OperationDefinition;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLFieldsContainer;
 
@@ -14,6 +15,7 @@ import java.util.Map;
 
 @Internal
 public class ExecutableNormalizedOperation {
+    private final OperationDefinition.Operation operation;
     private final String operationName;
     private final List<ExecutableNormalizedField> topLevelFields;
     private final ImmutableListMultimap<Field, ExecutableNormalizedField> fieldToNormalizedField;
@@ -21,17 +23,23 @@ public class ExecutableNormalizedOperation {
     private final ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields;
 
     public ExecutableNormalizedOperation(
+            OperationDefinition.Operation operation,
             String operationName,
             List<ExecutableNormalizedField> topLevelFields,
             ImmutableListMultimap<Field, ExecutableNormalizedField> fieldToNormalizedField,
             Map<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField,
             ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields
     ) {
+        this.operation = operation;
         this.operationName = operationName;
         this.topLevelFields = topLevelFields;
         this.fieldToNormalizedField = fieldToNormalizedField;
         this.normalizedFieldToMergedField = normalizedFieldToMergedField;
         this.coordinatesToNormalizedFields = coordinatesToNormalizedFields;
+    }
+
+    public OperationDefinition.Operation getOperation() {
+        return operation;
     }
 
     public String getOperationName() {

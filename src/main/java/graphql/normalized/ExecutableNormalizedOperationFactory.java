@@ -131,6 +131,7 @@ public class ExecutableNormalizedOperationFactory {
 
         }
         return new ExecutableNormalizedOperation(
+                operationDefinition.getOperation(),
                 operationDefinition.getName(),
                 new ArrayList<>(collectFromOperationResult.children),
                 fieldToNormalizedField.build(),
