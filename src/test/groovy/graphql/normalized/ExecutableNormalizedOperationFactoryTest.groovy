@@ -583,6 +583,52 @@ type Dog implements Animal{
 
     }
 
+    def "parses operation name"() {
+        String schema = """
+        type Query {
+            issues: [Issue]
+        }
+
+        type Issue {
+            authors: [User]
+        }
+        type User {
+            name: String
+            friends: [User]
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        def query = """query X_28 { issues {
+                    authors {
+                       friends {
+                            friends {
+                                name
+                            }
+                       } 
+                   }
+                }}
+                """
+
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
+        def printedTree = printTree(tree)
+
+        expect:
+        tree.operation == OperationDefinition.Operation.QUERY
+        tree.operationName == "X_28"
+        printedTree == ['Query.issues',
+                        'Issue.authors',
+                        'User.friends',
+                        'User.friends',
+                        'User.name']
+
+    }
+
     def "query with fragment definition"() {
         def graphQLSchema = TestUtil.schema("""
             type Query{

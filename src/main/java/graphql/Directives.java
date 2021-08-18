@@ -44,7 +44,7 @@ public class Directives {
                 .directiveLocation(newDirectiveLocation().name(ENUM_VALUE.name()).build())
                 .directiveLocation(newDirectiveLocation().name(ARGUMENT_DEFINITION.name()).build())
                 .directiveLocation(newDirectiveLocation().name(INPUT_FIELD_DEFINITION.name()).build())
-                .description(createDescription("Marks the field or enum value as deprecated"))
+                .description(createDescription("Marks the field, argument, input field or enum value as deprecated"))
                 .inputValueDefinition(
                         newInputValueDefinition()
                                 .name("reason")
