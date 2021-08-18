@@ -278,7 +278,7 @@ public class FpKit {
                 .collect(Collectors.toList());
     }
 
-    public static <T> Set<T> filterSet(Set<T> input, Predicate<T> filter) {
+    public static <T> Set<T> filterSet(Collection<T> input, Predicate<T> filter) {
         LinkedHashSet<T> result = new LinkedHashSet<>();
         for (T t : input) {
             if (filter.test(t)) {

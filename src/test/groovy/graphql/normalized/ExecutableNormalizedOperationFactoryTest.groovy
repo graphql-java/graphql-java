@@ -13,7 +13,6 @@ import graphql.util.TraversalControl
 import graphql.util.Traverser
 import graphql.util.TraverserContext
 import graphql.util.TraverserVisitorStub
-import spock.lang.Ignore
 import spock.lang.Specification
 
 import static graphql.TestUtil.schema
@@ -110,22 +109,22 @@ type Dog implements Animal{
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
         def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
-        def printedTree = printTree(tree)
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
-        tree.operation == OperationDefinition.Operation.QUERY
-        tree.operationName == null
-        printedTree == ['Query.animal',
-                        '[Bird, Cat, Dog].name',
-                        'otherName: [Bird, Cat, Dog].name',
-                        '[Cat, Bird].friends',
-                        'Friend.isCatOwner',
-                        'Friend.pets',
-                        'Dog.name',
-                        'Cat.breed',
-                        'Friend.isBirdOwner',
-                        'Friend.name']
-
+        printedTree == ['-Query.animal: Animal',
+                        '--[Bird, Cat, Dog].name: String',
+                        '--otherName: [Bird, Cat, Dog].name: String',
+                        '--Cat.friends: [Friend]',
+                        '---Friend.isCatOwner: Boolean',
+                        '---Friend.pets: [Pet]',
+                        '----Dog.name: String',
+                        '--Bird.friends: [Friend]',
+                        '---Friend.isBirdOwner: Boolean',
+                        '---Friend.name: String',
+                        '---Friend.pets: [Pet]',
+                        '----Cat.breed: String'
+        ]
     }
 
     def "test2"() {
@@ -196,14 +195,19 @@ type Dog implements Animal{
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
         def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
-        def printedTree = printTree(tree)
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
-        printedTree == ['Query.a',
-                        'myAlias: [A1, A2].b',
-                        '[B1, B2].leaf',
-                        '[A1, A2].b',
-                        '[B1, B2].leaf']
+        printedTree == ['-Query.a: A',
+                        '--myAlias: [A1, A2].b: B',
+                        '---[B1, B2].leaf: String',
+                        '--A1.b: B',
+                        '---[B1, B2].leaf: String',
+                        '--A2.b: B',
+                        '---B2.leaf: String'
+        ]
+
+
     }
 
     def "test3"() {
@@ -271,14 +275,15 @@ type Dog implements Animal{
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
         def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
-        def printedTree = printTree(tree)
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
-        printedTree == ['Query.object',
-                        'Object.someValue',
-                        'Query.a',
-                        'A1.b',
-                        '[B1, B2].leaf']
+        printedTree == ['-Query.object: Object',
+                        '--Object.someValue: String',
+                        '-Query.a: [A]',
+                        '--A1.b: B',
+                        '---[B1, B2].leaf: String'
+        ]
 
     }
 
@@ -477,13 +482,14 @@ type Dog implements Animal{
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
         def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
-        def printedTree = printTree(tree)
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
-        printedTree == ['Query.a',
-                        '[A1, A2, A3].b',
-                        'A2.otherField',
-                        '[A2, A3].b']
+        printedTree == ['-Query.a: [A]',
+                        '--[A1, A2, A3].b: String',
+                        '--A2.otherField: A',
+                        '---[A2, A3].b: String'
+        ]
 
     }
 
@@ -649,6 +655,56 @@ type Dog implements Animal{
                         'Foo.subFoo',
                         'Foo.moreFoos',
                         'Foo.subFoo']
+    }
+
+    def "query with fragment and type condition"() {
+        def graphQLSchema = TestUtil.schema("""
+            type Query {
+                pet(qualifier : String) : Pet
+            }
+            interface Pet {
+                name(nameArg : String) : String
+            }
+            
+            type Dog implements Pet {
+                name(nameArg : String) : String
+            }
+
+            type Bird implements Pet {
+                name(nameArg : String) : String
+            }
+            
+            type Cat implements Pet {
+                name(nameArg : String) : String
+            }
+        """)
+        def query = """
+        {
+            pet {
+                name
+                ... on Dog {
+                    name
+                }
+                ... CatFrag
+            }
+         }
+         
+        fragment CatFrag on Cat {
+            name
+        }
+            """
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
+
+        expect:
+        printedTree == ['-Query.pet: Pet',
+                        '--[Bird, Cat, Dog].name: String'
+        ]
     }
 
     def "query with interface in between"() {
@@ -891,11 +947,11 @@ type Dog implements Animal{
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
         def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
-        def printedTree = printTree(tree)
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
-        printedTree == ['Query.pet',
-                        '[Dog, Cat].name'];
+        printedTree == ['-Query.pet: Pet',
+                        '--[Dog, Cat].name: String'];
     }
 
     def "same result key but different field"() {
@@ -1101,18 +1157,18 @@ schema {
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
         def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
-        def printedTree = printTree(tree)
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
-        tree.operation == OperationDefinition.Operation.MUTATION
-        printedTree == ['Mutation.createAnimal',
-                        'Query.animal',
-                        '[Bird, Cat, Dog].name',
-                        'otherName: [Bird, Cat, Dog].name',
-                        '[Cat, Bird].friends',
-                        'Friend.isCatOwner',
-                        'Friend.isBirdOwner',
-                        'Friend.name']
+        printedTree == ['-Mutation.createAnimal: Query',
+                        '--Query.animal: Animal',
+                        '---[Bird, Cat, Dog].name: String',
+                        '---otherName: [Bird, Cat, Dog].name: String',
+                        '---Cat.friends: [Friend]',
+                        '----Friend.isCatOwner: Boolean',
+                        '---Bird.friends: [Friend]',
+                        '----Friend.isBirdOwner: Boolean',
+                        '----Friend.name: String']
     }
 
     private void assertValidQuery(GraphQLSchema graphQLSchema, String query, Map variables = [:]) {
@@ -1493,7 +1549,7 @@ schema {
                     name(arg: "foo")
               }
                 ... on Dog {
-                    name(arg: "foo")
+                    name(arg: "fooOther")
               }
           }}
         '''
@@ -1502,14 +1558,15 @@ schema {
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
         when:
         def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, [:])
-        println String.join("\n", printTree(tree))
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         then:
-        tree.normalizedFieldToMergedField.size() == 2
-        tree.fieldToNormalizedField.size() == 3
+        printedTree == ['-Query.pets: Pet',
+                        '--Cat.name: String',
+                        '--Dog.name: String'
+        ]
     }
 
-    @Ignore
     def "diverging fields with the same parent type on deeper level"() {
         given:
         def schema = schema('''
@@ -1580,9 +1637,547 @@ schema {
                         '---[Cat, Dog].name: String',
                         '---breed: Dog.dogBreed: String',
                         '--Cat.friends: [Pet]',
-                        '---[Cat, Dog].name: String',
                         '---catFriendsName: [Cat, Dog].name: String',
+                        '---Dog.breed: String',
+                        '---[Cat, Dog].name: String'
+        ]
+    }
+
+    def "subselection different with different concrete parents"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Pet {
+          name: String
+          dogBreed: String
+         breed: String
+          friends: [Pet]
+
+        }
+        type Cat implements Pet {
+          catBreed: String
+         breed: String
+          name : String
+          friends: [Pet]
+
+        }
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+               friends { #P1
+                 name
+               }
+            }
+            ... on Cat {
+             friends {  
+                otherName: name
+               }
+            }
+            friends {
+                breed
+            }
+          }
+        }
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [Pet]',
+                        '--Dog.friends: [Pet]',
+                        '---[Cat, Dog].name: String',
+                        '---[Cat, Dog].breed: String',
+                        '--Cat.friends: [Pet]',
+                        '---otherName: [Cat, Dog].name: String',
+                        '---[Cat, Dog].breed: String',
+        ]
+    }
+
+
+    def "diverging non-composite fields"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Pet {
+          name: String
+          dogBreed: String
+          breed: String
+          friends: [Pet]
+
+        }
+        type Cat implements Pet {
+          catBreed: String
+         breed: String
+          name : String
+          friends: [Pet]
+
+        }
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+                breed: dogBreed
+            }
+            ... on Cat {
+                breed: catBreed
+            }
+          }
+        }
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [Pet]',
+                        '--breed: Dog.dogBreed: String',
+                        '--breed: Cat.catBreed: String'
+        ]
+    }
+
+    def "different children for different Interfaces"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        
+        interface Mammal implements Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Turtle implements Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Mammal & Pet {
+          name: String
+          dogBreed: String
+          breed: String
+          friends: [Pet]
+        }
+        type Cat implements Mammal & Pet {
+          catBreed: String
+         breed: String
+          name : String
+          friends: [Pet]
+        }
+        ''')
+        def query = '''
+        {
+          pets {
+          ... on Cat { 
+              friends {
+               catFriendName: name  
+              }
+            }
+            ... on Dog { 
+              friends {
+               dogFriendName: name  
+              }
+            }
+            ... on Mammal {
+                friends {
+                    name
+                }
+            }
+            ... on Pet {
+                friends {
+                    breed
+                }
+            }
+          }
+        }
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [Pet]',
+                        '--Cat.friends: [Pet]',
+                        '---catFriendName: [Cat, Dog, Turtle].name: String',
+                        '---[Cat, Dog, Turtle].name: String',
+                        '---[Cat, Dog, Turtle].breed: String',
+                        '--Dog.friends: [Pet]',
+                        '---dogFriendName: [Cat, Dog, Turtle].name: String',
+                        '---[Cat, Dog, Turtle].name: String',
+                        '---[Cat, Dog, Turtle].breed: String',
+                        '--Turtle.friends: [Pet]',
+                        '---[Cat, Dog, Turtle].breed: String'
+        ]
+    }
+
+    def "diverging fields with Union as parent type"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [DogOrCat]
+        }
+        type Dog {
+          name: String
+          dogBreed: String
+          breed: String
+          friends: [DogOrCat]
+        }
+        type Cat {
+          catBreed: String
+          breed: String
+          name : String
+          friends: [DogOrCat]
+        }
+        union DogOrCat = Dog | Cat
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+               friends { #P1
+                 ... on Dog {
+                    breed: dogBreed #F1
+                 }
+               }
+            }
+            ... on Cat {
+             friends {  #P2
+                ... on Dog {
+                  breed #F2
+                }
+               }
+            }
+          }
+        }
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [DogOrCat]',
+                        '--Dog.friends: [DogOrCat]',
+                        '---breed: Dog.dogBreed: String',
+                        '--Cat.friends: [DogOrCat]',
                         '---Dog.breed: String'
+        ]
+    }
+
+    def "union fields are not merged"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [DogOrCat]
+        }
+        type Dog {
+          name: String
+        }
+        type Cat {
+          name: String
+        }
+        union DogOrCat = Dog | Cat
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+                name
+            }
+            ... on Cat {
+                name
+            }
+          }
+        }
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [DogOrCat]',
+                        '--Dog.name: String',
+                        '--Cat.name: String'
+        ]
+    }
+
+    def "union fields which are shared in an interface are merged"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [DogOrCat]
+        }
+        interface Pet {
+            name: String
+        }  
+        type Dog implements Pet{
+          name: String
+        }
+        type Cat implements Pet{
+          name: String
+        }
+        union DogOrCat = Dog | Cat
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+                name
+            }
+            ... on Cat {
+                name
+            }
+          }
+        }
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [DogOrCat]',
+                        '--[Dog, Cat].name: String'
+        ]
+    }
+
+    def "fields which don't come from a shared interface are not merged"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+            name: String
+        }
+        type Dog implements Pet{
+          name: String
+          breed: String
+        }
+        
+        type Cat implements Pet{
+          name: String
+          breed: String
+        }
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+                breed
+            }
+            ... on Cat {
+                breed
+            }
+        }}
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [Pet]',
+                        '--Dog.breed: String',
+                        '--Cat.breed: String'
+        ]
+    }
+
+    def "fields are merged together on multiple level"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Pet {
+          name: String
+          dogBreed: String
+          breed: String
+          friends: [Pet]
+
+        }
+        type Cat implements Pet {
+          catBreed: String
+         breed: String
+          name : String
+          friends: [Pet]
+
+        }
+
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+               friends { 
+                 ... on Dog {
+                    friends {
+                       name 
+                    }
+                 }
+                 ... on Cat {
+                    friends {
+                       name 
+                    }
+                 }
+               }
+            }
+            ... on Cat {
+             friends {  
+                 ... on Dog {
+                    friends {
+                       name 
+                    }
+                 }
+                 ... on Cat {
+                    friends {
+                       name 
+                    }
+                 }
+               }
+            }
+          }
+        }
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [Pet]',
+                        '--[Dog, Cat].friends: [Pet]',
+                        '---[Dog, Cat].friends: [Pet]',
+                        '----[Cat, Dog].name: String'
+        ]
+    }
+
+    def "fields are not merged together because of different arguments on deeper level"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name(arg:String): String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Pet {
+          name(arg:String): String
+          dogBreed: String
+          breed: String
+          friends: [Pet]
+
+        }
+        type Cat implements Pet {
+          catBreed: String
+         breed: String
+          name(arg:String) : String
+          friends: [Pet]
+
+        }
+
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+               friends { 
+                 ... on Dog {
+                    friends {
+                       name 
+                    }
+                 }
+                 ... on Cat {
+                    friends {
+                       name 
+                    }
+                 }
+               }
+            }
+            ... on Cat {
+             friends {  
+                 ... on Dog {
+                    friends {
+                       name 
+                    }
+                 }
+                 ... on Cat {
+                    friends {
+                       name(arg: "not-be-merged")
+                    }
+                 }
+               }
+            }
+          }
+        }
+        '''
+        assertValidQuery(schema, query)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory();
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, schema)
+
+        then:
+        printedTree == ['-Query.pets: [Pet]',
+                        '--Dog.friends: [Pet]',
+                        '---[Dog, Cat].friends: [Pet]',
+                        '----[Cat, Dog].name: String',
+                        '--Cat.friends: [Pet]',
+                        '---Dog.friends: [Pet]',
+                        '----[Cat, Dog].name: String',
+                        '---Cat.friends: [Pet]',
+                        '----[Cat, Dog].name: String'
         ]
     }
 
