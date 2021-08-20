@@ -9,7 +9,6 @@ import graphql.Scalars
 import graphql.SerializationError
 import graphql.StarWarsSchema
 import graphql.TypeMismatchError
-import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.InstrumentationContext
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
