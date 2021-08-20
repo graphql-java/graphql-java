@@ -9,7 +9,10 @@ import graphql.Scalars
 import graphql.SerializationError
 import graphql.StarWarsSchema
 import graphql.TypeMismatchError
+import graphql.execution.instrumentation.Instrumentation
+import graphql.execution.instrumentation.InstrumentationContext
 import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
 import graphql.language.Argument
 import graphql.language.Field
 import graphql.language.OperationDefinition
@@ -624,6 +627,47 @@ class ExecutionStrategyTest extends Specification {
         executionContext.errors.size() == 1
         def exceptionWhileDataFetching = executionContext.errors[0] as ExceptionWhileDataFetching
         exceptionWhileDataFetching.getMessage().contains('This is the exception you are looking for')
+    }
+
+    def "data fetcher errors for a given field appear in FetchedResult within instrumentation"() {
+        def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
+
+        //noinspection GroovyAssignabilityCheck,GroovyUnusedAssignment
+        def (ExecutionContext executionContext, GraphQLFieldDefinition fieldDefinition, ResultPath expectedPath, ExecutionStrategyParameters params, Field field, SourceLocation sourceLocation) = exceptionSetupFixture(expectedException)
+
+        ExecutionContextBuilder executionContextBuilder = ExecutionContextBuilder.newExecutionContextBuilder(executionContext)
+        def instrumentation = new SimpleInstrumentation() {
+            Map<String, FetchedValue> fetchedValues = [:]
+
+            @Override
+            InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters) {
+                if (parameters.fetchedValue instanceof FetchedValue) {
+                    FetchedValue value = (FetchedValue) parameters.fetchedValue
+                    fetchedValues.put(parameters.field.name, value)
+                }
+                return super.beginFieldComplete(parameters)
+            }
+        }
+        ExecutionContext instrumentedExecutionContext = executionContextBuilder.instrumentation(instrumentation).build()
+
+        ExecutionStrategy overridingStrategy = new ExecutionStrategy() {
+            @Override
+            CompletableFuture<ExecutionResult> execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
+                null
+            }
+        }
+
+        when:
+        overridingStrategy.resolveField(instrumentedExecutionContext, params)
+
+        then:
+        FetchedValue fetchedValue = instrumentation.fetchedValues.get("someField")
+        fetchedValue != null
+        fetchedValue.errors.size() == 1
+        def exceptionWhileDataFetching = fetchedValue.errors[0] as ExceptionWhileDataFetching
+        exceptionWhileDataFetching.getMessage().contains('This is the exception you are looking for')
+        instrumentedExecutionContext.errors.size() == 1
+        instrumentedExecutionContext.errors[0] == fetchedValue.errors[0]
     }
 
     def "#522 - single error during execution - not two errors"() {

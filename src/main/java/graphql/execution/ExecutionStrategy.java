@@ -291,7 +291,8 @@ public abstract class ExecutionStrategy {
                 .handle((result, exception) -> {
                     fetchCtx.onCompleted(result, exception);
                     if (exception != null) {
-                        return handleFetchingException(executionContext, environment, exception);
+                        CompletableFuture<Object> objectCompletableFuture = handleFetchingException(executionContext, environment, exception);
+                        return objectCompletableFuture;
                     } else {
                         return CompletableFuture.completedFuture(result);
                     }
@@ -353,15 +354,10 @@ public abstract class ExecutionStrategy {
     }
 
     private <T> CompletableFuture<T> asyncHandleException(DataFetcherExceptionHandler handler, DataFetcherExceptionHandlerParameters handlerParameters, ExecutionContext executionContext) {
-        return handler.handleException(handlerParameters)
-                .thenApply(handlerResult -> {
-                            // the side effect is that we added the returned errors to the execution context
-                            // here
-                            executionContext.addErrors(handlerResult.getErrors());
-                            // and we return null because there is no data for the executed field
-                            return null;
-                        }
-                );
+        //noinspection unchecked
+        return  handler.handleException(handlerParameters)
+            .thenApply(handlerResult -> (T) DataFetcherResult.<FetchedValue>newResult().errors(handlerResult.getErrors()).build()
+            );
     }
 
     /**
