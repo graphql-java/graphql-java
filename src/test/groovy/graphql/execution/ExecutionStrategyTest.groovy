@@ -628,7 +628,7 @@ class ExecutionStrategyTest extends Specification {
         exceptionWhileDataFetching.getMessage().contains('This is the exception you are looking for')
     }
 
-    def "data fetcher errors for a given field appear in FetchedResult within instrumentation"() {
+    def "#2519 data fetcher errors for a given field appear in FetchedResult within instrumentation"() {
         def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
 
         //noinspection GroovyAssignabilityCheck,GroovyUnusedAssignment
