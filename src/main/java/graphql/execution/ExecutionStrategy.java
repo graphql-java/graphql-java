@@ -291,8 +291,7 @@ public abstract class ExecutionStrategy {
                 .handle((result, exception) -> {
                     fetchCtx.onCompleted(result, exception);
                     if (exception != null) {
-                        CompletableFuture<Object> objectCompletableFuture = handleFetchingException(executionContext, environment, exception);
-                        return objectCompletableFuture;
+                        return handleFetchingException(executionContext, environment, exception);
                     } else {
                         return CompletableFuture.completedFuture(result);
                     }
