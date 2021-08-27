@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import graphql.Internal;
 import graphql.normalized.ExecutableNormalizedField;
 
+import java.io.File;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
@@ -30,6 +31,7 @@ import static java.util.Collections.emptyList;
 public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelectionSet {
 
     private final static String SEP = "/";
+    private final static boolean UNIXY = SEP.equals(File.separator);
 
     private final static DataFetchingFieldSelectionSet NOOP = new DataFetchingFieldSelectionSet() {
 
@@ -110,12 +112,21 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         fieldGlobPattern = removeLeadingSlash(fieldGlobPattern);
         PathMatcher globMatcher = globMatcher(fieldGlobPattern);
         for (String flattenedField : flattenedFieldsForGlobSearching) {
+            flattenedField = osAppropriate(flattenedField);
             Path path = Paths.get(flattenedField);
             if (globMatcher.matches(path)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private String osAppropriate(String flattenedField) {
+        if (UNIXY) {
+            return flattenedField;
+        } else {
+            return flattenedField.replace(SEP, "\\");
+        }
     }
 
     @Override
