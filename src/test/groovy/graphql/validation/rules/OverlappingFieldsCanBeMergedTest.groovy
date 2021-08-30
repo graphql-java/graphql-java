@@ -1,6 +1,6 @@
 package graphql.validation.rules
 
-import graphql.TestUtil
+
 import graphql.TypeResolutionEnvironment
 import graphql.language.Document
 import graphql.language.SourceLocation
@@ -16,6 +16,7 @@ import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.TestUtil.schema
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
@@ -101,11 +102,11 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
                 .name("BoxUnion")
                 .possibleTypes(StringBox, IntBox, NonNullStringBox1, NonNullStringBox2, ListStringBox1)
                 .typeResolver(new TypeResolver() {
-            @Override
-            GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                return null
-            }
-        })
+                    @Override
+                    GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                        return null
+                    }
+                })
                 .build()
         def QueryRoot = newObject()
                 .name("QueryRoot")
@@ -308,8 +309,17 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
             fido: nickname
         }
         """
+        def schema = schema('''
+        type Dog {
+            name: String
+            nickname: String
+        }
+        type Query {
+            dog: Dog
+        }
+        ''')
         when:
-        traverse(query, null)
+        traverse(query, schema)
 
         then:
         errorCollector.getErrors().size() == 1
@@ -325,8 +335,14 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
             name
         }
          """
+        def schema = schema('''
+        type Dog {
+            nickname: String
+        }
+        type Query { dog: Dog }
+        ''')
         when:
-        traverse(query, null)
+        traverse(query, schema)
 
         then:
         errorCollector.getErrors().size() == 1
@@ -342,8 +358,17 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
             doesKnowCommand(dogCommand: HEEL)
         }
         """
+        def schema = schema('''
+        type Dog {
+            doesKnowCommand(dogCommand: DogCommand): String
+        }
+        enum DogCommand { SIT, HEEL }
+        type Query {
+            dog: Dog
+        }
+        ''')
         when:
-        traverse(query, null)
+        traverse(query, schema)
 
         then:
         errorCollector.getErrors().size() == 1
@@ -385,8 +410,18 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
             x: b
         }
         """
+        def schema = schema('''
+        type Type {
+            a: String
+            b: String
+            c: String
+        }
+        schema {
+           query: Type 
+        }
+        ''')
         when:
-        traverse(query, null)
+        traverse(query, schema)
 
         then:
         errorCollector.getErrors().size() == 1
@@ -418,20 +453,28 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
             x: b
         }
         """
+        def schema = schema('''
+        type Type {
+            a: String
+            b: String
+            c: String
+        }
+        type Query {
+            f1: Type
+            f2: Type
+            f3: Type
+        }
+        ''')
+
         when:
-        traverse(query, null)
+        traverse(query, schema)
 
         then:
-        errorCollector.getErrors().size() == 3
+        errorCollector.getErrors().size() == 1
 
         errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: x: a and b are different fields @ 'f1'"
         errorCollector.getErrors()[0].locations == [new SourceLocation(18, 13), new SourceLocation(21, 13)]
 
-        errorCollector.getErrors()[1].message == "Validation error of type FieldsConflict: x: a and c are different fields @ 'f3'"
-        errorCollector.getErrors()[1].locations == [new SourceLocation(18, 13), new SourceLocation(14, 17)]
-
-        errorCollector.getErrors()[2].message == "Validation error of type FieldsConflict: x: b and c are different fields @ 'f3'"
-        errorCollector.getErrors()[2].locations == [new SourceLocation(21, 13), new SourceLocation(14, 17)]
     }
 
 
@@ -447,12 +490,21 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         }
         """
         when:
-        traverse(query, null)
+        def schema = schema('''
+        type Type {
+            a: String
+            b: String
+        }
+        type Query {
+            field: Type
+        }
+        ''')
+        traverse(query, schema)
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field: (x: a and b are different fields)"
-        errorCollector.getErrors()[0].locations.size() == 4
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field/x: a and b are different fields"
+        errorCollector.getErrors()[0].locations.size() == 2
     }
 
     def 'deep conflict with multiple issues'() {
@@ -468,13 +520,28 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
                     }
                 }
                 """
+        def schema = schema('''
+        type Type {
+            a: String
+            b: String
+            c: String
+            d: String
+        }
+        type Query {
+            field: Type
+        }
+        ''')
+
         when:
-        traverse(query, null)
+        traverse(query, schema)
 
         then:
-        errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field: (x: a and b are different fields, y: c and d are different fields)"
-        errorCollector.getErrors()[0].locations.size() == 6
+        errorCollector.getErrors().size() == 2
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field/x: a and b are different fields"
+        errorCollector.getErrors()[0].locations.size() == 2
+
+        errorCollector.getErrors()[1].message == "Validation error of type FieldsConflict: field/y: c and d are different fields"
+        errorCollector.getErrors()[1].locations.size() == 2
     }
 
     def 'very deep conflict'() {
@@ -493,13 +560,27 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
                     }
                 }
                 """
+        def schema = schema('''
+        type Type {
+            a: String
+            b: String
+            c: String
+            d: String
+        }
+        type Field {
+            deepField: Type 
+        }
+        type Query {
+            field: Field
+        }
+        ''')
         when:
-        traverse(query, null)
+        traverse(query, schema)
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field: (deepField: (x: a and b are different fields))"
-        errorCollector.getErrors()[0].locations.size() == 6
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field/deepField/x: a and b are different fields"
+        errorCollector.getErrors()[0].locations.size() == 2
     }
 
     def 'reports deep conflict to nearest common ancestor'() {
@@ -520,13 +601,28 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
                     }
                 }
                 """
+        def schema = schema('''
+        type Type {
+            a: String
+            b: String
+            c: String
+            d: String
+        }
+        type Field {
+            deepField: Type 
+        }
+        type Query {
+            field: Field
+        }
+        ''')
+
         when:
-        traverse(query, null)
+        traverse(query, schema)
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: deepField: (x: a and b are different fields) @ 'field'"
-        errorCollector.getErrors()[0].locations.size() == 4
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: deepField/x: a and b are different fields @ 'field'"
+        errorCollector.getErrors()[0].locations.size() == 2
     }
 
 
@@ -544,7 +640,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
           componentInfoLocationUrl
         }
 """
-        def schema = TestUtil.schema("""
+        def schema = schema("""
     type Query {
       services(ids: [String!]): [Component!]
     }
@@ -576,7 +672,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
           componentInfoLocationUrl
         }
 """
-        def schema = TestUtil.schema("""
+        def schema = schema("""
     type Query {
       services(ids: [String!]): [[Component!]]
     }
@@ -608,7 +704,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
           componentInfoLocationUrl
         }
 """
-        def schema = TestUtil.schema("""
+        def schema = schema("""
     type Query {
       services(ids: [String!]): [Component!]
     }
@@ -624,6 +720,181 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         then:
         errorCollector.getErrors().size() == 0
 
+    }
+
+    def "valid diverging fields with the same parent type on deeper level"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Pet {
+          name: String
+          dogBreed: String
+         breed: String
+          friends: [Pet]
+
+        }
+        type Cat implements Pet {
+          catBreed: String
+         breed: String
+          name : String
+          friends: [Pet]
+
+        }
+        ''')
+        /**
+         * Here F1 and F2 are allowed to diverge (backed by different field definitions) because the parent fields have
+         * different concrete parent: P1 has Dog, P2 has Cat.
+         */
+        def query = '''
+{
+  pets {
+    ... on Dog {
+       friends { #P1
+         name
+         ... on Dog {
+            breed: dogBreed #F1
+         }
+       }
+    }
+    ... on Cat {
+     friends {  #P2
+        name
+        ... on Dog {
+          breed #F2
+        }
+       }
+    }
+    ... on Pet {
+      friends { 
+        name
+       }
+    }
+  }
+}
+        '''
+        when:
+        traverse(query, schema)
+
+
+        then:
+        errorCollector.getErrors().size() == 0
+    }
+
+    def "children of diverging fields still need to have same response shape"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Pet {
+          name: String
+          age: Int
+          dogBreed: String
+         breed: String
+          friends: [Pet]
+
+        }
+        type Cat implements Pet {
+          catBreed: String
+          breed: String
+          height: Float
+          name : String
+          friends: [Pet]
+
+        }
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+               friends {
+                 ... on Dog {
+                    conflict: age
+                 }
+               }
+            }
+            ... on Cat {
+             friends { 
+                ... on Cat {
+                  conflict: height 
+                }
+               }
+            }
+          }
+        }
+        '''
+        when:
+        traverse(query, schema)
+
+
+        then:
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: friends/conflict: they return differing types Int and Float @ 'pets'"
+    }
+
+
+    def "subselection of fields with different concrete parent can be different "() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Pet {
+          name: String
+          age: Int
+          dogBreed: String
+         breed: String
+          friends: [Pet]
+
+        }
+        type Cat implements Pet {
+          catBreed: String
+          breed: String
+          height: Float
+          name : String
+          friends: [Pet]
+
+        }
+        ''')
+        def query = '''
+        {
+          pets {
+            ... on Dog {
+               friends {
+                name
+               }
+            }
+            ... on Cat {
+             friends { 
+                  breed
+               }
+            }
+          }
+        }
+        '''
+        when:
+        traverse(query, schema)
+
+
+        then:
+        errorCollector.getErrors().size() == 0
     }
 
 

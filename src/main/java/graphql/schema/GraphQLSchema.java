@@ -293,6 +293,30 @@ public class GraphQLSchema {
         return (GraphQLObjectType) graphQLType;
     }
 
+    public GraphQLFieldDefinition getFieldDefinition(FieldCoordinates fieldCoordinates) {
+        String fieldName = fieldCoordinates.getFieldName();
+        if (fieldCoordinates.isSystemCoordinates()) {
+            if (fieldName.equals(this.getIntrospectionSchemaFieldDefinition().getName())) {
+                return this.getIntrospectionSchemaFieldDefinition();
+            }
+            if (fieldName.equals(this.getIntrospectionTypeFieldDefinition().getName())) {
+                return this.getIntrospectionTypeFieldDefinition();
+            }
+            if (fieldName.equals(this.getIntrospectionTypenameFieldDefinition().getName())) {
+                return this.getIntrospectionTypenameFieldDefinition();
+            }
+            return Assert.assertShouldNeverHappen("The system field name %s is unknown", fieldName);
+        }
+        String typeName = fieldCoordinates.getTypeName();
+        GraphQLType graphQLType = getType(typeName);
+        if (graphQLType != null) {
+            assertTrue(graphQLType instanceof GraphQLFieldsContainer,
+                    () -> String.format("You have asked for named type '%s' but its not GraphQLFieldsContainer but rather a '%s'", typeName, graphQLType.getClass().getName()));
+            return ((GraphQLFieldsContainer) graphQLType).getFieldDefinition(fieldName);
+        }
+        return null;
+    }
+
     public Map<String, GraphQLNamedType> getTypeMap() {
         return typeMap;
     }

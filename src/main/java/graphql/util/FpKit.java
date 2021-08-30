@@ -9,11 +9,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
@@ -274,6 +276,16 @@ public class FpKit {
                 .stream()
                 .filter(filter)
                 .collect(Collectors.toList());
+    }
+
+    public static <T> Set<T> filterSet(Collection<T> input, Predicate<T> filter) {
+        LinkedHashSet<T> result = new LinkedHashSet<>();
+        for (T t : input) {
+            if (filter.test(t)) {
+                result.add(t);
+            }
+        }
+        return result;
     }
 
     /**

@@ -939,7 +939,7 @@ directive @scalarDirective on SCALAR
 
 directive @repeatableDirective repeatable on SCALAR
 
-"Marks the field or enum value as deprecated"
+"Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
     reason: String = "No longer supported"
@@ -1078,7 +1078,7 @@ directive @skip(
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field or enum value as deprecated"
+"Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
     reason: String = "No longer supported"
@@ -1175,7 +1175,7 @@ directive @example on FIELD_DEFINITION
 
 directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 
-"Marks the field or enum value as deprecated"
+"Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
     reason: String = "No longer supported"
@@ -1240,7 +1240,7 @@ directive @example on FIELD_DEFINITION
 
 directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 
-"Marks the field or enum value as deprecated"
+"Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
     reason: String = "No longer supported"
@@ -1372,7 +1372,7 @@ directive @skip(
 
 directive @directive1 on SCALAR
 
-"Marks the field or enum value as deprecated"
+"Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
     reason: String = "No longer supported"
@@ -1875,7 +1875,7 @@ directive @skip(
 
 directive @foo on SCHEMA
 
-"Marks the field or enum value as deprecated"
+"Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
     reason: String = "No longer supported"

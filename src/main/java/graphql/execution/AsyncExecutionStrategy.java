@@ -76,6 +76,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             // if there are any issues with combining/handling the field results,
             // complete the future at all costs and bubble up any thrown exception so
             // the execution does not hang.
+            executionStrategyCtx.onFieldValuesException();
             overallResult.completeExceptionally(ex);
             return null;
         });

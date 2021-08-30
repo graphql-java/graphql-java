@@ -7,7 +7,9 @@ import graphql.schema.GraphQLSchema;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Internal
@@ -16,6 +18,22 @@ public class FieldCollectorNormalizedQueryParams {
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final Map<String, Object> coercedVariableValues;
     private final Map<String, NormalizedInputValue> normalizedVariableValues;
+
+    public List<PossibleMerger> possibleMergerList = new ArrayList<>();
+
+    public static class PossibleMerger {
+        ExecutableNormalizedField parent;
+        String resultKey;
+
+        public PossibleMerger(ExecutableNormalizedField parent, String resultKey) {
+            this.parent = parent;
+            this.resultKey = resultKey;
+        }
+    }
+
+    public void addPossibleMergers(ExecutableNormalizedField parent, String resultKey) {
+        possibleMergerList.add(new PossibleMerger(parent, resultKey));
+    }
 
     public GraphQLSchema getGraphQLSchema() {
         return graphQLSchema;

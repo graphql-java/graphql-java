@@ -3,12 +3,14 @@ package graphql.normalized;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
+import graphql.Mutable;
 import graphql.collect.ImmutableKit;
 import graphql.language.Argument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
+import graphql.util.FpKit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,6 +33,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
  * Intentionally Mutable
  */
 @Internal
+@Mutable
 public class ExecutableNormalizedField {
     private final String alias;
     private final ImmutableMap<String, NormalizedInputValue> normalizedArguments;
@@ -110,13 +113,17 @@ public class ExecutableNormalizedField {
         this.objectTypeNames.addAll(objectTypeNames);
     }
 
+    public void setObjectTypeNames(Collection<String> objectTypeNames) {
+        this.objectTypeNames.clear();
+        this.objectTypeNames.addAll(objectTypeNames);
+    }
+
     public void addChild(ExecutableNormalizedField executableNormalizedField) {
         this.children.add(executableNormalizedField);
     }
 
     public void clearChildren() {
         this.children.clear();
-        ;
     }
 
     /**
@@ -188,6 +195,10 @@ public class ExecutableNormalizedField {
         return objectTypeNames;
     }
 
+    public String getSingleObjectTypeName() {
+        return objectTypeNames.iterator().next();
+    }
+
     public GraphQLObjectType getOneObjectType(GraphQLSchema schema) {
         return (GraphQLObjectType) schema.getType(objectTypeNames.iterator().next());
     }
@@ -222,6 +233,10 @@ public class ExecutableNormalizedField {
 
     public List<ExecutableNormalizedField> getChildren() {
         return children;
+    }
+
+    public List<ExecutableNormalizedField> getChildrenWithSameResultKey(String resultKey) {
+        return FpKit.filterList(children, child -> child.getResultKey().equals(resultKey));
     }
 
     public int getLevel() {

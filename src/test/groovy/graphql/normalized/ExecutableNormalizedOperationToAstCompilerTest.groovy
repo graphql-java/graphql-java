@@ -4,7 +4,6 @@ import graphql.GraphQL
 import graphql.TestUtil
 import graphql.language.AstPrinter
 import graphql.language.Document
-import graphql.language.OperationDefinition
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
@@ -14,7 +13,8 @@ import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION
 import static graphql.normalized.ExecutableNormalizedOperationToAstCompiler.compileToDocument
 
 class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
-    def "test"() {
+
+    def "test pet interfaces"() {
         String sdl = """
         type Query { 
             animal: Animal
@@ -42,6 +42,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
            name: String 
            friends: [Friend]
            breed: String 
+           mood: String 
         }
 
         type Dog implements Animal {
@@ -61,6 +62,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
                 }
                 ... on Cat {
                     name
+                    mood
                     friends {
                         ... on Friend {
                             isCatOwner
@@ -87,6 +89,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
                 }
                 ... on Dog {
                     name
+                    breed
                 }
             }
         }
@@ -94,72 +97,114 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(QUERY, fields)
+        def document = compileToDocument(QUERY, null, fields)
+        def printed = AstPrinter.printAst(document)
         then:
-        AstPrinter.printAst(document) == '''query {
+        printed == '''query {
   ... on Query {
     animal {
       ... on Bird {
         name
-      }
-      ... on Cat {
-        name
-      }
-      ... on Dog {
-        name
-      }
-      ... on Bird {
         otherName: name
-      }
-      ... on Cat {
-        otherName: name
-      }
-      ... on Dog {
-        otherName: name
-      }
-      ... on Cat {
         friends {
           ... on Friend {
-            isCatOwner
-          }
-          ... on Friend {
+            isBirdOwner
+            name
             pets {
-              ... on Dog {
-                name
-              }
               ... on Cat {
                 breed
               }
             }
-          }
-          ... on Friend {
-            isBirdOwner
-          }
-          ... on Friend {
-            name
           }
         }
       }
-      ... on Bird {
+      ... on Cat {
+        name
+        otherName: name
+        mood
         friends {
           ... on Friend {
             isCatOwner
-          }
-          ... on Friend {
             pets {
               ... on Dog {
                 name
               }
-              ... on Cat {
-                breed
-              }
             }
           }
-          ... on Friend {
-            isBirdOwner
-          }
-          ... on Friend {
-            name
+        }
+      }
+      ... on Dog {
+        name
+        otherName: name
+        breed
+      }
+    }
+  }
+}
+'''
+    }
+
+    def "test a combination of plain objects and interfaces"() {
+        def sdl = '''
+        type Query {
+            foo(arg: I): Foo
+        }
+        type Foo {
+            bar(arg: I): Bar
+        }
+        type Bar {
+            baz : Baz
+        }
+        
+        interface Baz {
+            boo : String
+        }
+        
+        type ABaz implements Baz {
+            boo : String
+            a : String
+        }
+
+        type BBaz implements Baz {
+            boo : String
+            b : String
+        }
+            
+        
+        input I {
+            arg1: String
+        }
+        '''
+        def query = '''query {
+  foo(arg: {arg1 : "fooArg"}) {
+    bar(arg: {arg1 : "barArg"}) {
+        baz {
+            ... on ABaz {
+              boo
+              a
+            }
+        }
+    }
+  }
+}
+        '''
+        GraphQLSchema schema = TestUtil.schema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def document = compileToDocument(QUERY, null, fields)
+        then:
+        AstPrinter.printAst(document) == '''query {
+  ... on Query {
+    foo(arg: {arg1 : "fooArg"}) {
+      ... on Foo {
+        bar(arg: {arg1 : "barArg"}) {
+          ... on Bar {
+            baz {
+              ... on ABaz {
+                boo
+                a
+              }
+            }
           }
         }
       }
@@ -167,31 +212,54 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
   }
 }
 '''
-
     }
 
     def "test arguments"() {
         def sdl = '''
         type Query {
             foo1(arg: String): String
-            foo2(a:Int ,b: Boolean, c: Float): String
+            foo2(a: Int, b: Boolean, c: Float): String
         }
         '''
         def query = ''' {
             foo1(arg: "hello")
-            foo2(a: 123,b: true, c: 123.45)
+            foo2(a: 123, b: true, c: 123.45)
         }
         '''
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(QUERY, fields)
+        def document = compileToDocument(QUERY, null, fields)
         then:
         AstPrinter.printAst(document) == '''query {
   ... on Query {
     foo1(arg: "hello")
+    foo2(a: 123, b: true, c: 123.45)
   }
+}
+'''
+    }
+
+    def "sets operation name"() {
+        def sdl = '''
+        type Query {
+            foo1(arg: String): String
+            foo2(a: Int,b: Boolean, c: Float): String
+        }
+        '''
+        def query = ''' {
+            foo1(arg: "hello")
+            foo2(a: 123, b: true, c: 123.45)
+        }
+        '''
+        GraphQLSchema schema = TestUtil.schema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def document = compileToDocument(QUERY, "My_Op23", fields)
+        then:
+        AstPrinter.printAst(document) == '''query My_Op23 {
   ... on Query {
+    foo1(arg: "hello")
     foo2(a: 123, b: true, c: 123.45)
   }
 }
@@ -232,7 +300,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(QUERY, fields)
+        def document = compileToDocument(QUERY, null, fields)
         then:
         AstPrinter.printAst(document) == '''query {
   ... on Query {
@@ -263,7 +331,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(MUTATION, fields)
+        def document = compileToDocument(MUTATION, null, fields)
         then:
         AstPrinter.printAst(document) == '''mutation {
   ... on Mutation {
@@ -294,7 +362,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(SUBSCRIPTION, fields)
+        def document = compileToDocument(SUBSCRIPTION, null, fields)
         then:
         AstPrinter.printAst(document) == '''subscription {
   ... on Subscription {
