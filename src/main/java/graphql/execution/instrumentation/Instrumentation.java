@@ -4,6 +4,8 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.PublicSpi;
 import graphql.execution.ExecutionContext;
+import graphql.execution.MergedField;
+import graphql.execution.instrumentation.parameters.InstrumentationCollectFieldsParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -18,6 +20,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.noOp;
@@ -236,6 +239,10 @@ public interface Instrumentation {
      */
     default CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
         return CompletableFuture.completedFuture(executionResult);
+    }
+
+    default Map<String, MergedField> instrumentFieldsCollect(InstrumentationCollectFieldsParameters collectFieldsParameters, Map<String, MergedField> fields) {
+        return fields;
     }
 
 }

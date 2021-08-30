@@ -6,8 +6,6 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStepInfoFactory;
 import graphql.execution.FetchedValue;
-import graphql.execution.FieldCollector;
-import graphql.execution.FieldCollectorParameters;
 import graphql.execution.MergedField;
 import graphql.execution.MergedSelectionSet;
 import graphql.execution.ResolveType;
@@ -20,7 +18,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static graphql.collect.ImmutableKit.map;
-import static graphql.execution.FieldCollectorParameters.newParameters;
+import static graphql.execution.nextgen.FieldCollectorParameters.newParameters;
 
 @Internal
 public class ExecutionStrategyUtil {

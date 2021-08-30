@@ -154,6 +154,7 @@ class ExecutionInputTest extends Specification {
 
         then:
         er.errors.isEmpty()
+        print(er.data["fetch"])
         er.data["fetch"] == "{locale=German, cacheControl=true, executionId=ID123, graphqlContext=b}"
     }
 }

@@ -133,6 +133,8 @@ public class Execution {
                 .objectType(operationRootType)
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
+                .instrumentation(instrumentation)
+                .instrumentationState(executionContext.getInstrumentationState())
                 .build();
 
         MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());

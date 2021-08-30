@@ -7,6 +7,8 @@ import graphql.PublicApi;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.FieldValueInfo;
+import graphql.execution.MergedField;
+import graphql.execution.instrumentation.parameters.InstrumentationCollectFieldsParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -264,5 +266,13 @@ public class ChainedInstrumentation implements Instrumentation {
 
     }
 
+    @Override
+    public Map<String, MergedField> instrumentFieldsCollect(InstrumentationCollectFieldsParameters collectFieldsParameters, Map<String, MergedField> fields) {
+        for (Instrumentation instrumentation : instrumentations) {
+            InstrumentationState state = getState(instrumentation, collectFieldsParameters.getInstrumentationState());
+            fields = instrumentation.instrumentFieldsCollect(collectFieldsParameters.withNewState(state), fields);
+        }
+        return fields;
+    }
 }
 

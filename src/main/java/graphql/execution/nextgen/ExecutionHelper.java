@@ -5,8 +5,6 @@ import graphql.Internal;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
-import graphql.execution.FieldCollector;
-import graphql.execution.FieldCollectorParameters;
 import graphql.execution.MergedSelectionSet;
 import graphql.execution.ResultPath;
 import graphql.execution.ValuesResolver;

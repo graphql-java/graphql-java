@@ -1,6 +1,8 @@
 package graphql.execution
 
 import graphql.TestUtil
+import graphql.execution.instrumentation.InstrumentationState
+import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.language.Document
 import graphql.language.Field
 import graphql.language.InlineFragment
@@ -15,6 +17,10 @@ import static graphql.execution.FieldCollectorParameters.newParameters
 class FieldCollectorTest extends Specification {
 
 
+    class CustomInstrumentationState implements InstrumentationState {
+
+    }
+
     def "collect fields"() {
         given:
         def schema = TestUtil.schema("""
@@ -28,6 +34,8 @@ class FieldCollectorTest extends Specification {
         FieldCollectorParameters fieldCollectorParameters = newParameters()
                 .schema(schema)
                 .objectType(objectType)
+                .instrumentation(SimpleInstrumentation.INSTANCE)
+                .instrumentationState(new CustomInstrumentationState())
                 .build()
         Document document = new Parser().parseDocument("{foo {bar1 bar2 }}")
         Field field = ((OperationDefinition) document.children[0]).selectionSet.selections[0] as Field
@@ -61,6 +69,8 @@ class FieldCollectorTest extends Specification {
         FieldCollectorParameters fieldCollectorParameters = newParameters()
                 .schema(schema)
                 .objectType(object)
+                .instrumentation(SimpleInstrumentation.INSTANCE)
+                .instrumentationState(new CustomInstrumentationState())
                 .build()
         Document document = new Parser().parseDocument("{bar1 { ...on Test {fieldOnInterface}}}")
         Field bar1Field = ((OperationDefinition) document.children[0]).selectionSet.selections[0] as Field
