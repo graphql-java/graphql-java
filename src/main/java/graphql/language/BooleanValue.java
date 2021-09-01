@@ -90,6 +90,10 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarVa
         return visitor.visitBooleanValue(this, context);
     }
 
+    public static BooleanValue of(boolean value) {
+        return BooleanValue.newBooleanValue(value).build();
+    }
+
     public static Builder newBooleanValue() {
         return new Builder();
     }

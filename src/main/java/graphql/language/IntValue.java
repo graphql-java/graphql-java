@@ -8,7 +8,6 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +91,10 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
         return visitor.visitIntValue(this, context);
     }
 
+    public static IntValue of(int i) {
+        return newIntValue().value(i).build();
+    }
+
     public static Builder newIntValue() {
         return new Builder();
     }
@@ -130,6 +133,11 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
 
         public Builder value(BigInteger value) {
             this.value = value;
+            return this;
+        }
+
+        public Builder value(int value) {
+            this.value = BigInteger.valueOf(value);
             return this;
         }
 

@@ -354,14 +354,14 @@ public class ValuesResolver {
                 if (valueMode == ValueMode.LITERAL) {
                     normalizedResult.put(fieldName, new NormalizedInputValue(simplePrint(fieldType), defaultValueLiteral));
                 } else {
-                    objectFields.add(newObjectField().value((Value) defaultValueLiteral).build());
+                    objectFields.add(newObjectField().name(fieldName).value((Value) defaultValueLiteral).build());
                 }
             } else if (hasValue) {
                 if (fieldValue == null) {
                     if (valueMode == NORMALIZED) {
                         normalizedResult.put(fieldName, new NormalizedInputValue(simplePrint(fieldType), null));
                     } else {
-                        objectFields.add(newObjectField().value(newNullValue().build()).build());
+                        objectFields.add(newObjectField().name(fieldName).value(newNullValue().build()).build());
                     }
                 } else {
                     Object literal = externalValueToLiteral(fieldVisibility,
@@ -371,7 +371,7 @@ public class ValuesResolver {
                     if (valueMode == NORMALIZED) {
                         normalizedResult.put(fieldName, new NormalizedInputValue(simplePrint(fieldType), literal));
                     } else {
-                        objectFields.add(newObjectField().value((Value) literal).build());
+                        objectFields.add(newObjectField().name(fieldName).value((Value) literal).build());
                     }
                 }
             }

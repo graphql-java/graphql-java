@@ -9,6 +9,7 @@ import graphql.introspection.IntrospectionResultToSchema
 import graphql.schema.Coercing
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLCodeRegistry
+import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLEnumValueDefinition
 import graphql.schema.GraphQLFieldDefinition
@@ -1950,4 +1951,61 @@ type Query {
 """
     }
 
+    def "programmatic object value in an argument is printed"() {
+        def sdl = """
+            type Query {
+              f : String 
+            }
+            
+            input Compound {
+                a : String!
+                b : String!
+            }
+        """
+
+        def schema = TestUtil.schema(sdl)
+        GraphQLInputObjectType compoundType = schema.getTypeAs("Compound")
+
+        GraphQLObjectType objType = newObject().name("obj")
+                .field({
+                    it.name("f").type(GraphQLString)
+                            .argument({
+                                it.name("arg").type(compoundType).defaultValueProgrammatic(["a": "A", "b": "B"])
+                            })
+                }).build()
+
+        when:
+
+        def result = new SchemaPrinter().print(objType)
+
+
+        then:
+        result == '''type obj {
+  f(arg: Compound = {a : "A", b : "B"}): String
+}
+
+'''
+
+        when:
+        def newDirective = GraphQLDirective.newDirective().name("foo")
+                .argument({
+                    it.name("arg").type(compoundType).valueProgrammatic(["a": "A", "b": "B"])
+                })
+                .build()
+        def fieldDef = schema.getQueryType().getFieldDefinition("f")
+        fieldDef = fieldDef.transform({ it.withDirective(newDirective) })
+
+        objType = newObject().name("obj").field(fieldDef).build()
+
+        result = new SchemaPrinter().print(objType)
+
+        then:
+
+        result == '''type obj {
+  f: String @foo(arg : {a : "A", b : "B"})
+}
+
+'''
+
+    }
 }
