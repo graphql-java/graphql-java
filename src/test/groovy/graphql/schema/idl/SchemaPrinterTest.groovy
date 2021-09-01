@@ -1952,19 +1952,11 @@ type Query {
     }
 
     def "programmatic object value in an argument is printed"() {
-        def sdl = """
-            type Query {
-              f : String 
-            }
-            
-            input Compound {
-                a : String!
-                b : String!
-            }
-        """
 
-        def schema = TestUtil.schema(sdl)
-        GraphQLInputObjectType compoundType = schema.getTypeAs("Compound")
+        GraphQLInputObjectType compoundType = GraphQLInputObjectType.newInputObject().name("Compound")
+                .field({ it.name("a").type(GraphQLString) })
+                .field({ it.name("b").type(GraphQLString) })
+                .build()
 
         GraphQLObjectType objType = newObject().name("obj")
                 .field({
@@ -1992,10 +1984,10 @@ type Query {
                     it.name("arg").type(compoundType).valueProgrammatic(["a": "A", "b": "B"])
                 })
                 .build()
-        def fieldDef = schema.getQueryType().getFieldDefinition("f")
-        fieldDef = fieldDef.transform({ it.withDirective(newDirective) })
 
-        objType = newObject().name("obj").field(fieldDef).build()
+        objType = newObject().name("obj").field({
+            it.name("f").type(GraphQLString).withDirective(newDirective)
+        }).build()
 
         result = new SchemaPrinter().print(objType)
 
