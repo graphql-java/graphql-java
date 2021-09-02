@@ -7,7 +7,6 @@ import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,6 +88,10 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitStringValue(this, context);
+    }
+
+    public static StringValue of(String value) {
+        return StringValue.newStringValue(value).build();
     }
 
     public static Builder newStringValue() {

@@ -97,6 +97,10 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
         return visitor.visitFloatValue(this, context);
     }
 
+    public static FloatValue of(double d) {
+        return newFloatValue().value(d).build();
+    }
+
     public static Builder newFloatValue() {
         return new Builder();
     }

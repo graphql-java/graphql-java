@@ -3,6 +3,7 @@ package graphql.language
 
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectType
+import spock.lang.Ignore
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
@@ -185,6 +186,7 @@ class ValuesResolverTestLegacy extends Specification {
 
     }
 
+    @Ignore("ObjectValue.isEqualTo is broken - this test currently makes no sense")
     def 'converts input objects with explicit nulls'() {
         expect:
         def inputObj = GraphQLInputObjectType.newInputObject()

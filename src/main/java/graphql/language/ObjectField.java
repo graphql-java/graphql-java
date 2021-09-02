@@ -28,8 +28,8 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
     @Internal
     protected ObjectField(String name, Value value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
-        this.name = name;
-        this.value = value;
+        this.name = assertNotNull(name);
+        this.value = assertNotNull(value);
     }
 
     /**
