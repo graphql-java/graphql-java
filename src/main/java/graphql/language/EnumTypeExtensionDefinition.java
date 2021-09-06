@@ -14,7 +14,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
 
 @PublicApi
-public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
+public class EnumTypeExtensionDefinition extends EnumTypeDefinition implements SDLExtensionDefinition {
 
     @Internal
     protected EnumTypeExtensionDefinition(String name,
