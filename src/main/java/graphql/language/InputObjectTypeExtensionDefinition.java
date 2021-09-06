@@ -14,7 +14,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
 
 @PublicApi
-public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinition {
+public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinition implements SDLExtensionDefinition {
 
     @Internal
     protected InputObjectTypeExtensionDefinition(String name,

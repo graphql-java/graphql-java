@@ -14,7 +14,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
 
 @PublicApi
-public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
+public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition implements SDLExtensionDefinition {
 
     @Internal
     protected ScalarTypeExtensionDefinition(String name,
