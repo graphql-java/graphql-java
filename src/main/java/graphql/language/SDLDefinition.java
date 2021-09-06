@@ -4,7 +4,7 @@ package graphql.language;
 import graphql.PublicApi;
 
 /**
- * All Schema Definition Language (SDL) Definitions.
+ * An interface for Schema Definition Language (SDL) definitions.
  *
  * @param <T> the actual Node type
  */
