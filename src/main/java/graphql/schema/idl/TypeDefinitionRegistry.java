@@ -47,6 +47,7 @@ import static java.util.Optional.ofNullable;
  * A {@link TypeDefinitionRegistry} contains the set of type definitions that come from compiling
  * a graphql schema definition file via {@link SchemaParser#parse(String)}
  */
+@SuppressWarnings("rawtypes")
 @PublicApi
 public class TypeDefinitionRegistry implements Serializable {
 
@@ -62,12 +63,23 @@ public class TypeDefinitionRegistry implements Serializable {
     private final Map<String, DirectiveDefinition> directiveDefinitions = new LinkedHashMap<>();
     private SchemaDefinition schema;
     private final List<SchemaExtensionDefinition> schemaExtensionDefinitions = new ArrayList<>();
+    private final SchemaParseOrder schemaParseOrder = new SchemaParseOrder();
+
+
+    /**
+     * @return the order in which {@link SDLDefinition}s were parsed
+     */
+    public SchemaParseOrder getParseOrder() {
+        return schemaParseOrder;
+    }
 
     /**
      * This will merge these type registries together and return this one
      *
      * @param typeRegistry the registry to be merged into this one
+     *
      * @return this registry
+     *
      * @throws SchemaProblem if there are problems merging the types such as redefinitions
      */
     public TypeDefinitionRegistry merge(TypeDefinitionRegistry typeRegistry) throws SchemaProblem {
@@ -97,8 +109,10 @@ public class TypeDefinitionRegistry implements Serializable {
         if (this.schema == null) {
             // ensure schema is not overwritten by merge
             this.schema = typeRegistry.schema;
+            schemaParseOrder.addDefinition(typeRegistry.schema);
         }
         this.schemaExtensionDefinitions.addAll(typeRegistry.schemaExtensionDefinitions);
+        typeRegistry.schemaExtensionDefinitions.forEach(schemaParseOrder::addDefinition);
 
         // ok commit to the merge
         this.types.putAll(tempTypes);
@@ -167,6 +181,7 @@ public class TypeDefinitionRegistry implements Serializable {
      * Adds a a collections of definitions to the registry
      *
      * @param definitions the definitions to add
+     *
      * @return an optional error for the first problem, typically type redefinition
      */
     public Optional<GraphQLError> addAll(Collection<SDLDefinition> definitions) {
@@ -183,6 +198,7 @@ public class TypeDefinitionRegistry implements Serializable {
      * Adds a definition to the registry
      *
      * @param definition the definition to add
+     *
      * @return an optional error
      */
     public Optional<GraphQLError> add(SDLDefinition definition) {
@@ -207,6 +223,7 @@ public class TypeDefinitionRegistry implements Serializable {
             return defineExt(inputObjectTypeExtensions, newEntry, InputObjectTypeExtensionDefinition::getName);
         } else if (definition instanceof SchemaExtensionDefinition) {
             schemaExtensionDefinitions.add((SchemaExtensionDefinition) definition);
+            schemaParseOrder.addDefinition(definition);
             Optional<GraphQLError> error = checkAddOperationDefs();
             if (error.isPresent()) {
                 return error;
@@ -226,6 +243,7 @@ public class TypeDefinitionRegistry implements Serializable {
                 return Optional.of(new SchemaRedefinitionError(this.schema, newSchema));
             } else {
                 schema = newSchema;
+                schemaParseOrder.addDefinition(newSchema);
             }
             Optional<GraphQLError> error = checkAddOperationDefs();
             if (error.isPresent()) {
@@ -244,6 +262,7 @@ public class TypeDefinitionRegistry implements Serializable {
      */
     public void remove(SDLDefinition definition) {
         assertNotNull(definition, () -> "definition to remove can't be null");
+        schemaParseOrder.removedDefinition(definition);
         if (definition instanceof ObjectTypeExtensionDefinition) {
             removeFromList(objectTypeExtensions, (TypeDefinition) definition);
         } else if (definition instanceof InterfaceTypeExtensionDefinition) {
@@ -285,12 +304,13 @@ public class TypeDefinitionRegistry implements Serializable {
     /**
      * Removes a {@code SDLDefinition} from a map.
      *
-     * @param key the key to remove
+     * @param key        the key to remove
      * @param definition the definition to remove
      */
     public void remove(String key, SDLDefinition definition) {
         assertNotNull(definition, () -> "definition to remove can't be null");
         assertNotNull(key, () -> "key to remove can't be null");
+        schemaParseOrder.removedDefinition(definition);
         if (definition instanceof ObjectTypeExtensionDefinition) {
             removeFromMap(objectTypeExtensions, key);
         } else if (definition instanceof InterfaceTypeExtensionDefinition) {
@@ -334,6 +354,7 @@ public class TypeDefinitionRegistry implements Serializable {
             return Optional.of(handleReDefinition(olderEntry, newEntry));
         } else {
             target.put(name, newEntry);
+            schemaParseOrder.addDefinition(newEntry);
         }
         return Optional.empty();
     }
@@ -346,13 +367,15 @@ public class TypeDefinitionRegistry implements Serializable {
             return Optional.of(handleReDefinition(olderEntry, newEntry));
         } else {
             target.put(name, newEntry);
+            schemaParseOrder.addDefinition(newEntry);
         }
         return Optional.empty();
     }
 
-    private <T> Optional<GraphQLError> defineExt(Map<String, List<T>> typeExtensions, T newEntry, Function<T, String> namerFunc) {
+    private <T extends TypeDefinition> Optional<GraphQLError> defineExt(Map<String, List<T>> typeExtensions, T newEntry, Function<T, String> namerFunc) {
         List<T> currentList = typeExtensions.computeIfAbsent(namerFunc.apply(newEntry), k -> new ArrayList<>());
         currentList.add(newEntry);
+        schemaParseOrder.addDefinition(newEntry);
         return Optional.empty();
     }
 
@@ -419,7 +442,7 @@ public class TypeDefinitionRegistry implements Serializable {
         return types.containsKey(name) || ScalarInfo.GRAPHQL_SPECIFICATION_SCALARS_DEFINITIONS.containsKey(name) || scalarTypes.containsKey(name) || objectTypeExtensions.containsKey(name);
     }
 
-    public Optional<TypeDefinition>     getType(Type type) {
+    public Optional<TypeDefinition> getType(Type type) {
         String typeName = TypeInfo.typeInfo(type).getName();
         return getType(typeName);
     }
@@ -457,6 +480,7 @@ public class TypeDefinitionRegistry implements Serializable {
      * Returns true if the specified type exists in the registry and is an abstract (Interface or Union) type
      *
      * @param type the type to check
+     *
      * @return true if its abstract
      */
     public boolean isInterfaceOrUnion(Type type) {
@@ -472,6 +496,7 @@ public class TypeDefinitionRegistry implements Serializable {
      * Returns true if the specified type exists in the registry and is an object type or interface
      *
      * @param type the type to check
+     *
      * @return true if its an object type or interface
      */
     public boolean isObjectTypeOrInterface(Type type) {
@@ -487,6 +512,7 @@ public class TypeDefinitionRegistry implements Serializable {
      * Returns true if the specified type exists in the registry and is an object type
      *
      * @param type the type to check
+     *
      * @return true if its an object type
      */
     public boolean isObjectType(Type type) {
@@ -498,6 +524,7 @@ public class TypeDefinitionRegistry implements Serializable {
      *
      * @param targetClass the class to search for
      * @param <T>         must extend TypeDefinition
+     *
      * @return a list of types of the target class
      */
     public <T extends TypeDefinition> List<T> getTypes(Class<T> targetClass) {
@@ -512,6 +539,7 @@ public class TypeDefinitionRegistry implements Serializable {
      *
      * @param targetClass the class to search for
      * @param <T>         must extend TypeDefinition
+     *
      * @return a map of types
      */
     public <T extends TypeDefinition> Map<String, T> getTypesMap(Class<T> targetClass) {
@@ -523,7 +551,9 @@ public class TypeDefinitionRegistry implements Serializable {
      * Returns the list of object and interface types that implement the given interface type
      *
      * @param targetInterface the target to search for
+     *
      * @return the list of object types that implement the given interface type
+     *
      * @see TypeDefinitionRegistry#getImplementationsOf(InterfaceTypeDefinition)
      */
     public List<ImplementingTypeDefinition> getAllImplementationsOf(InterfaceTypeDefinition targetInterface) {
@@ -547,7 +577,9 @@ public class TypeDefinitionRegistry implements Serializable {
      * Returns the list of object interface types that implement the given interface type
      *
      * @param targetInterface the target to search for
+     *
      * @return the list of object types that implement the given interface type
+     *
      * @see TypeDefinitionRegistry#getAllImplementationsOf(InterfaceTypeDefinition)
      */
     public List<ObjectTypeDefinition> getImplementationsOf(InterfaceTypeDefinition targetInterface) {
@@ -563,9 +595,9 @@ public class TypeDefinitionRegistry implements Serializable {
      *
      * @param abstractType the abstract type to check (interface or union)
      * @param possibleType the object type or interface to check
+     *
      * @return true if the object type or interface implements the abstract type
      */
-    @SuppressWarnings("ConstantConditions")
     public boolean isPossibleType(Type abstractType, Type possibleType) {
         if (!isInterfaceOrUnion(abstractType)) {
             return false;
@@ -599,6 +631,7 @@ public class TypeDefinitionRegistry implements Serializable {
      *
      * @param maybeSubType the type to check
      * @param superType    the equality checked type
+     *
      * @return true if maybeSubType is covariant or equal to superType
      */
     @SuppressWarnings("SimplifiableIfStatement")
