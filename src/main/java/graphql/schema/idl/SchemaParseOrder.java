@@ -10,6 +10,7 @@ import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLSchemaElement;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -25,7 +26,7 @@ import static java.util.Optional.ofNullable;
  * This class will track what order {@link SDLDefinition} were parsed in
  * via {@link SchemaParser} and {@link TypeDefinitionRegistry}
  */
-public class SchemaParseOrder {
+public class SchemaParseOrder implements Serializable {
 
     private final Map<String, List<SDLDefinition<?>>> definitionOrder = new LinkedHashMap<>();
 
