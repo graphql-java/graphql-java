@@ -4,14 +4,17 @@ import com.google.common.collect.ImmutableMap;
 import graphql.language.SDLDefinition;
 import graphql.language.SDLNamedDefinition;
 import graphql.language.SourceLocation;
+import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLNamedSchemaElement;
+import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLSchemaElement;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -70,19 +73,25 @@ public class SchemaParseOrder implements Serializable {
         // relies in the fact that names in graphql schema are unique across ALL elements
         Map<String, Integer> namedSortValues = buildNameIndex(getInNameOrder());
         return (e1, e2) -> {
-            if (e1 instanceof GraphQLFieldDefinition || e1 instanceof GraphQLInputObjectField || e1 instanceof GraphQLEnumValueDefinition) {
-                return 0; // as is
+            if (isAssignable(e1, GraphQLFieldDefinition.class, GraphQLInputObjectField.class, GraphQLEnumValueDefinition.class) ||
+                    isAssignable(e2, GraphQLFieldDefinition.class, GraphQLInputObjectField.class, GraphQLEnumValueDefinition.class)
+            ) {
+                return 0; // as is - they are not parsed tracked
             }
-            if (e1 instanceof GraphQLNamedSchemaElement && e2 instanceof GraphQLNamedSchemaElement) {
-                int sortVal1 = sortVale((GraphQLNamedSchemaElement) e1, namedSortValues);
-                int sortVal2 = sortVale((GraphQLNamedSchemaElement) e2, namedSortValues);
+            if (isAssignable(e1, GraphQLDirective.class, GraphQLNamedType.class) && isAssignable(e2, GraphQLDirective.class, GraphQLNamedType.class)) {
+                int sortVal1 = sortValue((GraphQLNamedSchemaElement) e1, namedSortValues);
+                int sortVal2 = sortValue((GraphQLNamedSchemaElement) e2, namedSortValues);
                 return Integer.compare(sortVal1, sortVal2);
             }
             return -1; // sort to the top
         };
     }
 
-    private Integer sortVale(GraphQLNamedSchemaElement e1, Map<String, Integer> namedSortValues) {
+    private <T extends GraphQLSchemaElement> boolean isAssignable(T e1, Class<?>... classes) {
+        return Arrays.stream(classes).anyMatch(aClass -> aClass.isAssignableFrom(e1.getClass()));
+    }
+
+    private Integer sortValue(GraphQLNamedSchemaElement e1, Map<String, Integer> namedSortValues) {
         return namedSortValues.getOrDefault(e1.getName(), -1);
     }
 
@@ -125,7 +134,7 @@ public class SchemaParseOrder implements Serializable {
      *
      * @return this {@link SchemaParseOrder} for fluent building
      */
-    public <T extends SDLDefinition<?>> SchemaParseOrder removedDefinition(T sdlDefinition) {
+    public <T extends SDLDefinition<?>> SchemaParseOrder removeDefinition(T sdlDefinition) {
         definitionList(sdlDefinition).remove(sdlDefinition);
         return this;
     }
