@@ -247,7 +247,7 @@ public class Parser {
             public void visitTerminal(TerminalNode node) {
                 count++;
                 if (count > maxTokens) {
-                    String msg = String.format("More than %d parse tokens have been presented.  To prevent Denial Of Service attacks, parsing has been cancelled.", maxTokens);
+                    String msg = String.format("More than %d parse tokens have been presented. To prevent Denial Of Service attacks, parsing has been cancelled.", maxTokens);
                     SourceLocation sourceLocation = null;
                     String offendingToken = null;
                     if (node.getSymbol() != null) {
