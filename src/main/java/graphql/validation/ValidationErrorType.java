@@ -3,6 +3,7 @@ package graphql.validation;
 
 public enum ValidationErrorType {
 
+    MaxValidationErrorsReached,
     DefaultForNonNullArgument,
     WrongType,
     UnknownType,
