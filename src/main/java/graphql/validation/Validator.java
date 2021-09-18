@@ -36,14 +36,36 @@ import java.util.List;
 @Internal
 public class Validator {
 
+    static int MAX_VALIDATION_ERRORS = 500;
+
+    /**
+     * `graphql-java` will stop validation after a maximum number of validation messages has been reached.  Attackers
+     * can send pathologically invalid queries to induce a Denial of Service attack and fill memory with 10000s of errors
+     * and burn CPU in process.
+     *
+     * You can set a new JVM wide value as the maximum allow validation errors.  By default this is set to 500 errors.
+     *
+     * @param maxValidationErrors the maximum validation errors allow JVM wide
+     */
+    public static void setMaxValidationErrors(int maxValidationErrors) {
+        MAX_VALIDATION_ERRORS = maxValidationErrors;
+    }
+
+    public static int getMaxValidationErrors() {
+        return MAX_VALIDATION_ERRORS;
+    }
+
     public List<ValidationError> validateDocument(GraphQLSchema schema, Document document) {
         ValidationContext validationContext = new ValidationContext(schema, document);
 
-
-        ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector();
+        ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector(MAX_VALIDATION_ERRORS);
         List<AbstractRule> rules = createRules(validationContext, validationErrorCollector);
         LanguageTraversal languageTraversal = new LanguageTraversal();
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, rules));
+        try {
+            languageTraversal.traverse(document, new RulesVisitor(validationContext, rules));
+        } catch (ValidationErrorCollector.MaxValidationErrorsReached ignored) {
+            // if we have generated enough errors, then we can shortcut out
+        }
 
         return validationErrorCollector.getErrors();
     }
