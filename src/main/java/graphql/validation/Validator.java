@@ -36,14 +36,14 @@ import java.util.List;
 @Internal
 public class Validator {
 
-    static int MAX_VALIDATION_ERRORS = 500;
+    static int MAX_VALIDATION_ERRORS = 100;
 
     /**
      * `graphql-java` will stop validation after a maximum number of validation messages has been reached.  Attackers
      * can send pathologically invalid queries to induce a Denial of Service attack and fill memory with 10000s of errors
      * and burn CPU in process.
      *
-     * You can set a new JVM wide value as the maximum allow validation errors.  By default this is set to 500 errors.
+     * By default, this is set to 100 errors.  You can set a new JVM wide value as the maximum allowed validation errors.
      *
      * @param maxValidationErrors the maximum validation errors allow JVM wide
      */

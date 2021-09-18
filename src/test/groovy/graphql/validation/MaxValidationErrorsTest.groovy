@@ -13,7 +13,7 @@ class MaxValidationErrorsTest extends SpecValidationBase {
         def validationErrors = validate(query)
 
         then:
-        validationErrors.size() == 500
+        validationErrors.size() == 100
 
         when: "we can set a new maximum"
         Validator.setMaxValidationErrors(10)
