@@ -99,6 +99,10 @@ public class GraphqlAntlrToLanguage {
         this.parserOptions = parserOptions == null ? ParserOptions.getDefaultParserOptions() : parserOptions;
     }
 
+    public ParserOptions getParserOptions() {
+        return parserOptions;
+    }
+
     //MARKER START: Here GraphqlOperation.g4 specific methods begin
 
 

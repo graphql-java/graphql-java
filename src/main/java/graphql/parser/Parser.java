@@ -5,6 +5,7 @@ import graphql.language.Document;
 import graphql.language.Node;
 import graphql.language.SourceLocation;
 import graphql.language.Value;
+import graphql.parser.antlr.GraphqlBaseListener;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.BaseErrorListener;
@@ -16,6 +17,8 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
+import org.antlr.v4.runtime.tree.ParseTreeListener;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -144,7 +147,7 @@ public class Parser {
         return parseDocumentImpl(reader, parserOptions);
     }
 
-    private Document parseDocumentImpl(Reader reader, ParserOptions parserOptions) throws InvalidSyntaxException {
+    private Document parseDocumentImpl(Reader reader, ParserOptions parserOptions) throws InvalidSyntaxException, ParseCancelledException {
         BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction = (parser, toLanguage) -> {
             GraphqlParser.DocumentContext documentContext = parser.document();
             Document doc = toLanguage.createDocument(documentContext);
@@ -188,7 +191,7 @@ public class Parser {
             public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
                 SourceLocation sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, line, charPositionInLine);
                 String preview = AntlrHelper.createPreview(multiSourceReader, line);
-                throw new InvalidSyntaxException(sourceLocation, "Invalid syntax: " + msg, preview, null, null);
+                throw new InvalidSyntaxException(sourceLocation, msg, preview, null, null);
             }
         });
 
@@ -206,6 +209,13 @@ public class Parser {
         if (toLanguage == null) {
             toLanguage = getAntlrToLanguage(tokens, multiSourceReader, parserOptions);
         }
+
+        setupParserListener(multiSourceReader, parser, toLanguage);
+
+
+        //
+        // parsing starts ...... now!
+        //
         Object[] contextAndNode = nodeFunction.apply(parser, toLanguage);
         ParserRuleContext parserRuleContext = (ParserRuleContext) contextAndNode[0];
         Node<?> node = (Node<?>) contextAndNode[1];
@@ -225,6 +235,31 @@ public class Parser {
             }
         }
         return node;
+    }
+
+    private void setupParserListener(MultiSourceReader multiSourceReader, GraphqlParser parser, GraphqlAntlrToLanguage toLanguage) {
+        int maxTokens = toLanguage.getParserOptions().getMaxTokens();
+        // prevent a billion laugh attacks by restricting how many tokens we allow
+        ParseTreeListener listener = new GraphqlBaseListener() {
+            int count = 0;
+
+            @Override
+            public void visitTerminal(TerminalNode node) {
+                count++;
+                if (count > maxTokens) {
+                    String msg = String.format("More than %d parse tokens have been presented. To prevent Denial Of Service attacks, parsing has been cancelled.", maxTokens);
+                    SourceLocation sourceLocation = null;
+                    String offendingToken = null;
+                    if (node.getSymbol() != null) {
+                        offendingToken = node.getText();
+                        sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, node.getSymbol().getLine(), node.getSymbol().getCharPositionInLine());
+                    }
+
+                    throw new ParseCancelledException(msg, sourceLocation, offendingToken);
+                }
+            }
+        };
+        parser.addParseListener(listener);
     }
 
     /**
