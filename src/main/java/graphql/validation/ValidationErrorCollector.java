@@ -6,6 +6,8 @@ import graphql.Internal;
 import java.util.ArrayList;
 import java.util.List;
 
+import static graphql.validation.ValidationErrorType.MaxValidationErrorsReached;
+
 @Internal
 public class ValidationErrorCollector {
 
@@ -20,8 +22,8 @@ public class ValidationErrorCollector {
         this.maxErrors = maxErrors;
     }
 
-    public boolean atMaxErrors() {
-        return errors.size() >= maxErrors;
+    private boolean atMaxErrors() {
+        return errors.size() >= maxErrors - 1;
     }
 
     /**
@@ -35,6 +37,13 @@ public class ValidationErrorCollector {
         if (!atMaxErrors()) {
             this.errors.add(validationError);
         } else {
+            this.errors.add(ValidationError.newValidationError()
+                    .validationErrorType(MaxValidationErrorsReached)
+                    .description(
+                            String.format("The maximum number of validation errors has been reached. (%d)", maxErrors)
+                    )
+                    .build());
+
             throw new MaxValidationErrorsReached();
         }
     }
