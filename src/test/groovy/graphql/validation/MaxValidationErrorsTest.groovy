@@ -3,7 +3,7 @@ package graphql.validation
 class MaxValidationErrorsTest extends SpecValidationBase {
 
     def "The maximum number of validation messages is respected"() {
-        def directives = "@lol" * 10000
+        def directives = "@lol" * 500
         def query = """
             query lotsOfErrors {
               f $directives        
