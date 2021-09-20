@@ -238,21 +238,42 @@ public class Parser {
     }
 
     private void setupParserListener(MultiSourceReader multiSourceReader, GraphqlParser parser, GraphqlAntlrToLanguage toLanguage) {
-        int maxTokens = toLanguage.getParserOptions().getMaxTokens();
+        ParserOptions parserOptions = toLanguage.getParserOptions();
+        ParsingListener parsingListener = parserOptions.getParsingListener();
+        int maxTokens = parserOptions.getMaxTokens();
         // prevent a billion laugh attacks by restricting how many tokens we allow
         ParseTreeListener listener = new GraphqlBaseListener() {
             int count = 0;
 
             @Override
             public void visitTerminal(TerminalNode node) {
+
+                final Token symbol = node.getSymbol();
+                parsingListener.onToken(new ParsingListener.Symbol() {
+                    @Override
+                    public String getText() {
+                        return symbol == null ? null : symbol.getText();
+                    }
+
+                    @Override
+                    public int getLine() {
+                        return symbol == null ? -1 : symbol.getLine();
+                    }
+
+                    @Override
+                    public int getCharPositionInLine() {
+                        return symbol == null ? -1 : symbol.getCharPositionInLine();
+                    }
+                });
+
                 count++;
                 if (count > maxTokens) {
                     String msg = String.format("More than %d parse tokens have been presented. To prevent Denial Of Service attacks, parsing has been cancelled.", maxTokens);
                     SourceLocation sourceLocation = null;
                     String offendingToken = null;
-                    if (node.getSymbol() != null) {
+                    if (symbol != null) {
                         offendingToken = node.getText();
-                        sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, node.getSymbol().getLine(), node.getSymbol().getCharPositionInLine());
+                        sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, symbol.getLine(), symbol.getCharPositionInLine());
                     }
 
                     throw new ParseCancelledException(msg, sourceLocation, offendingToken);
