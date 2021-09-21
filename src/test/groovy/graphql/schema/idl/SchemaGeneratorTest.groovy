@@ -61,7 +61,8 @@ class SchemaGeneratorTest extends Specification {
     }
 
     static GraphQLSchema schema(String sdl, RuntimeWiring runtimeWiring) {
-        return TestUtil.schema(sdl, runtimeWiring)
+        SchemaGenerator.Options options = defaultOptions().captureAstDefinitions(true)
+        return TestUtil.schema(options, sdl, runtimeWiring)
     }
 
 
@@ -1311,8 +1312,11 @@ class SchemaGeneratorTest extends Specification {
         expect:
         type.getDirectives().size() == 4
         type.getDirectives()[0].name == "directive1"
+        type.getDirectives()[0].getDefinition() != null
         type.getDirectives()[1].name == "directive2"
+        type.getDirectives()[1].getDefinition() != null
         type.getDirectives()[2].name == "directive3"
+        type.getDirectives()[2].getDefinition() != null
 
         // test that fields can have directives as well
 

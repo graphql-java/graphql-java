@@ -285,7 +285,9 @@ public class SchemaGeneratorHelper {
         });
         builder.repeatable(graphQLDirective.isRepeatable());
 
-        List<GraphQLArgument> appliedArguments = map(directive.getArguments(), arg -> buildAppliedDArgument(arg, graphQLDirective));
+        builder.definition(buildCtx.isCaptureAstDefinitions() ? graphQLDirective.getDefinition() : null);
+
+        List<GraphQLArgument> appliedArguments = map(directive.getArguments(), arg -> buildAppliedDArgument(buildCtx, arg, graphQLDirective));
 
         appliedArguments = transferMissingArguments(buildCtx, appliedArguments, graphQLDirective);
         appliedArguments.forEach(builder::argument);
@@ -293,12 +295,14 @@ public class SchemaGeneratorHelper {
         return builder.build();
     }
 
-    private GraphQLArgument buildAppliedDArgument(Argument arg, GraphQLDirective directiveDefinition) {
+    private GraphQLArgument buildAppliedDArgument(BuildContext buildCtx, Argument arg, GraphQLDirective directiveDefinition) {
         GraphQLArgument directiveDefArgument = directiveDefinition.getArgument(arg.getName());
         GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
-        builder.name(arg.getName());
         GraphQLInputType inputType = directiveDefArgument.getType();
-        builder.type(inputType);
+        builder.name(arg.getName())
+                .type(inputType)
+                .definition(buildCtx.isCaptureAstDefinitions() ? directiveDefArgument.getDefinition() : null);
+        
         // we know it is a literal because it was created by SchemaGenerator
         if (directiveDefArgument.getArgumentDefaultValue().isSet()) {
             builder.defaultValueLiteral((Value) directiveDefArgument.getArgumentDefaultValue().getValue());
