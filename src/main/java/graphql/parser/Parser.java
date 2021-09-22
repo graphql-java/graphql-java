@@ -147,7 +147,7 @@ public class Parser {
         return parseDocumentImpl(reader, parserOptions);
     }
 
-    private Document parseDocumentImpl(Reader reader, ParserOptions parserOptions) throws InvalidSyntaxException, ParseCancelledException {
+    private Document parseDocumentImpl(Reader reader, ParserOptions parserOptions) throws InvalidSyntaxException {
         BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction = (parser, toLanguage) -> {
             GraphqlParser.DocumentContext documentContext = parser.document();
             Document doc = toLanguage.createDocument(documentContext);
@@ -248,21 +248,21 @@ public class Parser {
             @Override
             public void visitTerminal(TerminalNode node) {
 
-                final Token symbol = node.getSymbol();
-                parsingListener.onToken(new ParsingListener.Symbol() {
+                final Token token = node.getSymbol();
+                parsingListener.onToken(new ParsingListener.Token() {
                     @Override
                     public String getText() {
-                        return symbol == null ? null : symbol.getText();
+                        return token == null ? null : token.getText();
                     }
 
                     @Override
                     public int getLine() {
-                        return symbol == null ? -1 : symbol.getLine();
+                        return token == null ? -1 : token.getLine();
                     }
 
                     @Override
                     public int getCharPositionInLine() {
-                        return symbol == null ? -1 : symbol.getCharPositionInLine();
+                        return token == null ? -1 : token.getCharPositionInLine();
                     }
                 });
 
@@ -271,9 +271,9 @@ public class Parser {
                     String msg = String.format("More than %d parse tokens have been presented. To prevent Denial Of Service attacks, parsing has been cancelled.", maxTokens);
                     SourceLocation sourceLocation = null;
                     String offendingToken = null;
-                    if (symbol != null) {
+                    if (token != null) {
                         offendingToken = node.getText();
-                        sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, symbol.getLine(), symbol.getCharPositionInLine());
+                        sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, token.getLine(), token.getCharPositionInLine());
                     }
 
                     throw new ParseCancelledException(msg, sourceLocation, offendingToken);

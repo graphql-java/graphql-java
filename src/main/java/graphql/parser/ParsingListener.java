@@ -16,20 +16,29 @@ public interface ParsingListener {
 
 
     /**
-     * This represents a token symbol that has been parsed
+     * This represents a token that has been parsed
      */
-    interface Symbol {
+    interface Token {
+        /**
+         * @return the text of the parsed token
+         */
         String getText();
 
+        /**
+         * @return the line the token occurred on
+         */
         int getLine();
 
+        /**
+         * @return the position within the line the token occurred on
+         */
         int getCharPositionInLine();
     }
 
     /**
      * This is called for each token found during parsing
      *
-     * @param symbol the symbol found
+     * @param token the token found
      */
-    void onToken(Symbol symbol);
+    void onToken(Token token);
 }
