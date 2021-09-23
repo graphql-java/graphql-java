@@ -1,6 +1,6 @@
 package graphql.parser
 
-
+import graphql.ExecutionInput
 import graphql.TestUtil
 import graphql.language.Argument
 import graphql.language.ArrayValue
@@ -1103,5 +1103,42 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
 
         then:
         doc != null
+    }
+
+    def "they can set their own listener into action"() {
+        def queryText = "query { f(arg : 1) }"
+
+        def count = 0
+        def tokens = []
+        ParsingListener listener = { count++; tokens.add(it.getText()) }
+        def parserOptions = ParserOptions.newParserOptions().parsingListener(listener).build()
+        when:
+        def doc = new Parser().parseDocument(queryText, parserOptions)
+
+        then:
+        doc != null
+        count == 9
+        tokens == ["query" , "{", "f" , "(", "arg", ":", "1", ")", "}"]
+
+        when: "integration test to prove it be supplied via EI"
+
+        def sdl = """type Query { f(arg : Int) : ID} """
+        def graphQL = TestUtil.graphQL(sdl).build()
+
+
+        def context = [:]
+        context.put(ParserOptions.class, parserOptions)
+        def executionInput = ExecutionInput.newExecutionInput()
+                .query(queryText)
+                .graphQLContext(context).build()
+
+        count = 0
+        tokens = []
+        def er = graphQL.execute(executionInput)
+        then:
+        er.errors.size() == 0
+        count == 9
+        tokens == ["query" , "{", "f" , "(", "arg", ":", "1", ")", "}"]
+
     }
 }

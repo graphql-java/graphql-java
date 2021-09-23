@@ -147,7 +147,7 @@ public class Parser {
         return parseDocumentImpl(reader, parserOptions);
     }
 
-    private Document parseDocumentImpl(Reader reader, ParserOptions parserOptions) throws InvalidSyntaxException, ParseCancelledException {
+    private Document parseDocumentImpl(Reader reader, ParserOptions parserOptions) throws InvalidSyntaxException {
         BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction = (parser, toLanguage) -> {
             GraphqlParser.DocumentContext documentContext = parser.document();
             Document doc = toLanguage.createDocument(documentContext);
@@ -238,21 +238,42 @@ public class Parser {
     }
 
     private void setupParserListener(MultiSourceReader multiSourceReader, GraphqlParser parser, GraphqlAntlrToLanguage toLanguage) {
-        int maxTokens = toLanguage.getParserOptions().getMaxTokens();
+        ParserOptions parserOptions = toLanguage.getParserOptions();
+        ParsingListener parsingListener = parserOptions.getParsingListener();
+        int maxTokens = parserOptions.getMaxTokens();
         // prevent a billion laugh attacks by restricting how many tokens we allow
         ParseTreeListener listener = new GraphqlBaseListener() {
             int count = 0;
 
             @Override
             public void visitTerminal(TerminalNode node) {
+
+                final Token token = node.getSymbol();
+                parsingListener.onToken(new ParsingListener.Token() {
+                    @Override
+                    public String getText() {
+                        return token == null ? null : token.getText();
+                    }
+
+                    @Override
+                    public int getLine() {
+                        return token == null ? -1 : token.getLine();
+                    }
+
+                    @Override
+                    public int getCharPositionInLine() {
+                        return token == null ? -1 : token.getCharPositionInLine();
+                    }
+                });
+
                 count++;
                 if (count > maxTokens) {
                     String msg = String.format("More than %d parse tokens have been presented. To prevent Denial Of Service attacks, parsing has been cancelled.", maxTokens);
                     SourceLocation sourceLocation = null;
                     String offendingToken = null;
-                    if (node.getSymbol() != null) {
+                    if (token != null) {
                         offendingToken = node.getText();
-                        sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, node.getSymbol().getLine(), node.getSymbol().getCharPositionInLine());
+                        sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, token.getLine(), token.getCharPositionInLine());
                     }
 
                     throw new ParseCancelledException(msg, sourceLocation, offendingToken);
