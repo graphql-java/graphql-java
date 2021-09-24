@@ -19,10 +19,8 @@ import static graphql.schema.GraphqlTypeComparatorEnvironment.newEnvironment;
 @PublicApi
 public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparatorRegistry {
 
-    // This order was taken from the original SchemaPrinter code.  It ordered the types in this hard coded manner
-    // followed by in name order (by default)
-    // this has been created to preserve the old behavior.
-    private static final ImmutableMap<Class<? extends GraphQLSchemaElement>, Integer> HARD_CODED_ORDER =
+    // This sensible order was taken from the original SchemaPrinter code.  It ordered the types in this manner
+    private static final ImmutableMap<Class<? extends GraphQLSchemaElement>, Integer> SENSIBLE_ORDER =
             ImmutableMap.<Class<? extends GraphQLSchemaElement>, Integer>builder()
                     .put(GraphQLDirective.class, 1)
                     .put(GraphQLInterfaceType.class, 2)
@@ -33,12 +31,16 @@ public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparat
                     .put(GraphQLInputObjectType.class, 7)
                     .build();
 
-    private static Comparator<GraphQLSchemaElement> schemaPrinterHardCodedAlgo() {
+    /**
+     * This orders the schema into a sensible grouped order
+     * @return a comparator that allows for sensible grouped order
+     */
+    public static Comparator<GraphQLSchemaElement> sensibleGroupedOrder() {
         return (o1, o2) -> {
             o1 = unwrapElement(o1);
             o2 = unwrapElement(o2);
-            int i1 = HARD_CODED_ORDER.getOrDefault(o1.getClass(), 0);
-            int i2 = HARD_CODED_ORDER.getOrDefault(o2.getClass(), 0);
+            int i1 = SENSIBLE_ORDER.getOrDefault(o1.getClass(), 0);
+            int i2 = SENSIBLE_ORDER.getOrDefault(o2.getClass(), 0);
             int rc = i1 - i2;
             if (rc == 0) {
                 rc = compareByName(o1, o2);
@@ -67,7 +69,7 @@ public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparat
         }).compare(o1, o2);
     }
 
-    public static final Comparator<GraphQLSchemaElement> DEFAULT_COMPARATOR = schemaPrinterHardCodedAlgo();
+    public static final Comparator<GraphQLSchemaElement> DEFAULT_COMPARATOR = sensibleGroupedOrder();
 
     private Map<GraphqlTypeComparatorEnvironment, Comparator<?>> registry = new HashMap<>();
 
