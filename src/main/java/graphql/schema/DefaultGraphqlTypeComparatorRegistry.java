@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import com.google.common.collect.ImmutableMap;
 import graphql.PublicApi;
 
 import java.util.Comparator;
@@ -18,9 +19,43 @@ import static graphql.schema.GraphqlTypeComparatorEnvironment.newEnvironment;
 @PublicApi
 public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparatorRegistry {
 
-    public static final Comparator<GraphQLSchemaElement> DEFAULT_COMPARATOR;
-    static {
-        DEFAULT_COMPARATOR = Comparator.comparing(element -> {
+    // This order was taken from the original SchemaPrinter code.  It ordered the types in this hard coded manner
+    // followed by in name order (by default)
+    // this has been created to preserve the old behavior.
+    private static final ImmutableMap<Class<? extends GraphQLSchemaElement>, Integer> HARD_CODED_ORDER =
+            ImmutableMap.<Class<? extends GraphQLSchemaElement>, Integer>builder()
+                    .put(GraphQLDirective.class, 1)
+                    .put(GraphQLInterfaceType.class, 2)
+                    .put(GraphQLUnionType.class, 3)
+                    .put(GraphQLObjectType.class, 4)
+                    .put(GraphQLEnumType.class, 5)
+                    .put(GraphQLScalarType.class, 6)
+                    .put(GraphQLInputObjectType.class, 7)
+                    .build();
+
+    private static Comparator<GraphQLSchemaElement> schemaPrinterHardCodedAlgo() {
+        return (o1, o2) -> {
+            o1 = unwrapElement(o1);
+            o2 = unwrapElement(o2);
+            int i1 = HARD_CODED_ORDER.getOrDefault(o1.getClass(), 0);
+            int i2 = HARD_CODED_ORDER.getOrDefault(o2.getClass(), 0);
+            int rc = i1 - i2;
+            if (rc == 0) {
+                rc = compareByName(o1, o2);
+            }
+            return rc;
+        };
+    }
+
+    private static GraphQLSchemaElement unwrapElement(GraphQLSchemaElement element) {
+        if (element instanceof GraphQLType) {
+            element = unwrapAll((GraphQLType) element);
+        }
+        return element;
+    }
+
+    private static int compareByName(GraphQLSchemaElement o1, GraphQLSchemaElement o2) {
+        return Comparator.comparing(element -> {
             if (element instanceof GraphQLType) {
                 element = unwrapAll((GraphQLType) element);
             }
@@ -29,8 +64,10 @@ public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparat
             } else {
                 return Objects.toString(element);
             }
-        });
+        }).compare(o1, o2);
     }
+
+    public static final Comparator<GraphQLSchemaElement> DEFAULT_COMPARATOR = schemaPrinterHardCodedAlgo();
 
     private Map<GraphqlTypeComparatorEnvironment, Comparator<?>> registry = new HashMap<>();
 
@@ -72,7 +109,7 @@ public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparat
 
     public static class Builder {
 
-        private Map<GraphqlTypeComparatorEnvironment, Comparator<?>> registry = new HashMap<>();
+        private final Map<GraphqlTypeComparatorEnvironment, Comparator<?>> registry = new HashMap<>();
 
         /**
          * Registers a {@code Comparator} with an environment to control its permitted scope of operation.

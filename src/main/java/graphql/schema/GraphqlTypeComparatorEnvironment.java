@@ -1,6 +1,5 @@
 package graphql.schema;
 
-import graphql.Assert;
 import graphql.PublicApi;
 
 import java.util.Objects;
@@ -10,7 +9,7 @@ import java.util.function.Consumer;
  * Defines the scope to control where the registered {@code Comparator} can be applied.
  * <p>
  * {@code elementType}s can be ordered within its {@code parentType} to restrict the {@code Comparator}s scope of operation.
- * Otherwise supplying only the {@code elementType} results in the {@code Comparator} being reused across all matching {@code GraphQLType}s regardless of parent.
+ * Otherwise, supplying only the {@code elementType} results in the {@code Comparator} being reused across all matching {@code GraphQLType}s regardless of parent.
  */
 @PublicApi
 public class GraphqlTypeComparatorEnvironment {
@@ -20,7 +19,6 @@ public class GraphqlTypeComparatorEnvironment {
     private Class<? extends GraphQLSchemaElement> elementType;
 
     private GraphqlTypeComparatorEnvironment(Class<? extends GraphQLSchemaElement> parentType, Class<? extends GraphQLSchemaElement> elementType) {
-        Assert.assertNotNull(elementType, () -> "elementType can't be null");
         this.parentType = parentType;
         this.elementType = elementType;
     }
@@ -33,7 +31,7 @@ public class GraphqlTypeComparatorEnvironment {
     }
 
     /**
-     * @return The valid element type.
+     * @return The valid element type or {@code null} if not supplied.
      */
     public Class<? extends GraphQLSchemaElement> getElementType() {
         return elementType;
