@@ -24,7 +24,7 @@ class TypeResolutionEnvironmentTest extends Specification {
             bar : String
         }
         
-        type FooBar implements Foo, Bar {
+        type FooBar implements Foo & Bar {
             foo : String
             bar : String
         }

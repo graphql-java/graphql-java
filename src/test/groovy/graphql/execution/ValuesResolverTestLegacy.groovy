@@ -3,6 +3,7 @@ package graphql.language
 
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectType
+import spock.lang.Ignore
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
@@ -130,6 +131,21 @@ class ValuesResolverTestLegacy extends Specification {
         )
     }
 
+    def 'converts list to lists'() {
+        expect:
+        valueToLiteralLegacy(['hello', 'world'], list(GraphQLString)).isEqualTo(
+                new ArrayValue(['hello', 'world'])
+        )
+    }
+
+    def 'converts arrays to lists'() {
+        String[] sArr = ['hello', 'world'] as String[]
+        expect:
+        valueToLiteralLegacy(sArr, list(GraphQLString)).isEqualTo(
+                new ArrayValue(['hello', 'world'])
+        )
+    }
+
     class SomePojo {
         def foo = 3
         def bar = "HELLO"
@@ -170,6 +186,7 @@ class ValuesResolverTestLegacy extends Specification {
 
     }
 
+    @Ignore("ObjectValue.isEqualTo is broken - this test currently makes no sense")
     def 'converts input objects with explicit nulls'() {
         expect:
         def inputObj = GraphQLInputObjectType.newInputObject()

@@ -3,8 +3,8 @@ package benchmark;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import graphql.language.Document;
-import graphql.normalized.NormalizedQuery;
-import graphql.normalized.NormalizedQueryFactory;
+import graphql.normalized.ExecutableNormalizedOperation;
+import graphql.normalized.ExecutableNormalizedOperationFactory;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaGenerator;
@@ -67,10 +67,10 @@ public class NQBenchmark {
     @Fork(3)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public NormalizedQuery benchMarkAvgTime(MyState myState) throws ExecutionException, InterruptedException {
-        NormalizedQuery normalizedQuery = NormalizedQueryFactory.createNormalizedQuery(myState.schema, myState.document, null, Collections.emptyMap());
+    public ExecutableNormalizedOperation benchMarkAvgTime(MyState myState) throws ExecutionException, InterruptedException {
+        ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(myState.schema, myState.document, null, Collections.emptyMap());
 //        System.out.println("fields size:" + normalizedQuery.getFieldToNormalizedField().size());
-        return normalizedQuery;
+        return executableNormalizedOperation;
     }
 
 

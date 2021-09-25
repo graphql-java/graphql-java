@@ -156,6 +156,13 @@ public class FieldLevelTrackingApproach {
                     dispatch();
                 }
             }
+
+            @Override
+            public void onFieldValuesException() {
+                synchronized (callStack) {
+                    callStack.increaseHappenedOnFieldValueCalls(curLevel);
+                }
+            }
         };
     }
 

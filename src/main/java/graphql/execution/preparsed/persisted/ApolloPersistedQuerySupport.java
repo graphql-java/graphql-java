@@ -3,6 +3,10 @@ package graphql.execution.preparsed.persisted;
 import graphql.ExecutionInput;
 import graphql.PublicApi;
 
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.Optional;
 
@@ -32,6 +36,8 @@ import java.util.Optional;
 @PublicApi
 public class ApolloPersistedQuerySupport extends PersistedQuerySupport {
 
+    private static final String CHECKSUM_TYPE = "SHA-256";
+
     public ApolloPersistedQuerySupport(PersistedQueryCache persistedQueryCache) {
         super(persistedQueryCache);
     }
@@ -46,5 +52,19 @@ public class ApolloPersistedQuerySupport extends PersistedQuerySupport {
             return Optional.ofNullable(sha256Hash);
         }
         return Optional.empty();
+    }
+
+    @Override
+    protected boolean persistedQueryIdIsInvalid(Object persistedQueryId, String queryText) {
+        MessageDigest messageDigest;
+        try {
+            messageDigest = MessageDigest.getInstance(CHECKSUM_TYPE);
+        } catch (NoSuchAlgorithmException e) {
+            return false;
+        }
+
+        BigInteger bigInteger = new BigInteger(1, messageDigest.digest(queryText.getBytes(StandardCharsets.UTF_8)));
+        String calculatedChecksum = String.format("%064x", bigInteger);
+        return !calculatedChecksum.equalsIgnoreCase(persistedQueryId.toString());
     }
 }

@@ -3,6 +3,7 @@ package graphql;
 import graphql.language.Document;
 import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
+import graphql.parser.ParserOptions;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 import graphql.validation.Validator;
@@ -23,6 +24,7 @@ public class ParseAndValidate {
      *
      * @param graphQLSchema  the schema to validate against
      * @param executionInput the execution input containing the query
+     *
      * @return a result object that indicates how this operation went
      */
     public static ParseAndValidateResult parseAndValidate(GraphQLSchema graphQLSchema, ExecutionInput executionInput) {
@@ -38,12 +40,16 @@ public class ParseAndValidate {
      * This can be called to parse (but not validate) a graphql query.
      *
      * @param executionInput the input containing the query
+     *
      * @return a result object that indicates how this operation went
      */
     public static ParseAndValidateResult parse(ExecutionInput executionInput) {
         try {
+            //
+            // we allow the caller to specify new parser options by context
+            ParserOptions parserOptions = executionInput.getGraphQLContext().get(ParserOptions.class);
             Parser parser = new Parser();
-            Document document = parser.parseDocument(executionInput.getQuery());
+            Document document = parser.parseDocument(executionInput.getQuery(), parserOptions);
             return ParseAndValidateResult.newResult().document(document).variables(executionInput.getVariables()).build();
         } catch (InvalidSyntaxException e) {
             return ParseAndValidateResult.newResult().syntaxException(e).variables(executionInput.getVariables()).build();
@@ -55,6 +61,7 @@ public class ParseAndValidate {
      *
      * @param graphQLSchema  the graphql schema to validate against
      * @param parsedDocument the previously parsed document
+     *
      * @return a result object that indicates how this operation went
      */
     public static List<ValidationError> validate(GraphQLSchema graphQLSchema, Document parsedDocument) {

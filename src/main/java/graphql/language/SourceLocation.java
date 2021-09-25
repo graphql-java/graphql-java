@@ -9,6 +9,8 @@ import java.util.Objects;
 @PublicApi
 public class SourceLocation implements Serializable {
 
+    public static final SourceLocation EMPTY = new SourceLocation(-1, -1);
+
     private final int line;
     private final int column;
     private final String sourceName;
@@ -37,13 +39,21 @@ public class SourceLocation implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         SourceLocation that = (SourceLocation) o;
 
-        if (line != that.line) return false;
-        if (column != that.column) return false;
+        if (line != that.line) {
+            return false;
+        }
+        if (column != that.column) {
+            return false;
+        }
         return Objects.equals(sourceName, that.sourceName);
     }
 

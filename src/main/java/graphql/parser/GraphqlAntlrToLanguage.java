@@ -86,11 +86,21 @@ public class GraphqlAntlrToLanguage {
     private static final int CHANNEL_IGNORED_CHARS = 3;
     private final CommonTokenStream tokens;
     private final MultiSourceReader multiSourceReader;
+    private final ParserOptions parserOptions;
 
 
     public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
+        this(tokens, multiSourceReader, null);
+    }
+
+    public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions) {
         this.tokens = tokens;
         this.multiSourceReader = multiSourceReader;
+        this.parserOptions = parserOptions == null ? ParserOptions.getDefaultParserOptions() : parserOptions;
+    }
+
+    public ParserOptions getParserOptions() {
+        return parserOptions;
     }
 
     //MARKER START: Here GraphqlOperation.g4 specific methods begin
@@ -754,13 +764,14 @@ public class GraphqlAntlrToLanguage {
         return assertShouldNeverHappen();
     }
 
-    static String quotedString(TerminalNode terminalNode) {
+    protected String quotedString(TerminalNode terminalNode) {
         boolean multiLine = terminalNode.getText().startsWith("\"\"\"");
         String strText = terminalNode.getText();
+        SourceLocation sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, terminalNode);
         if (multiLine) {
             return parseTripleQuotedString(strText);
         } else {
-            return parseSingleQuotedString(strText);
+            return parseSingleQuotedString(strText, sourceLocation);
         }
     }
 
@@ -774,6 +785,9 @@ public class GraphqlAntlrToLanguage {
     }
 
     private void addIgnoredChars(ParserRuleContext ctx, NodeBuilder nodeBuilder) {
+        if (!parserOptions.isCaptureIgnoredChars()) {
+            return;
+        }
         Token start = ctx.getStart();
         int tokenStartIndex = start.getTokenIndex();
         List<Token> leftChannel = tokens.getHiddenTokensToLeft(tokenStartIndex, CHANNEL_IGNORED_CHARS);
@@ -830,21 +844,25 @@ public class GraphqlAntlrToLanguage {
         }
         String content = terminalNode.getText();
         boolean multiLine = content.startsWith("\"\"\"");
+        SourceLocation sourceLocation = getSourceLocation(descriptionCtx);
         if (multiLine) {
             content = parseTripleQuotedString(content);
         } else {
-            content = parseSingleQuotedString(content);
+            content = parseSingleQuotedString(content, sourceLocation);
         }
-        SourceLocation sourceLocation = getSourceLocation(descriptionCtx);
         return new Description(content, sourceLocation, multiLine);
-    }
-
-    protected SourceLocation getSourceLocation(Token token) {
-        return AntlrHelper.createSourceLocation(multiSourceReader, token);
     }
 
     protected SourceLocation getSourceLocation(ParserRuleContext parserRuleContext) {
         return getSourceLocation(parserRuleContext.getStart());
+    }
+
+    protected SourceLocation getSourceLocation(Token token) {
+        if (parserOptions.isCaptureSourceLocation()) {
+            return AntlrHelper.createSourceLocation(multiSourceReader, token);
+        } else {
+            return SourceLocation.EMPTY;
+        }
     }
 
     protected List<Comment> getComments(ParserRuleContext ctx) {
@@ -875,7 +893,12 @@ public class GraphqlAntlrToLanguage {
             int column = refTok.getCharPositionInLine();
             // graphql spec says line numbers start at 1
             int line = sourceAndLine.getLine() + 1;
-            comments.add(new Comment(text, new SourceLocation(line, column, sourceAndLine.getSourceName())));
+
+            SourceLocation sourceLocation = SourceLocation.EMPTY;
+            if (parserOptions.isCaptureSourceLocation()) {
+                sourceLocation = new SourceLocation(line, column, sourceAndLine.getSourceName());
+            }
+            comments.add(new Comment(text, sourceLocation));
         }
         return comments.build();
     }
@@ -884,9 +907,8 @@ public class GraphqlAntlrToLanguage {
     private List<Type> getImplementz(GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext) {
         List<Type> implementz = new ArrayList<>();
         while (implementsInterfacesContext != null) {
-            List<TypeName> typeNames = map(implementsInterfacesContext.typeName(), this::createTypeName);
-
-            implementz.addAll(0, typeNames);
+            GraphqlParser.TypeNameContext typeName = implementsInterfacesContext.typeName();
+            implementz.add(0, createTypeName(typeName));
             implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
         }
         return implementz;

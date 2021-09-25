@@ -8,6 +8,12 @@ import java.util.List;
 
 import static graphql.collect.ImmutableKit.emptyList;
 
+/**
+ * Graphql syntax has a series of characters, such as spaces, new lines and commas that are not considered relevant
+ * to the syntax.  However they can be captured and associated with the AST elements they belong to.
+ *
+ * This costs more memory but for certain use cases (like editors) this maybe be useful
+ */
 @PublicApi
 public class IgnoredChars implements Serializable {
 

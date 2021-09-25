@@ -1,5 +1,5 @@
 name: Master Build and Publish
-# For master push: Builds and publishes the development version to bintray/maven
+# For master push: Builds and publishes the development version to maven
 on:
   push:
     branches:

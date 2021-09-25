@@ -42,4 +42,23 @@ class ImmutableKitTest extends Specification {
         then:
         list == ["a", "b", "c", "d", "e"]
     }
+
+    def "can add to sets"() {
+        def set = new HashSet(["a"])
+
+        when:
+        set = ImmutableKit.addToSet(set, "b")
+        then:
+        set == ["a", "b"] as Set
+
+        when:
+        set = ImmutableKit.addToSet(set, "c", "d", "e")
+        then:
+        set == ["a", "b", "c", "d", "e"] as Set
+
+        when:
+        set = ImmutableKit.addToSet(set, "c", "d", "e", "f")
+        then:
+        set == ["a", "b", "c", "d", "e", "f"] as Set
+    }
 }

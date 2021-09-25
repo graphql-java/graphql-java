@@ -264,4 +264,14 @@ public class GraphQLTypeUtil {
         }
         return decoration;
     }
+
+    public static boolean isInterfaceOrUnion(GraphQLType type) {
+        return type instanceof GraphQLInterfaceType || type instanceof GraphQLUnionType;
+    }
+
+    public static boolean isObjectType(GraphQLType type) {
+        return type instanceof GraphQLObjectType;
+    }
+
+
 }

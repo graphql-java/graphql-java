@@ -3,6 +3,7 @@ package graphql.execution.instrumentation.dataloader;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
+import graphql.execution.Async;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategy;
@@ -110,16 +111,12 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
     private boolean isDataLoaderCompatibleExecution(ExecutionContext executionContext) {
         //
-        // currently we only support Query operations and ONLY with AsyncExecutionStrategy as the query ES
-        // This may change in the future but this is the fix for now
+        // Currently we only support aggressive batching for the AsyncExecutionStrategy.
+        // This may change in the future but this is the fix for now.
         //
-        if (executionContext.getOperationDefinition().getOperation() == OperationDefinition.Operation.QUERY) {
-            ExecutionStrategy queryStrategy = executionContext.getQueryStrategy();
-            if (queryStrategy instanceof AsyncExecutionStrategy) {
-                return true;
-            }
-        }
-        return false;
+        OperationDefinition.Operation operation = executionContext.getOperationDefinition().getOperation();
+        ExecutionStrategy strategy = executionContext.getStrategy(operation);
+        return (strategy instanceof AsyncExecutionStrategy);
     }
 
     @Override

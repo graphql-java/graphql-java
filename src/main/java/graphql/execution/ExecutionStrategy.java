@@ -20,8 +20,8 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldParamete
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.Field;
-import graphql.normalized.NormalizedField;
-import graphql.normalized.NormalizedQuery;
+import graphql.normalized.ExecutableNormalizedField;
+import graphql.normalized.ExecutableNormalizedOperation;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static graphql.execution.Async.exceptionallyCompletedFuture;
@@ -244,7 +245,7 @@ public abstract class ExecutionStrategy {
                 () -> createExecutionStepInfo(executionContext, parameters, fieldDef, parentType));
         Supplier<Map<String, Object>> argumentValues = () -> executionStepInfo.get().getArguments();
 
-        Supplier<NormalizedField> normalizedFieldSupplier = getNormalizedField(executionContext, parameters, executionStepInfo);
+        Supplier<ExecutableNormalizedField> normalizedFieldSupplier = getNormalizedField(executionContext, parameters, executionStepInfo);
 
         // DataFetchingFieldSelectionSet and QueryDirectives is a supplier of sorts - eg a lazy pattern
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext.getGraphQLSchema(), fieldType, normalizedFieldSupplier);
@@ -268,7 +269,7 @@ public abstract class ExecutionStrategy {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
-        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment, parameters, dataFetcher instanceof TrivialDataFetcher);
+        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, environment, parameters, dataFetcher instanceof TrivialDataFetcher);
         InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParams);
 
         CompletableFuture<Object> fetchedValue;
@@ -290,17 +291,17 @@ public abstract class ExecutionStrategy {
                 .handle((result, exception) -> {
                     fetchCtx.onCompleted(result, exception);
                     if (exception != null) {
-                        handleFetchingException(executionContext, environment, exception);
-                        return null;
+                        return handleFetchingException(executionContext, environment, exception);
                     } else {
-                        return result;
+                        return CompletableFuture.completedFuture(result);
                     }
                 })
+                .thenCompose(Function.identity())
                 .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result));
     }
 
-    protected Supplier<NormalizedField> getNormalizedField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Supplier<ExecutionStepInfo> executionStepInfo) {
-        Supplier<NormalizedQuery> normalizedQuery = executionContext.getNormalizedQueryTree();
+    protected Supplier<ExecutableNormalizedField> getNormalizedField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Supplier<ExecutionStepInfo> executionStepInfo) {
+        Supplier<ExecutableNormalizedOperation> normalizedQuery = executionContext.getNormalizedQueryTree();
         return () -> normalizedQuery.get().getNormalizedField(parameters.getField(), executionStepInfo.get().getObjectType(), executionStepInfo.get().getPath());
     }
 
@@ -309,9 +310,8 @@ public abstract class ExecutionStrategy {
                                                           Object result) {
 
         if (result instanceof DataFetcherResult) {
-            //noinspection unchecked
-            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result;
-            dataFetcherResult.getErrors().forEach(executionContext::addError);
+            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult<?>) result;
+            executionContext.addErrors(dataFetcherResult.getErrors());
 
             Object localContext = dataFetcherResult.getLocalContext();
             if (localContext == null) {
@@ -333,26 +333,30 @@ public abstract class ExecutionStrategy {
         }
     }
 
-    protected void handleFetchingException(ExecutionContext executionContext,
-                                           DataFetchingEnvironment environment,
-                                           Throwable e) {
+    protected <T> CompletableFuture<T> handleFetchingException(ExecutionContext executionContext,
+                                                               DataFetchingEnvironment environment,
+                                                               Throwable e) {
         DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                 .dataFetchingEnvironment(environment)
                 .exception(e)
                 .build();
 
-        DataFetcherExceptionHandlerResult handlerResult;
         try {
-            handlerResult = dataFetcherExceptionHandler.onException(handlerParameters);
+            return asyncHandleException(dataFetcherExceptionHandler, handlerParameters, executionContext);
         } catch (Exception handlerException) {
             handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                     .dataFetchingEnvironment(environment)
                     .exception(handlerException)
                     .build();
-            handlerResult = new SimpleDataFetcherExceptionHandler().onException(handlerParameters);
+            return asyncHandleException(new SimpleDataFetcherExceptionHandler(), handlerParameters, executionContext);
         }
-        handlerResult.getErrors().forEach(executionContext::addError);
+    }
 
+    private <T> CompletableFuture<T> asyncHandleException(DataFetcherExceptionHandler handler, DataFetcherExceptionHandlerParameters handlerParameters, ExecutionContext executionContext) {
+        //noinspection unchecked
+        return  handler.handleException(handlerParameters)
+            .thenApply(handlerResult -> (T) DataFetcherResult.<FetchedValue>newResult().errors(handlerResult.getErrors()).build()
+            );
     }
 
     /**
@@ -684,7 +688,7 @@ public abstract class ExecutionStrategy {
      * @throws java.lang.ClassCastException if its not an Iterable
      */
     protected Iterable<Object> toIterable(Object result) {
-        return FpKit.toCollection(result);
+        return FpKit.toIterable(result);
     }
 
     protected GraphQLObjectType resolveType(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLType fieldType) {
@@ -706,7 +710,6 @@ public abstract class ExecutionStrategy {
         TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getUnwrappedNonNullType());
         logNotSafe.warn("{} got {}", error.getMessage(), result.getClass());
         context.addError(error);
-
     }
 
 

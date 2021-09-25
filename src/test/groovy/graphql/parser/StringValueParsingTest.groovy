@@ -40,8 +40,7 @@ class StringValueParsingTest extends Specification {
         parsed == '''"'''
     }
 
-    def "parsing emoji should work"() {
-        // needs surrogate pairs for this emoji
+    def "parsing beer stein as surrogate pair should work"() {
         given:
         def input = '''"\\ud83c\\udf7a"'''
 
@@ -52,17 +51,16 @@ class StringValueParsingTest extends Specification {
         parsed == '''🍺''' // contains the beer icon 	U+1F37A  : http://www.charbase.com/1f37a-unicode-beer-mug
     }
 
-    def "parsing simple unicode should work"() {
+    def "parsing simple unicode should work - Basic Multilingual Plane (BMP)"() {
         given:
-        def input = '''"\\u56fe"'''
+        def input = '''"\\u5564\\u9152"'''
 
         when:
         String parsed = StringValueParsing.parseSingleQuotedString(input)
 
         then:
-        parsed == '''图'''
+        parsed == '''啤酒'''
     }
-
 
     def "parsing triple quoted string should work"() {
         given:

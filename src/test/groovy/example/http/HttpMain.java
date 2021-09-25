@@ -133,7 +133,7 @@ public class HttpMain extends AbstractHandler {
         Map<String, Object> context = new HashMap<>();
         context.put("YouAppSecurityClearanceLevel", "CodeRed");
         context.put("YouAppExecutingUser", "Dr Nefarious");
-        executionInput.context(context);
+        executionInput.graphQLContext(context);
 
         //
         // you need a schema in order to execute queries
@@ -152,7 +152,7 @@ public class HttpMain extends AbstractHandler {
                 // instrumentation is pluggable
                 .instrumentation(instrumentation)
                 .build();
-        ExecutionResult executionResult = graphQL.execute(executionInput.build());
+        ExecutionResult executionResult = graphQL.execute(executionInput);
 
         returnAsJson(httpResponse, executionResult);
     }

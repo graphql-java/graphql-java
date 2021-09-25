@@ -56,6 +56,7 @@ public class ExecutionHelper {
                 .instrumentationState(instrumentationState)
                 .graphQLSchema(graphQLSchema)
                 .context(executionInput.getContext())
+                .graphQLContext(executionInput.getGraphQLContext())
                 .root(executionInput.getRoot())
                 .fragmentsByName(fragmentsByName)
                 .variables(coercedVariables)

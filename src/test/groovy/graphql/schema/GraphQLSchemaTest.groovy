@@ -84,7 +84,7 @@ class GraphQLSchemaTest extends Specification {
         assert 0 == runQuery(schema).getErrors().size()
     }
 
-    def runQuery(GraphQLSchema schema) {
+    static def runQuery(GraphQLSchema schema) {
         GraphQL graphQL = GraphQL.newGraphQL(schema)
                 .build()
 
@@ -97,7 +97,7 @@ class GraphQLSchemaTest extends Specification {
                 .join()
     }
 
-    def basicSchemaBuilder() {
+    static def basicSchemaBuilder() {
         GraphQLSchema.newSchema()
                 .query(newObject()
                         .name("QueryType")
@@ -143,7 +143,7 @@ class GraphQLSchemaTest extends Specification {
         schema.directives.size() == 3
 
         when: "the schema is transformed, things are copied"
-        schema = schema.transform({ bldr -> bldr.additionalDirective(Directives.IncludeDirective) })
+        schema = schema.transform({ builder -> builder.additionalDirective(Directives.IncludeDirective) })
         then:
         schema.directives.size() == 4
     }
@@ -168,7 +168,7 @@ class GraphQLSchemaTest extends Specification {
         schema.additionalTypes.size() == 1
 
         when: "the schema is transformed, things are copied"
-        schema = schema.transform({ bldr -> bldr.additionalType(additionalType2) })
+        schema = schema.transform({ builder -> builder.additionalType(additionalType2) })
         then:
         schema.additionalTypes.size() == 2
     }
@@ -212,5 +212,116 @@ class GraphQLSchemaTest extends Specification {
 
         GraphQLObjectType dogType = schema.getTypeAs("Dog")
         dogType.getName() == "Dog"
+    }
+
+    def "cheap transform without types transformation works"() {
+
+        def sdl = '''
+        "a schema involving pets"
+        schema {
+            query : Query
+        }
+        type Query {
+            field1 : Dog
+            field2 : Cat
+        }
+        
+        type Dog {
+            name : String
+        }
+
+        type Cat {
+            name : String
+        }
+            
+        '''
+
+
+        when:
+        DataFetcher nameDF = { env -> "name" }
+        def originalSchema = TestUtil.schema(sdl, ["Dog": ["name": nameDF]])
+        def originalCodeRegistry = originalSchema.getCodeRegistry()
+
+        then:
+        originalSchema.getDescription() == "a schema involving pets"
+        originalSchema.containsType("Dog")
+        !originalSchema.containsType("Elephant")
+
+        originalCodeRegistry.getDataFetcher(originalSchema.getObjectType("Dog"), originalSchema.getObjectType("Dog").getField("name")) === nameDF
+
+        when:
+        def newRegistry = originalCodeRegistry.transform({ bld -> bld.clearDataFetchers() })
+        def newSchema = originalSchema.transformWithoutTypes({
+            it.description("A new home for pets").codeRegistry(newRegistry)
+        })
+
+        then:
+
+        newSchema.getDescription() == "A new home for pets"
+        newSchema.containsType("Dog")
+        !newSchema.containsType("Elephant")
+
+        def dogType = newSchema.getObjectType("Dog")
+        dogType === originalSchema.getObjectType("Dog") // schema type graph is the same
+
+        newRegistry == newSchema.getCodeRegistry()
+        newRegistry != originalCodeRegistry
+
+
+        def newDF = newRegistry.getDataFetcher(dogType, dogType.getField("name"))
+        newDF !== nameDF
+        newDF instanceof PropertyDataFetcher // defaulted in
+    }
+
+    def "can get by field co-ordinate"() {
+        when:
+        def fieldDef = starWarsSchema.getFieldDefinition(FieldCoordinates.coordinates("QueryType", "hero"))
+
+        then:
+        fieldDef.name == "hero"
+        (fieldDef.type as GraphQLInterfaceType).getName() == "Character"
+
+        when:
+        fieldDef = starWarsSchema.getFieldDefinition(FieldCoordinates.coordinates("X", "hero"))
+
+        then:
+        fieldDef == null
+
+        when:
+        fieldDef = starWarsSchema.getFieldDefinition(FieldCoordinates.coordinates("QueryType", "X"))
+
+        then:
+        fieldDef == null
+
+        when:
+        starWarsSchema.getFieldDefinition(FieldCoordinates.coordinates("Episode", "JEDI"))
+
+        then:
+        thrown(AssertException)
+
+        when:
+        fieldDef = starWarsSchema.getFieldDefinition(FieldCoordinates.systemCoordinates("__typename"))
+
+        then:
+        fieldDef == starWarsSchema.getIntrospectionTypenameFieldDefinition()
+
+        when:
+        fieldDef = starWarsSchema.getFieldDefinition(FieldCoordinates.systemCoordinates("__type"))
+
+        then:
+        fieldDef == starWarsSchema.getIntrospectionTypeFieldDefinition()
+
+        when:
+        fieldDef = starWarsSchema.getFieldDefinition(FieldCoordinates.systemCoordinates("__schema"))
+
+        then:
+        fieldDef == starWarsSchema.getIntrospectionSchemaFieldDefinition()
+
+        when:
+        starWarsSchema.getFieldDefinition(FieldCoordinates.systemCoordinates("__junk"))
+
+        then:
+        thrown(AssertException)
+
     }
 }

@@ -1,33 +1,11 @@
 package graphql
 
-import graphql.execution.batched.BatchedExecutionStrategy
+
 import spock.lang.Specification
 import spock.lang.Unroll
 
 class ScalarsQueryTest extends Specification {
 
-
-    def 'Float NaN Not a Number '() {
-        given:
-        def query = """
-        query FloatNaN {
-          floatNaN
-        }
-        """
-        def expected = [
-                floatNaN: null
-        ]
-
-        when:
-        def result = GraphQL.newGraphQL(ScalarsQuerySchema.scalarsQuerySchema)
-                .build().execute(query)
-        def resultBatched = GraphQL.newGraphQL(ScalarsQuerySchema.scalarsQuerySchema)
-                .queryExecutionStrategy(new BatchedExecutionStrategy())
-                .build().execute(query)
-
-        then:
-        thrown(GraphQLException)
-    }
 
     def 'Escaped characters are handled'() {
         given:
@@ -45,7 +23,7 @@ class ScalarsQueryTest extends Specification {
 
         then:
         result.data == expected
-        result.errors.empty == true
+        result.errors.empty
     }
 
     @Unroll
@@ -60,8 +38,8 @@ class ScalarsQueryTest extends Specification {
         result.errors[0] instanceof SerializationError
 
         where:
-        number       | _
-        "float"      | _
-        "int"        | _
+        number  | _
+        "float" | _
+        "int"   | _
     }
 }

@@ -14,7 +14,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
 
 @PublicApi
-public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
+public class UnionTypeExtensionDefinition extends UnionTypeDefinition implements SDLExtensionDefinition {
 
     @Internal
     protected UnionTypeExtensionDefinition(String name,

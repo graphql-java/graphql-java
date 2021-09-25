@@ -304,9 +304,11 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         }
 
         /**
-         * @param defaultValue
+         * A legacy method for setting a defaulr value
          *
-         * @return
+         * @param defaultValue the value to set
+         *
+         * @return this builder
          *
          * @deprecated use {@link #defaultValueLiteral(Value)}
          */

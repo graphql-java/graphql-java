@@ -4,28 +4,29 @@ package graphql.execution;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.ExecutionInput;
+import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
+import graphql.collect.ImmutableKit;
 import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
-import graphql.normalized.NormalizedQuery;
-import graphql.normalized.NormalizedQueryFactory;
+import graphql.normalized.ExecutableNormalizedOperation;
+import graphql.normalized.ExecutableNormalizedOperationFactory;
 import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import org.dataloader.DataLoaderRegistry;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -45,16 +46,17 @@ public class ExecutionContext {
     private final ImmutableMapWithNullValues<String, Object> variables;
     private final Object root;
     private final Object context;
+    private final GraphQLContext graphQLContext;
     private final Object localContext;
     private final Instrumentation instrumentation;
-    private final List<GraphQLError> errors = Collections.synchronizedList(new ArrayList<>());
+    private final AtomicReference<ImmutableList<GraphQLError>> errors = new AtomicReference<>(ImmutableKit.emptyList());
     private final Set<ResultPath> errorPaths = new HashSet<>();
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
     private final Locale locale;
     private final ValueUnboxer valueUnboxer;
     private final ExecutionInput executionInput;
-    private final Supplier<NormalizedQuery> queryTree;
+    private final Supplier<ExecutableNormalizedOperation> queryTree;
 
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
@@ -68,16 +70,17 @@ public class ExecutionContext {
         this.document = builder.document;
         this.operationDefinition = builder.operationDefinition;
         this.context = builder.context;
+        this.graphQLContext = builder.graphQLContext;
         this.root = builder.root;
         this.instrumentation = builder.instrumentation;
         this.dataLoaderRegistry = builder.dataLoaderRegistry;
         this.cacheControl = builder.cacheControl;
         this.locale = builder.locale;
         this.valueUnboxer = builder.valueUnboxer;
-        this.errors.addAll(builder.errors);
+        this.errors.set(builder.errors);
         this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
-        queryTree = FpKit.interThreadMemoize(() -> NormalizedQueryFactory.createNormalizedQuery(graphQLSchema, operationDefinition, fragmentsByName, variables));
+        queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, variables));
     }
 
 
@@ -117,9 +120,20 @@ public class ExecutionContext {
         return variables;
     }
 
-    @SuppressWarnings("unchecked")
+    /**
+     * @param <T> for two
+     * @return the legacy context
+     *
+     * @deprecated use {@link #getGraphQLContext()} instead
+     */
+    @Deprecated
+    @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
     public <T> T getContext() {
         return (T) context;
+    }
+
+    public GraphQLContext getGraphQLContext() {
+        return graphQLContext;
     }
 
     @SuppressWarnings("unchecked")
@@ -159,15 +173,17 @@ public class ExecutionContext {
      * @param fieldPath the field path to put it under
      */
     public void addError(GraphQLError error, ResultPath fieldPath) {
-        //
-        // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability about how per
-        // field errors should be handled - ie only once per field if its already there for nullability
-        // but unclear if its not that error path
-        //
-        if (!errorPaths.add(fieldPath)) {
-            return;
+        synchronized (this) {
+            //
+            // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability about how per
+            // field errors should be handled - ie only once per field if its already there for nullability
+            // but unclear if its not that error path
+            //
+            if (!errorPaths.add(fieldPath)) {
+                return;
+            }
+            this.errors.set(ImmutableKit.addToList(this.errors.get(), error));
         }
-        this.errors.add(error);
     }
 
     /**
@@ -177,25 +193,54 @@ public class ExecutionContext {
      * @param error the error to add
      */
     public void addError(GraphQLError error) {
-        // see https://github.com/graphql-java/graphql-java/issues/888 on how the spec is unclear
-        // on how exactly multiple errors should be handled - ie only once per field or not outside the nullability
-        // aspect.
-        if (error.getPath() != null) {
-            this.errorPaths.add(ResultPath.fromList(error.getPath()));
+        synchronized (this) {
+            // see https://github.com/graphql-java/graphql-java/issues/888 on how the spec is unclear
+            // on how exactly multiple errors should be handled - ie only once per field or not outside the nullability
+            // aspect.
+            if (error.getPath() != null) {
+                ResultPath path = ResultPath.fromList(error.getPath());
+                this.errorPaths.add(path);
+            }
+            this.errors.set(ImmutableKit.addToList(this.errors.get(), error));
         }
-        this.errors.add(error);
+    }
+
+    /**
+     * This method will allow you to add errors into the running execution context, without a check
+     * for per field unique-ness
+     *
+     * @param errors the errors to add
+     */
+    public void addErrors(List<GraphQLError> errors) {
+        if (errors.isEmpty()) {
+            return;
+        }
+        // we are synchronised because we set two fields at once - but we only ever read one of them later
+        // in getErrors so no need for synchronised there.
+        synchronized (this) {
+            Set<ResultPath> newErrorPaths = new HashSet<>();
+            for (GraphQLError error : errors) {
+                // see https://github.com/graphql-java/graphql-java/issues/888 on how the spec is unclear
+                // on how exactly multiple errors should be handled - ie only once per field or not outside the nullability
+                // aspect.
+                if (error.getPath() != null) {
+                    ResultPath path = ResultPath.fromList(error.getPath());
+                    newErrorPaths.add(path);
+                }
+            }
+            this.errorPaths.addAll(newErrorPaths);
+            this.errors.set(ImmutableKit.concatLists(this.errors.get(), errors));
+        }
     }
 
     /**
      * @return the total list of errors for this execution context
      */
     public List<GraphQLError> getErrors() {
-        return ImmutableList.copyOf(errors);
+        return errors.get();
     }
 
-    public ExecutionStrategy getQueryStrategy() {
-        return queryStrategy;
-    }
+    public ExecutionStrategy getQueryStrategy() { return queryStrategy; }
 
     public ExecutionStrategy getMutationStrategy() {
         return mutationStrategy;
@@ -205,7 +250,17 @@ public class ExecutionContext {
         return subscriptionStrategy;
     }
 
-    public Supplier<NormalizedQuery> getNormalizedQueryTree() {
+    public ExecutionStrategy getStrategy(OperationDefinition.Operation operation) {
+        if (operation == OperationDefinition.Operation.MUTATION) {
+            return getMutationStrategy();
+        } else if (operation == OperationDefinition.Operation.SUBSCRIPTION) {
+            return getSubscriptionStrategy();
+        } else {
+            return getQueryStrategy();
+        }
+    }
+
+    public Supplier<ExecutableNormalizedOperation> getNormalizedQueryTree() {
         return queryTree;
     }
 
