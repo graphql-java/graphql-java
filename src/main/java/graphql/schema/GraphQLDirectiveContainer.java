@@ -10,7 +10,7 @@ import static java.util.Collections.emptyList;
 /**
  * Represents a graphql runtime type that can have {@link graphql.schema.GraphQLDirective}'s.
  * <p>
- * Directives can be repeatable and (by default) non repeatable.
+ * Directives can be repeatable and (by default) non-repeatable.
  * <p>
  * There are access methods here that get the two different types.
  *
@@ -19,6 +19,43 @@ import static java.util.Collections.emptyList;
  */
 @PublicApi
 public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
+
+    /**
+     * This will return a list of all the directives that have been put on {@link graphql.schema.GraphQLNamedSchemaElement} as a flat list, which may contain repeatable
+     * and non-repeatable directives.
+     *
+     * @return a list of all the directives associated with this named schema element
+     */
+    List<GraphQLAppliedDirective> getAppliedDirectives();
+
+    /**
+     * This will return a Map of the all directives that are associated with a {@link graphql.schema.GraphQLNamedSchemaElement}, including both
+     * repeatable and non-repeatable directives.
+     *
+     * @return a map of all directives by directive name
+     */
+    Map<String, List<GraphQLAppliedDirective>> getAllAppliedDirectivesByName();
+
+    /**
+     * Returns a non-repeatable directive with the provided name.
+     *
+     * @param directiveName the name of the directive to retrieve
+     *
+     * @return the directive or null if there is not one with that name
+     */
+    GraphQLAppliedDirective getAppliedDirective(String directiveName);
+
+
+    /**
+     * Returns all of the directives with the provided name, including repeatable and non repeatable directives.
+     *
+     * @param directiveName the name of the directives to retrieve
+     *
+     * @return the directives or empty list if there is not one with that name
+     */
+    default List<GraphQLAppliedDirective> getAppliedDirectives(String directiveName) {
+        return getAllAppliedDirectivesByName().getOrDefault(directiveName, emptyList());
+    }
 
     /**
      * This will return a list of all the directives that have been put on {@link graphql.schema.GraphQLNamedSchemaElement} as a flat list, which may contain repeatable

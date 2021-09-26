@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.language.Directive;
 import graphql.language.DirectiveDefinition;
+import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.util.FpKit;
@@ -79,7 +80,16 @@ public class DirectivesUtil {
         return targetList;
     }
 
-    public static List<GraphQLDirective> enforceAddAll(List<GraphQLDirective> targetList, List<GraphQLDirective> newDirectives) {
+    /*
+     * This method can die at some point - we won't enforce the directive unique-ness at add time but rather
+     * we will do it via schema validation.  But this is left as is right now for old behavior reasons
+     */
+    public static void enforceAddAll(
+            List<GraphQLDirective> targetList,
+            List<GraphQLDirective> newDirectives,
+            List<GraphQLAppliedDirective> targetAppliedList,
+            List<GraphQLAppliedDirective> newAppliedDirectives
+    ) {
         assertNotNull(targetList, () -> "directive list can't be null");
         assertNotNull(newDirectives, () -> "directive list can't be null");
         Map<String, ImmutableList<GraphQLDirective>> map = allDirectivesByName(targetList);
@@ -87,7 +97,7 @@ public class DirectivesUtil {
             assertNonRepeatable(newDirective, map);
             targetList.add(newDirective);
         }
-        return targetList;
+        targetAppliedList.addAll(newAppliedDirectives);
     }
 
     private static void assertNonRepeatable(GraphQLDirective directive, Map<String, ImmutableList<GraphQLDirective>> mapOfDirectives) {
@@ -117,13 +127,20 @@ public class DirectivesUtil {
         private final ImmutableMap<String, GraphQLDirective> nonRepeatableDirectivesByName;
         private final List<GraphQLDirective> allDirectives;
 
-        public DirectivesHolder(Collection<GraphQLDirective> allDirectives) {
+        private final ImmutableMap<String, List<GraphQLAppliedDirective>> allAppliedDirectivesByName;
+        private final List<GraphQLAppliedDirective> allAppliedDirectives;
+
+        public DirectivesHolder(Collection<GraphQLDirective> allDirectives, Collection<GraphQLAppliedDirective> allAppliedDirectives) {
             this.allDirectives = ImmutableList.copyOf(allDirectives);
             this.allDirectivesByName = ImmutableMap.copyOf(FpKit.groupingBy(allDirectives, GraphQLDirective::getName));
             // filter out the repeatable directives
             List<GraphQLDirective> nonRepeatableDirectives = allDirectives.stream()
                     .filter(d -> !d.isRepeatable()).collect(Collectors.toList());
             this.nonRepeatableDirectivesByName = ImmutableMap.copyOf(FpKit.getByName(nonRepeatableDirectives, GraphQLDirective::getName));
+
+            this.allAppliedDirectives = ImmutableList.copyOf(allAppliedDirectives);
+            this.allAppliedDirectivesByName = ImmutableMap.copyOf(FpKit.groupingBy(allAppliedDirectives, GraphQLAppliedDirective::getName));
+
         }
 
         public ImmutableMap<String, List<GraphQLDirective>> getAllDirectivesByName() {
@@ -145,15 +162,39 @@ public class DirectivesUtil {
             }
             Assert.assertTrue(isAllNonRepeatable(directiveList), () -> String.format("'%s' is a repeatable directive and you have used a non repeatable access method", directiveName));
             return directiveList.get(0);
-
         }
 
         public List<GraphQLDirective> getDirectives(String directiveName) {
             return allDirectivesByName.getOrDefault(directiveName, emptyList());
         }
+
+        public ImmutableMap<String, List<GraphQLAppliedDirective>> getAllAppliedDirectivesByName() {
+            return allAppliedDirectivesByName;
+        }
+
+        public List<GraphQLAppliedDirective> getAppliedDirectives() {
+            return allAppliedDirectives;
+        }
+
+        public List<GraphQLAppliedDirective> getAppliedDirectives(String directiveName) {
+            return allAppliedDirectivesByName.getOrDefault(directiveName, emptyList());
+        }
+
+        public GraphQLAppliedDirective getAppliedDirective(String directiveName) {
+            List<GraphQLAppliedDirective> list = allAppliedDirectivesByName.getOrDefault(directiveName, emptyList());
+            return list.isEmpty() ? null : list.get(0);
+        }
     }
 
     public static List<Directive> nonRepeatableDirectivesOnly(Map<String, DirectiveDefinition> directiveDefinitionMap, List<Directive> directives) {
+        return directives.stream().filter(directive -> {
+            String directiveName = directive.getName();
+            DirectiveDefinition directiveDefinition = directiveDefinitionMap.get(directiveName);
+            return directiveDefinition == null || !directiveDefinition.isRepeatable();
+        }).collect(toList());
+    }
+
+    public static List<GraphQLAppliedDirective> nonRepeatableAppliedDirectivesOnly(Map<String, DirectiveDefinition> directiveDefinitionMap, List<GraphQLAppliedDirective> directives) {
         return directives.stream().filter(directive -> {
             String directiveName = directive.getName();
             DirectiveDefinition directiveDefinition = directiveDefinitionMap.get(directiveName);

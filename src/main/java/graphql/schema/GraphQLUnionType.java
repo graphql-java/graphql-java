@@ -49,9 +49,10 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
 
     public static final String CHILD_TYPES = "types";
     public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_APPLIED_DIRECTIVES = "appliedDirectives";
 
     @Internal
-    private GraphQLUnionType(String name, String description, List<GraphQLNamedOutputType> types, TypeResolver typeResolver, List<GraphQLDirective> directives, UnionTypeDefinition definition, List<UnionTypeExtensionDefinition> extensionDefinitions) {
+    private GraphQLUnionType(String name, String description, List<GraphQLNamedOutputType> types, TypeResolver typeResolver, List<GraphQLDirective> directives, List<GraphQLAppliedDirective> appliedDirectives, UnionTypeDefinition definition, List<UnionTypeExtensionDefinition> extensionDefinitions) {
         assertValidName(name);
         assertNotNull(types, () -> "types can't be null");
         assertNotEmpty(types, () -> "A Union type must define one or more member types.");
@@ -63,7 +64,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         this.typeResolver = typeResolver;
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directives = new DirectivesUtil.DirectivesHolder(directives);
+        this.directives = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
     }
 
     void replaceTypes(List<GraphQLNamedOutputType> types) {
@@ -135,6 +136,21 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         return directives.getDirective(directiveName);
     }
 
+    @Override
+    public List<GraphQLAppliedDirective> getAppliedDirectives() {
+        return directives.getAppliedDirectives();
+    }
+
+    @Override
+    public Map<String, List<GraphQLAppliedDirective>> getAllAppliedDirectivesByName() {
+        return directives.getAllAppliedDirectivesByName();
+    }
+
+    @Override
+    public GraphQLAppliedDirective getAppliedDirective(String directiveName) {
+        return directives.getAppliedDirective(directiveName);
+    }
+
     /**
      * This helps you transform the current GraphQLUnionType into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
@@ -172,14 +188,17 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         return newSchemaElementChildrenContainer()
                 .children(CHILD_TYPES, originalTypes)
                 .children(CHILD_DIRECTIVES, directives.getDirectives())
+                .children(CHILD_APPLIED_DIRECTIVES, directives.getDirectives())
                 .build();
     }
 
     @Override
     public GraphQLUnionType withNewChildren(SchemaElementChildrenContainer newChildren) {
         return transform(builder ->
-                builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
-                        .replacePossibleTypes(newChildren.getChildren(CHILD_TYPES))
+                builder.replacePossibleTypes(newChildren.getChildren(CHILD_TYPES))
+                        .replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .replaceAppliedDirectives(newChildren.getChildren(CHILD_APPLIED_DIRECTIVES))
+
         );
     }
 
@@ -209,13 +228,12 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
     }
 
     @PublicApi
-    public static class Builder extends GraphqlTypeBuilder {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder {
         private TypeResolver typeResolver;
         private UnionTypeDefinition definition;
         private List<UnionTypeExtensionDefinition> extensionDefinitions = emptyList();
 
         private final Map<String, GraphQLNamedOutputType> types = new LinkedHashMap<>();
-        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder() {
         }
@@ -227,7 +245,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
             this.definition = existing.getDefinition();
             this.extensionDefinitions = existing.getExtensionDefinitions();
             this.types.putAll(getByName(existing.originalTypes, GraphQLNamedType::getName));
-            DirectivesUtil.enforceAddAll(this.directives,existing.getDirectives());
+            copyExistingDirectives(existing);
         }
 
         @Override
@@ -319,42 +337,6 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
             return types.containsKey(name);
         }
 
-        public Builder withDirectives(GraphQLDirective... directives) {
-            assertNotNull(directives, () -> "directives can't be null");
-            this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                withDirective(directive);
-            }
-            return this;
-        }
-
-        public Builder replaceDirectives(List<GraphQLDirective> directives) {
-            assertNotNull(directives, () -> "directive can't be null");
-            this.directives.clear();
-            DirectivesUtil.enforceAddAll(this.directives, directives);
-            return this;
-        }
-
-        public Builder withDirective(GraphQLDirective directive) {
-            assertNotNull(directive, () -> "directive can't be null");
-            DirectivesUtil.enforceAdd(this.directives, directive);
-            return this;
-        }
-
-        public Builder withDirective(GraphQLDirective.Builder builder) {
-            return withDirective(builder.build());
-        }
-
-        /**
-         * This is used to clear all the directives in the builder so far.
-         *
-         * @return the builder
-         */
-        public Builder clearDirectives() {
-            directives.clear();
-            return this;
-        }
-
         public GraphQLUnionType build() {
             return new GraphQLUnionType(
                     name,
@@ -362,6 +344,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
                     sort(types, GraphQLUnionType.class, GraphQLOutputType.class),
                     typeResolver,
                     sort(directives, GraphQLUnionType.class, GraphQLDirective.class),
+                    sort(appliedDirectives, GraphQLUnionType.class, GraphQLAppliedDirective.class),
                     definition,
                     extensionDefinitions);
         }
