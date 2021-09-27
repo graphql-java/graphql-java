@@ -42,7 +42,7 @@ class NoUndefinedVariablesTest extends Specification {
 
     }
 
-    def "all variables definied"() {
+    def "all variables defined"() {
         given:
         def query = """
             query Foo(\$a: String, \$b: String, \$c: String) {
@@ -86,7 +86,7 @@ class NoUndefinedVariablesTest extends Specification {
         errorCollector.errors.isEmpty()
     }
 
-    def 'variable in fragment not defined by operation'() {
+    def "variable in fragment not defined by operation"() {
         given:
         def query = """
         query Foo(\$a: String, \$b: String) {

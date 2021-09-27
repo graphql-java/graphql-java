@@ -11,10 +11,7 @@ import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
 class NoUnusedVariablesTest extends Specification {
-
-
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-
 
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
@@ -25,8 +22,7 @@ class NoUnusedVariablesTest extends Specification {
         languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedVariables]))
     }
 
-
-    def 'uses all variables in fragments'() {
+    def "uses all variables in fragments"() {
         given:
         def query = """
         fragment FragA on Type {
@@ -56,7 +52,7 @@ class NoUnusedVariablesTest extends Specification {
     def "variable used by fragment in multiple operations"() {
         given:
         def query = """
-        query Foo(\$a: String) {
+          query Foo(\$a: String) {
             ...FragA
           }
           query Bar(\$b: String) {
@@ -68,7 +64,7 @@ class NoUnusedVariablesTest extends Specification {
           fragment FragB on Type {
             field(b: \$b)
           }
-            """
+          """
 
         when:
         traverse(query)
@@ -89,8 +85,33 @@ class NoUnusedVariablesTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UnusedVariable)
-
     }
 
+    def "variables not used in fragments"() {
+        given:
+        def query = """
+        fragment FragA on Type {
+            field(a: \$a) {
+                ...FragB
+            }
+        }
+        fragment FragB on Type {
+            field(b: \$b) {
+                ...FragC
+            }
+        }
+        fragment FragC on Type {
+            __typename
+        }
+        query Foo(\$a: String, \$b: String, \$c: String) {
+            ...FragA
+        }
+        """
 
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.containsValidationError(ValidationErrorType.UnusedVariable)
+    }
 }

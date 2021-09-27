@@ -1,14 +1,13 @@
 package graphql.validation;
 
-
-import java.util.ArrayList;
-import java.util.IdentityHashMap;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 import com.google.common.collect.ImmutableList;
+
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.Directive;
@@ -25,41 +24,33 @@ import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 
 @Internal
+@SuppressWarnings("rawtypes")
 public class RulesVisitor implements DocumentVisitor {
-
-    private final ImmutableList<AbstractRule> rules;
     private final ValidationContext validationContext;
-    private boolean subVisitor;
-    private final List<AbstractRule> rulesVisitingFragmentSpreads = new ArrayList<>();
-    private final Map<Node, List<AbstractRule>> rulesToSkipByUntilNode = new IdentityHashMap<>();
-    private final Set<AbstractRule> rulesToSkip = new LinkedHashSet<>();
+    private int fragmentSpreadVisitDepth;
+    private final Stack<Node> popRulesStackOnLeave = new Stack<>();
+    private final Stack<ImmutableList<AbstractRule>> rulesStack = new Stack<>();
+    private final Set<String> visitedFragmentSpreads = new HashSet<>();
 
     public RulesVisitor(ValidationContext validationContext, List<AbstractRule> rules) {
-        this(validationContext, rules, false);
-    }
-
-    public RulesVisitor(ValidationContext validationContext, List<AbstractRule> rules, boolean subVisitor) {
         this.validationContext = validationContext;
-        this.subVisitor = subVisitor;
-        this.rules = ImmutableList.copyOf(rules);
-        this.subVisitor = subVisitor;
-        findRulesVisitingFragmentSpreads();
+        this.rulesStack.push(ImmutableList.copyOf(rules));
+        this.fragmentSpreadVisitDepth = 0;
     }
 
-    private void findRulesVisitingFragmentSpreads() {
-        for (AbstractRule rule : rules) {
-            if (rule.isVisitFragmentSpreads()) {
-                rulesVisitingFragmentSpreads.add(rule);
-            }
-        }
+    private ImmutableList<AbstractRule> filterRulesVisitingFragmentSpreads(List<AbstractRule> rules, boolean isVisitFragmentSpreads) {
+        Iterator<AbstractRule> itr = rulesStack.peek()
+            .stream()
+            .filter(r -> r.isVisitFragmentSpreads() == isVisitFragmentSpreads)
+            .iterator();
+        return ImmutableList.copyOf(itr);
     }
 
     @Override
     public void enter(Node node, List<Node> ancestors) {
         validationContext.getTraversalContext().enter(node, ancestors);
-        Set<AbstractRule> tmpRulesSet = new LinkedHashSet<>(this.rules);
-        tmpRulesSet.removeAll(rulesToSkip);
-        List<AbstractRule> rulesToConsider = new ArrayList<>(tmpRulesSet);
+        ImmutableList<AbstractRule> rulesToConsider = rulesStack.peek();
+
         if (node instanceof Document){
             checkDocument((Document) node, rulesToConsider);
         } else if (node instanceof Argument) {
@@ -88,139 +79,106 @@ public class RulesVisitor implements DocumentVisitor {
     }
 
     private void checkDocument(Document node, List<AbstractRule> rules) {
-        for (AbstractRule rule : rules) {
-            rule.checkDocument(node);
-        }
+        rules.forEach(r -> r.checkDocument(node));
     }
 
-
     private void checkArgument(Argument node, List<AbstractRule> rules) {
-        for (AbstractRule rule : rules) {
-            rule.checkArgument(node);
-        }
+        rules.forEach(r -> r.checkArgument(node));
     }
 
     private void checkTypeName(TypeName node, List<AbstractRule> rules) {
-        for (AbstractRule rule : rules) {
-            rule.checkTypeName(node);
-        }
+        rules.forEach(r -> r.checkTypeName(node));
     }
 
-
-    private void checkVariableDefinition(VariableDefinition variableDefinition, List<AbstractRule> rules) {
-        for (AbstractRule rule : rules) {
-            rule.checkVariableDefinition(variableDefinition);
-        }
+    private void checkVariableDefinition(VariableDefinition node, List<AbstractRule> rules) {
+        rules.forEach(r -> r.checkVariableDefinition(node));
     }
 
-    private void checkField(Field field, List<AbstractRule> rules) {
-        for (AbstractRule rule : rules) {
-            rule.checkField(field);
-        }
+    private void checkField(Field node, List<AbstractRule> rules) {
+        rules.forEach(r -> r.checkField(node));
     }
 
-    private void checkInlineFragment(InlineFragment inlineFragment, List<AbstractRule> rules) {
-        for (AbstractRule rule : rules) {
-            rule.checkInlineFragment(inlineFragment);
-        }
+    private void checkInlineFragment(InlineFragment node, List<AbstractRule> rules) {
+        rules.forEach(r -> r.checkInlineFragment(node));
     }
 
-    private void checkDirective(Directive directive, List<Node> ancestors, List<AbstractRule> rules) {
-        for (AbstractRule rule : rules) {
-            rule.checkDirective(directive, ancestors);
-        }
+    private void checkDirective(Directive node, List<Node> ancestors, List<AbstractRule> rules) {
+        rules.forEach(r -> r.checkDirective(node, ancestors));
     }
 
-    private void checkFragmentSpread(FragmentSpread fragmentSpread, List<AbstractRule> rules, List<Node> ancestors) {
-        for (AbstractRule rule : rules) {
-            rule.checkFragmentSpread(fragmentSpread);
-        }
-        List<AbstractRule> rulesVisitingFragmentSpreads = getRulesVisitingFragmentSpreads(rules);
+    private void checkFragmentSpread(FragmentSpread node, List<AbstractRule> rules, List<Node> ancestors) {
+        rules.forEach(r -> r.checkFragmentSpread(node));
+
+        ImmutableList<AbstractRule> rulesVisitingFragmentSpreads = filterRulesVisitingFragmentSpreads(rules, true);
         if (rulesVisitingFragmentSpreads.size() > 0) {
-            FragmentDefinition fragment = validationContext.getFragment(fragmentSpread.getName());
-            if (fragment != null && !ancestors.contains(fragment)) {
-                new LanguageTraversal(ancestors).traverse(fragment, new RulesVisitor(validationContext, rulesVisitingFragmentSpreads, true));
+            FragmentDefinition fragment = validationContext.getFragment(node.getName());
+            if (fragment != null && !ancestors.contains(fragment) && !visitedFragmentSpreads.contains(node.getName())) {
+                // Manually traverse into the FragmentDefinition
+                visitedFragmentSpreads.add(node.getName());
+                rulesStack.push(rulesVisitingFragmentSpreads);
+                fragmentSpreadVisitDepth++;
+                new LanguageTraversal(ancestors).traverse(fragment, this);
+                fragmentSpreadVisitDepth--;
+                rulesStack.pop();
             }
         }
     }
 
-    private List<AbstractRule> getRulesVisitingFragmentSpreads(List<AbstractRule> rules) {
-        List<AbstractRule> result = new ArrayList<>();
-        for (AbstractRule rule : rules) {
-            if (rule.isVisitFragmentSpreads()) result.add(rule);
+    private void checkFragmentDefinition(FragmentDefinition node, ImmutableList<AbstractRule> rules) {
+        ImmutableList<AbstractRule> scopeRules = rules;
+
+        // If we've encountered a FragmentDefinition and we got here without coming through a
+        // FragmentSpread, then suspend all isVisitFragmentSpread rules for this subtree.
+        // Expect these rules to be checked when when the FragmentSpread is traversed
+        if (fragmentSpreadVisitDepth == 0) {
+            scopeRules = filterRulesVisitingFragmentSpreads(rules, false);
+            popRulesStackOnLeave.push(node);
+            rulesStack.push(scopeRules);
         }
-        return result;
+
+        scopeRules.forEach(r -> r.checkFragmentDefinition(node));
     }
 
-
-    private void checkFragmentDefinition(FragmentDefinition fragmentDefinition, List<AbstractRule> rules) {
-        if (!subVisitor) {
-            rulesToSkipByUntilNode.put(fragmentDefinition, new ArrayList<>(rulesVisitingFragmentSpreads));
-            rulesToSkip.addAll(rulesVisitingFragmentSpreads);
-        }
-
-
-        for (AbstractRule rule : rules) {
-            if (!subVisitor && (rule.isVisitFragmentSpreads())) continue;
-            rule.checkFragmentDefinition(fragmentDefinition);
-        }
-
+    private void checkOperationDefinition(OperationDefinition node, List<AbstractRule> rules) {
+        rules.forEach(r -> r.checkOperationDefinition(node));
     }
 
-    private void checkOperationDefinition(OperationDefinition operationDefinition, List<AbstractRule> rules) {
-        for (AbstractRule rule : rules) {
-            rule.checkOperationDefinition(operationDefinition);
-        }
+    private void checkSelectionSet(SelectionSet node, List<AbstractRule> rules) {
+        rules.forEach(r -> r.checkSelectionSet(node));
     }
 
-    private void checkSelectionSet(SelectionSet selectionSet, List<AbstractRule> rules) {
-        for (AbstractRule rule : rules) {
-            rule.checkSelectionSet(selectionSet);
-        }
+    private void checkVariable(VariableReference node, List<AbstractRule> rules) {
+        rules.forEach(r -> r.checkVariable(node));
     }
-
-    private void checkVariable(VariableReference variableReference, List<AbstractRule> rules) {
-        for (AbstractRule rule : rules) {
-            rule.checkVariable(variableReference);
-        }
-    }
-
 
     @Override
     public void leave(Node node, List<Node> ancestors) {
         validationContext.getTraversalContext().leave(node, ancestors);
+        ImmutableList<AbstractRule> rules = rulesStack.peek();
 
         if (node instanceof Document) {
-            documentFinished((Document) node);
+            documentFinished((Document) node, rules);
         } else if (node instanceof OperationDefinition) {
-            leaveOperationDefinition((OperationDefinition) node);
+            leaveOperationDefinition((OperationDefinition) node, rules);
         } else if (node instanceof SelectionSet) {
-            leaveSelectionSet((SelectionSet) node);
+            leaveSelectionSet((SelectionSet) node, rules);
         }
 
-        if (rulesToSkipByUntilNode.containsKey(node)) {
-            rulesToSkip.removeAll(rulesToSkipByUntilNode.get(node));
-            rulesToSkipByUntilNode.remove(node);
-        }
-
-
-    }
-
-    private void leaveSelectionSet(SelectionSet selectionSet) {
-        for (AbstractRule rule : rules) {
-            rule.leaveSelectionSet(selectionSet);
+        if (!popRulesStackOnLeave.isEmpty() && popRulesStackOnLeave.peek() == node) {
+            popRulesStackOnLeave.pop();
+            rulesStack.pop();
         }
     }
 
-    private void leaveOperationDefinition(OperationDefinition operationDefinition) {
-        for (AbstractRule rule : rules) {
-            rule.leaveOperationDefinition(operationDefinition);
-        }
+    private void leaveSelectionSet(SelectionSet node, List<AbstractRule> rules) {
+        rules.forEach(r -> r.leaveSelectionSet(node));
     }
 
-    private void documentFinished(Document document) {
-        for (AbstractRule rule : rules) {
-            rule.documentFinished(document);
-        }
+    private void leaveOperationDefinition(OperationDefinition node, List<AbstractRule> rules) {
+        rules.forEach(r -> r.leaveOperationDefinition(node));
+    }
+
+    private void documentFinished(Document node, List<AbstractRule> rules) {
+        rules.forEach(r -> r.documentFinished(node));
     }
 }
