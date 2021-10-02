@@ -4,5 +4,5 @@ package graphql.validation;
 import graphql.PublicApi;
 
 @PublicApi
-public interface ValidationErrorTypeInterface {
+public interface ValidationErrorClassification {
 }

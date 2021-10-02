@@ -4,7 +4,7 @@ package graphql.validation;
 import graphql.PublicApi;
 
 @PublicApi
-public enum ValidationErrorType implements ValidationErrorTypeInterface {
+public enum ValidationErrorType implements ValidationErrorClassification {
 
     DefaultForNonNullArgument,
     WrongType,

@@ -18,16 +18,16 @@ public class ValidationError implements GraphQLError {
     private final String message;
     private final List<SourceLocation> locations = new ArrayList<>();
     private final String description;
-    private final ValidationErrorTypeInterface validationErrorType;
+    private final ValidationErrorClassification validationErrorType;
     private final List<String> queryPath;
     private final Map<String, Object> extensions;
 
-    public ValidationError(ValidationErrorTypeInterface validationErrorType) {
+    public ValidationError(ValidationErrorClassification validationErrorType) {
         this(newValidationError()
                 .validationErrorType(validationErrorType));
     }
 
-    public ValidationError(ValidationErrorTypeInterface validationErrorType, SourceLocation sourceLocation, String description) {
+    public ValidationError(ValidationErrorClassification validationErrorType, SourceLocation sourceLocation, String description) {
         this(newValidationError()
                 .validationErrorType(validationErrorType)
                 .sourceLocation(sourceLocation)
@@ -68,7 +68,7 @@ public class ValidationError implements GraphQLError {
         this.extensions = builder.extensions;
     }
 
-    private String mkMessage(ValidationErrorTypeInterface validationErrorType, String description, List<String> queryPath) {
+    private String mkMessage(ValidationErrorClassification validationErrorType, String description, List<String> queryPath) {
         return String.format("Validation error of type %s: %s%s", validationErrorType, description, toPath(queryPath));
     }
 
@@ -79,7 +79,7 @@ public class ValidationError implements GraphQLError {
         return String.format(" @ '%s'", String.join("/", queryPath));
     }
 
-    public ValidationErrorTypeInterface getValidationErrorType() {
+    public ValidationErrorClassification getValidationErrorType() {
         return validationErrorType;
     }
 
@@ -142,11 +142,11 @@ public class ValidationError implements GraphQLError {
         private List<SourceLocation> sourceLocations;
         private Map<String, Object> extensions;
         private String description;
-        private ValidationErrorTypeInterface validationErrorType;
+        private ValidationErrorClassification validationErrorType;
         private List<String> queryPath;
 
 
-        public Builder validationErrorType(ValidationErrorTypeInterface validationErrorType) {
+        public Builder validationErrorType(ValidationErrorClassification validationErrorType) {
             this.validationErrorType = validationErrorType;
             return this;
         }
