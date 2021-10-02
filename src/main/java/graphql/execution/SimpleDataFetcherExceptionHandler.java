@@ -24,9 +24,18 @@ public class SimpleDataFetcherExceptionHandler implements DataFetcherExceptionHa
         ResultPath path = handlerParameters.getPath();
 
         ExceptionWhileDataFetching error = new ExceptionWhileDataFetching(path, exception, sourceLocation);
-        logNotSafe.warn(error.getMessage(), exception);
+        logException(error, exception);
 
         return DataFetcherExceptionHandlerResult.newResult().error(error).build();
+    }
+
+    /**
+     * Called to log the exception - a subclass could choose to something different in logging terms
+     * @param error the graphql error
+     * @param exception the exception that happened
+     */
+    protected void logException(ExceptionWhileDataFetching error, Throwable exception) {
+        logNotSafe.warn(error.getMessage(), exception);
     }
 
     /**
