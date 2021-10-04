@@ -17,26 +17,13 @@ import static graphql.Assert.assertValidName;
 import static graphql.execution.ValuesResolver.getInputValueImpl;
 
 /**
- * This defines an argument that can be supplied to a graphql field (via {@link GraphQLFieldDefinition}.
+ * This defines an argument and its value that can be supplied to a graphql field (via {@link GraphQLFieldDefinition} during
+ * a query OR it represents the argument values that can be placed on an {@link GraphQLAppliedDirective}.
  * <p>
- * Fields can be thought of as "functions" that take arguments and return a value.
- * <p>
- * See http://graphql.org/learn/queries/#arguments for more details on the concept.
- * <p>
- * {@link GraphQLAppliedDirectiveArgument} is used in two contexts, one context is graphql queries where it represents the arguments that can be
- * set on a field and the other is in Schema Definition Language (SDL) where it can be used to represent the argument value instances
- * that have been supplied on a {@link GraphQLDirective}.
- * <p>
- * The difference is the 'value' and 'defaultValue' properties.  In a query argument, the 'value' is never in the GraphQLArgument
- * object but rather in the AST direct or in the query variables map and the 'defaultValue' represents a value to use if both of these are
- * not present. You can think of them like a descriptor of what shape an argument might have.
- * <p>
- * However with directives on SDL elements, the value is specified in AST only and transferred into the GraphQLArgument object and the
- * 'defaultValue' comes instead from the directive definition elsewhere in the SDL.  You can think of them as 'instances' of arguments, their shape and their
- * specific value on that directive.
+ * You can think of them as 'instances' of {@link GraphQLArgument}, when applied to some other element
  */
 @PublicApi
-public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElement {
+public class GraphQLAppliedArgument implements GraphQLNamedSchemaElement {
 
     private final String name;
     private final InputValueWithState value;
@@ -44,9 +31,9 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
     private final Argument definition;
 
 
-    private GraphQLAppliedDirectiveArgument(String name,
-                                            InputValueWithState value,
-                                            Argument definition
+    private GraphQLAppliedArgument(String name,
+                                   InputValueWithState value,
+                                   Argument definition
     ) {
         assertValidName(name);
         this.name = name;
@@ -73,25 +60,30 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
 
     /**
      * This static helper method will give out a java value based on the semantics captured
-     * in the {@link InputValueWithState} from {@link GraphQLAppliedDirectiveArgument#getArgumentValue()}
+     * in the {@link InputValueWithState} from {@link GraphQLAppliedArgument#getArgumentValue()}
      *
-     * Note : You MUST only call this on a {@link GraphQLAppliedDirectiveArgument} that is part of a fully formed schema.  We need
+     * Note : You MUST only call this on a {@link GraphQLAppliedArgument} that is part of a fully formed schema.  We need
      * all the types to be resolved in order for this work correctly.
      *
      * Note: This method will return null if the value is not set or explicitly set to null.  If you want to know the difference
-     * when "not set" and "set to null" then you can't use this method.  Rather you should use {@link GraphQLAppliedDirectiveArgument#getArgumentValue()}
+     * when "not set" and "set to null" then you can't use this method.  Rather you should use {@link GraphQLAppliedArgument#getArgumentValue()}
      * and use the {@link InputValueWithState#isNotSet()} methods to decide how to handle those values.
      *
-     * @param argument the fully formed {@link GraphQLAppliedDirectiveArgument}
+     * @param argument the fully formed {@link GraphQLAppliedArgument}
      * @param <T>      the type you want it cast as
      *
      * @return a value of type T which is the java value of the argument
      */
-    public static <T> T getArgumentValue(GraphQLInputType argumentType, GraphQLAppliedDirectiveArgument argument) {
+    public static <T> T getArgumentValue(GraphQLInputType argumentType, GraphQLAppliedArgument argument) {
         return getInputValueImpl(argumentType, argument.getArgumentValue());
     }
 
-    public String getDescription() {
+    /**
+     * This will always be null
+     *
+     * @return null
+     */
+    public @Nullable String getDescription() {
         return null;
     }
 
@@ -112,7 +104,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
     }
 
     @Override
-    public GraphQLAppliedDirectiveArgument withNewChildren(SchemaElementChildrenContainer newChildren) {
+    public GraphQLAppliedArgument withNewChildren(SchemaElementChildrenContainer newChildren) {
         return this;
     }
 
@@ -147,7 +139,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
      *
      * @return a new field based on calling build on that builder
      */
-    public GraphQLAppliedDirectiveArgument transform(Consumer<Builder> builderConsumer) {
+    public GraphQLAppliedArgument transform(Consumer<Builder> builderConsumer) {
         Builder builder = newArgument(this);
         builderConsumer.accept(builder);
         return builder.build();
@@ -157,13 +149,13 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
         return new Builder();
     }
 
-    public static Builder newArgument(GraphQLAppliedDirectiveArgument existing) {
+    public static Builder newArgument(GraphQLAppliedArgument existing) {
         return new Builder(existing);
     }
 
     @Override
     public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
-        return visitor.visitGraphQLAppliedDirectiveArgument(this, context);
+        return visitor.visitGraphQLAppliedArgument(this, context);
     }
 
     @Override
@@ -184,7 +176,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
         public Builder() {
         }
 
-        public Builder(GraphQLAppliedDirectiveArgument existing) {
+        public Builder(GraphQLAppliedArgument existing) {
             this.name = existing.getName();
             this.value = existing.getArgumentValue();
         }
@@ -240,9 +232,9 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
         }
 
 
-        public GraphQLAppliedDirectiveArgument build() {
+        public GraphQLAppliedArgument build() {
 
-            return new GraphQLAppliedDirectiveArgument(
+            return new GraphQLAppliedArgument(
                     name,
                     value,
                     definition

@@ -28,12 +28,12 @@ import static graphql.util.FpKit.getByName;
 public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
 
     private final String name;
-    private final ImmutableList<GraphQLAppliedDirectiveArgument> arguments;
+    private final ImmutableList<GraphQLAppliedArgument> arguments;
     private final Directive definition;
 
     public static final String CHILD_ARGUMENTS = "arguments";
 
-    private GraphQLAppliedDirective(String name, Directive definition, List<GraphQLAppliedDirectiveArgument> arguments) {
+    private GraphQLAppliedDirective(String name, Directive definition, List<GraphQLAppliedArgument> arguments) {
         assertValidName(name);
         assertNotNull(arguments, () -> "arguments can't be null");
         this.name = name;
@@ -51,12 +51,12 @@ public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
         return null;
     }
 
-    public List<GraphQLAppliedDirectiveArgument> getArguments() {
+    public List<GraphQLAppliedArgument> getArguments() {
         return arguments;
     }
 
-    public GraphQLAppliedDirectiveArgument getArgument(String name) {
-        for (GraphQLAppliedDirectiveArgument argument : arguments) {
+    public GraphQLAppliedArgument getArgument(String name) {
+        for (GraphQLAppliedArgument argument : arguments) {
             if (argument.getName().equals(name)) {
                 return argument;
             }
@@ -148,7 +148,7 @@ public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
 
     public static class Builder extends GraphqlTypeBuilder {
 
-        private final Map<String, GraphQLAppliedDirectiveArgument> arguments = new LinkedHashMap<>();
+        private final Map<String, GraphQLAppliedArgument> arguments = new LinkedHashMap<>();
         private Directive definition;
 
         public Builder() {
@@ -157,7 +157,7 @@ public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
         public Builder(GraphQLAppliedDirective existing) {
             this.name = existing.getName();
             this.description = existing.getDescription();
-            this.arguments.putAll(getByName(existing.getArguments(), GraphQLAppliedDirectiveArgument::getName));
+            this.arguments.putAll(getByName(existing.getArguments(), GraphQLAppliedArgument::getName));
         }
 
         @Override
@@ -178,16 +178,16 @@ public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
             return this;
         }
 
-        public Builder argument(GraphQLAppliedDirectiveArgument argument) {
+        public Builder argument(GraphQLAppliedArgument argument) {
             assertNotNull(argument, () -> "argument must not be null");
             arguments.put(argument.getName(), argument);
             return this;
         }
 
-        public Builder replaceArguments(List<GraphQLAppliedDirectiveArgument> arguments) {
+        public Builder replaceArguments(List<GraphQLAppliedArgument> arguments) {
             assertNotNull(arguments, () -> "arguments must not be null");
             this.arguments.clear();
-            for (GraphQLAppliedDirectiveArgument argument : arguments) {
+            for (GraphQLAppliedArgument argument : arguments) {
                 this.arguments.put(argument.getName(), argument);
             }
             return this;
@@ -206,8 +206,8 @@ public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
          *
          * @return this
          */
-        public Builder argument(UnaryOperator<GraphQLAppliedDirectiveArgument.Builder> builderFunction) {
-            GraphQLAppliedDirectiveArgument.Builder builder = GraphQLAppliedDirectiveArgument.newArgument();
+        public Builder argument(UnaryOperator<GraphQLAppliedArgument.Builder> builderFunction) {
+            GraphQLAppliedArgument.Builder builder = GraphQLAppliedArgument.newArgument();
             builder = builderFunction.apply(builder);
             return argument(builder);
         }
@@ -220,7 +220,7 @@ public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
          *
          * @return this
          */
-        public Builder argument(GraphQLAppliedDirectiveArgument.Builder builder) {
+        public Builder argument(GraphQLAppliedArgument.Builder builder) {
             return argument(builder.build());
         }
 
@@ -241,7 +241,7 @@ public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
         }
 
         public GraphQLAppliedDirective build() {
-            return new GraphQLAppliedDirective(name, this.definition, sort(arguments, GraphQLAppliedDirective.class, GraphQLAppliedDirectiveArgument.class));
+            return new GraphQLAppliedDirective(name, this.definition, sort(arguments, GraphQLAppliedDirective.class, GraphQLAppliedArgument.class));
         }
     }
 }

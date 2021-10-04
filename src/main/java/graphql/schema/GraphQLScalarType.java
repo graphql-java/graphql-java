@@ -47,12 +47,14 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
     private final String specifiedByUrl;
 
     public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_APPLIED_DIRECTIVES = "appliedDirectives";
 
     @Internal
     private GraphQLScalarType(String name,
                               String description,
                               Coercing coercing,
                               List<GraphQLDirective> directives,
+                              List<GraphQLAppliedDirective> appliedDirectives,
                               ScalarTypeDefinition definition,
                               List<ScalarTypeExtensionDefinition> extensionDefinitions,
                               String specifiedByUrl) {
@@ -64,7 +66,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
         this.description = description;
         this.coercing = coercing;
         this.definition = definition;
-        this.directives = new DirectivesUtil.DirectivesHolder(directives);
+        this.directives = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
         this.specifiedByUrl = specifiedByUrl;
     }
@@ -116,6 +118,21 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
     }
 
     @Override
+    public List<GraphQLAppliedDirective> getAppliedDirectives() {
+        return directives.getAppliedDirectives();
+    }
+
+    @Override
+    public Map<String, List<GraphQLAppliedDirective>> getAllAppliedDirectivesByName() {
+        return directives.getAllAppliedDirectivesByName();
+    }
+
+    @Override
+    public GraphQLAppliedDirective getAppliedDirective(String directiveName) {
+        return directives.getAppliedDirective(directiveName);
+    }
+
+    @Override
     public String toString() {
         return "GraphQLScalarType{" +
                 "name='" + name + '\'' +
@@ -151,13 +168,16 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
     @Override
     public List<GraphQLSchemaElement> getChildren() {
-        return ImmutableList.copyOf(directives.getDirectives());
+        List<GraphQLSchemaElement> children = new ArrayList<>(directives.getDirectives());
+        children.addAll(directives.getAppliedDirectives());
+        return children;
     }
 
     @Override
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return newSchemaElementChildrenContainer()
                 .children(CHILD_DIRECTIVES, directives.getDirectives())
+                .children(CHILD_APPLIED_DIRECTIVES, directives.getAppliedDirectives())
                 .build();
     }
 
@@ -165,6 +185,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
     public GraphQLScalarType withNewChildren(SchemaElementChildrenContainer newChildren) {
         return transform(builder ->
                 builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .replaceAppliedDirectives(newChildren.getChildren(CHILD_APPLIED_DIRECTIVES))
         );
     }
 
@@ -195,11 +216,10 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
 
     @PublicApi
-    public static class Builder extends GraphqlTypeBuilder {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder {
         private Coercing coercing;
         private ScalarTypeDefinition definition;
         private List<ScalarTypeExtensionDefinition> extensionDefinitions = emptyList();
-        private final List<GraphQLDirective> directives = new ArrayList<>();
         private String specifiedByUrl;
 
         public Builder() {
@@ -212,7 +232,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
             definition = existing.getDefinition();
             extensionDefinitions = existing.getExtensionDefinitions();
             specifiedByUrl = existing.getSpecifiedByUrl();
-            DirectivesUtil.enforceAddAll(this.directives, existing.getDirectives());
+            copyExistingDirectives(existing);
         }
 
         @Override
@@ -253,47 +273,13 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
             return this;
         }
 
-        public Builder withDirectives(GraphQLDirective... directives) {
-            assertNotNull(directives, () -> "directives can't be null");
-            this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                withDirective(directive);
-            }
-            return this;
-        }
-
-        public Builder withDirective(GraphQLDirective directive) {
-            assertNotNull(directive, () -> "directive can't be null");
-            DirectivesUtil.enforceAdd(this.directives, directive);
-            return this;
-        }
-
-        public Builder replaceDirectives(List<GraphQLDirective> directives) {
-            assertNotNull(directives, () -> "directive can't be null");
-            this.directives.clear();
-            DirectivesUtil.enforceAddAll(this.directives, directives);
-            return this;
-        }
-
-        public Builder withDirective(GraphQLDirective.Builder builder) {
-            return withDirective(builder.build());
-        }
-
-        /**
-         * This is used to clear all the directives in the builder so far.
-         *
-         * @return this builder
-         */
-        public Builder clearDirectives() {
-            directives.clear();
-            return this;
-        }
 
         public GraphQLScalarType build() {
             return new GraphQLScalarType(name,
                     description,
                     coercing,
                     sort(directives, GraphQLScalarType.class, GraphQLDirective.class),
+                    sort(appliedDirectives, GraphQLScalarType.class, GraphQLAppliedDirective.class),
                     definition,
                     extensionDefinitions,
                     specifiedByUrl);

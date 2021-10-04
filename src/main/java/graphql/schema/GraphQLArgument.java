@@ -55,6 +55,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     private GraphQLInputType replacedType;
 
     public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_APPLIED_DIRECTIVES = "appliedDirectives";
     public static final String CHILD_TYPE = "type";
 
 
@@ -65,6 +66,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
                             InputValueWithState value,
                             InputValueDefinition definition,
                             List<GraphQLDirective> directives,
+                            List<GraphQLAppliedDirective> appliedDirectives,
                             String deprecationReason) {
         assertValidName(name);
         assertNotNull(type, () -> "type can't be null");
@@ -75,7 +77,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         this.value = value;
         this.definition = definition;
         this.deprecationReason = deprecationReason;
-        this.directives = new DirectivesUtil.DirectivesHolder(directives);
+        this.directives = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
     }
 
 
@@ -196,10 +198,26 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     }
 
     @Override
+    public List<GraphQLAppliedDirective> getAppliedDirectives() {
+        return directives.getAppliedDirectives();
+    }
+
+    @Override
+    public Map<String, List<GraphQLAppliedDirective>> getAllAppliedDirectivesByName() {
+        return directives.getAllAppliedDirectivesByName();
+    }
+
+    @Override
+    public GraphQLAppliedDirective getAppliedDirective(String directiveName) {
+        return directives.getAppliedDirective(directiveName);
+    }
+
+    @Override
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>();
         children.add(getType());
         children.addAll(directives.getDirectives());
+        children.addAll(directives.getAppliedDirectives());
         return children;
     }
 
@@ -207,8 +225,9 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     @Override
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
-                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .child(CHILD_TYPE, originalType)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
+                .children(CHILD_APPLIED_DIRECTIVES, directives.getAppliedDirectives())
                 .build();
     }
 
@@ -216,7 +235,9 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     public GraphQLArgument withNewChildren(SchemaElementChildrenContainer newChildren) {
         return transform(builder ->
                 builder.type(newChildren.getChildOrNull(CHILD_TYPE))
-                        .replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES)));
+                        .replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .replaceAppliedDirectives(newChildren.getChildren(CHILD_APPLIED_DIRECTIVES))
+        );
     }
 
     @Override
@@ -279,14 +300,13 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
                 '}';
     }
 
-    public static class Builder extends GraphqlTypeBuilder {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder {
 
         private GraphQLInputType type;
         private InputValueWithState defaultValue = InputValueWithState.NOT_SET;
         private InputValueWithState value = InputValueWithState.NOT_SET;
         private String deprecationReason;
         private InputValueDefinition definition;
-        private final List<GraphQLDirective> directives = new ArrayList<>();
 
 
         public Builder() {
@@ -300,7 +320,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
             this.description = existing.getDescription();
             this.definition = existing.getDefinition();
             this.deprecationReason = existing.deprecationReason;
-            DirectivesUtil.enforceAddAll(this.directives, existing.getDirectives());
+            copyExistingDirectives(existing);
         }
 
         @Override
@@ -428,43 +448,6 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
             return this;
         }
 
-        public Builder withDirectives(GraphQLDirective... directives) {
-            assertNotNull(directives, () -> "directives can't be null");
-            this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                withDirective(directive);
-            }
-            return this;
-        }
-
-        public Builder withDirective(GraphQLDirective directive) {
-            assertNotNull(directive, () -> "directive can't be null");
-            DirectivesUtil.enforceAdd(this.directives, directive);
-            return this;
-        }
-
-        public Builder replaceDirectives(List<GraphQLDirective> directives) {
-            assertNotNull(directives, () -> "directive can't be null");
-            this.directives.clear();
-            DirectivesUtil.enforceAddAll(this.directives, directives);
-            return this;
-        }
-
-        public Builder withDirective(GraphQLDirective.Builder builder) {
-            return withDirective(builder.build());
-        }
-
-        /**
-         * This is used to clear all the directives in the builder so far.
-         *
-         * @return the builder
-         */
-        public Builder clearDirectives() {
-            directives.clear();
-            return this;
-        }
-
-
         public GraphQLArgument build() {
             assertNotNull(type, () -> "type can't be null");
 
@@ -476,6 +459,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
                     value,
                     definition,
                     sort(directives, GraphQLArgument.class, GraphQLDirective.class),
+                    sort(appliedDirectives, GraphQLScalarType.class, GraphQLAppliedDirective.class),
                     deprecationReason
             );
         }

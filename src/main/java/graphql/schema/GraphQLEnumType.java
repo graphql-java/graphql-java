@@ -47,9 +47,16 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
 
     public static final String CHILD_VALUES = "values";
     public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_APPLIED_DIRECTIVES = "appliedDirectives";
 
     @Internal
-    private GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values, List<GraphQLDirective> directives, EnumTypeDefinition definition, List<EnumTypeExtensionDefinition> extensionDefinitions) {
+    private GraphQLEnumType(String name,
+                            String description,
+                            List<GraphQLEnumValueDefinition> values,
+                            List<GraphQLDirective> directives,
+                            List<GraphQLAppliedDirective> appliedDirectives,
+                            EnumTypeDefinition definition,
+                            List<EnumTypeExtensionDefinition> extensionDefinitions) {
         assertValidName(name);
         assertNotNull(directives, () -> "directives cannot be null");
 
@@ -57,7 +64,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         this.description = description;
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directives = new DirectivesUtil.DirectivesHolder(directives);
+        this.directives = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
         this.valueDefinitionMap = buildMap(values);
     }
 
@@ -187,6 +194,21 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         return directives.getDirective(directiveName);
     }
 
+    @Override
+    public List<GraphQLAppliedDirective> getAppliedDirectives() {
+        return directives.getAppliedDirectives();
+    }
+
+    @Override
+    public Map<String, List<GraphQLAppliedDirective>> getAllAppliedDirectivesByName() {
+        return directives.getAllAppliedDirectivesByName();
+    }
+
+    @Override
+    public GraphQLAppliedDirective getAppliedDirective(String directiveName) {
+        return directives.getAppliedDirective(directiveName);
+    }
+
     /**
      * This helps you transform the current GraphQLEnumType into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
@@ -216,6 +238,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>(valueDefinitionMap.values());
         children.addAll(directives.getDirectives());
+        children.addAll(directives.getAppliedDirectives());
         return children;
     }
 
@@ -224,14 +247,16 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
                 .children(CHILD_VALUES, valueDefinitionMap.values())
                 .children(CHILD_DIRECTIVES, directives.getDirectives())
+                .children(CHILD_APPLIED_DIRECTIVES, directives.getAppliedDirectives())
                 .build();
     }
 
     @Override
     public GraphQLEnumType withNewChildren(SchemaElementChildrenContainer newChildren) {
         return transform(builder ->
-                builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
-                        .replaceValues(newChildren.getChildren(CHILD_VALUES))
+                builder.replaceValues(newChildren.getChildren(CHILD_VALUES))
+                        .replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .replaceAppliedDirectives(newChildren.getChildren(CHILD_APPLIED_DIRECTIVES))
         );
     }
 
@@ -272,12 +297,11 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         return new Builder(existing);
     }
 
-    public static class Builder extends GraphqlTypeBuilder {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder {
 
         private EnumTypeDefinition definition;
         private List<EnumTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLEnumValueDefinition> values = new LinkedHashMap<>();
-        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder() {
         }
@@ -288,7 +312,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
             this.definition = existing.getDefinition();
             this.extensionDefinitions = existing.getExtensionDefinitions();
             this.values.putAll(getByName(existing.getValues(), GraphQLEnumValueDefinition::getName));
-            DirectivesUtil.enforceAddAll(this.directives, existing.getDirectives());
+            copyExistingDirectives(existing);
         }
 
         @Override
@@ -374,41 +398,6 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
             return this;
         }
 
-        public Builder withDirectives(GraphQLDirective... directives) {
-            assertNotNull(directives, () -> "directives can't be null");
-            this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                withDirective(directive);
-            }
-            return this;
-        }
-
-        public Builder withDirective(GraphQLDirective directive) {
-            assertNotNull(directive, () -> "directive can't be null");
-            DirectivesUtil.enforceAdd(this.directives, directive);
-            return this;
-        }
-
-        public Builder replaceDirectives(List<GraphQLDirective> directives) {
-            assertNotNull(directives, () -> "directive can't be null");
-            this.directives.clear();
-            DirectivesUtil.enforceAddAll(this.directives, directives);
-            return this;
-        }
-
-        public Builder withDirective(GraphQLDirective.Builder builder) {
-            return withDirective(builder.build());
-        }
-
-        /**
-         * This is used to clear all the directives in the builder so far.
-         *
-         * @return the builder
-         */
-        public Builder clearDirectives() {
-            directives.clear();
-            return this;
-        }
 
         public GraphQLEnumType build() {
             return new GraphQLEnumType(
@@ -416,6 +405,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
                     description,
                     sort(values, GraphQLEnumType.class, GraphQLEnumValueDefinition.class),
                     sort(directives, GraphQLEnumType.class, GraphQLDirective.class),
+                    sort(appliedDirectives, GraphQLScalarType.class, GraphQLAppliedDirective.class),
                     definition,
                     extensionDefinitions);
         }

@@ -91,8 +91,8 @@ public class GraphQLSchema {
         this.introspectionSchemaType = builder.introspectionSchemaType;
         this.introspectionSchemaField = Introspection.buildSchemaField(builder.introspectionSchemaType);
         this.introspectionTypeField = Introspection.buildTypeField(builder.introspectionSchemaType);
-        this.directives = new DirectivesUtil.DirectivesHolder(builder.additionalDirectives);
-        this.schemaDirectives = new DirectivesUtil.DirectivesHolder(builder.schemaDirectives);
+        this.directives = new DirectivesUtil.DirectivesHolder(builder.additionalDirectives, emptyList());
+        this.schemaDirectives = new DirectivesUtil.DirectivesHolder(builder.schemaDirectives, builder.schemaAppliedDirectives);
         this.definition = builder.definition;
         this.extensionDefinitions = nonNullCopyOf(builder.extensionDefinitions);
         this.description = builder.description;
@@ -163,6 +163,10 @@ public class GraphQLSchema {
 
     private static GraphQLDirective[] schemaDirectivesArray(GraphQLSchema existingSchema) {
         return existingSchema.schemaDirectives.getDirectives().toArray(new GraphQLDirective[0]);
+    }
+
+    private static GraphQLAppliedDirective[] schemaAppliedDirectivesArray(GraphQLSchema existingSchema) {
+        return existingSchema.schemaDirectives.getAppliedDirectives().toArray(new GraphQLAppliedDirective[0]);
     }
 
     private static List<GraphQLNamedType> getAllTypesAsList(ImmutableMap<String, GraphQLNamedType> typeMap) {
@@ -430,7 +434,7 @@ public class GraphQLSchema {
     }
 
     /**
-     * Returns a the first named directive that can include non repeatable and repeatable directives
+     * Returns the first named directive that can include non-repeatable and repeatable directives
      * or null if there is not one called that name
      *
      * @param directiveName the name of the directives to retrieve
@@ -491,6 +495,46 @@ public class GraphQLSchema {
 
     public List<GraphQLDirective> getSchemaDirectives(String directiveName) {
         return schemaDirectives.getDirectives(directiveName);
+    }
+
+    /**
+     * This returns the list of directives that have been explicitly put on the
+     * schema object.  Note that {@link #getDirectives()} will return
+     * directives for all schema elements, whereas this is just for the schema
+     * element itself
+     *
+     * @return a list of directives
+     */
+    public List<GraphQLAppliedDirective> getSchemaAppliedDirectives() {
+        return schemaDirectives.getAppliedDirectives();
+    }
+
+    /**
+     * Schema directives can be `repeatable` and hence this returns a list of directives by name, some with an arity of 1 and some with an arity of greater than
+     * 1.
+     *
+     * @return a map of all schema directives by directive name
+     */
+    public Map<String, List<GraphQLAppliedDirective>> getAllSchemaAppliedDirectivesByName() {
+        return schemaDirectives.getAllAppliedDirectivesByName();
+    }
+
+    /**
+     * This returns the named directive that have been explicitly put on the
+     * schema object.  Note that {@link graphql.schema.GraphQLDirectiveContainer#getDirective(String)} will return
+     * directives for all schema elements, whereas this is just for the schema
+     * element itself
+     *
+     * @param directiveName the name of the directive
+     *
+     * @return a named directive
+     */
+    public GraphQLAppliedDirective getSchemaAppliedDirective(String directiveName) {
+        return schemaDirectives.getAppliedDirective(directiveName);
+    }
+
+    public List<GraphQLAppliedDirective> getSchemaAppliedDirectives(String directiveName) {
+        return schemaDirectives.getAppliedDirectives(directiveName);
     }
 
     public SchemaDefinition getDefinition() {
@@ -568,6 +612,7 @@ public class GraphQLSchema {
                 .additionalDirectives(new LinkedHashSet<>(existingSchema.getDirectives()))
                 .clearSchemaDirectives()
                 .withSchemaDirectives(schemaDirectivesArray(existingSchema))
+                .withSchemaAppliedDirectives(schemaAppliedDirectivesArray(existingSchema))
                 .additionalTypes(existingSchema.additionalTypes)
                 .description(existingSchema.getDescription());
     }
@@ -618,6 +663,7 @@ public class GraphQLSchema {
         );
         private final Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
         private final List<GraphQLDirective> schemaDirectives = new ArrayList<>();
+        private final List<GraphQLAppliedDirective> schemaAppliedDirectives = new ArrayList<>();
 
         public Builder query(GraphQLObjectType.Builder builder) {
             return query(builder.build());
@@ -719,6 +765,30 @@ public class GraphQLSchema {
             return withSchemaDirective(builder.build());
         }
 
+        public Builder withSchemaAppliedDirectives(GraphQLAppliedDirective... appliedDirectives) {
+            for (GraphQLAppliedDirective directive : appliedDirectives) {
+                withSchemaAppliedDirective(directive);
+            }
+            return this;
+        }
+
+        public Builder withSchemaAppliedDirectives(Collection<? extends GraphQLAppliedDirective> appliedDirectives) {
+            for (GraphQLAppliedDirective directive : appliedDirectives) {
+                withSchemaAppliedDirective(directive);
+            }
+            return this;
+        }
+
+        public Builder withSchemaAppliedDirective(GraphQLAppliedDirective appliedDirective) {
+            assertNotNull(appliedDirective, () -> "directive can't be null");
+            schemaAppliedDirectives.add(appliedDirective);
+            return this;
+        }
+
+        public Builder withSchemaAppliedDirective(GraphQLAppliedDirective.Builder builder) {
+            return withSchemaAppliedDirective(builder.build());
+        }
+
         /**
          * This is used to clear all the directives in the builder so far.
          *
@@ -726,6 +796,7 @@ public class GraphQLSchema {
          */
         public Builder clearSchemaDirectives() {
             schemaDirectives.clear();
+            schemaAppliedDirectives.clear();
             return this;
         }
 

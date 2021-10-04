@@ -52,7 +52,14 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
     public static final String CHILD_APPLIED_DIRECTIVES = "appliedDirectives";
 
     @Internal
-    private GraphQLUnionType(String name, String description, List<GraphQLNamedOutputType> types, TypeResolver typeResolver, List<GraphQLDirective> directives, List<GraphQLAppliedDirective> appliedDirectives, UnionTypeDefinition definition, List<UnionTypeExtensionDefinition> extensionDefinitions) {
+    private GraphQLUnionType(String name,
+                             String description,
+                             List<GraphQLNamedOutputType> types,
+                             TypeResolver typeResolver,
+                             List<GraphQLDirective> directives,
+                             List<GraphQLAppliedDirective> appliedDirectives,
+                             UnionTypeDefinition definition,
+                             List<UnionTypeExtensionDefinition> extensionDefinitions) {
         assertValidName(name);
         assertNotNull(types, () -> "types can't be null");
         assertNotEmpty(types, () -> "A Union type must define one or more member types.");
@@ -180,6 +187,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>(getTypes());
         children.addAll(directives.getDirectives());
+        children.addAll(directives.getAppliedDirectives());
         return children;
     }
 
