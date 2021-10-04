@@ -36,7 +36,8 @@ import static java.util.Collections.emptyList;
  * @see graphql.Scalars
  */
 @PublicApi
-public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class
+GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
@@ -216,7 +217,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
 
     @PublicApi
-    public static class Builder extends GraphqlDirectivesContainerTypeBuilder {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder,Builder> {
         private Coercing coercing;
         private ScalarTypeDefinition definition;
         private List<ScalarTypeExtensionDefinition> extensionDefinitions = emptyList();
@@ -235,26 +236,8 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
             copyExistingDirectives(existing);
         }
 
-        @Override
-        public Builder name(String name) {
-            super.name(name);
-            return this;
-        }
-
-        @Override
-        public Builder description(String description) {
-            super.description(description);
-            return this;
-        }
-
         public Builder specifiedByUrl(String specifiedByUrl) {
             this.specifiedByUrl = specifiedByUrl;
-            return this;
-        }
-
-        @Override
-        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            super.comparatorRegistry(comparatorRegistry);
             return this;
         }
 

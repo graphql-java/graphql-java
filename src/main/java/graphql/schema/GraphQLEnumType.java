@@ -297,7 +297,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         return new Builder(existing);
     }
 
-    public static class Builder extends GraphqlDirectivesContainerTypeBuilder {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder,Builder> {
 
         private EnumTypeDefinition definition;
         private List<EnumTypeExtensionDefinition> extensionDefinitions = emptyList();
@@ -315,23 +315,6 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
             copyExistingDirectives(existing);
         }
 
-        @Override
-        public Builder name(String name) {
-            super.name(name);
-            return this;
-        }
-
-        @Override
-        public Builder description(String description) {
-            super.description(description);
-            return this;
-        }
-
-        @Override
-        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            super.comparatorRegistry(comparatorRegistry);
-            return this;
-        }
 
         public Builder definition(EnumTypeDefinition definition) {
             this.definition = definition;

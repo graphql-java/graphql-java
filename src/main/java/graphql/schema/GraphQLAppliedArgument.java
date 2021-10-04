@@ -166,9 +166,8 @@ public class GraphQLAppliedArgument implements GraphQLNamedSchemaElement {
                 '}';
     }
 
-    public static class Builder extends GraphqlTypeBuilder {
+    public static class Builder extends GraphqlTypeBuilder<Builder> {
 
-        private String name;
         private InputValueWithState value = InputValueWithState.NOT_SET;
         private Argument definition;
 
@@ -181,23 +180,10 @@ public class GraphQLAppliedArgument implements GraphQLNamedSchemaElement {
             this.value = existing.getArgumentValue();
         }
 
-        @Override
-        public Builder name(String name) {
-            super.name(name);
-            return this;
-        }
-
-        @Override
-        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            super.comparatorRegistry(comparatorRegistry);
-            return this;
-        }
-
         public Builder definition(Argument definition) {
             this.definition = definition;
             return this;
         }
-
 
         /**
          * Sets a literal AST value as the arguments value

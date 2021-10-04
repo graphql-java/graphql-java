@@ -263,7 +263,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
 
     @PublicApi
-    public static class Builder extends GraphqlDirectivesContainerTypeBuilder {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder,Builder> {
         private TypeResolver typeResolver;
         private InterfaceTypeDefinition definition;
         private List<InterfaceTypeExtensionDefinition> extensionDefinitions = emptyList();
@@ -282,24 +282,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
             this.fields.putAll(getByName(existing.getFieldDefinitions(), GraphQLFieldDefinition::getName));
             this.interfaces.putAll(getByName(existing.originalInterfaces, GraphQLNamedType::getName));
             copyExistingDirectives(existing);
-        }
-
-        @Override
-        public Builder name(String name) {
-            super.name(name);
-            return this;
-        }
-
-        @Override
-        public Builder description(String description) {
-            super.description(description);
-            return this;
-        }
-
-        @Override
-        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            super.comparatorRegistry(comparatorRegistry);
-            return this;
         }
 
         public Builder definition(InterfaceTypeDefinition definition) {

@@ -227,7 +227,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     }
 
     @PublicApi
-    public static class Builder extends GraphqlDirectivesContainerTypeBuilder {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder,Builder> {
         private InputObjectTypeDefinition definition;
         private List<InputObjectTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLInputObjectField> fields = new LinkedHashMap<>();
@@ -242,24 +242,6 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
             this.extensionDefinitions = existing.getExtensionDefinitions();
             this.fields.putAll(getByName(existing.getFields(), GraphQLInputObjectField::getName));
             copyExistingDirectives(existing);
-        }
-
-        @Override
-        public Builder name(String name) {
-            super.name(name);
-            return this;
-        }
-
-        @Override
-        public Builder description(String description) {
-            super.description(description);
-            return this;
-        }
-
-        @Override
-        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            super.comparatorRegistry(comparatorRegistry);
-            return this;
         }
 
         public Builder definition(InputObjectTypeDefinition definition) {

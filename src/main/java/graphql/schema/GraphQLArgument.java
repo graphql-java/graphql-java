@@ -300,7 +300,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
                 '}';
     }
 
-    public static class Builder extends GraphqlDirectivesContainerTypeBuilder {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder,Builder> {
 
         private GraphQLInputType type;
         private InputValueWithState defaultValue = InputValueWithState.NOT_SET;
@@ -321,24 +321,6 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
             this.definition = existing.getDefinition();
             this.deprecationReason = existing.deprecationReason;
             copyExistingDirectives(existing);
-        }
-
-        @Override
-        public Builder name(String name) {
-            super.name(name);
-            return this;
-        }
-
-        @Override
-        public Builder description(String description) {
-            super.description(description);
-            return this;
-        }
-
-        @Override
-        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            super.comparatorRegistry(comparatorRegistry);
-            return this;
         }
 
         public Builder definition(InputValueDefinition definition) {

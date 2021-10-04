@@ -146,7 +146,7 @@ public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
         return new Builder(existing);
     }
 
-    public static class Builder extends GraphqlTypeBuilder {
+    public static class Builder extends GraphqlTypeBuilder<Builder> {
 
         private final Map<String, GraphQLAppliedArgument> arguments = new LinkedHashMap<>();
         private Directive definition;
@@ -158,24 +158,6 @@ public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
             this.name = existing.getName();
             this.description = existing.getDescription();
             this.arguments.putAll(getByName(existing.getArguments(), GraphQLAppliedArgument::getName));
-        }
-
-        @Override
-        public Builder name(String name) {
-            super.name(name);
-            return this;
-        }
-
-        @Override
-        public Builder description(String description) {
-            super.description(description);
-            return this;
-        }
-
-        @Override
-        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            super.comparatorRegistry(comparatorRegistry);
-            return this;
         }
 
         public Builder argument(GraphQLAppliedArgument argument) {

@@ -255,7 +255,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
     }
 
     @PublicApi
-    public static class Builder extends GraphqlDirectivesContainerTypeBuilder {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder,Builder> {
 
         private GraphQLOutputType type;
         private DataFetcherFactory<?> dataFetcherFactory;
@@ -275,25 +275,6 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
             this.definition = existing.getDefinition();
             this.arguments.putAll(getByName(existing.getArguments(), GraphQLArgument::getName));
             copyExistingDirectives(existing);
-        }
-
-
-        @Override
-        public Builder name(String name) {
-            super.name(name);
-            return this;
-        }
-
-        @Override
-        public Builder description(String description) {
-            super.description(description);
-            return this;
-        }
-
-        @Override
-        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            super.comparatorRegistry(comparatorRegistry);
-            return this;
         }
 
         public Builder definition(FieldDefinition definition) {

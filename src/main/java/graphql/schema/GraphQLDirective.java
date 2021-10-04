@@ -171,7 +171,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         return new Builder(existing);
     }
 
-    public static class Builder extends GraphqlTypeBuilder {
+    public static class Builder extends GraphqlTypeBuilder<Builder> {
 
         private EnumSet<DirectiveLocation> locations = EnumSet.noneOf(DirectiveLocation.class);
         private final Map<String, GraphQLArgument> arguments = new LinkedHashMap<>();
@@ -189,26 +189,8 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
             this.arguments.putAll(getByName(existing.getArguments(), GraphQLArgument::getName));
         }
 
-        @Override
-        public Builder name(String name) {
-            super.name(name);
-            return this;
-        }
-
-        @Override
-        public Builder description(String description) {
-            super.description(description);
-            return this;
-        }
-
         public Builder repeatable(boolean repeatable) {
             this.repeatable = repeatable;
-            return this;
-        }
-
-        @Override
-        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            super.comparatorRegistry(comparatorRegistry);
             return this;
         }
 

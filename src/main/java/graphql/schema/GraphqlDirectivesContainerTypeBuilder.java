@@ -8,63 +8,64 @@ import java.util.List;
 
 import static graphql.Assert.assertNotNull;
 
+@SuppressWarnings("unchecked")
 @Internal
-public class GraphqlDirectivesContainerTypeBuilder extends GraphqlTypeBuilder {
+public abstract class GraphqlDirectivesContainerTypeBuilder<B extends GraphqlDirectivesContainerTypeBuilder<B, BASE>, BASE extends GraphqlTypeBuilder<BASE>> extends GraphqlTypeBuilder<BASE> {
 
     protected final List<GraphQLAppliedDirective> appliedDirectives = new ArrayList<>();
     protected final List<GraphQLDirective> directives = new ArrayList<>();
 
 
-    public final GraphqlDirectivesContainerTypeBuilder replaceAppliedDirectives(List<GraphQLAppliedDirective> directives) {
+    public B replaceAppliedDirectives(List<GraphQLAppliedDirective> directives) {
         assertNotNull(directives, () -> "directive can't be null");
         this.appliedDirectives.clear();
         this.appliedDirectives.addAll(directives);
-        return this;
+        return (B) this;
     }
 
-    public final GraphqlDirectivesContainerTypeBuilder withAppliedDirectives(GraphQLAppliedDirective... directives) {
+    public B withAppliedDirectives(GraphQLAppliedDirective... directives) {
         assertNotNull(directives, () -> "directives can't be null");
         this.appliedDirectives.clear();
         for (GraphQLAppliedDirective directive : directives) {
             withAppliedDirective(directive);
         }
-        return this;
+        return (B) this;
     }
 
-    public final GraphqlDirectivesContainerTypeBuilder withAppliedDirective(GraphQLAppliedDirective directive) {
+    public B withAppliedDirective(GraphQLAppliedDirective directive) {
         assertNotNull(directive, () -> "directive can't be null");
         this.appliedDirectives.add(directive);
-        return this;
+        return (B) this;
     }
 
-    public final GraphqlDirectivesContainerTypeBuilder withAppliedDirective(GraphQLAppliedDirective.Builder builder) {
+    public B withAppliedDirective(GraphQLAppliedDirective.Builder builder) {
         return withAppliedDirectives(builder.build());
     }
 
 
-    public final GraphqlDirectivesContainerTypeBuilder replaceDirectives(List<GraphQLDirective> directives) {
+    public B replaceDirectives(List<GraphQLDirective> directives) {
         assertNotNull(directives, () -> "directive can't be null");
         this.directives.clear();
-        DirectivesUtil.enforceAddAll(this.directives, this.appliedDirectives); // TODO
-        return this;
+        this.directives.addAll(directives);
+        return (B) this;
     }
 
-    public final GraphqlDirectivesContainerTypeBuilder withDirectives(GraphQLDirective... directives) {
+    public B withDirectives(GraphQLDirective... directives) {
         assertNotNull(directives, () -> "directives can't be null");
         this.directives.clear();
         for (GraphQLDirective directive : directives) {
             withDirective(directive);
         }
-        return this;
+        return (B) this;
     }
 
-    public final GraphqlDirectivesContainerTypeBuilder withDirective(GraphQLDirective directive) {
+    public B withDirective(GraphQLDirective directive) {
         assertNotNull(directive, () -> "directive can't be null");
         this.directives.add(directive);
-        return this;
+        return (B) this;
     }
 
-    public final GraphqlDirectivesContainerTypeBuilder withDirective(GraphQLDirective.Builder builder) {
+    public B withDirective(GraphQLDirective.Builder builder) {
         return withDirective(builder.build());
     }
 
@@ -73,10 +74,10 @@ public class GraphqlDirectivesContainerTypeBuilder extends GraphqlTypeBuilder {
      *
      * @return the builder
      */
-    public final GraphqlDirectivesContainerTypeBuilder clearDirectives() {
+    public B clearDirectives() {
         directives.clear();
         appliedDirectives.clear();
-        return this;
+        return (B) this;
     }
 
     protected void copyExistingDirectives(GraphQLDirectiveContainer directivesContainer) {

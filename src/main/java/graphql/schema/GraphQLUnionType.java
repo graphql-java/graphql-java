@@ -236,7 +236,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
     }
 
     @PublicApi
-    public static class Builder extends GraphqlDirectivesContainerTypeBuilder {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder,Builder> {
         private TypeResolver typeResolver;
         private UnionTypeDefinition definition;
         private List<UnionTypeExtensionDefinition> extensionDefinitions = emptyList();
@@ -254,24 +254,6 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
             this.extensionDefinitions = existing.getExtensionDefinitions();
             this.types.putAll(getByName(existing.originalTypes, GraphQLNamedType::getName));
             copyExistingDirectives(existing);
-        }
-
-        @Override
-        public Builder name(String name) {
-            super.name(name);
-            return this;
-        }
-
-        @Override
-        public Builder description(String description) {
-            super.description(description);
-            return this;
-        }
-
-        @Override
-        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            super.comparatorRegistry(comparatorRegistry);
-            return this;
         }
 
         public Builder definition(UnionTypeDefinition definition) {

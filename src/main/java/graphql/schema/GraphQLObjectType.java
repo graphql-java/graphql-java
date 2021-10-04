@@ -252,7 +252,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     }
 
     @PublicApi
-    public static class Builder extends GraphqlDirectivesContainerTypeBuilder {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder,Builder> {
         private ObjectTypeDefinition definition;
         private List<ObjectTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLFieldDefinition> fields = new LinkedHashMap<>();
@@ -269,24 +269,6 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
             fields.putAll(getByName(existing.getFieldDefinitions(), GraphQLFieldDefinition::getName));
             interfaces.putAll(getByName(existing.originalInterfaces, GraphQLNamedType::getName));
             copyExistingDirectives(existing);
-        }
-
-        @Override
-        public Builder name(String name) {
-            super.name(name);
-            return this;
-        }
-
-        @Override
-        public Builder description(String description) {
-            super.description(description);
-            return this;
-        }
-
-        @Override
-        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            super.comparatorRegistry(comparatorRegistry);
-            return this;
         }
 
         public Builder definition(ObjectTypeDefinition definition) {
