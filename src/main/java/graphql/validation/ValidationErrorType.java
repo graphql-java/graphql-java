@@ -1,7 +1,10 @@
 package graphql.validation;
 
 
-public enum ValidationErrorType {
+import graphql.PublicApi;
+
+@PublicApi
+public enum ValidationErrorType implements ValidationErrorClassification {
 
     MaxValidationErrorsReached,
     DefaultForNonNullArgument,
