@@ -20,6 +20,10 @@ import static java.util.Collections.emptyList;
 @PublicApi
 public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
 
+    String CHILD_DIRECTIVES = "directives";
+    String CHILD_APPLIED_DIRECTIVES = "appliedDirectives";
+
+
     /**
      * This will return a list of all the directives that have been put on {@link graphql.schema.GraphQLNamedSchemaElement} as a flat list, which may contain repeatable
      * and non-repeatable directives.

@@ -43,11 +43,9 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     private final ImmutableMap<String, GraphQLEnumValueDefinition> valueDefinitionMap;
     private final EnumTypeDefinition definition;
     private final ImmutableList<EnumTypeExtensionDefinition> extensionDefinitions;
-    private final DirectivesUtil.DirectivesHolder directives;
+    private final DirectivesUtil.DirectivesHolder directivesHolder;
 
     public static final String CHILD_VALUES = "values";
-    public static final String CHILD_DIRECTIVES = "directives";
-    public static final String CHILD_APPLIED_DIRECTIVES = "appliedDirectives";
 
     @Internal
     private GraphQLEnumType(String name,
@@ -64,7 +62,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         this.description = description;
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directives = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
+        this.directivesHolder = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
         this.valueDefinitionMap = buildMap(values);
     }
 
@@ -176,37 +174,37 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives.getDirectives();
+        return directivesHolder.getDirectives();
     }
 
     @Override
     public Map<String, GraphQLDirective> getDirectivesByName() {
-        return directives.getDirectivesByName();
+        return directivesHolder.getDirectivesByName();
     }
 
     @Override
     public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
-        return directives.getAllDirectivesByName();
+        return directivesHolder.getAllDirectivesByName();
     }
 
     @Override
     public GraphQLDirective getDirective(String directiveName) {
-        return directives.getDirective(directiveName);
+        return directivesHolder.getDirective(directiveName);
     }
 
     @Override
     public List<GraphQLAppliedDirective> getAppliedDirectives() {
-        return directives.getAppliedDirectives();
+        return directivesHolder.getAppliedDirectives();
     }
 
     @Override
     public Map<String, List<GraphQLAppliedDirective>> getAllAppliedDirectivesByName() {
-        return directives.getAllAppliedDirectivesByName();
+        return directivesHolder.getAllAppliedDirectivesByName();
     }
 
     @Override
     public GraphQLAppliedDirective getAppliedDirective(String directiveName) {
-        return directives.getAppliedDirective(directiveName);
+        return directivesHolder.getAppliedDirective(directiveName);
     }
 
     /**
@@ -237,8 +235,8 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     @Override
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>(valueDefinitionMap.values());
-        children.addAll(directives.getDirectives());
-        children.addAll(directives.getAppliedDirectives());
+        children.addAll(directivesHolder.getDirectives());
+        children.addAll(directivesHolder.getAppliedDirectives());
         return children;
     }
 
@@ -246,8 +244,8 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
                 .children(CHILD_VALUES, valueDefinitionMap.values())
-                .children(CHILD_DIRECTIVES, directives.getDirectives())
-                .children(CHILD_APPLIED_DIRECTIVES, directives.getAppliedDirectives())
+                .children(CHILD_DIRECTIVES, directivesHolder.getDirectives())
+                .children(CHILD_APPLIED_DIRECTIVES, directivesHolder.getAppliedDirectives())
                 .build();
     }
 
@@ -285,7 +283,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
                 ", valueDefinitionMap=" + valueDefinitionMap +
                 ", definition=" + definition +
                 ", extensionDefinitions=" + extensionDefinitions +
-                ", directives=" + directives +
+                ", directives=" + directivesHolder +
                 '}';
     }
 

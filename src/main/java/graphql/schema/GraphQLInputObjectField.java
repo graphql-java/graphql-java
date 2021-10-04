@@ -36,13 +36,11 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
 
     private final String deprecationReason;
     private final InputValueDefinition definition;
-    private final DirectivesUtil.DirectivesHolder directives;
+    private final DirectivesUtil.DirectivesHolder directivesHolder;
 
     private GraphQLInputType replacedType;
 
     public static final String CHILD_TYPE = "type";
-    public static final String CHILD_DIRECTIVES = "directives";
-    public static final String CHILD_APPLIED_DIRECTIVES = "appliedDirectives";
 
 
     private GraphQLInputObjectField(
@@ -62,7 +60,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         this.originalType = type;
         this.defaultValue = defaultValue;
         this.description = description;
-        this.directives = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
+        this.directivesHolder = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
         this.definition = definition;
         this.deprecationReason = deprecationReason;
     }
@@ -134,37 +132,37 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives.getDirectives();
+        return directivesHolder.getDirectives();
     }
 
     @Override
     public Map<String, GraphQLDirective> getDirectivesByName() {
-        return directives.getDirectivesByName();
+        return directivesHolder.getDirectivesByName();
     }
 
     @Override
     public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
-        return directives.getAllDirectivesByName();
+        return directivesHolder.getAllDirectivesByName();
     }
 
     @Override
     public GraphQLDirective getDirective(String directiveName) {
-        return directives.getDirective(directiveName);
+        return directivesHolder.getDirective(directiveName);
     }
 
     @Override
     public List<GraphQLAppliedDirective> getAppliedDirectives() {
-        return directives.getAppliedDirectives();
+        return directivesHolder.getAppliedDirectives();
     }
 
     @Override
     public Map<String, List<GraphQLAppliedDirective>> getAllAppliedDirectivesByName() {
-        return directives.getAllAppliedDirectivesByName();
+        return directivesHolder.getAllAppliedDirectivesByName();
     }
 
     @Override
     public GraphQLAppliedDirective getAppliedDirective(String directiveName) {
-        return directives.getAppliedDirective(directiveName);
+        return directivesHolder.getAppliedDirective(directiveName);
     }
 
     /**
@@ -196,16 +194,16 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>();
         children.add(getType());
-        children.addAll(directives.getDirectives());
-        children.addAll(directives.getAppliedDirectives());
+        children.addAll(directivesHolder.getDirectives());
+        children.addAll(directivesHolder.getAppliedDirectives());
         return children;
     }
 
     @Override
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
-                .children(CHILD_DIRECTIVES, directives.getDirectives())
-                .children(CHILD_APPLIED_DIRECTIVES, directives.getAppliedDirectives())
+                .children(CHILD_DIRECTIVES, directivesHolder.getDirectives())
+                .children(CHILD_APPLIED_DIRECTIVES, directivesHolder.getAppliedDirectives())
                 .child(CHILD_TYPE, originalType)
                 .build();
     }
@@ -245,7 +243,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
                 ", originalType=" + inputTypeToStringAvoidingCircularReference(originalType) +
                 ", defaultValue=" + defaultValue +
                 ", definition=" + definition +
-                ", directives=" + directives +
+                ", directives=" + directivesHolder +
                 ", replacedType=" + inputTypeToStringAvoidingCircularReference(replacedType) +
                 '}';
     }

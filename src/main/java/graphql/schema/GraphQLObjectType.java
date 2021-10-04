@@ -46,15 +46,13 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
     private final ImmutableMap<String, GraphQLFieldDefinition> fieldDefinitionsByName;
     private final ImmutableList<GraphQLNamedOutputType> originalInterfaces;
-    private final DirectivesUtil.DirectivesHolder directives;
+    private final DirectivesUtil.DirectivesHolder directivesHolder;
     private final ObjectTypeDefinition definition;
     private final ImmutableList<ObjectTypeExtensionDefinition> extensionDefinitions;
 
     private ImmutableList<GraphQLNamedOutputType> replacedInterfaces;
 
     public static final String CHILD_INTERFACES = "interfaces";
-    public static final String CHILD_DIRECTIVES = "directives";
-    public static final String CHILD_APPLIED_DIRECTIVES = "appliedDirectives";
     public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
 
     @Internal
@@ -76,7 +74,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         this.originalInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directives = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
+        this.directivesHolder = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
         this.fieldDefinitionsByName = buildDefinitionMap(fieldDefinitions);
     }
 
@@ -91,37 +89,37 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives.getDirectives();
+        return directivesHolder.getDirectives();
     }
 
     @Override
     public Map<String, GraphQLDirective> getDirectivesByName() {
-        return directives.getDirectivesByName();
+        return directivesHolder.getDirectivesByName();
     }
 
     @Override
     public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
-        return directives.getAllDirectivesByName();
+        return directivesHolder.getAllDirectivesByName();
     }
 
     @Override
     public GraphQLDirective getDirective(String directiveName) {
-        return directives.getDirective(directiveName);
+        return directivesHolder.getDirective(directiveName);
     }
 
     @Override
     public List<GraphQLAppliedDirective> getAppliedDirectives() {
-        return directives.getAppliedDirectives();
+        return directivesHolder.getAppliedDirectives();
     }
 
     @Override
     public Map<String, List<GraphQLAppliedDirective>> getAllAppliedDirectivesByName() {
-        return directives.getAllAppliedDirectivesByName();
+        return directivesHolder.getAllAppliedDirectivesByName();
     }
 
     @Override
     public GraphQLAppliedDirective getAppliedDirective(String directiveName) {
-        return directives.getAppliedDirective(directiveName);
+        return directivesHolder.getAppliedDirective(directiveName);
     }
 
     @Override
@@ -199,8 +197,8 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>(fieldDefinitionsByName.values());
         children.addAll(getInterfaces());
-        children.addAll(directives.getDirectives());
-        children.addAll(directives.getAppliedDirectives());
+        children.addAll(directivesHolder.getDirectives());
+        children.addAll(directivesHolder.getAppliedDirectives());
         return children;
     }
 
@@ -208,9 +206,9 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
                 .children(CHILD_FIELD_DEFINITIONS, fieldDefinitionsByName.values())
-                .children(CHILD_APPLIED_DIRECTIVES, directives.getAppliedDirectives())
-                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .children(CHILD_INTERFACES, originalInterfaces)
+                .children(CHILD_APPLIED_DIRECTIVES, directivesHolder.getAppliedDirectives())
+                .children(CHILD_DIRECTIVES, directivesHolder.getDirectives())
                 .build();
     }
 

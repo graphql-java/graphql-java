@@ -48,8 +48,6 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
     private ImmutableList<GraphQLNamedOutputType> replacedTypes;
 
     public static final String CHILD_TYPES = "types";
-    public static final String CHILD_DIRECTIVES = "directives";
-    public static final String CHILD_APPLIED_DIRECTIVES = "appliedDirectives";
 
     @Internal
     private GraphQLUnionType(String name,
@@ -196,7 +194,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         return newSchemaElementChildrenContainer()
                 .children(CHILD_TYPES, originalTypes)
                 .children(CHILD_DIRECTIVES, directives.getDirectives())
-                .children(CHILD_APPLIED_DIRECTIVES, directives.getDirectives())
+                .children(CHILD_APPLIED_DIRECTIVES, directives.getAppliedDirectives())
                 .build();
     }
 
@@ -240,7 +238,6 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         private TypeResolver typeResolver;
         private UnionTypeDefinition definition;
         private List<UnionTypeExtensionDefinition> extensionDefinitions = emptyList();
-
         private final Map<String, GraphQLNamedOutputType> types = new LinkedHashMap<>();
 
         public Builder() {

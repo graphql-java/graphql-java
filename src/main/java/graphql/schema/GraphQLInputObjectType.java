@@ -41,8 +41,6 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     private final DirectivesUtil.DirectivesHolder directives;
 
     public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
-    public static final String CHILD_DIRECTIVES = "directives";
-    public static final String CHILD_APPLIED_DIRECTIVES = "appliedDirectives";
 
     @Internal
     private GraphQLInputObjectType(String name,

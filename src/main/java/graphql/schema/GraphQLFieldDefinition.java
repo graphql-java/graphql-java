@@ -40,14 +40,12 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
     private final DataFetcherFactory dataFetcherFactory;
     private final String deprecationReason;
     private final ImmutableList<GraphQLArgument> arguments;
-    private final DirectivesUtil.DirectivesHolder directives;
+    private final DirectivesUtil.DirectivesHolder directivesHolder;
     private final FieldDefinition definition;
 
     private GraphQLOutputType replacedType;
 
     public static final String CHILD_ARGUMENTS = "arguments";
-    public static final String CHILD_DIRECTIVES = "directives";
-    public static final String CHILD_APPLIED_DIRECTIVES = "appliedDirectives";
     public static final String CHILD_TYPE = "type";
 
     @Internal
@@ -68,7 +66,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         this.originalType = type;
         this.dataFetcherFactory = dataFetcherFactory;
         this.arguments = ImmutableList.copyOf(arguments);
-        this.directives = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
+        this.directivesHolder = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
         this.deprecationReason = deprecationReason;
         this.definition = definition;
     }
@@ -108,37 +106,37 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives.getDirectives();
+        return directivesHolder.getDirectives();
     }
 
     @Override
     public Map<String, GraphQLDirective> getDirectivesByName() {
-        return directives.getDirectivesByName();
+        return directivesHolder.getDirectivesByName();
     }
 
     @Override
     public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
-        return directives.getAllDirectivesByName();
+        return directivesHolder.getAllDirectivesByName();
     }
 
     @Override
     public GraphQLDirective getDirective(String directiveName) {
-        return directives.getDirective(directiveName);
+        return directivesHolder.getDirective(directiveName);
     }
 
     @Override
     public List<GraphQLAppliedDirective> getAppliedDirectives() {
-        return directives.getAppliedDirectives();
+        return directivesHolder.getAppliedDirectives();
     }
 
     @Override
     public Map<String, List<GraphQLAppliedDirective>> getAllAppliedDirectivesByName() {
-        return directives.getAllAppliedDirectivesByName();
+        return directivesHolder.getAllAppliedDirectivesByName();
     }
 
     @Override
     public GraphQLAppliedDirective getAppliedDirective(String directiveName) {
-        return directives.getAppliedDirective(directiveName);
+        return directivesHolder.getAppliedDirective(directiveName);
     }
 
     public List<GraphQLArgument> getArguments() {
@@ -204,8 +202,8 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         List<GraphQLSchemaElement> children = new ArrayList<>();
         children.add(getType());
         children.addAll(arguments);
-        children.addAll(directives.getDirectives());
-        children.addAll(directives.getAppliedDirectives());
+        children.addAll(directivesHolder.getDirectives());
+        children.addAll(directivesHolder.getAppliedDirectives());
         return children;
     }
 
@@ -214,8 +212,8 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
                 .child(CHILD_TYPE, originalType)
                 .children(CHILD_ARGUMENTS, arguments)
-                .children(CHILD_DIRECTIVES, directives.getDirectives())
-                .children(CHILD_APPLIED_DIRECTIVES, directives.getAppliedDirectives())
+                .children(CHILD_DIRECTIVES, directivesHolder.getDirectives())
+                .children(CHILD_APPLIED_DIRECTIVES, directivesHolder.getAppliedDirectives())
                 .build();
     }
 
