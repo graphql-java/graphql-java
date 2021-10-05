@@ -19,6 +19,7 @@ import graphql.validation.ValidationErrorType;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Internal
 public class VariableTypesMatchRule extends AbstractRule {
@@ -58,12 +59,12 @@ public class VariableTypesMatchRule extends AbstractRule {
             return;
         }
         GraphQLInputType expectedType = getValidationContext().getInputType();
-        InputValueWithState schemaDefault = getValidationContext().getArgument().getArgumentDefaultValue();
+        Optional<InputValueWithState> schemaDefault = Optional.ofNullable(getValidationContext().getArgument()).map(v -> v.getArgumentDefaultValue());
         Value schemaDefaultValue = null;
-        if (schemaDefault.isLiteral()) {
-            schemaDefaultValue = (Value) schemaDefault.getValue();
-        } else if (schemaDefault.isSet()) {
-            schemaDefaultValue = ValuesResolver.valueToLiteral(schemaDefault, expectedType);
+        if (schemaDefault.isPresent() && schemaDefault.get().isLiteral()) {
+            schemaDefaultValue = (Value) schemaDefault.get().getValue();
+        } else if (schemaDefault.isPresent() && schemaDefault.get().isSet()) {
+            schemaDefaultValue = ValuesResolver.valueToLiteral(schemaDefault.get(), expectedType);
         }
         if (expectedType == null) {
             // we must have a unknown variable say to not have a known type
