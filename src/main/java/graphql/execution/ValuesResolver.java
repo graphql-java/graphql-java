@@ -460,7 +460,7 @@ public class ValuesResolver {
                         argumentType);
                 coercedValues.put(argumentName, coercedDefaultValue);
             } else if (isNonNull(argumentType) && (!hasValue || isNullValue(value))) {
-                throw new RuntimeException();
+                throw new NonNullableValueCoercedAsNullException(argumentDefinition);
             } else if (hasValue) {
                 if (isNullValue(value)) {
                     coercedValues.put(argumentName, value);

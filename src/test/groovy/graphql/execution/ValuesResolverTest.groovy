@@ -534,6 +534,24 @@ class ValuesResolverTest extends Specification {
         values['arg'] == null
     }
 
+    def "argument of Non-Nullable type and with null coerced value throws error"() {
+        given:
+        def inputObjectType = newInputObject()
+                .name("inputObject")
+                .build()
+
+        def fieldArgument = newArgument().name("arg").type(nonNull(inputObjectType)).build()
+        def argument = new Argument("arg", new VariableReference("var"))
+
+        when:
+        def variables = ["var": null]
+        resolver.getArgumentValues([fieldArgument], [argument], variables)
+
+        then:
+        def error = thrown(NonNullableValueCoercedAsNullException)
+        error.message == "Argument 'arg' has coerced Null value for NonNull type 'inputObject!'"
+    }
+
     def "invalid enum error message is not nested and contains source location - issue 2560"() {
         when:
         def graphQL = TestUtil.graphQL('''

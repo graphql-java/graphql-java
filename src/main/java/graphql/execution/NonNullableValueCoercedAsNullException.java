@@ -6,6 +6,7 @@ import graphql.GraphQLException;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
 import graphql.language.VariableDefinition;
+import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
@@ -57,6 +58,10 @@ public class NonNullableValueCoercedAsNullException extends GraphQLException imp
         super(format("Input field '%s' has coerced Null value for NonNull type '%s'",
                 inputTypeField.getName(), GraphQLTypeUtil.simplePrint(inputTypeField.getType())));
         this.path = path;
+    }
+
+    public NonNullableValueCoercedAsNullException(GraphQLArgument graphQLArgument) {
+        super(format("Argument '%s' has coerced Null value for NonNull type '%s'", graphQLArgument.getName(), graphQLArgument.getType()));
     }
 
     @Override
