@@ -1,5 +1,7 @@
 package graphql.execution
 
+import graphql.ErrorType
+import graphql.ExecutionInput
 import graphql.GraphQLException
 import graphql.TestUtil
 import graphql.language.Argument
@@ -12,6 +14,7 @@ import graphql.language.NonNullType
 import graphql.language.NullValue
 import graphql.language.ObjectField
 import graphql.language.ObjectValue
+import graphql.language.SourceLocation
 import graphql.language.StringValue
 import graphql.language.TypeName
 import graphql.language.Value
@@ -547,5 +550,124 @@ class ValuesResolverTest extends Specification {
         then:
         def error = thrown(NonNullableValueCoercedAsNullException)
         error.message == "Argument 'arg' has coerced Null value for NonNull type 'inputObject!'"
+    }
+
+    def "invalid enum error message is not nested and contains source location - issue 2560"() {
+        when:
+        def graphQL = TestUtil.graphQL('''
+            enum PositionType {
+                MANAGER
+                DEVELOPER
+            }
+            
+            input PersonInput {
+                name: String
+                position: PositionType
+            }
+
+            type Query {
+                name: String
+            }
+            
+            type Mutation {
+              updatePerson(input: PersonInput!): Boolean
+            }
+        ''').build()
+
+        def mutation = '''
+            mutation UpdatePerson($input: PersonInput!) {
+                updatePerson(input: $input)
+            }
+        '''
+
+        def executionInput = ExecutionInput.newExecutionInput()
+                .query(mutation)
+                .variables([input: [name: 'Name', position: 'UNKNOWN_POSITION'] ])
+                .build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        then:
+        executionResult.data == null
+        executionResult.errors.size() == 1
+        executionResult.errors[0].errorType == ErrorType.ValidationError
+        executionResult.errors[0].message == 'Variable \'input\' has an invalid value: Invalid input for Enum \'PositionType\'. No value found for name \'UNKNOWN_POSITION\''
+        executionResult.errors[0].locations == [new SourceLocation(2, 35)]
+    }
+
+    def "invalid boolean coercing parse value error message is not nested and contains source location - issue 2560"() {
+        when:
+        def graphQL = TestUtil.graphQL('''
+            input PersonInput {
+                name: String
+                hilarious: Boolean
+            }
+
+            type Query {
+                name: String
+            }
+            
+            type Mutation {
+              updatePerson(input: PersonInput!): Boolean
+            }
+        ''').build()
+
+        def mutation = '''
+            mutation UpdatePerson($input: PersonInput!) {
+                updatePerson(input: $input)
+            }
+        '''
+
+        def executionInput = ExecutionInput.newExecutionInput()
+                .query(mutation)
+                .variables([input: [name: 'Name', hilarious: 'sometimes'] ])
+                .build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        then:
+        executionResult.data == null
+        executionResult.errors.size() == 1
+        executionResult.errors[0].errorType == ErrorType.ValidationError
+        executionResult.errors[0].message == 'Variable \'input\' has an invalid value: Expected type \'Boolean\' but was \'String\'.'
+        executionResult.errors[0].locations == [new SourceLocation(2, 35)]
+    }
+
+    def "invalid float coercing parse value error message is not nested and contains source location - issue 2560"() {
+        when:
+        def graphQL = TestUtil.graphQL('''
+            input PersonInput {
+                name: String
+                laughsPerMinute: Float
+            }
+
+            type Query {
+                name: String
+            }
+            
+            type Mutation {
+              updatePerson(input: PersonInput!): Boolean
+            }
+        ''').build()
+
+        def mutation = '''
+            mutation UpdatePerson($input: PersonInput!) {
+                updatePerson(input: $input)
+            }
+        '''
+
+        def executionInput = ExecutionInput.newExecutionInput()
+                .query(mutation)
+                .variables([input: [name: 'Name', laughsPerMinute: 'none'] ])
+                .build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        then:
+        executionResult.data == null
+        executionResult.errors.size() == 1
+        executionResult.errors[0].errorType == ErrorType.ValidationError
+        executionResult.errors[0].message == 'Variable \'input\' has an invalid value: Expected type \'Float\' but was \'String\'.'
+        executionResult.errors[0].locations == [new SourceLocation(2, 35)]
     }
 }
