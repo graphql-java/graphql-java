@@ -65,12 +65,12 @@ class NoFragmentCyclesTest extends Specification {
     def 'double spread within abstract types'() {
         given:
         def query = """
-                fragment nameFragment on Pet {
+        fragment nameFragment on Pet {
             ... on Dog { name }
             ... on Cat { name }
         }
 
-                fragment spreadsInAnon on Pet {
+        fragment spreadsInAnon on Pet {
             ... on Dog { ...nameFragment }
             ... on Cat { ...nameFragment }
         }
@@ -93,9 +93,7 @@ class NoFragmentCyclesTest extends Specification {
         traverse(query)
         then:
         errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
-
     }
-
 
     def 'no spreading itself directly'() {
         given:
@@ -106,7 +104,6 @@ class NoFragmentCyclesTest extends Specification {
         traverse(query)
         then:
         errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
-
     }
 
     def "no spreading itself indirectly within inline fragment"() {
@@ -142,6 +139,50 @@ class NoFragmentCyclesTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
 
+    }
+
+    def "no self-spreading in floating fragments"() {
+        given:
+        def query = """
+        fragment fragA on Dog {
+          ...fragA
+        }
+        """
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
+    }
+
+    def "no co-recursive spreads in floating fragments"() {
+        given:
+        def query = """
+        fragment fragB on Dog { ...fragA }
+        fragment fragA on Dog { ...fragB }
+        """
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
+    }
+
+    def "no self-spread fragments used in multiple operations"() {
+        given:
+        def query = """
+            fragment fragA on Dog { ...fragA }
+            query A { ...fragA }
+            query B { ...fragA }
+        """
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
     }
 
     def "#583 no npe on undefined fragment"() {

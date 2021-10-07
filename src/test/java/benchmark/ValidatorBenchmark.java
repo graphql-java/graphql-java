@@ -2,7 +2,6 @@ package benchmark;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Charsets;
@@ -26,15 +25,12 @@ import graphql.language.Document;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaGenerator;
-import graphql.validation.AbstractRule;
-import graphql.validation.LanguageTraversal;
-import graphql.validation.ValidationContext;
-import graphql.validation.ValidationErrorCollector;
 import graphql.validation.Validator;
 
 import static com.google.common.io.Resources.getResource;
 
 import static graphql.Assert.assertTrue;
+
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)

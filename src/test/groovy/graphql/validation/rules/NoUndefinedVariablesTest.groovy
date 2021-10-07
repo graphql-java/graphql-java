@@ -11,10 +11,7 @@ import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
 class NoUndefinedVariablesTest extends Specification {
-
-
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-
 
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
@@ -24,7 +21,6 @@ class NoUndefinedVariablesTest extends Specification {
 
         languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUndefinedVariables]))
     }
-
 
     def "undefined variable"() {
         given:
@@ -55,7 +51,6 @@ class NoUndefinedVariablesTest extends Specification {
 
         then:
         errorCollector.errors.isEmpty()
-
     }
 
     def "all variables in fragments deeply defined"() {
@@ -111,6 +106,74 @@ class NoUndefinedVariablesTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UndefinedVariable)
+    }
 
+    def "floating fragment with variables"() {
+        given:
+        def query = """
+        fragment A on Type {
+            field(a: \$a)
+        }
+        """
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.errors.isEmpty()
+    }
+
+    def "multiple operations and completely defined variables"() {
+        given:
+        def query = """
+        query Foo(\$a: String) { ...A }
+        query Bar(\$a: String) { ...A }
+        
+        fragment A on Type { 
+            field(a: \$a)
+        }
+        """
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.errors.isEmpty()
+    }
+
+    def "multiple operations and mixed variable definitions"() {
+        given:
+        def query = """
+        query Foo(\$a: String) { ...A }
+        query Bar { ...A }
+        
+        fragment A on Type { 
+            field(a: \$a)
+        }
+        """
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.containsValidationError(ValidationErrorType.UndefinedVariable)
+    }
+
+    def "multiple operations with undefined variables"() {
+        given:
+        def query = """
+        query Foo { ...A }
+        query Bar { ...A }
+        
+        fragment A on Type { 
+            field(a: \$a)
+        }
+        """
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.containsValidationError(ValidationErrorType.UndefinedVariable)
     }
 }

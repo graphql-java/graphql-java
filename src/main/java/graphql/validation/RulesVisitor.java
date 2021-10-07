@@ -39,7 +39,7 @@ public class RulesVisitor implements DocumentVisitor {
     }
 
     private ImmutableList<AbstractRule> filterRulesVisitingFragmentSpreads(List<AbstractRule> rules, boolean isVisitFragmentSpreads) {
-        Iterator<AbstractRule> itr = rulesStack.peek()
+        Iterator<AbstractRule> itr = rules
             .stream()
             .filter(r -> r.isVisitFragmentSpreads() == isVisitFragmentSpreads)
             .iterator();
@@ -175,6 +175,8 @@ public class RulesVisitor implements DocumentVisitor {
     }
 
     private void leaveOperationDefinition(OperationDefinition node, List<AbstractRule> rules) {
+        // fragments should be revisited for each operation
+        visitedFragmentSpreads.clear();
         rules.forEach(r -> r.leaveOperationDefinition(node));
     }
 
