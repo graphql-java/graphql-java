@@ -16,6 +16,6 @@ public enum SchemaValidationErrorType {
     NonNullWrapNonNullError,
     RepetitiveElementError,
     InvalidDefaultValue,
-    InvalidAppliedDirectiveArgument
-
+    InvalidAppliedDirectiveArgument,
+    InvalidAppliedDirective
 }

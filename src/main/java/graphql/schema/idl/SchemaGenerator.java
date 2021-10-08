@@ -27,7 +27,7 @@ public class SchemaGenerator {
     public SchemaGenerator() {
     }
 
-    /**
+    /**SchemaGeneratorTest
      * Created a schema from the SDL that is has a mocked runtime.
      *
      * @param sdl the SDL to be mocked

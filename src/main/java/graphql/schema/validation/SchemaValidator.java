@@ -22,6 +22,7 @@ public class SchemaValidator {
         rules.add(new TypesImplementInterfaces());
         rules.add(new TypeAndFieldRule());
         rules.add(new DefaultValuesAreValid());
+        rules.add(new AppliedDirectivesAreValid());
         rules.add(new AppliedDirectiveArgumentsAreValid());
     }
 

@@ -2,6 +2,7 @@ package graphql.schema.transform
 
 import graphql.Scalars
 import graphql.TestUtil
+import graphql.introspection.Introspection
 import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLObjectType
@@ -964,6 +965,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .additionalType(account)
                 .additionalType(billingStatus)
                 .additionalType(secretData)
+                .additionalDirective(privateDirective)
                 .build()
         when:
 
@@ -1009,6 +1011,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .additionalType(account)
                 .additionalType(billingStatus)
                 .additionalType(secretData)
+                .additionalDirective(privateDirective)
                 .build()
         when:
 
@@ -1044,6 +1047,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .query(query)
                 .additionalType(billingStatus)
                 .additionalType(account)
+                .additionalDirective(privateDirective)
                 .build()
         when:
 

@@ -248,7 +248,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
             this.deprecationReason = existing.getDeprecationReason();
             this.definition = existing.getDefinition();
             this.arguments.putAll(getByName(existing.getArguments(), GraphQLArgument::getName));
-            DirectivesUtil.enforceAddAll(this.directives, existing.getDirectives());
+            DirectivesUtil.addAll(this.directives, existing.getDirectives());
         }
 
 
@@ -442,14 +442,14 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            DirectivesUtil.enforceAdd(this.directives, directive);
+            DirectivesUtil.add(this.directives, directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
-            DirectivesUtil.enforceAddAll(this.directives, directives);
+            DirectivesUtil.addAll(this.directives, directives);
             return this;
         }
 
