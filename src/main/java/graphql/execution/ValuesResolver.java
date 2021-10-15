@@ -75,6 +75,12 @@ public class ValuesResolver {
         NORMALIZED
     }
 
+    private boolean allowMissingVariables = false;
+
+    public void allowMissingVariables(boolean allow) {
+        this.allowMissingVariables = allow;
+    }
+
     /**
      * This method coerces the "raw" variables values provided to the engine. The coerced values will be used to
      * provide arguments to {@link graphql.schema.DataFetchingEnvironment}
@@ -459,7 +465,7 @@ public class ValuesResolver {
                         defaultValue,
                         argumentType);
                 coercedValues.put(argumentName, coercedDefaultValue);
-            } else if (isNonNull(argumentType) && (!hasValue || isNullValue(value))) {
+            } else if (isNonNull(argumentType) && (!hasValue || isNullValue(value)) && !allowMissingVariables) {
                 throw new NonNullableValueCoercedAsNullException(argumentDefinition);
             } else if (hasValue) {
                 if (isNullValue(value)) {

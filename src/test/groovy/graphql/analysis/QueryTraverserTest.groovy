@@ -1804,4 +1804,42 @@ class QueryTraverserTest extends Specification {
         then: "it should not be visited"
         0 * visitor.visitField(_)
     }
+
+    def "can traverse query without required variables"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo(required_param : String!) : String  
+            }
+        """)
+
+        def queryReducer = new QueryReducer<Set<String>>() {
+            @Override
+            Set<String> reduceField(QueryVisitorFieldEnvironment fieldEnvironment, Set<String> acc) {
+                acc.add(fieldEnvironment.fieldDefinition.name)
+                return acc
+            }
+        }
+        def query = createQuery('''
+            query test {
+                foo { subFoo }
+                bar
+            }
+            ''')
+        QueryTraverser queryTraversal = QueryTraverser.newQueryTraverser()
+                .schema(schema)
+                .document(query)
+                .allowMissingVariables(true)
+                .build()
+
+        when: "we have an enabled variable conditional node"
+        def fields = queryTraversal.reducePreOrder(queryReducer, new HashSet<>())
+
+        then: "it should be visited"
+        fields.size() == 3
+    }
 }

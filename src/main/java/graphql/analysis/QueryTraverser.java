@@ -16,6 +16,7 @@ import graphql.schema.GraphQLSchema;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,11 +46,13 @@ public class QueryTraverser {
     private final Map<String, Object> variables;
 
     private final GraphQLCompositeType rootParentType;
+    private final boolean allowMissingVariables;
 
     private QueryTraverser(GraphQLSchema schema,
                            Document document,
                            String operation,
-                           Map<String, Object> variables) {
+                           Map<String, Object> variables,
+                           boolean allowMissingVariables) {
         assertNotNull(document, () -> "document  can't be null");
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operation);
         List<VariableDefinition> variableDefinitions = getOperationResult.operationDefinition.getVariableDefinitions();
@@ -57,7 +60,12 @@ public class QueryTraverser {
         this.fragmentsByName = getOperationResult.fragmentsByName;
         this.roots = singletonList(getOperationResult.operationDefinition);
         this.rootParentType = getRootTypeFromOperation(getOperationResult.operationDefinition);
-        this.variables = coerceVariables(assertNotNull(variables, () -> "variables can't be null"), variableDefinitions);
+        this.allowMissingVariables = allowMissingVariables;
+        if (allowMissingVariables && variables == null) {
+            this.variables = new HashMap<>();
+        } else {
+            this.variables = coerceVariables(assertNotNull(variables, () -> "variables can't be null"), variableDefinitions);
+        }
     }
 
     private Map<String, Object> coerceVariables(Map<String, Object> rawVariables, List<VariableDefinition> variableDefinitions) {
@@ -68,9 +76,15 @@ public class QueryTraverser {
                            Node root,
                            GraphQLCompositeType rootParentType,
                            Map<String, FragmentDefinition> fragmentsByName,
-                           Map<String, Object> variables) {
+                           Map<String, Object> variables,
+                           boolean allowMissingVariables) {
         this.schema = assertNotNull(schema, () -> "schema can't be null");
-        this.variables = assertNotNull(variables, () -> "variables can't be null");
+        this.allowMissingVariables = allowMissingVariables;
+        if (allowMissingVariables) {
+            this.variables = new HashMap<>();
+        } else {
+            this.variables = assertNotNull(variables, () -> "variables can't be null");
+        }
         assertNotNull(root, () -> "root can't be null");
         this.roots = Collections.singleton(root);
         this.rootParentType = assertNotNull(rootParentType, () -> "rootParentType can't be null");
@@ -181,7 +195,7 @@ public class QueryTraverser {
         }
 
         NodeTraverser nodeTraverser = new NodeTraverser(rootVars, this::childrenOf);
-        NodeVisitorWithTypeTracking nodeVisitorWithTypeTracking = new NodeVisitorWithTypeTracking(preOrderCallback, postOrderCallback, variables, schema, fragmentsByName);
+        NodeVisitorWithTypeTracking nodeVisitorWithTypeTracking = new NodeVisitorWithTypeTracking(preOrderCallback, postOrderCallback, variables, schema, fragmentsByName, allowMissingVariables);
         return nodeTraverser.depthFirst(nodeVisitorWithTypeTracking, roots);
     }
 
@@ -195,6 +209,7 @@ public class QueryTraverser {
         private Document document;
         private String operation;
         private Map<String, Object> variables;
+        private boolean allowMissingVariables;
 
         private Node root;
         private GraphQLCompositeType rootParentType;
@@ -252,6 +267,18 @@ public class QueryTraverser {
         }
 
         /**
+         * Whether or not to allow missing variables when traversing the query.
+         *
+         * @param allow allow variables to be missing
+         *
+         * @return this builder
+         */
+        public Builder allowMissingVariables(boolean allow) {
+            this.allowMissingVariables = allow;
+            return this;
+        }
+
+        /**
          * Specify the root node for the traversal. Needs to be provided if there is
          * no {@link Builder#document(Document)}.
          *
@@ -294,9 +321,9 @@ public class QueryTraverser {
         public QueryTraverser build() {
             checkState();
             if (document != null) {
-                return new QueryTraverser(schema, document, operation, variables);
+                return new QueryTraverser(schema, document, operation, variables, allowMissingVariables);
             } else {
-                return new QueryTraverser(schema, root, rootParentType, fragmentsByName, variables);
+                return new QueryTraverser(schema, root, rootParentType, fragmentsByName, variables, allowMissingVariables);
             }
         }
 
