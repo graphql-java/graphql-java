@@ -195,7 +195,8 @@ public class QueryTraverser {
         }
 
         NodeTraverser nodeTraverser = new NodeTraverser(rootVars, this::childrenOf);
-        NodeVisitorWithTypeTracking nodeVisitorWithTypeTracking = new NodeVisitorWithTypeTracking(preOrderCallback, postOrderCallback, variables, schema, fragmentsByName, allowMissingVariables);
+        NodeVisitorWithTypeTracking nodeVisitorWithTypeTracking = new NodeVisitorWithTypeTracking(preOrderCallback, postOrderCallback, variables, schema, fragmentsByName);
+        nodeVisitorWithTypeTracking.allowMissingVariables(allowMissingVariables);
         return nodeTraverser.depthFirst(nodeVisitorWithTypeTracking, roots);
     }
 

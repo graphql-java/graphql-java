@@ -1836,10 +1836,122 @@ class QueryTraverserTest extends Specification {
                 .allowMissingVariables(true)
                 .build()
 
-        when: "we have an enabled variable conditional node"
+        when: "we have missing required variables"
         def fields = queryTraversal.reducePreOrder(queryReducer, new HashSet<>())
 
         then: "it should be visited"
-        fields.size() == 3
+        fields == ["foo", "bar", "subFoo"].toSet()
+    }
+
+    def "properly use given variables while allowing other missing required variables"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo1 
+                foo2: String
+                bar: String
+            }
+            type Foo1 {
+                string: String  
+                subFoo: Foo2 
+            }
+            type Foo2 {
+                otherString(required_param : String!) : String
+            }
+        """)
+
+        def queryReducer = new QueryReducer<Set<String>>() {
+            @Override
+            Set<String> reduceField(QueryVisitorFieldEnvironment fieldEnvironment, Set<String> acc) {
+                acc.add(fieldEnvironment.fieldDefinition.name)
+                return acc
+            }
+        }
+        def query = createQuery("""
+            query MyQuery(\$variableFoo: Boolean) {
+                bar 
+                ...Test @include(if: \$variableFoo)
+                foo {
+                    subFoo {
+                        otherString
+                    }
+                }
+            }
+            fragment Test on Query {
+                foo2
+            }
+            """)
+        def variables = [variableFoo: variableFoo]
+        QueryTraverser queryTraversal = QueryTraverser.newQueryTraverser()
+                .schema(schema)
+                .document(query)
+                .variables(variables)
+                .allowMissingVariables(true)
+                .build()
+
+        when:
+        def fields = queryTraversal.reducePreOrder(queryReducer, new HashSet<>())
+
+        then:
+        fields == expected.toSet()
+
+        where:
+        variableFoo | expected
+        true        | ["bar", "foo2", "foo", "subFoo", "otherString"]
+        false       | ["bar", "foo", "subFoo", "otherString"]
+    }
+
+    def "always include conditional fragments and fields if allowMissingVariables is true"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query {
+                foo: String
+                baz: String
+            }
+        """)
+
+        def queryReducer = new QueryReducer<Set<String>>() {
+            @Override
+            Set<String> reduceField(QueryVisitorFieldEnvironment fieldEnvironment, Set<String> acc) {
+                acc.add(fieldEnvironment.fieldDefinition.name)
+                return acc
+            }
+        }
+        def query = createQuery("""
+            query MyQuery(\$includeFoo: Boolean, \$skipBaz: Boolean) {
+                ...TestFoo @include(if: \$includeFoo)
+                ...TestBaz @skip(if: \$skipBaz)
+            }
+            fragment TestFoo on Query {
+                foo
+            }
+            fragment TestBaz on Query {
+                baz
+            }
+            """)
+        def variables = [includeFoo: includeFoo, skipBaz: skipBaz]
+        QueryTraverser queryTraversal = QueryTraverser.newQueryTraverser()
+                .schema(schema)
+                .document(query)
+                .variables(variables)
+                .allowMissingVariables(true)
+                .build()
+
+        when:
+        def fields = queryTraversal.reducePreOrder(queryReducer, new HashSet<>())
+
+        then:
+        fields == expected.toSet()
+
+        where:
+        includeFoo | skipBaz    | expected
+        true       | false      | ["foo", "baz"]
+        false      | false      | ["baz"]
+        null       | false      | ["foo", "baz"]
+        true       | true       | ["foo"]
+        false      | true       | []
+        null       | true       | ["foo"]
+        null       | false      | ["foo", "baz"]
+        null       | null       | ["foo", "baz"]
     }
 }

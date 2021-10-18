@@ -61,13 +61,9 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         this.fragmentsByName = fragmentsByName;
     }
 
-    public NodeVisitorWithTypeTracking(QueryVisitor preOrderCallback, QueryVisitor postOrderCallback, Map<String, Object> variables, GraphQLSchema schema, Map<String, FragmentDefinition> fragmentsByName, boolean allowMissingVariables) {
-        this.preOrderCallback = preOrderCallback;
-        this.postOrderCallback = postOrderCallback;
-        this.variables = variables;
-        this.schema = schema;
-        this.fragmentsByName = fragmentsByName;
-        this.valuesResolver.allowMissingVariables(allowMissingVariables);
+    public void allowMissingVariables(boolean allow) {
+        this.valuesResolver.allowMissingVariables(allow);
+        this.conditionalNodes.allowMissingVariables(allow);
     }
 
     @Override

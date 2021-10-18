@@ -18,6 +18,13 @@ public class ConditionalNodes {
     @VisibleForTesting
     ValuesResolver valuesResolver = new ValuesResolver();
 
+    private boolean allowMissingVariables = false;
+
+    public void allowMissingVariables(boolean allow) {
+        this.allowMissingVariables = allow;
+        valuesResolver.allowMissingVariables(allow);
+    }
+
     public boolean shouldInclude(Map<String, Object> variables, List<Directive> directives) {
         boolean skip = getDirectiveResult(variables, directives, SkipDirective.getName(), false);
         if (skip) {
@@ -32,8 +39,17 @@ public class ConditionalNodes {
         if (foundDirective != null) {
             Map<String, Object> argumentValues = valuesResolver.getArgumentValues(SkipDirective.getArguments(), foundDirective.getArguments(), variables);
             Object flag = argumentValues.get("if");
-            Assert.assertTrue(flag instanceof Boolean, () -> String.format("The '%s' directive MUST have a value for the 'if' argument", directiveName));
-            return (Boolean) flag;
+            //Always return default for null if we allow missing variables
+            if (allowMissingVariables) {
+                if (flag instanceof Boolean) {
+                    return (Boolean) flag;
+                } else {
+                    return defaultValue;
+                }
+            } else {
+                Assert.assertTrue(flag instanceof Boolean, () -> String.format("The '%s' directive MUST have a value for the 'if' argument", directiveName));
+                return (Boolean) flag;
+            }
         }
         return defaultValue;
     }
