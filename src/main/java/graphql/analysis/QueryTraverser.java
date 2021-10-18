@@ -61,8 +61,8 @@ public class QueryTraverser {
         this.roots = singletonList(getOperationResult.operationDefinition);
         this.rootParentType = getRootTypeFromOperation(getOperationResult.operationDefinition);
         this.allowMissingVariables = allowMissingVariables;
-        if (allowMissingVariables && variables == null) {
-            this.variables = new HashMap<>();
+        if (allowMissingVariables) {
+            this.variables = variables == null ? new HashMap<>() : variables;
         } else {
             this.variables = coerceVariables(assertNotNull(variables, () -> "variables can't be null"), variableDefinitions);
         }
@@ -80,8 +80,8 @@ public class QueryTraverser {
                            boolean allowMissingVariables) {
         this.schema = assertNotNull(schema, () -> "schema can't be null");
         this.allowMissingVariables = allowMissingVariables;
-        if (allowMissingVariables && variables == null) {
-            this.variables = new HashMap<>();
+        if (allowMissingVariables) {
+            this.variables = variables == null ? new HashMap<>() : variables;
         } else {
             this.variables = assertNotNull(variables, () -> "variables can't be null");
         }
