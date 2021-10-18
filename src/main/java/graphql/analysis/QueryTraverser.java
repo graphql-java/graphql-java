@@ -80,7 +80,7 @@ public class QueryTraverser {
                            boolean allowMissingVariables) {
         this.schema = assertNotNull(schema, () -> "schema can't be null");
         this.allowMissingVariables = allowMissingVariables;
-        if (allowMissingVariables) {
+        if (allowMissingVariables && variables == null) {
             this.variables = new HashMap<>();
         } else {
             this.variables = assertNotNull(variables, () -> "variables can't be null");
