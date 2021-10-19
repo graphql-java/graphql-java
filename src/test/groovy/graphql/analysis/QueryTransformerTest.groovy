@@ -544,17 +544,17 @@ class QueryTransformerTest extends Specification {
         def newDocument = queryTransformer.transform(visitor)
 
         then:
-        printAstCompact(newDocument) == expected
+        printAstCompact(newDocument) == "query MyQuery(\$includeA:Boolean,\$skipB:Boolean) {...TestRootA@include(if:\$includeA) ...TestRootB@skip(if:\$skipB)} fragment TestRootA on Query {root {fooA-modified}} fragment TestRootB on Query {root {fooB-modified}}"
 
         where:
-        includeA   | skipB      | expected
-        true       | false      | "query MyQuery(\$includeA:Boolean,\$skipB:Boolean) {...TestRootA@include(if:\$includeA) ...TestRootB@skip(if:\$skipB)} fragment TestRootA on Query {root {fooA-modified}} fragment TestRootB on Query {root {fooB-modified}}"
-        false      | false      | "query MyQuery(\$includeA:Boolean,\$skipB:Boolean) {...TestRootA@include(if:\$includeA) ...TestRootB@skip(if:\$skipB)} fragment TestRootA on Query {root {fooA-modified}} fragment TestRootB on Query {root {fooB-modified}}"
-        null       | false      | "query MyQuery(\$includeA:Boolean,\$skipB:Boolean) {...TestRootA@include(if:\$includeA) ...TestRootB@skip(if:\$skipB)} fragment TestRootA on Query {root {fooA-modified}} fragment TestRootB on Query {root {fooB-modified}}"
-        true       | true       | "query MyQuery(\$includeA:Boolean,\$skipB:Boolean) {...TestRootA@include(if:\$includeA) ...TestRootB@skip(if:\$skipB)} fragment TestRootA on Query {root {fooA-modified}} fragment TestRootB on Query {root {fooB-modified}}"
-        false      | true       | "query MyQuery(\$includeA:Boolean,\$skipB:Boolean) {...TestRootA@include(if:\$includeA) ...TestRootB@skip(if:\$skipB)} fragment TestRootA on Query {root {fooA-modified}} fragment TestRootB on Query {root {fooB-modified}}"
-        null       | true       | "query MyQuery(\$includeA:Boolean,\$skipB:Boolean) {...TestRootA@include(if:\$includeA) ...TestRootB@skip(if:\$skipB)} fragment TestRootA on Query {root {fooA-modified}} fragment TestRootB on Query {root {fooB-modified}}"
-        null       | false      | "query MyQuery(\$includeA:Boolean,\$skipB:Boolean) {...TestRootA@include(if:\$includeA) ...TestRootB@skip(if:\$skipB)} fragment TestRootA on Query {root {fooA-modified}} fragment TestRootB on Query {root {fooB-modified}}"
-        null       | null       | "query MyQuery(\$includeA:Boolean,\$skipB:Boolean) {...TestRootA@include(if:\$includeA) ...TestRootB@skip(if:\$skipB)} fragment TestRootA on Query {root {fooA-modified}} fragment TestRootB on Query {root {fooB-modified}}"
+        includeA   | skipB
+        true       | false
+        false      | false
+        null       | false
+        true       | true
+        false      | true
+        null       | true
+        null       | false
+        null       | null
     }
 }

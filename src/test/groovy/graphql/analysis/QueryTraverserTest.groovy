@@ -1844,6 +1844,7 @@ class QueryTraverserTest extends Specification {
         fields == ["foo", "bar", "subFoo"].toSet()
     }
 
+    @Rollup
     def "properly use given variables while allowing other missing required variables"() {
         given:
         def schema = TestUtil.schema("""

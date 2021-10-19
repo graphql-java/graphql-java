@@ -5,6 +5,7 @@ import graphql.Directives
 import graphql.language.Argument
 import graphql.language.BooleanValue
 import graphql.language.Directive
+import spock.lang.Rollup
 import spock.lang.Specification
 
 class ConditionalNodesTest extends Specification {
@@ -53,6 +54,7 @@ class ConditionalNodesTest extends Specification {
         thrown AssertException
     }
 
+    @Rollup
     def "returns default value for condition if allowMissingVariables is true and variable missing"() {
         given:
         def variables = new LinkedHashMap<String, Object>()
