@@ -21,6 +21,7 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLUnionType
 import graphql.util.TraversalControl
+import spock.lang.Rollup
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -1901,6 +1902,7 @@ class QueryTraverserTest extends Specification {
         false       | ["bar", "foo", "subFoo", "otherString"]
     }
 
+    @Rollup
     def "always include conditional fragments and fields if allowMissingVariables is true"() {
         given:
         def schema = TestUtil.schema("""

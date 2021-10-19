@@ -11,6 +11,7 @@ import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLUnionType
 import graphql.util.TraversalControl
+import spock.lang.Rollup
 import spock.lang.Specification
 
 import static graphql.language.AstPrinter.printAstCompact
@@ -447,5 +448,113 @@ class QueryTransformerTest extends Specification {
         then:
         printAstCompact(newNode) == "{__typename ... on A {aX} ... on B {b}}"
 
+    }
+
+
+    def "can transform query with variables missing"() {
+        def transfSchema = TestUtil.schema("""
+            type Query {
+                root: Root
+            }
+            type Root {
+                fooA(required_param : String!) : String
+                fooB: String  
+            }
+        """)
+
+        def query = TestUtil.parseQuery("{ root { fooA fooB } }")
+
+        def fragments = NodeUtil.getFragmentsByName(query)
+        QueryTransformer queryTransformer = QueryTransformer.newQueryTransformer()
+                .schema(transfSchema)
+                .fragmentsByName(fragments)
+                .root(query)
+                .allowMissingVariables(true)
+                .rootParentType(transfSchema.getQueryType())
+                .build()
+
+        def visitor = new QueryVisitorStub() {
+            @Override
+            void visitField(QueryVisitorFieldEnvironment env) {
+                if (env.fieldDefinition.type.name == "String") {
+                    String newName = env.field.name + "-modified"
+
+                    Field changedField = env.field.transform({ builder -> builder.name(newName) })
+                    changeNode(env.getTraverserContext(), changedField)
+                }
+            }
+        }
+
+        when:
+        def newDocument = queryTransformer.transform(visitor)
+
+        then:
+        printAstCompact(newDocument) == "query {root {fooA-modified fooB-modified}}"
+    }
+
+    @Rollup
+    def "can transform query with skip/include variables included and missing"() {
+        def transfSchema = TestUtil.schema("""
+            type Query {
+                root: Root
+            }
+            type Root {
+                fooA(required_param : String!) : String
+                fooB: String
+            }
+        """)
+
+        def query = TestUtil.parseQuery("""
+            query MyQuery(\$includeA: Boolean, \$skipB: Boolean) {
+                ...TestRootA @include(if: \$includeA)
+                ...TestRootB @skip(if: \$skipB)
+            }
+            fragment TestRootA on Query {
+                root { fooA }
+            }
+            fragment TestRootB on Query {
+                root { fooB }
+            }
+            """)
+
+        def variables = [includeFoo: includeA, skipBaz: skipB]
+        def fragments = NodeUtil.getFragmentsByName(query)
+        QueryTransformer queryTransformer = QueryTransformer.newQueryTransformer()
+                .schema(transfSchema)
+                .fragmentsByName(fragments)
+                .root(query)
+                .variables(variables)
+                .allowMissingVariables(true)
+                .rootParentType(transfSchema.getQueryType())
+                .build()
+
+        def visitor = new QueryVisitorStub() {
+            @Override
+            void visitField(QueryVisitorFieldEnvironment env) {
+                if (env.fieldDefinition.type.name == "String") {
+                    String newName = env.field.name + "-modified"
+
+                    Field changedField = env.field.transform({ builder -> builder.name(newName) })
+                    changeNode(env.getTraverserContext(), changedField)
+                }
+            }
+        }
+
+        when:
+        def newDocument = queryTransformer.transform(visitor)
+
+        then:
+        printAstCompact(newDocument) == expected
+
+        where:
+        includeA   | skipB      | expected
+        true       | false      | "query MyQuery(\$includeA:Boolean,\$skipB:Boolean) {...TestRootA@include(if:\$includeA) ...TestRootB@skip(if:\$skipB)} fragment TestRootA on Query {root {fooA-modified}} fragment TestRootB on Query {root {fooB-modified}}"
+        false      | false      | "query MyQuery(\$includeA:Boolean,\$skipB:Boolean) {...TestRootA@include(if:\$includeA) ...TestRootB@skip(if:\$skipB)} fragment TestRootA on Query {root {fooA-modified}} fragment TestRootB on Query {root {fooB-modified}}"
+        null       | false      | "query MyQuery(\$includeA:Boolean,\$skipB:Boolean) {...TestRootA@include(if:\$includeA) ...TestRootB@skip(if:\$skipB)} fragment TestRootA on Query {root {fooA-modified}} fragment TestRootB on Query {root {fooB-modified}}"
+        true       | true       | "query MyQuery(\$includeA:Boolean,\$skipB:Boolean) {...TestRootA@include(if:\$includeA) ...TestRootB@skip(if:\$skipB)} fragment TestRootA on Query {root {fooA-modified}} fragment TestRootB on Query {root {fooB-modified}}"
+        false      | true       | "query MyQuery(\$includeA:Boolean,\$skipB:Boolean) {...TestRootA@include(if:\$includeA) ...TestRootB@skip(if:\$skipB)} fragment TestRootA on Query {root {fooA-modified}} fragment TestRootB on Query {root {fooB-modified}}"
+        null       | true       | "query MyQuery(\$includeA:Boolean,\$skipB:Boolean) {...TestRootA@include(if:\$includeA) ...TestRootB@skip(if:\$skipB)} fragment TestRootA on Query {root {fooA-modified}} fragment TestRootB on Query {root {fooB-modified}}"
+        null       | false      | "query MyQuery(\$includeA:Boolean,\$skipB:Boolean) {...TestRootA@include(if:\$includeA) ...TestRootB@skip(if:\$skipB)} fragment TestRootA on Query {root {fooA-modified}} fragment TestRootB on Query {root {fooB-modified}}"
+        null       | null       | "query MyQuery(\$includeA:Boolean,\$skipB:Boolean) {...TestRootA@include(if:\$includeA) ...TestRootB@skip(if:\$skipB)} fragment TestRootA on Query {root {fooA-modified}} fragment TestRootB on Query {root {fooB-modified}}"
     }
 }

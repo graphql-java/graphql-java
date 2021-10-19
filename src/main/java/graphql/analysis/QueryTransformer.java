@@ -10,6 +10,7 @@ import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitor;
 import graphql.util.TreeTransformer;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -37,15 +38,22 @@ public class QueryTransformer {
     private final Map<String, Object> variables;
 
     private final GraphQLCompositeType rootParentType;
+    private final boolean allowMissingVariables;
 
 
     private QueryTransformer(GraphQLSchema schema,
                              Node root,
                              GraphQLCompositeType rootParentType,
                              Map<String, FragmentDefinition> fragmentsByName,
-                             Map<String, Object> variables) {
+                             Map<String, Object> variables,
+                             boolean allowMissingVariables) {
         this.schema = assertNotNull(schema, () -> "schema can't be null");
-        this.variables = assertNotNull(variables, () -> "variables can't be null");
+        this.allowMissingVariables = allowMissingVariables;
+        if (allowMissingVariables) {
+            this.variables = variables == null ? new HashMap<>() : variables;
+        } else {
+            this.variables = assertNotNull(variables, () -> "variables can't be null");
+        }
         this.root = assertNotNull(root, () -> "root can't be null");
         this.rootParentType = assertNotNull(rootParentType);
         this.fragmentsByName = assertNotNull(fragmentsByName, () -> "fragmentsByName can't be null");
@@ -65,7 +73,7 @@ public class QueryTransformer {
     public Node transform(QueryVisitor queryVisitor) {
         QueryVisitor noOp = new QueryVisitorStub();
         NodeVisitorWithTypeTracking nodeVisitor = new NodeVisitorWithTypeTracking(queryVisitor, noOp, variables, schema, fragmentsByName);
-
+        nodeVisitor.allowMissingVariables(allowMissingVariables);
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
         rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, null, null));
 
@@ -97,6 +105,7 @@ public class QueryTransformer {
         private Node root;
         private GraphQLCompositeType rootParentType;
         private Map<String, FragmentDefinition> fragmentsByName;
+        private boolean allowMissingVariables;
 
 
         /**
@@ -120,6 +129,18 @@ public class QueryTransformer {
          */
         public Builder variables(Map<String, Object> variables) {
             this.variables = variables;
+            return this;
+        }
+
+        /**
+         * Whether or not to allow missing variables when transforming the query.
+         *
+         * @param allow allow variables to be missing
+         *
+         * @return this builder
+         */
+        public Builder allowMissingVariables(boolean allow) {
+            this.allowMissingVariables = allow;
             return this;
         }
 
@@ -160,7 +181,7 @@ public class QueryTransformer {
         }
 
         public QueryTransformer build() {
-            return new QueryTransformer(schema, root, rootParentType, fragmentsByName, variables);
+            return new QueryTransformer(schema, root, rootParentType, fragmentsByName, variables, allowMissingVariables);
         }
     }
 }
