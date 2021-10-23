@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 public class ResolveType {
 
 
-    public GraphQLObjectType resolveType(ExecutionContext executionContext, MergedField field, Object source, GraphQLType fieldType, ExecutionStepInfo executionStepInfo) {
+    public GraphQLObjectType resolveType(ExecutionContext executionContext, MergedField field, Object source, ExecutionStepInfo executionStepInfo, GraphQLType fieldType) {
         GraphQLObjectType resolvedType;
         if (fieldType instanceof GraphQLInterfaceType) {
             DataFetchingFieldSelectionSet fieldSelectionSet = buildSelectionSet(executionContext, field, (GraphQLOutputType) fieldType, executionStepInfo);

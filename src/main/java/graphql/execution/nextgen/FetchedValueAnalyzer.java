@@ -69,7 +69,7 @@ public class FetchedValueAnalyzer {
                     .build();
         }
         try {
-            GraphQLObjectType resolvedObjectType = resolveType.resolveType(executionContext, field, toAnalyze,fieldType, executionInfo);
+            GraphQLObjectType resolvedObjectType = resolveType.resolveType(executionContext, field, toAnalyze, executionInfo, fieldType);
             return newFetchedValueAnalysis(OBJECT)
                     .fetchedValue(fetchedValue)
                     .executionStepInfo(executionInfo)
