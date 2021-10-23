@@ -136,10 +136,9 @@ class ParseAndValidateTest extends Specification {
             }
         '''
 
-        def map = ["graphql.ParseAndValidate.Predicate": predicate]
         when:
         def ei = ExecutionInput.newExecutionInput(query)
-                .graphQLContext(map)
+                .graphQLContext(["graphql.ParseAndValidate.Predicate": predicate])
                 .build()
         def rs = graphQL.execute(ei)
 
