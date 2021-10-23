@@ -8,6 +8,7 @@ import graphql.util.TraverserVisitorStub;
 import graphql.util.TreeParallelTransformer;
 import graphql.util.TreeTransformer;
 
+import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 
 import static graphql.Assert.assertNotNull;
@@ -25,20 +26,18 @@ public class AstTransformer {
         assertNotNull(root);
         assertNotNull(nodeVisitor);
 
-        TraverserVisitor<Node> traverserVisitor = new TraverserVisitor<Node>() {
-            @Override
-            public TraversalControl enter(TraverserContext<Node> context) {
-                return context.thisNode().accept(context, nodeVisitor);
-            }
-
-            @Override
-            public TraversalControl leave(TraverserContext<Node> context) {
-                return TraversalControl.CONTINUE;
-            }
-        };
-
+        TraverserVisitor<Node> traverserVisitor = getNodeTraverserVisitor(nodeVisitor);
         TreeTransformer<Node> treeTransformer = new TreeTransformer<>(AST_NODE_ADAPTER);
         return treeTransformer.transform(root, traverserVisitor);
+    }
+
+    public Node transform(Node root, NodeVisitor nodeVisitor, Map<Class<?>, Object> rootVars) {
+        assertNotNull(root);
+        assertNotNull(nodeVisitor);
+
+        TraverserVisitor<Node> traverserVisitor = getNodeTraverserVisitor(nodeVisitor);
+        TreeTransformer<Node> treeTransformer = new TreeTransformer<>(AST_NODE_ADAPTER);
+        return treeTransformer.transform(root, traverserVisitor, rootVars);
     }
 
     public Node transformParallel(Node root, NodeVisitor nodeVisitor) {
@@ -61,4 +60,19 @@ public class AstTransformer {
         return treeParallelTransformer.transform(root, traverserVisitor);
     }
 
+    private TraverserVisitor<Node> getNodeTraverserVisitor(NodeVisitor nodeVisitor) {
+
+
+        return new TraverserVisitor<Node>() {
+            @Override
+            public TraversalControl enter(TraverserContext<Node> context) {
+                return context.thisNode().accept(context, nodeVisitor);
+            }
+
+            @Override
+            public TraversalControl leave(TraverserContext<Node> context) {
+                return TraversalControl.CONTINUE;
+            }
+        };
+    }
 }
