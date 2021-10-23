@@ -40,6 +40,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
@@ -170,6 +171,7 @@ public class GraphQL {
      * Helps you build a GraphQL object ready to execute queries
      *
      * @param graphQLSchema the schema to use
+     *
      * @return a builder of GraphQL objects
      */
     public static Builder newGraphQL(GraphQLSchema graphQLSchema) {
@@ -181,6 +183,7 @@ public class GraphQL {
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new GraphQL object based on calling build on that builder
      */
     public GraphQL transform(Consumer<GraphQL.Builder> builderConsumer) {
@@ -241,6 +244,7 @@ public class GraphQL {
          * in {@link graphql.schema.DataFetcher} invocations.
          *
          * @param dataFetcherExceptionHandler the default handler for data fetching exception
+         *
          * @return this builder
          */
         public Builder defaultDataFetcherExceptionHandler(DataFetcherExceptionHandler dataFetcherExceptionHandler) {
@@ -306,6 +310,7 @@ public class GraphQL {
      * Executes the specified graphql query/mutation/subscription
      *
      * @param query the query/mutation/subscription
+     *
      * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(String query) {
@@ -320,7 +325,9 @@ public class GraphQL {
      *
      * @param query   the query/mutation/subscription
      * @param context custom object provided to each {@link graphql.schema.DataFetcher}
+     *
      * @return an {@link ExecutionResult} which can include errors
+     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -339,7 +346,9 @@ public class GraphQL {
      * @param query         the query/mutation/subscription
      * @param operationName the name of the operation to execute
      * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
+     *
      * @return an {@link ExecutionResult} which can include errors
+     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -359,7 +368,9 @@ public class GraphQL {
      * @param query     the query/mutation/subscription
      * @param context   custom object provided to each {@link graphql.schema.DataFetcher}
      * @param variables variable values uses as argument
+     *
      * @return an {@link ExecutionResult} which can include errors
+     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -380,7 +391,9 @@ public class GraphQL {
      * @param operationName name of the operation to execute
      * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
      * @param variables     variable values uses as argument
+     *
      * @return an {@link ExecutionResult} which can include errors
+     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -399,6 +412,7 @@ public class GraphQL {
      * Executes the graphql query using the provided input object builder
      *
      * @param executionInputBuilder {@link ExecutionInput.Builder}
+     *
      * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(ExecutionInput.Builder executionInputBuilder) {
@@ -416,6 +430,7 @@ public class GraphQL {
      * </pre>
      *
      * @param builderFunction a function that is given a {@link ExecutionInput.Builder}
+     *
      * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(UnaryOperator<ExecutionInput.Builder> builderFunction) {
@@ -426,6 +441,7 @@ public class GraphQL {
      * Executes the graphql query using the provided input object
      *
      * @param executionInput {@link ExecutionInput}
+     *
      * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(ExecutionInput executionInput) {
@@ -447,6 +463,7 @@ public class GraphQL {
      * which is the result of executing the provided query.
      *
      * @param executionInputBuilder {@link ExecutionInput.Builder}
+     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput.Builder executionInputBuilder) {
@@ -467,6 +484,7 @@ public class GraphQL {
      * </pre>
      *
      * @param builderFunction a function that is given a {@link ExecutionInput.Builder}
+     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(UnaryOperator<ExecutionInput.Builder> builderFunction) {
@@ -480,6 +498,7 @@ public class GraphQL {
      * which is the result of executing the provided query.
      *
      * @param executionInput {@link ExecutionInput}
+     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
@@ -595,7 +614,8 @@ public class GraphQL {
         CompletableFuture<List<ValidationError>> cf = new CompletableFuture<>();
         validationCtx.onDispatched(cf);
 
-        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document);
+        Predicate<Class<?>> validationRulePredicate = executionInput.getGraphQLContext().getOrDefault(ParseAndValidate.VALIDATION_PREDICATE_HINT, r -> true);
+        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate);
 
         validationCtx.onCompleted(validationErrors, null);
         cf.complete(validationErrors);
