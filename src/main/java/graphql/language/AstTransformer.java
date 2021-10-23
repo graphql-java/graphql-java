@@ -21,7 +21,12 @@ import static graphql.language.AstNodeAdapter.AST_NODE_ADAPTER;
 @PublicApi
 public class AstTransformer {
 
-
+    /**
+     * Transforms the input tree using the Visitor Pattern.
+     * @param root the root node of the input tree.
+     * @param nodeVisitor the visitor which will transform the input tree.
+     * @return the transformed tree.
+     */
     public Node transform(Node root, NodeVisitor nodeVisitor) {
         assertNotNull(root);
         assertNotNull(nodeVisitor);
@@ -31,6 +36,16 @@ public class AstTransformer {
         return treeTransformer.transform(root, traverserVisitor);
     }
 
+    /**
+     * Transforms the input tree using the Visitor Pattern.
+     * @param root the root node of the input tree.
+     * @param nodeVisitor the visitor which will transform the input tree.
+     * @param rootVars a context argument to pass information into the nodeVisitor. Pass a contextual
+     *                 object to your visitor by adding it to this map such that such that the key
+     *                 is the class of the object, and the value is the object itself. The object
+     *                 can be retrieved within the visitor by calling context.getVarFromParents().
+     * @return the transformed tree.
+     */
     public Node transform(Node root, NodeVisitor nodeVisitor, Map<Class<?>, Object> rootVars) {
         assertNotNull(root);
         assertNotNull(nodeVisitor);
@@ -61,8 +76,6 @@ public class AstTransformer {
     }
 
     private TraverserVisitor<Node> getNodeTraverserVisitor(NodeVisitor nodeVisitor) {
-
-
         return new TraverserVisitor<Node>() {
             @Override
             public TraversalControl enter(TraverserContext<Node> context) {
