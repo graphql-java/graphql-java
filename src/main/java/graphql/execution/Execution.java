@@ -133,7 +133,7 @@ public class Execution {
                 .objectType(operationRootType)
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
-                .instrumentation(instrumentation)
+                .instrumentation(executionContext.getInstrumentation())
                 .instrumentationState(executionContext.getInstrumentationState())
                 .build();
 

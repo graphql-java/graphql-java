@@ -286,7 +286,7 @@ class InstrumentationTest extends Specification {
     }
 
     def " instrument when collect field: always fetch 'name' field "() {
-
+        given:
         String sdl = '''
         type Query {
             userInfo(userId: Int): UserInfo
@@ -299,9 +299,7 @@ class InstrumentationTest extends Specification {
         }
         '''
 
-        given:
-        String collectField =
-            '''
+        String collectField = '''
                 query collectField($userId: Int) {
                         userInfo(userId: $userId) 
                         {
