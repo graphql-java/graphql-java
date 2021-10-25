@@ -21,8 +21,12 @@ public class ParseAndValidate {
 
     /**
      * This {@link GraphQLContext} hint can be used to supply a Predicate to the Validator so that certain rules can be skipped.
+     *
+     * This is an internal capability that you should use at your own risk.  While we intend for this to be present for some time, the validation
+     * rule class names may change, as may this mechanism.
      */
-    public static final String VALIDATION_PREDICATE_HINT = "graphql.ParseAndValidate.Predicate";
+    @Internal
+    public static final String INTERNAL_VALIDATION_PREDICATE_HINT = "graphql.ParseAndValidate.Predicate";
 
     /**
      * This can be called to parse and validate a graphql query against a schema, which is useful if you want to know if it would be acceptable

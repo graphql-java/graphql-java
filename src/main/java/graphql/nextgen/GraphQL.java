@@ -253,7 +253,7 @@ public class GraphQL {
         CompletableFuture<List<ValidationError>> cf = new CompletableFuture<>();
         validationCtx.onDispatched(cf);
 
-        Predicate<Class<?>> validationRulePredicate = executionInput.getGraphQLContext().getOrDefault(ParseAndValidate.VALIDATION_PREDICATE_HINT, r -> true);
+        Predicate<Class<?>> validationRulePredicate = executionInput.getGraphQLContext().getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, r -> true);
         List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate);
 
         validationCtx.onCompleted(validationErrors, null);
