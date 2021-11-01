@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import com.google.common.collect.ImmutableList;
+import graphql.Assert;
 import graphql.AssertException;
 import graphql.DirectivesUtil;
 import graphql.Internal;
@@ -20,7 +21,6 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
-import static graphql.schema.GraphqlTypeComparators.asIsOrder;
 import static graphql.schema.GraphqlTypeComparators.sortTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
@@ -401,18 +401,22 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
             return this;
         }
 
-        public Builder withInterface(GraphQLInterfaceType interfaceType) {
-            assertNotNull(interfaceType, () -> "interfaceType can't be null");
-            this.interfaces.put(interfaceType.getName(), interfaceType);
+        public Builder replaceInterfaces(List<? extends GraphQLNamedOutputType> interfaces) {
+            assertNotNull(interfaces, () -> "interfaces can't be null");
+            this.interfaces.clear();
+            for (GraphQLNamedOutputType schemaElement : interfaces) {
+                if (schemaElement instanceof GraphQLInterfaceType || schemaElement instanceof GraphQLTypeReference) {
+                    this.interfaces.put(schemaElement.getName(), schemaElement);
+                } else {
+                    Assert.assertShouldNeverHappen("Unexpected type " + (schemaElement != null ? schemaElement.getClass() : "null"));
+                }
+            }
             return this;
         }
 
-        public Builder replaceInterfaces(List<GraphQLInterfaceType> interfaces) {
-            assertNotNull(interfaces, () -> "interfaces can't be null");
-            this.interfaces.clear();
-            for (GraphQLInterfaceType interfaceType : interfaces) {
-                this.interfaces.put(interfaceType.getName(), interfaceType);
-            }
+        public Builder withInterface(GraphQLInterfaceType interfaceType) {
+            assertNotNull(interfaceType, () -> "interfaceType can't be null");
+            this.interfaces.put(interfaceType.getName(), interfaceType);
             return this;
         }
 
@@ -429,6 +433,12 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
             return this;
         }
 
+        public Builder withInterfaces(GraphQLTypeReference... references) {
+            for (GraphQLTypeReference reference : references) {
+                withInterface(reference);
+            }
+            return this;
+        }
 
         public GraphQLInterfaceType build() {
             return new GraphQLInterfaceType(
