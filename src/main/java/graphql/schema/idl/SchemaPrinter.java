@@ -918,6 +918,22 @@ public class SchemaPrinter {
         return sw.toString();
     }
 
+    public String print(List<GraphQLSchemaElement> elements) {
+        StringWriter sw = new StringWriter();
+        PrintWriter out = new PrintWriter(sw);
+
+        for (GraphQLSchemaElement element : elements) {
+            if (element instanceof GraphQLDirective) {
+                out.print(print(((GraphQLDirective) element)));
+            } else if (element instanceof GraphQLType) {
+                printType(out, (GraphQLType) element, DEFAULT_FIELD_VISIBILITY);
+            } else {
+                Assert.assertShouldNeverHappen("How did we miss a %s", element.getClass());
+            }
+        }
+        return sw.toString();
+    }
+
     public String print(GraphQLDirective graphQLDirective) {
         return directiveDefinition(graphQLDirective);
     }

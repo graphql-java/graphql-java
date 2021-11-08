@@ -1,6 +1,5 @@
 package graphql.schema.idl
 
-
 import graphql.language.DirectiveDefinition
 import graphql.language.EnumTypeDefinition
 import graphql.language.EnumTypeExtensionDefinition
@@ -20,10 +19,14 @@ import graphql.language.TypeDefinition
 import graphql.language.TypeName
 import graphql.language.UnionTypeDefinition
 import graphql.language.UnionTypeExtensionDefinition
+import graphql.parser.MultiSourceReader
+import graphql.schema.GraphQLTypeUtil
 import graphql.schema.idl.errors.SchemaProblem
 import graphql.schema.idl.errors.SchemaRedefinitionError
 import spock.lang.Specification
 import spock.lang.Unroll
+
+import java.util.stream.Collectors
 
 class TypeDefinitionRegistryTest extends Specification {
 
@@ -985,6 +988,215 @@ class TypeDefinitionRegistryTest extends Specification {
         "Bar"           | _
     }
 
+    def "can maintain parsed order"() {
+        def sdl = '''
+            "the schema"
+            schema {
+                query : Q
+            }
+            
+            "the query type"
+            type Q {
+                field( arg : String! = "default") : FieldType @deprecated(reason : "no good")
+            }
+            
+            interface FieldType {
+                f : UnionType
+            }
+            
+            type FieldTypeImpl implements FieldType {
+                f : UnionType
+            }
+            
+            union UnionType = Foo | Bar
+            
+            type Foo {
+                foo : String
+            }
+
+            type Bar {
+                bar : String
+            }
+            
+            scalar FooScalar
+            
+            directive @FooDirective on FIELD_DEFINITION
+        '''
+
+        when:
+        def registry = new SchemaParser().parse(sdl)
+        def parseOrder = registry.getParseOrder()
+        def defListInOrder = parseOrder.getInOrder().get("")
+        def defListInNameOrder = parseOrder.getInNameOrder().get("")
+        def listOfNames = defListInNameOrder.collect({ d -> d.getName() })
+
+        then:
+
+        defListInOrder.size() == 9
+
+        defListInOrder[0] instanceof SchemaDefinition
+        defListInOrder[1] instanceof ObjectTypeDefinition
+        defListInOrder[2] instanceof InterfaceTypeDefinition
+
+        defListInOrder[8] instanceof DirectiveDefinition
+
+        listOfNames == ["Q", "FieldType", "FieldTypeImpl", "UnionType",
+                        "Foo", "Bar", "FooScalar", "FooDirective"]
+
+        when: "We merge in a new type registry, they are added to the end"
+        def extraSDL = '''
+            type Extra {
+                s : String
+            }
+
+            interface ExtraInterface {
+                s : String
+            }
+        '''
+
+        def extraRegistry = new SchemaParser().parse(extraSDL)
+        registry.merge(extraRegistry)
+
+        parseOrder = registry.getParseOrder()
+        defListInOrder = parseOrder.getInOrder().get("")
+        defListInNameOrder = parseOrder.getInNameOrder().get("")
+        listOfNames = defListInNameOrder.collect({ d -> d.getName() })
+
+        then:
+
+        defListInOrder.size() == 11
+
+        defListInOrder[0] instanceof SchemaDefinition
+        defListInOrder[1] instanceof ObjectTypeDefinition
+        defListInOrder[2] instanceof InterfaceTypeDefinition
+
+        defListInOrder[9] instanceof ObjectTypeDefinition
+        defListInOrder[10] instanceof InterfaceTypeDefinition
+
+        listOfNames == ["Q", "FieldType", "FieldTypeImpl", "UnionType",
+                        "Foo", "Bar", "FooScalar", "FooDirective", "Extra", "ExtraInterface"]
+    }
+
+    def "multi source reader works"() {
+
+        def sdl1 = '''
+            type Query {
+                f : IType
+            }
+            
+            scalar FooScalar
+        '''
+
+        def sdl2 = '''
+            interface IType {
+                q : FooScalar
+            }
+            
+            type QType {
+                q : FooScalar
+            }
+        '''
+
+        def sdl3 = '''
+            directive @FooDirective on FIELD_DEFINITION
+        '''
+
+        def multiSourceReader = MultiSourceReader.newMultiSourceReader()
+                .string(sdl1, "source1")
+                .string(sdl2, "source2")
+                .string(sdl3, null)
+                .build()
+
+        when:
+        def registry = new SchemaParser().parse(multiSourceReader)
+        def parseOrder = registry.getParseOrder()
+        def inNameOrderMap = parseOrder.getInNameOrder()
+
+        then:
+        inNameOrderMap.size() == 3
+        inNameOrderMap["source1"].collect({ it.getName() })
+                == ["Query", "FooScalar"]
+        inNameOrderMap["source2"].collect({ it.getName() })
+                == ["IType", "QType"]
+        inNameOrderMap[""].collect({ it.getName() })
+                == ["FooDirective"]
+
+    }
+
+    def "can created a runtime type comparator"() {
+        def sdl1 = '''
+            type Query {
+                f : QType @FooDirective
+            }
+
+            input BInput {
+                b : String
+            }
+            
+            input AInput {
+                a : String
+            }
+            
+            scalar FooScalar
+        '''
+
+        def sdl2 = '''
+            type QType {
+                c : String
+                b : ID
+                a : FooScalar
+            }
+
+            type XType {
+                x : String
+                z : ID
+                y : FooScalar
+            }
+
+        '''
+
+        def sdl3 = '''
+            type AType {
+                y : FooScalar
+                x : String
+                z : ID
+            }
+
+            directive @FooDirective on FIELD_DEFINITION
+        '''
+
+        def multiSourceReader = MultiSourceReader.newMultiSourceReader()
+                .string(sdl1, "source1")
+                .string(sdl2, "source2")
+                .string(sdl3, null)
+                .build()
+
+        when:
+        def registry = new SchemaParser().parse(multiSourceReader)
+        def parseOrder = registry.getParseOrder()
+        def schema = new SchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING)
+
+
+        def schemaElements = schema.getAllElementsAsList().stream()
+                .filter(GraphQLTypeUtil.isSystemElement().negate())
+                .collect(Collectors.toList())
+
+        schemaElements.sort(parseOrder.getElementComparator())
+
+        then:
+        schemaElements.collect({ it.name }) ==
+                ["Query",
+                 "BInput",
+                 "AInput",
+                 "FooScalar",
+                 "QType",
+                 "XType",
+                 "AType",
+                 "FooDirective",
+                ]
+
+    }
+
     static TypeDefinitionRegistry serialise(TypeDefinitionRegistry registryOut) {
         ByteArrayOutputStream baOS = new ByteArrayOutputStream()
         ObjectOutputStream oos = new ObjectOutputStream(baOS)
@@ -996,6 +1208,4 @@ class TypeDefinitionRegistryTest extends Specification {
 
         ois.readObject() as TypeDefinitionRegistry
     }
-
-
 }
