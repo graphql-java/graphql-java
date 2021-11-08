@@ -22,7 +22,7 @@ class Issue2141 extends Specification {
         def schemaStr = new SchemaPrinter().print(schema)
 
         then:
-        schemaStr == """directive @auth(roles: [String!]) on FIELD_DEFINITION
+        schemaStr == '''directive @auth(roles: [String!]) on FIELD_DEFINITION
 
 "Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
@@ -51,6 +51,6 @@ directive @specifiedBy(
 type Query {
   hello: String! @auth
 }
-"""
+'''
     }
 }

@@ -24,6 +24,8 @@ import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLSchemaElement
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLUnionType
+import graphql.schema.GraphqlTypeComparatorRegistry
+import graphql.schema.GraphqlTypeComparators
 import graphql.schema.TypeResolver
 import spock.lang.Specification
 
@@ -1997,6 +1999,119 @@ type Query {
   f: String @foo(arg : {a : "A", b : "B"})
 }
 
+'''
+    }
+
+    def "can specify a new ordering for the schema printer"() {
+
+        def sdl = """
+            type Query { id( b:ID a:ID c:ID) : ID }
+            
+            type XQuery { id: ID }
+            type YQuery { id: ID }
+            type ZQuery { id: ID }
+            
+            interface XInterface { id: ID }
+            interface ZInterface { id: ID }
+            interface YInterface { id: ID }
+            
+            
+            input XInput { x : Int }
+            input ZInput { x : Int }
+            input YInput { x : Int }
+            
+            scalar XScalar
+            scalar ZScalar
+            scalar YScalar
+            
+            union XUnion = Query | XQuery
+            union ZUnion = Query | XQuery
+            union YUnion = Query | XQuery
+        """
+        def schema = TestUtil.schema(sdl)
+
+        // by name descending
+        GraphqlTypeComparatorRegistry comparatorRegistry = { env -> return GraphqlTypeComparators.byNameAsc().reversed() }
+        def options = defaultOptions().includeDirectives(true).setComparators(comparatorRegistry)
+        when:
+        def result = new SchemaPrinter(options).print(schema)
+
+        then:
+        result == '''"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
+"Directs the executor to skip this field or fragment when the `if`'argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+union ZUnion = XQuery | Query
+
+scalar ZScalar
+
+type ZQuery {
+  id: ID
+}
+
+interface ZInterface {
+  id: ID
+}
+
+input ZInput {
+  x: Int
+}
+
+union YUnion = XQuery | Query
+
+scalar YScalar
+
+type YQuery {
+  id: ID
+}
+
+interface YInterface {
+  id: ID
+}
+
+input YInput {
+  x: Int
+}
+
+union XUnion = XQuery | Query
+
+scalar XScalar
+
+type XQuery {
+  id: ID
+}
+
+interface XInterface {
+  id: ID
+}
+
+input XInput {
+  x: Int
+}
+
+type Query {
+  id(c: ID, b: ID, a: ID): ID
+}
 '''
 
     }
