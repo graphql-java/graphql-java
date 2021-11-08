@@ -1,6 +1,7 @@
 package graphql.analysis;
 
 import graphql.PublicApi;
+import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 
 /**
  * The query complexity info.
@@ -9,9 +10,11 @@ import graphql.PublicApi;
 public class QueryComplexityInfo {
 
     private final int complexity;
+    private InstrumentationValidationParameters instrumentationValidationParameters;
 
-    private QueryComplexityInfo(int complexity) {
+    private QueryComplexityInfo(int complexity, InstrumentationValidationParameters parameters) {
         this.complexity = complexity;
+        this.instrumentationValidationParameters = parameters;
     }
 
     /**
@@ -21,6 +24,15 @@ public class QueryComplexityInfo {
      */
     public int getComplexity() {
         return complexity;
+    }
+
+    /**
+     * This returns the instrumentation validation parameters.
+     *
+     * @return the instrumentation validation parameters.
+     */
+    public InstrumentationValidationParameters getInstrumentationValidationParameters() {
+        return instrumentationValidationParameters;
     }
 
     @Override
@@ -41,6 +53,7 @@ public class QueryComplexityInfo {
     public static class Builder {
 
         private int complexity;
+        private InstrumentationValidationParameters instrumentationValidationParameters;
 
         private Builder() {
         }
@@ -57,10 +70,21 @@ public class QueryComplexityInfo {
         }
 
         /**
+         * The instrumentation validation parameters.
+         *
+         * @param parameters the instrumentation validation parameters.
+         * @return this builder
+         */
+        public Builder instrumentationValidationParameters(InstrumentationValidationParameters parameters) {
+            this.instrumentationValidationParameters = parameters;
+            return this;
+        }
+
+        /**
          * @return a built {@link QueryComplexityInfo} object
          */
         public QueryComplexityInfo build() {
-            return new QueryComplexityInfo(complexity);
+            return new QueryComplexityInfo(complexity, instrumentationValidationParameters);
         }
     }
 }

@@ -843,10 +843,19 @@ public class SchemaPrinter {
 
     private String directiveDefinitions(List<GraphQLDirective> directives) {
         StringBuilder sb = new StringBuilder();
-        directives.stream().filter(options.getIncludeSchemaElement()).forEach(directive -> {
-            sb.append(directiveDefinition(directive));
-            sb.append("\n\n");
-        });
+        GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
+            .parentType(GraphQLSchemaElement.class)
+            .elementType(GraphQLDirective.class)
+            .build();
+        Comparator<? super GraphQLSchemaElement> comparator = options.comparatorRegistry.getComparator(environment);
+        directives
+            .stream()
+            .sorted(comparator)
+            .filter(options.getIncludeSchemaElement())
+            .forEach(directive -> {
+                sb.append(directiveDefinition(directive));
+                sb.append("\n\n");
+            });
         return sb.toString();
     }
 
