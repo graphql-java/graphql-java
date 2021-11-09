@@ -926,7 +926,7 @@ public class SchemaPrinter {
             if (element instanceof GraphQLDirective) {
                 out.print(print(((GraphQLDirective) element)));
             } else if (element instanceof GraphQLType) {
-                printType(out, (GraphQLType) element, DEFAULT_FIELD_VISIBILITY);
+                printSchemaElement(out, element, DEFAULT_FIELD_VISIBILITY);
             } else {
                 Assert.assertShouldNeverHappen("How did we miss a %s", element.getClass());
             }
