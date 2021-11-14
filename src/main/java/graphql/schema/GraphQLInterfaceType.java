@@ -200,7 +200,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
         return transform(builder ->
                 builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
                         .replaceFields(newChildren.getChildren(CHILD_FIELD_DEFINITIONS))
-                        .replaceInterfaces(newChildren.getChildren(CHILD_INTERFACES))
+                        .replaceInterfacesOrReferences(newChildren.getChildren(CHILD_INTERFACES))
         );
     }
 
@@ -401,10 +401,14 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
             return this;
         }
 
-        public Builder replaceInterfaces(List<? extends GraphQLNamedOutputType> interfaces) {
-            assertNotNull(interfaces, () -> "interfaces can't be null");
+        public Builder replaceInterfaces(List<GraphQLInterfaceType> interfaces) {
+            return replaceInterfacesOrReferences(interfaces);
+        }
+
+        public Builder replaceInterfacesOrReferences(List<? extends GraphQLNamedOutputType> interfacesOrReferences) {
+            assertNotNull(interfacesOrReferences, () -> "interfaces can't be null");
             this.interfaces.clear();
-            for (GraphQLNamedOutputType schemaElement : interfaces) {
+            for (GraphQLNamedOutputType schemaElement : interfacesOrReferences) {
                 if (schemaElement instanceof GraphQLInterfaceType || schemaElement instanceof GraphQLTypeReference) {
                     this.interfaces.put(schemaElement.getName(), schemaElement);
                 } else {
