@@ -1,7 +1,10 @@
 package graphql.schema.diffing;
 
 
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
 import graphql.collect.ImmutableKit;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -14,6 +17,7 @@ public class SchemaGraph {
 
     private Map<String, Vertex> typesByName = new LinkedHashMap<>();
     private Map<String, Vertex> directivesByName = new LinkedHashMap<>();
+    private Table<Vertex, Vertex, Edge> edgeByVertexPair = HashBasedTable.create();
 
     public void addVertex(Vertex vertex) {
         vertices.add(vertex);
@@ -22,10 +26,19 @@ public class SchemaGraph {
     public void addEdge(Edge edge) {
         edges.add(edge);
         fromEdges.computeIfAbsent(edge.getFrom(), ignored -> new ArrayList<>()).add(edge);
+        edgeByVertexPair.put(edge.getFrom(), edge.getTo(), edge);
     }
 
     public List<Edge> getEdges(Vertex from) {
-        return fromEdges.get(from);
+        return fromEdges.getOrDefault(from, Collections.emptyList());
+    }
+
+    public List<Edge> getEdges() {
+        return edges;
+    }
+
+    public @Nullable Edge getEdge(Vertex from, Vertex to) {
+        return edgeByVertexPair.get(from, to);
     }
 
     public List<Vertex> getTargetVertices(Vertex from) {

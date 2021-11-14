@@ -22,4 +22,8 @@ public class Vertex {
     public <T> T get(String propName) {
        return (T) properties.get(propName);
     }
+
+    public Map<String, Object> getProperties() {
+        return properties;
+    }
 }

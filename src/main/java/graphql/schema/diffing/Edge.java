@@ -1,13 +1,10 @@
 package graphql.schema.diffing;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 public class Edge {
     private Vertex from;
     private Vertex to;
 
-    private Map<String, Object> properties = new LinkedHashMap<>();
+    private String label = "";
 
     public Edge(Vertex from, Vertex to) {
         this.from = from;
@@ -31,13 +28,11 @@ public class Edge {
     }
 
 
-    public void add(String propName, Object propValue) {
-        properties.put(propName, propValue);
+    public void setLabel(String label) {
+        this.label = label;
     }
 
-    public <T> T get(String propName) {
-        return (T) properties.get(propName);
+    public String getLabel() {
+        return label;
     }
-
-
 }

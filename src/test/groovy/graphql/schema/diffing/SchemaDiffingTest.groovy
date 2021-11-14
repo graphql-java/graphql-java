@@ -22,4 +22,25 @@ class SchemaDiffingTest extends Specification {
         schemaGraph.size() == 64
 
     }
+
+    def "test ged"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            hello: String
+           } 
+        """)
+        def schema2 = schema("""
+           type Query {
+            hello2: String
+           } 
+        """)
+
+        when:
+        new SchemaDiffing().diff(schema1, schema2)
+
+        then:
+        true
+
+    }
 }

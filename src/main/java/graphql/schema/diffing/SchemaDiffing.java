@@ -1,309 +1,249 @@
 package graphql.schema.diffing;
 
+import com.google.common.collect.*;
+import com.google.common.util.concurrent.AtomicDouble;
+import graphql.Assert;
+import graphql.collect.ImmutableKit;
 import graphql.schema.*;
 import graphql.util.*;
 
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertTrue;
 
 public class SchemaDiffing {
 
-    public static void diff(GraphQLSchema from, GraphQLSchema to) {
+    private static class Mapping {
     }
 
-    public SchemaGraph createGraph(GraphQLSchema schema) {
-        Set<GraphQLSchemaElement> roots = new LinkedHashSet<>();
-        roots.add(schema.getQueryType());
-        if (schema.isSupportingMutations()) {
-            roots.add(schema.getMutationType());
+    private static class MappingEntry {
+        public MappingEntry(ImmutableList<Vertex> partialMapping, int level, double lowerBoundCost, ImmutableList<Vertex> candidates) {
+            this.partialMapping = partialMapping;
+            this.level = level;
+            this.lowerBoundCost = lowerBoundCost;
+            this.candidates = candidates;
         }
-        if (schema.isSupportingSubscriptions()) {
-            roots.add(schema.getSubscriptionType());
-        }
-        roots.addAll(schema.getAdditionalTypes());
-        roots.addAll(schema.getDirectives());
-        roots.addAll(schema.getSchemaDirectives());
-        roots.add(schema.getIntrospectionSchemaType());
-        Traverser<GraphQLSchemaElement> traverser = Traverser.depthFirst(GraphQLSchemaElement::getChildren);
-        SchemaGraph schemaGraph = new SchemaGraph();
-        traverser.traverse(roots, new TraverserVisitor<GraphQLSchemaElement>() {
-            @Override
-            public TraversalControl enter(TraverserContext<GraphQLSchemaElement> context) {
-                if (context.thisNode() instanceof GraphQLObjectType) {
-                    newObject((GraphQLObjectType) context.thisNode(), schemaGraph);
-                }
-                if (context.thisNode() instanceof GraphQLInterfaceType) {
-                    newInterface((GraphQLInterfaceType) context.thisNode(), schemaGraph);
-                }
-                if (context.thisNode() instanceof GraphQLUnionType) {
-                    newUnion((GraphQLInterfaceType) context.thisNode(), schemaGraph);
-                }
-                if (context.thisNode() instanceof GraphQLScalarType) {
-                    newScalar((GraphQLScalarType) context.thisNode(), schemaGraph);
-                }
-                if (context.thisNode() instanceof GraphQLInputObjectType) {
-                    newInputObject((GraphQLInputObjectType) context.thisNode(), schemaGraph);
-                }
-                if (context.thisNode() instanceof GraphQLEnumType) {
-                    newEnum((GraphQLEnumType) context.thisNode(), schemaGraph);
-                }
-                if (context.thisNode() instanceof GraphQLDirective) {
-                    newDirective((GraphQLDirective) context.thisNode(), schemaGraph);
-                }
-                return TraversalControl.CONTINUE;
-            }
 
-            @Override
-            public TraversalControl leave(TraverserContext<GraphQLSchemaElement> context) {
-                return TraversalControl.CONTINUE;
+        public MappingEntry() {
+
+        }
+
+        // target vertices which the fist `level` vertices of source graph are mapped to
+        ImmutableList<Vertex> partialMapping = ImmutableList.<Vertex>builder().build();
+        int level;
+        double lowerBoundCost;
+        ImmutableList<Vertex> candidates = ImmutableList.<Vertex>builder().build();
+    }
+
+    public void diff(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) {
+        SchemaGraph sourceGraph = new SchemaGraphFactory().createGraph(graphQLSchema1);
+        SchemaGraph targetGraph = new SchemaGraphFactory().createGraph(graphQLSchema2);
+        // we assert here that the graphs have the same size. The algorithm depends on it
+        assertTrue(sourceGraph.size() == targetGraph.size());
+        int graphSize = sourceGraph.size();
+
+        AtomicDouble upperBoundCost = new AtomicDouble(Double.MAX_VALUE);
+        AtomicReference<List<Vertex>> result = new AtomicReference<>();
+        PriorityQueue<MappingEntry> queue = new PriorityQueue<MappingEntry>((mappingEntry1, mappingEntry2) -> {
+            int compareResult = Double.compare(mappingEntry1.lowerBoundCost, mappingEntry2.lowerBoundCost);
+            if (compareResult == 0) {
+                return (-1) * Integer.compare(mappingEntry1.level, mappingEntry2.level);
+            } else {
+                return compareResult;
             }
         });
-
-        for (Vertex vertex : schemaGraph.getVertices()) {
-            if ("Object".equals(vertex.getType())) {
-                handleObjectVertex(vertex, schemaGraph, schema);
+        queue.add(new MappingEntry());
+        while (!queue.isEmpty()) {
+            MappingEntry mappingEntry = queue.poll();
+            if (mappingEntry.lowerBoundCost >= upperBoundCost.doubleValue()) {
+                continue;
             }
-            if ("Interface".equals(vertex.getType())) {
-                handleInterfaceVertex(vertex, schemaGraph, schema);
+            // generate sibling
+            if (mappingEntry.level > 0 && mappingEntry.candidates.size() > 0) {
+                // we need to remove the last mapping
+                ImmutableList<Vertex> parentMapping = mappingEntry.partialMapping.subList(0, mappingEntry.partialMapping.size() - 1);
+                genNextMapping(parentMapping, mappingEntry.level, mappingEntry.candidates, queue, upperBoundCost, result, sourceGraph, targetGraph);
             }
-            if ("Union".equals(vertex.getType())) {
-                handleUnion(vertex, schemaGraph, schema);
-            }
-            if ("InputObject".equals(vertex.getType())) {
-                handleInputObject(vertex, schemaGraph, schema);
-            }
-            if ("AppliedDirective".equals(vertex.getType())) {
-                handleAppliedDirective(vertex, schemaGraph, schema);
+            // generate children
+            if (mappingEntry.level < graphSize) {
+                // candidates are the vertices in target, of which are not used yet in partialMapping
+                List<Vertex> childCandidates = new ArrayList<>(targetGraph.getVertices());
+                childCandidates.removeAll(mappingEntry.partialMapping);
+                genNextMapping(mappingEntry.partialMapping, mappingEntry.level + 1, ImmutableList.copyOf(childCandidates), queue, upperBoundCost, result, sourceGraph, targetGraph);
             }
         }
-        return schemaGraph;
+        System.out.println("ged cost: " + upperBoundCost.doubleValue());
+        System.out.println("mapping : " + result);
     }
 
-    private void handleAppliedDirective(Vertex appliedDirectiveVertex, SchemaGraph schemaGraph, GraphQLSchema graphQLSchema) {
-        Vertex directiveVertex = schemaGraph.getDirective(appliedDirectiveVertex.get("name"));
-        schemaGraph.addEdge(new Edge(appliedDirectiveVertex, directiveVertex));
-    }
+    // level starts at 1 indicating the level in the search tree to look for the next mapping
+    private void genNextMapping(ImmutableList<Vertex> partialMappingTargetList,
+                                int level,
+                                ImmutableList<Vertex> candidates,
+                                PriorityQueue<MappingEntry> queue,
+                                AtomicDouble upperBound,
+                                AtomicReference<List<Vertex>> bestMapping,
+                                SchemaGraph sourceGraph,
+                                SchemaGraph targetGraph) {
+        List<Vertex> sourceList = sourceGraph.getVertices();
+        List<Vertex> targetList = targetGraph.getVertices();
+        ArrayList<Vertex> availableTargetVertices = new ArrayList<>(targetList);
+        availableTargetVertices.removeAll(partialMappingTargetList);
+        Vertex v_i = sourceList.get(level);
+        int costMatrixSize = sourceList.size() - level + 1;
+        double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
 
-    private void handleInputObject(Vertex inputObject, SchemaGraph schemaGraph, GraphQLSchema graphQLSchema) {
-        GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) graphQLSchema.getType(inputObject.get("name"));
-        List<GraphQLInputObjectField> inputFields = inputObjectType.getFields();
-        for (GraphQLInputObjectField inputField : inputFields) {
-            Vertex inputFieldVertex = schemaGraph.findTargetVertex(inputObject, vertex -> vertex.getType().equals("InputField") &&
-                    vertex.get("name").equals(inputField.getName())).get();
-            handleInputField(inputFieldVertex, inputField, schemaGraph, graphQLSchema);
-        }
-    }
+        List<Vertex> partialMappingSourceList = new ArrayList<>(partialMappingTargetList.subList(0, level - 1));
 
-    private void handleInputField(Vertex inputFieldVertex, GraphQLInputObjectField inputField, SchemaGraph
-            schemaGraph, GraphQLSchema graphQLSchema) {
-        GraphQLInputType type = inputField.getType();
-        GraphQLUnmodifiedType graphQLUnmodifiedType = GraphQLTypeUtil.unwrapAll(type);
-        Vertex typeVertex = assertNotNull(schemaGraph.getType(graphQLUnmodifiedType.getName()));
-        Edge typeEdge = new Edge(inputFieldVertex, typeVertex);
-        typeEdge.add("type", GraphQLTypeUtil.simplePrint(type));
-        schemaGraph.addEdge(typeEdge);
-    }
-
-    private void handleUnion(Vertex unionVertex, SchemaGraph schemaGraph, GraphQLSchema graphQLSchema) {
-        GraphQLUnionType unionType = (GraphQLUnionType) graphQLSchema.getType(unionVertex.get("name"));
-        List<GraphQLNamedOutputType> types = unionType.getTypes();
-        for (GraphQLNamedOutputType unionMemberType : types) {
-            Vertex unionMemberVertex = assertNotNull(schemaGraph.getType(unionMemberType.getName()));
-            schemaGraph.addEdge(new Edge(unionVertex, unionMemberVertex));
-        }
-    }
-
-    private void handleInterfaceVertex(Vertex interfaceVertex, SchemaGraph schemaGraph, GraphQLSchema graphQLSchema) {
-        GraphQLInterfaceType interfaceType = (GraphQLInterfaceType) graphQLSchema.getType(interfaceVertex.get("name"));
-
-        for (GraphQLNamedOutputType implementsInterface : interfaceType.getInterfaces()) {
-            Vertex implementsInterfaceVertex = assertNotNull(schemaGraph.getType(implementsInterface.getName()));
-            schemaGraph.addEdge(new Edge(interfaceVertex, implementsInterfaceVertex));
-        }
-
-        List<GraphQLFieldDefinition> fieldDefinitions = interfaceType.getFieldDefinitions();
-        for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
-            Vertex fieldVertex = schemaGraph.findTargetVertex(interfaceVertex, vertex -> vertex.getType().equals("Field") &&
-                    vertex.get("name").equals(fieldDefinition.getName())).get();
-            handleField(fieldVertex, fieldDefinition, schemaGraph, graphQLSchema);
-        }
-
-    }
-
-    private void handleObjectVertex(Vertex objectVertex, SchemaGraph schemaGraph, GraphQLSchema graphQLSchema) {
-        GraphQLObjectType objectType = graphQLSchema.getObjectType(objectVertex.get("name"));
-
-        for (GraphQLNamedOutputType interfaceType : objectType.getInterfaces()) {
-            Vertex interfaceVertex = assertNotNull(schemaGraph.getType(interfaceType.getName()));
-            schemaGraph.addEdge(new Edge(objectVertex, interfaceVertex));
-        }
-
-        List<GraphQLFieldDefinition> fieldDefinitions = objectType.getFieldDefinitions();
-        for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
-            Vertex fieldVertex = schemaGraph.findTargetVertex(objectVertex, vertex -> vertex.getType().equals("Field") &&
-                    vertex.get("name").equals(fieldDefinition.getName())).get();
-            handleField(fieldVertex, fieldDefinition, schemaGraph, graphQLSchema);
-        }
-    }
-
-    private void handleField(Vertex fieldVertex, GraphQLFieldDefinition fieldDefinition, SchemaGraph
-            schemaGraph, GraphQLSchema graphQLSchema) {
-        GraphQLOutputType type = fieldDefinition.getType();
-        GraphQLUnmodifiedType graphQLUnmodifiedType = GraphQLTypeUtil.unwrapAll(type);
-        Vertex typeVertex = assertNotNull(schemaGraph.getType(graphQLUnmodifiedType.getName()));
-        Edge typeEdge = new Edge(fieldVertex, typeVertex);
-        typeEdge.add("type", GraphQLTypeUtil.simplePrint(type));
-        schemaGraph.addEdge(typeEdge);
-
-        for (GraphQLArgument graphQLArgument : fieldDefinition.getArguments()) {
-            Vertex argumentVertex = schemaGraph.findTargetVertex(fieldVertex, vertex -> vertex.getType().equals("Argument") &&
-                    vertex.get("name").equals(graphQLArgument.getName())).get();
-            handleArgument(argumentVertex, graphQLArgument, schemaGraph);
-        }
-    }
-
-    private void handleArgument(Vertex argumentVertex, GraphQLArgument graphQLArgument, SchemaGraph schemaGraph) {
-        GraphQLInputType type = graphQLArgument.getType();
-        GraphQLUnmodifiedType graphQLUnmodifiedType = GraphQLTypeUtil.unwrapAll(type);
-        Vertex typeVertex = assertNotNull(schemaGraph.getType(graphQLUnmodifiedType.getName()));
-        Edge typeEdge = new Edge(argumentVertex, typeVertex);
-        typeEdge.add("type", GraphQLTypeUtil.simplePrint(type));
-        schemaGraph.addEdge(typeEdge);
-    }
-
-    private void newObject(GraphQLObjectType graphQLObjectType, SchemaGraph schemaGraph) {
-        Vertex objectVertex = new Vertex("Object");
-        objectVertex.add("name", graphQLObjectType.getName());
-        objectVertex.add("description", graphQLObjectType.getDescription());
-        for (GraphQLFieldDefinition fieldDefinition : graphQLObjectType.getFieldDefinitions()) {
-            Vertex newFieldVertex = newField(fieldDefinition, schemaGraph);
-            schemaGraph.addVertex(newFieldVertex);
-            schemaGraph.addEdge(new Edge(objectVertex, newFieldVertex));
-        }
-        schemaGraph.addVertex(objectVertex);
-        schemaGraph.addType(graphQLObjectType.getName(), objectVertex);
-        cratedAppliedDirectives(objectVertex, graphQLObjectType.getDirectives(), schemaGraph);
-    }
-
-    private Vertex newField(GraphQLFieldDefinition graphQLFieldDefinition, SchemaGraph schemaGraph) {
-        Vertex fieldVertex = new Vertex("Field");
-        fieldVertex.add("name", graphQLFieldDefinition.getName());
-        fieldVertex.add("description", graphQLFieldDefinition.getDescription());
-        for (GraphQLArgument argument : graphQLFieldDefinition.getArguments()) {
-            Vertex argumentVertex = newArgument(argument, schemaGraph);
-            schemaGraph.addVertex(argumentVertex);
-            schemaGraph.addEdge(new Edge(fieldVertex, argumentVertex));
-        }
-        cratedAppliedDirectives(fieldVertex, graphQLFieldDefinition.getDirectives(), schemaGraph);
-        return fieldVertex;
-    }
-
-    private Vertex newArgument(GraphQLArgument graphQLArgument, SchemaGraph schemaGraph) {
-        Vertex vertex = new Vertex("Argument");
-        vertex.add("name", graphQLArgument.getName());
-        vertex.add("description", graphQLArgument.getDescription());
-        cratedAppliedDirectives(vertex, graphQLArgument.getDirectives(), schemaGraph);
-        return vertex;
-    }
-
-    private void newScalar(GraphQLScalarType scalarType, SchemaGraph schemaGraph) {
-        Vertex scalarVertex = new Vertex("Scalar");
-        scalarVertex.add("name", scalarType.getName());
-        scalarVertex.add("description", scalarType.getDescription());
-        schemaGraph.addVertex(scalarVertex);
-        schemaGraph.addType(scalarType.getName(), scalarVertex);
-        cratedAppliedDirectives(scalarVertex, scalarType.getDirectives(), schemaGraph);
-    }
-
-    private void newInterface(GraphQLInterfaceType interfaceType, SchemaGraph schemaGraph) {
-        Vertex interfaceVertex = new Vertex("Interface");
-        interfaceVertex.add("name", interfaceType.getName());
-        interfaceVertex.add("description", interfaceType.getDescription());
-        for (GraphQLFieldDefinition fieldDefinition : interfaceType.getFieldDefinitions()) {
-            Vertex newFieldVertex = newField(fieldDefinition, schemaGraph);
-            schemaGraph.addVertex(newFieldVertex);
-            schemaGraph.addEdge(new Edge(interfaceVertex, newFieldVertex));
-        }
-        schemaGraph.addVertex(interfaceVertex);
-        schemaGraph.addType(interfaceType.getName(), interfaceVertex);
-        cratedAppliedDirectives(interfaceVertex, interfaceType.getDirectives(), schemaGraph);
-    }
-
-    private void newEnum(GraphQLEnumType enumType, SchemaGraph schemaGraph) {
-        Vertex enumVertex = new Vertex("Enum");
-        enumVertex.add("name", enumType.getName());
-        enumVertex.add("description", enumType.getDescription());
-        for (GraphQLEnumValueDefinition enumValue : enumType.getValues()) {
-            Vertex enumValueVertex = new Vertex("EnumValue");
-            enumValueVertex.add("name", enumValue.getName());
-            schemaGraph.addEdge(new Edge(enumVertex, enumValueVertex));
-            cratedAppliedDirectives(enumValueVertex, enumValue.getDirectives(), schemaGraph);
-        }
-        schemaGraph.addVertex(enumVertex);
-        schemaGraph.addType(enumType.getName(), enumVertex);
-        cratedAppliedDirectives(enumVertex, enumType.getDirectives(), schemaGraph);
-    }
-
-    private void newUnion(GraphQLInterfaceType unionType, SchemaGraph schemaGraph) {
-        Vertex unionVertex = new Vertex("Union");
-        unionVertex.add("name", unionType.getName());
-        unionVertex.add("description", unionType.getDescription());
-        schemaGraph.addVertex(unionVertex);
-        schemaGraph.addType(unionType.getName(), unionVertex);
-        cratedAppliedDirectives(unionVertex, unionType.getDirectives(), schemaGraph);
-    }
-
-    private void newInputObject(GraphQLInputObjectType inputObject, SchemaGraph schemaGraph) {
-        Vertex inputObjectVertex = new Vertex("InputObject");
-        inputObjectVertex.add("name", inputObject.getName());
-        inputObjectVertex.add("description", inputObject.getDescription());
-        for (GraphQLInputObjectField inputObjectField : inputObject.getFieldDefinitions()) {
-            Vertex newInputField = newInputField(inputObjectField, schemaGraph);
-            Edge newEdge = new Edge(inputObjectVertex, newInputField);
-            schemaGraph.addEdge(newEdge);
-            cratedAppliedDirectives(inputObjectVertex, inputObjectField.getDirectives(), schemaGraph);
-        }
-        schemaGraph.addVertex(inputObjectVertex);
-        schemaGraph.addType(inputObject.getName(), inputObjectVertex);
-        cratedAppliedDirectives(inputObjectVertex, inputObject.getDirectives(), schemaGraph);
-    }
-
-    private void cratedAppliedDirectives(Vertex from, List<GraphQLDirective> appliedDirectives, SchemaGraph
-            schemaGraph) {
-        for (GraphQLDirective appliedDirective : appliedDirectives) {
-            Vertex appliedDirectiveVertex = new Vertex("AppliedDirective");
-            appliedDirectiveVertex.add("name", appliedDirective.getName());
-            for (GraphQLArgument appliedArgument : appliedDirective.getArguments()) {
-                Vertex appliedArgumentVertex = new Vertex("AppliedArgument");
-                appliedArgumentVertex.add("name", appliedArgument.getName());
-                appliedArgumentVertex.add("value", appliedArgument.getArgumentValue());
-                schemaGraph.addEdge(new Edge(appliedArgumentVertex, appliedArgumentVertex));
+        // we are skipping the first level -i indeces
+        for (int i = level - 1; i < sourceList.size(); i++) {
+            Vertex v = sourceList.get(i);
+            int j = 0;
+            for (Vertex u : availableTargetVertices) {
+                if (v == v_i && !candidates.contains(u)) {
+                    costMatrix[i - level + 1][j] = Integer.MAX_VALUE;
+                } else {
+                    costMatrix[i - level + 1][j] = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMappingSourceList, partialMappingTargetList);
+                }
+                j++;
             }
-            schemaGraph.addEdge(new Edge(from, appliedDirectiveVertex));
+        }
+
+        // find out the best extension
+        HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrix);
+        int[] assignments = hungarianAlgorithm.execute();
+        int v_i_target_Index = assignments[0];
+        Vertex bestExtensionTargetVertex = targetList.get(v_i_target_Index);
+
+        double bestExtensionLowerBound = costMatrix[0][v_i_target_Index];
+        if (bestExtensionLowerBound < upperBound.doubleValue()) {
+            ImmutableList<Vertex> newMapping = ImmutableKit.addToList(partialMappingTargetList, bestExtensionTargetVertex);
+            ImmutableList<Vertex> newCandidates = removeVertex(candidates, bestExtensionTargetVertex);
+            queue.add(new MappingEntry(newMapping, level, bestExtensionLowerBound, newCandidates));
+
+            // we have a full mapping from the cost matrix
+            List<Vertex> fullMapping = new ArrayList<>(partialMappingTargetList);
+            for (int i = 0; i < assignments.length; i++) {
+                fullMapping.add(availableTargetVertices.get(assignments[i]));
+            }
+            // the cost of the full mapping is the new upperBound (aka the current best mapping)
+            upperBound.set(editorialCostForFullMapping(fullMapping, sourceGraph, targetGraph));
+            bestMapping.set(fullMapping);
         }
     }
 
-    private void newDirective(GraphQLDirective directive, SchemaGraph schemaGraph) {
-        Vertex directiveVertex = new Vertex("Directive");
-        directiveVertex.add("name", directive.getName());
-        directiveVertex.add("description", directive.getDescription());
-        for (GraphQLArgument argument : directive.getArguments()) {
-            Vertex argumentVertex = newArgument(argument, schemaGraph);
-            schemaGraph.addVertex(argumentVertex);
-            schemaGraph.addEdge(new Edge(directiveVertex, argumentVertex));
+    // minimum number of edit operations for a full mapping
+    private int editorialCostForFullMapping(List<Vertex> fullMapping, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
+        int cost = 0;
+        int i = 0;
+        for (Vertex v : sourceGraph.getVertices()) {
+            Vertex targetVertex = fullMapping.get(i++);
+            // Vertex changing (relabeling)
+            boolean equalNodes = v.getType().equals(targetVertex.getType()) && v.getProperties().equals(targetVertex.getProperties());
+            if (!equalNodes) {
+                cost++;
+            }
+            List<Edge> edges = sourceGraph.getEdges(v);
+            // edge deletion or relabeling
+            for (Edge sourceEdge : edges) {
+                Vertex targetFrom = getTargetVertex(fullMapping, sourceEdge.getFrom(), sourceGraph);
+                Vertex targetTo = getTargetVertex(fullMapping, sourceEdge.getTo(), sourceGraph);
+                Edge targetEdge = targetGraph.getEdge(targetFrom, targetTo);
+                if (targetEdge == null || !sourceEdge.getLabel().equals(targetEdge.getLabel())) {
+                    cost++;
+                }
+            }
+
+            // edge insertion
+            for (Edge targetEdge : targetGraph.getEdges()) {
+                Vertex sourceFrom = getSourceVertex(fullMapping, targetEdge.getFrom(), sourceGraph);
+                Vertex sourceTo = getSourceVertex(fullMapping, targetEdge.getTo(), sourceGraph);
+                if (sourceGraph.getEdge(sourceFrom, sourceTo) == null) {
+                    cost++;
+                }
+            }
         }
-        schemaGraph.addDirective(directive.getName(),directiveVertex);
-        schemaGraph.addVertex(directiveVertex);
+        return cost;
     }
 
-    private Vertex newInputField(GraphQLInputObjectField inputField, SchemaGraph schemaGraph) {
-        Vertex vertex = new Vertex("InputField");
-        vertex.add("name", inputField.getName());
-        vertex.add("description", inputField.getDescription());
-        cratedAppliedDirectives(vertex, inputField.getDirectives(), schemaGraph);
-        return vertex;
+    // TODO: very inefficient
+    private Vertex getTargetVertex(List<Vertex> mappingTargetVertices, Vertex sourceVertex, SchemaGraph sourceGraph) {
+        for (int i = 0; i < sourceGraph.getVertices().size(); i++) {
+            Vertex v = sourceGraph.getVertices().get(i);
+            if (v != sourceVertex) continue;
+            return mappingTargetVertices.get(i);
+        }
+        return Assert.assertShouldNeverHappen();
     }
+
+    private Vertex getSourceVertex(List<Vertex> mappingTargetVertices, Vertex targetVertex, SchemaGraph sourceGraph) {
+        int index = mappingTargetVertices.indexOf(targetVertex);
+        assertTrue(index > -1);
+        return Assert.assertNotNull(sourceGraph.getVertices().get(index));
+    }
+
+    // lower bound mapping cost between for v -> u in respect to a partial mapping
+    private double calcLowerBoundMappingCost(Vertex v,
+                                             Vertex u,
+                                             SchemaGraph sourceGraph,
+                                             SchemaGraph targetGraph,
+                                             List<Vertex> partialMappingSourceList,
+                                             List<Vertex> partialMappingTargetList) {
+        boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());
+        // inner edge labels of u (resp. v) in regards to the partial mapping: all labels of edges
+        // which are adjacent of u (resp. v) which are inner edges
+
+        List<Edge> adjacentEdgesV = sourceGraph.getEdges(v);
+        Set<Vertex> nonMappedSourceVertices = nonMappedVertices(sourceGraph.getVertices(), partialMappingSourceList);
+        Multiset<String> multisetLabelsV = HashMultiset.create();
+
+        for (Edge edge : adjacentEdgesV) {
+            if (nonMappedSourceVertices.contains(edge.getFrom()) && nonMappedSourceVertices.contains(edge.getTo())) {
+                multisetLabelsV.add(edge.getLabel());
+            }
+        }
+        List<Edge> adjacentEdgesU = targetGraph.getEdges(u);
+        Set<Vertex> nonMappedTargetVertices = nonMappedVertices(targetGraph.getVertices(), partialMappingTargetList);
+        Multiset<String> multisetLabelsU = HashMultiset.create();
+        for (Edge edge : adjacentEdgesU) {
+            if (nonMappedTargetVertices.contains(edge.getFrom()) && nonMappedTargetVertices.contains(edge.getTo())) {
+                multisetLabelsU.add(edge.getLabel());
+            }
+        }
+
+        int anchoredVerticesCost = 0;
+        for (int i = 0; i < partialMappingSourceList.size(); i++) {
+            Vertex vPrime = partialMappingSourceList.get(i);
+            Vertex mappedVPrime = partialMappingTargetList.get(i);
+            Edge sourceEdge = sourceGraph.getEdge(v, vPrime);
+            Edge targetEdge = targetGraph.getEdge(u, mappedVPrime);
+            if (sourceEdge != targetEdge) {
+                anchoredVerticesCost++;
+            }
+        }
+        Multiset<String> intersection = Multisets.intersection(multisetLabelsV, multisetLabelsU);
+        int multiSetEditDistance = Math.max(multisetLabelsV.size(), multisetLabelsU.size()) - intersection.size();
+
+        return (equalNodes ? 0 : 1) + multiSetEditDistance / 2.0 + anchoredVerticesCost;
+    }
+
+    private Set<Vertex> nonMappedVertices(List<Vertex> allVertices, List<Vertex> partialMapping) {
+        Set<Vertex> set = new LinkedHashSet<>(allVertices);
+        partialMapping.forEach(set::remove);
+        return set;
+    }
+
+
+    private ImmutableList<Vertex> removeVertex(ImmutableList<Vertex> list, Vertex toRemove) {
+        ImmutableList.Builder<Vertex> builder = ImmutableList.builder();
+        for (Vertex vertex : list) {
+            if (vertex != toRemove) {
+                builder.add(vertex);
+            }
+        }
+        return builder.build();
+    }
+
 }
