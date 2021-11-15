@@ -68,6 +68,7 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
      * up the persisted query in the cache.
      *
      * @param executionInput the execution input
+     *
      * @return an optional id of the persisted query
      */
     abstract protected Optional<Object> getPersistedQueryId(ExecutionInput executionInput);
@@ -80,6 +81,7 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
      * Allows you to customize the graphql error that is sent back on a missing persistend query
      *
      * @param persistedQueryError the missing persistent query exception
+     *
      * @return a PreparsedDocumentEntry that holds an error
      */
     protected PreparsedDocumentEntry mkMissingError(PersistedQueryError persistedQueryError) {

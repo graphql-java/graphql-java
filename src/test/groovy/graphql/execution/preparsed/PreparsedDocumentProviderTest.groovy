@@ -12,7 +12,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionPara
 import graphql.language.Document
 import spock.lang.Specification
 
-import java.util.concurrent.CompletableFuture
 import java.util.function.Function
 
 class PreparsedDocumentProviderTest extends Specification {

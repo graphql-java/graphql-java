@@ -5,7 +5,6 @@ import graphql.execution.preparsed.PreparsedDocumentEntry
 import graphql.parser.Parser
 import spock.lang.Specification
 
-import java.util.concurrent.CompletableFuture
 import java.util.function.Function
 
 import static graphql.execution.preparsed.persisted.PersistedQuerySupport.PERSISTED_QUERY_MARKER
