@@ -8,6 +8,7 @@ import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
@@ -36,7 +37,7 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
     }
 
     @Override
-    public PreparsedDocumentEntry getDocument(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
+    public CompletableFuture<PreparsedDocumentEntry> getDocument(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
         Optional<Object> queryIdOption = getPersistedQueryId(executionInput);
         assertNotNull(queryIdOption, () -> String.format("The class %s MUST return a non null optional query id", this.getClass().getName()));
 
@@ -57,9 +58,9 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
                 });
             }
             // ok there is no query id - we assume the query is indeed ready to go as is - ie its not a persisted query
-            return parseAndValidateFunction.apply(executionInput);
+            return CompletableFuture.completedFuture(parseAndValidateFunction.apply(executionInput));
         } catch (PersistedQueryError e) {
-            return mkMissingError(e);
+            return CompletableFuture.completedFuture(mkMissingError(e));
         }
     }
 
@@ -68,7 +69,6 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
      * up the persisted query in the cache.
      *
      * @param executionInput the execution input
-     *
      * @return an optional id of the persisted query
      */
     abstract protected Optional<Object> getPersistedQueryId(ExecutionInput executionInput);
@@ -81,7 +81,6 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
      * Allows you to customize the graphql error that is sent back on a missing persistend query
      *
      * @param persistedQueryError the missing persistent query exception
-     *
      * @return a PreparsedDocumentEntry that holds an error
      */
     protected PreparsedDocumentEntry mkMissingError(PersistedQueryError persistedQueryError) {

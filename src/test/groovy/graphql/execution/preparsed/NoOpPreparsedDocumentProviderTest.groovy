@@ -16,7 +16,7 @@ class NoOpPreparsedDocumentProviderTest extends Specification {
         def actual = provider.getDocument(newExecutionInput("{}").build(), { return documentEntry })
 
         then:
-        actual == documentEntry
+        actual.get() == documentEntry
 
     }
 }

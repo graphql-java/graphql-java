@@ -1,11 +1,6 @@
 package graphql.nextgen;
 
-import graphql.ExecutionInput;
-import graphql.ExecutionResult;
-import graphql.ExecutionResultImpl;
-import graphql.Internal;
-import graphql.ParseAndValidate;
-import graphql.ParseAndValidateResult;
+import graphql.*;
 import graphql.execution.AbortExecutionException;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionIdProvider;
@@ -182,11 +177,13 @@ public class GraphQL {
             executionInputRef.set(transformedInput);
             return parseAndValidate(executionInputRef, graphQLSchema, instrumentationState);
         };
-        PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.getDocument(executionInput, computeFunction);
-        if (preparsedDoc.hasErrors()) {
-            return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDoc.getErrors()));
-        }
-        return execute(executionInputRef.get(), preparsedDoc.getDocument(), graphQLSchema, instrumentationState);
+        CompletableFuture<PreparsedDocumentEntry> preparsedDoc = preparsedDocumentProvider.getDocument(executionInput, computeFunction);
+        return preparsedDoc.thenCompose(preparsedDocumentEntry -> {
+            if (preparsedDocumentEntry.hasErrors()) {
+                return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDocumentEntry.getErrors()));
+            }
+            return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState);
+        });
     }
 
     private PreparsedDocumentEntry parseAndValidate(AtomicReference<ExecutionInput> executionInputRef, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {

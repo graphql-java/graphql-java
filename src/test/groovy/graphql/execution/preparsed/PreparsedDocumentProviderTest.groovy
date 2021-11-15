@@ -12,6 +12,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionPara
 import graphql.language.Document
 import spock.lang.Specification
 
+import java.util.concurrent.CompletableFuture
 import java.util.function.Function
 
 class PreparsedDocumentProviderTest extends Specification {
@@ -188,13 +189,13 @@ class PreparsedDocumentProviderTest extends Specification {
         def documentProvider = new PreparsedDocumentProvider() {
 
             @Override
-            PreparsedDocumentEntry getDocument(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
+            CompletableFuture<PreparsedDocumentEntry> getDocument(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
                 if (executionInput.getQuery() == "#A") {
                     executionInput = executionInput.transform({ it.query(queryA) })
                 } else {
                     executionInput = executionInput.transform({ it.query(queryB) })
                 }
-                return parseAndValidateFunction.apply(executionInput)
+                return CompletableFuture.completedFuture(parseAndValidateFunction.apply(executionInput))
             }
         }
 

@@ -1,22 +1,7 @@
 package graphql;
 
-import graphql.execution.AbortExecutionException;
-import graphql.execution.AsyncExecutionStrategy;
-import graphql.execution.AsyncSerialExecutionStrategy;
-import graphql.execution.DataFetcherExceptionHandler;
-import graphql.execution.Execution;
-import graphql.execution.ExecutionId;
-import graphql.execution.ExecutionIdProvider;
-import graphql.execution.ExecutionStrategy;
-import graphql.execution.SimpleDataFetcherExceptionHandler;
-import graphql.execution.SubscriptionExecutionStrategy;
-import graphql.execution.ValueUnboxer;
-import graphql.execution.instrumentation.ChainedInstrumentation;
-import graphql.execution.instrumentation.DocumentAndVariables;
-import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.InstrumentationContext;
-import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.*;
+import graphql.execution.instrumentation.*;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -530,12 +515,13 @@ public class GraphQL {
             executionInputRef.set(transformedInput);
             return parseAndValidate(executionInputRef, graphQLSchema, instrumentationState);
         };
-        PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.getDocument(executionInput, computeFunction);
-        if (preparsedDoc.hasErrors()) {
-            return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDoc.getErrors()));
-        }
-
-        return execute(executionInputRef.get(), preparsedDoc.getDocument(), graphQLSchema, instrumentationState);
+        CompletableFuture<PreparsedDocumentEntry> preparsedDoc = preparsedDocumentProvider.getDocument(executionInput, computeFunction);
+        return preparsedDoc.thenCompose(preparsedDocumentEntry -> {
+            if (preparsedDocumentEntry.hasErrors()) {
+                return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDocumentEntry.getErrors()));
+            }
+            return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState);
+        });
     }
 
     private PreparsedDocumentEntry parseAndValidate(AtomicReference<ExecutionInput> executionInputRef, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {

@@ -38,7 +38,7 @@ class InMemoryPersistedQueryCacheTest extends Specification {
 
         when:
         def getDoc = inMemCache.getPersistedQueryDocument(hash, ei, onMiss)
-        def doc = getDoc.document
+        def doc = getDoc.get().document
         then:
         printAstCompact(doc) == "query {oneTwoThreeFour}"
     }
@@ -51,7 +51,7 @@ class InMemoryPersistedQueryCacheTest extends Specification {
         def ei = mkEI(hash, PersistedQuerySupport.PERSISTED_QUERY_MARKER)
         when:
         def getDoc = inMemCache.getPersistedQueryDocument(hash, ei, onMiss)
-        def doc = getDoc.document
+        def doc = getDoc.get().document
         then:
         printAstCompact(doc) == "query {foo bar baz}"
     }

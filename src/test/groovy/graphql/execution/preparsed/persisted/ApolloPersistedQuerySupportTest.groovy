@@ -5,6 +5,7 @@ import graphql.execution.preparsed.PreparsedDocumentEntry
 import graphql.parser.Parser
 import spock.lang.Specification
 
+import java.util.concurrent.CompletableFuture
 import java.util.function.Function
 
 import static graphql.execution.preparsed.persisted.PersistedQuerySupport.PERSISTED_QUERY_MARKER
@@ -29,11 +30,11 @@ class ApolloPersistedQuerySupportTest extends Specification {
         def parseCount = [:]
 
         @Override
-        PreparsedDocumentEntry getPersistedQueryDocument(Object persistedQueryId, ExecutionInput executionInput, PersistedQueryCacheMiss onCacheMiss) throws PersistedQueryNotFound {
+        CompletableFuture<PreparsedDocumentEntry> getPersistedQueryDocument(Object persistedQueryId, ExecutionInput executionInput, PersistedQueryCacheMiss onCacheMiss) throws PersistedQueryNotFound {
             keyCount.compute(persistedQueryId, { k, v -> v == null ? 1 : v + 1 })
             PreparsedDocumentEntry entry = map.get(persistedQueryId) as PreparsedDocumentEntry
             if (entry != null) {
-                return entry
+                return CompletableFuture.completedFuture(entry)
             }
             parseCount.compute(persistedQueryId, { k, v -> v == null ? 1 : v + 1 })
 
@@ -44,7 +45,7 @@ class ApolloPersistedQuerySupportTest extends Specification {
             }
             def newDocEntry = onCacheMiss.apply(queryText)
             map.put(persistedQueryId, newDocEntry)
-            return newDocEntry
+            return CompletableFuture.completedFuture(newDocEntry)
         }
     }
 
@@ -67,7 +68,7 @@ class ApolloPersistedQuerySupportTest extends Specification {
         when:
         def ei = mkEI(hashOne, PERSISTED_QUERY_MARKER)
         def documentEntry = apolloSupport.getDocument(ei, engineParser)
-        def doc = documentEntry.getDocument()
+        def doc = documentEntry.get().getDocument()
         then:
         printAstCompact(doc) == "query {oneTwoThree}"
         persistedQueryCache.keyCount[hashOne] == 1
@@ -76,7 +77,7 @@ class ApolloPersistedQuerySupportTest extends Specification {
         when:
         ei = mkEI(hashOne, PERSISTED_QUERY_MARKER)
         documentEntry = apolloSupport.getDocument(ei, engineParser)
-        doc = documentEntry.getDocument()
+        doc = documentEntry.get().getDocument()
 
         then:
         printAstCompact(doc) == "query {oneTwoThree}"
@@ -92,7 +93,7 @@ class ApolloPersistedQuerySupportTest extends Specification {
         when:
         def ei = ExecutionInput.newExecutionInput("query { normal }").build()
         def documentEntry = apolloSupport.getDocument(ei, engineParser)
-        def doc = documentEntry.getDocument()
+        def doc = documentEntry.get().getDocument()
         then:
         printAstCompact(doc) == "query {normal}"
         persistedQueryCache.keyCount.size() == 0
@@ -106,7 +107,7 @@ class ApolloPersistedQuerySupportTest extends Specification {
         when:
         def ei = mkEI(hashOne, "query {normal}")
         def documentEntry = apolloSupport.getDocument(ei, engineParser)
-        def doc = documentEntry.getDocument()
+        def doc = documentEntry.get().getDocument()
         then:
         printAstCompact(doc) == "query {oneTwoThree}"
         persistedQueryCache.keyCount[hashOne] == 1
@@ -123,8 +124,8 @@ class ApolloPersistedQuerySupportTest extends Specification {
         def ei = mkEI("nonExistedHash", PERSISTED_QUERY_MARKER)
         def documentEntry = apolloSupport.getDocument(ei, engineParser)
         then:
-        documentEntry.getDocument() == null
-        def gqlError = documentEntry.getErrors()[0]
+        documentEntry.get().getDocument() == null
+        def gqlError = documentEntry.get().getErrors()[0]
         gqlError.getMessage() == "PersistedQueryNotFound"
         gqlError.getErrorType().toString() == "PersistedQueryNotFound"
         gqlError.getExtensions()["persistedQueryId"] == "nonExistedHash"
@@ -138,14 +139,14 @@ class ApolloPersistedQuerySupportTest extends Specification {
         when:
         def ei = mkEI(hashOne, PERSISTED_QUERY_MARKER)
         def documentEntry = apolloSupport.getDocument(ei, engineParser)
-        def doc = documentEntry.getDocument()
+        def doc = documentEntry.get().getDocument()
         then:
         printAstCompact(doc) == "query {oneTwoThree}"
 
         when:
         ei = mkEI(hashTwo, PERSISTED_QUERY_MARKER)
         documentEntry = apolloSupport.getDocument(ei, engineParser)
-        doc = documentEntry.getDocument()
+        doc = documentEntry.get().getDocument()
         then:
         printAstCompact(doc) == "query {fourFiveSix}"
 
@@ -153,7 +154,7 @@ class ApolloPersistedQuerySupportTest extends Specification {
         ei = mkEI("nonExistent", PERSISTED_QUERY_MARKER)
         documentEntry = apolloSupport.getDocument(ei, engineParser)
         then:
-        documentEntry.hasErrors()
+        documentEntry.get().hasErrors()
     }
 
     def "will have error if the calculated sha hash of the query does not match the persistedQueryId"() {
@@ -161,7 +162,7 @@ class ApolloPersistedQuerySupportTest extends Specification {
         def apolloSupport = new ApolloPersistedQuerySupport(cache)
         when:
         def ei = mkEI("badHash", PERSISTED_QUERY_MARKER)
-        def docEntry = apolloSupport.getDocument(ei, engineParser)
+        def docEntry = apolloSupport.getDocument(ei, engineParser).get()
         then:
         docEntry.getDocument() == null
         def error = docEntry.getErrors()[0]

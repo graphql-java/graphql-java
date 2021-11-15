@@ -7,6 +7,7 @@ import graphql.execution.preparsed.PreparsedDocumentEntry;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -27,24 +28,25 @@ public class InMemoryPersistedQueryCache implements PersistedQueryCache {
     }
 
     @Override
-    public PreparsedDocumentEntry getPersistedQueryDocument(Object persistedQueryId, ExecutionInput executionInput, PersistedQueryCacheMiss onCacheMiss) throws PersistedQueryNotFound {
-        return cache.compute(persistedQueryId, (k, v) -> {
-            if (v != null) {
-                return v;
-            }
+    public CompletableFuture<PreparsedDocumentEntry> getPersistedQueryDocument(Object persistedQueryId, ExecutionInput executionInput, PersistedQueryCacheMiss onCacheMiss) throws PersistedQueryNotFound {
+        return CompletableFuture.completedFuture(
+                cache.compute(persistedQueryId, (k, v) -> {
+                    if (v != null) {
+                        return v;
+                    }
 
-            //get the query from the execution input. Make sure it's not null, empty or the APQ marker.
-            // if it is, fallback to the known queries.
-            String queryText = executionInput.getQuery();
-            if (queryText == null || queryText.isEmpty() || queryText.equals(PersistedQuerySupport.PERSISTED_QUERY_MARKER)) {
-                queryText = knownQueries.get(persistedQueryId);
-            }
+                    //get the query from the execution input. Make sure it's not null, empty or the APQ marker.
+                    // if it is, fallback to the known queries.
+                    String queryText = executionInput.getQuery();
+                    if (queryText == null || queryText.isEmpty() || queryText.equals(PersistedQuerySupport.PERSISTED_QUERY_MARKER)) {
+                        queryText = knownQueries.get(persistedQueryId);
+                    }
 
-            if (queryText == null) {
-                throw new PersistedQueryNotFound(persistedQueryId);
-            }
-            return onCacheMiss.apply(queryText);
-        });
+                    if (queryText == null) {
+                        throw new PersistedQueryNotFound(persistedQueryId);
+                    }
+                    return onCacheMiss.apply(queryText);
+                }));
     }
 
     public static Builder newInMemoryPersistedQueryCache() {
