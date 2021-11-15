@@ -28,6 +28,13 @@ public interface PersistedQueryCache {
      * @param onCacheMiss      the call back should it be a valid query id but its not currently not in the cache
      * @return a parsed and validated PreparsedDocumentEntry where {@link graphql.execution.preparsed.PreparsedDocumentEntry#getDocument()} is set
      * @throws graphql.execution.preparsed.persisted.PersistedQueryNotFound if the query id is not know at all and you have no query text
+     *
+     * @deprecated - use {@link #getPersistedQueryDocumentAsync(Object persistedQueryId, ExecutionInput executionInput, PersistedQueryCacheMiss onCacheMiss)}
      */
-    CompletableFuture<PreparsedDocumentEntry> getPersistedQueryDocument(Object persistedQueryId, ExecutionInput executionInput, PersistedQueryCacheMiss onCacheMiss) throws PersistedQueryNotFound;
+    @Deprecated
+    PreparsedDocumentEntry getPersistedQueryDocument(Object persistedQueryId, ExecutionInput executionInput, PersistedQueryCacheMiss onCacheMiss) throws PersistedQueryNotFound;
+
+    default CompletableFuture<PreparsedDocumentEntry> getPersistedQueryDocumentAsync(Object persistedQueryId, ExecutionInput executionInput, PersistedQueryCacheMiss onCacheMiss) throws PersistedQueryNotFound{
+        return CompletableFuture.completedFuture(getPersistedQueryDocument(persistedQueryId, executionInput, onCacheMiss));
+    }
 }

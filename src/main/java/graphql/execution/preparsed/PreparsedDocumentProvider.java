@@ -3,6 +3,7 @@ package graphql.execution.preparsed;
 
 import graphql.ExecutionInput;
 import graphql.PublicSpi;
+import graphql.execution.preparsed.persisted.PersistedQueryCacheMiss;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -23,8 +24,15 @@ public interface PreparsedDocumentProvider {
      * @param executionInput           The {@link graphql.ExecutionInput} containing the query
      * @param parseAndValidateFunction If the query has not be pre-parsed, this function MUST be called to parse and validate it
      * @return an instance of {@link PreparsedDocumentEntry}
+     * <p>
+     * @deprecated - use {@link #getDocumentAsync(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction)}
      */
-    CompletableFuture<PreparsedDocumentEntry> getDocument(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction);
+    @Deprecated
+    PreparsedDocumentEntry getDocument(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction);
+
+    default CompletableFuture<PreparsedDocumentEntry> getDocumentAsync(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
+        return CompletableFuture.completedFuture(getDocument(executionInput, parseAndValidateFunction));
+    }
 }
 
 

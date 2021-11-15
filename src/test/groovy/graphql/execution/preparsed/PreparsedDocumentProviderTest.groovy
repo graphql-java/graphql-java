@@ -189,13 +189,13 @@ class PreparsedDocumentProviderTest extends Specification {
         def documentProvider = new PreparsedDocumentProvider() {
 
             @Override
-            CompletableFuture<PreparsedDocumentEntry> getDocument(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
+            PreparsedDocumentEntry getDocument(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
                 if (executionInput.getQuery() == "#A") {
                     executionInput = executionInput.transform({ it.query(queryA) })
                 } else {
                     executionInput = executionInput.transform({ it.query(queryB) })
                 }
-                return CompletableFuture.completedFuture(parseAndValidateFunction.apply(executionInput))
+                return parseAndValidateFunction.apply(executionInput)
             }
         }
 

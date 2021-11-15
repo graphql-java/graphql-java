@@ -13,7 +13,7 @@ class NoOpPreparsedDocumentProviderTest extends Specification {
         def documentEntry = new PreparsedDocumentEntry(Document.newDocument().build())
 
         when:
-        def actual = provider.getDocument(newExecutionInput("{}").build(), { return documentEntry })
+        def actual = provider.getDocumentAsync(newExecutionInput("{}").build(), { return documentEntry })
 
         then:
         actual.get() == documentEntry
