@@ -132,6 +132,8 @@ public class Execution {
                 .schema(executionContext.getGraphQLSchema())
                 .objectType(operationRootType)
                 .fragments(executionContext.getFragmentsByName())
+                .instrumentation(executionContext.getInstrumentation())
+                .instrumentationState(executionContext.getInstrumentationState())
                 .variables(executionContext.getVariables())
                 .build();
 

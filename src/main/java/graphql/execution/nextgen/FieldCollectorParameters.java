@@ -1,10 +1,8 @@
-package graphql.execution;
+package graphql.execution.nextgen;
 
 import graphql.Assert;
 import graphql.Internal;
 import graphql.language.FragmentDefinition;
-import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
@@ -19,8 +17,6 @@ public class FieldCollectorParameters {
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final Map<String, Object> variables;
     private final GraphQLObjectType objectType;
-    private final Instrumentation instrumentation;
-    private final InstrumentationState instrumentationState;
 
     public GraphQLSchema getGraphQLSchema() {
         return graphQLSchema;
@@ -38,22 +34,11 @@ public class FieldCollectorParameters {
         return objectType;
     }
 
-    public Instrumentation getInstrumentation() {
-        return instrumentation;
-    }
-
-    public InstrumentationState getInstrumentationState() {
-        return instrumentationState;
-    }
-
-    private FieldCollectorParameters(GraphQLSchema graphQLSchema, Map<String, Object> variables, Map<String, FragmentDefinition> fragmentsByName,
-                                     GraphQLObjectType objectType, Instrumentation instrumentation, InstrumentationState instrumentationState) {
+    private FieldCollectorParameters(GraphQLSchema graphQLSchema, Map<String, Object> variables, Map<String, FragmentDefinition> fragmentsByName, GraphQLObjectType objectType) {
         this.fragmentsByName = fragmentsByName;
         this.graphQLSchema = graphQLSchema;
         this.variables = variables;
         this.objectType = objectType;
-        this.instrumentation = instrumentation;
-        this.instrumentationState = instrumentationState;
     }
 
     public static Builder newParameters() {
@@ -65,8 +50,6 @@ public class FieldCollectorParameters {
         private Map<String, FragmentDefinition> fragmentsByName;
         private Map<String, Object> variables;
         private GraphQLObjectType objectType;
-        private Instrumentation instrumentation;
-        private InstrumentationState instrumentationState;
 
         /**
          * @see FieldCollectorParameters#newParameters()
@@ -95,20 +78,9 @@ public class FieldCollectorParameters {
             return this;
         }
 
-        public Builder instrumentation(Instrumentation instrumentation) {
-            this.instrumentation = instrumentation;
-            return this;
-        }
-
-
-        public Builder instrumentationState(InstrumentationState instrumentationState) {
-            this.instrumentationState = instrumentationState;
-            return this;
-        }
-
         public FieldCollectorParameters build() {
             Assert.assertNotNull(graphQLSchema, () -> "You must provide a schema");
-            return new FieldCollectorParameters(graphQLSchema, variables, fragmentsByName, objectType, instrumentation, instrumentationState);
+            return new FieldCollectorParameters(graphQLSchema, variables, fragmentsByName, objectType);
         }
 
     }

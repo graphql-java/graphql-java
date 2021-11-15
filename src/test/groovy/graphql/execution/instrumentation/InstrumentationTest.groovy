@@ -4,16 +4,22 @@ import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
+import graphql.TestUtil
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.MergedField
+import graphql.execution.instrumentation.parameters.InstrumentationCollectFieldsParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
 import graphql.language.AstPrinter
+import graphql.language.Field
 import graphql.parser.Parser
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.GraphQLSchema
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.StaticDataFetcher
+import graphql.schema.idl.RuntimeWiring
 import org.awaitility.Awaitility
 import spock.lang.Specification
 
@@ -277,4 +283,102 @@ class InstrumentationTest extends Specification {
         instrumentation.capturedData["originalDoc"] == query
         instrumentation.capturedData["originalVariables"] == variables
     }
+
+    def " instrument when collect field: always fetch 'name' field "() {
+        given:
+        String sdl = '''
+        type Query {
+            userInfo(userId: Int): UserInfo
+        }
+        
+        type UserInfo{
+            userId: Int
+            age: Int
+            name: String
+        }
+        '''
+
+        String collectField = '''
+                query collectField($userId: Int) {
+                        userInfo(userId: $userId) 
+                        {
+                            userId
+                            age
+                        }
+                }
+            '''
+
+        String collectInlineFragment =
+                '''
+                    query collectInlineFragment($userId: Int) {
+                            userInfo(userId: $userId) {
+                                userId
+                                ... {
+                                    age
+                                }
+                            }
+                    }
+                '''
+
+        String collectFragmentSpread =
+                '''
+                    query collectFragmentSpread($userId: Int) {
+                            userInfo(userId: $userId) {
+                                userId
+                                ...userInfoFragment
+                            }
+                    }
+                    
+                    fragment userInfoFragment on UserInfo{
+                        age
+                    }
+                '''
+
+        DataFetcher userInfoDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                Long userId = environment.getArgumentOrDefault("userId", 0);
+                HashMap<String, Object> userInfo = new LinkedHashMap();
+                userInfo.put("userId", userId);
+                userInfo.put("age", userId * 10);
+                userInfo.put("name", "userName_" + userId);
+                return userInfo;
+            }
+        }
+        RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .type("Query", { builder -> builder.dataFetcher("userInfo", userInfoDF) })
+                .build()
+
+
+        GraphQLSchema schema = TestUtil.schema(sdl, runtimeWiring)
+
+        Instrumentation instrumentation = new TestingInstrumentation() {
+            @Override
+            Map<String, MergedField> instrumentFieldsCollect(InstrumentationCollectFieldsParameters collectFieldsParameters, Map<String, MergedField> fields) {
+                String objectType = collectFieldsParameters.getFieldCollectorParameters().getObjectType().getName();
+                if ("UserInfo" == objectType) {
+                    MergedField mergedField = MergedField.newMergedField(Field.newField("name").build()).build();
+                    fields.put("name", mergedField);
+                }
+                return fields;
+            }
+        }
+
+        GraphQL graphQL = GraphQL
+                .newGraphQL(schema)
+                .instrumentation(instrumentation)
+                .build()
+
+        when:
+        def collectFieldResult = graphQL.execute(ExecutionInput.newExecutionInput().query(collectField).variables([userId: 1]))
+        def collectInlineFragmentResult = graphQL.execute(ExecutionInput.newExecutionInput().query(collectInlineFragment).variables([userId: 1]))
+        def collectFragmentSpreadResult = graphQL.execute(ExecutionInput.newExecutionInput().query(collectFragmentSpread).variables([userId: 1]))
+
+
+        then:
+        collectFieldResult.getData() == [userInfo: [userId: 1, age: 10, name: "userName_1"]]
+        collectInlineFragmentResult.getData() == [userInfo: [userId: 1, age: 10, name: "userName_1"]]
+        collectFragmentSpreadResult.getData() == [userInfo: [userId: 1, age: 10, name: "userName_1"]]
+    }
+
 }

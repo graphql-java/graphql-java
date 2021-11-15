@@ -1,9 +1,10 @@
-package graphql.execution;
+package graphql.execution.nextgen;
 
 
 import graphql.Internal;
-import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.parameters.InstrumentationCollectFieldsParameters;
+import graphql.execution.ConditionalNodes;
+import graphql.execution.MergedField;
+import graphql.execution.MergedSelectionSet;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
@@ -23,7 +24,6 @@ import java.util.Set;
 
 import static graphql.execution.MergedSelectionSet.newMergedSelectionSet;
 import static graphql.execution.TypeFromAST.getTypeFromAST;
-
 /**
  * A field collector can iterate over field selection sets and build out the sub fields that have been selected,
  * expanding named and inline fragments as it goes.s
@@ -40,16 +40,7 @@ public class FieldCollector {
             if (field.getSelectionSet() == null) {
                 continue;
             }
-
-            Map<String, MergedField> fields = new LinkedHashMap<>();
-            this.collectFields(parameters, field.getSelectionSet(), visitedFragments, fields);
-
-            InstrumentationCollectFieldsParameters collectFieldsParameters = new InstrumentationCollectFieldsParameters(
-                    parameters, field.getSelectionSet(), visitedFragments, fields, parameters.getInstrumentationState()
-            );
-
-            fields = parameters.getInstrumentation().instrumentFieldsCollect(collectFieldsParameters, fields);
-            subFields.putAll(fields);
+            this.collectFields(parameters, field.getSelectionSet(), visitedFragments, subFields);
         }
         return newMergedSelectionSet().subFields(subFields).build();
     }
@@ -66,11 +57,6 @@ public class FieldCollector {
         Map<String, MergedField> subFields = new LinkedHashMap<>();
         Set<String> visitedFragments = new LinkedHashSet<>();
         this.collectFields(parameters, selectionSet, visitedFragments, subFields);
-        InstrumentationCollectFieldsParameters collectFieldsParameters = new InstrumentationCollectFieldsParameters(
-                parameters, selectionSet, visitedFragments, subFields, parameters.getInstrumentationState()
-        );
-
-        subFields = parameters.getInstrumentation().instrumentFieldsCollect(collectFieldsParameters, subFields);
         return newMergedSelectionSet().subFields(subFields).build();
     }
 

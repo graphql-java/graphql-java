@@ -648,6 +648,8 @@ public abstract class ExecutionStrategy {
                 .objectType(resolvedObjectType)
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
+                .instrumentation(executionContext.getInstrumentation())
+                .instrumentationState(executionContext.getInstrumentationState())
                 .build();
 
         MergedSelectionSet subFields = fieldCollector.collectFields(collectorParameters, parameters.getField());
