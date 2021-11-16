@@ -7,16 +7,15 @@ public class Vertex {
 
     private String type;
     private Map<String, Object> properties = new LinkedHashMap<>();
-    private String name;
+    private String debugName;
 
     public Vertex(String type) {
         this.type = type;
     }
-    public Vertex(String type, String name) {
+    public Vertex(String type, String debugName) {
         this.type = type;
-        this.name = name;
+        this.debugName = debugName;
     }
-
     public void add(String propName, Object propValue) {
         properties.put(propName, propValue);
     }
@@ -38,7 +37,7 @@ public class Vertex {
         return "Vertex{" +
                 "type='" + type + '\'' +
                 ", properties=" + properties +
-                ", name='" + name + '\'' +
+                ", debugName='" + debugName + '\'' +
                 '}';
     }
 }

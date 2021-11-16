@@ -2,6 +2,7 @@ package graphql.schema.diffing;
 
 
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Table;
 import graphql.collect.ImmutableKit;
 import org.jetbrains.annotations.Nullable;
@@ -17,6 +18,16 @@ public class SchemaGraph {
     private Map<String, Vertex> typesByName = new LinkedHashMap<>();
     private Map<String, Vertex> directivesByName = new LinkedHashMap<>();
     private Table<Vertex, Vertex, Edge> edgeByVertexPair = HashBasedTable.create();
+
+    public SchemaGraph() {
+
+    }
+
+    public SchemaGraph(List<Vertex> vertices, List<Edge> edges, Table<Vertex, Vertex, Edge> edgeByVertexPair) {
+        this.vertices = vertices;
+        this.edges = edges;
+        this.edgeByVertexPair = edgeByVertexPair;
+    }
 
     public void addVertex(Vertex vertex) {
         vertices.add(vertex);
@@ -67,5 +78,13 @@ public class SchemaGraph {
 
     public int size() {
         return vertices.size();
+    }
+
+    public void addIsolatedVertices(int count) {
+        String uniqueType = String.valueOf(UUID.randomUUID());
+        for (int i = 0; i < count; i++) {
+            Vertex isolatedVertex = new Vertex(uniqueType);
+            vertices.add(isolatedVertex);
+        }
     }
 }

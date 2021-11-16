@@ -71,7 +71,7 @@ class SchemaDiffingTest extends Specification {
 
     }
 
-    def "delete a field ged2"() {
+    def "delete a field"() {
         given:
         def schema1 = schema("""
            type Query {
@@ -101,6 +101,41 @@ class SchemaDiffingTest extends Specification {
         new SchemaDiffing().diffImpl(source, target)
         then:
         true
+    }
+
+    def "test example schema 2"() {
+        given:
+        def source = sourceGraph2()
+        def target = targetGraph2()
+        when:
+        new SchemaDiffing().diffImpl(source, target)
+        then:
+        true
+    }
+
+    SchemaGraph sourceGraph2() {
+        def source = new SchemaGraph()
+        Vertex a = new Vertex("A")
+        source.addVertex(a)
+        Vertex b = new Vertex("B")
+        source.addVertex(b)
+        Vertex c = new Vertex("C")
+        source.addVertex(c)
+        Vertex d = new Vertex("D")
+        source.addVertex(d)
+        source.addEdge(new Edge(a, b))
+        source.addEdge(new Edge(b, c))
+        source.addEdge(new Edge(c, d))
+        source
+    }
+
+    SchemaGraph targetGraph2() {
+        def target = new SchemaGraph()
+        Vertex a = new Vertex("A")
+        Vertex d = new Vertex("D")
+        target.addVertex(a)
+        target.addVertex(d)
+        target
     }
 
     SchemaGraph buildTargetGraph() {

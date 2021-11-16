@@ -37,12 +37,18 @@ public class SchemaDiffing {
     public void diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) {
         SchemaGraph sourceGraph = new SchemaGraphFactory().createGraph(graphQLSchema1);
         SchemaGraph targetGraph = new SchemaGraphFactory().createGraph(graphQLSchema2);
+//        System.out.println(GraphPrinter.print(sourceGraph));
         diffImpl(sourceGraph, targetGraph);
 
     }
 
     void diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) {
         // we assert here that the graphs have the same size. The algorithm depends on it
+        if (sourceGraph.size() < targetGraph.size()) {
+            sourceGraph.addIsolatedVertices(targetGraph.size() - sourceGraph.size());
+        } else if (sourceGraph.size() > targetGraph.size()) {
+            targetGraph.addIsolatedVertices(sourceGraph.size() - targetGraph.size());
+        }
         assertTrue(sourceGraph.size() == targetGraph.size());
         int graphSize = sourceGraph.size();
 
@@ -61,7 +67,7 @@ public class SchemaDiffing {
         int counter = 0;
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
-            System.out.println("entry at level " + mappingEntry.level + " counter:" + (++counter));
+            System.out.println("entry at level " + mappingEntry.level + " counter:" + (++counter) + " q size: " + queue.size());
             if (mappingEntry.lowerBoundCost >= upperBoundCost.doubleValue()) {
                 System.out.println("skipping!");
                 continue;
@@ -127,8 +133,8 @@ public class SchemaDiffing {
         // calculating the lower bound costs for this extension: editorial cost for the partial mapping + value from the cost matrix for v_i
         int editorialCostForMapping = editorialCostForMapping(partialMapping, sourceGraph, targetGraph, new ArrayList<>());
         double costMatrixSum = 0;
-        for(int i = 0; i < assignments.length; i++) {
-           costMatrixSum += costMatrix[i][assignments[i]];
+        for (int i = 0; i < assignments.length; i++) {
+            costMatrixSum += costMatrix[i][assignments[i]];
         }
         double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
 
@@ -137,6 +143,7 @@ public class SchemaDiffing {
             Vertex bestExtensionTargetVertex = availableTargetVertices.get(v_i_target_Index);
             Mapping newMapping = partialMapping.extendMapping(v_i, bestExtensionTargetVertex);
             candidates.remove(bestExtensionTargetVertex);
+            System.out.println("adding new entry at level " + level + " with candidates: " + candidates.size() + " at lower bound: " + lowerBoundForPartialMapping);
             queue.add(new MappingEntry(newMapping, level, lowerBoundForPartialMapping, candidates));
 
             // we have a full mapping from the cost matrix
@@ -151,11 +158,11 @@ public class SchemaDiffing {
                 upperBound.set(costForFullMapping);
                 bestMapping.set(fullMapping);
                 bestEdit.set(editOperations);
-                System.out.println("setting new best edit: " + bestEdit);
+                System.out.println("setting new best edit with size " + editOperations.size());
             } else {
 //                System.out.println("to expensive cost for overall mapping " + costForFullMapping);
             }
-        }else {
+        } else {
             System.out.println("don't add new entries ");
         }
     }
