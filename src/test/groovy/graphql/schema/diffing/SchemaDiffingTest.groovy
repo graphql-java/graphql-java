@@ -7,7 +7,7 @@ import static graphql.TestUtil.schema
 class SchemaDiffingTest extends Specification {
 
 
-    def "test"() {
+    def "test schema generation"() {
         given:
         def schema = schema("""
            type Query {
@@ -23,7 +23,7 @@ class SchemaDiffingTest extends Specification {
 
     }
 
-    def "test ged"() {
+    def "test rename field"() {
         given:
         def schema1 = schema("""
            type Query {
@@ -44,7 +44,7 @@ class SchemaDiffingTest extends Specification {
 
     }
 
-    def "test ged2"() {
+    def "test two field renames one type rename"() {
         given:
         def schema1 = schema("""
            type Query {
@@ -61,6 +61,27 @@ class SchemaDiffingTest extends Specification {
            type Foo2 {
             foo2: String 
            }
+        """)
+
+        when:
+        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        true
+
+    }
+
+    def "test field type change"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            hello: Int
+           } 
+        """)
+        def schema2 = schema("""
+           type Query {
+            hello: String
+           } 
         """)
 
         when:
