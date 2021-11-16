@@ -67,7 +67,7 @@ public class SchemaDiffing {
         int counter = 0;
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
-            System.out.println("entry at level " + mappingEntry.level + " counter:" + (++counter) + " q size: " + queue.size());
+//            System.out.println("entry at level " + mappingEntry.level + " counter:" + (++counter) + " q size: " + queue.size());
             if (mappingEntry.lowerBoundCost >= upperBoundCost.doubleValue()) {
                 System.out.println("skipping!");
                 continue;
@@ -120,7 +120,9 @@ public class SchemaDiffing {
                 if (v == v_i && !candidates.contains(u)) {
                     costMatrix[i - level + 1][j] = Integer.MAX_VALUE;
                 } else {
-                    costMatrix[i - level + 1][j] = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMapping.getTargets());
+                    double cost = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMapping.getTargets());
+                    costMatrix[i - level + 1][j] = cost;
+//                    System.out.println("lower bound cost for mapping " + v + " to " + u + " is " + cost + " with index " + (i - level + 1) + " => " + j);
                 }
                 j++;
             }
@@ -143,7 +145,7 @@ public class SchemaDiffing {
             Vertex bestExtensionTargetVertex = availableTargetVertices.get(v_i_target_Index);
             Mapping newMapping = partialMapping.extendMapping(v_i, bestExtensionTargetVertex);
             candidates.remove(bestExtensionTargetVertex);
-            System.out.println("adding new entry at level " + level + " with candidates: " + candidates.size() + " at lower bound: " + lowerBoundForPartialMapping);
+//            System.out.println("adding new entry " + getDebugMap(newMapping) + "  at level " + level + " with candidates: " + candidates.size() + " at lower bound: " + lowerBoundForPartialMapping);
             queue.add(new MappingEntry(newMapping, level, lowerBoundForPartialMapping, candidates));
 
             // we have a full mapping from the cost matrix
@@ -160,11 +162,22 @@ public class SchemaDiffing {
                 bestEdit.set(editOperations);
                 System.out.println("setting new best edit with size " + editOperations.size());
             } else {
-//                System.out.println("to expensive cost for overall mapping " + costForFullMapping);
+//                System.out.println("to expensive cost for overall mapping " +);
             }
         } else {
-            System.out.println("don't add new entries ");
+            int v_i_target_Index = assignments[0];
+            Vertex bestExtensionTargetVertex = availableTargetVertices.get(v_i_target_Index);
+            Mapping newMapping = partialMapping.extendMapping(v_i, bestExtensionTargetVertex);
+            System.out.println("not adding new entrie " + getDebugMap(newMapping) + " because " + lowerBoundForPartialMapping + " to high");
         }
+    }
+
+    private List<String> getDebugMap(Mapping mapping) {
+        List<String> result = new ArrayList<>();
+        for (Map.Entry<Vertex, Vertex> entry : mapping.getMap().entrySet()) {
+            result.add(entry.getKey().getDebugName() + "->" + entry.getValue().getDebugName());
+        }
+        return result;
     }
 
     // minimum number of edit operations for a full mapping
@@ -202,7 +215,7 @@ public class SchemaDiffing {
 
         // edge insertion
         for (Edge targetEdge : targetGraph.getEdges()) {
-            // only subraph edges
+            // only subgraph edges
             if (!partialOrFullMapping.containsTarget(targetEdge.getOne()) || !partialOrFullMapping.containsTarget(targetEdge.getTwo())) {
                 continue;
             }
@@ -252,14 +265,16 @@ public class SchemaDiffing {
             Vertex vPrime = partialMappingSourceList.get(i);
             Vertex mappedVPrime = partialMappingTargetList.get(i);
             Edge sourceEdge = sourceGraph.getEdge(v, vPrime);
+            String labelSourceEdge = sourceEdge != null ? sourceEdge.getLabel() : null;
             Edge targetEdge = targetGraph.getEdge(u, mappedVPrime);
-            if (sourceEdge != targetEdge) {
+            String labelTargetEdge = targetEdge != null ? targetEdge.getLabel() : null;
+            if (!Objects.equals(labelSourceEdge,labelTargetEdge)) {
                 anchoredVerticesCost++;
             }
         }
         Multiset<String> intersection = Multisets.intersection(multisetLabelsV, multisetLabelsU);
         int multiSetEditDistance = Math.max(multisetLabelsV.size(), multisetLabelsU.size()) - intersection.size();
-
+//        System.out.println("equalNodes : " + (equalNodes ? 0 : 1) + " editDistance " + (multiSetEditDistance / 2.0) + " anchored cost" + (anchoredVerticesCost));
         return (equalNodes ? 0 : 1) + multiSetEditDistance / 2.0 + anchoredVerticesCost;
     }
 

@@ -89,4 +89,8 @@ public class Mapping {
         newTargetList.add(target);
         return new Mapping(newMap, newSourceList, newTargetList);
     }
+
+    public BiMap<Vertex, Vertex> getMap() {
+        return map;
+    }
 }

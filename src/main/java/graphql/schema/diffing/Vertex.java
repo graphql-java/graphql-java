@@ -32,6 +32,10 @@ public class Vertex {
         return properties;
     }
 
+    public String getDebugName() {
+        return debugName;
+    }
+
     @Override
     public String toString() {
         return "Vertex{" +

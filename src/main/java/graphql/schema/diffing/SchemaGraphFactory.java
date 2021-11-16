@@ -15,6 +15,9 @@ import static graphql.Assert.assertNotNull;
 
 public class SchemaGraphFactory {
 
+    public static final String DUMMY_TYPE_VERTICE = "__DUMMY_TYPE_VERTICE";
+    private int counter = 1;
+
     public SchemaGraph createGraph(GraphQLSchema schema) {
         Set<GraphQLSchemaElement> roots = new LinkedHashSet<>();
         roots.add(schema.getQueryType());
@@ -103,9 +106,9 @@ public class SchemaGraphFactory {
             schemaGraph, GraphQLSchema graphQLSchema) {
         GraphQLInputType type = inputField.getType();
         GraphQLUnmodifiedType graphQLUnmodifiedType = GraphQLTypeUtil.unwrapAll(type);
-        Vertex dummyTypeVertex = new Vertex("type");
+        Vertex dummyTypeVertex = new Vertex(DUMMY_TYPE_VERTICE, String.valueOf(counter++));
         schemaGraph.addVertex(dummyTypeVertex);
-        schemaGraph.addEdge(new Edge(inputFieldVertex,dummyTypeVertex));
+        schemaGraph.addEdge(new Edge(inputFieldVertex, dummyTypeVertex));
         Vertex typeVertex = assertNotNull(schemaGraph.getType(graphQLUnmodifiedType.getName()));
         Edge typeEdge = new Edge(dummyTypeVertex, typeVertex);
         typeEdge.setLabel(GraphQLTypeUtil.simplePrint(type));
@@ -158,9 +161,9 @@ public class SchemaGraphFactory {
             schemaGraph, GraphQLSchema graphQLSchema) {
         GraphQLOutputType type = fieldDefinition.getType();
         GraphQLUnmodifiedType graphQLUnmodifiedType = GraphQLTypeUtil.unwrapAll(type);
-        Vertex dummyTypeVertex = new Vertex("type");
+        Vertex dummyTypeVertex = new Vertex(DUMMY_TYPE_VERTICE, String.valueOf(counter++));
         schemaGraph.addVertex(dummyTypeVertex);
-        schemaGraph.addEdge(new Edge(fieldVertex,dummyTypeVertex));
+        schemaGraph.addEdge(new Edge(fieldVertex, dummyTypeVertex));
         Vertex typeVertex = assertNotNull(schemaGraph.getType(graphQLUnmodifiedType.getName()));
         Edge typeEdge = new Edge(dummyTypeVertex, typeVertex);
         typeEdge.setLabel(GraphQLTypeUtil.simplePrint(type));
@@ -183,7 +186,7 @@ public class SchemaGraphFactory {
     }
 
     private void newObject(GraphQLObjectType graphQLObjectType, SchemaGraph schemaGraph) {
-        Vertex objectVertex = new Vertex("Object");
+        Vertex objectVertex = new Vertex("Object", String.valueOf(counter++));
         objectVertex.add("name", graphQLObjectType.getName());
         objectVertex.add("description", graphQLObjectType.getDescription());
         for (GraphQLFieldDefinition fieldDefinition : graphQLObjectType.getFieldDefinitions()) {
@@ -197,7 +200,7 @@ public class SchemaGraphFactory {
     }
 
     private Vertex newField(GraphQLFieldDefinition graphQLFieldDefinition, SchemaGraph schemaGraph) {
-        Vertex fieldVertex = new Vertex("Field");
+        Vertex fieldVertex = new Vertex("Field", String.valueOf(counter++));
         fieldVertex.add("name", graphQLFieldDefinition.getName());
         fieldVertex.add("description", graphQLFieldDefinition.getDescription());
         for (GraphQLArgument argument : graphQLFieldDefinition.getArguments()) {
@@ -210,7 +213,7 @@ public class SchemaGraphFactory {
     }
 
     private Vertex newArgument(GraphQLArgument graphQLArgument, SchemaGraph schemaGraph) {
-        Vertex vertex = new Vertex("Argument");
+        Vertex vertex = new Vertex("Argument", String.valueOf(counter++));
         vertex.add("name", graphQLArgument.getName());
         vertex.add("description", graphQLArgument.getDescription());
         cratedAppliedDirectives(vertex, graphQLArgument.getDirectives(), schemaGraph);
@@ -218,7 +221,7 @@ public class SchemaGraphFactory {
     }
 
     private void newScalar(GraphQLScalarType scalarType, SchemaGraph schemaGraph) {
-        Vertex scalarVertex = new Vertex("Scalar");
+        Vertex scalarVertex = new Vertex("Scalar", String.valueOf(counter++));
         scalarVertex.add("name", scalarType.getName());
         scalarVertex.add("description", scalarType.getDescription());
         schemaGraph.addVertex(scalarVertex);
@@ -227,7 +230,7 @@ public class SchemaGraphFactory {
     }
 
     private void newInterface(GraphQLInterfaceType interfaceType, SchemaGraph schemaGraph) {
-        Vertex interfaceVertex = new Vertex("Interface");
+        Vertex interfaceVertex = new Vertex("Interface", String.valueOf(counter++));
         interfaceVertex.add("name", interfaceType.getName());
         interfaceVertex.add("description", interfaceType.getDescription());
         for (GraphQLFieldDefinition fieldDefinition : interfaceType.getFieldDefinitions()) {
@@ -241,11 +244,11 @@ public class SchemaGraphFactory {
     }
 
     private void newEnum(GraphQLEnumType enumType, SchemaGraph schemaGraph) {
-        Vertex enumVertex = new Vertex("Enum");
+        Vertex enumVertex = new Vertex("Enum", String.valueOf(counter++));
         enumVertex.add("name", enumType.getName());
         enumVertex.add("description", enumType.getDescription());
         for (GraphQLEnumValueDefinition enumValue : enumType.getValues()) {
-            Vertex enumValueVertex = new Vertex("EnumValue");
+            Vertex enumValueVertex = new Vertex("EnumValue", String.valueOf(counter++));
             enumValueVertex.add("name", enumValue.getName());
             schemaGraph.addVertex(enumValueVertex);
             schemaGraph.addEdge(new Edge(enumVertex, enumValueVertex));
@@ -257,7 +260,7 @@ public class SchemaGraphFactory {
     }
 
     private void newUnion(GraphQLInterfaceType unionType, SchemaGraph schemaGraph) {
-        Vertex unionVertex = new Vertex("Union");
+        Vertex unionVertex = new Vertex("Union", String.valueOf(counter++));
         unionVertex.add("name", unionType.getName());
         unionVertex.add("description", unionType.getDescription());
         schemaGraph.addVertex(unionVertex);
@@ -266,7 +269,7 @@ public class SchemaGraphFactory {
     }
 
     private void newInputObject(GraphQLInputObjectType inputObject, SchemaGraph schemaGraph) {
-        Vertex inputObjectVertex = new Vertex("InputObject");
+        Vertex inputObjectVertex = new Vertex("InputObject", String.valueOf(counter++));
         inputObjectVertex.add("name", inputObject.getName());
         inputObjectVertex.add("description", inputObject.getDescription());
         for (GraphQLInputObjectField inputObjectField : inputObject.getFieldDefinitions()) {
@@ -283,10 +286,10 @@ public class SchemaGraphFactory {
     private void cratedAppliedDirectives(Vertex from, List<GraphQLDirective> appliedDirectives, SchemaGraph
             schemaGraph) {
         for (GraphQLDirective appliedDirective : appliedDirectives) {
-            Vertex appliedDirectiveVertex = new Vertex("AppliedDirective");
+            Vertex appliedDirectiveVertex = new Vertex("AppliedDirective", String.valueOf(counter++));
             appliedDirectiveVertex.add("name", appliedDirective.getName());
             for (GraphQLArgument appliedArgument : appliedDirective.getArguments()) {
-                Vertex appliedArgumentVertex = new Vertex("AppliedArgument");
+                Vertex appliedArgumentVertex = new Vertex("AppliedArgument", String.valueOf(counter++));
                 appliedArgumentVertex.add("name", appliedArgument.getName());
                 appliedArgumentVertex.add("value", appliedArgument.getArgumentValue());
                 schemaGraph.addEdge(new Edge(appliedArgumentVertex, appliedArgumentVertex));
@@ -296,7 +299,7 @@ public class SchemaGraphFactory {
     }
 
     private void newDirective(GraphQLDirective directive, SchemaGraph schemaGraph) {
-        Vertex directiveVertex = new Vertex("Directive");
+        Vertex directiveVertex = new Vertex("Directive", String.valueOf(counter++));
         directiveVertex.add("name", directive.getName());
         directiveVertex.add("description", directive.getDescription());
         for (GraphQLArgument argument : directive.getArguments()) {
@@ -309,7 +312,7 @@ public class SchemaGraphFactory {
     }
 
     private Vertex newInputField(GraphQLInputObjectField inputField, SchemaGraph schemaGraph) {
-        Vertex vertex = new Vertex("InputField");
+        Vertex vertex = new Vertex("InputField", String.valueOf(counter++));
         vertex.add("name", inputField.getName());
         vertex.add("description", inputField.getDescription());
         cratedAppliedDirectives(vertex, inputField.getDirectives(), schemaGraph);
