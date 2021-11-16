@@ -1,30 +1,36 @@
 package graphql.schema.diffing;
 
 public class Edge {
-    private Vertex from;
-    private Vertex to;
+    private Vertex one;
+    private Vertex two;
 
     private String label = "";
 
     public Edge(Vertex from, Vertex to) {
-        this.from = from;
-        this.to = to;
+        this.one = from;
+        this.two = to;
     }
 
-    public Vertex getFrom() {
-        return from;
+    public Edge(Vertex from, Vertex to, String label) {
+        this.one = from;
+        this.two = to;
+        this.label = label;
     }
 
-    public void setFrom(Vertex from) {
-        this.from = from;
+    public Vertex getOne() {
+        return one;
     }
 
-    public Vertex getTo() {
-        return to;
+    public void setOne(Vertex one) {
+        this.one = one;
     }
 
-    public void setTo(Vertex to) {
-        this.to = to;
+    public Vertex getTwo() {
+        return two;
+    }
+
+    public void setTwo(Vertex two) {
+        this.two = two;
     }
 
 
@@ -34,5 +40,14 @@ public class Edge {
 
     public String getLabel() {
         return label;
+    }
+
+    @Override
+    public String toString() {
+        return "Edge{" +
+                "one=" + one +
+                ", two=" + two +
+                ", label='" + label + '\'' +
+                '}';
     }
 }

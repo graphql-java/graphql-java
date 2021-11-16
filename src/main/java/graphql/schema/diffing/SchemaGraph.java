@@ -12,7 +12,6 @@ import java.util.function.Predicate;
 public class SchemaGraph {
 
     private List<Vertex> vertices = new ArrayList<>();
-    private Map<Vertex, List<Edge>> fromEdges = new LinkedHashMap<>();
     private List<Edge> edges = new ArrayList<>();
 
     private Map<String, Vertex> typesByName = new LinkedHashMap<>();
@@ -25,12 +24,12 @@ public class SchemaGraph {
 
     public void addEdge(Edge edge) {
         edges.add(edge);
-        fromEdges.computeIfAbsent(edge.getFrom(), ignored -> new ArrayList<>()).add(edge);
-        edgeByVertexPair.put(edge.getFrom(), edge.getTo(), edge);
+        edgeByVertexPair.put(edge.getOne(), edge.getTwo(), edge);
+        edgeByVertexPair.put(edge.getTwo(), edge.getOne(), edge);
     }
 
     public List<Edge> getEdges(Vertex from) {
-        return fromEdges.getOrDefault(from, Collections.emptyList());
+        return new ArrayList<>(edgeByVertexPair.row(from).values());
     }
 
     public List<Edge> getEdges() {
@@ -41,9 +40,6 @@ public class SchemaGraph {
         return edgeByVertexPair.get(from, to);
     }
 
-    public List<Vertex> getTargetVertices(Vertex from) {
-        return ImmutableKit.map(fromEdges.get(from), Edge::getTo);
-    }
 
     public List<Vertex> getVertices() {
         return vertices;
@@ -66,7 +62,7 @@ public class SchemaGraph {
     }
 
     public Optional<Vertex> findTargetVertex(Vertex from, Predicate<Vertex> vertexPredicate) {
-        return fromEdges.get(from).stream().map(Edge::getTo).filter(vertexPredicate).findFirst();
+        return edgeByVertexPair.row(from).values().stream().map(Edge::getTwo).filter(vertexPredicate).findFirst();
     }
 
     public int size() {

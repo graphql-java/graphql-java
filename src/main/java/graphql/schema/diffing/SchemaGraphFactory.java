@@ -6,6 +6,7 @@ import graphql.util.Traverser;
 import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitor;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -62,7 +63,8 @@ public class SchemaGraphFactory {
             }
         });
 
-        for (Vertex vertex : schemaGraph.getVertices()) {
+        ArrayList<Vertex> copyOfVertices = new ArrayList<>(schemaGraph.getVertices());
+        for (Vertex vertex : copyOfVertices) {
             if ("Object".equals(vertex.getType())) {
                 handleObjectVertex(vertex, schemaGraph, schema);
             }
@@ -101,8 +103,11 @@ public class SchemaGraphFactory {
             schemaGraph, GraphQLSchema graphQLSchema) {
         GraphQLInputType type = inputField.getType();
         GraphQLUnmodifiedType graphQLUnmodifiedType = GraphQLTypeUtil.unwrapAll(type);
+        Vertex dummyTypeVertex = new Vertex("type");
+        schemaGraph.addVertex(dummyTypeVertex);
+        schemaGraph.addEdge(new Edge(inputFieldVertex,dummyTypeVertex));
         Vertex typeVertex = assertNotNull(schemaGraph.getType(graphQLUnmodifiedType.getName()));
-        Edge typeEdge = new Edge(inputFieldVertex, typeVertex);
+        Edge typeEdge = new Edge(dummyTypeVertex, typeVertex);
         typeEdge.setLabel(GraphQLTypeUtil.simplePrint(type));
         schemaGraph.addEdge(typeEdge);
     }
@@ -153,8 +158,11 @@ public class SchemaGraphFactory {
             schemaGraph, GraphQLSchema graphQLSchema) {
         GraphQLOutputType type = fieldDefinition.getType();
         GraphQLUnmodifiedType graphQLUnmodifiedType = GraphQLTypeUtil.unwrapAll(type);
+        Vertex dummyTypeVertex = new Vertex("type");
+        schemaGraph.addVertex(dummyTypeVertex);
+        schemaGraph.addEdge(new Edge(fieldVertex,dummyTypeVertex));
         Vertex typeVertex = assertNotNull(schemaGraph.getType(graphQLUnmodifiedType.getName()));
-        Edge typeEdge = new Edge(fieldVertex, typeVertex);
+        Edge typeEdge = new Edge(dummyTypeVertex, typeVertex);
         typeEdge.setLabel(GraphQLTypeUtil.simplePrint(type));
         schemaGraph.addEdge(typeEdge);
 

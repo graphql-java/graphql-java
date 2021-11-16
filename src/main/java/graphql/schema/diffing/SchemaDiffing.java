@@ -5,7 +5,6 @@ import com.google.common.util.concurrent.AtomicDouble;
 import graphql.Assert;
 import graphql.collect.ImmutableKit;
 import graphql.schema.*;
-import graphql.util.*;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -15,15 +14,13 @@ import static graphql.Assert.assertTrue;
 
 public class SchemaDiffing {
 
-    private static class Mapping {
-    }
-
     private static class MappingEntry {
-        public MappingEntry(ImmutableList<Vertex> partialMapping, int level, double lowerBoundCost, ImmutableList<Vertex> candidates) {
+
+        public MappingEntry(Mapping partialMapping, int level, double lowerBoundCost, List<Vertex> availableSiblings) {
             this.partialMapping = partialMapping;
             this.level = level;
             this.lowerBoundCost = lowerBoundCost;
-            this.candidates = candidates;
+            this.availableSiblings = availableSiblings;
         }
 
         public MappingEntry() {
@@ -31,21 +28,27 @@ public class SchemaDiffing {
         }
 
         // target vertices which the fist `level` vertices of source graph are mapped to
-        ImmutableList<Vertex> partialMapping = ImmutableList.<Vertex>builder().build();
+        Mapping partialMapping = new Mapping();
         int level;
         double lowerBoundCost;
-        ImmutableList<Vertex> candidates = ImmutableList.<Vertex>builder().build();
+        List<Vertex> availableSiblings = new ArrayList<>();
     }
 
-    public void diff(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) {
+    public void diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) {
         SchemaGraph sourceGraph = new SchemaGraphFactory().createGraph(graphQLSchema1);
         SchemaGraph targetGraph = new SchemaGraphFactory().createGraph(graphQLSchema2);
+        diffImpl(sourceGraph, targetGraph);
+
+    }
+
+    void diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) {
         // we assert here that the graphs have the same size. The algorithm depends on it
         assertTrue(sourceGraph.size() == targetGraph.size());
         int graphSize = sourceGraph.size();
 
         AtomicDouble upperBoundCost = new AtomicDouble(Double.MAX_VALUE);
-        AtomicReference<List<Vertex>> result = new AtomicReference<>();
+        AtomicReference<Mapping> bestFullMapping = new AtomicReference<>();
+        AtomicReference<List<EditOperation>> bestEdit = new AtomicReference<>();
         PriorityQueue<MappingEntry> queue = new PriorityQueue<MappingEntry>((mappingEntry1, mappingEntry2) -> {
             int compareResult = Double.compare(mappingEntry1.lowerBoundCost, mappingEntry2.lowerBoundCost);
             if (compareResult == 0) {
@@ -55,47 +58,53 @@ public class SchemaDiffing {
             }
         });
         queue.add(new MappingEntry());
+        int counter = 0;
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
+            System.out.println("entry at level " + mappingEntry.level + " counter:" + (++counter));
             if (mappingEntry.lowerBoundCost >= upperBoundCost.doubleValue()) {
+                System.out.println("skipping!");
                 continue;
             }
             // generate sibling
-            if (mappingEntry.level > 0 && mappingEntry.candidates.size() > 0) {
+            if (mappingEntry.level > 0 && mappingEntry.availableSiblings.size() > 0) {
                 // we need to remove the last mapping
-                ImmutableList<Vertex> parentMapping = mappingEntry.partialMapping.subList(0, mappingEntry.partialMapping.size() - 1);
-                genNextMapping(parentMapping, mappingEntry.level, mappingEntry.candidates, queue, upperBoundCost, result, sourceGraph, targetGraph);
+                Mapping parentMapping = mappingEntry.partialMapping.removeLastElement();
+                genNextMapping(parentMapping, mappingEntry.level, mappingEntry.availableSiblings, queue, upperBoundCost, bestFullMapping, bestEdit, sourceGraph, targetGraph);
             }
             // generate children
             if (mappingEntry.level < graphSize) {
                 // candidates are the vertices in target, of which are not used yet in partialMapping
                 List<Vertex> childCandidates = new ArrayList<>(targetGraph.getVertices());
-                childCandidates.removeAll(mappingEntry.partialMapping);
-                genNextMapping(mappingEntry.partialMapping, mappingEntry.level + 1, ImmutableList.copyOf(childCandidates), queue, upperBoundCost, result, sourceGraph, targetGraph);
+                childCandidates.removeAll(mappingEntry.partialMapping.getTargets());
+                genNextMapping(mappingEntry.partialMapping, mappingEntry.level + 1, childCandidates, queue, upperBoundCost, bestFullMapping, bestEdit, sourceGraph, targetGraph);
             }
         }
         System.out.println("ged cost: " + upperBoundCost.doubleValue());
-        System.out.println("mapping : " + result);
+        System.out.println("edit : " + bestEdit);
     }
 
     // level starts at 1 indicating the level in the search tree to look for the next mapping
-    private void genNextMapping(ImmutableList<Vertex> partialMappingTargetList,
+    private void genNextMapping(Mapping partialMapping,
                                 int level,
-                                ImmutableList<Vertex> candidates,
+                                List<Vertex> candidates,
                                 PriorityQueue<MappingEntry> queue,
                                 AtomicDouble upperBound,
-                                AtomicReference<List<Vertex>> bestMapping,
+                                AtomicReference<Mapping> bestMapping,
+                                AtomicReference<List<EditOperation>> bestEdit,
                                 SchemaGraph sourceGraph,
                                 SchemaGraph targetGraph) {
+        assertTrue(level - 1 == partialMapping.size());
         List<Vertex> sourceList = sourceGraph.getVertices();
         List<Vertex> targetList = targetGraph.getVertices();
         ArrayList<Vertex> availableTargetVertices = new ArrayList<>(targetList);
-        availableTargetVertices.removeAll(partialMappingTargetList);
-        Vertex v_i = sourceList.get(level);
+        availableTargetVertices.removeAll(partialMapping.getTargets());
+        assertTrue(availableTargetVertices.size() + partialMapping.size() == targetList.size());
+        // level starts at 1 ... therefore level - 1 is the current one we want to extend
+        Vertex v_i = sourceList.get(level - 1);
         int costMatrixSize = sourceList.size() - level + 1;
         double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
 
-        List<Vertex> partialMappingSourceList = new ArrayList<>(partialMappingTargetList.subList(0, level - 1));
 
         // we are skipping the first level -i indeces
         for (int i = level - 1; i < sourceList.size(); i++) {
@@ -105,7 +114,7 @@ public class SchemaDiffing {
                 if (v == v_i && !candidates.contains(u)) {
                     costMatrix[i - level + 1][j] = Integer.MAX_VALUE;
                 } else {
-                    costMatrix[i - level + 1][j] = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMappingSourceList, partialMappingTargetList);
+                    costMatrix[i - level + 1][j] = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMapping.getTargets());
                 }
                 j++;
             }
@@ -114,74 +123,90 @@ public class SchemaDiffing {
         // find out the best extension
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrix);
         int[] assignments = hungarianAlgorithm.execute();
-        int v_i_target_Index = assignments[0];
-        Vertex bestExtensionTargetVertex = targetList.get(v_i_target_Index);
 
-        double bestExtensionLowerBound = costMatrix[0][v_i_target_Index];
-        if (bestExtensionLowerBound < upperBound.doubleValue()) {
-            ImmutableList<Vertex> newMapping = ImmutableKit.addToList(partialMappingTargetList, bestExtensionTargetVertex);
-            ImmutableList<Vertex> newCandidates = removeVertex(candidates, bestExtensionTargetVertex);
-            queue.add(new MappingEntry(newMapping, level, bestExtensionLowerBound, newCandidates));
+        // calculating the lower bound costs for this extension: editorial cost for the partial mapping + value from the cost matrix for v_i
+        int editorialCostForMapping = editorialCostForMapping(partialMapping, sourceGraph, targetGraph, new ArrayList<>());
+        double costMatrixSum = 0;
+        for(int i = 0; i < assignments.length; i++) {
+           costMatrixSum += costMatrix[i][assignments[i]];
+        }
+        double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
+
+        if (lowerBoundForPartialMapping < upperBound.doubleValue()) {
+            int v_i_target_Index = assignments[0];
+            Vertex bestExtensionTargetVertex = availableTargetVertices.get(v_i_target_Index);
+            Mapping newMapping = partialMapping.extendMapping(v_i, bestExtensionTargetVertex);
+            candidates.remove(bestExtensionTargetVertex);
+            queue.add(new MappingEntry(newMapping, level, lowerBoundForPartialMapping, candidates));
 
             // we have a full mapping from the cost matrix
-            List<Vertex> fullMapping = new ArrayList<>(partialMappingTargetList);
+            Mapping fullMapping = partialMapping.copy();
             for (int i = 0; i < assignments.length; i++) {
-                fullMapping.add(availableTargetVertices.get(assignments[i]));
+                fullMapping.add(sourceList.get(level - 1 + i), availableTargetVertices.get(assignments[i]));
             }
-            // the cost of the full mapping is the new upperBound (aka the current best mapping)
-            upperBound.set(editorialCostForFullMapping(fullMapping, sourceGraph, targetGraph));
-            bestMapping.set(fullMapping);
+            assertTrue(fullMapping.size() == sourceGraph.size());
+            List<EditOperation> editOperations = new ArrayList<>();
+            int costForFullMapping = editorialCostForMapping(fullMapping, sourceGraph, targetGraph, editOperations);
+            if (costForFullMapping < upperBound.doubleValue()) {
+                upperBound.set(costForFullMapping);
+                bestMapping.set(fullMapping);
+                bestEdit.set(editOperations);
+                System.out.println("setting new best edit: " + bestEdit);
+            } else {
+//                System.out.println("to expensive cost for overall mapping " + costForFullMapping);
+            }
+        }else {
+            System.out.println("don't add new entries ");
         }
     }
 
     // minimum number of edit operations for a full mapping
-    private int editorialCostForFullMapping(List<Vertex> fullMapping, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
+    private int editorialCostForMapping(Mapping partialOrFullMapping, SchemaGraph sourceGraph, SchemaGraph targetGraph, List<EditOperation> editOperationsResult) {
         int cost = 0;
-        int i = 0;
-        for (Vertex v : sourceGraph.getVertices()) {
-            Vertex targetVertex = fullMapping.get(i++);
+        for (int i = 0; i < partialOrFullMapping.size(); i++) {
+            Vertex sourceVertex = partialOrFullMapping.getSource(i);
+            Vertex targetVertex = partialOrFullMapping.getTarget(i);
             // Vertex changing (relabeling)
-            boolean equalNodes = v.getType().equals(targetVertex.getType()) && v.getProperties().equals(targetVertex.getProperties());
+            boolean equalNodes = sourceVertex.getType().equals(targetVertex.getType()) && sourceVertex.getProperties().equals(targetVertex.getProperties());
             if (!equalNodes) {
+                editOperationsResult.add(new EditOperation(EditOperation.Operation.CHANGE_VERTEX, "Change " + sourceVertex + " to " + targetVertex));
                 cost++;
             }
-            List<Edge> edges = sourceGraph.getEdges(v);
-            // edge deletion or relabeling
-            for (Edge sourceEdge : edges) {
-                Vertex targetFrom = getTargetVertex(fullMapping, sourceEdge.getFrom(), sourceGraph);
-                Vertex targetTo = getTargetVertex(fullMapping, sourceEdge.getTo(), sourceGraph);
-                Edge targetEdge = targetGraph.getEdge(targetFrom, targetTo);
-                if (targetEdge == null || !sourceEdge.getLabel().equals(targetEdge.getLabel())) {
-                    cost++;
-                }
+        }
+        List<Vertex> subGraphSource = sourceGraph.getVertices().subList(0, partialOrFullMapping.size());
+        List<Edge> edges = sourceGraph.getEdges();
+        // edge deletion or relabeling
+        for (Edge sourceEdge : edges) {
+            // only edges relevant to the subgraph
+            if (!subGraphSource.contains(sourceEdge.getOne()) || !subGraphSource.contains(sourceEdge.getTwo())) {
+                continue;
             }
+            Vertex target1 = partialOrFullMapping.getTarget(sourceEdge.getOne());
+            Vertex target2 = partialOrFullMapping.getTarget(sourceEdge.getTwo());
+            Edge targetEdge = targetGraph.getEdge(target1, target2);
+            if (targetEdge == null) {
+                editOperationsResult.add(new EditOperation(EditOperation.Operation.DELETE_EDGE, "Delete edge " + sourceEdge));
+                cost++;
+            } else if (!sourceEdge.getLabel().equals(targetEdge.getLabel())) {
+                editOperationsResult.add(new EditOperation(EditOperation.Operation.CHANGE_EDGE, "Change " + sourceEdge + " to " + targetEdge));
+                cost++;
+            }
+        }
 
-            // edge insertion
-            for (Edge targetEdge : targetGraph.getEdges()) {
-                Vertex sourceFrom = getSourceVertex(fullMapping, targetEdge.getFrom(), sourceGraph);
-                Vertex sourceTo = getSourceVertex(fullMapping, targetEdge.getTo(), sourceGraph);
-                if (sourceGraph.getEdge(sourceFrom, sourceTo) == null) {
-                    cost++;
-                }
+        // edge insertion
+        for (Edge targetEdge : targetGraph.getEdges()) {
+            // only subraph edges
+            if (!partialOrFullMapping.containsTarget(targetEdge.getOne()) || !partialOrFullMapping.containsTarget(targetEdge.getTwo())) {
+                continue;
+            }
+            Vertex sourceFrom = partialOrFullMapping.getSource(targetEdge.getOne());
+            Vertex sourceTo = partialOrFullMapping.getSource(targetEdge.getTwo());
+            if (sourceGraph.getEdge(sourceFrom, sourceTo) == null) {
+                editOperationsResult.add(new EditOperation(EditOperation.Operation.INSERT_EDGE, "Insert edge " + targetEdge));
+                cost++;
             }
         }
         return cost;
-    }
-
-    // TODO: very inefficient
-    private Vertex getTargetVertex(List<Vertex> mappingTargetVertices, Vertex sourceVertex, SchemaGraph sourceGraph) {
-        for (int i = 0; i < sourceGraph.getVertices().size(); i++) {
-            Vertex v = sourceGraph.getVertices().get(i);
-            if (v != sourceVertex) continue;
-            return mappingTargetVertices.get(i);
-        }
-        return Assert.assertShouldNeverHappen();
-    }
-
-    private Vertex getSourceVertex(List<Vertex> mappingTargetVertices, Vertex targetVertex, SchemaGraph sourceGraph) {
-        int index = mappingTargetVertices.indexOf(targetVertex);
-        assertTrue(index > -1);
-        return Assert.assertNotNull(sourceGraph.getVertices().get(index));
     }
 
     // lower bound mapping cost between for v -> u in respect to a partial mapping
@@ -200,7 +225,8 @@ public class SchemaDiffing {
         Multiset<String> multisetLabelsV = HashMultiset.create();
 
         for (Edge edge : adjacentEdgesV) {
-            if (nonMappedSourceVertices.contains(edge.getFrom()) && nonMappedSourceVertices.contains(edge.getTo())) {
+            // test if this an inner edge
+            if (nonMappedSourceVertices.contains(edge.getOne()) && nonMappedSourceVertices.contains(edge.getTwo())) {
                 multisetLabelsV.add(edge.getLabel());
             }
         }
@@ -208,7 +234,8 @@ public class SchemaDiffing {
         Set<Vertex> nonMappedTargetVertices = nonMappedVertices(targetGraph.getVertices(), partialMappingTargetList);
         Multiset<String> multisetLabelsU = HashMultiset.create();
         for (Edge edge : adjacentEdgesU) {
-            if (nonMappedTargetVertices.contains(edge.getFrom()) && nonMappedTargetVertices.contains(edge.getTo())) {
+            // test if this is an inner edge
+            if (nonMappedTargetVertices.contains(edge.getOne()) && nonMappedTargetVertices.contains(edge.getTwo())) {
                 multisetLabelsU.add(edge.getLabel());
             }
         }
