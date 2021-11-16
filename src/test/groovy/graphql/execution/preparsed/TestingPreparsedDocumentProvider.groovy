@@ -4,6 +4,7 @@ import graphql.ExecutionInput
 
 import java.util.function.Function
 
+
 class TestingPreparsedDocumentProvider implements PreparsedDocumentProvider {
     private Map<String, PreparsedDocumentEntry> cache = new HashMap<>()
 
