@@ -24,7 +24,7 @@ public interface PreparsedDocumentProvider {
      * @param parseAndValidateFunction If the query has not be pre-parsed, this function MUST be called to parse and validate it
      * @return an instance of {@link PreparsedDocumentEntry}
      * <p>
-     * @deprecated - use {@link #getDocumentAsync(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction)}
+     * @deprecated - use {@link #getDocumentAsync(ExecutionInput executionInput, Function parseAndValidateFunction)}
      */
     @Deprecated
     PreparsedDocumentEntry getDocument(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction);
