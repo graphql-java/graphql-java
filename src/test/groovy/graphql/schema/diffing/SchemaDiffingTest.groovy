@@ -92,6 +92,108 @@ class SchemaDiffingTest extends Specification {
 
     }
 
+    def "change object type name used once"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            hello: Foo
+           } 
+           type Foo {
+            foo: String 
+           }
+        """)
+        def schema2 = schema("""
+           type Query {
+            hello: Foo2
+           } 
+           type Foo2 {
+            foo: String 
+           }
+        """)
+
+        when:
+        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        true
+
+    }
+
+    def "change object type name used twice"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            hello: Foo
+            hello2: Foo
+           } 
+           type Foo {
+            foo: String 
+           }
+        """)
+        def schema2 = schema("""
+           type Query {
+            hello: Foo2
+            hello2: Foo2
+           } 
+           type Foo2 {
+            foo: String 
+           }
+        """)
+
+        when:
+        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        true
+
+    }
+
+    def "change directive not applied"() {
+        given:
+        def schema1 = schema("""
+           directive @foo on FIELD_DEFINITION  
+           type Query {
+            hello: String 
+           } 
+        """)
+        def schema2 = schema("""
+           directive @foo2 on FIELD_DEFINITION  
+           type Query {
+            hello: String
+           } 
+        """)
+
+        when:
+        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        true
+
+    }
+
+    def "change directive which is also applied"() {
+        given:
+        def schema1 = schema("""
+           directive @foo on FIELD_DEFINITION  
+           type Query {
+            hello: String @foo 
+           } 
+        """)
+        def schema2 = schema("""
+           directive @foo2 on FIELD_DEFINITION  
+           type Query {
+            hello: String @foo2
+           } 
+        """)
+
+        when:
+        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        true
+
+    }
+
     def "delete a field"() {
         given:
         def schema1 = schema("""
@@ -103,6 +205,28 @@ class SchemaDiffingTest extends Specification {
         def schema2 = schema("""
            type Query {
             hello: String
+           } 
+        """)
+
+        when:
+        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        true
+
+    }
+
+    def "add a field"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            hello: String
+           } 
+        """)
+        def schema2 = schema("""
+           type Query {
+            hello: String
+            newField: String
            } 
         """)
 
