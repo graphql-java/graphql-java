@@ -1,6 +1,11 @@
 package graphql.nextgen;
 
-import graphql.*;
+import graphql.ExecutionInput;
+import graphql.ExecutionResult;
+import graphql.ExecutionResultImpl;
+import graphql.Internal;
+import graphql.ParseAndValidate;
+import graphql.ParseAndValidateResult;
 import graphql.execution.AbortExecutionException;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionIdProvider;
