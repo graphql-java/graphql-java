@@ -17,7 +17,9 @@ public class SimpleDataFetcherExceptionHandler implements DataFetcherExceptionHa
 
     private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(SimpleDataFetcherExceptionHandler.class);
 
-    @Override
+    static final SimpleDataFetcherExceptionHandler defaultImpl = new SimpleDataFetcherExceptionHandler();
+
+        @Override
     public DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
         Throwable exception = unwrap(handlerParameters.getException());
         SourceLocation sourceLocation = handlerParameters.getSourceLocation();
