@@ -575,8 +575,9 @@ class ExecutionStrategyTest extends Specification {
 
         boolean handlerCalled = false
         ExecutionStrategy overridingStrategy = new AsyncExecutionStrategy(new SimpleDataFetcherExceptionHandler() {
+
             @Override
-            DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
+            CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters handlerParameters) {
                 handlerCalled = true
                 assert handlerParameters.exception == expectedException
                 assert handlerParameters.fieldDefinition == fieldDefinition
@@ -584,7 +585,7 @@ class ExecutionStrategyTest extends Specification {
                 assert handlerParameters.path == expectedPath
 
                 // by calling down we are testing the base class as well
-                super.onException(handlerParameters)
+                super.handleException(handlerParameters)
             }
         }) {
             @Override
