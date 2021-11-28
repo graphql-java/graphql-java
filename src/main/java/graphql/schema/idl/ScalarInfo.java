@@ -49,7 +49,7 @@ public class ScalarInfo {
      *
      * @param scalarTypeName the name of the scalar type in question
      *
-     * @return true if the scalar type is is specified by the graphql specification
+     * @return true if the scalar type is specified by the graphql specification
      */
     public static boolean isGraphqlSpecifiedScalar(String scalarTypeName) {
         return inList(GRAPHQL_SPECIFICATION_SCALARS, scalarTypeName);
@@ -60,7 +60,7 @@ public class ScalarInfo {
      *
      * @param scalarType the type in question
      *
-     * @return true if the scalar type is is specified by the graphql specification
+     * @return true if the scalar type is specified by the graphql specification
      */
     public static boolean isGraphqlSpecifiedScalar(GraphQLScalarType scalarType) {
         return inList(GRAPHQL_SPECIFICATION_SCALARS, scalarType.getName());

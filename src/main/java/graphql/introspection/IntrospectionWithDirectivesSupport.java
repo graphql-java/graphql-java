@@ -102,7 +102,7 @@ public class IntrospectionWithDirectivesSupport {
      * This version allows you to filter what directives are listed via the provided predicate
      *
      * Some graphql systems (graphql-js in 2021) cannot cope with extra types starting with `__`
-     * so we use a `_` as a prefx by default.   You can supply your own prefix via this constructor.
+     * so we use a `_` as a prefix by default.   You can supply your own prefix via this constructor.
      *
      * See: https://github.com/graphql-java/graphql-java/pull/2221 for more details
      *
@@ -251,7 +251,7 @@ public class IntrospectionWithDirectivesSupport {
 
         /**
          * A schema has two list of directives.  A list of directives that are defined
-         * in that schema and the list of direcives that are applied to a schema element.
+         * in that schema and the list of directives that are applied to a schema element.
          *
          * This returns true if this filtering represents the defined directives.
          *

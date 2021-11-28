@@ -66,7 +66,7 @@ public class ENFMerger {
     }
 
     private static boolean isFieldInSharedInterface(ExecutableNormalizedField fieldOne, ExecutableNormalizedField fieldTwo, GraphQLSchema schema) {
-        /**
+        /*
          * we can get away with only checking one of the object names, because all object names in one ENF are guaranteed to be the same field.
          * This comes from how the ENFs are created in the factory before.
          */
