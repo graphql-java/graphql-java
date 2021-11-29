@@ -45,12 +45,12 @@ public class ExecutableNormalizedOperationToAstCompiler {
         SelectionSet selectionSet = new SelectionSet(selections);
 
         return Document.newDocument()
-            .definition(OperationDefinition.newOperationDefinition()
-                .name(operationName)
-                .operation(operationKind)
-                .selectionSet(selectionSet)
-                .build())
-            .build();
+                .definition(OperationDefinition.newOperationDefinition()
+                        .name(operationName)
+                        .operation(operationKind)
+                        .selectionSet(selectionSet)
+                        .build())
+                .build();
     }
 
     private static List<Selection<?>> selectionsForNormalizedFields(GraphQLSchema schema,
@@ -77,9 +77,9 @@ public class ExecutableNormalizedOperationToAstCompiler {
         conditionalFieldsByObjectTypeName.forEach((objectTypeName, fields) -> {
             TypeName typeName = newTypeName(objectTypeName).build();
             InlineFragment inlineFragment = newInlineFragment().
-                typeCondition(typeName)
-                .selectionSet(selectionSet(fields))
-                .build();
+                    typeCondition(typeName)
+                    .selectionSet(selectionSet(fields))
+                    .build();
             selections.add(inlineFragment);
         });
 
@@ -94,16 +94,16 @@ public class ExecutableNormalizedOperationToAstCompiler {
             SelectionSet selectionSet = null;
             if (subSelections.size() > 0) {
                 selectionSet = newSelectionSet()
-                    .selections(subSelections)
-                    .build();
+                        .selections(subSelections)
+                        .build();
             }
             List<Argument> arguments = createArguments(executableNormalizedField);
             Field field = newField()
-                .name(executableNormalizedField.getFieldName())
-                .alias(executableNormalizedField.getAlias())
-                .selectionSet(selectionSet)
-                .arguments(arguments)
-                .build();
+                    .name(executableNormalizedField.getFieldName())
+                    .alias(executableNormalizedField.getAlias())
+                    .selectionSet(selectionSet)
+                    .arguments(arguments)
+                    .build();
 
             groupedFields.computeIfAbsent(objectTypeName, ignored -> new ArrayList<>()).add(field);
         }
@@ -119,9 +119,9 @@ public class ExecutableNormalizedOperationToAstCompiler {
         ImmutableMap<String, NormalizedInputValue> normalizedArguments = executableNormalizedField.getNormalizedArguments();
         for (String argName : normalizedArguments.keySet()) {
             Argument argument = newArgument()
-                .name(argName)
-                .value(argValue(normalizedArguments.get(argName).getValue()))
-                .build();
+                    .name(argName)
+                    .value(argValue(normalizedArguments.get(argName).getValue()))
+                    .build();
             result.add(argument);
         }
         return result.build();
