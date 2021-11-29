@@ -2,6 +2,7 @@ package graphql.normalized;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.Assert;
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -16,6 +17,8 @@ import graphql.language.Selection;
 import graphql.language.SelectionSet;
 import graphql.language.TypeName;
 import graphql.language.Value;
+import graphql.schema.GraphQLSchema;
+import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -26,71 +29,81 @@ import static graphql.collect.ImmutableKit.map;
 import static graphql.language.Argument.newArgument;
 import static graphql.language.Field.newField;
 import static graphql.language.InlineFragment.newInlineFragment;
+import static graphql.language.OperationDefinition.Operation.MUTATION;
+import static graphql.language.OperationDefinition.Operation.QUERY;
+import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
 import static graphql.language.SelectionSet.newSelectionSet;
 import static graphql.language.TypeName.newTypeName;
 
 @Internal
 public class ExecutableNormalizedOperationToAstCompiler {
-    public static Document compileToDocument(
-            OperationDefinition.Operation operationKind,
-            String operationName,
-            List<ExecutableNormalizedField> topLevelFields
-    ) {
-        List<Selection<?>> selections = selectionsForNormalizedFields(topLevelFields);
+    public static Document compileToDocument(GraphQLSchema schema,
+                                             OperationDefinition.Operation operationKind,
+                                             String operationName,
+                                             List<ExecutableNormalizedField> topLevelFields) {
+        List<Selection<?>> selections = selectionsForNormalizedFields(schema, topLevelFields);
         SelectionSet selectionSet = new SelectionSet(selections);
 
         return Document.newDocument()
-                .definition(OperationDefinition.newOperationDefinition()
-                        .name(operationName)
-                        .operation(operationKind)
-                        .selectionSet(selectionSet)
-                        .build())
-                .build();
+            .definition(OperationDefinition.newOperationDefinition()
+                .name(operationName)
+                .operation(operationKind)
+                .selectionSet(selectionSet)
+                .build())
+            .build();
     }
 
-    private static List<Selection<?>> selectionsForNormalizedFields(List<ExecutableNormalizedField> executableNormalizedFields) {
-        ImmutableList.Builder<Selection<?>> result = ImmutableList.builder();
+    private static List<Selection<?>> selectionsForNormalizedFields(GraphQLSchema schema,
+                                                                    List<ExecutableNormalizedField> executableNormalizedFields) {
+        ImmutableList.Builder<Selection<?>> selections = ImmutableList.builder();
 
-        Map<String, List<Field>> overallGroupedFields = new LinkedHashMap<>();
+        // All conditional fields go here instead of directly to selections so they can be grouped together
+        // in the same inline fragement in the output
+        Map<String, List<Field>> conditionalFieldsByObjectTypeName = new LinkedHashMap<>();
+
         for (ExecutableNormalizedField nf : executableNormalizedFields) {
-            Map<String, List<Field>> groupFieldsForChild = selectionForNormalizedField(nf);
-
-            groupFieldsForChild.forEach((objectTypeName, fields) -> {
-                List<Field> fieldList = overallGroupedFields.computeIfAbsent(objectTypeName, ignored -> new ArrayList<>());
-                fieldList.addAll(fields);
-            });
-
+            Map<String, List<Field>> groupFieldsForChild = selectionForNormalizedField(schema, nf);
+            if (nf.isConditional(schema)) {
+                groupFieldsForChild.forEach((objectTypeName, fields) -> {
+                    List<Field> fieldList = conditionalFieldsByObjectTypeName.computeIfAbsent(objectTypeName, ignored -> new ArrayList<>());
+                    fieldList.addAll(fields);
+                });
+            } else {
+                List<Field> fields = groupFieldsForChild.values().iterator().next();
+                selections.addAll(fields);
+            }
         }
 
-        overallGroupedFields.forEach((objectTypeName, fields) -> {
+        conditionalFieldsByObjectTypeName.forEach((objectTypeName, fields) -> {
             TypeName typeName = newTypeName(objectTypeName).build();
             InlineFragment inlineFragment = newInlineFragment().
-                    typeCondition(typeName)
-                    .selectionSet(selectionSet(fields))
-                    .build();
-            result.add(inlineFragment);
+                typeCondition(typeName)
+                .selectionSet(selectionSet(fields))
+                .build();
+            selections.add(inlineFragment);
         });
 
-        return result.build();
+        return selections.build();
     }
 
-    private static Map<String, List<Field>> selectionForNormalizedField(ExecutableNormalizedField executableNormalizedField) {
+    private static Map<String, List<Field>> selectionForNormalizedField(GraphQLSchema schema,
+                                                                        ExecutableNormalizedField executableNormalizedField) {
         Map<String, List<Field>> groupedFields = new LinkedHashMap<>();
         for (String objectTypeName : executableNormalizedField.getObjectTypeNames()) {
-            List<Selection<?>> subSelections = selectionsForNormalizedFields(executableNormalizedField.getChildren());
+            List<Selection<?>> subSelections = selectionsForNormalizedFields(schema, executableNormalizedField.getChildren());
             SelectionSet selectionSet = null;
             if (subSelections.size() > 0) {
                 selectionSet = newSelectionSet()
-                        .selections(subSelections)
-                        .build();
+                    .selections(subSelections)
+                    .build();
             }
             List<Argument> arguments = createArguments(executableNormalizedField);
             Field field = newField()
-                    .name(executableNormalizedField.getFieldName())
-                    .alias(executableNormalizedField.getAlias())
-                    .selectionSet(selectionSet)
-                    .arguments(arguments)
-                    .build();
+                .name(executableNormalizedField.getFieldName())
+                .alias(executableNormalizedField.getAlias())
+                .selectionSet(selectionSet)
+                .arguments(arguments)
+                .build();
 
             groupedFields.computeIfAbsent(objectTypeName, ignored -> new ArrayList<>()).add(field);
         }
@@ -106,9 +119,9 @@ public class ExecutableNormalizedOperationToAstCompiler {
         ImmutableMap<String, NormalizedInputValue> normalizedArguments = executableNormalizedField.getNormalizedArguments();
         for (String argName : normalizedArguments.keySet()) {
             Argument argument = newArgument()
-                    .name(argName)
-                    .value(argValue(normalizedArguments.get(argName).getValue()))
-                    .build();
+                .name(argName)
+                .value(argValue(normalizedArguments.get(argName).getValue()))
+                .build();
             result.add(argument);
         }
         return result.build();
