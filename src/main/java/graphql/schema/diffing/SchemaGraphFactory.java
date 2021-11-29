@@ -55,7 +55,10 @@ public class SchemaGraphFactory {
                     newEnum((GraphQLEnumType) context.thisNode(), schemaGraph);
                 }
                 if (context.thisNode() instanceof GraphQLDirective) {
-                    newDirective((GraphQLDirective) context.thisNode(), schemaGraph);
+                    // only continue if not applied directive
+                    if (context.getParentNode() == null) {
+                        newDirective((GraphQLDirective) context.thisNode(), schemaGraph);
+                    }
                 }
                 return TraversalControl.CONTINUE;
             }
@@ -294,6 +297,7 @@ public class SchemaGraphFactory {
                 appliedArgumentVertex.add("value", appliedArgument.getArgumentValue());
                 schemaGraph.addEdge(new Edge(appliedArgumentVertex, appliedArgumentVertex));
             }
+            schemaGraph.addVertex(appliedDirectiveVertex);
             schemaGraph.addEdge(new Edge(from, appliedDirectiveVertex));
         }
     }
