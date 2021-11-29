@@ -2,7 +2,6 @@ package graphql.normalized;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import graphql.Assert;
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -18,7 +17,6 @@ import graphql.language.SelectionSet;
 import graphql.language.TypeName;
 import graphql.language.Value;
 import graphql.schema.GraphQLSchema;
-import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -29,9 +27,6 @@ import static graphql.collect.ImmutableKit.map;
 import static graphql.language.Argument.newArgument;
 import static graphql.language.Field.newField;
 import static graphql.language.InlineFragment.newInlineFragment;
-import static graphql.language.OperationDefinition.Operation.MUTATION;
-import static graphql.language.OperationDefinition.Operation.QUERY;
-import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
 import static graphql.language.SelectionSet.newSelectionSet;
 import static graphql.language.TypeName.newTypeName;
 
