@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static graphql.collect.ImmutableKit.addToList;
@@ -374,12 +375,12 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
             FieldAndType that = (FieldAndType) o;
 
-            return field != null ? field.equals(that.field) : that.field == null;
+            return Objects.equals(field, that.field);
         }
 
         @Override
         public int hashCode() {
-            return field != null ? field.hashCode() : 0;
+            return Objects.hashCode(field);
         }
     }
 
