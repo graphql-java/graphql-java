@@ -199,7 +199,7 @@ public class GraphQL {
         }
         ParseAndValidateResult parseResult = parse(executionInput, graphQLSchema, instrumentationState);
         if (parseResult.isFailure()) {
-            logNotSafe.warn("Query failed to parse : '{}'", executionInput.getQuery());
+            logNotSafe.warn("Query did not parse : '{}'", executionInput.getQuery());
             return new PreparsedDocumentEntry(parseResult.getSyntaxException().toInvalidSyntaxError());
         } else {
             final Document document = parseResult.getDocument();
@@ -212,7 +212,7 @@ public class GraphQL {
             }
             final List<ValidationError> errors = validate(executionInput, document, graphQLSchema, instrumentationState);
             if (!errors.isEmpty()) {
-                logNotSafe.warn("Query failed to validate : '{}'", query);
+                logNotSafe.warn("Query did not validate : '{}'", query);
                 return new PreparsedDocumentEntry(errors);
             }
 
