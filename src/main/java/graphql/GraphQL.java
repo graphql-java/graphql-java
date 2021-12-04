@@ -535,7 +535,11 @@ public class GraphQL {
             if (preparsedDocumentEntry.hasErrors()) {
                 return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDocumentEntry.getErrors()));
             }
-            return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState);
+            try {
+                return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState);
+            } catch (AbortExecutionException e){
+                return CompletableFuture.completedFuture(e.toExecutionResult());
+            }
         });
     }
 
