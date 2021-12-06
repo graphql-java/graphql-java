@@ -576,6 +576,7 @@ class ExecutionStrategyTest extends Specification {
         boolean handlerCalled = false
         ExecutionStrategy overridingStrategy = new AsyncExecutionStrategy(new SimpleDataFetcherExceptionHandler() {
 
+
             @Override
             CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters handlerParameters) {
                 handlerCalled = true

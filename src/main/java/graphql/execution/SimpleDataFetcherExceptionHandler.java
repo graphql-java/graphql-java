@@ -6,6 +6,7 @@ import graphql.language.SourceLocation;
 import graphql.util.LogKit;
 import org.slf4j.Logger;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 /**
@@ -19,7 +20,7 @@ public class SimpleDataFetcherExceptionHandler implements DataFetcherExceptionHa
 
     static final SimpleDataFetcherExceptionHandler defaultImpl = new SimpleDataFetcherExceptionHandler();
 
-        @Override
+    @Override
     public DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
         Throwable exception = unwrap(handlerParameters.getException());
         SourceLocation sourceLocation = handlerParameters.getSourceLocation();
@@ -31,9 +32,15 @@ public class SimpleDataFetcherExceptionHandler implements DataFetcherExceptionHa
         return DataFetcherExceptionHandlerResult.newResult().error(error).build();
     }
 
+    @Override
+    public CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters handlerParameters) {
+        return CompletableFuture.completedFuture(onException(handlerParameters));
+    }
+
     /**
      * Called to log the exception - a subclass could choose to something different in logging terms
-     * @param error the graphql error
+     *
+     * @param error     the graphql error
      * @param exception the exception that happened
      */
     protected void logException(ExceptionWhileDataFetching error, Throwable exception) {
