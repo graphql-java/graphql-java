@@ -29,16 +29,16 @@ public class FieldLevelTrackingApproach {
 
     private static class CallStack implements InstrumentationState {
 
-        private final IntMap expectedFetchCountPerLevel = new IntMap();
-        private final IntMap fetchCountPerLevel = new IntMap();
-        private final IntMap expectedStrategyCallsPerLevel = new IntMap();
-        private final IntMap happenedStrategyCallsPerLevel = new IntMap();
-        private final IntMap happenedOnFieldValueCallsPerLevel = new IntMap();
+        private final LevelMap expectedFetchCountPerLevel = new LevelMap();
+        private final LevelMap fetchCountPerLevel = new LevelMap();
+        private final LevelMap expectedStrategyCallsPerLevel = new LevelMap();
+        private final LevelMap happenedStrategyCallsPerLevel = new LevelMap();
+        private final LevelMap happenedOnFieldValueCallsPerLevel = new LevelMap();
 
         private final Set<Integer> dispatchedLevels = new LinkedHashSet<>();
 
         CallStack() {
-            expectedStrategyCallsPerLevel.increment(1, 1);
+            expectedStrategyCallsPerLevel.set(1, 1);
         }
 
         void increaseExpectedFetchCount(int level, int count) {
@@ -95,11 +95,11 @@ public class FieldLevelTrackingApproach {
         }
 
         public void clearAndMarkCurrentLevelAsReady(int level) {
-            expectedFetchCountPerLevel.reset();
-            fetchCountPerLevel.reset();
-            expectedStrategyCallsPerLevel.reset();
-            happenedStrategyCallsPerLevel.reset();
-            happenedOnFieldValueCallsPerLevel.reset();
+            expectedFetchCountPerLevel.clear();
+            fetchCountPerLevel.clear();
+            expectedStrategyCallsPerLevel.clear();
+            happenedStrategyCallsPerLevel.clear();
+            happenedOnFieldValueCallsPerLevel.clear();
             dispatchedLevels.clear();
 
             // make sure the level is ready

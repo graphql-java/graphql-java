@@ -2,11 +2,11 @@ package graphql.execution.instrumentation.dataloader
 
 import spock.lang.Specification
 
-class IntMapTest extends Specification {
+class LevelMapTest extends Specification {
 
     def "increase adds levels"() {
         given:
-        IntMap sut = new IntMap(0) // starts empty
+        LevelMap sut = new LevelMap(0) // starts empty
 
         when:
         sut.increment(2, 42) // level 2 has count 42
@@ -19,7 +19,7 @@ class IntMapTest extends Specification {
 
     def "increase count by 10 for every level"() {
         given:
-        IntMap sut = new IntMap(0)
+        LevelMap sut = new LevelMap(0)
 
         when:
         5.times {Integer level ->
@@ -31,10 +31,9 @@ class IntMapTest extends Specification {
             sut.get(level) == 10
         }
     }
-
     def "increase yields new count"() {
         given:
-        IntMap sut = new IntMap(0)
+        LevelMap sut = new LevelMap(0)
 
         when:
         sut.increment(1, 0)
@@ -55,9 +54,32 @@ class IntMapTest extends Specification {
         sut.get(1) == 101
     }
 
+    def "set yields new value"() {
+        given:
+        LevelMap sut = new LevelMap(0)
+
+        when:
+        sut.set(1, 1)
+
+        then:
+        sut.get(1) == 1
+
+        when:
+        sut.increment(1, 100)
+
+        then:
+        sut.get(1) == 101
+
+        when:
+        sut.set(1, 666)
+
+        then:
+        sut.get(1) == 666
+    }
+
     def "toString() is important for debugging"() {
         given:
-        IntMap sut = new IntMap(0)
+        LevelMap sut = new LevelMap(0)
 
         when:
         sut.toString()
