@@ -262,7 +262,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
             this.extensionDefinitions = existing.getExtensionDefinitions();
             this.fields.putAll(getByName(existing.getFieldDefinitions(), GraphQLFieldDefinition::getName));
             this.interfaces.putAll(getByName(existing.originalInterfaces, GraphQLNamedType::getName));
-            DirectivesUtil.enforceAddAll(this.directives,existing.getDirectives());
+            DirectivesUtil.addAll(this.directives,existing.getDirectives());
         }
 
         @Override
@@ -376,14 +376,14 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            DirectivesUtil.enforceAdd(this.directives, directive);
+            DirectivesUtil.add(this.directives, directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
-            DirectivesUtil.enforceAddAll(this.directives, directives);
+            DirectivesUtil.addAll(this.directives, directives);
             return this;
         }
 
