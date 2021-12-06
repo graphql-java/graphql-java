@@ -1,9 +1,9 @@
 package graphql.schema;
 
-import graphql.DirectivesUtil;
 import graphql.Internal;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
@@ -67,6 +67,30 @@ public abstract class GraphqlDirectivesContainerTypeBuilder<B extends GraphqlDir
 
     public B withDirective(GraphQLDirective.Builder builder) {
         return withDirective(builder.build());
+    }
+
+
+    /**
+     * This method that allows you to set the legacy {@link GraphQLDirective} on an element as well
+     * as the modern {@link GraphQLAppliedDirective}s.  Eventually this method will go
+     * away and only {@link GraphQLAppliedDirective} will be used.
+     *
+     * @param directives        the legacy {@link GraphQLDirective}s
+     * @param appliedDirectives the more correct {@link GraphQLAppliedDirective}s
+     *
+     * @return this builder
+     */
+    public B withAppliedDirectives(Collection<GraphQLDirective> directives, Collection<GraphQLAppliedDirective> appliedDirectives) {
+        assertNotNull(directives, () -> "directives can't be null");
+        assertNotNull(appliedDirectives, () -> "appliedDirectives can't be null");
+        clearDirectives();
+        for (GraphQLDirective directive : directives) {
+            withDirective(directive);
+        }
+        for (GraphQLAppliedDirective appliedDirective : appliedDirectives) {
+            withAppliedDirectives(appliedDirective);
+        }
+        return (B) this;
     }
 
     /**
