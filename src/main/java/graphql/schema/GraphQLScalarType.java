@@ -233,23 +233,6 @@ GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOutputType, Grap
             copyExistingDirectives(existing);
         }
 
-        @Override
-        public Builder name(String name) {
-            super.name(name);
-            return this;
-        }
-
-        @Override
-        public Builder description(String description) {
-            super.description(description);
-            return this;
-        }
-
-        @Override
-        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            super.comparatorRegistry(comparatorRegistry);
-            return this;
-        }
         public Builder specifiedByUrl(String specifiedByUrl) {
             this.specifiedByUrl = specifiedByUrl;
             return this;

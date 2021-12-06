@@ -253,24 +253,6 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
             copyExistingDirectives(existing);
         }
 
-        @Override
-        public Builder name(String name) {
-            super.name(name);
-            return this;
-        }
-
-        @Override
-        public Builder description(String description) {
-            super.description(description);
-            return this;
-        }
-
-        @Override
-        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            super.comparatorRegistry(comparatorRegistry);
-            return this;
-        }
-
         public Builder definition(UnionTypeDefinition definition) {
             this.definition = definition;
             return this;

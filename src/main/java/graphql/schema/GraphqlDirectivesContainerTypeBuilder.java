@@ -81,10 +81,7 @@ public abstract class GraphqlDirectivesContainerTypeBuilder<B extends GraphqlDir
     }
 
     protected void copyExistingDirectives(GraphQLDirectiveContainer directivesContainer) {
-        DirectivesUtil.enforceAddAll(this.directives,
-                directivesContainer.getDirectives(),
-                this.appliedDirectives,
-                directivesContainer.getAppliedDirectives());
-
+        directives.addAll(directivesContainer.getDirectives());
+        appliedDirectives.addAll(directivesContainer.getAppliedDirectives());
     }
 }
