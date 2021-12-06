@@ -1,6 +1,6 @@
 package benchmark;
 
-import graphql.execution.instrumentation.dataloader.IntMap;
+import graphql.execution.instrumentation.dataloader.LevelMap;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Measurement;
@@ -33,7 +33,7 @@ public class IntMapBenchmark {
 
 	@Benchmark
 	public void benchmarkIntMap(Blackhole blackhole) {
-		IntMap result = new IntMap(16);
+		LevelMap result = new LevelMap(16);
 		for (int i = 0; i < 30; i++) {
 			int level = i % 10;
 			int count = i * 2;

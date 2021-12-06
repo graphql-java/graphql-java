@@ -4,8 +4,11 @@ import graphql.Internal;
 
 import java.util.Arrays;
 
+/**
+ * This data structure tracks the number of expected calls on a given level
+ */
 @Internal
-public class IntMap {
+public class LevelMap {
 
     // A reasonable default that guarantees no additional allocations for most use cases.
     private static final int DEFAULT_INITIAL_SIZE = 16;
@@ -13,14 +16,14 @@ public class IntMap {
     // this array is mutable in both size and contents.
     private int[] countsByLevel;
 
-    public IntMap(int initialSize) {
+    public LevelMap(int initialSize) {
         if (initialSize < 0) {
             throw new IllegalArgumentException("negative size " + initialSize);
         }
         countsByLevel = new int[initialSize];
     }
 
-    public IntMap() {
+    public LevelMap() {
         this(DEFAULT_INITIAL_SIZE);
     }
 
@@ -35,6 +38,16 @@ public class IntMap {
     }
 
     public void increment(int level, int by) {
+        mutatePreconditions(level);
+        countsByLevel[level] += by;
+    }
+
+    public void set(int level, int newValue) {
+        mutatePreconditions(level);
+        countsByLevel[level] = newValue;
+    }
+
+    private void mutatePreconditions(int level) {
         if (level < 0) {
             throw new IllegalArgumentException("negative level " + level);
         }
@@ -42,7 +55,6 @@ public class IntMap {
             int newSize = level == 0 ? 1 : level * 2;
             countsByLevel = Arrays.copyOf(countsByLevel, newSize);
         }
-        countsByLevel[level] += by;
     }
 
     @Override
@@ -56,7 +68,7 @@ public class IntMap {
         return result.toString();
     }
 
-    public void reset() {
+    public void clear() {
         Arrays.fill(countsByLevel, 0);
     }
 }
