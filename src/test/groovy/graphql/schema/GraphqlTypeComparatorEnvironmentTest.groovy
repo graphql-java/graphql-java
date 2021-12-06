@@ -25,21 +25,6 @@ class GraphqlTypeComparatorEnvironmentTest extends Specification {
         ]
     }
 
-    def "invalid instance with missing elementType"() {
-        when:
-        environment.build()
-
-        then:
-        thrown(AssertException)
-
-        where:
-
-        environment << [
-                newEnvironment().parentType(GraphQLObjectType.class),
-                newEnvironment()
-        ]
-    }
-
     def "equals handles optional parentType"() {
         given:
         def fullEnvironmentA = newEnvironment()
@@ -120,20 +105,15 @@ class GraphqlTypeComparatorEnvironmentTest extends Specification {
 
         transformedEnvironment.parentType == null
         transformedEnvironment.elementType == GraphQLFieldDefinition.class
-    }
 
-    def "object cannot be transformed into an invalid state"() {
-        given:
-        def startEnvironment = newEnvironment()
-                .parentType(GraphQLObjectType.class)
-                .elementType(GraphQLFieldDefinition.class)
-                .build()
         when:
-        startEnvironment.transform({
+        transformedEnvironment = startEnvironment.transform({
             it.elementType(null)
         })
 
         then:
-        thrown(AssertException)
+        transformedEnvironment.parentType == GraphQLObjectType.class
+        transformedEnvironment.elementType == null
     }
+
 }

@@ -26,7 +26,7 @@ import static graphql.schema.GraphQLTypeUtil.isList;
 @PublicApi
 public class ExecutionStepInfo {
 
-    /**
+    /*
      * An ExecutionStepInfo represent either a field or a list element inside a list of objects/interfaces/unions.
      *
      * A StepInfo never represent a Scalar/Enum inside a list (e.g. [String]) because GraphQL execution doesn't descend down

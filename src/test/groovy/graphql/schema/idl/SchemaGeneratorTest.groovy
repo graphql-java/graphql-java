@@ -1027,26 +1027,6 @@ class SchemaGeneratorTest extends Specification {
         scalar.getSpecifiedByUrl() == "myUrl.example"
     }
 
-    def "specifiedBy is only allowed once per scalar"() {
-        given:
-        def spec = """
-        type Query {
-            foo: MyScalar
-        }
-        scalar MyScalar @specifiedBy(url: "myUrl.example")
-        extend scalar MyScalar @specifiedBy(url: "myUrl.example")
-        """
-        when:
-        def registry = new SchemaParser().parse(spec)
-        new SchemaGenerator().makeExecutableSchema(defaultOptions(), registry, TestUtil.mockRuntimeWiring)
-
-        then:
-        def schemaProblem = thrown(SchemaProblem)
-        schemaProblem.message.contains("has redefined the directive called 'specifiedBy")
-
-    }
-
-
     def "schema is optional if there is a type called Query"() {
 
         def spec = """     

@@ -72,7 +72,7 @@ public class FetchedValueAnalysis {
         return fetchedValue;
     }
 
-    public FetchedValueAnalysis transfrom(Consumer<Builder> builderConsumer) {
+    public FetchedValueAnalysis transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
         return builder.build();

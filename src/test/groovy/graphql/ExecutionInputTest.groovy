@@ -131,7 +131,7 @@ class ExecutionInputTest extends Specification {
         '''
         DataFetcher df = { DataFetchingEnvironment env ->
             return [
-                    "locale"        : env.getLocale().getDisplayName(),
+                    "locale"        : env.getLocale().getDisplayName(Locale.ENGLISH),
                     "cacheControl"  : env.getCacheControl() == cacheControl,
                     "executionId"   : env.getExecutionId().toString(),
                     "graphqlContext": env.getGraphQlContext().get("a")

@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import com.google.common.collect.ImmutableList;
+import graphql.Assert;
 import graphql.AssertException;
 import graphql.DirectivesUtil;
 import graphql.Internal;
@@ -215,8 +216,9 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     @Override
     public GraphQLInterfaceType withNewChildren(SchemaElementChildrenContainer newChildren) {
         return transform(builder ->
-                builder.replaceFields(newChildren.getChildren(CHILD_FIELD_DEFINITIONS))
-                        .replaceInterfaces(newChildren.getChildren(CHILD_INTERFACES))
+                builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .replaceFields(newChildren.getChildren(CHILD_FIELD_DEFINITIONS))
+                        .replaceInterfacesOrReferences(newChildren.getChildren(CHILD_INTERFACES))
                         .replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
                         .replaceAppliedDirectives(newChildren.getChildren(CHILD_APPLIED_DIRECTIVES))
         );
@@ -280,6 +282,24 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
             this.fields.putAll(getByName(existing.getFieldDefinitions(), GraphQLFieldDefinition::getName));
             this.interfaces.putAll(getByName(existing.originalInterfaces, GraphQLNamedType::getName));
             copyExistingDirectives(existing);
+        }
+
+        @Override
+        public Builder name(String name) {
+            super.name(name);
+            return this;
+        }
+
+        @Override
+        public Builder description(String description) {
+            super.description(description);
+            return this;
+        }
+
+        @Override
+        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
+            super.comparatorRegistry(comparatorRegistry);
+            return this;
         }
 
         public Builder definition(InterfaceTypeDefinition definition) {
@@ -364,19 +384,26 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
             return this;
         }
 
+        public Builder replaceInterfaces(List<GraphQLInterfaceType> interfaces) {
+            return replaceInterfacesOrReferences(interfaces);
+        }
+
+        public Builder replaceInterfacesOrReferences(List<? extends GraphQLNamedOutputType> interfacesOrReferences) {
+            assertNotNull(interfacesOrReferences, () -> "interfaces can't be null");
+            this.interfaces.clear();
+            for (GraphQLNamedOutputType schemaElement : interfacesOrReferences) {
+                if (schemaElement instanceof GraphQLInterfaceType || schemaElement instanceof GraphQLTypeReference) {
+                    this.interfaces.put(schemaElement.getName(), schemaElement);
+                } else {
+                    Assert.assertShouldNeverHappen("Unexpected type " + (schemaElement != null ? schemaElement.getClass() : "null"));
+                }
+            }
+            return this;
+        }
 
         public Builder withInterface(GraphQLInterfaceType interfaceType) {
             assertNotNull(interfaceType, () -> "interfaceType can't be null");
             this.interfaces.put(interfaceType.getName(), interfaceType);
-            return this;
-        }
-
-        public Builder replaceInterfaces(List<GraphQLInterfaceType> interfaces) {
-            assertNotNull(interfaces, () -> "interfaces can't be null");
-            this.interfaces.clear();
-            for (GraphQLInterfaceType interfaceType : interfaces) {
-                this.interfaces.put(interfaceType.getName(), interfaceType);
-            }
             return this;
         }
 
@@ -393,6 +420,12 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
             return this;
         }
 
+        public Builder withInterfaces(GraphQLTypeReference... references) {
+            for (GraphQLTypeReference reference : references) {
+                withInterface(reference);
+            }
+            return this;
+        }
 
         public GraphQLInterfaceType build() {
             return new GraphQLInterfaceType(

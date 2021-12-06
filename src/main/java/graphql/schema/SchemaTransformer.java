@@ -63,7 +63,7 @@ import static java.lang.String.format;
  * <p>
  * To insert elements use either {@link GraphQLTypeVisitor#insertAfter(TraverserContext, GraphQLSchemaElement)} or
  * {@link GraphQLTypeVisitor#insertBefore(TraverserContext, GraphQLSchemaElement)}
- * which will insert the new node before or afgter the current node being visited
+ * which will insert the new node before or after the current node being visited
  * <pre>
  * {@code
  *  public TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, TraverserContext<GraphQLSchemaElement> context) {

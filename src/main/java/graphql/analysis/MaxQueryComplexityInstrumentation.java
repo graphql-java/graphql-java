@@ -103,6 +103,7 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
             if (totalComplexity > maxComplexity) {
                 QueryComplexityInfo queryComplexityInfo = QueryComplexityInfo.newQueryComplexityInfo()
                         .complexity(totalComplexity)
+                        .instrumentationValidationParameters(parameters)
                         .build();
                 boolean throwAbortException = maxQueryComplexityExceededFunction.apply(queryComplexityInfo);
                 if (throwAbortException) {
