@@ -28,7 +28,7 @@ public final class ImmutableKit {
     }
 
     /**
-     * ImmutableMaps are hard to build via {@link Map#computeIfAbsent(Object, Function)} style.  This methods
+     * ImmutableMaps are hard to build via {@link Map#computeIfAbsent(Object, Function)} style.  This method
      * allows you to take a mutable map with mutable list of keys and make it immutable.
      * <p>
      * This of course has a cost - if the map is very large you will be using more memory.  But for static
@@ -118,7 +118,7 @@ public final class ImmutableKit {
      * @param extraValues more values to add
      * @param <T>         for two
      *
-     * @return an Immutable Set with the extra itens.
+     * @return an Immutable Set with the extra items.
      */
     public static <T> ImmutableSet<T> addToSet(Collection<? extends T> existing, T newValue, T... extraValues) {
         assertNotNull(existing);

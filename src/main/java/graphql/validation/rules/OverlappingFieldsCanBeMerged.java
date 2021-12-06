@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static graphql.collect.ImmutableKit.addToList;
@@ -143,7 +144,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
 
     private List<Conflict> findConflicts(Map<String, Set<FieldAndType>> fieldMap) {
-        /**
+        /*
          * The algorithm implemented here is not the one from the Spec, but is based on
          * https://tech.xing.com/graphql-overlapping-fields-can-be-merged-fast-ea6e92e0a01
          * . It is not the final version (Listing 11), but Listing 10 adopted to this code base.
@@ -374,12 +375,12 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
             FieldAndType that = (FieldAndType) o;
 
-            return field != null ? field.equals(that.field) : that.field == null;
+            return Objects.equals(field, that.field);
         }
 
         @Override
         public int hashCode() {
-            return field != null ? field.hashCode() : 0;
+            return Objects.hashCode(field);
         }
     }
 
