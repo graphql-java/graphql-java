@@ -160,6 +160,24 @@ public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
             this.arguments.putAll(getByName(existing.getArguments(), GraphQLAppliedArgument::getName));
         }
 
+        @Override
+        public Builder name(String name) {
+            super.name(name);
+            return this;
+        }
+
+        @Override
+        public Builder description(String description) {
+            super.description(description);
+            return this;
+        }
+
+        @Override
+        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
+            super.comparatorRegistry(comparatorRegistry);
+            return this;
+        }
+
         public Builder argument(GraphQLAppliedArgument argument) {
             assertNotNull(argument, () -> "argument must not be null");
             arguments.put(argument.getName(), argument);

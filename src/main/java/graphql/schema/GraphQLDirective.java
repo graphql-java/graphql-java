@@ -189,6 +189,24 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
             this.arguments.putAll(getByName(existing.getArguments(), GraphQLArgument::getName));
         }
 
+        @Override
+        public Builder name(String name) {
+            super.name(name);
+            return this;
+        }
+
+        @Override
+        public Builder description(String description) {
+            super.description(description);
+            return this;
+        }
+
+        @Override
+        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
+            super.comparatorRegistry(comparatorRegistry);
+            return this;
+        }
+
         public Builder repeatable(boolean repeatable) {
             this.repeatable = repeatable;
             return this;
