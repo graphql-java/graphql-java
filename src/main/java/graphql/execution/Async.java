@@ -126,6 +126,16 @@ public class Async {
         return result;
     }
 
+    public static <T> void copyResults(CompletableFuture<T> source, CompletableFuture<T> target) {
+        source.whenComplete((o, throwable) -> {
+            if (throwable != null) {
+                target.completeExceptionally(throwable);
+                return;
+            }
+            target.complete(o);
+        });
+    }
+
     public static <U, T> CompletableFuture<List<U>> flatMap(List<T> inputs, Function<T, CompletableFuture<U>> mapper) {
         List<CompletableFuture<U>> collect = ImmutableKit.map(inputs, mapper);
         return Async.each(collect);

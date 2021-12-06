@@ -36,6 +36,9 @@ public enum ValidationErrorType implements ValidationErrorClassification {
     DuplicateOperationName,
     DuplicateFragmentName,
     DuplicateDirectiveName,
+    DeferDirectiveOnNonNullField,
+    DeferDirectiveNotOnQueryOperation,
+    DeferMustBeOnAllFields,
     DuplicateArgumentNames,
     DuplicateVariableName,
     NullValueForNonNullArgument

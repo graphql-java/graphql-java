@@ -21,6 +21,7 @@ public class FetchedValueAnalysis {
         LIST,
         SCALAR,
         ENUM,
+        DEFER
     }
 
     private final FetchedValueType valueType;

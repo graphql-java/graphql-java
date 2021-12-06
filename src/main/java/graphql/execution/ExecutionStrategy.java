@@ -218,6 +218,12 @@ public abstract class ExecutionStrategy {
         return result;
     }
 
+    protected CompletableFuture<FieldValueInfo> resolveFieldWithInfoToNull(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        FetchedValue fetchedValue = FetchedValue.newFetchedValue().build();
+        FieldValueInfo fieldValueInfo = completeField(executionContext, parameters, fetchedValue);
+        return CompletableFuture.completedFuture(fieldValueInfo);
+    }
+
     /**
      * Called to fetch a value for a field from the {@link DataFetcher} associated with the field
      * {@link GraphQLFieldDefinition}.
@@ -291,7 +297,7 @@ public abstract class ExecutionStrategy {
                 .handle((result, exception) -> {
                     fetchCtx.onCompleted(result, exception);
                     if (exception != null) {
-                        return handleFetchingException(executionContext, environment, exception);
+                        return handleFetchingException(executionContext, parameters, environment, exception);
                     } else {
                         return CompletableFuture.completedFuture(result);
                     }
@@ -334,6 +340,7 @@ public abstract class ExecutionStrategy {
     }
 
     protected <T> CompletableFuture<T> handleFetchingException(ExecutionContext executionContext,
+                                                               ExecutionStrategyParameters parameters,
                                                                DataFetchingEnvironment environment,
                                                                Throwable e) {
         DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
@@ -342,12 +349,16 @@ public abstract class ExecutionStrategy {
                 .build();
 
         try {
+            // TODO: Maybe this needs to be moved inside the async method
+            parameters.deferredErrorSupport().onFetchingException(parameters, e);
+
             return asyncHandleException(dataFetcherExceptionHandler, handlerParameters, executionContext);
         } catch (Exception handlerException) {
             handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                     .dataFetchingEnvironment(environment)
                     .exception(handlerException)
                     .build();
+
             return asyncHandleException(new SimpleDataFetcherExceptionHandler(), handlerParameters, executionContext);
         }
     }
@@ -355,8 +366,7 @@ public abstract class ExecutionStrategy {
     private <T> CompletableFuture<T> asyncHandleException(DataFetcherExceptionHandler handler, DataFetcherExceptionHandlerParameters handlerParameters, ExecutionContext executionContext) {
         //noinspection unchecked
         return  handler.handleException(handlerParameters)
-            .thenApply(handlerResult -> (T) DataFetcherResult.<FetchedValue>newResult().errors(handlerResult.getErrors()).build()
-            );
+            .thenApply(handlerResult -> (T) DataFetcherResult.<FetchedValue>newResult().errors(handlerResult.getErrors()).build());
     }
 
     /**
@@ -468,6 +478,7 @@ public abstract class ExecutionStrategy {
         logNotSafe.warn(error.getMessage(), e);
         context.addError(error);
 
+        parameters.deferredErrorSupport().onError(error);
     }
 
     protected CompletableFuture<ExecutionResult> completeValueForNull(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
@@ -673,6 +684,7 @@ public abstract class ExecutionStrategy {
         logNotSafe.warn(error.getMessage(), e);
         context.addError(error);
 
+        parameters.deferredErrorSupport().onError(error);
 
         return null;
     }
@@ -710,6 +722,8 @@ public abstract class ExecutionStrategy {
         TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getUnwrappedNonNullType());
         logNotSafe.warn("{} got {}", error.getMessage(), result.getClass());
         context.addError(error);
+
+        parameters.deferredErrorSupport().onError(error);
     }
 
 

@@ -6,10 +6,12 @@ import com.google.common.collect.ImmutableMap;
 import graphql.ExecutionInput;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
 import graphql.collect.ImmutableKit;
 import graphql.collect.ImmutableMapWithNullValues;
+import graphql.execution.defer.DeferSupport;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -54,6 +56,7 @@ public class ExecutionContext {
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
     private final Locale locale;
+    private final DeferSupport deferSupport = new DeferSupport();
     private final ValueUnboxer valueUnboxer;
     private final ExecutionInput executionInput;
     private final Supplier<ExecutableNormalizedOperation> queryTree;
@@ -262,6 +265,10 @@ public class ExecutionContext {
 
     public Supplier<ExecutableNormalizedOperation> getNormalizedQueryTree() {
         return queryTree;
+    }
+
+    public DeferSupport getDeferSupport() {
+        return deferSupport;
     }
 
     /**
