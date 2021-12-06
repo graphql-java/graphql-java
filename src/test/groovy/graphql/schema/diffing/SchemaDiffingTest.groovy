@@ -1,5 +1,12 @@
 package graphql.schema.diffing
 
+import graphql.TestUtil
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLSchemaElement
+import graphql.schema.GraphQLTypeVisitorStub
+import graphql.schema.SchemaTransformer
+import graphql.util.TraversalControl
+import graphql.util.TraverserContext
 import spock.lang.Specification
 
 import static graphql.TestUtil.schema
@@ -117,6 +124,70 @@ class SchemaDiffingTest extends Specification {
         then:
         true
 
+    }
+
+    def "remove Interface from Object"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            hello: Foo
+            hello2: Foo2
+           } 
+           interface Node {
+                id: ID
+           }
+           type Foo implements Node{
+               id: ID
+           }
+           type Foo2 implements Node{
+               id: ID
+           }
+        """)
+        def schema2 = schema("""
+           type Query {
+            hello: Foo
+            hello2: Foo2
+           } 
+           interface Node {
+                id: ID
+           }
+           type Foo implements Node{
+               id: ID
+           }
+           type Foo2 {
+               id: ID
+           }
+        """)
+
+        when:
+        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        true
+
+    }
+
+    def "change large schema a bit"() {
+        given:
+        def largeSchema = TestUtil.schemaFromResource("large-schema-2.graphqls", TestUtil.mockRuntimeWiring)
+        int counter = 0;
+        def changedOne = SchemaTransformer.transformSchema(largeSchema, new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition fieldDefinition, TraverserContext<GraphQLSchemaElement> context) {
+                if (fieldDefinition.getName() == "field50") {
+                    counter++;
+                    return changeNode(context, fieldDefinition.transform({ it.name("field50Changed") }))
+                }
+                return TraversalControl.CONTINUE
+            }
+        })
+        println "changed fields: " + counter
+        when:
+        long t = System.currentTimeMillis()
+        new SchemaDiffing().diffGraphQLSchema(largeSchema, changedOne)
+        println "time: " + (System.currentTimeMillis() - t)
+        then:
+        true
     }
 
     def "change object type name used twice"() {

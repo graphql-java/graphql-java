@@ -51,7 +51,7 @@ public class SchemaDiffing {
         }
         assertTrue(sourceGraph.size() == targetGraph.size());
         int graphSize = sourceGraph.size();
-
+        System.out.println("graph size: " + graphSize);
         AtomicDouble upperBoundCost = new AtomicDouble(Double.MAX_VALUE);
         AtomicReference<Mapping> bestFullMapping = new AtomicReference<>();
         AtomicReference<List<EditOperation>> bestEdit = new AtomicReference<>();
@@ -67,7 +67,7 @@ public class SchemaDiffing {
         int counter = 0;
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
-//            System.out.println("entry at level " + mappingEntry.level + " counter:" + (++counter) + " q size: " + queue.size());
+            System.out.println("entry at level " + mappingEntry.level + " counter:" + (++counter) + " queue size: " + queue.size());
             if (mappingEntry.lowerBoundCost >= upperBoundCost.doubleValue()) {
                 System.out.println("skipping!");
                 continue;
@@ -88,6 +88,9 @@ public class SchemaDiffing {
         }
         System.out.println("ged cost: " + upperBoundCost.doubleValue());
         System.out.println("edit : " + bestEdit);
+        for (EditOperation editOperation : bestEdit.get()) {
+            System.out.println(editOperation);
+        }
     }
 
     // level starts at 1 indicating the level in the search tree to look for the next mapping
@@ -113,6 +116,11 @@ public class SchemaDiffing {
 
 
         // we are skipping the first level -i indeces
+        int costCounter = 0;
+        int overallCount = (sourceList.size() - level) * availableTargetVertices.size();
+        Set<Vertex> partialMappingSourceSet = new LinkedHashSet<>(partialMapping.getSources());
+        Set<Vertex> partialMappingTargetSet = new LinkedHashSet<>(partialMapping.getTargets());
+
         for (int i = level - 1; i < sourceList.size(); i++) {
             Vertex v = sourceList.get(i);
             int j = 0;
@@ -120,14 +128,15 @@ public class SchemaDiffing {
                 if (v == v_i && !candidates.contains(u)) {
                     costMatrix[i - level + 1][j] = Integer.MAX_VALUE;
                 } else {
-                    double cost = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMapping.getTargets());
+                    double cost = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet);
                     costMatrix[i - level + 1][j] = cost;
 //                    System.out.println("lower bound cost for mapping " + v + " to " + u + " is " + cost + " with index " + (i - level + 1) + " => " + j);
+//                    System.out.println("cost counter: " + (costCounter++) + "/" + overallCount + " percentage: " + (costCounter / (float) overallCount));
                 }
                 j++;
             }
         }
-
+        System.out.println("finished matrix");
         // find out the best extension
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrix);
         int[] assignments = hungarianAlgorithm.execute();
@@ -235,30 +244,42 @@ public class SchemaDiffing {
                                              SchemaGraph sourceGraph,
                                              SchemaGraph targetGraph,
                                              List<Vertex> partialMappingSourceList,
-                                             List<Vertex> partialMappingTargetList) {
+                                             Set<Vertex> partialMappingSourceSet,
+                                             List<Vertex> partialMappingTargetList,
+                                             Set<Vertex> partialMappingTargetSet
+    ) {
+        long t = System.nanoTime();
         boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());
         // inner edge labels of u (resp. v) in regards to the partial mapping: all labels of edges
         // which are adjacent of u (resp. v) which are inner edges
 
         List<Edge> adjacentEdgesV = sourceGraph.getEdges(v);
-        Set<Vertex> nonMappedSourceVertices = nonMappedVertices(sourceGraph.getVertices(), partialMappingSourceList);
+//        Set<Vertex> nonMappedSourceVertices = nonMappedVertices(sourceGraph.getVertices(), partialMappingSourceList);
         Multiset<String> multisetLabelsV = HashMultiset.create();
 
         for (Edge edge : adjacentEdgesV) {
-            // test if this an inner edge
-            if (nonMappedSourceVertices.contains(edge.getOne()) && nonMappedSourceVertices.contains(edge.getTwo())) {
+            // test if this an inner edge: meaning both edges vertices are part of the non mapped vertices
+            // or: at least one edge is part of the partial mapping
+//            if (nonMappedSourceVertices.contains(edge.getOne()) && nonMappedSourceVertices.contains(edge.getTwo())) {
+            if (!partialMappingSourceSet.contains(edge.getOne()) || !partialMappingSourceSet.contains(edge.getTwo())) {
                 multisetLabelsV.add(edge.getLabel());
             }
         }
+        System.out.println("time1: " + (System.nanoTime() - t));
+        long t2 = System.nanoTime();
+
         List<Edge> adjacentEdgesU = targetGraph.getEdges(u);
-        Set<Vertex> nonMappedTargetVertices = nonMappedVertices(targetGraph.getVertices(), partialMappingTargetList);
+//        Set<Vertex> nonMappedTargetVertices = nonMappedVertices(targetGraph.getVertices(), partialMappingTargetList);
         Multiset<String> multisetLabelsU = HashMultiset.create();
         for (Edge edge : adjacentEdgesU) {
             // test if this is an inner edge
-            if (nonMappedTargetVertices.contains(edge.getOne()) && nonMappedTargetVertices.contains(edge.getTwo())) {
+            if (!partialMappingSourceSet.contains(edge.getOne()) || !partialMappingTargetSet.contains(edge.getTwo())) {
                 multisetLabelsU.add(edge.getLabel());
             }
         }
+        System.out.println("time2: " + (System.nanoTime() - t2));
+        long t3 = System.nanoTime();
+
 
         int anchoredVerticesCost = 0;
         for (int i = 0; i < partialMappingSourceList.size(); i++) {
@@ -268,13 +289,17 @@ public class SchemaDiffing {
             String labelSourceEdge = sourceEdge != null ? sourceEdge.getLabel() : null;
             Edge targetEdge = targetGraph.getEdge(u, mappedVPrime);
             String labelTargetEdge = targetEdge != null ? targetEdge.getLabel() : null;
-            if (!Objects.equals(labelSourceEdge,labelTargetEdge)) {
+            if (!Objects.equals(labelSourceEdge, labelTargetEdge)) {
                 anchoredVerticesCost++;
             }
         }
+        System.out.println("time3: " + (System.nanoTime() - t3));
+        long t4 = System.nanoTime();
+
         Multiset<String> intersection = Multisets.intersection(multisetLabelsV, multisetLabelsU);
         int multiSetEditDistance = Math.max(multisetLabelsV.size(), multisetLabelsU.size()) - intersection.size();
 //        System.out.println("equalNodes : " + (equalNodes ? 0 : 1) + " editDistance " + (multiSetEditDistance / 2.0) + " anchored cost" + (anchoredVerticesCost));
+        System.out.println("time4: " + (System.nanoTime() - t4));
         return (equalNodes ? 0 : 1) + multiSetEditDistance / 2.0 + anchoredVerticesCost;
     }
 

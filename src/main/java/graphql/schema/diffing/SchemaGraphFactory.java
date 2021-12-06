@@ -132,7 +132,7 @@ public class SchemaGraphFactory {
 
         for (GraphQLNamedOutputType implementsInterface : interfaceType.getInterfaces()) {
             Vertex implementsInterfaceVertex = assertNotNull(schemaGraph.getType(implementsInterface.getName()));
-            schemaGraph.addEdge(new Edge(interfaceVertex, implementsInterfaceVertex));
+            schemaGraph.addEdge(new Edge(interfaceVertex, implementsInterfaceVertex, "implements " + implementsInterface.getName()));
         }
 
         List<GraphQLFieldDefinition> fieldDefinitions = interfaceType.getFieldDefinitions();
@@ -147,9 +147,9 @@ public class SchemaGraphFactory {
     private void handleObjectVertex(Vertex objectVertex, SchemaGraph schemaGraph, GraphQLSchema graphQLSchema) {
         GraphQLObjectType objectType = graphQLSchema.getObjectType(objectVertex.get("name"));
 
-        for (GraphQLNamedOutputType interfaceType : objectType.getInterfaces()) {
-            Vertex interfaceVertex = assertNotNull(schemaGraph.getType(interfaceType.getName()));
-            schemaGraph.addEdge(new Edge(objectVertex, interfaceVertex));
+        for (GraphQLNamedOutputType implementsInterface : objectType.getInterfaces()) {
+            Vertex implementsInterfaceVertex = assertNotNull(schemaGraph.getType(implementsInterface.getName()));
+            schemaGraph.addEdge(new Edge(objectVertex, implementsInterfaceVertex, "implements " + implementsInterface.getName()));
         }
 
         List<GraphQLFieldDefinition> fieldDefinitions = objectType.getFieldDefinitions();
