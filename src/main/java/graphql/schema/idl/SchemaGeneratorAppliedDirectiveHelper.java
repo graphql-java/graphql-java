@@ -30,18 +30,23 @@ import static graphql.schema.idl.SchemaGeneratorHelper.buildDescription;
 import static graphql.util.Pair.pair;
 import static java.util.Collections.emptyList;
 
+/**
+ * This contains helper code to build out appliedm directives on schema element
+ */
 @Internal
 class SchemaGeneratorAppliedDirectiveHelper {
 
     static void buildAppliedDirectives(SchemaGeneratorHelper.BuildContext buildCtx, GraphqlDirectivesContainerTypeBuilder<?, ?> builder, Pair<List<GraphQLDirective>, List<GraphQLAppliedDirective>> appliedDirectives) {
-        // TODO - put in a flag that means we DONT build the old school directives on the type
-        if (buildCtx.options != null) {
+        builder.clearDirectives();
+
+        // for legacy reasons we can use the old directives construct.  This is false by default
+        if (!buildCtx.options.isUseAppliedDirectivesOnly()) {
             for (GraphQLDirective directive : appliedDirectives.first) {
                 builder.withDirective(directive);
             }
         }
         for (GraphQLAppliedDirective appliedDirective : appliedDirectives.second) {
-            builder.withAppliedDirectives(appliedDirective);
+            builder.withAppliedDirective(appliedDirective);
         }
     }
 

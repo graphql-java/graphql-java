@@ -69,19 +69,20 @@ public class GraphQLAppliedArgument implements GraphQLNamedSchemaElement {
      * when "not set" and "set to null" then you can't use this method.  Rather you should use {@link GraphQLAppliedArgument#getArgumentValue()}
      * and use the {@link InputValueWithState#isNotSet()} methods to decide how to handle those values.
      *
-     * @param argument the fully formed {@link GraphQLAppliedArgument}
-     * @param <T>      the type you want it cast as
+     * @param <T>          the type you want it cast as
+     * @param argument     the fully formed {@link GraphQLAppliedArgument}
+     * @param argumentType the type of the applied argument
      *
      * @return a value of type T which is the java value of the argument
      */
-    public static <T> T getArgumentValue(GraphQLInputType argumentType, GraphQLAppliedArgument argument) {
+    public static <T> T getArgumentValue(GraphQLAppliedArgument argument, GraphQLInputType argumentType) {
         return getInputValueImpl(argumentType, argument.getArgumentValue());
     }
 
     /**
-     * This will always be null
+     * This will always be null.  Applied arguments have no description
      *
-     * @return null
+     * @return always null
      */
     public @Nullable String getDescription() {
         return null;

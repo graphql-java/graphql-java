@@ -212,11 +212,6 @@ public class SchemaGeneratorHelper {
 
     static final String NO_LONGER_SUPPORTED = "No longer supported";
 
-    private static Description createDescription(String s) {
-        return new Description(s, null, false);
-    }
-
-
     static String buildDescription(BuildContext buildContext, Node<?> node, Description description) {
         if (description != null) {
             return description.getContent();
@@ -451,6 +446,7 @@ public class SchemaGeneratorHelper {
 
         if (!ScalarInfo.isGraphqlSpecifiedScalar(scalar)) {
             String description = getScalarDesc(scalar, typeDefinition);
+
             Pair<List<GraphQLDirective>, List<GraphQLAppliedDirective>> appliedDirectives = buildAppliedDirectives(
                     buildCtx,
                     inputTypeFactory(buildCtx),
@@ -459,12 +455,14 @@ public class SchemaGeneratorHelper {
                     SCALAR,
                     buildCtx.getDirectives(),
                     buildCtx.getComparatorRegistry());
+
             scalar = scalar.transform(builder -> {
                 builder
                         .description(description)
                         .definition(buildCtx.isCaptureAstDefinitions() ? typeDefinition : null)
                         .comparatorRegistry(buildCtx.getComparatorRegistry())
                         .specifiedByUrl(getSpecifiedByUrl(typeDefinition, extensions));
+
                 buildAppliedDirectives(buildCtx, builder, appliedDirectives);
             });
         }

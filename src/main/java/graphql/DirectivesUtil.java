@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
@@ -143,6 +144,14 @@ public class DirectivesUtil {
         public GraphQLAppliedDirective getAppliedDirective(String directiveName) {
             List<GraphQLAppliedDirective> list = allAppliedDirectivesByName.getOrDefault(directiveName, emptyList());
             return list.isEmpty() ? null : list.get(0);
+        }
+
+        @Override
+        public String toString() {
+            return new StringJoiner(", ", DirectivesHolder.class.getSimpleName() + "[", "]")
+                    .add("allDirectivesByName=" + String.join(",", allDirectivesByName.keySet()))
+                    .add("allAppliedDirectivesByName=" + String.join(",", allAppliedDirectivesByName.keySet()))
+                    .toString();
         }
     }
 }
