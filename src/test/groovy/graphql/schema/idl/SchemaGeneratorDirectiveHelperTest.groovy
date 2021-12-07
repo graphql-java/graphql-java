@@ -776,9 +776,11 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 def arg = env.getElement()
                 if (arg.getName() == "arg1") {
                     assert env.getDirectives().keySet().sort() == ["argDirective1", "argDirective2"]
+                    assert env.getAppliedDirectives().keySet().sort() == ["argDirective1", "argDirective2"]
                 }
                 if (arg.getName() == "arg2") {
                     assert env.getDirectives().keySet().sort() == ["argDirective3"]
+                    assert env.getAppliedDirectives().keySet().sort() == ["argDirective3"]
                 }
                 def fieldDef = env.getFieldDefinition()
                 assert fieldDef != null
@@ -804,6 +806,15 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                         .sort()
 
                 assert argDirectiveNames == ["argDirective1", "argDirective2", "argDirective3"]
+
+                def argAppliedDirectiveNames = fieldDef.getArguments()
+                        .stream()
+                        .map({ a -> a.getAppliedDirectives() })
+                        .flatMap({ dl -> dl.stream() })
+                        .collect { d -> d.getName() }
+                        .sort()
+
+                assert argAppliedDirectiveNames == ["argDirective1", "argDirective2", "argDirective3"]
 
                 return env.getElement()
             }
