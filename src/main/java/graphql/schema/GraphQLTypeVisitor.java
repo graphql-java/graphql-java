@@ -25,9 +25,13 @@ public interface GraphQLTypeVisitor {
 
     TraversalControl visitGraphQLDirective(GraphQLDirective node, TraverserContext<GraphQLSchemaElement> context);
 
-    TraversalControl visitGraphQLAppliedDirective(GraphQLAppliedDirective node, TraverserContext<GraphQLSchemaElement> context);
+    default TraversalControl visitGraphQLAppliedDirective(GraphQLAppliedDirective node, TraverserContext<GraphQLSchemaElement> context) {
+        return TraversalControl.CONTINUE;
+    }
 
-    TraversalControl visitGraphQLAppliedArgument(GraphQLAppliedArgument node, TraverserContext<GraphQLSchemaElement> context);
+    default TraversalControl visitGraphQLAppliedArgument(GraphQLAppliedArgument node, TraverserContext<GraphQLSchemaElement> context) {
+        return TraversalControl.CONTINUE;
+    }
 
     TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField node, TraverserContext<GraphQLSchemaElement> context);
 
