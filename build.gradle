@@ -299,6 +299,11 @@ tasks.withType(PublishToMavenRepository) {
     dependsOn build
 }
 
+// Only publish Maven POM, disable default Gradle modules file
+tasks.withType(GenerateModuleMetadata) {
+    enabled = false
+}
+
 test {
     useJUnitPlatform()
 }

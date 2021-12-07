@@ -212,7 +212,7 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
             definition = existing.getDefinition();
             extensionDefinitions = existing.getExtensionDefinitions();
             specifiedByUrl = existing.getSpecifiedByUrl();
-            DirectivesUtil.enforceAddAll(this.directives, existing.getDirectives());
+            DirectivesUtil.addAll(this.directives, existing.getDirectives());
         }
 
         @Override
@@ -264,14 +264,14 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            DirectivesUtil.enforceAdd(this.directives, directive);
+            DirectivesUtil.add(this.directives, directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
-            DirectivesUtil.enforceAddAll(this.directives, directives);
+            DirectivesUtil.addAll(this.directives, directives);
             return this;
         }
 

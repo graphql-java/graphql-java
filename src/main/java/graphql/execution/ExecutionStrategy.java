@@ -458,7 +458,7 @@ public abstract class ExecutionStrategy {
             // and validate the field is nullable, if non-nullable throw exception
             parameters.getNonNullFieldValidator().validate(parameters.getPath(), null);
             // complete the field as null
-            fieldValue = completedFuture(new ExecutionResultImpl(null, null));
+            fieldValue = completedFuture(new ExecutionResultImpl(null, executionContext.getErrors()));
         }
         return FieldValueInfo.newFieldValueInfo(OBJECT).fieldValue(fieldValue).build();
     }
@@ -473,7 +473,7 @@ public abstract class ExecutionStrategy {
     protected CompletableFuture<ExecutionResult> completeValueForNull(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         return Async.tryCatch(() -> {
             Object nullValue = parameters.getNonNullFieldValidator().validate(parameters.getPath(), null);
-            return completedFuture(new ExecutionResultImpl(nullValue, null));
+            return completedFuture(new ExecutionResultImpl(nullValue, executionContext.getErrors()));
         });
     }
 
@@ -495,7 +495,7 @@ public abstract class ExecutionStrategy {
             return FieldValueInfo.newFieldValueInfo(LIST).fieldValue(exceptionallyCompletedFuture(e)).build();
         }
         if (resultIterable == null) {
-            return FieldValueInfo.newFieldValueInfo(LIST).fieldValue(completedFuture(new ExecutionResultImpl(null, null))).build();
+            return FieldValueInfo.newFieldValueInfo(LIST).fieldValue(completedFuture(new ExecutionResultImpl(null, executionContext.getErrors()))).build();
         }
         return completeValueForList(executionContext, parameters, resultIterable);
     }
@@ -562,7 +562,7 @@ public abstract class ExecutionStrategy {
             for (ExecutionResult completedValue : results) {
                 completedResults.add(completedValue.getData());
             }
-            ExecutionResultImpl executionResult = new ExecutionResultImpl(completedResults, null);
+            ExecutionResultImpl executionResult = new ExecutionResultImpl(completedResults, executionContext.getErrors());
             overallResult.complete(executionResult);
         });
         overallResult.whenComplete(completeListCtx::onCompleted);
@@ -602,7 +602,7 @@ public abstract class ExecutionStrategy {
         } catch (NonNullableFieldWasNullException e) {
             return exceptionallyCompletedFuture(e);
         }
-        return completedFuture(new ExecutionResultImpl(serialized, null));
+        return completedFuture(new ExecutionResultImpl(serialized, executionContext.getErrors()));
     }
 
     /**
@@ -627,7 +627,7 @@ public abstract class ExecutionStrategy {
         } catch (NonNullableFieldWasNullException e) {
             return exceptionallyCompletedFuture(e);
         }
-        return completedFuture(new ExecutionResultImpl(serialized, null));
+        return completedFuture(new ExecutionResultImpl(serialized, executionContext.getErrors()));
     }
 
     /**

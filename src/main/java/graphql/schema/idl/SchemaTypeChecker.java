@@ -25,7 +25,6 @@ import graphql.schema.idl.errors.MissingScalarImplementationError;
 import graphql.schema.idl.errors.MissingTypeError;
 import graphql.schema.idl.errors.MissingTypeResolverError;
 import graphql.schema.idl.errors.NonUniqueArgumentError;
-import graphql.schema.idl.errors.NonUniqueDirectiveError;
 import graphql.schema.idl.errors.NonUniqueNameError;
 import graphql.schema.idl.errors.SchemaProblem;
 
@@ -42,7 +41,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static graphql.DirectivesUtil.nonRepeatableDirectivesOnly;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
 import static java.util.stream.Collectors.toList;
 
@@ -212,13 +210,6 @@ public class SchemaTypeChecker {
                 (name, inputValueDefinition) -> new NonUniqueArgumentError(typeDefinition, fld, name)));
 
         // directive checks
-        for (FieldDefinition fieldDefinition : fieldDefinitions) {
-            List<Directive> directives = fieldDefinition.getDirectives();
-            List<Directive> nonRepeatableDirectives = nonRepeatableDirectivesOnly(directiveDefinitionMap, directives);
-
-            checkNamedUniqueness(errors, nonRepeatableDirectives, Directive::getName,
-                    (directiveName, directive) -> new NonUniqueDirectiveError(typeDefinition, fieldDefinition, directiveName));
-        }
         fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive -> {
 
             checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
@@ -239,10 +230,6 @@ public class SchemaTypeChecker {
         // directive checks
         fieldDefinitions.forEach(fieldDefinition -> {
             List<Directive> directives = fieldDefinition.getDirectives();
-            List<Directive> nonRepeatableDirectives = nonRepeatableDirectivesOnly(directiveDefinitionMap, directives);
-
-            checkNamedUniqueness(errors, nonRepeatableDirectives, Directive::getName,
-                    (directiveName, directive) -> new NonUniqueDirectiveError(interfaceType, fieldDefinition, directiveName));
 
             directives.forEach(directive -> checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
                     (argumentName, argument) -> new NonUniqueArgumentError(interfaceType, fieldDefinition, argumentName)));
@@ -257,14 +244,6 @@ public class SchemaTypeChecker {
 
 
         // directive checks
-        for (EnumValueDefinition enumValueDefinition : enumValueDefinitions) {
-            List<Directive> directives = enumValueDefinition.getDirectives();
-            List<Directive> nonRepeatableDirectives = nonRepeatableDirectivesOnly(directiveDefinitionMap, directives);
-
-            checkNamedUniqueness(errors, nonRepeatableDirectives, Directive::getName,
-                    (directiveName, directive) -> new NonUniqueDirectiveError(enumType, enumValueDefinition, directiveName));
-        }
-
         enumValueDefinitions.forEach(enumValue -> enumValue.getDirectives().forEach(directive -> {
 
             BiFunction<String, Argument, NonUniqueArgumentError> errorFunction = (argumentName, argument) -> new NonUniqueArgumentError(enumType, enumValue, argumentName);
@@ -286,14 +265,6 @@ public class SchemaTypeChecker {
 
 
         // directive checks
-        for (InputValueDefinition inputValueDefinition : inputValueDefinitions) {
-            List<Directive> directives = inputValueDefinition.getDirectives();
-            List<Directive> nonRepeatableDirectives = nonRepeatableDirectivesOnly(directiveDefinitionMap, directives);
-
-            checkNamedUniqueness(errors, nonRepeatableDirectives, Directive::getName,
-                    (directiveName, directive) -> new NonUniqueDirectiveError(inputType, inputValueDefinition, directiveName));
-        }
-
         inputValueDefinitions.forEach(inputValueDef -> inputValueDef.getDirectives().forEach(directive ->
                 checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
                         (argumentName, argument) -> new NonUniqueArgumentError(inputType, inputValueDef, argumentName))));
@@ -322,7 +293,7 @@ public class SchemaTypeChecker {
 
     private void checkTypeResolversArePresent(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
 
-        Predicate<InterfaceTypeDefinition> noDynamicResolverForInterface = interaceTypeDef -> !wiring.getWiringFactory().providesTypeResolver(new InterfaceWiringEnvironment(typeRegistry, interaceTypeDef));
+        Predicate<InterfaceTypeDefinition> noDynamicResolverForInterface = interfaceTypeDef -> !wiring.getWiringFactory().providesTypeResolver(new InterfaceWiringEnvironment(typeRegistry, interfaceTypeDef));
         Predicate<UnionTypeDefinition> noDynamicResolverForUnion = unionTypeDef -> !wiring.getWiringFactory().providesTypeResolver(new UnionWiringEnvironment(typeRegistry, unionTypeDef));
 
         Predicate<TypeDefinition> noTypeResolver = typeDefinition -> !wiring.getTypeResolvers().containsKey(typeDefinition.getName());

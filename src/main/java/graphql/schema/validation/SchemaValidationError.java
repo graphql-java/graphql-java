@@ -3,6 +3,7 @@ package graphql.schema.validation;
 import graphql.Internal;
 
 import java.util.Objects;
+import java.util.StringJoiner;
 
 import static graphql.Assert.assertNotNull;
 
@@ -25,6 +26,14 @@ public class SchemaValidationError {
 
     public String getDescription() {
         return description;
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", SchemaValidationError.class.getSimpleName() + "[", "]")
+                .add("errorType=" + errorType)
+                .add("description='" + description + "'")
+                .toString();
     }
 
     @Override

@@ -1711,7 +1711,7 @@ class QueryTraverserTest extends Specification {
 
     }
 
-    def "can copy with Scalar ObjectField visits"() {
+    def     "can copy with Scalar ObjectField visits"() {
         given:
         def schema = TestUtil.schema('''
             scalar JSON

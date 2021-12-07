@@ -1,6 +1,6 @@
 package graphql
 
-
+import graphql.language.SourceLocation
 import graphql.schema.GraphQLObjectType
 import graphql.schema.idl.RuntimeWiring
 import spock.lang.Specification
@@ -87,8 +87,8 @@ class Issue739 extends Specification {
         varResult.data == null
         varResult.errors.size() == 1
         varResult.errors[0].errorType == ErrorType.ValidationError
-        varResult.errors[0].message == "invalid value : invalid value : Expected type 'Map' but was 'Integer'. Variables for input objects must be an instance of type 'Map'.";
-//        varResult.errors[0].locations == [new SourceLocation(1, 11)]
+        varResult.errors[0].message == "Variable 'input' has an invalid value: Expected type 'Map' but was 'Integer'. Variables for input objects must be an instance of type 'Map'."
+        varResult.errors[0].locations == [new SourceLocation(1, 11)]
 
         when:
         variables = ["input": ["baz": "hi", "boom": "hi"]]
@@ -106,8 +106,7 @@ class Issue739 extends Specification {
         varResult.data == null
         varResult.errors.size() == 1
         varResult.errors[0].errorType == ErrorType.ValidationError
-        // TODO: check error message
-        varResult.errors[0].message == "invalid value : invalid value : invalid value : Expected type 'Int' but was 'String'."
-//        varResult.errors[0].locations == [new SourceLocation(1, 11)]
+        varResult.errors[0].message == "Variable 'input' has an invalid value: Expected type 'Int' but was 'String'."
+        varResult.errors[0].locations == [new SourceLocation(1, 11)]
     }
 }

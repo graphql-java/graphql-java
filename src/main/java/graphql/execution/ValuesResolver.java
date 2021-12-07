@@ -388,30 +388,38 @@ public class ValuesResolver {
      */
     private Map<String, Object> externalValueToInternalValueForVariables(GraphQLSchema schema,
                                                                          List<VariableDefinition> variableDefinitions,
-                                                                         Map<String, Object> rawVariables
-    ) {
+                                                                         Map<String, Object> rawVariables) {
         GraphqlFieldVisibility fieldVisibility = schema.getCodeRegistry().getFieldVisibility();
         Map<String, Object> coercedValues = new LinkedHashMap<>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
-            String variableName = variableDefinition.getName();
-            GraphQLType variableType = TypeFromAST.getTypeFromAST(schema, variableDefinition.getType());
-            assertTrue(variableType instanceof GraphQLInputType);
-            // can be NullValue
-            Value defaultValue = variableDefinition.getDefaultValue();
-            boolean hasValue = rawVariables.containsKey(variableName);
-            Object value = rawVariables.get(variableName);
-            if (!hasValue && defaultValue != null) {
-                Object coercedDefaultValue = literalToInternalValue(fieldVisibility, variableType, defaultValue, Collections.emptyMap());
-                coercedValues.put(variableName, coercedDefaultValue);
-            } else if (isNonNull(variableType) && (!hasValue || value == null)) {
-                throw new NonNullableValueCoercedAsNullException(variableDefinition, variableType);
-            } else if (hasValue) {
-                if (value == null) {
-                    coercedValues.put(variableName, null);
-                } else {
-                    Object coercedValue = externalValueToInternalValue(fieldVisibility, variableType, value);
-                    coercedValues.put(variableName, coercedValue);
+            try {
+                String variableName = variableDefinition.getName();
+                GraphQLType variableType = TypeFromAST.getTypeFromAST(schema, variableDefinition.getType());
+                assertTrue(variableType instanceof GraphQLInputType);
+                // can be NullValue
+                Value defaultValue = variableDefinition.getDefaultValue();
+                boolean hasValue = rawVariables.containsKey(variableName);
+                Object value = rawVariables.get(variableName);
+                if (!hasValue && defaultValue != null) {
+                    Object coercedDefaultValue = literalToInternalValue(fieldVisibility, variableType, defaultValue, Collections.emptyMap());
+                    coercedValues.put(variableName, coercedDefaultValue);
+                } else if (isNonNull(variableType) && (!hasValue || value == null)) {
+                    throw new NonNullableValueCoercedAsNullException(variableDefinition, variableType);
+                } else if (hasValue) {
+                    if (value == null) {
+                        coercedValues.put(variableName, null);
+                    } else {
+                        Object coercedValue = externalValueToInternalValue(fieldVisibility, variableType, value);
+                        coercedValues.put(variableName, coercedValue);
+                    }
                 }
+            } catch (CoercingParseValueException e) {
+                throw CoercingParseValueException.newCoercingParseValueException()
+                        .message(String.format("Variable '%s' has an invalid value: %s", variableDefinition.getName(), e.getMessage()))
+                        .extensions(e.getExtensions())
+                        .cause(e.getCause())
+                        .sourceLocation(variableDefinition.getSourceLocation())
+                        .build();
             }
         }
 
@@ -452,7 +460,7 @@ public class ValuesResolver {
                         argumentType);
                 coercedValues.put(argumentName, coercedDefaultValue);
             } else if (isNonNull(argumentType) && (!hasValue || isNullValue(value))) {
-                throw new RuntimeException();
+                throw new NonNullableValueCoercedAsNullException(argumentDefinition);
             } else if (hasValue) {
                 if (isNullValue(value)) {
                     coercedValues.put(argumentName, value);
@@ -485,50 +493,37 @@ public class ValuesResolver {
     private Object externalValueToInternalValue(GraphqlFieldVisibility fieldVisibility,
                                                 GraphQLType graphQLType,
                                                 Object value) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
-        try {
-            if (isNonNull(graphQLType)) {
-                Object returnValue =
-                        externalValueToInternalValue(fieldVisibility, unwrapOne(graphQLType), value);
-                if (returnValue == null) {
-                    throw new NonNullableValueCoercedAsNullException("", emptyList(), graphQLType);
-                }
-                return returnValue;
+        if (isNonNull(graphQLType)) {
+            Object returnValue =
+                    externalValueToInternalValue(fieldVisibility, unwrapOne(graphQLType), value);
+            if (returnValue == null) {
+                throw new NonNullableValueCoercedAsNullException("", emptyList(), graphQLType);
             }
-
-            if (value == null) {
-                return null;
-            }
-
-            if (graphQLType instanceof GraphQLScalarType) {
-                return externalValueToInternalValueForScalar((GraphQLScalarType) graphQLType, value);
-            } else if (graphQLType instanceof GraphQLEnumType) {
-                return externalValueToInternalValueForEnum((GraphQLEnumType) graphQLType, value);
-            } else if (graphQLType instanceof GraphQLList) {
-                return externalValueToInternalValueForList(fieldVisibility, (GraphQLList) graphQLType, value);
-            } else if (graphQLType instanceof GraphQLInputObjectType) {
-                if (value instanceof Map) {
-                    return externalValueToInternalValueForObject(fieldVisibility, (GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
-                } else {
-                    throw CoercingParseValueException.newCoercingParseValueException()
-                            .message("Expected type 'Map' but was '" + value.getClass().getSimpleName() +
-                                    "'. Variables for input objects must be an instance of type 'Map'.")
-                            .build();
-                }
-            } else {
-                return assertShouldNeverHappen("unhandled type %s", graphQLType);
-            }
-        } catch (CoercingParseValueException e) {
-            if (e.getLocations() != null) {
-                throw e;
-            }
-            CoercingParseValueException.Builder builder = CoercingParseValueException.newCoercingParseValueException();
-            throw builder
-                    .message("invalid value : " + e.getMessage())
-                    .extensions(e.getExtensions())
-                    .cause(e.getCause())
-                    .build();
+            return returnValue;
         }
 
+        if (value == null) {
+            return null;
+        }
+
+        if (graphQLType instanceof GraphQLScalarType) {
+            return externalValueToInternalValueForScalar((GraphQLScalarType) graphQLType, value);
+        } else if (graphQLType instanceof GraphQLEnumType) {
+            return externalValueToInternalValueForEnum((GraphQLEnumType) graphQLType, value);
+        } else if (graphQLType instanceof GraphQLList) {
+            return externalValueToInternalValueForList(fieldVisibility, (GraphQLList) graphQLType, value);
+        } else if (graphQLType instanceof GraphQLInputObjectType) {
+            if (value instanceof Map) {
+                return externalValueToInternalValueForObject(fieldVisibility, (GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
+            } else {
+                throw CoercingParseValueException.newCoercingParseValueException()
+                        .message("Expected type 'Map' but was '" + value.getClass().getSimpleName() +
+                                "'. Variables for input objects must be an instance of type 'Map'.")
+                        .build();
+            }
+        } else {
+            return assertShouldNeverHappen("unhandled type %s", graphQLType);
+        }
     }
 
     /**

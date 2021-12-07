@@ -10,6 +10,7 @@ import graphql.util.TraverserContext;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -76,7 +77,7 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
 
         StringValue that = (StringValue) o;
 
-        return !(value != null ? !value.equals(that.value) : that.value != null);
+        return Objects.equals(value, that.value);
 
     }
 

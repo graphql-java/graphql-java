@@ -19,7 +19,10 @@ class ValidateCustomDirectives extends Specification {
 
     GraphQLSchema customDirectiveSchema = GraphQLSchema.newSchema()
             .query(SpecValidationSchema.queryRoot)
-            .build(SpecValidationSchema.specValidationDictionary, [customDirective].toSet())
+            .additionalDirective(SpecValidationSchema.dogDirective)
+            .additionalDirective(customDirective)
+            .additionalTypes(SpecValidationSchema.specValidationDictionary)
+            .build()
 
     def 'Schema with custom directive validates query with same directive'() {
         def query = """
