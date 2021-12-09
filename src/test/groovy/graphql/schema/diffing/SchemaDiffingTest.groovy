@@ -165,10 +165,47 @@ class SchemaDiffingTest extends Specification {
         """)
 
         when:
-        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        true
+        diff.size() == 1
+
+    }
+
+    def "change Object into an Interface"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            luna: Pet
+           } 
+           type Pet {
+                name: String
+           }
+        """)
+        def schema2 = schema("""
+           type Query {
+            luna: Pet
+           } 
+           interface Pet {
+                name: String
+           }
+           type Dog implements Pet {
+                name: String
+           }
+        """)
+
+        when:
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        /**
+         * 1. Change type Pet into Interface Pet
+         * 2,3,4: Insert Object Dog, Insert Field name, Insert __DUMMY_TYPE_VERTICE
+         * 5. Insert Edge from Object Dog to Field name
+         * 6,7 Insert Edge from Field name to DUMMY_TYPE_VERTICE to Scalar String
+         * 8. Insert 'implements' Edge from Object Pet to Interface Pet
+         */
+        diff.size() == 8
 
     }
 
