@@ -1,6 +1,7 @@
 package graphql.schema.diffing
 
 import graphql.TestUtil
+import graphql.language.OperationDefinition
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLSchemaElement
 import graphql.schema.GraphQLTypeVisitorStub
@@ -285,6 +286,244 @@ class SchemaDiffingTest extends Specification {
         then:
         true
 
+    }
+
+    def "changing schema a lot 1"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            pets: [Pet]
+           } 
+           interface Pet {
+            name: String
+           }
+           type Dog implements Pet {
+            name: String
+           }
+           type Cat implements Pet {
+            name: String
+           }
+        """)
+        def schema2 = schema("""
+           type Query {
+            pets: [Animal] @deprecated
+            animals: [Animal]
+           } 
+           interface Animal {
+            name: String
+            friend: Human
+           }
+           type Human {
+                name: String
+           }
+           interface Pet implements Animal {
+            name: String
+            friend: Human
+           }
+           type Dog implements Pet & Animal {
+            name: String
+            friend: Human
+           }
+           type Cat implements Pet & Animal {
+            name: String
+            friend: Human
+           }
+           type Fish implements Pet & Animal {
+            name: String
+            friend: Human
+           }
+        """)
+
+        when:
+        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        true
+
+    }
+
+    def "adding a few things "() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            pets: [Pet]
+           } 
+           interface Pet {
+            name: String
+           }
+           type Dog implements Pet {
+            name: String
+           }
+           type Cat implements Pet {
+            name: String
+           }
+        """)
+        def schema2 = schema("""
+           type Query {
+            pets: [Pet] 
+            animals: [Animal]
+           } 
+           interface Animal {
+            name: String
+           }
+           interface Pet  {
+            name: String
+           }
+           type Dog implements Pet {
+            name: String
+           }
+           type Cat implements Pet {
+            name: String
+           }
+           type Fish implements Pet{
+            name: String
+           }
+        """)
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        operations.size() == 20
+    }
+
+    def "adding a few things plus introducing new interface"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            pets: [Pet]
+           } 
+           interface Pet {
+            name: String
+           }
+           type Dog implements Pet {
+            name: String
+           }
+           type Cat implements Pet {
+            name: String
+           }
+        """)
+        def schema2 = schema("""
+           type Query {
+            pets: [Pet] 
+            animals: [Animal]
+           } 
+           interface Animal {
+            name: String
+           }
+           interface Pet  implements Animal {
+            name: String
+           }
+           type Dog implements Pet & Animal {
+            name: String
+           }
+           type Cat implements Pet & Animal {
+            name: String
+           }
+           type Fish implements Pet & Animal {
+            name: String
+           }
+        """)
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        operations.size() == 24
+    }
+
+    def "adding a few things plus introducing new interface plus changing return type"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            pets: [Pet]
+           } 
+           interface Pet {
+            name: String
+           }
+           type Dog implements Pet {
+            name: String
+           }
+           type Cat implements Pet {
+            name: String
+           }
+        """)
+        def schema2 = schema("""
+           type Query {
+            pets: [Animal] # This is different from the previous one   
+            animals: [Animal]
+           } 
+           interface Animal {
+            name: String
+           }
+           interface Pet  implements Animal {
+            name: String
+           }
+           type Dog implements Pet & Animal {
+            name: String
+           }
+           type Cat implements Pet & Animal {
+            name: String
+           }
+           type Fish implements Pet & Animal {
+            name: String
+           }
+        """)
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        operations.size() == 26
+    }
+
+    def "adding a few things plus introducing new interface plus changing return type plus adding field in Interface"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            pets: [Pet]
+           } 
+           interface Pet {
+            name: String
+           }
+           type Dog implements Pet {
+            name: String
+           }
+           type Cat implements Pet {
+            name: String
+           }
+        """)
+        def schema2 = schema("""
+           type Query {
+            pets: [Pet] 
+           } 
+           interface Animal {
+            name: String
+            friend: String 
+           }
+           interface Pet implements Animal {
+            name: String
+            friend: String
+           }
+           type Dog implements Pet & Animal {
+            name: String
+            friend: String
+           }
+           type Cat implements Pet & Animal {
+            name: String
+            friend: String
+           }
+           type Fish implements Pet & Animal {
+            name: String
+            friend: String
+           }
+        """)
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        operations.size() == 48
     }
 
     def "add a field"() {

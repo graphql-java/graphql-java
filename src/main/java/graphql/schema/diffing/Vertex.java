@@ -8,14 +8,23 @@ public class Vertex {
     private String type;
     private Map<String, Object> properties = new LinkedHashMap<>();
     private String debugName;
+    private boolean artificialNode;
 
-    public Vertex(String type) {
-        this.type = type;
+    public static Vertex newArtificialNode(String type) {
+        Vertex vertex = new Vertex(type, null);
+        vertex.artificialNode = true;
+        return vertex;
     }
+
     public Vertex(String type, String debugName) {
         this.type = type;
         this.debugName = debugName;
     }
+
+    public boolean isArtificialNode() {
+        return artificialNode;
+    }
+
     public void add(String propName, Object propValue) {
         properties.put(propName, propValue);
     }

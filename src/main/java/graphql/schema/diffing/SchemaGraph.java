@@ -83,8 +83,8 @@ public class SchemaGraph {
     public void addIsolatedVertices(int count) {
         String uniqueType = String.valueOf(UUID.randomUUID());
         for (int i = 0; i < count; i++) {
-            Vertex isolatedVertex = new Vertex(uniqueType);
-            vertices.add(isolatedVertex);
+            Vertex isolatedVertex = Vertex.newArtificialNode(uniqueType);
+            vertices.add( isolatedVertex);
         }
     }
 }
