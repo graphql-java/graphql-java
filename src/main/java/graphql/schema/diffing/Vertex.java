@@ -10,6 +10,7 @@ public class Vertex {
     private String debugName;
     private boolean artificialNode;
 
+
     public static Vertex newArtificialNode(String type) {
         Vertex vertex = new Vertex(type, null);
         vertex.artificialNode = true;
@@ -35,6 +36,10 @@ public class Vertex {
 
     public <T> T get(String propName) {
         return (T) properties.get(propName);
+    }
+
+    public <T> T getProperty(String name) {
+        return (T) properties.get(name);
     }
 
     public Map<String, Object> getProperties() {

@@ -39,8 +39,17 @@ public class SchemaGraph {
         edgeByVertexPair.put(edge.getTwo(), edge.getOne(), edge);
     }
 
-    public List<Edge> getEdges(Vertex from) {
+    public List<Edge> getAdjacentEdges(Vertex from) {
         return new ArrayList<>(edgeByVertexPair.row(from).values());
+    }
+
+    public Edge getSingleAdjacentEdge(Vertex from, Predicate<Edge> predicate) {
+        for (Edge edge : edgeByVertexPair.row(from).values()) {
+          if(predicate.test(edge)) {
+              return edge;
+          }
+        }
+        return null;
     }
 
     public List<Edge> getEdges() {

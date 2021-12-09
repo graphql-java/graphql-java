@@ -32,9 +32,12 @@ public class SchemaDiffing {
         List<Vertex> availableSiblings = new ArrayList<>();
     }
 
+    SchemaGraph sourceGraph;
+    SchemaGraph targetGraph;
+
     public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) {
-        SchemaGraph sourceGraph = new SchemaGraphFactory().createGraph(graphQLSchema1);
-        SchemaGraph targetGraph = new SchemaGraphFactory().createGraph(graphQLSchema2);
+        sourceGraph = new SchemaGraphFactory().createGraph(graphQLSchema1);
+        targetGraph = new SchemaGraphFactory().createGraph(graphQLSchema2);
 //        System.out.println(GraphPrinter.print(sourceGraph));
         return diffImpl(sourceGraph, targetGraph);
     }
@@ -199,11 +202,11 @@ public class SchemaDiffing {
             boolean equalNodes = sourceVertex.getType().equals(targetVertex.getType()) && sourceVertex.getProperties().equals(targetVertex.getProperties());
             if (!equalNodes) {
                 if (sourceVertex.isArtificialNode()) {
-                    editOperationsResult.add(new EditOperation(EditOperation.Operation.INSERT_VERTEX, "Insert" + targetVertex));
+                    editOperationsResult.add(new EditOperation(EditOperation.Operation.INSERT_VERTEX, "Insert" + targetVertex, targetVertex));
                 } else if (targetVertex.isArtificialNode()) {
-                    editOperationsResult.add(new EditOperation(EditOperation.Operation.DELETE_VERTEX, "Delete " + sourceVertex));
+                    editOperationsResult.add(new EditOperation(EditOperation.Operation.DELETE_VERTEX, "Delete " + sourceVertex, sourceVertex));
                 } else {
-                    editOperationsResult.add(new EditOperation(EditOperation.Operation.CHANGE_VERTEX, "Change " + sourceVertex + " to " + targetVertex));
+                    editOperationsResult.add(new EditOperation(EditOperation.Operation.CHANGE_VERTEX, "Change " + sourceVertex + " to " + targetVertex, Arrays.asList(sourceVertex, targetVertex)));
                 }
                 cost++;
             }
@@ -220,10 +223,10 @@ public class SchemaDiffing {
             Vertex target2 = partialOrFullMapping.getTarget(sourceEdge.getTwo());
             Edge targetEdge = targetGraph.getEdge(target1, target2);
             if (targetEdge == null) {
-                editOperationsResult.add(new EditOperation(EditOperation.Operation.DELETE_EDGE, "Delete edge " + sourceEdge));
+                editOperationsResult.add(new EditOperation(EditOperation.Operation.DELETE_EDGE, "Delete edge " + sourceEdge, sourceEdge));
                 cost++;
             } else if (!sourceEdge.getLabel().equals(targetEdge.getLabel())) {
-                editOperationsResult.add(new EditOperation(EditOperation.Operation.CHANGE_EDGE, "Change " + sourceEdge + " to " + targetEdge));
+                editOperationsResult.add(new EditOperation(EditOperation.Operation.CHANGE_EDGE, "Change " + sourceEdge + " to " + targetEdge, Arrays.asList(sourceEdge, targetEdge)));
                 cost++;
             }
         }
@@ -237,7 +240,7 @@ public class SchemaDiffing {
             Vertex sourceFrom = partialOrFullMapping.getSource(targetEdge.getOne());
             Vertex sourceTo = partialOrFullMapping.getSource(targetEdge.getTwo());
             if (sourceGraph.getEdge(sourceFrom, sourceTo) == null) {
-                editOperationsResult.add(new EditOperation(EditOperation.Operation.INSERT_EDGE, "Insert edge " + targetEdge));
+                editOperationsResult.add(new EditOperation(EditOperation.Operation.INSERT_EDGE, "Insert edge " + targetEdge, targetEdge));
                 cost++;
             }
         }
@@ -258,7 +261,7 @@ public class SchemaDiffing {
         // inner edge labels of u (resp. v) in regards to the partial mapping: all labels of edges
         // which are adjacent of u (resp. v) which are inner edges
 
-        List<Edge> adjacentEdgesV = sourceGraph.getEdges(v);
+        List<Edge> adjacentEdgesV = sourceGraph.getAdjacentEdges(v);
 //        Set<Vertex> nonMappedSourceVertices = nonMappedVertices(sourceGraph.getVertices(), partialMappingSourceList);
         Multiset<String> multisetLabelsV = HashMultiset.create();
 
@@ -271,7 +274,7 @@ public class SchemaDiffing {
             }
         }
 
-        List<Edge> adjacentEdgesU = targetGraph.getEdges(u);
+        List<Edge> adjacentEdgesU = targetGraph.getAdjacentEdges(u);
 //        Set<Vertex> nonMappedTargetVertices = nonMappedVertices(targetGraph.getVertices(), partialMappingTargetList);
         Multiset<String> multisetLabelsU = HashMultiset.create();
         for (Edge edge : adjacentEdgesU) {

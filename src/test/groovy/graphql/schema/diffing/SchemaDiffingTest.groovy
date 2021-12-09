@@ -52,6 +52,7 @@ class SchemaDiffingTest extends Specification {
 
     }
 
+
     def "test two field renames one type rename"() {
         given:
         def schema1 = schema("""
@@ -319,12 +320,22 @@ class SchemaDiffingTest extends Specification {
            } 
         """)
 
+        def changeHandler = new SchemaChangedHandler() {
+            @Override
+            void fieldRemoved(String description) {
+                println "field removed: " + description
+            }
+        }
+
+        def diffing = new SchemaDiffing()
         when:
-        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        def diff = diffing.diffGraphQLSchema(schema1, schema2)
+        new DefaultGraphEditOperationAnalyzer(schema1, schema2, diffing.sourceGraph, diffing.targetGraph, changeHandler).analyzeEdits(diff)
 
         then:
         diff.size() == 5
     }
+
 
     def "changing schema a lot"() {
         given:
