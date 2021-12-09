@@ -24,10 +24,10 @@ class SchemaDiffingTest extends Specification {
         """)
 
         when:
-        def schemaGraph = new SchemaDiffing().createGraph(schema)
+        def schemaGraph = new SchemaGraphFactory().createGraph(schema)
 
         then:
-        schemaGraph.size() == 64
+        schemaGraph.size() == 132
 
     }
 
@@ -188,11 +188,9 @@ class SchemaDiffingTest extends Specification {
         })
         println "changed fields: " + counter
         when:
-        long t = System.currentTimeMillis()
-        new SchemaDiffing().diffGraphQLSchema(largeSchema, changedOne)
-        println "time: " + (System.currentTimeMillis() - t)
+        def diff = new SchemaDiffing().diffGraphQLSchema(largeSchema, changedOne)
         then:
-        true
+        diff.size() == 171
     }
 
     def "change object type name used twice"() {
@@ -217,10 +215,10 @@ class SchemaDiffingTest extends Specification {
         """)
 
         when:
-        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        true
+        diff.size() == 3
 
     }
 
@@ -240,10 +238,10 @@ class SchemaDiffingTest extends Specification {
         """)
 
         when:
-        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        true
+        diff.size() == 1
 
     }
 
@@ -263,10 +261,10 @@ class SchemaDiffingTest extends Specification {
         """)
 
         when:
-        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        true
+        diff.size() == 2
 
     }
 
@@ -285,14 +283,13 @@ class SchemaDiffingTest extends Specification {
         """)
 
         when:
-        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        true
-
+        diff.size() == 5
     }
 
-    def "changing schema a lot 1"() {
+    def "changing schema a lot"() {
         given:
         def schema1 = schema("""
            type Query {
@@ -339,10 +336,10 @@ class SchemaDiffingTest extends Specification {
         """)
 
         when:
-        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        true
+        diff.size() == 58
 
     }
 
@@ -388,7 +385,7 @@ class SchemaDiffingTest extends Specification {
         def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        operations.size() == 20
+        operations.size() == 18
     }
 
     def "adding a few things plus introducing new interface"() {
@@ -433,7 +430,7 @@ class SchemaDiffingTest extends Specification {
         def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        operations.size() == 24
+        operations.size() == 22
     }
 
     def "adding a few things plus introducing new interface plus changing return type"() {
@@ -527,7 +524,7 @@ class SchemaDiffingTest extends Specification {
         def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        operations.size() == 48
+        operations.size() == 42
     }
 
     def "add a field"() {
@@ -545,10 +542,10 @@ class SchemaDiffingTest extends Specification {
         """)
 
         when:
-        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        true
+        diff.size() == 5
 
     }
 
