@@ -24,6 +24,12 @@ import static graphql.util.FpKit.getByName;
  * A directive can be used to modify the behavior of a graphql field or type.
  * <p>
  * See http://graphql.org/learn/queries/#directives for more details on the concept.
+ * <p>
+ * A directive has a definition, that is what arguments it takes, and it can also be applied
+ * to other schema elements.  Originally graphql-java re-used the {@link GraphQLDirective} and {@link GraphQLArgument}
+ * classes to do both purposes.  This was a modelling mistake.  New {@link GraphQLAppliedDirective} and {@link GraphQLAppliedArgument}
+ * classes have been introduced to better model when a directive is applied to a schema element,
+ * as opposed to its schema definition itself.
  */
 @PublicApi
 public class GraphQLDirective implements GraphQLNamedSchemaElement {
@@ -144,6 +150,19 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         return transform(builder ->
                 builder.replaceArguments(newChildren.getChildren(CHILD_ARGUMENTS))
         );
+    }
+
+    /**
+     * This method can be used to turn a directive that was being use as an applied directive into one.
+     * @return an {@link GraphQLAppliedDirective}
+     */
+    public GraphQLAppliedDirective toAppliedDirective() {
+        GraphQLAppliedDirective.Builder builder = GraphQLAppliedDirective.newDirective();
+        builder.name(this.name);
+        for (GraphQLArgument argument : arguments) {
+            builder.argument(argument.toAppliedArgument());
+        }
+        return builder.build();
     }
 
     /**

@@ -118,7 +118,7 @@ class SchemaGeneratorAppliedDirectiveHelper {
         List<GraphQLAppliedArgument> appliedArguments = new ArrayList<>();
 
         for (Argument arg : directive.getArguments()) {
-            directiveArguments.add(buildDirectiveAppliedArg(buildCtx, arg, graphQLDirective));
+            directiveArguments.add(buildDirectiveArg(buildCtx, arg, graphQLDirective));
             appliedArguments.add(buildAppliedArg(buildCtx, arg, graphQLDirective));
         }
 
@@ -131,7 +131,7 @@ class SchemaGeneratorAppliedDirectiveHelper {
         return pair(builder.build(), builderAppliedDirective.build());
     }
 
-    private static GraphQLArgument buildDirectiveAppliedArg(SchemaGeneratorHelper.BuildContext buildCtx, Argument arg, GraphQLDirective directiveDefinition) {
+    private static GraphQLArgument buildDirectiveArg(SchemaGeneratorHelper.BuildContext buildCtx, Argument arg, GraphQLDirective directiveDefinition) {
         GraphQLArgument directiveDefArgument = directiveDefinition.getArgument(arg.getName());
         GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
         GraphQLInputType inputType = directiveDefArgument.getType();
@@ -158,6 +158,7 @@ class SchemaGeneratorAppliedDirectiveHelper {
         GraphQLArgument directiveDefArgument = directiveDefinition.getArgument(arg.getName());
         GraphQLAppliedArgument.Builder builder = GraphQLAppliedArgument.newArgument();
         builder.name(arg.getName())
+                .type(directiveDefArgument.getType())
                 .definition(buildCtx.isCaptureAstDefinitions() ? arg : null);
 
         // Object value = buildCtx, arg.getValue(), inputType);
@@ -205,6 +206,7 @@ class SchemaGeneratorAppliedDirectiveHelper {
             if (!declaredArgs.containsKey(directiveDefArg.getName())) {
                 GraphQLAppliedArgument.Builder missingArg = GraphQLAppliedArgument.newArgument()
                         .name(directiveDefArg.getName())
+                        .type(directiveDefArg.getType())
                         .description(directiveDefArg.getDescription());
 
                 if (directiveDefArg.hasSetDefaultValue()) {

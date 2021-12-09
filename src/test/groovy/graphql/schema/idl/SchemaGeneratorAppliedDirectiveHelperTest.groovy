@@ -79,7 +79,7 @@ class SchemaGeneratorAppliedDirectiveHelperTest extends Specification {
 
         def fooAppliedDirective = field.getAppliedDirective("foo")
         fooAppliedDirective.arguments.collect { it.name }.sort() == ["arg1", "arg2"]
-        fooAppliedDirective.arguments.collect { GraphQLAppliedArgument.getArgumentValue(it, GraphQLString) }.sort() == ["arg2Value", "fooArg1Value"]
+        fooAppliedDirective.arguments.collect { it.getValue() }.sort() == ["arg2Value", "fooArg1Value"]
 
 
         def fooDirectiveOnType = barType.getDirective("foo")
@@ -88,7 +88,7 @@ class SchemaGeneratorAppliedDirectiveHelperTest extends Specification {
 
         def fooAppliedDirectiveOnType = barType.getAppliedDirective("foo")
         fooAppliedDirectiveOnType.arguments.collect { it.name }.sort() == ["arg1", "arg2"]
-        fooAppliedDirectiveOnType.arguments.collect { GraphQLAppliedArgument.getArgumentValue(it, GraphQLString) }.sort() == ["BarTypeValue", "arg2Value",]
+        fooAppliedDirectiveOnType.arguments.collect { it.getValue() }.sort() == ["BarTypeValue", "arg2Value",]
 
 
         def complexDirective = complexField.getDirective("complex")
@@ -100,7 +100,7 @@ class SchemaGeneratorAppliedDirectiveHelperTest extends Specification {
         def complexAppliedDirective = complexField.getAppliedDirective("complex")
         GraphQLInputType complexInputType = schema.getTypeAs("ComplexInput")
         complexAppliedDirective.arguments.collect { it.name }.sort() == ["complexArg1"]
-        complexAppliedDirective.arguments.collect { GraphQLAppliedArgument.getArgumentValue(it, complexInputType) }.sort() == [
+        complexAppliedDirective.arguments.collect { it.getValue() }.sort() == [
                 [name:"Boris", address:[number:10, street:"Downing St", town:"London"]]
         ]
 
@@ -143,7 +143,7 @@ class SchemaGeneratorAppliedDirectiveHelperTest extends Specification {
 
         def fooAppliedDirective = field.getAppliedDirective("foo")
         fooAppliedDirective.arguments.collect { it.name }.sort() == ["arg1", "arg2"]
-        fooAppliedDirective.arguments.collect { GraphQLAppliedArgument.getArgumentValue(it, GraphQLString) }.sort() == ["arg2Value", "fooArg1Value"]
+        fooAppliedDirective.arguments.collect { it.value }.sort() == ["arg2Value", "fooArg1Value"]
     }
 
 }

@@ -19,8 +19,14 @@ import static graphql.Assert.assertValidName;
 import static graphql.util.FpKit.getByName;
 
 /**
- * An applied directive repreents the instance of a  directive that is applied to a schema element,
+ * An applied directive represents the instance of a directive that is applied to a schema element,
  * as opposed to it definition
+ * <p>
+ * A directive has a definition, that is what arguments it takes, and it can also be applied
+ * to other schema elements.  Originally graphql-java re-used the {@link GraphQLDirective} and {@link GraphQLArgument}
+ * classes to do both purposes.  This was a modelling mistake.  New {@link GraphQLAppliedDirective} and {@link GraphQLAppliedArgument}
+ * classes have been introduced to better model when a directive is applied to a schema element,
+ * as opposed to its schema definition itself.
  * <p>
  * See http://graphql.org/learn/queries/#directives for more details on the concept.
  */

@@ -45,6 +45,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     private final String description;
     private final String deprecationReason;
     private final GraphQLInputType originalType;
+    private GraphQLInputType replacedType;
 
     private final InputValueWithState defaultValue;
     private final InputValueWithState value;
@@ -52,7 +53,6 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     private final InputValueDefinition definition;
     private final DirectivesUtil.DirectivesHolder directivesHolder;
 
-    private GraphQLInputType replacedType;
 
     public static final String CHILD_TYPE = "type";
 
@@ -296,6 +296,19 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
                 ", defaultValue=" + defaultValue +
                 ", type=" + getType() +
                 '}';
+    }
+
+    /**
+     * This method can be used to turn an argument that was being use as an applied argument into one.
+     *
+     * @return an {@link GraphQLAppliedArgument}
+     */
+    public GraphQLAppliedArgument toAppliedArgument() {
+        return GraphQLAppliedArgument.newArgument()
+                .name(name)
+                .type(getType())
+                .inputValueWithState(value)
+                .build();
     }
 
     public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder, Builder> {

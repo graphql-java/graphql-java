@@ -2,22 +2,23 @@ package graphql;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import graphql.language.Directive;
-import graphql.language.DirectiveDefinition;
 import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLDirectiveContainer;
 import graphql.util.FpKit;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
+import static java.util.stream.Collectors.toSet;
 
 @Internal
 public class DirectivesUtil {
@@ -78,6 +79,43 @@ public class DirectivesUtil {
             return null;
         }
         return directives.get(0);
+    }
+
+    /**
+     * This can take a collection of legacy directives and turn them applied directives, and combine them with any applied directives.  The applied
+     * directives collection takes precedence.
+     *
+     * @param directiveContainer the schema element holding applied directives
+     *
+     * @return a combined list unique by name
+     */
+    public static List<GraphQLAppliedDirective> toAppliedDirectives(GraphQLDirectiveContainer directiveContainer) {
+        return toAppliedDirectives(directiveContainer.getAppliedDirectives(), directiveContainer.getDirectives());
+    }
+
+    /**
+     * This can take a collection of legacy directives and turn them applied directives, and combine them with any applied directives.  The applied
+     * directives collection takes precedence.
+     *
+     * @param appliedDirectives the applied directives to use
+     * @param directives        the legacy directives to use
+     *
+     * @return a combined list unique by name
+     */
+    public static List<GraphQLAppliedDirective> toAppliedDirectives(Collection<GraphQLAppliedDirective> appliedDirectives, Collection<GraphQLDirective> directives) {
+        Set<String> named = appliedDirectives.stream()
+                .map(GraphQLAppliedDirective::getName).collect(toSet());
+
+        ImmutableList.Builder<GraphQLAppliedDirective> list = ImmutableList.<GraphQLAppliedDirective>builder()
+                .addAll(appliedDirectives);
+        // we only put in legacy directives if the list does not already contain them.  We need this mechanism
+        // (and not a map) because of repeated directives
+        directives.forEach(directive -> {
+            if (!named.contains(directive.getName())) {
+                list.add(directive.toAppliedDirective());
+            }
+        });
+        return list.build();
     }
 
     /**

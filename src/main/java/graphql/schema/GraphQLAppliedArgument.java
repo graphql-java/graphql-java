@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.Assert;
 import graphql.PublicApi;
 import graphql.language.Argument;
 import graphql.language.Value;
@@ -13,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.execution.ValuesResolver.getInputValueImpl;
 
@@ -27,24 +29,35 @@ public class GraphQLAppliedArgument implements GraphQLNamedSchemaElement {
 
     private final String name;
     private final InputValueWithState value;
+    private final GraphQLInputType originalType;
+    private GraphQLInputType replacedType;
 
     private final Argument definition;
 
 
     private GraphQLAppliedArgument(String name,
                                    InputValueWithState value,
+                                   GraphQLInputType type,
                                    Argument definition
     ) {
         assertValidName(name);
         this.name = name;
-        this.value = value;
+        this.value = assertNotNull(value);
+        this.originalType = assertNotNull(type);
         this.definition = definition;
     }
-
 
     @Override
     public String getName() {
         return name;
+    }
+
+    public GraphQLInputType getType() {
+        return replacedType != null ? replacedType : originalType;
+    }
+
+    void replaceType(GraphQLInputType type) {
+        this.replacedType = type;
     }
 
     public boolean hasSetValue() {
@@ -59,7 +72,7 @@ public class GraphQLAppliedArgument implements GraphQLNamedSchemaElement {
     }
 
     /**
-     * This static helper method will give out a java value based on the semantics captured
+     * This swill give out an internal java value based on the semantics captured
      * in the {@link InputValueWithState} from {@link GraphQLAppliedArgument#getArgumentValue()}
      *
      * Note : You MUST only call this on a {@link GraphQLAppliedArgument} that is part of a fully formed schema.  We need
@@ -69,14 +82,12 @@ public class GraphQLAppliedArgument implements GraphQLNamedSchemaElement {
      * when "not set" and "set to null" then you can't use this method.  Rather you should use {@link GraphQLAppliedArgument#getArgumentValue()}
      * and use the {@link InputValueWithState#isNotSet()} methods to decide how to handle those values.
      *
-     * @param <T>          the type you want it cast as
-     * @param argument     the fully formed {@link GraphQLAppliedArgument}
-     * @param argumentType the type of the applied argument
+     * @param <T> the type you want it cast as
      *
      * @return a value of type T which is the java value of the argument
      */
-    public static <T> T getArgumentValue(GraphQLAppliedArgument argument, GraphQLInputType argumentType) {
-        return getInputValueImpl(argumentType, argument.getArgumentValue());
+    public <T> T getValue() {
+        return getInputValueImpl(getType(), value);
     }
 
     /**
@@ -163,6 +174,7 @@ public class GraphQLAppliedArgument implements GraphQLNamedSchemaElement {
     public String toString() {
         return "GraphQLAppliedDirectiveArgument{" +
                 "name='" + name + '\'' +
+                ", type=" + getType() +
                 ", value=" + value +
                 '}';
     }
@@ -171,7 +183,7 @@ public class GraphQLAppliedArgument implements GraphQLNamedSchemaElement {
 
         private InputValueWithState value = InputValueWithState.NOT_SET;
         private Argument definition;
-
+        private GraphQLInputType type;
 
         public Builder() {
         }
@@ -179,6 +191,12 @@ public class GraphQLAppliedArgument implements GraphQLNamedSchemaElement {
         public Builder(GraphQLAppliedArgument existing) {
             this.name = existing.getName();
             this.value = existing.getArgumentValue();
+            this.type = existing.getType();
+        }
+
+        public Builder type(GraphQLInputType type) {
+            this.type = assertNotNull(type);
+            return this;
         }
 
         public Builder definition(Argument definition) {
@@ -208,6 +226,11 @@ public class GraphQLAppliedArgument implements GraphQLNamedSchemaElement {
             return this;
         }
 
+        public Builder inputValueWithState(@NotNull InputValueWithState value) {
+            this.value = Assert.assertNotNull(value);
+            return this;
+        }
+
         /**
          * Removes the value to represent a missing value (which is different from null)
          *
@@ -224,6 +247,7 @@ public class GraphQLAppliedArgument implements GraphQLNamedSchemaElement {
             return new GraphQLAppliedArgument(
                     name,
                     value,
+                    type,
                     definition
             );
         }
