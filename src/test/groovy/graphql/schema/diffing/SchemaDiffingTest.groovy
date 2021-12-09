@@ -45,10 +45,10 @@ class SchemaDiffingTest extends Specification {
         """)
 
         when:
-        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        true
+        diff.size() == 1
 
     }
 
@@ -72,10 +72,10 @@ class SchemaDiffingTest extends Specification {
         """)
 
         when:
-        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        true
+        diff.size() == 4
 
     }
 
@@ -83,7 +83,7 @@ class SchemaDiffingTest extends Specification {
         given:
         def schema1 = schema("""
            type Query {
-            hello: Int
+            hello: Boolean
            } 
         """)
         def schema2 = schema("""
@@ -93,10 +93,14 @@ class SchemaDiffingTest extends Specification {
         """)
 
         when:
-        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        true
+        /**
+         * Deleting the edge from __DUMMY_TYPE_VERTICE to Boolean
+         * Insert the edge from __DUMMY_TYPE_VERTICE to String
+         */
+        diff.size() == 2
 
     }
 
@@ -120,10 +124,10 @@ class SchemaDiffingTest extends Specification {
         """)
 
         when:
-        new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        true
+        diff.size() == 2
 
     }
 
@@ -450,7 +454,7 @@ class SchemaDiffingTest extends Specification {
         """)
         def schema2 = schema("""
            type Query {
-            pets: [Animal] # This is different from the previous one   
+            pets: [Animal] 
             animals: [Animal]
            } 
            interface Animal {
@@ -474,7 +478,7 @@ class SchemaDiffingTest extends Specification {
         def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        operations.size() == 26
+        operations.size() == 24
     }
 
     def "adding a few things plus introducing new interface plus changing return type plus adding field in Interface"() {

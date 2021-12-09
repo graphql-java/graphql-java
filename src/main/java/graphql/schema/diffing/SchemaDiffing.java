@@ -266,7 +266,7 @@ public class SchemaDiffing {
             // test if this an inner edge: meaning both edges vertices are part of the non mapped vertices
             // or: at least one edge is part of the partial mapping
 //            if (nonMappedSourceVertices.contains(edge.getOne()) && nonMappedSourceVertices.contains(edge.getTwo())) {
-            if (!partialMappingSourceSet.contains(edge.getOne()) || !partialMappingSourceSet.contains(edge.getTwo())) {
+            if (!partialMappingSourceSet.contains(edge.getOne()) && !partialMappingSourceSet.contains(edge.getTwo())) {
                 multisetLabelsV.add(edge.getLabel());
             }
         }
@@ -276,7 +276,7 @@ public class SchemaDiffing {
         Multiset<String> multisetLabelsU = HashMultiset.create();
         for (Edge edge : adjacentEdgesU) {
             // test if this is an inner edge
-            if (!partialMappingSourceSet.contains(edge.getOne()) || !partialMappingTargetSet.contains(edge.getTwo())) {
+            if (!partialMappingTargetSet.contains(edge.getOne()) && !partialMappingTargetSet.contains(edge.getTwo())) {
                 multisetLabelsU.add(edge.getLabel());
             }
         }
