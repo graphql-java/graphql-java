@@ -840,7 +840,7 @@ type Query {
   field: String @foo(changedArg1 : "fooArg")
   field2: String @bar(arg1 : "barArg")
 }
-    
+
 '''
     }
 }
