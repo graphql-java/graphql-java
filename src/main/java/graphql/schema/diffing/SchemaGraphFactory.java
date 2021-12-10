@@ -1,6 +1,10 @@
 package graphql.schema.diffing;
 
+import graphql.Directives;
+import graphql.introspection.Introspection;
 import graphql.schema.*;
+import graphql.schema.idl.DirectiveInfo;
+import graphql.schema.idl.ScalarInfo;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
 import graphql.util.TraverserContext;
@@ -33,26 +37,38 @@ public class SchemaGraphFactory {
         roots.add(schema.getIntrospectionSchemaType());
         Traverser<GraphQLSchemaElement> traverser = Traverser.depthFirst(GraphQLSchemaElement::getChildren);
         SchemaGraph schemaGraph = new SchemaGraph();
+        class IntrospectionNode {
+
+        }
         traverser.traverse(roots, new TraverserVisitor<GraphQLSchemaElement>() {
             @Override
             public TraversalControl enter(TraverserContext<GraphQLSchemaElement> context) {
+                boolean isIntrospectionNode = false;
+                if (context.thisNode() instanceof GraphQLNamedType) {
+                    if (Introspection.isIntrospectionTypes((GraphQLNamedType) context.thisNode())) {
+                        isIntrospectionNode = true;
+                        context.setVar(IntrospectionNode.class, new IntrospectionNode());
+                    }
+                } else {
+                    isIntrospectionNode = context.getVarFromParents(IntrospectionNode.class) != null;
+                }
                 if (context.thisNode() instanceof GraphQLObjectType) {
-                    newObject((GraphQLObjectType) context.thisNode(), schemaGraph);
+                    newObject((GraphQLObjectType) context.thisNode(), schemaGraph, isIntrospectionNode);
                 }
                 if (context.thisNode() instanceof GraphQLInterfaceType) {
-                    newInterface((GraphQLInterfaceType) context.thisNode(), schemaGraph);
+                    newInterface((GraphQLInterfaceType) context.thisNode(), schemaGraph, isIntrospectionNode);
                 }
                 if (context.thisNode() instanceof GraphQLUnionType) {
-                    newUnion((GraphQLInterfaceType) context.thisNode(), schemaGraph);
+                    newUnion((GraphQLInterfaceType) context.thisNode(), schemaGraph, isIntrospectionNode);
                 }
                 if (context.thisNode() instanceof GraphQLScalarType) {
-                    newScalar((GraphQLScalarType) context.thisNode(), schemaGraph);
+                    newScalar((GraphQLScalarType) context.thisNode(), schemaGraph, isIntrospectionNode);
                 }
                 if (context.thisNode() instanceof GraphQLInputObjectType) {
-                    newInputObject((GraphQLInputObjectType) context.thisNode(), schemaGraph);
+                    newInputObject((GraphQLInputObjectType) context.thisNode(), schemaGraph, isIntrospectionNode);
                 }
                 if (context.thisNode() instanceof GraphQLEnumType) {
-                    newEnum((GraphQLEnumType) context.thisNode(), schemaGraph);
+                    newEnum((GraphQLEnumType) context.thisNode(), schemaGraph, isIntrospectionNode);
                 }
                 if (context.thisNode() instanceof GraphQLDirective) {
                     // only continue if not applied directive
@@ -110,6 +126,7 @@ public class SchemaGraphFactory {
         GraphQLInputType type = inputField.getType();
         GraphQLUnmodifiedType graphQLUnmodifiedType = GraphQLTypeUtil.unwrapAll(type);
         Vertex dummyTypeVertex = new Vertex(DUMMY_TYPE_VERTICE, String.valueOf(counter++));
+        dummyTypeVertex.setBuiltInType(inputFieldVertex.isBuiltInType());
         schemaGraph.addVertex(dummyTypeVertex);
         schemaGraph.addEdge(new Edge(inputFieldVertex, dummyTypeVertex));
         Vertex typeVertex = assertNotNull(schemaGraph.getType(graphQLUnmodifiedType.getName()));
@@ -165,6 +182,7 @@ public class SchemaGraphFactory {
         GraphQLOutputType type = fieldDefinition.getType();
         GraphQLUnmodifiedType graphQLUnmodifiedType = GraphQLTypeUtil.unwrapAll(type);
         Vertex dummyTypeVertex = new Vertex(DUMMY_TYPE_VERTICE, String.valueOf(counter++));
+        dummyTypeVertex.setBuiltInType(fieldVertex.isBuiltInType());
         schemaGraph.addVertex(dummyTypeVertex);
         schemaGraph.addEdge(new Edge(fieldVertex, dummyTypeVertex));
         Vertex typeVertex = assertNotNull(schemaGraph.getType(graphQLUnmodifiedType.getName()));
@@ -188,12 +206,13 @@ public class SchemaGraphFactory {
         schemaGraph.addEdge(typeEdge);
     }
 
-    private void newObject(GraphQLObjectType graphQLObjectType, SchemaGraph schemaGraph) {
+    private void newObject(GraphQLObjectType graphQLObjectType, SchemaGraph schemaGraph, boolean isIntrospectionNode) {
         Vertex objectVertex = new Vertex("Object", String.valueOf(counter++));
+        objectVertex.setBuiltInType(isIntrospectionNode);
         objectVertex.add("name", graphQLObjectType.getName());
         objectVertex.add("description", graphQLObjectType.getDescription());
         for (GraphQLFieldDefinition fieldDefinition : graphQLObjectType.getFieldDefinitions()) {
-            Vertex newFieldVertex = newField(fieldDefinition, schemaGraph);
+            Vertex newFieldVertex = newField(fieldDefinition, schemaGraph, isIntrospectionNode);
             schemaGraph.addVertex(newFieldVertex);
             schemaGraph.addEdge(new Edge(objectVertex, newFieldVertex));
         }
@@ -202,12 +221,13 @@ public class SchemaGraphFactory {
         cratedAppliedDirectives(objectVertex, graphQLObjectType.getDirectives(), schemaGraph);
     }
 
-    private Vertex newField(GraphQLFieldDefinition graphQLFieldDefinition, SchemaGraph schemaGraph) {
+    private Vertex newField(GraphQLFieldDefinition graphQLFieldDefinition, SchemaGraph schemaGraph, boolean isIntrospectionNode) {
         Vertex fieldVertex = new Vertex("Field", String.valueOf(counter++));
+        fieldVertex.setBuiltInType(isIntrospectionNode);
         fieldVertex.add("name", graphQLFieldDefinition.getName());
         fieldVertex.add("description", graphQLFieldDefinition.getDescription());
         for (GraphQLArgument argument : graphQLFieldDefinition.getArguments()) {
-            Vertex argumentVertex = newArgument(argument, schemaGraph);
+            Vertex argumentVertex = newArgument(argument, schemaGraph, isIntrospectionNode);
             schemaGraph.addVertex(argumentVertex);
             schemaGraph.addEdge(new Edge(fieldVertex, argumentVertex));
         }
@@ -215,16 +235,21 @@ public class SchemaGraphFactory {
         return fieldVertex;
     }
 
-    private Vertex newArgument(GraphQLArgument graphQLArgument, SchemaGraph schemaGraph) {
+    private Vertex newArgument(GraphQLArgument graphQLArgument, SchemaGraph schemaGraph, boolean isIntrospectionNode) {
         Vertex vertex = new Vertex("Argument", String.valueOf(counter++));
+        vertex.setBuiltInType(isIntrospectionNode);
         vertex.add("name", graphQLArgument.getName());
         vertex.add("description", graphQLArgument.getDescription());
         cratedAppliedDirectives(vertex, graphQLArgument.getDirectives(), schemaGraph);
         return vertex;
     }
 
-    private void newScalar(GraphQLScalarType scalarType, SchemaGraph schemaGraph) {
+    private void newScalar(GraphQLScalarType scalarType, SchemaGraph schemaGraph, boolean isIntrospectionNode) {
         Vertex scalarVertex = new Vertex("Scalar", String.valueOf(counter++));
+        scalarVertex.setBuiltInType(isIntrospectionNode);
+        if (ScalarInfo.isGraphqlSpecifiedScalar(scalarType.getName())) {
+            scalarVertex.setBuiltInType(true);
+        }
         scalarVertex.add("name", scalarType.getName());
         scalarVertex.add("description", scalarType.getDescription());
         schemaGraph.addVertex(scalarVertex);
@@ -232,12 +257,13 @@ public class SchemaGraphFactory {
         cratedAppliedDirectives(scalarVertex, scalarType.getDirectives(), schemaGraph);
     }
 
-    private void newInterface(GraphQLInterfaceType interfaceType, SchemaGraph schemaGraph) {
+    private void newInterface(GraphQLInterfaceType interfaceType, SchemaGraph schemaGraph, boolean isIntrospectionNode) {
         Vertex interfaceVertex = new Vertex("Interface", String.valueOf(counter++));
+        interfaceVertex.setBuiltInType(isIntrospectionNode);
         interfaceVertex.add("name", interfaceType.getName());
         interfaceVertex.add("description", interfaceType.getDescription());
         for (GraphQLFieldDefinition fieldDefinition : interfaceType.getFieldDefinitions()) {
-            Vertex newFieldVertex = newField(fieldDefinition, schemaGraph);
+            Vertex newFieldVertex = newField(fieldDefinition, schemaGraph, isIntrospectionNode);
             schemaGraph.addVertex(newFieldVertex);
             schemaGraph.addEdge(new Edge(interfaceVertex, newFieldVertex));
         }
@@ -246,12 +272,14 @@ public class SchemaGraphFactory {
         cratedAppliedDirectives(interfaceVertex, interfaceType.getDirectives(), schemaGraph);
     }
 
-    private void newEnum(GraphQLEnumType enumType, SchemaGraph schemaGraph) {
+    private void newEnum(GraphQLEnumType enumType, SchemaGraph schemaGraph, boolean isIntrospectionNode) {
         Vertex enumVertex = new Vertex("Enum", String.valueOf(counter++));
+        enumVertex.setBuiltInType(isIntrospectionNode);
         enumVertex.add("name", enumType.getName());
         enumVertex.add("description", enumType.getDescription());
         for (GraphQLEnumValueDefinition enumValue : enumType.getValues()) {
             Vertex enumValueVertex = new Vertex("EnumValue", String.valueOf(counter++));
+            enumValueVertex.setBuiltInType(isIntrospectionNode);
             enumValueVertex.add("name", enumValue.getName());
             schemaGraph.addVertex(enumValueVertex);
             schemaGraph.addEdge(new Edge(enumVertex, enumValueVertex));
@@ -262,8 +290,9 @@ public class SchemaGraphFactory {
         cratedAppliedDirectives(enumVertex, enumType.getDirectives(), schemaGraph);
     }
 
-    private void newUnion(GraphQLInterfaceType unionType, SchemaGraph schemaGraph) {
+    private void newUnion(GraphQLInterfaceType unionType, SchemaGraph schemaGraph, boolean isIntrospectionNode) {
         Vertex unionVertex = new Vertex("Union", String.valueOf(counter++));
+        unionVertex.setBuiltInType(isIntrospectionNode);
         unionVertex.add("name", unionType.getName());
         unionVertex.add("description", unionType.getDescription());
         schemaGraph.addVertex(unionVertex);
@@ -271,12 +300,13 @@ public class SchemaGraphFactory {
         cratedAppliedDirectives(unionVertex, unionType.getDirectives(), schemaGraph);
     }
 
-    private void newInputObject(GraphQLInputObjectType inputObject, SchemaGraph schemaGraph) {
+    private void newInputObject(GraphQLInputObjectType inputObject, SchemaGraph schemaGraph, boolean isIntrospectionNode) {
         Vertex inputObjectVertex = new Vertex("InputObject", String.valueOf(counter++));
+        inputObjectVertex.setBuiltInType(isIntrospectionNode);
         inputObjectVertex.add("name", inputObject.getName());
         inputObjectVertex.add("description", inputObject.getDescription());
         for (GraphQLInputObjectField inputObjectField : inputObject.getFieldDefinitions()) {
-            Vertex newInputField = newInputField(inputObjectField, schemaGraph);
+            Vertex newInputField = newInputField(inputObjectField, schemaGraph, isIntrospectionNode);
             Edge newEdge = new Edge(inputObjectVertex, newInputField);
             schemaGraph.addEdge(newEdge);
             cratedAppliedDirectives(inputObjectVertex, inputObjectField.getDirectives(), schemaGraph);
@@ -305,9 +335,11 @@ public class SchemaGraphFactory {
     private void newDirective(GraphQLDirective directive, SchemaGraph schemaGraph) {
         Vertex directiveVertex = new Vertex("Directive", String.valueOf(counter++));
         directiveVertex.add("name", directive.getName());
+        boolean graphqlSpecified = DirectiveInfo.isGraphqlSpecifiedDirective(directive.getName());
+        directiveVertex.setBuiltInType(graphqlSpecified);
         directiveVertex.add("description", directive.getDescription());
         for (GraphQLArgument argument : directive.getArguments()) {
-            Vertex argumentVertex = newArgument(argument, schemaGraph);
+            Vertex argumentVertex = newArgument(argument, schemaGraph, graphqlSpecified);
             schemaGraph.addVertex(argumentVertex);
             schemaGraph.addEdge(new Edge(directiveVertex, argumentVertex));
         }
@@ -315,8 +347,9 @@ public class SchemaGraphFactory {
         schemaGraph.addVertex(directiveVertex);
     }
 
-    private Vertex newInputField(GraphQLInputObjectField inputField, SchemaGraph schemaGraph) {
+    private Vertex newInputField(GraphQLInputObjectField inputField, SchemaGraph schemaGraph, boolean isIntrospectionNode) {
         Vertex vertex = new Vertex("InputField", String.valueOf(counter++));
+        vertex.setBuiltInType(isIntrospectionNode);
         vertex.add("name", inputField.getName());
         vertex.add("description", inputField.getDescription());
         cratedAppliedDirectives(vertex, inputField.getDirectives(), schemaGraph);

@@ -12,6 +12,8 @@ public class Vertex {
     private boolean artificialNode;
 
 
+    private boolean builtInType;
+
     public static Vertex newArtificialNode(String type) {
         Vertex vertex = new Vertex(type, null);
         vertex.artificialNode = true;
@@ -57,12 +59,21 @@ public class Vertex {
                 Objects.equals(this.properties, other.properties);
     }
 
+    public boolean isBuiltInType() {
+        return builtInType;
+    }
+
+    public void setBuiltInType(boolean builtInType) {
+        this.builtInType = builtInType;
+    }
+
     @Override
     public String toString() {
         return "Vertex{" +
                 "type='" + type + '\'' +
                 ", properties=" + properties +
                 ", debugName='" + debugName + '\'' +
+                ", builtInType='" + builtInType + '\'' +
                 '}';
     }
 }

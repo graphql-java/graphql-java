@@ -70,7 +70,7 @@ public class SchemaDiffing {
         int counter = 0;
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
-            System.out.println("entry at level " + mappingEntry.level + " counter:" + (++counter) + " queue size: " + queue.size());
+            System.out.println("entry at level " + mappingEntry.level + " counter:" + (++counter) + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost);
             if (mappingEntry.lowerBoundCost >= upperBoundCost.doubleValue()) {
 //                System.out.println("skipping!");
                 continue;
@@ -134,10 +134,10 @@ public class SchemaDiffing {
             result.add(nextOne);
             nextCandidates.remove(nextOneIndex);
         }
-//        System.out.println(result);
+        System.out.println(result);
 //        System.out.println(nextCandidates);
 //        Collections.reverse(result);
-        sourceGraph.setVertices(result);
+//        sourceGraph.setVertices(result);
     }
 
     private List<Edge> allAdjacentEdges(SchemaGraph schemaGraph, List<Vertex> fromList, Vertex to) {
@@ -153,9 +153,12 @@ public class SchemaDiffing {
     }
 
     private int totalWeight(SchemaGraph sourceGraph, Vertex vertex, List<Edge> edges, Map<Vertex, Integer> vertexWeights, Map<Edge, Integer> edgesWeights) {
-//        if (vertex.isArtificialNode()) {
-//            return Integer.MIN_VALUE + 1;
-//        }
+        if (vertex.isBuiltInType()) {
+            return Integer.MIN_VALUE + 1;
+        }
+        if (vertex.isArtificialNode()) {
+            return Integer.MIN_VALUE + 2;
+        }
         return vertexWeights.get(vertex) + edges.stream().mapToInt(edgesWeights::get).sum();
     }
 
@@ -245,7 +248,7 @@ public class SchemaDiffing {
             Vertex bestExtensionTargetVertex = availableTargetVertices.get(v_i_target_Index);
             Mapping newMapping = partialMapping.extendMapping(v_i, bestExtensionTargetVertex);
             candidates.remove(bestExtensionTargetVertex);
-//            System.out.println("adding new entry " + getDebugMap(newMapping) + "  at level " + level + " with candidates: " + candidates.size() + " at lower bound: " + lowerBoundForPartialMapping);
+//            System.out.println("adding new entry " + getDebugMap(newMapping) + "  at level " + level + " with candidates left: " + candidates.size() + " at lower bound: " + lowerBoundForPartialMapping);
             queue.add(new MappingEntry(newMapping, level, lowerBoundForPartialMapping, candidates));
 
             // we have a full mapping from the cost matrix

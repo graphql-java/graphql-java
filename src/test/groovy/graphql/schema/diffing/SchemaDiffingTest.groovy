@@ -597,6 +597,55 @@ class SchemaDiffingTest extends Specification {
 
     }
 
+    def "add a field and Type"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            hello: String
+           } 
+        """)
+        def schema2 = schema("""
+           type Query {
+            hello: String
+            newField: Foo
+           } 
+           type Foo {
+              foo: String 
+           }
+        """)
+
+        when:
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        diff.size() == 11
+
+    }
+
+    def "add a field and Type and remove a field"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            hello: String
+           } 
+        """)
+        def schema2 = schema("""
+           type Query {
+            newField: Foo
+           } 
+           type Foo {
+              foo: String 
+           }
+        """)
+
+        when:
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        diff.size() == 8
+
+    }
+
     def "test example schema"() {
         given:
         def source = buildSourceGraph()
