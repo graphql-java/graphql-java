@@ -14,7 +14,7 @@ public class SchemaDiffing {
 
     private static class MappingEntry {
 
-        public MappingEntry(Mapping partialMapping, int level, double lowerBoundCost, List<Vertex> availableSiblings) {
+        public MappingEntry(Mapping partialMapping, int level, double lowerBoundCost, Set<Vertex> availableSiblings) {
             this.partialMapping = partialMapping;
             this.level = level;
             this.lowerBoundCost = lowerBoundCost;
@@ -29,7 +29,7 @@ public class SchemaDiffing {
         Mapping partialMapping = new Mapping();
         int level;
         double lowerBoundCost;
-        List<Vertex> availableSiblings = new ArrayList<>();
+        Set<Vertex> availableSiblings = new LinkedHashSet<>();
     }
 
     SchemaGraph sourceGraph;
@@ -83,23 +83,23 @@ public class SchemaDiffing {
             // generate children
             if (mappingEntry.level < graphSize) {
                 // candidates are the vertices in target, of which are not used yet in partialMapping
-                List<Vertex> childCandidates = new ArrayList<>(targetGraph.getVertices());
+                Set<Vertex> childCandidates = new LinkedHashSet<>(targetGraph.getVertices());
                 childCandidates.removeAll(mappingEntry.partialMapping.getTargets());
                 genNextMapping(mappingEntry.partialMapping, mappingEntry.level + 1, childCandidates, queue, upperBoundCost, bestFullMapping, bestEdit, sourceGraph, targetGraph);
             }
         }
-        System.out.println("ged cost: " + upperBoundCost.doubleValue());
-        System.out.println("edit : " + bestEdit);
-        for (EditOperation editOperation : bestEdit.get()) {
-            System.out.println(editOperation);
-        }
+//        System.out.println("ged cost: " + upperBoundCost.doubleValue());
+//        System.out.println("edit : " + bestEdit);
+//        for (EditOperation editOperation : bestEdit.get()) {
+//            System.out.println(editOperation);
+//        }
         return bestEdit.get();
     }
 
     // level starts at 1 indicating the level in the search tree to look for the next mapping
     private void genNextMapping(Mapping partialMapping,
                                 int level,
-                                List<Vertex> candidates,
+                                Set<Vertex> candidates, // changed in place on purpose
                                 PriorityQueue<MappingEntry> queue,
                                 AtomicDouble upperBound,
                                 AtomicReference<Mapping> bestMapping,
@@ -211,7 +211,7 @@ public class SchemaDiffing {
                 cost++;
             }
         }
-        List<Vertex> subGraphSource = sourceGraph.getVertices().subList(0, partialOrFullMapping.size());
+        Set<Vertex> subGraphSource = new LinkedHashSet<>(sourceGraph.getVertices().subList(0, partialOrFullMapping.size()));
         List<Edge> edges = sourceGraph.getEdges();
         // edge deletion or relabeling
         for (Edge sourceEdge : edges) {

@@ -45,9 +45,9 @@ public class SchemaGraph {
 
     public Edge getSingleAdjacentEdge(Vertex from, Predicate<Edge> predicate) {
         for (Edge edge : edgeByVertexPair.row(from).values()) {
-          if(predicate.test(edge)) {
-              return edge;
-          }
+            if (predicate.test(edge)) {
+                return edge;
+            }
         }
         return null;
     }
@@ -93,7 +93,7 @@ public class SchemaGraph {
         String uniqueType = String.valueOf(UUID.randomUUID());
         for (int i = 0; i < count; i++) {
             Vertex isolatedVertex = Vertex.newArtificialNode(uniqueType);
-            vertices.add(isolatedVertex);
+            vertices.add(0, isolatedVertex);
         }
     }
 }
