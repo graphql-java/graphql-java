@@ -56,6 +56,7 @@ public class SchemaGraph {
         return edges;
     }
 
+    // null if the edge doesn't exist
     public @Nullable Edge getEdge(Vertex from, Vertex to) {
         return edgeByVertexPair.get(from, to);
     }
@@ -63,6 +64,10 @@ public class SchemaGraph {
 
     public List<Vertex> getVertices() {
         return vertices;
+    }
+
+    public void setVertices(List<Vertex> vertices) {
+        this.vertices = vertices;
     }
 
     public void addType(String name, Vertex vertex) {

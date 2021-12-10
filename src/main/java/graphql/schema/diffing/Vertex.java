@@ -2,6 +2,7 @@ package graphql.schema.diffing;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class Vertex {
 
@@ -48,6 +49,12 @@ public class Vertex {
 
     public String getDebugName() {
         return debugName;
+    }
+
+    public boolean isEqualTo(Vertex other) {
+        return other != null &&
+                Objects.equals(this.type, other.type) &&
+                Objects.equals(this.properties, other.properties);
     }
 
     @Override

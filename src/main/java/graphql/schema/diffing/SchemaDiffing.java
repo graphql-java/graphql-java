@@ -52,6 +52,7 @@ public class SchemaDiffing {
         assertTrue(sourceGraph.size() == targetGraph.size());
         int graphSize = sourceGraph.size();
         System.out.println("graph size: " + graphSize);
+        sortSourceGraph(sourceGraph, targetGraph);
 
         AtomicDouble upperBoundCost = new AtomicDouble(Double.MAX_VALUE);
         AtomicReference<Mapping> bestFullMapping = new AtomicReference<>();
@@ -94,6 +95,93 @@ public class SchemaDiffing {
 //            System.out.println(editOperation);
 //        }
         return bestEdit.get();
+    }
+
+    private void sortSourceGraph(SchemaGraph sourceGraph, SchemaGraph targetGraph) {
+        Map<Vertex, Integer> vertexWeights = new LinkedHashMap<>();
+        Map<Edge, Integer> edgesWeights = new LinkedHashMap<>();
+        for (Vertex vertex : sourceGraph.getVertices()) {
+            vertexWeights.put(vertex, infrequencyWeightForVertex(vertex, targetGraph));
+        }
+        for (Edge edge : sourceGraph.getEdges()) {
+            edgesWeights.put(edge, infrequencyWeightForEdge(edge, targetGraph));
+        }
+        // start with the vertex with largest total weight
+        List<Vertex> result = new ArrayList<>();
+        ArrayList<Vertex> nextCandidates = new ArrayList<>(sourceGraph.getVertices());
+        nextCandidates.sort(Comparator.comparingInt(o -> totalWeight(sourceGraph, o, vertexWeights, edgesWeights)));
+//        System.out.println("0: " + totalWeight(sourceGraph, nextCandidates.get(0), vertexWeights, edgesWeights));
+//        System.out.println("last: " + totalWeight(sourceGraph, nextCandidates.get(nextCandidates.size() - 1), vertexWeights, edgesWeights));
+//        // starting with the one with largest totalWeight:
+        Vertex curVertex = nextCandidates.get(nextCandidates.size() - 1);
+        result.add(curVertex);
+        nextCandidates.remove(nextCandidates.size() - 1);
+
+        while (nextCandidates.size() > 0) {
+            Vertex nextOne = null;
+            int curMaxWeight = Integer.MIN_VALUE;
+            int index = 0;
+            int nextOneIndex = -1;
+            for (Vertex candidate : nextCandidates) {
+                int totalWeight = totalWeight(sourceGraph, candidate, allAdjacentEdges(sourceGraph, result, candidate), vertexWeights, edgesWeights);
+                if (totalWeight > curMaxWeight) {
+                    nextOne = candidate;
+                    nextOneIndex = index;
+                    curMaxWeight = totalWeight;
+                }
+                index++;
+            }
+            result.add(nextOne);
+            nextCandidates.remove(nextOneIndex);
+        }
+//        System.out.println(result);
+//        System.out.println(nextCandidates);
+//        Collections.reverse(result);
+        sourceGraph.setVertices(result);
+    }
+
+    private List<Edge> allAdjacentEdges(SchemaGraph schemaGraph, List<Vertex> fromList, Vertex to) {
+        List<Edge> result = new ArrayList<>();
+        for (Vertex from : fromList) {
+            Edge edge = schemaGraph.getEdge(from, to);
+            if (edge == null) {
+                continue;
+            }
+            result.add(edge);
+        }
+        return result;
+    }
+
+    private int totalWeight(SchemaGraph sourceGraph, Vertex vertex, List<Edge> edges, Map<Vertex, Integer> vertexWeights, Map<Edge, Integer> edgesWeights) {
+//        if (vertex.isArtificialNode()) {
+//            return Integer.MIN_VALUE + 1;
+//        }
+        return vertexWeights.get(vertex) + edges.stream().mapToInt(edgesWeights::get).sum();
+    }
+
+    private int totalWeight(SchemaGraph sourceGraph, Vertex vertex, Map<Vertex, Integer> vertexWeights, Map<Edge, Integer> edgesWeights) {
+        List<Edge> adjacentEdges = sourceGraph.getAdjacentEdges(vertex);
+        return vertexWeights.get(vertex) + adjacentEdges.stream().mapToInt(edgesWeights::get).sum();
+    }
+
+    private int infrequencyWeightForVertex(Vertex sourceVertex, SchemaGraph targetGraph) {
+        int count = 0;
+        for (Vertex targetVertex : targetGraph.getVertices()) {
+            if (sourceVertex.isEqualTo(targetVertex)) {
+                count++;
+            }
+        }
+        return 1 - count;
+    }
+
+    private int infrequencyWeightForEdge(Edge sourceEdge, SchemaGraph targetGraph) {
+        int count = 0;
+        for (Edge targetEdge : targetGraph.getEdges()) {
+            if (sourceEdge.isEqualTo(targetEdge)) {
+                count++;
+            }
+        }
+        return 1 - count;
     }
 
     // level starts at 1 indicating the level in the search tree to look for the next mapping

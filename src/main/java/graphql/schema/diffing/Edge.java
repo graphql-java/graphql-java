@@ -1,5 +1,7 @@
 package graphql.schema.diffing;
 
+import java.util.Objects;
+
 public class Edge {
     private Vertex one;
     private Vertex two;
@@ -49,5 +51,9 @@ public class Edge {
                 ", two=" + two +
                 ", label='" + label + '\'' +
                 '}';
+    }
+
+    public boolean isEqualTo(Edge other) {
+        return Objects.equals(this.label, other.label);
     }
 }
