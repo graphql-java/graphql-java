@@ -6,6 +6,8 @@ import graphql.collect.ImmutableKit
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.AsyncSerialExecutionStrategy
 import graphql.execution.DataFetcherExceptionHandler
+import graphql.execution.DataFetcherExceptionHandlerParameters
+import graphql.execution.DataFetcherExceptionHandlerResult
 import graphql.execution.DataFetcherResult
 import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionId
@@ -1156,16 +1158,23 @@ many lines''']
         er.data["f"] == "hi"
     }
 
+
     def "can set default fetcher exception handler"() {
+
+
         def sdl = 'type Query { f : String } '
 
         DataFetcher df = { env ->
             throw new RuntimeException("BANG!")
         }
         def capturedMsg = null
-        def exceptionHandler = { params ->
-            capturedMsg = params.exception.getMessage()
-        } as DataFetcherExceptionHandler
+        def exceptionHandler = new DataFetcherExceptionHandler() {
+            @Override
+            CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters params) {
+                capturedMsg = params.exception.getMessage()
+                return CompletableFuture.completedFuture(DataFetcherExceptionHandlerResult.newResult().build())
+            }
+        }
         def schema = TestUtil.schema(sdl, [Query: [f: df]])
         def graphQL = GraphQL.newGraphQL(schema).defaultDataFetcherExceptionHandler(exceptionHandler).build()
         when:
