@@ -2,6 +2,7 @@ package graphql.execution.directives;
 
 import graphql.PublicApi;
 import graphql.language.Field;
+import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLDirective;
 
 import java.util.List;
@@ -32,6 +33,13 @@ public interface QueryDirectives {
      */
     Map<String, List<GraphQLDirective>> getImmediateDirectivesByName();
 
+    /**
+     * This will return a map of the applied directives that are immediately on a merged field
+     *
+     * @return a map of all the applied directives immediately on this merged field
+     */
+    Map<String, List<GraphQLAppliedDirective>> getImmediateAppliedDirectivesByName();
+
 
     /**
      * This will return a list of the named directives that are immediately on this merged field.
@@ -45,10 +53,29 @@ public interface QueryDirectives {
     List<GraphQLDirective> getImmediateDirective(String directiveName);
 
     /**
+     * This will return a list of the named applied directives that are immediately on this merged field.
+     *
+     * Read above for why this is a list of applied directives and not just one
+     *
+     * @param directiveName the named directive
+     *
+     * @return a list of the named applied directives that are immediately on this merged field
+     */
+    List<GraphQLAppliedDirective> getImmediateAppliedDirective(String directiveName);
+
+    /**
      * This will return a map of the {@link graphql.language.Field}s inside a {@link graphql.execution.MergedField}
      * and the immediate directives that are on each specific field
      *
      * @return a map of all directives on each field inside this
      */
     Map<Field, List<GraphQLDirective>> getImmediateDirectivesByField();
+
+    /**
+     * This will return a map of the {@link graphql.language.Field}s inside a {@link graphql.execution.MergedField}
+     * and the immediate applied directives that are on each specific field
+     *
+     * @return a map of all directives on each field inside this
+     */
+    Map<Field, List<GraphQLAppliedDirective>> getImmediateAppliedDirectivesByField();
 }
