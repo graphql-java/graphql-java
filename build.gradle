@@ -211,7 +211,8 @@ artifacts {
 
 test {
     testLogging {
-        exceptionFormat = 'full'
+        events "FAILED", "SKIPPED"
+        exceptionFormat = "FULL"
     }
 }
 
