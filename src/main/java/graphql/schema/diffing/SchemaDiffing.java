@@ -6,19 +6,27 @@ import graphql.schema.*;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
+import static graphql.schema.diffing.SchemaGraphFactory.INPUT_OBJECT;
+import static graphql.schema.diffing.SchemaGraphFactory.INTERFACE;
+import static graphql.schema.diffing.SchemaGraphFactory.UNION;
 
 public class SchemaDiffing {
 
     private static class MappingEntry {
 
-        public MappingEntry(Mapping partialMapping, int level, double lowerBoundCost, Set<Vertex> availableSiblings) {
+        public List<MappingEntry> mappingEntriesSiblings = new ArrayList<>();
+        public int[] assignments;
+        public ArrayList<Vertex> availableTargetVertices;
+
+        public MappingEntry(Mapping partialMapping, int level, double lowerBoundCost, Set<Vertex> candidates) {
             this.partialMapping = partialMapping;
             this.level = level;
             this.lowerBoundCost = lowerBoundCost;
-            this.availableSiblings = availableSiblings;
+            this.candidates = candidates;
         }
 
         public MappingEntry() {
@@ -29,20 +37,25 @@ public class SchemaDiffing {
         Mapping partialMapping = new Mapping();
         int level;
         double lowerBoundCost;
-        Set<Vertex> availableSiblings = new LinkedHashSet<>();
+        Set<Vertex> candidates = new LinkedHashSet<>();
     }
 
     SchemaGraph sourceGraph;
     SchemaGraph targetGraph;
 
-    public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) {
+    public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2, boolean oldVersion) {
         sourceGraph = new SchemaGraphFactory().createGraph(graphQLSchema1);
         targetGraph = new SchemaGraphFactory().createGraph(graphQLSchema2);
 //        System.out.println(GraphPrinter.print(sourceGraph));
-        return diffImpl(sourceGraph, targetGraph);
+        return diffImpl(sourceGraph, targetGraph, oldVersion);
+
     }
 
-    List<EditOperation> diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) {
+    public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) {
+        return diffGraphQLSchema(graphQLSchema1, graphQLSchema2, false);
+    }
+
+    List<EditOperation> diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph, boolean oldVersion) {
         // we assert here that the graphs have the same size. The algorithm depends on it
         if (sourceGraph.size() < targetGraph.size()) {
             sourceGraph.addIsolatedVertices(targetGraph.size() - sourceGraph.size());
@@ -58,7 +71,7 @@ public class SchemaDiffing {
         AtomicReference<Mapping> bestFullMapping = new AtomicReference<>();
         AtomicReference<List<EditOperation>> bestEdit = new AtomicReference<>();
 
-        PriorityQueue<MappingEntry> queue = new PriorityQueue<MappingEntry>((mappingEntry1, mappingEntry2) -> {
+        PriorityQueue<MappingEntry> queue = new PriorityQueue<>((mappingEntry1, mappingEntry2) -> {
             int compareResult = Double.compare(mappingEntry1.lowerBoundCost, mappingEntry2.lowerBoundCost);
             if (compareResult == 0) {
                 return (-1) * Integer.compare(mappingEntry1.level, mappingEntry2.level);
@@ -68,34 +81,82 @@ public class SchemaDiffing {
         });
         queue.add(new MappingEntry());
         int counter = 0;
-        while (!queue.isEmpty()) {
-            MappingEntry mappingEntry = queue.poll();
-            System.out.println("entry at level " + mappingEntry.level + " counter:" + (++counter) + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost);
-            if (mappingEntry.lowerBoundCost >= upperBoundCost.doubleValue()) {
+        if (oldVersion) {
+
+            while (!queue.isEmpty()) {
+                MappingEntry mappingEntry = queue.poll();
+                System.out.println((++counter) + " entry at level " + mappingEntry.level + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost + " map " + getDebugMap(mappingEntry.partialMapping));
+                if (mappingEntry.lowerBoundCost >= upperBoundCost.doubleValue()) {
 //                System.out.println("skipping!");
-                continue;
+                    continue;
+                }
+                // generate sibling
+                if (mappingEntry.level > 0 && mappingEntry.candidates.size() > 0) {
+                    // we need to remove the last mapping
+                    Mapping parentMapping = mappingEntry.partialMapping.removeLastElement();
+                    System.out.println("generate sibling");
+                    genNextMapping(parentMapping, mappingEntry.level, mappingEntry.candidates, queue, upperBoundCost, bestFullMapping, bestEdit, sourceGraph, targetGraph);
+                }
+                // generate children
+                if (mappingEntry.level < graphSize) {
+                    // candidates are the vertices in target, of which are not used yet in partialMapping
+                    Set<Vertex> childCandidates = new LinkedHashSet<>(targetGraph.getVertices());
+                    childCandidates.removeAll(mappingEntry.partialMapping.getTargets());
+                    System.out.println("generate child");
+                    genNextMapping(mappingEntry.partialMapping, mappingEntry.level + 1, childCandidates, queue, upperBoundCost, bestFullMapping, bestEdit, sourceGraph, targetGraph);
+                }
             }
-            // generate sibling
-            if (mappingEntry.level > 0 && mappingEntry.availableSiblings.size() > 0) {
-                // we need to remove the last mapping
-                Mapping parentMapping = mappingEntry.partialMapping.removeLastElement();
-                genNextMapping(parentMapping, mappingEntry.level, mappingEntry.availableSiblings, queue, upperBoundCost, bestFullMapping, bestEdit, sourceGraph, targetGraph);
-            }
-            // generate children
-            if (mappingEntry.level < graphSize) {
-                // candidates are the vertices in target, of which are not used yet in partialMapping
-                Set<Vertex> childCandidates = new LinkedHashSet<>(targetGraph.getVertices());
-                childCandidates.removeAll(mappingEntry.partialMapping.getTargets());
-                genNextMapping(mappingEntry.partialMapping, mappingEntry.level + 1, childCandidates, queue, upperBoundCost, bestFullMapping, bestEdit, sourceGraph, targetGraph);
+        } else {
+
+            while (!queue.isEmpty()) {
+                MappingEntry mappingEntry = queue.poll();
+                System.out.println((++counter) + " entry at level " + mappingEntry.level + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost + " map " + getDebugMap(mappingEntry.partialMapping));
+                if (mappingEntry.lowerBoundCost >= upperBoundCost.doubleValue()) {
+//                System.out.println("skipping!");
+                    continue;
+                }
+                // generate sibling
+                if (mappingEntry.level > 0 && mappingEntry.mappingEntriesSiblings.size() > 0) {
+                    System.out.println("get sibling");
+                    getSibling(
+                            mappingEntry.level,
+                            mappingEntry.candidates,
+                            queue,
+                            upperBoundCost,
+                            bestFullMapping,
+                            bestEdit,
+                            sourceGraph,
+                            targetGraph,
+                            mappingEntry);
+                }
+                // generate children
+                if (mappingEntry.level < graphSize) {
+                    // candidates are the vertices in target, of which are not used yet in partialMapping
+                    Set<Vertex> childCandidates = new LinkedHashSet<>(targetGraph.getVertices());
+                    childCandidates.removeAll(mappingEntry.partialMapping.getTargets());
+                    System.out.println("generate children");
+                    generateChilds(mappingEntry.partialMapping,
+                            mappingEntry.level + 1,
+                            childCandidates,
+                            queue,
+                            upperBoundCost,
+                            bestFullMapping,
+                            bestEdit,
+                            sourceGraph,
+                            targetGraph,
+                            mappingEntry
+                    );
+                }
             }
         }
-//        System.out.println("ged cost: " + upperBoundCost.doubleValue());
-//        System.out.println("edit : " + bestEdit);
-//        for (EditOperation editOperation : bestEdit.get()) {
-//            System.out.println(editOperation);
-//        }
+        System.out.println("ged cost: " + upperBoundCost.doubleValue());
+        System.out.println("edit : " + bestEdit);
+        for (EditOperation editOperation : bestEdit.get()) {
+            System.out.println(editOperation);
+        }
         return bestEdit.get();
     }
+
 
     private void sortSourceGraph(SchemaGraph sourceGraph, SchemaGraph targetGraph) {
         Map<Vertex, Integer> vertexWeights = new LinkedHashMap<>();
@@ -109,7 +170,7 @@ public class SchemaDiffing {
         // start with the vertex with largest total weight
         List<Vertex> result = new ArrayList<>();
         ArrayList<Vertex> nextCandidates = new ArrayList<>(sourceGraph.getVertices());
-        nextCandidates.sort(Comparator.comparingInt(o -> totalWeight(sourceGraph, o, vertexWeights, edgesWeights)));
+        nextCandidates.sort(Comparator.comparingInt(o -> totalWeightWithAdjacentEdges(sourceGraph, o, vertexWeights, edgesWeights)));
 //        System.out.println("0: " + totalWeight(sourceGraph, nextCandidates.get(0), vertexWeights, edgesWeights));
 //        System.out.println("last: " + totalWeight(sourceGraph, nextCandidates.get(nextCandidates.size() - 1), vertexWeights, edgesWeights));
 //        // starting with the one with largest totalWeight:
@@ -123,7 +184,7 @@ public class SchemaDiffing {
             int index = 0;
             int nextOneIndex = -1;
             for (Vertex candidate : nextCandidates) {
-                int totalWeight = totalWeight(sourceGraph, candidate, allAdjacentEdges(sourceGraph, result, candidate), vertexWeights, edgesWeights);
+                int totalWeight = totalWeightWithSomeEdges(sourceGraph, candidate, allAdjacentEdges(sourceGraph, result, candidate), vertexWeights, edgesWeights);
                 if (totalWeight > curMaxWeight) {
                     nextOne = candidate;
                     nextOneIndex = index;
@@ -136,8 +197,7 @@ public class SchemaDiffing {
         }
         System.out.println(result);
 //        System.out.println(nextCandidates);
-//        Collections.reverse(result);
-//        sourceGraph.setVertices(result);
+        sourceGraph.setVertices(result);
     }
 
     private List<Edge> allAdjacentEdges(SchemaGraph schemaGraph, List<Vertex> fromList, Vertex to) {
@@ -152,7 +212,7 @@ public class SchemaDiffing {
         return result;
     }
 
-    private int totalWeight(SchemaGraph sourceGraph, Vertex vertex, List<Edge> edges, Map<Vertex, Integer> vertexWeights, Map<Edge, Integer> edgesWeights) {
+    private int totalWeightWithSomeEdges(SchemaGraph sourceGraph, Vertex vertex, List<Edge> edges, Map<Vertex, Integer> vertexWeights, Map<Edge, Integer> edgesWeights) {
         if (vertex.isBuiltInType()) {
             return Integer.MIN_VALUE + 1;
         }
@@ -162,7 +222,13 @@ public class SchemaDiffing {
         return vertexWeights.get(vertex) + edges.stream().mapToInt(edgesWeights::get).sum();
     }
 
-    private int totalWeight(SchemaGraph sourceGraph, Vertex vertex, Map<Vertex, Integer> vertexWeights, Map<Edge, Integer> edgesWeights) {
+    private int totalWeightWithAdjacentEdges(SchemaGraph sourceGraph, Vertex vertex, Map<Vertex, Integer> vertexWeights, Map<Edge, Integer> edgesWeights) {
+        if (vertex.isBuiltInType()) {
+            return Integer.MIN_VALUE + 1;
+        }
+        if (vertex.isArtificialNode()) {
+            return Integer.MIN_VALUE + 2;
+        }
         List<Edge> adjacentEdges = sourceGraph.getAdjacentEdges(vertex);
         return vertexWeights.get(vertex) + adjacentEdges.stream().mapToInt(edgesWeights::get).sum();
     }
@@ -187,7 +253,6 @@ public class SchemaDiffing {
         return 1 - count;
     }
 
-    // level starts at 1 indicating the level in the search tree to look for the next mapping
     private void genNextMapping(Mapping partialMapping,
                                 int level,
                                 Set<Vertex> candidates, // changed in place on purpose
@@ -224,13 +289,10 @@ public class SchemaDiffing {
                 } else {
                     double cost = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet);
                     costMatrix[i - level + 1][j] = cost;
-//                    System.out.println("lower bound cost for mapping " + v + " to " + u + " is " + cost + " with index " + (i - level + 1) + " => " + j);
-//                    System.out.println("cost counter: " + (costCounter++) + "/" + overallCount + " percentage: " + (costCounter / (float) overallCount));
                 }
                 j++;
             }
         }
-//        System.out.println("finished matrix");
         // find out the best extension
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrix);
         int[] assignments = hungarianAlgorithm.execute();
@@ -248,7 +310,7 @@ public class SchemaDiffing {
             Vertex bestExtensionTargetVertex = availableTargetVertices.get(v_i_target_Index);
             Mapping newMapping = partialMapping.extendMapping(v_i, bestExtensionTargetVertex);
             candidates.remove(bestExtensionTargetVertex);
-//            System.out.println("adding new entry " + getDebugMap(newMapping) + "  at level " + level + " with candidates left: " + candidates.size() + " at lower bound: " + lowerBoundForPartialMapping);
+            System.out.println("adding new entry " + getDebugMap(newMapping) + "  at level " + level + " with candidates left: " + candidates.size() + " at lower bound: " + lowerBoundForPartialMapping);
             queue.add(new MappingEntry(newMapping, level, lowerBoundForPartialMapping, candidates));
 
             // we have a full mapping from the cost matrix
@@ -263,7 +325,7 @@ public class SchemaDiffing {
                 upperBound.set(costForFullMapping);
                 bestMapping.set(fullMapping);
                 bestEdit.set(editOperations);
-                System.out.println("setting new best edit with size " + editOperations.size() + " at level " + level);
+                System.out.println("setting new best edit at level " + level + " with size " + editOperations.size() + " at level " + level);
             } else {
 //                System.out.println("to expensive cost for overall mapping " +);
             }
@@ -273,6 +335,183 @@ public class SchemaDiffing {
             Mapping newMapping = partialMapping.extendMapping(v_i, bestExtensionTargetVertex);
 //            System.out.println("not adding new entrie " + getDebugMap(newMapping) + " because " + lowerBoundForPartialMapping + " to high");
         }
+    }
+
+
+    // level starts at 1 indicating the level in the search tree to look for the next mapping
+    private void generateChilds(Mapping partialMapping,
+                                int level,
+                                Set<Vertex> candidates, // changed in place on purpose
+                                PriorityQueue<MappingEntry> queue,
+                                AtomicDouble upperBound,
+                                AtomicReference<Mapping> bestMapping,
+                                AtomicReference<List<EditOperation>> bestEdit,
+                                SchemaGraph sourceGraph,
+                                SchemaGraph targetGraph,
+                                MappingEntry parentOrSiblingEntry
+    ) {
+        assertTrue(level - 1 == partialMapping.size());
+        List<Vertex> sourceList = sourceGraph.getVertices();
+        List<Vertex> targetList = targetGraph.getVertices();
+
+        ArrayList<Vertex> availableTargetVertices = new ArrayList<>(targetList);
+        availableTargetVertices.removeAll(partialMapping.getTargets());
+        assertTrue(availableTargetVertices.size() + partialMapping.size() == targetList.size());
+        // level starts at 1 ... therefore level - 1 is the current one we want to extend
+        Vertex v_i = sourceList.get(level - 1);
+
+
+        int costMatrixSize = sourceList.size() - level + 1;
+        double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
+
+
+        // we are skipping the first level -i indices
+        Set<Vertex> partialMappingSourceSet = new LinkedHashSet<>(partialMapping.getSources());
+        Set<Vertex> partialMappingTargetSet = new LinkedHashSet<>(partialMapping.getTargets());
+
+        // costMatrix[0] is the row for  v_i
+        for (int i = level - 1; i < sourceList.size(); i++) {
+            Vertex v = sourceList.get(i);
+            int j = 0;
+            for (Vertex u : availableTargetVertices) {
+//                if (v == v_i && !candidates.contains(u)) {
+//                    costMatrix[i - level + 1][j] = Integer.MAX_VALUE;
+//                } else {
+                double cost = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet);
+                costMatrix[i - level + 1][j] = cost;
+//                }
+                j++;
+            }
+        }
+        // find out the best extension
+        HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrix);
+        int[] assignments = hungarianAlgorithm.execute();
+
+
+        // calculating the lower bound costs for this extension: editorial cost for the partial mapping + value from the cost matrix for v_i
+        int editorialCostForMapping = editorialCostForMapping(partialMapping, sourceGraph, targetGraph, new ArrayList<>());
+
+        double costMatrixSum = getCostMatrixSum(costMatrix, assignments);
+        double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
+
+        if (lowerBoundForPartialMapping < upperBound.doubleValue()) {
+            int v_i_target_Index = assignments[0];
+            Vertex bestExtensionTargetVertex = availableTargetVertices.get(v_i_target_Index);
+            Mapping newMapping = partialMapping.extendMapping(v_i, bestExtensionTargetVertex);
+
+            // generate all siblings
+            List<MappingEntry> siblings = new ArrayList<>();
+            for (int child = 1; child < availableTargetVertices.size(); child++) {
+                int[] siblingAssignment = hungarianAlgorithm.nextChild(child, assignments);
+                double costMatrixSumSibling = getCostMatrixSum(costMatrix, siblingAssignment);
+                double lowerBoundForPartialMappingSibling = editorialCostForMapping + costMatrixSumSibling;
+                // this must be always something else
+                int v_i_target_IndexSibling = siblingAssignment[0];
+
+//                System.out.println("job index: " + v_i_target_IndexSibling);
+                Vertex bestExtensionTargetVertexSibling = availableTargetVertices.get(v_i_target_IndexSibling);
+                Mapping newMappingSibling = partialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
+//                candidates.remove(bestExtensionTargetVertex);
+                MappingEntry sibling = new MappingEntry(newMappingSibling, level, lowerBoundForPartialMappingSibling, candidates);
+                sibling.mappingEntriesSiblings = siblings;
+                sibling.assignments = siblingAssignment;
+                sibling.availableTargetVertices = availableTargetVertices;
+                siblings.add( sibling);
+            }
+
+            MappingEntry e = new MappingEntry(newMapping, level, lowerBoundForPartialMapping, candidates);
+            e.mappingEntriesSiblings = siblings;
+            System.out.println("adding new entry " + getDebugMap(newMapping) + "  at level " + level + " with candidates left: " + candidates.size() + " at lower bound: " + lowerBoundForPartialMapping);
+            queue.add(e);
+
+            // we have a full mapping from the cost matrix
+            Mapping fullMapping = partialMapping.copy();
+            for (int i = 0; i < assignments.length; i++) {
+                fullMapping.add(sourceList.get(level - 1 + i), availableTargetVertices.get(assignments[i]));
+            }
+            assertTrue(fullMapping.size() == sourceGraph.size());
+            List<EditOperation> editOperations = new ArrayList<>();
+            int costForFullMapping = editorialCostForMapping(fullMapping, sourceGraph, targetGraph, editOperations);
+            if (costForFullMapping < upperBound.doubleValue()) {
+                upperBound.set(costForFullMapping);
+                bestMapping.set(fullMapping);
+                bestEdit.set(editOperations);
+                System.out.println("setting new best edit at level " + level + " with size " + editOperations.size() + " at level " + level);
+            } else {
+//                System.out.println("to expensive cost for overall mapping " +);
+            }
+        } else {
+            int v_i_target_Index = assignments[0];
+            Vertex bestExtensionTargetVertex = availableTargetVertices.get(v_i_target_Index);
+            Mapping newMapping = partialMapping.extendMapping(v_i, bestExtensionTargetVertex);
+//            System.out.println("not adding new entrie " + getDebugMap(newMapping) + " because " + lowerBoundForPartialMapping + " to high");
+        }
+    }
+
+    private void getSibling(
+            int level,
+            Set<Vertex> __noUseded,
+            PriorityQueue<MappingEntry> queue,
+            AtomicDouble upperBoundCost,
+            AtomicReference<Mapping> bestFullMapping,
+            AtomicReference<List<EditOperation>> bestEdit,
+            SchemaGraph sourceGraph,
+            SchemaGraph targetGraph,
+            MappingEntry mappingEntry) {
+
+        MappingEntry sibling = mappingEntry.mappingEntriesSiblings.get(0);
+        if (sibling.lowerBoundCost < upperBoundCost.doubleValue()) {
+            System.out.println("adding new entry " + getDebugMap(sibling.partialMapping) + "  at level " + level + " with candidates left: " + sibling.availableTargetVertices.size() + " at lower bound: " + sibling.lowerBoundCost);
+
+            queue.add(sibling);
+            mappingEntry.mappingEntriesSiblings.remove(0);
+
+            List<Vertex> sourceList = sourceGraph.getVertices();
+            List<Vertex> targetList = targetGraph.getVertices();
+
+            // we expect here the parent mapping, this is why we remove the last element
+            Mapping fullMapping = sibling.partialMapping.removeLastElement();
+            for (int i = 0; i < sibling.assignments.length; i++) {
+                fullMapping.add(sourceList.get(level - 1 + i), sibling.availableTargetVertices.get(sibling.assignments[i]));
+            }
+            assertTrue(fullMapping.size() == this.sourceGraph.size());
+            List<EditOperation> editOperations = new ArrayList<>();
+            int costForFullMapping = editorialCostForMapping(fullMapping, this.sourceGraph, this.targetGraph, editOperations);
+            if (costForFullMapping < upperBoundCost.doubleValue()) {
+                upperBoundCost.set(costForFullMapping);
+                bestFullMapping.set(fullMapping);
+                bestEdit.set(editOperations);
+                System.out.println("setting new best edit at level " + level + " with size " + editOperations.size() + " at level " + level);
+
+            }
+        }
+    }
+
+
+    private double getCostMatrixSum(double[][] costMatrix, int[] assignments) {
+        double costMatrixSum = 0;
+        for (int i = 0; i < assignments.length; i++) {
+            costMatrixSum += costMatrix[i][assignments[i]];
+        }
+        return costMatrixSum;
+    }
+
+    private Vertex findMatchingVertex(Vertex v_i, List<Vertex> availableTargetVertices, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
+        String viType = v_i.getType();
+        HashMultiset<String> viAdjacentEdges = HashMultiset.create(sourceGraph.getAdjacentEdges(v_i).stream().map(edge -> edge.getLabel()).collect(Collectors.toList()));
+        if (viType.equals(SchemaGraphFactory.OBJECT) || viType.equals(INTERFACE) || viType.equals(UNION) || viType.equals(INPUT_OBJECT)) {
+            for (Vertex targetVertex : availableTargetVertices) {
+                if (v_i.isEqualTo(targetVertex)) {
+                    // check if edges are the same
+                    HashMultiset<String> adjacentEdges = HashMultiset.create(targetGraph.getAdjacentEdges(targetVertex).stream().map(Edge::getLabel).collect(Collectors.toList()));
+                    if (viAdjacentEdges.equals(adjacentEdges)) {
+                        return targetVertex;
+                    }
+                }
+
+            }
+        }
+        return null;
     }
 
     private List<String> getDebugMap(Mapping mapping) {

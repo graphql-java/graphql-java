@@ -20,6 +20,10 @@ import static graphql.Assert.assertNotNull;
 public class SchemaGraphFactory {
 
     public static final String DUMMY_TYPE_VERTICE = "__DUMMY_TYPE_VERTICE";
+    public static final String OBJECT = "Object";
+    public static final String INTERFACE = "Interface";
+    public static final String UNION = "Union";
+    public static final String INPUT_OBJECT = "InputObject";
     private int counter = 1;
 
     public SchemaGraph createGraph(GraphQLSchema schema) {
@@ -87,16 +91,16 @@ public class SchemaGraphFactory {
 
         ArrayList<Vertex> copyOfVertices = new ArrayList<>(schemaGraph.getVertices());
         for (Vertex vertex : copyOfVertices) {
-            if ("Object".equals(vertex.getType())) {
+            if (OBJECT.equals(vertex.getType())) {
                 handleObjectVertex(vertex, schemaGraph, schema);
             }
-            if ("Interface".equals(vertex.getType())) {
+            if (INTERFACE.equals(vertex.getType())) {
                 handleInterfaceVertex(vertex, schemaGraph, schema);
             }
-            if ("Union".equals(vertex.getType())) {
+            if (UNION.equals(vertex.getType())) {
                 handleUnion(vertex, schemaGraph, schema);
             }
-            if ("InputObject".equals(vertex.getType())) {
+            if (INPUT_OBJECT.equals(vertex.getType())) {
                 handleInputObject(vertex, schemaGraph, schema);
             }
             if ("AppliedDirective".equals(vertex.getType())) {

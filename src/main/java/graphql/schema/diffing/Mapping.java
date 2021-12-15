@@ -2,17 +2,16 @@ package graphql.schema.diffing;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import graphql.Assert;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 public class Mapping {
     private BiMap<Vertex, Vertex> map = HashBiMap.create();
     private List<Vertex> sourceList = new ArrayList<>();
     private List<Vertex> targetList = new ArrayList<>();
 
+    int[] targetIndices;
     private Mapping(BiMap<Vertex, Vertex> map, List<Vertex> sourceList, List<Vertex> targetList) {
         this.map = map;
         this.sourceList = sourceList;

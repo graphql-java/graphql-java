@@ -48,14 +48,30 @@ import java.util.Arrays;
  * @author Kevin L. Stern
  */
 public class HungarianAlgorithm {
+    // changed by reduce
     private final double[][] costMatrix;
-    private final int rows, cols, dim;
-    private final double[] labelByWorker, labelByJob;
+
+    // constant always
+    private final int rows;
+    private final int cols;
+    private final int dim;
+
+    // the assigned workers,jobs for the result
+    private final int[] matchJobByWorker;
+    private final int[] matchWorkerByJob;
+
+    // reset for each execute
     private final int[] minSlackWorkerByJob;
     private final double[] minSlackValueByJob;
-    private final int[] matchJobByWorker, matchWorkerByJob;
     private final int[] parentWorkerByCommittedJob;
+    // reset for worker
     private final boolean[] committedWorkers;
+
+
+    // labels for both sides of the bipartite graph
+    private final double[] labelByWorker;
+    private final double[] labelByJob;
+
 
     /**
      * Construct an instance of the algorithm.
@@ -131,9 +147,9 @@ public class HungarianAlgorithm {
          * smallest element, compute an initial non-zero dual feasible solution and
          * create a greedy matching from workers to jobs of the cost matrix.
          */
-        reduce();
+//        reduce();
         computeInitialFeasibleSolution();
-        greedyMatch();
+//        greedyMatch();
 
         int w = fetchUnmatchedWorker();
         while (w < dim) {
@@ -170,7 +186,9 @@ public class HungarianAlgorithm {
      */
     protected void executePhase() {
         while (true) {
-            int minSlackWorker = -1, minSlackJob = -1;
+            // the last worker we found
+            int minSlackWorker = -1;
+            int minSlackJob = -1;
             double minSlackValue = Double.POSITIVE_INFINITY;
             for (int j = 0; j < dim; j++) {
                 if (parentWorkerByCommittedJob[j] == -1) {
@@ -184,10 +202,17 @@ public class HungarianAlgorithm {
             if (minSlackValue > 0) {
                 updateLabeling(minSlackValue);
             }
+            // adding (minSlackWorker, minSlackJob) to the path
             parentWorkerByCommittedJob[minSlackJob] = minSlackWorker;
+            // check if minSlackJob is not assigned yet
+            // the requirement of an augmenting path is that start and end is not matched (assigned) yet
             if (matchWorkerByJob[minSlackJob] == -1) {
                 /*
                  * An augmenting path has been found.
+                 * Iterating via parentWorkerByCommittedJob and matchJobByWorker through the
+                 * path and add/update matching.
+                 * Job -> Parent worker via parentWorkerByCommittedJob
+                 * and Worker -> Job via matchJobByWorker
                  */
                 int committedJob = minSlackJob;
                 int parentWorker = parentWorkerByCommittedJob[committedJob];
@@ -206,7 +231,9 @@ public class HungarianAlgorithm {
                  * Update slack values since we increased the size of the committed
                  * workers set.
                  */
+                // we checked above that minSlackJob is indeed assigned
                 int worker = matchWorkerByJob[minSlackJob];
+                // committedWorkers is used when slack is updated
                 committedWorkers[worker] = true;
                 for (int j = 0; j < dim; j++) {
                     if (parentWorkerByCommittedJob[j] == -1) {
@@ -262,8 +289,7 @@ public class HungarianAlgorithm {
         Arrays.fill(parentWorkerByCommittedJob, -1);
         committedWorkers[w] = true;
         for (int j = 0; j < dim; j++) {
-            minSlackValueByJob[j] = costMatrix[w][j] - labelByWorker[w]
-                    - labelByJob[j];
+            minSlackValueByJob[j] = costMatrix[w][j] - labelByWorker[w] - labelByJob[j];
             minSlackWorkerByJob[j] = w;
         }
     }
@@ -329,6 +355,46 @@ public class HungarianAlgorithm {
             } else {
                 minSlackValueByJob[j] -= slack;
             }
+        }
+    }
+
+    public int[] nextChild(int jobIndex, int[] prevResult) {
+        int currentJobAssigned = matchJobByWorker[0];
+        // we want to make currentJobAssigned not allowed,meaning we set the size to Infinity
+        double oldCost = costMatrix[0][currentJobAssigned];
+        costMatrix[0][currentJobAssigned] = Integer.MAX_VALUE;
+        matchWorkerByJob[currentJobAssigned] = -1;
+        matchJobByWorker[0] = -1;
+
+//        for (int w = 0; w < dim; w++) {
+//            labelByWorker[w] = 0;
+//        }
+//        for (int j = 0; j < dim; j++) {
+//            labelByJob[j] -= 0;
+//        }
+//        computeInitialFeasibleSolution();
+//        System.out.println("worker label: " + labelByWorker[0]);
+//        System.out.println("job label: " + labelByJob[currentJobAssigned]);
+//        System.out.println("added: " + (labelByWorker[0] + labelByJob[currentJobAssigned]) +  " vs old cost " + oldCost);
+        minSlackValueByJob[currentJobAssigned] = Integer.MAX_VALUE;
+        initializePhase(0);
+        executePhase();
+        int[] result = Arrays.copyOf(matchJobByWorker, rows);
+        return result;
+//        } else {
+//            // this means we are good with previous result because the jobIndex was not picked anyway
+//            return prevResult;
+//        }
+    }
+
+    public static void main(String[] args) {
+        double[][] c = new double[][]{{1, 33, 4}, {3, 5, 2}, {2, 4, 4}};
+        HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(c);
+        int[] result = hungarianAlgorithm.execute();
+        System.out.println(Arrays.toString(result));
+        for (int i = 0; i < c.length - 1; i++) {
+            result = hungarianAlgorithm.nextChild(i, result);
+            System.out.println(Arrays.toString(result));
         }
     }
 }
