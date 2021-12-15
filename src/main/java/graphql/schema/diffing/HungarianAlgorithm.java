@@ -147,9 +147,9 @@ public class HungarianAlgorithm {
          * smallest element, compute an initial non-zero dual feasible solution and
          * create a greedy matching from workers to jobs of the cost matrix.
          */
-//        reduce();
+        reduce();
         computeInitialFeasibleSolution();
-//        greedyMatch();
+        greedyMatch();
 
         int w = fetchUnmatchedWorker();
         while (w < dim) {

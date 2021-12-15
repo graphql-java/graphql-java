@@ -62,31 +62,31 @@ class SchemaDiffTest extends Specification {
         return RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(new WiringFactory() {
 
-            @Override
-            boolean providesTypeResolver(UnionWiringEnvironment environment) {
-                return true
-            }
+                    @Override
+                    boolean providesTypeResolver(UnionWiringEnvironment environment) {
+                        return true
+                    }
 
-            @Override
-            boolean providesTypeResolver(InterfaceWiringEnvironment environment) {
-                return true
-            }
+                    @Override
+                    boolean providesTypeResolver(InterfaceWiringEnvironment environment) {
+                        return true
+                    }
 
-            @Override
-            TypeResolver getTypeResolver(InterfaceWiringEnvironment environment) {
-                return NULL_TYPE_RESOLVER
-            }
+                    @Override
+                    TypeResolver getTypeResolver(InterfaceWiringEnvironment environment) {
+                        return NULL_TYPE_RESOLVER
+                    }
 
-            @Override
-            TypeResolver getTypeResolver(UnionWiringEnvironment environment) {
-                return NULL_TYPE_RESOLVER
-            }
+                    @Override
+                    TypeResolver getTypeResolver(UnionWiringEnvironment environment) {
+                        return NULL_TYPE_RESOLVER
+                    }
 
-            @Override
-            DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
-                return new PropertyDataFetcher(environment.getFieldDefinition().getName())
-            }
-        })
+                    @Override
+                    DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
+                        return new PropertyDataFetcher(environment.getFieldDefinition().getName())
+                    }
+                })
                 .scalar(CUSTOM_SCALAR)
                 .build()
     }
@@ -238,7 +238,7 @@ class SchemaDiffTest extends Specification {
         reporter.breakageCount == 0
 
         List<DiffEvent> newFieldEvents = reporter.infos.stream()
-                .filter{de -> de.typeName == "Ainur" && de.fieldName == "surname"}
+                .filter { de -> de.typeName == "Ainur" && de.fieldName == "surname" }
                 .collect(Collectors.toList())
 
         newFieldEvents.size() == 2
