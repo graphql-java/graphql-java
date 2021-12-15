@@ -255,91 +255,59 @@ public class SchemaDiffing {
             Vertex v = sourceList.get(i);
             int j = 0;
             for (Vertex u : availableTargetVertices) {
-//                if (v == v_i && !candidates.contains(u)) {
-//                    costMatrix[i - level + 1][j] = Integer.MAX_VALUE;
-//                } else {
                 double cost = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet);
                 costMatrix[i - level + 1][j] = cost;
-//                }
                 j++;
             }
         }
-        // find out the best extension
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrix);
-        int[] assignments = hungarianAlgorithm.execute();
-
-
-        // calculating the lower bound costs for this extension: editorial cost for the partial mapping + value from the cost matrix for v_i
         int editorialCostForMapping = editorialCostForMapping(partialMapping, sourceGraph, targetGraph, new ArrayList<>());
 
-        double costMatrixSum = getCostMatrixSum(costMatrix, assignments);
-        double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
+        // generate all childrens (which are siblings to each other)
+        List<MappingEntry> siblings = new ArrayList<>();
+        for (int child = 0; child < availableTargetVertices.size(); child++) {
+            int[] assignments = child == 0 ? hungarianAlgorithm.execute() : hungarianAlgorithm.nextChild();
+            double costMatrixSumSibling = getCostMatrixSum(costMatrix, assignments);
+            double lowerBoundForPartialMappingSibling = editorialCostForMapping + costMatrixSumSibling;
+//            System.out.println("lower bound: " + child + " : " + lowerBoundForPartialMappingSibling);
+            int v_i_target_IndexSibling = assignments[0];
+            Vertex bestExtensionTargetVertexSibling = availableTargetVertices.get(v_i_target_IndexSibling);
+            Mapping newMappingSibling = partialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
 
-        if (lowerBoundForPartialMapping < upperBound.doubleValue()) {
-            int v_i_target_Index = assignments[0];
-            Vertex bestExtensionTargetVertex = availableTargetVertices.get(v_i_target_Index);
-            Mapping newMapping = partialMapping.extendMapping(v_i, bestExtensionTargetVertex);
-
-            if (lowerBoundForPartialMapping == parentEntry.lowerBoundCost) {
-//                System.out.println("same lower Bound: " + v_i + " -> " + bestExtensionTargetVertex);
+            if (lowerBoundForPartialMappingSibling == parentEntry.lowerBoundCost) {
+//                System.out.println("same lower Bound: " + v_i + " -> " + bestExtensionTargetVertexSibling);
             }
 
-            // generate all siblings
-            List<MappingEntry> siblings = new ArrayList<>();
-            for (int child = 1; child < availableTargetVertices.size(); child++) {
-                int[] siblingAssignment = hungarianAlgorithm.nextChild();
-                double costMatrixSumSibling = getCostMatrixSum(costMatrix, siblingAssignment);
-                double lowerBoundForPartialMappingSibling = editorialCostForMapping + costMatrixSumSibling;
+            if (lowerBoundForPartialMappingSibling >= upperBound.doubleValue()) {
+                break;
+            }
+            MappingEntry sibling = new MappingEntry(newMappingSibling, level, lowerBoundForPartialMappingSibling);
+            sibling.mappingEntriesSiblings = siblings;
+            sibling.assignments = assignments;
+            sibling.availableTargetVertices = availableTargetVertices;
 
-                if (lowerBoundForPartialMappingSibling == parentEntry.lowerBoundCost) {
-//                    System.out.println("same lower Bound: " + v_i + " -> " + bestExtensionTargetVertex);
+            // first child we add to the queue, otherwise save it for later
+            if (child == 0) {
+                queue.add(sibling);
+                Mapping fullMapping = partialMapping.copy();
+                for (int i = 0; i < assignments.length; i++) {
+                    fullMapping.add(sourceList.get(level - 1 + i), availableTargetVertices.get(assignments[i]));
                 }
-
-                if (lowerBoundForPartialMappingSibling >= upperBound.doubleValue()) {
-                    break;
+                assertTrue(fullMapping.size() == sourceGraph.size());
+                List<EditOperation> editOperations = new ArrayList<>();
+                int costForFullMapping = editorialCostForMapping(fullMapping, sourceGraph, targetGraph, editOperations);
+                if (costForFullMapping < upperBound.doubleValue()) {
+                    upperBound.set(costForFullMapping);
+                    bestMapping.set(fullMapping);
+                    bestEdit.set(editOperations);
+                    System.out.println("setting new best edit at level " + level + " with size " + editOperations.size() + " at level " + level);
                 }
-
-
-//                if(lowerBoundForPartialMappingSibling == )
-                // this must be always something else
-                int v_i_target_IndexSibling = siblingAssignment[0];
-
-                Vertex bestExtensionTargetVertexSibling = availableTargetVertices.get(v_i_target_IndexSibling);
-                Mapping newMappingSibling = partialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
-                MappingEntry sibling = new MappingEntry(newMappingSibling, level, lowerBoundForPartialMappingSibling);
-                sibling.mappingEntriesSiblings = siblings;
-                sibling.assignments = siblingAssignment;
-                sibling.availableTargetVertices = availableTargetVertices;
+            } else {
                 siblings.add(sibling);
             }
 
-            MappingEntry e = new MappingEntry(newMapping, level, lowerBoundForPartialMapping);
-            e.mappingEntriesSiblings = siblings;
-//            System.out.println("adding new entry " + getDebugMap(newMapping) + "  at level " + level + " with candidates left: " + candidates.size() + " at lower bound: " + lowerBoundForPartialMapping);
-            queue.add(e);
-
-            // we have a full mapping from the cost matrix
-            Mapping fullMapping = partialMapping.copy();
-            for (int i = 0; i < assignments.length; i++) {
-                fullMapping.add(sourceList.get(level - 1 + i), availableTargetVertices.get(assignments[i]));
-            }
-            assertTrue(fullMapping.size() == sourceGraph.size());
-            List<EditOperation> editOperations = new ArrayList<>();
-            int costForFullMapping = editorialCostForMapping(fullMapping, sourceGraph, targetGraph, editOperations);
-            if (costForFullMapping < upperBound.doubleValue()) {
-                upperBound.set(costForFullMapping);
-                bestMapping.set(fullMapping);
-                bestEdit.set(editOperations);
-                System.out.println("setting new best edit at level " + level + " with size " + editOperations.size() + " at level " + level);
-            } else {
-//                System.out.println("to expensive cost for overall mapping " +);
-            }
-        } else {
-            int v_i_target_Index = assignments[0];
-            Vertex bestExtensionTargetVertex = availableTargetVertices.get(v_i_target_Index);
-            Mapping newMapping = partialMapping.extendMapping(v_i, bestExtensionTargetVertex);
-//            System.out.println("not adding new entrie " + getDebugMap(newMapping) + " because " + lowerBoundForPartialMapping + " to high");
         }
+
     }
 
     private void getSibling(
