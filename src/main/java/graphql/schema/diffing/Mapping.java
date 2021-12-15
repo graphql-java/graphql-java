@@ -11,7 +11,6 @@ public class Mapping {
     private List<Vertex> sourceList = new ArrayList<>();
     private List<Vertex> targetList = new ArrayList<>();
 
-    int[] targetIndices;
     private Mapping(BiMap<Vertex, Vertex> map, List<Vertex> sourceList, List<Vertex> targetList) {
         this.map = map;
         this.sourceList = sourceList;

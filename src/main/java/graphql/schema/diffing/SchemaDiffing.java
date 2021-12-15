@@ -83,14 +83,15 @@ public class SchemaDiffing {
 
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
-            System.out.println((++counter) + " entry at level " + mappingEntry.level + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost + " map " + getDebugMap(mappingEntry.partialMapping));
+//            System.out.println((++counter) + " entry at level " + mappingEntry.level + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost + " map " + getDebugMap(mappingEntry.partialMapping));
+            if ((++counter) % 100 == 0) {
+                System.out.println((counter) + " entry at level");
+            }
             if (mappingEntry.lowerBoundCost >= upperBoundCost.doubleValue()) {
 //                System.out.println("skipping!");
                 continue;
             }
-            // generate sibling
             if (mappingEntry.level > 0 && mappingEntry.mappingEntriesSiblings.size() > 0) {
-//                    System.out.println("get sibling");
                 getSibling(
                         mappingEntry.level,
                         queue,
@@ -101,22 +102,15 @@ public class SchemaDiffing {
                         targetGraph,
                         mappingEntry);
             }
-            // generate children
             if (mappingEntry.level < graphSize) {
-                // candidates are the vertices in target, of which are not used yet in partialMapping
-                Set<Vertex> childCandidates = new LinkedHashSet<>(targetGraph.getVertices());
-                childCandidates.removeAll(mappingEntry.partialMapping.getTargets());
-//                System.out.println("generate children");
-                generateChilds(mappingEntry.partialMapping,
+                generateChildren(mappingEntry,
                         mappingEntry.level + 1,
-                        childCandidates,
                         queue,
                         upperBoundCost,
                         bestFullMapping,
                         bestEdit,
                         sourceGraph,
-                        targetGraph,
-                        mappingEntry
+                        targetGraph
                 );
             }
         }
@@ -226,21 +220,21 @@ public class SchemaDiffing {
 
 
     // level starts at 1 indicating the level in the search tree to look for the next mapping
-    private void generateChilds(Mapping partialMapping,
-                                int level,
-                                Set<Vertex> candiates, // changed in place on purpose
-                                PriorityQueue<MappingEntry> queue,
-                                AtomicDouble upperBound,
-                                AtomicReference<Mapping> bestMapping,
-                                AtomicReference<List<EditOperation>> bestEdit,
-                                SchemaGraph sourceGraph,
-                                SchemaGraph targetGraph,
-                                MappingEntry parentOrSiblingEntry
+    private void generateChildren(MappingEntry parentEntry,
+                                  int level,
+                                  PriorityQueue<MappingEntry> queue,
+                                  AtomicDouble upperBound,
+                                  AtomicReference<Mapping> bestMapping,
+                                  AtomicReference<List<EditOperation>> bestEdit,
+                                  SchemaGraph sourceGraph,
+                                  SchemaGraph targetGraph
     ) {
+        Mapping partialMapping = parentEntry.partialMapping;
         assertTrue(level - 1 == partialMapping.size());
         List<Vertex> sourceList = sourceGraph.getVertices();
         List<Vertex> targetList = targetGraph.getVertices();
 
+        // TODO: iterates over all target vertices
         ArrayList<Vertex> availableTargetVertices = new ArrayList<>(targetList);
         availableTargetVertices.removeAll(partialMapping.getTargets());
         assertTrue(availableTargetVertices.size() + partialMapping.size() == targetList.size());
@@ -286,19 +280,32 @@ public class SchemaDiffing {
             Vertex bestExtensionTargetVertex = availableTargetVertices.get(v_i_target_Index);
             Mapping newMapping = partialMapping.extendMapping(v_i, bestExtensionTargetVertex);
 
+            if (lowerBoundForPartialMapping == parentEntry.lowerBoundCost) {
+//                System.out.println("same lower Bound: " + v_i + " -> " + bestExtensionTargetVertex);
+            }
+
             // generate all siblings
             List<MappingEntry> siblings = new ArrayList<>();
             for (int child = 1; child < availableTargetVertices.size(); child++) {
-                int[] siblingAssignment = hungarianAlgorithm.nextChild(child, assignments);
+                int[] siblingAssignment = hungarianAlgorithm.nextChild();
                 double costMatrixSumSibling = getCostMatrixSum(costMatrix, siblingAssignment);
                 double lowerBoundForPartialMappingSibling = editorialCostForMapping + costMatrixSumSibling;
+
+                if (lowerBoundForPartialMappingSibling == parentEntry.lowerBoundCost) {
+//                    System.out.println("same lower Bound: " + v_i + " -> " + bestExtensionTargetVertex);
+                }
+
+                if (lowerBoundForPartialMappingSibling >= upperBound.doubleValue()) {
+                    break;
+                }
+
+
+//                if(lowerBoundForPartialMappingSibling == )
                 // this must be always something else
                 int v_i_target_IndexSibling = siblingAssignment[0];
 
-//                System.out.println("job index: " + v_i_target_IndexSibling);
                 Vertex bestExtensionTargetVertexSibling = availableTargetVertices.get(v_i_target_IndexSibling);
                 Mapping newMappingSibling = partialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
-//                candidates.remove(bestExtensionTargetVertex);
                 MappingEntry sibling = new MappingEntry(newMappingSibling, level, lowerBoundForPartialMappingSibling);
                 sibling.mappingEntriesSiblings = siblings;
                 sibling.assignments = siblingAssignment;
@@ -353,9 +360,7 @@ public class SchemaDiffing {
             mappingEntry.mappingEntriesSiblings.remove(0);
 
             List<Vertex> sourceList = sourceGraph.getVertices();
-            List<Vertex> targetList = targetGraph.getVertices();
-
-            // we expect here the parent mapping, this is why we remove the last element
+            // we need to start here from the parent mapping, this is why we remove the last element
             Mapping fullMapping = sibling.partialMapping.removeLastElement();
             for (int i = 0; i < sibling.assignments.length; i++) {
                 fullMapping.add(sourceList.get(level - 1 + i), sibling.availableTargetVertices.get(sibling.assignments[i]));
@@ -427,12 +432,11 @@ public class SchemaDiffing {
                 cost++;
             }
         }
-        Set<Vertex> subGraphSource = new LinkedHashSet<>(sourceGraph.getVertices().subList(0, partialOrFullMapping.size()));
         List<Edge> edges = sourceGraph.getEdges();
         // edge deletion or relabeling
         for (Edge sourceEdge : edges) {
             // only edges relevant to the subgraph
-            if (!subGraphSource.contains(sourceEdge.getOne()) || !subGraphSource.contains(sourceEdge.getTwo())) {
+            if (!partialOrFullMapping.containsSource(sourceEdge.getOne()) || !partialOrFullMapping.containsSource(sourceEdge.getTwo())) {
                 continue;
             }
             Vertex target1 = partialOrFullMapping.getTarget(sourceEdge.getOne());
@@ -447,7 +451,7 @@ public class SchemaDiffing {
             }
         }
 
-        // edge insertion
+        //TODO: iterates over all edges in the target Graph
         for (Edge targetEdge : targetGraph.getEdges()) {
             // only subgraph edges
             if (!partialOrFullMapping.containsTarget(targetEdge.getOne()) || !partialOrFullMapping.containsTarget(targetEdge.getTwo())) {
@@ -478,7 +482,6 @@ public class SchemaDiffing {
         // which are adjacent of u (resp. v) which are inner edges
 
         List<Edge> adjacentEdgesV = sourceGraph.getAdjacentEdges(v);
-//        Set<Vertex> nonMappedSourceVertices = nonMappedVertices(sourceGraph.getVertices(), partialMappingSourceList);
         Multiset<String> multisetLabelsV = HashMultiset.create();
 
         for (Edge edge : adjacentEdgesV) {
@@ -491,7 +494,6 @@ public class SchemaDiffing {
         }
 
         List<Edge> adjacentEdgesU = targetGraph.getAdjacentEdges(u);
-//        Set<Vertex> nonMappedTargetVertices = nonMappedVertices(targetGraph.getVertices(), partialMappingTargetList);
         Multiset<String> multisetLabelsU = HashMultiset.create();
         for (Edge edge : adjacentEdgesU) {
             // test if this is an inner edge

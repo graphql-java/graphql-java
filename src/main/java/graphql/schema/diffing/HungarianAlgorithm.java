@@ -358,33 +358,17 @@ public class HungarianAlgorithm {
         }
     }
 
-    public int[] nextChild(int jobIndex, int[] prevResult) {
+    public int[] nextChild() {
         int currentJobAssigned = matchJobByWorker[0];
         // we want to make currentJobAssigned not allowed,meaning we set the size to Infinity
-        double oldCost = costMatrix[0][currentJobAssigned];
         costMatrix[0][currentJobAssigned] = Integer.MAX_VALUE;
         matchWorkerByJob[currentJobAssigned] = -1;
         matchJobByWorker[0] = -1;
-
-//        for (int w = 0; w < dim; w++) {
-//            labelByWorker[w] = 0;
-//        }
-//        for (int j = 0; j < dim; j++) {
-//            labelByJob[j] -= 0;
-//        }
-//        computeInitialFeasibleSolution();
-//        System.out.println("worker label: " + labelByWorker[0]);
-//        System.out.println("job label: " + labelByJob[currentJobAssigned]);
-//        System.out.println("added: " + (labelByWorker[0] + labelByJob[currentJobAssigned]) +  " vs old cost " + oldCost);
         minSlackValueByJob[currentJobAssigned] = Integer.MAX_VALUE;
         initializePhase(0);
         executePhase();
         int[] result = Arrays.copyOf(matchJobByWorker, rows);
         return result;
-//        } else {
-//            // this means we are good with previous result because the jobIndex was not picked anyway
-//            return prevResult;
-//        }
     }
 
     public static void main(String[] args) {
@@ -393,7 +377,7 @@ public class HungarianAlgorithm {
         int[] result = hungarianAlgorithm.execute();
         System.out.println(Arrays.toString(result));
         for (int i = 0; i < c.length - 1; i++) {
-            result = hungarianAlgorithm.nextChild(i, result);
+            result = hungarianAlgorithm.nextChild();
             System.out.println(Arrays.toString(result));
         }
     }
