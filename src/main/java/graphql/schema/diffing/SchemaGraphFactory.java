@@ -1,6 +1,5 @@
 package graphql.schema.diffing;
 
-import graphql.Directives;
 import graphql.introspection.Introspection;
 import graphql.schema.*;
 import graphql.schema.idl.DirectiveInfo;
@@ -63,7 +62,7 @@ public class SchemaGraphFactory {
                     newInterface((GraphQLInterfaceType) context.thisNode(), schemaGraph, isIntrospectionNode);
                 }
                 if (context.thisNode() instanceof GraphQLUnionType) {
-                    newUnion((GraphQLInterfaceType) context.thisNode(), schemaGraph, isIntrospectionNode);
+                    newUnion((GraphQLUnionType) context.thisNode(), schemaGraph, isIntrospectionNode);
                 }
                 if (context.thisNode() instanceof GraphQLScalarType) {
                     newScalar((GraphQLScalarType) context.thisNode(), schemaGraph, isIntrospectionNode);
@@ -294,7 +293,7 @@ public class SchemaGraphFactory {
         cratedAppliedDirectives(enumVertex, enumType.getDirectives(), schemaGraph);
     }
 
-    private void newUnion(GraphQLInterfaceType unionType, SchemaGraph schemaGraph, boolean isIntrospectionNode) {
+    private void newUnion(GraphQLUnionType unionType, SchemaGraph schemaGraph, boolean isIntrospectionNode) {
         Vertex unionVertex = new Vertex("Union", String.valueOf(counter++));
         unionVertex.setBuiltInType(isIntrospectionNode);
         unionVertex.add("name", unionType.getName());

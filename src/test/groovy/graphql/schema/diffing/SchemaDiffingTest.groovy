@@ -647,6 +647,52 @@ class SchemaDiffingTest extends Specification {
 
     }
 
+
+    def "change a Union "() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            pet: Pet
+           } 
+           union Pet = Dog | Cat
+           type Dog {
+            name: String
+           }
+           type Cat {
+            name: String
+           }
+        """)
+        def schema2 = schema("""
+           type Query {
+            pet: Pet
+           } 
+           union Pet = Dog | Bird | Fish
+           type Dog {
+            name: String
+           }
+           type Bird {
+            name: String
+           }
+           type Fish {
+            name: String
+           }
+        """)
+
+        when:
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        /**
+         * 1. Change Cat to Bird
+         * 2,3,4: Insert Fish, Insert Fish.name, Insert __DummyTypeVertice
+         * 5. Insert Edge from Fish to Fish.name
+         * 6.7. Insert Edge from Fish.name -> __DummyType --> String
+         * 8. Insert edge from Pet -> Fish
+         */
+        diff.size() == 8
+
+    }
+
 //    def "test example schema"() {
 //        given:
 //        def source = buildSourceGraph()
