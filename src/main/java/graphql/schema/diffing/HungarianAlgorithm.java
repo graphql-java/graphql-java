@@ -49,7 +49,7 @@ import java.util.Arrays;
  */
 public class HungarianAlgorithm {
     // changed by reduce
-    private final double[][] costMatrix;
+    public final double[][] costMatrix;
 
     // constant always
     private final int rows;
@@ -57,7 +57,7 @@ public class HungarianAlgorithm {
     private final int dim;
 
     // the assigned workers,jobs for the result
-    private final int[] matchJobByWorker;
+    public final int[] matchJobByWorker;
     private final int[] matchWorkerByJob;
 
     // reset for each execute
@@ -369,16 +369,5 @@ public class HungarianAlgorithm {
         executePhase();
         int[] result = Arrays.copyOf(matchJobByWorker, rows);
         return result;
-    }
-
-    public static void main(String[] args) {
-        double[][] c = new double[][]{{1, 33, 4}, {3, 5, 2}, {2, 4, 4}};
-        HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(c);
-        int[] result = hungarianAlgorithm.execute();
-        System.out.println(Arrays.toString(result));
-        for (int i = 0; i < c.length - 1; i++) {
-            result = hungarianAlgorithm.nextChild();
-            System.out.println(Arrays.toString(result));
-        }
     }
 }

@@ -39,7 +39,7 @@ public class DefaultGraphEditOperationAnalyzer {
                 }
                 String fieldName = deletedVertex.getProperty("name");
                 // find the "dummy-type" vertex for this field
-                Edge edgeToDummyTypeVertex = assertNotNull(oldSchemaGraph.getSingleAdjacentEdge(deletedVertex, edge -> edge.getTwo().getType().equals(SchemaGraphFactory.DUMMY_TYPE_VERTICE)));
+                Edge edgeToDummyTypeVertex = assertNotNull(oldSchemaGraph.getSingleAdjacentEdge(deletedVertex, edge -> edge.getTwo().getType().equals(SchemaGraphFactory.DUMMY_TYPE_VERTEX)));
                 Vertex dummyTypeVertex = edgeToDummyTypeVertex.getTwo();
 
                 Edge edgeToObjectOrInterface = assertNotNull(oldSchemaGraph.getSingleAdjacentEdge(deletedVertex, edge ->

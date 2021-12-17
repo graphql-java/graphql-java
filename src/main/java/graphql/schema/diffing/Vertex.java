@@ -76,4 +76,5 @@ public class Vertex {
                 ", builtInType='" + builtInType + '\'' +
                 '}';
     }
+
 }

@@ -10,8 +10,16 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
+import static graphql.schema.diffing.SchemaGraphFactory.ARGUMENT;
+import static graphql.schema.diffing.SchemaGraphFactory.DUMMY_TYPE_VERTEX;
+import static graphql.schema.diffing.SchemaGraphFactory.ENUM;
+import static graphql.schema.diffing.SchemaGraphFactory.ENUM_VALUE;
+import static graphql.schema.diffing.SchemaGraphFactory.FIELD;
+import static graphql.schema.diffing.SchemaGraphFactory.INPUT_FIELD;
 import static graphql.schema.diffing.SchemaGraphFactory.INPUT_OBJECT;
 import static graphql.schema.diffing.SchemaGraphFactory.INTERFACE;
+import static graphql.schema.diffing.SchemaGraphFactory.OBJECT;
+import static graphql.schema.diffing.SchemaGraphFactory.SCALAR;
 import static graphql.schema.diffing.SchemaGraphFactory.UNION;
 
 public class SchemaDiffing {
@@ -267,6 +275,10 @@ public class SchemaDiffing {
         List<MappingEntry> siblings = new ArrayList<>();
         for (int child = 0; child < availableTargetVertices.size(); child++) {
             int[] assignments = child == 0 ? hungarianAlgorithm.execute() : hungarianAlgorithm.nextChild();
+            if (hungarianAlgorithm.costMatrix[0][assignments[0]] == Integer.MAX_VALUE) {
+                break;
+            }
+
             double costMatrixSumSibling = getCostMatrixSum(costMatrix, assignments);
             double lowerBoundForPartialMappingSibling = editorialCostForMapping + costMatrixSumSibling;
 //            System.out.println("lower bound: " + child + " : " + lowerBoundForPartialMappingSibling);
@@ -286,13 +298,16 @@ public class SchemaDiffing {
             sibling.assignments = assignments;
             sibling.availableTargetVertices = availableTargetVertices;
 
+            Set<Mapping> existingMappings = new LinkedHashSet<>();
             // first child we add to the queue, otherwise save it for later
             if (child == 0) {
+//                System.out.println("adding new entry " + getDebugMap(sibling.partialMapping) + "  at level " + level + " with candidates left: " + sibling.availableTargetVertices.size() + " at lower bound: " + sibling.lowerBoundCost);
                 queue.add(sibling);
                 Mapping fullMapping = partialMapping.copy();
                 for (int i = 0; i < assignments.length; i++) {
                     fullMapping.add(sourceList.get(level - 1 + i), availableTargetVertices.get(assignments[i]));
                 }
+
                 assertTrue(fullMapping.size() == sourceGraph.size());
                 List<EditOperation> editOperations = new ArrayList<>();
                 int costForFullMapping = editorialCostForMapping(fullMapping, sourceGraph, targetGraph, editOperations);
@@ -435,6 +450,58 @@ public class SchemaDiffing {
         return cost;
     }
 
+    static Map<String, List<String>> allowedTypeMappings = new LinkedHashMap<>();
+
+    static {
+        allowedTypeMappings.put(DUMMY_TYPE_VERTEX, Collections.singletonList(DUMMY_TYPE_VERTEX));
+        allowedTypeMappings.put(SCALAR, Collections.singletonList(SCALAR));
+//        allowedTypeMappings.put(ENUM, Collections.singletonList(ENUM));
+//        allowedTypeMappings.put(INTERFACE, Arrays.asList(INTERFACE, OBJECT));
+//        allowedTypeMappings.put(OBJECT, Arrays.asList(INTERFACE, OBJECT));
+        allowedTypeMappings.put(ENUM_VALUE, Collections.singletonList(ENUM_VALUE));
+//        allowedTypeMappings.put(FIELD, Collections.singletonList(FIELD));
+//        allowedTypeMappings.put(ARGUMENT, Collections.singletonList(ARGUMENT));
+        allowedTypeMappings.put(INPUT_FIELD, Collections.singletonList(INPUT_FIELD));
+    }
+
+    private boolean isMappingPossible(Vertex v, Vertex u) {
+        if (u.isArtificialNode()) {
+            return true;
+        }
+        if (v.isBuiltInType()) {
+            return u.isBuiltInType() && v.isEqualTo(u);
+        }
+//        return true;
+        List<String> targetTypes = allowedTypeMappings.get(v.getType());
+        if (targetTypes == null) {
+            return true;
+        }
+        boolean contains = targetTypes.contains(u.getType());
+//        if (v.getType().equals(FIELD) && !contains) {
+//            System.out.println("bang");
+//        }
+//        if (!contains) {
+//            System.out.println(v + " not to " + u);
+//        }
+        return contains;
+//        if (v.getType().equals(DUMMY_TYPE_VERTEX)) {
+//            if (!u.isArtificialNode() && !u.getType().equals(DUMMY_TYPE_VERTEX)) {
+//                return false;
+//            }
+//        }
+//        if (v.getType().equals(SchemaGraphFactory.SCALAR)) {
+//            if (!u.isArtificialNode() && !u.getType().equals(SCALAR)) {
+//                return false;
+//            }
+//        }
+//        if (v.getType().equals(SchemaGraphFactory.ENUM)) {
+//            if (!u.isArtificialNode() && !u.getType().equals(ENUM)) {
+//                return false;
+//            }
+//        }
+//        return true;
+    }
+
     // lower bound mapping cost between for v -> u in respect to a partial mapping
     private double calcLowerBoundMappingCost(Vertex v,
                                              Vertex u,
@@ -445,6 +512,12 @@ public class SchemaDiffing {
                                              List<Vertex> partialMappingTargetList,
                                              Set<Vertex> partialMappingTargetSet
     ) {
+        if (!isMappingPossible(v, u)) {
+            return Integer.MAX_VALUE;
+        }
+        if (!isMappingPossible(u, v)) {
+            return Integer.MAX_VALUE;
+        }
         boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());
         // inner edge labels of u (resp. v) in regards to the partial mapping: all labels of edges
         // which are adjacent of u (resp. v) which are inner edges
@@ -455,7 +528,6 @@ public class SchemaDiffing {
         for (Edge edge : adjacentEdgesV) {
             // test if this an inner edge: meaning both edges vertices are part of the non mapped vertices
             // or: at least one edge is part of the partial mapping
-//            if (nonMappedSourceVertices.contains(edge.getOne()) && nonMappedSourceVertices.contains(edge.getTwo())) {
             if (!partialMappingSourceSet.contains(edge.getOne()) && !partialMappingSourceSet.contains(edge.getTwo())) {
                 multisetLabelsV.add(edge.getLabel());
             }
@@ -470,7 +542,9 @@ public class SchemaDiffing {
             }
         }
 
-
+        /**
+         * looking at all edges from x,vPrime and y,mappedVPrime
+         */
         int anchoredVerticesCost = 0;
         for (int i = 0; i < partialMappingSourceList.size(); i++) {
             Vertex vPrime = partialMappingSourceList.get(i);
@@ -486,8 +560,11 @@ public class SchemaDiffing {
 
         Multiset<String> intersection = Multisets.intersection(multisetLabelsV, multisetLabelsU);
         int multiSetEditDistance = Math.max(multisetLabelsV.size(), multisetLabelsU.size()) - intersection.size();
-//        System.out.println("equalNodes : " + (equalNodes ? 0 : 1) + " editDistance " + (multiSetEditDistance / 2.0) + " anchored cost" + (anchoredVerticesCost));
-        return (equalNodes ? 0 : 1) + multiSetEditDistance / 2.0 + anchoredVerticesCost;
+        double result = (equalNodes ? 0 : 1) + multiSetEditDistance / 2.0 + anchoredVerticesCost;
+//        if (v.getType().equals(SchemaGraphFactory.DUMMY_TYPE_VERTEX)) {
+//            System.out.println("result: " + result);
+//        }
+        return result;
     }
 
 }

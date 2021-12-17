@@ -5,6 +5,7 @@ import com.google.common.collect.HashBiMap;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Mapping {
     private BiMap<Vertex, Vertex> map = HashBiMap.create();
@@ -90,5 +91,22 @@ public class Mapping {
 
     public BiMap<Vertex, Vertex> getMap() {
         return map;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Mapping mapping = (Mapping) o;
+        return Objects.equals(map, mapping.map);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(map);
     }
 }
