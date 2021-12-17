@@ -1,14 +1,25 @@
 package graphql.schema.diffing;
 
-import com.google.common.collect.*;
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Multiset;
+import com.google.common.collect.Multisets;
 import com.google.common.util.concurrent.AtomicDouble;
-import graphql.schema.*;
+import graphql.schema.GraphQLSchema;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.SchemaGraphFactory.ARGUMENT;
 import static graphql.schema.diffing.SchemaGraphFactory.DUMMY_TYPE_VERTEX;
@@ -40,11 +51,9 @@ public class SchemaDiffing {
 
         }
 
-        // target vertices which the fist `level` vertices of source graph are mapped to
         Mapping partialMapping = new Mapping();
         int level;
         double lowerBoundCost;
-//        Set<Vertex> candidates = new LinkedHashSet<>();
     }
 
     SchemaGraph sourceGraph;
@@ -53,7 +62,6 @@ public class SchemaDiffing {
     public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2, boolean oldVersion) {
         sourceGraph = new SchemaGraphFactory().createGraph(graphQLSchema1);
         targetGraph = new SchemaGraphFactory().createGraph(graphQLSchema2);
-//        System.out.println(GraphPrinter.print(sourceGraph));
         return diffImpl(sourceGraph, targetGraph);
 
     }
@@ -63,7 +71,6 @@ public class SchemaDiffing {
     }
 
     List<EditOperation> diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) {
-        // we assert here that the graphs have the same size. The algorithm depends on it
         if (sourceGraph.size() < targetGraph.size()) {
             sourceGraph.addIsolatedVertices(targetGraph.size() - sourceGraph.size());
         } else if (sourceGraph.size() > targetGraph.size()) {
@@ -96,7 +103,6 @@ public class SchemaDiffing {
                 System.out.println((counter) + " entry at level");
             }
             if (mappingEntry.lowerBoundCost >= upperBoundCost.doubleValue()) {
-//                System.out.println("skipping!");
                 continue;
             }
             if (mappingEntry.level > 0 && mappingEntry.mappingEntriesSiblings.size() > 0) {
@@ -140,13 +146,11 @@ public class SchemaDiffing {
         for (Edge edge : sourceGraph.getEdges()) {
             edgesWeights.put(edge, infrequencyWeightForEdge(edge, targetGraph));
         }
-        // start with the vertex with largest total weight
         List<Vertex> result = new ArrayList<>();
         ArrayList<Vertex> nextCandidates = new ArrayList<>(sourceGraph.getVertices());
         nextCandidates.sort(Comparator.comparingInt(o -> totalWeightWithAdjacentEdges(sourceGraph, o, vertexWeights, edgesWeights)));
 //        System.out.println("0: " + totalWeight(sourceGraph, nextCandidates.get(0), vertexWeights, edgesWeights));
 //        System.out.println("last: " + totalWeight(sourceGraph, nextCandidates.get(nextCandidates.size() - 1), vertexWeights, edgesWeights));
-//        // starting with the one with largest totalWeight:
         Vertex curVertex = nextCandidates.get(nextCandidates.size() - 1);
         result.add(curVertex);
         nextCandidates.remove(nextCandidates.size() - 1);
@@ -169,7 +173,6 @@ public class SchemaDiffing {
             nextCandidates.remove(nextOneIndex);
         }
         System.out.println(result);
-//        System.out.println(nextCandidates);
         sourceGraph.setVertices(result);
     }
 
@@ -455,12 +458,12 @@ public class SchemaDiffing {
     static {
         allowedTypeMappings.put(DUMMY_TYPE_VERTEX, Collections.singletonList(DUMMY_TYPE_VERTEX));
         allowedTypeMappings.put(SCALAR, Collections.singletonList(SCALAR));
-//        allowedTypeMappings.put(ENUM, Collections.singletonList(ENUM));
-//        allowedTypeMappings.put(INTERFACE, Arrays.asList(INTERFACE, OBJECT));
-//        allowedTypeMappings.put(OBJECT, Arrays.asList(INTERFACE, OBJECT));
+        allowedTypeMappings.put(ENUM, Collections.singletonList(ENUM));
+        allowedTypeMappings.put(INTERFACE, Arrays.asList(INTERFACE, OBJECT));
+        allowedTypeMappings.put(OBJECT, Arrays.asList(INTERFACE, OBJECT));
         allowedTypeMappings.put(ENUM_VALUE, Collections.singletonList(ENUM_VALUE));
-//        allowedTypeMappings.put(FIELD, Collections.singletonList(FIELD));
-//        allowedTypeMappings.put(ARGUMENT, Collections.singletonList(ARGUMENT));
+        allowedTypeMappings.put(FIELD, Collections.singletonList(FIELD));
+        allowedTypeMappings.put(ARGUMENT, Collections.singletonList(ARGUMENT));
         allowedTypeMappings.put(INPUT_FIELD, Collections.singletonList(INPUT_FIELD));
     }
 
@@ -477,29 +480,7 @@ public class SchemaDiffing {
             return true;
         }
         boolean contains = targetTypes.contains(u.getType());
-//        if (v.getType().equals(FIELD) && !contains) {
-//            System.out.println("bang");
-//        }
-//        if (!contains) {
-//            System.out.println(v + " not to " + u);
-//        }
         return contains;
-//        if (v.getType().equals(DUMMY_TYPE_VERTEX)) {
-//            if (!u.isArtificialNode() && !u.getType().equals(DUMMY_TYPE_VERTEX)) {
-//                return false;
-//            }
-//        }
-//        if (v.getType().equals(SchemaGraphFactory.SCALAR)) {
-//            if (!u.isArtificialNode() && !u.getType().equals(SCALAR)) {
-//                return false;
-//            }
-//        }
-//        if (v.getType().equals(SchemaGraphFactory.ENUM)) {
-//            if (!u.isArtificialNode() && !u.getType().equals(ENUM)) {
-//                return false;
-//            }
-//        }
-//        return true;
     }
 
     // lower bound mapping cost between for v -> u in respect to a partial mapping
@@ -560,11 +541,7 @@ public class SchemaDiffing {
 
         Multiset<String> intersection = Multisets.intersection(multisetLabelsV, multisetLabelsU);
         int multiSetEditDistance = Math.max(multisetLabelsV.size(), multisetLabelsU.size()) - intersection.size();
-        double result = (equalNodes ? 0 : 1) + multiSetEditDistance / 2.0 + anchoredVerticesCost;
-//        if (v.getType().equals(SchemaGraphFactory.DUMMY_TYPE_VERTEX)) {
-//            System.out.println("result: " + result);
-//        }
-        return result;
+        return (equalNodes ? 0 : 1) + multiSetEditDistance / 2.0 + anchoredVerticesCost;
     }
 
 }
