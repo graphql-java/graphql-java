@@ -4,6 +4,7 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
 import com.google.common.util.concurrent.AtomicDouble;
+import graphql.Assert;
 import graphql.schema.GraphQLSchema;
 
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ import static graphql.schema.diffing.SchemaGraphFactory.INTERFACE;
 import static graphql.schema.diffing.SchemaGraphFactory.OBJECT;
 import static graphql.schema.diffing.SchemaGraphFactory.SCALAR;
 import static graphql.schema.diffing.SchemaGraphFactory.UNION;
+import static java.lang.String.format;
 
 public class SchemaDiffing {
 
@@ -486,20 +488,98 @@ public class SchemaDiffing {
         allowedTypeMappings.put(DIRECTIVE, Collections.singletonList(DIRECTIVE));
     }
 
-    private boolean isMappingPossible(Vertex v, Vertex u) {
+    private Map<Vertex, Vertex> forcedMatchingCache = new LinkedHashMap<>();
+
+    private boolean isMappingPossible(Vertex v, Vertex u, SchemaGraph sourceGraph, SchemaGraph targetGraph, Set<Vertex> partialMappingTargetSet) {
+        // deletion and inserting of vertices
         if (u.isArtificialNode() || v.isArtificialNode()) {
             return true;
         }
+        // build in types need to match exactly built in types: not allowing to change
+        // Introspection API to change here
         if (v.isBuiltInType()) {
             return u.isBuiltInType() && v.isEqualTo(u);
         }
-//        return true;
         List<String> targetTypes = allowedTypeMappings.get(v.getType());
         if (targetTypes == null) {
             return true;
         }
         boolean contains = targetTypes.contains(u.getType());
-        return contains;
+        if (contains) {
+            if (isNamedType(v.getType())) {
+                Vertex targetVertex = targetGraph.getType(v.get("name"));
+                if (targetVertex != null && Objects.equals(v.getType(), targetVertex.getType())) {
+                    return u == targetVertex;
+                }
+            }
+            Vertex forcedMatch = forcedMatchingCache.get(v);
+            if (forcedMatch != null && partialMappingTargetSet.contains(forcedMatch)) {
+                return forcedMatch == u;
+            }
+            if (FIELD.equals(v.getType())) {
+                Vertex sourceFieldsContainer = getFieldsContainer(v, sourceGraph);
+                Vertex targetFieldsContainerWithSameName = targetGraph.getType(sourceFieldsContainer.get("name"));
+                if (targetFieldsContainerWithSameName != null && targetFieldsContainerWithSameName.getType().equals(sourceFieldsContainer.getType())) {
+                    Vertex targetFieldWithSameParentAndSameName = getField(targetFieldsContainerWithSameName, v.get("name"), targetGraph);
+                    if (targetFieldWithSameParentAndSameName != null) {
+                        forcedMatchingCache.put(v, u);
+                        return u == targetFieldWithSameParentAndSameName;
+                    }
+                }
+            }
+            if (ENUM_VALUE.equals(v.getType())) {
+                Vertex enumVertex = getEnum(v, sourceGraph);
+                Vertex targetEnumWithSameName = targetGraph.getType(enumVertex.get("name"));
+                if (targetEnumWithSameName != null) {
+                    Vertex targetEnumValueWithSameParentAndSameName = getEnumValue(targetEnumWithSameName, v.get("name"), targetGraph);
+                    if (targetEnumValueWithSameParentAndSameName != null) {
+                        forcedMatchingCache.put(v, u);
+                        return u == targetEnumValueWithSameParentAndSameName;
+                    }
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private Vertex getField(Vertex fieldsContainer, String fieldName, SchemaGraph schemaGraph) {
+        List<Vertex> adjacentVertices = schemaGraph.getAdjacentVertices(fieldsContainer, v -> v.getType().equals(FIELD) && fieldName.equals(v.get("name")));
+        assertTrue(adjacentVertices.size() <= 1);
+        return adjacentVertices.size() == 0 ? null : adjacentVertices.get(0);
+    }
+
+    private Vertex getEnumValue(Vertex enumVertex, String valueName, SchemaGraph schemaGraph) {
+        List<Vertex> adjacentVertices = schemaGraph.getAdjacentVertices(enumVertex, v -> valueName.equals(v.get("name")));
+        assertTrue(adjacentVertices.size() <= 1);
+        return adjacentVertices.size() == 0 ? null : adjacentVertices.get(0);
+    }
+
+    private Vertex getFieldsContainer(Vertex field, SchemaGraph schemaGraph) {
+        List<Edge> adjacentEdges = schemaGraph.getAdjacentEdges(field);
+        for (Edge edge : adjacentEdges) {
+            Vertex adjacentVertex;
+            if (edge.getOne() == field) {
+                adjacentVertex = edge.getTwo();
+            } else {
+                adjacentVertex = edge.getOne();
+            }
+            if (adjacentVertex.getType().equals(OBJECT) || adjacentVertex.getType().equals(INTERFACE)) {
+                return adjacentVertex;
+            }
+        }
+        return Assert.assertShouldNeverHappen("No fields container found for ", field);
+    }
+
+    private Vertex getEnum(Vertex enumValue, SchemaGraph schemaGraph) {
+        List<Vertex> adjacentVertices = schemaGraph.getAdjacentVertices(enumValue, vertex -> vertex.getType().equals(ENUM));
+        assertTrue(adjacentVertices.size() == 1, () -> format("No enum found for value %s", enumValue));
+        return adjacentVertices.get(0);
+    }
+
+    private boolean isNamedType(String type) {
+        return Arrays.asList(OBJECT, INTERFACE, INPUT_OBJECT, ENUM, UNION, SCALAR).contains(type);
     }
 
     // lower bound mapping cost between for v -> u in respect to a partial mapping
@@ -512,10 +592,10 @@ public class SchemaDiffing {
                                              List<Vertex> partialMappingTargetList,
                                              Set<Vertex> partialMappingTargetSet
     ) {
-        if (!isMappingPossible(v, u)) {
+        if (!isMappingPossible(v, u, sourceGraph, targetGraph, partialMappingTargetSet)) {
             return Integer.MAX_VALUE;
         }
-        if (!isMappingPossible(u, v)) {
+        if (!isMappingPossible(u, v, targetGraph, sourceGraph, partialMappingSourceSet)) {
             return Integer.MAX_VALUE;
         }
         boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());

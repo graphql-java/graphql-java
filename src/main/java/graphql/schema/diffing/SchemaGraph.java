@@ -43,6 +43,26 @@ public class SchemaGraph {
         return new ArrayList<>(edgeByVertexPair.row(from).values());
     }
 
+    public List<Vertex> getAdjacentVertices(Vertex from) {
+        return getAdjacentVertices(from, x -> true);
+    }
+
+    public List<Vertex> getAdjacentVertices(Vertex from, Predicate<Vertex> predicate) {
+        List<Vertex> result = new ArrayList<>();
+        for (Edge edge : edgeByVertexPair.row(from).values()) {
+            Vertex v;
+            if (edge.getOne() == from) {
+                v = edge.getTwo();
+            } else {
+                v = edge.getOne();
+            }
+            if (predicate.test(v)) {
+                result.add(v);
+            }
+        }
+        return result;
+    }
+
     public Edge getSingleAdjacentEdge(Vertex from, Predicate<Edge> predicate) {
         for (Edge edge : edgeByVertexPair.row(from).values()) {
             if (predicate.test(edge)) {

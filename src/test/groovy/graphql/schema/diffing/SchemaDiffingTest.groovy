@@ -639,7 +639,7 @@ class SchemaDiffingTest extends Specification {
         def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        diff.size() == 8
+        diff.size() == 9
 
     }
 
@@ -727,6 +727,35 @@ class SchemaDiffingTest extends Specification {
 
         then:
         operations.size() == 4
+    }
+
+    def "adding enum value"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            foo: Foo
+           } 
+           enum Foo {
+                V1
+                V2
+           }
+        """)
+        def schema2 = schema("""
+           type Query {
+            foo: Foo
+           } 
+           enum Foo {
+                V1
+                V2
+                V3
+           }
+        """)
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        operations.size() == 2
     }
 
 
