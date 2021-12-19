@@ -21,7 +21,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertTrue;
+import static graphql.schema.diffing.SchemaGraphFactory.APPLIED_ARGUMENT;
+import static graphql.schema.diffing.SchemaGraphFactory.APPLIED_DIRECTIVE;
 import static graphql.schema.diffing.SchemaGraphFactory.ARGUMENT;
+import static graphql.schema.diffing.SchemaGraphFactory.DIRECTIVE;
 import static graphql.schema.diffing.SchemaGraphFactory.DUMMY_TYPE_VERTEX;
 import static graphql.schema.diffing.SchemaGraphFactory.ENUM;
 import static graphql.schema.diffing.SchemaGraphFactory.ENUM_VALUE;
@@ -80,6 +83,11 @@ public class SchemaDiffing {
         int graphSize = sourceGraph.size();
         System.out.println("graph size: " + graphSize);
         sortSourceGraph(sourceGraph, targetGraph);
+//        if (true) {
+//            String print = GraphPrinter.print(sourceGraph);
+//            System.out.println(print);
+//            return Collections.emptyList();
+//        }
 
         AtomicDouble upperBoundCost = new AtomicDouble(Double.MAX_VALUE);
         AtomicReference<Mapping> bestFullMapping = new AtomicReference<>();
@@ -95,7 +103,6 @@ public class SchemaDiffing {
         });
         queue.add(new MappingEntry());
         int counter = 0;
-
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
 //            System.out.println((++counter) + " entry at level " + mappingEntry.level + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost + " map " + getDebugMap(mappingEntry.partialMapping));
@@ -274,7 +281,7 @@ public class SchemaDiffing {
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrix);
         int editorialCostForMapping = editorialCostForMapping(partialMapping, sourceGraph, targetGraph, new ArrayList<>());
 
-        // generate all childrens (which are siblings to each other)
+        // generate all children (which are siblings to each other)
         List<MappingEntry> siblings = new ArrayList<>();
         for (int child = 0; child < availableTargetVertices.size(); child++) {
             int[] assignments = child == 0 ? hungarianAlgorithm.execute() : hungarianAlgorithm.nextChild();
@@ -287,6 +294,7 @@ public class SchemaDiffing {
 //            System.out.println("lower bound: " + child + " : " + lowerBoundForPartialMappingSibling);
             int v_i_target_IndexSibling = assignments[0];
             Vertex bestExtensionTargetVertexSibling = availableTargetVertices.get(v_i_target_IndexSibling);
+//            System.out.println("adding new mapping " + v_i + " => " + bestExtensionTargetVertexSibling);
             Mapping newMappingSibling = partialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
 
             if (lowerBoundForPartialMappingSibling == parentEntry.lowerBoundCost) {
@@ -304,7 +312,7 @@ public class SchemaDiffing {
             Set<Mapping> existingMappings = new LinkedHashSet<>();
             // first child we add to the queue, otherwise save it for later
             if (child == 0) {
-//                System.out.println("adding new entry " + getDebugMap(sibling.partialMapping) + "  at level " + level + " with candidates left: " + sibling.availableTargetVertices.size() + " at lower bound: " + sibling.lowerBoundCost);
+//                System.out.println("adding new child entry " + getDebugMap(sibling.partialMapping) + "  at level " + level + " with candidates left: " + sibling.availableTargetVertices.size() + " at lower bound: " + sibling.lowerBoundCost);
                 queue.add(sibling);
                 Mapping fullMapping = partialMapping.copy();
                 for (int i = 0; i < assignments.length; i++) {
@@ -340,7 +348,7 @@ public class SchemaDiffing {
 
         MappingEntry sibling = mappingEntry.mappingEntriesSiblings.get(0);
         if (sibling.lowerBoundCost < upperBoundCost.doubleValue()) {
-//            System.out.println("adding new entry " + getDebugMap(sibling.partialMapping) + "  at level " + level + " with candidates left: " + sibling.availableTargetVertices.size() + " at lower bound: " + sibling.lowerBoundCost);
+//            System.out.println("adding new sibling entry " + getDebugMap(sibling.partialMapping) + "  at level " + level + " with candidates left: " + sibling.availableTargetVertices.size() + " at lower bound: " + sibling.lowerBoundCost);
 
             queue.add(sibling);
             mappingEntry.mappingEntriesSiblings.remove(0);
@@ -393,7 +401,13 @@ public class SchemaDiffing {
 
     private List<String> getDebugMap(Mapping mapping) {
         List<String> result = new ArrayList<>();
+//        if (mapping.size() > 0) {
+//            result.add(mapping.getSource(mapping.size() - 1).getType() + " -> " + mapping.getTarget(mapping.size() - 1).getType());
+//        }
         for (Map.Entry<Vertex, Vertex> entry : mapping.getMap().entrySet()) {
+//            if (!entry.getKey().getType().equals(entry.getValue().getType())) {
+//                result.add(entry.getKey().getType() + "->" + entry.getValue().getType());
+//            }
             result.add(entry.getKey().getDebugName() + "->" + entry.getValue().getDebugName());
         }
         return result;
@@ -459,16 +473,21 @@ public class SchemaDiffing {
         allowedTypeMappings.put(DUMMY_TYPE_VERTEX, Collections.singletonList(DUMMY_TYPE_VERTEX));
         allowedTypeMappings.put(SCALAR, Collections.singletonList(SCALAR));
         allowedTypeMappings.put(ENUM, Collections.singletonList(ENUM));
-        allowedTypeMappings.put(INTERFACE, Arrays.asList(INTERFACE, OBJECT));
-        allowedTypeMappings.put(OBJECT, Arrays.asList(INTERFACE, OBJECT));
         allowedTypeMappings.put(ENUM_VALUE, Collections.singletonList(ENUM_VALUE));
+        allowedTypeMappings.put(OBJECT, Arrays.asList(OBJECT));
+        allowedTypeMappings.put(INTERFACE, Arrays.asList(INTERFACE));
         allowedTypeMappings.put(FIELD, Collections.singletonList(FIELD));
         allowedTypeMappings.put(ARGUMENT, Collections.singletonList(ARGUMENT));
+        allowedTypeMappings.put(INPUT_OBJECT, Collections.singletonList(INPUT_OBJECT));
         allowedTypeMappings.put(INPUT_FIELD, Collections.singletonList(INPUT_FIELD));
+        allowedTypeMappings.put(UNION, Collections.singletonList(UNION));
+        allowedTypeMappings.put(APPLIED_DIRECTIVE, Collections.singletonList(APPLIED_DIRECTIVE));
+        allowedTypeMappings.put(APPLIED_ARGUMENT, Collections.singletonList(APPLIED_ARGUMENT));
+        allowedTypeMappings.put(DIRECTIVE, Collections.singletonList(DIRECTIVE));
     }
 
     private boolean isMappingPossible(Vertex v, Vertex u) {
-        if (u.isArtificialNode()) {
+        if (u.isArtificialNode() || v.isArtificialNode()) {
             return true;
         }
         if (v.isBuiltInType()) {

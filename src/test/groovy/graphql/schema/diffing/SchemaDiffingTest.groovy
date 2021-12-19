@@ -200,13 +200,9 @@ class SchemaDiffingTest extends Specification {
 
         then:
         /**
-         * 1. Change type Pet into Interface Pet
-         * 2,3,4: Insert Object Dog, Insert Field name, Insert __DUMMY_TYPE_VERTICE
-         * 5. Insert Edge from Object Dog to Field name
-         * 6,7 Insert Edge from Field name to DUMMY_TYPE_VERTICE to Scalar String
-         * 8. Insert 'implements' Edge from Object Pet to Interface Pet
+         * If we would allow to map Object to Interface this would have a result of 8
          */
-        diff.size() == 8
+        diff.size() == 10
 
     }
 
@@ -385,7 +381,7 @@ class SchemaDiffingTest extends Specification {
         """)
 
         when:
-        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2,false)
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2, false)
 
         then:
         diff.size() == 58
@@ -692,6 +688,47 @@ class SchemaDiffingTest extends Specification {
         diff.size() == 8
 
     }
+
+    def "adding an argument "() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            foo: String
+           } 
+        """)
+        def schema2 = schema("""
+           type Query {
+            foo(arg: Int): String
+           }
+        """)
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        operations.size() == 4
+    }
+
+    def "changing an argument "() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            foo(arg: Int): String
+           } 
+        """)
+        def schema2 = schema("""
+           type Query {
+            foo(arg2: Boolean): String
+           }
+        """)
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        operations.size() == 4
+    }
+
 
 //    def "test example schema"() {
 //        given:

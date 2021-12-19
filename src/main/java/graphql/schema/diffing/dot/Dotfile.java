@@ -59,7 +59,7 @@ public class Dotfile {
 
     private List<Node> nodes = new ArrayList<>();
     private List<Edge> edges = new ArrayList<>();
-    private List<SubGraph> subGraphs = new ArrayList<>();
+//    private List<SubGraph> subGraphs = new ArrayList<>();
 
 
     public void addNode(Node node) {
@@ -78,9 +78,9 @@ public class Dotfile {
         edges.add(e);
     }
 
-    public void addSubgraph(SubGraph subGraph) {
-        subGraphs.add(subGraph);
-    }
+//    public void addSubgraph(SubGraph subGraph) {
+//        subGraphs.add(subGraph);
+//    }
 
     public String getId() {
         return "";
@@ -95,17 +95,17 @@ public class Dotfile {
         for (Edge edge : edges) {
             result.append(edge.from).append(" -- ").append(edge.to).append("[label=\"").append(edge.label).append("\"];\n");
         }
-        for (SubGraph subGraph : subGraphs) {
-            result.append("subgraph cluster_").append(subGraph.id).append("{\n").append("label=\"").append(subGraph.label).append("\";\n");
-            for (Node node : subGraph.nodes) {
-                result.append(node.id).append("[label=\"").append(node.label).append("\" color=").append(node.color).append(" style=filled").append("];\n");
-            }
-            for (Edge edge : subGraph.edges) {
-                result.append(edge.from).append(" -- ").append(edge.to).append("[label=\"").append(edge.label).append("\"];\n");
-            }
-            result.append("}");
-
-        }
+//        for (SubGraph subGraph : subGraphs) {
+//            result.append("subgraph cluster_").append(subGraph.id).append("{\n").append("label=\"").append(subGraph.label).append("\";\n");
+//            for (Node node : subGraph.nodes) {
+//                result.append(node.id).append("[label=\"").append(node.label).append("\" color=").append(node.color).append(" style=filled").append("];\n");
+//            }
+//            for (Edge edge : subGraph.edges) {
+//                result.append(edge.from).append(" -- ").append(edge.to).append("[label=\"").append(edge.label).append("\"];\n");
+//            }
+//            result.append("}");
+//
+//        }
 //        result.append(explanation());
         result.append("}");
         return result.toString();

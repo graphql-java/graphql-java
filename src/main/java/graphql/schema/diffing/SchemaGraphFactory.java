@@ -361,6 +361,7 @@ public class SchemaGraphFactory {
 
     private Vertex newInputField(GraphQLInputObjectField inputField, SchemaGraph schemaGraph, boolean isIntrospectionNode) {
         Vertex vertex = new Vertex(INPUT_FIELD, String.valueOf(counter++));
+        schemaGraph.addVertex(vertex);
         vertex.setBuiltInType(isIntrospectionNode);
         vertex.add("name", inputField.getName());
         vertex.add("description", desc(inputField.getDescription()));
