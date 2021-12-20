@@ -4,7 +4,6 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
 import com.google.common.util.concurrent.AtomicDouble;
-import graphql.Assert;
 import graphql.schema.GraphQLSchema;
 
 import java.util.ArrayList;
@@ -271,6 +270,8 @@ public class SchemaDiffing {
         Set<Vertex> partialMappingTargetSet = new LinkedHashSet<>(partialMapping.getTargets());
 
         // costMatrix[0] is the row for  v_i
+        int counter = 0;
+        int blockedCounter = 0;
         for (int i = level - 1; i < sourceList.size(); i++) {
             Vertex v = sourceList.get(i);
             int j = 0;
@@ -278,8 +279,15 @@ public class SchemaDiffing {
                 double cost = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet);
                 costMatrix[i - level + 1][j] = cost;
                 j++;
+                counter++;
+                if (cost == Integer.MAX_VALUE) {
+                    blockedCounter++;
+                } else {
+//                    System.out.println("not blocked " + v.getType());
+                }
             }
         }
+//        System.out.println("counter: " + counter + " vs " + blockedCounter + " perc: " + (blockedCounter / (double) counter));
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrix);
         int editorialCostForMapping = editorialCostForMapping(partialMapping, sourceGraph, targetGraph, new ArrayList<>());
 
@@ -505,43 +513,107 @@ public class SchemaDiffing {
             return true;
         }
         boolean contains = targetTypes.contains(u.getType());
-        if (contains) {
-            if (isNamedType(v.getType())) {
-                Vertex targetVertex = targetGraph.getType(v.get("name"));
-                if (targetVertex != null && Objects.equals(v.getType(), targetVertex.getType())) {
-                    return u == targetVertex;
-                }
-            }
-            Vertex forcedMatch = forcedMatchingCache.get(v);
-            if (forcedMatch != null && partialMappingTargetSet.contains(forcedMatch)) {
-                return forcedMatch == u;
-            }
-            if (FIELD.equals(v.getType())) {
-                Vertex sourceFieldsContainer = getFieldsContainer(v, sourceGraph);
-                Vertex targetFieldsContainerWithSameName = targetGraph.getType(sourceFieldsContainer.get("name"));
-                if (targetFieldsContainerWithSameName != null && targetFieldsContainerWithSameName.getType().equals(sourceFieldsContainer.getType())) {
-                    Vertex targetFieldWithSameParentAndSameName = getField(targetFieldsContainerWithSameName, v.get("name"), targetGraph);
-                    if (targetFieldWithSameParentAndSameName != null) {
-                        forcedMatchingCache.put(v, u);
-                        return u == targetFieldWithSameParentAndSameName;
-                    }
-                }
-            }
-            if (ENUM_VALUE.equals(v.getType())) {
-                Vertex enumVertex = getEnum(v, sourceGraph);
-                Vertex targetEnumWithSameName = targetGraph.getType(enumVertex.get("name"));
-                if (targetEnumWithSameName != null) {
-                    Vertex targetEnumValueWithSameParentAndSameName = getEnumValue(targetEnumWithSameName, v.get("name"), targetGraph);
-                    if (targetEnumValueWithSameParentAndSameName != null) {
-                        forcedMatchingCache.put(v, u);
-                        return u == targetEnumValueWithSameParentAndSameName;
-                    }
-                }
-            }
-            return true;
-        } else {
+        if (!contains) {
             return false;
         }
+        if (isNamedType(v.getType())) {
+            Vertex targetVertex = targetGraph.getType(v.get("name"));
+            if (targetVertex != null && Objects.equals(v.getType(), targetVertex.getType())) {
+                return u == targetVertex;
+            }
+        }
+        Vertex forcedMatch = forcedMatchingCache.get(v);
+        if (forcedMatch != null) {
+            return forcedMatch == u;
+        }
+
+        if (DUMMY_TYPE_VERTEX.equals(v.getType())) {
+            List<Vertex> adjacentVertices = sourceGraph.getAdjacentVertices(v);
+            for (Vertex vertex : adjacentVertices) {
+                if (vertex.getType().equals(FIELD)) {
+                    Vertex matchingTargetField = findMatchingTargetField(vertex, sourceGraph, targetGraph);
+                    if (matchingTargetField != null) {
+                        Vertex dummyTypeVertex = getDummyTypeVertex(matchingTargetField, targetGraph);
+                        forcedMatchingCache.put(v, dummyTypeVertex);
+                        return u == dummyTypeVertex;
+                    }
+                } else if (vertex.getType().equals(INPUT_FIELD)) {
+                    Vertex matchingTargetInputField = findMatchingTargetInputField(vertex, sourceGraph, targetGraph);
+                    if (matchingTargetInputField != null) {
+                        Vertex dummyTypeVertex = getDummyTypeVertex(matchingTargetInputField, targetGraph);
+                        forcedMatchingCache.put(v, dummyTypeVertex);
+                        return u == dummyTypeVertex;
+                    }
+                }
+            }
+
+        }
+        if (INPUT_FIELD.equals(v.getType())) {
+            Vertex matchingTargetInputField = findMatchingTargetInputField(v, sourceGraph, targetGraph);
+            if (matchingTargetInputField != null) {
+                forcedMatchingCache.put(v, matchingTargetInputField);
+                return u == matchingTargetInputField;
+            }
+        }
+        if (FIELD.equals(v.getType())) {
+            Vertex matchingTargetField = findMatchingTargetField(v, sourceGraph, targetGraph);
+            if (matchingTargetField != null) {
+                forcedMatchingCache.put(v, matchingTargetField);
+                return u == matchingTargetField;
+            }
+        }
+        if (ENUM_VALUE.equals(v.getType())) {
+            Vertex matchingTargetEnumValue = findMatchingEnumValue(v, sourceGraph, targetGraph);
+            if (matchingTargetEnumValue != null) {
+                forcedMatchingCache.put(v, matchingTargetEnumValue);
+                return u == matchingTargetEnumValue;
+            }
+        }
+        return true;
+
+    }
+
+    private Vertex getDummyTypeVertex(Vertex vertex, SchemaGraph schemaGraph) {
+        List<Vertex> adjacentVertices = schemaGraph.getAdjacentVertices(vertex, v -> v.getType().equals(DUMMY_TYPE_VERTEX));
+        assertTrue(adjacentVertices.size() == 1);
+        return adjacentVertices.get(0);
+    }
+
+    private Vertex findMatchingEnumValue(Vertex enumValue, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
+        Vertex enumVertex = getEnum(enumValue, sourceGraph);
+        Vertex targetEnumWithSameName = targetGraph.getType(enumVertex.get("name"));
+        if (targetEnumWithSameName != null) {
+            Vertex matchingTarget = getEnumValue(targetEnumWithSameName, enumValue.get("name"), targetGraph);
+            return matchingTarget;
+        }
+        return null;
+    }
+
+    private Vertex findMatchingTargetInputField(Vertex inputField, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
+        Vertex sourceInputObject = getInputFieldsObject(inputField, sourceGraph);
+        Vertex targetInputObject = targetGraph.getType(sourceInputObject.get("name"));
+        if (targetInputObject != null) {
+            Vertex matchingInputField = getInputField(targetInputObject, inputField.get("name"), targetGraph);
+            return matchingInputField;
+        }
+        return null;
+
+    }
+
+    private Vertex findMatchingTargetField(Vertex field, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
+        Vertex sourceFieldsContainer = getFieldsContainer(field, sourceGraph);
+        Vertex targetFieldsContainerWithSameName = targetGraph.getType(sourceFieldsContainer.get("name"));
+        if (targetFieldsContainerWithSameName != null && targetFieldsContainerWithSameName.getType().equals(sourceFieldsContainer.getType())) {
+            Vertex mathchingField = getField(targetFieldsContainerWithSameName, field.get("name"), targetGraph);
+            return mathchingField;
+        }
+        return null;
+    }
+
+    private Vertex getInputField(Vertex inputObject, String fieldName, SchemaGraph schemaGraph) {
+        List<Vertex> adjacentVertices = schemaGraph.getAdjacentVertices(inputObject, v -> v.getType().equals(INPUT_FIELD) && fieldName.equals(v.get("name")));
+        assertTrue(adjacentVertices.size() <= 1);
+        return adjacentVertices.size() == 0 ? null : adjacentVertices.get(0);
     }
 
     private Vertex getField(Vertex fieldsContainer, String fieldName, SchemaGraph schemaGraph) {
@@ -556,20 +628,16 @@ public class SchemaDiffing {
         return adjacentVertices.size() == 0 ? null : adjacentVertices.get(0);
     }
 
+    private Vertex getInputFieldsObject(Vertex inputField, SchemaGraph schemaGraph) {
+        List<Vertex> adjacentVertices = schemaGraph.getAdjacentVertices(inputField, vertex -> vertex.getType().equals(INPUT_OBJECT));
+        assertTrue(adjacentVertices.size() == 1, () -> format("No fields container found for %s", inputField));
+        return adjacentVertices.get(0);
+    }
+
     private Vertex getFieldsContainer(Vertex field, SchemaGraph schemaGraph) {
-        List<Edge> adjacentEdges = schemaGraph.getAdjacentEdges(field);
-        for (Edge edge : adjacentEdges) {
-            Vertex adjacentVertex;
-            if (edge.getOne() == field) {
-                adjacentVertex = edge.getTwo();
-            } else {
-                adjacentVertex = edge.getOne();
-            }
-            if (adjacentVertex.getType().equals(OBJECT) || adjacentVertex.getType().equals(INTERFACE)) {
-                return adjacentVertex;
-            }
-        }
-        return Assert.assertShouldNeverHappen("No fields container found for ", field);
+        List<Vertex> adjacentVertices = schemaGraph.getAdjacentVertices(field, vertex -> vertex.getType().equals(OBJECT) || vertex.getType().equals(INTERFACE));
+        assertTrue(adjacentVertices.size() == 1, () -> format("No fields container found for %s", field));
+        return adjacentVertices.get(0);
     }
 
     private Vertex getEnum(Vertex enumValue, SchemaGraph schemaGraph) {
