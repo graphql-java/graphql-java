@@ -20,6 +20,7 @@ import graphql.language.NullValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
 import graphql.language.ScalarTypeDefinition;
+import graphql.language.ScalarTypeExtensionDefinition;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
@@ -126,7 +127,7 @@ class ArgValueOfAllowedTypeChecker {
                 .orElseThrow(() -> new AssertException(format("Directive unknown argument type '%s'. This should have been validated before.", allowedTypeName)));
 
         if (allowedTypeDefinition instanceof ScalarTypeDefinition) {
-            checkArgValueMatchesAllowedScalar(errors, instanceValue, allowedTypeName);
+            checkArgValueMatchesAllowedScalar(errors, instanceValue, (ScalarTypeDefinition) allowedTypeDefinition);
         } else if (allowedTypeDefinition instanceof EnumTypeDefinition) {
             checkArgValueMatchesAllowedEnum(errors, instanceValue, (EnumTypeDefinition) allowedTypeDefinition);
         } else if (allowedTypeDefinition instanceof InputObjectTypeDefinition) {
@@ -212,13 +213,22 @@ class ArgValueOfAllowedTypeChecker {
         }
     }
 
-    private void checkArgValueMatchesAllowedScalar(List<GraphQLError> errors, Value<?> instanceValue, String allowedTypeName) {
+    private void checkArgValueMatchesAllowedScalar(List<GraphQLError> errors, Value<?> instanceValue, ScalarTypeDefinition allowedTypeDefinition) {
         // scalars are allowed to accept ANY literal value - its up to their coercion to decide if its valid or not
-        GraphQLScalarType scalarType = runtimeWiring.getScalars().get(allowedTypeName);
+        List<ScalarTypeExtensionDefinition> extensions = typeRegistry.scalarTypeExtensions().getOrDefault(allowedTypeDefinition.getName(), emptyList());
+        ScalarWiringEnvironment environment = new ScalarWiringEnvironment(typeRegistry, allowedTypeDefinition, extensions);
+        WiringFactory wiringFactory = runtimeWiring.getWiringFactory();
+
+        GraphQLScalarType scalarType;
+        if (wiringFactory.providesScalar(environment)) {
+            scalarType = wiringFactory.getScalar(environment);
+        } else {
+            scalarType = runtimeWiring.getScalars().get(allowedTypeDefinition.getName());
+        }
         // scalarType will always be present as
         // scalar implementation validation has been performed earlier
         if (!isArgumentValueScalarLiteral(scalarType, instanceValue)) {
-            addValidationError(errors, NOT_A_VALID_SCALAR_LITERAL_MESSAGE, allowedTypeName);
+            addValidationError(errors, NOT_A_VALID_SCALAR_LITERAL_MESSAGE, allowedTypeDefinition.getName());
         }
     }
 
