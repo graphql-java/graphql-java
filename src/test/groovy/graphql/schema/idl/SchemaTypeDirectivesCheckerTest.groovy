@@ -1,5 +1,7 @@
 package graphql.schema.idl
 
+import graphql.Scalars
+import graphql.schema.GraphQLScalarType
 import graphql.schema.idl.errors.DirectiveIllegalLocationError
 import graphql.schema.idl.errors.DirectiveMissingNonNullArgumentError
 import graphql.schema.idl.errors.DirectiveUndeclaredError
@@ -293,5 +295,44 @@ class SchemaTypeDirectivesCheckerTest extends Specification {
         errors.size() == 1
         errors.get(0) instanceof NotAnInputTypeError
         errors.get(0).getMessage() == "The type 'NotInputType' [@2:13] is not an input type, but was used as an input type [@6:46]"
+    }
+
+    def "uses runtime wiring factory for scalars"() {
+        given:
+        def spec = '''
+            directive @testDirective(knownArg : ScalarType!) on OBJECT
+
+            scalar ScalarType
+
+            type ObjectType @testDirective(knownArg : "x") {
+                field : String
+            }
+        '''
+        def registry = parse(spec)
+        def scalarType = GraphQLScalarType
+                .newScalar(Scalars.GraphQLString)
+                .name("ScalarType")
+                .build()
+        def runtimeWiring = RuntimeWiring
+                .newRuntimeWiring()
+                .wiringFactory(new WiringFactory() {
+                    @Override
+                    boolean providesScalar(ScalarWiringEnvironment environment) {
+                        return environment.scalarTypeDefinition.name == scalarType.name
+                    }
+
+                    @Override
+                    GraphQLScalarType getScalar(ScalarWiringEnvironment environment) {
+                        return scalarType
+                    }
+                })
+                .build()
+        def errors = []
+
+        when:
+        new SchemaTypeDirectivesChecker(registry, runtimeWiring).checkTypeDirectives(errors)
+
+        then:
+        errors.size() == 0
     }
 }
