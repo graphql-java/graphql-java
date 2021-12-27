@@ -9,6 +9,7 @@ import graphql.language.StringValue
 import graphql.language.TypeName
 import graphql.language.VariableDefinition
 import graphql.language.VariableReference
+import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import graphql.validation.ValidationContext
@@ -33,9 +34,11 @@ class VariableTypesMatchRuleTest extends Specification {
         def defaultValue = new StringValue("default")
         def astType = new TypeName("String")
         def expectedType = Scalars.GraphQLBoolean
+        def argument = GraphQLArgument.newArgument().name("test").type(expectedType).build();
 
         validationContext.getSchema() >> StarWarsSchema.starWarsSchema
         validationContext.getInputType() >> expectedType
+        validationContext.getArgument() >> argument
         variablesTypeMatcher.effectiveType(Scalars.GraphQLString, defaultValue) >> Scalars.GraphQLString
         variablesTypeMatcher
                 .doesVariableTypesMatch(Scalars.GraphQLString, defaultValue, expectedType) >> false
@@ -54,11 +57,13 @@ class VariableTypesMatchRuleTest extends Specification {
         def defaultValue = null
         def astType = new NonNullType(new ListType(new TypeName("String")))
         def expectedType = GraphQLList.list(GraphQLNonNull.nonNull(Scalars.GraphQLString))
+        def argument = GraphQLArgument.newArgument().name("test").type(expectedType).build();
 
         def mismatchedType = GraphQLNonNull.nonNull(GraphQLList.list(Scalars.GraphQLString))
 
         validationContext.getSchema() >> StarWarsSchema.starWarsSchema
         validationContext.getInputType() >> expectedType
+        validationContext.getArgument() >> argument
         variablesTypeMatcher.effectiveType({ mismatchedType.isEqualTo(it) }, defaultValue) >> mismatchedType
         variablesTypeMatcher
                 .doesVariableTypesMatch(expectedType, defaultValue, expectedType) >> false

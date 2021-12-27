@@ -1131,6 +1131,26 @@ many lines''']
 
     }
 
+    def "default value defined in the schema is used when none provided in the query"() {
+        // Spec (https://spec.graphql.org/June2018/#sec-All-Variable-Usages-are-Allowed): A notable exception to typical variable type compatibility is allowing a variable definition with a nullable type to be provided to a non‐null location as long as either that variable or that location provides a default value.
+        given:
+        def spec = """type Query {
+            sayHello(name: String! = "amigo"): String
+        }"""
+        def df = { dfe ->
+            return dfe.getArgument("name")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def result = graphQL.execute('query($var:String){sayHello(name:$var)}');
+
+        then:
+        result.errors.isEmpty()
+        result.getData() == [sayHello: "amigo"]
+
+    }
+
     def "specified url can be defined and queried via introspection"() {
         given:
         GraphQLSchema schema = TestUtil.schema('type Query {foo: MyScalar} scalar MyScalar @specifiedBy(url:"myUrl")');
