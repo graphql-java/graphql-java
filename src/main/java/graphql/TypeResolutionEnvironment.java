@@ -2,6 +2,7 @@ package graphql;
 
 import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.MergedField;
+import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 
@@ -22,18 +23,30 @@ public class TypeResolutionEnvironment {
     private final GraphQLType fieldType;
     private final GraphQLSchema schema;
     private final Object context;
+    private final GraphQLContext graphQLContext;
+    private final DataFetchingFieldSelectionSet fieldSelectionSet;
 
-    public TypeResolutionEnvironment(Object object, Map<String, Object> arguments, MergedField field, GraphQLType fieldType, GraphQLSchema schema, final Object context) {
+    public TypeResolutionEnvironment(Object object,
+                                     Map<String, Object> arguments,
+                                     MergedField field,
+                                     GraphQLType fieldType,
+                                     GraphQLSchema schema,
+                                     Object context,
+                                     GraphQLContext graphQLContext,
+                                     DataFetchingFieldSelectionSet fieldSelectionSet) {
         this.object = object;
         this.arguments = ImmutableMapWithNullValues.copyOf(arguments);
         this.field = field;
         this.fieldType = fieldType;
         this.schema = schema;
         this.context = context;
+        this.graphQLContext = graphQLContext;
+        this.fieldSelectionSet = fieldSelectionSet;
     }
 
+
     /**
-     * You will be passed the specific source object that needs to be resolve into a concrete graphql object type
+     * You will be passed the specific source object that needs to be resolved into a concrete graphql object type
      *
      * @param <T> you decide what type it is
      *
@@ -73,7 +86,31 @@ public class TypeResolutionEnvironment {
         return schema;
     }
 
+    /**
+     * Returns the context object set in via {@link ExecutionInput#getContext()}
+     *
+     * @param <T> to two
+     *
+     * @return the context object
+     *
+     * @deprecated use {@link #getGraphQLContext()} instead
+     */
+    @Deprecated
     public <T> T getContext() {
         return (T) context;
+    }
+
+    /**
+     * @return the {@link GraphQLContext} object set in via {@link ExecutionInput#getGraphQLContext()}
+     */
+    public GraphQLContext getGraphQLContext() {
+        return graphQLContext;
+    }
+
+    /**
+     * @return the {@link DataFetchingFieldSelectionSet} for the current field fetch that needs type resolution
+     */
+    public DataFetchingFieldSelectionSet getSelectionSet() {
+        return fieldSelectionSet;
     }
 }
