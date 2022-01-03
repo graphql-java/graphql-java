@@ -12,7 +12,9 @@ import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
+import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
+import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLTypeReference.typeRef
 
 class InputAndOutputTypesUsedAppropriatelyTest extends Specification {
@@ -20,7 +22,7 @@ class InputAndOutputTypesUsedAppropriatelyTest extends Specification {
     def "output type within input context is caught"() {
         given:
 
-        GraphQLObjectType OutputType = GraphQLObjectType.newObject()
+        GraphQLObjectType OutputType = newObject()
                 .name("OutputType")
                 .field(newFieldDefinition().name("field").type(GraphQLString))
                 .build()
@@ -29,7 +31,7 @@ class InputAndOutputTypesUsedAppropriatelyTest extends Specification {
                 .name("Person")
                 .field(newInputObjectField()
                         .name("friend")
-                        .type(nonNull(typeRef("OutputType")))
+                        .type(nonNull(list(nonNull(typeRef("OutputType")))))
                         .build())
                 .build()
 
@@ -41,7 +43,7 @@ class InputAndOutputTypesUsedAppropriatelyTest extends Specification {
                         .type(PersonInputType))
                 .build()
 
-        GraphQLObjectType queryType = GraphQLObjectType.newObject()
+        GraphQLObjectType queryType = newObject()
                 .name("Query")
                 .field(field)
                 .build()
@@ -70,10 +72,10 @@ class InputAndOutputTypesUsedAppropriatelyTest extends Specification {
 
         GraphQLFieldDefinition field = newFieldDefinition()
                 .name("outputField")
-                .type(nonNull(typeRef("Person")))
+                .type(nonNull(list(nonNull(typeRef("Person")))))
                 .build()
 
-        GraphQLObjectType queryType = GraphQLObjectType.newObject()
+        GraphQLObjectType queryType = newObject()
                 .name("Query")
                 .field(field)
                 .build()
