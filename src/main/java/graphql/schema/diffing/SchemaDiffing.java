@@ -497,16 +497,16 @@ public class SchemaDiffing {
     }
 
     private Map<Vertex, Vertex> forcedMatchingCache = new LinkedHashMap<>();
+    private Map<Vertex, Vertex> forcedMatchingNegativeCache = new LinkedHashMap<>();
 
     private boolean isMappingPossible(Vertex v, Vertex u, SchemaGraph sourceGraph, SchemaGraph targetGraph, Set<Vertex> partialMappingTargetSet) {
+        Vertex forcedMatch = forcedMatchingCache.get(v);
+        if (forcedMatch != null) {
+            return forcedMatch == u;
+        }
         // deletion and inserting of vertices
         if (u.isArtificialNode() || v.isArtificialNode()) {
             return true;
-        }
-        // build in types need to match exactly built in types: not allowing to change
-        // Introspection API to change here
-        if (v.isBuiltInType()) {
-            return u.isBuiltInType() && v.isEqualTo(u);
         }
         List<String> targetTypes = allowedTypeMappings.get(v.getType());
         if (targetTypes == null) {
@@ -522,10 +522,6 @@ public class SchemaDiffing {
                 return u == targetVertex;
             }
         }
-        Vertex forcedMatch = forcedMatchingCache.get(v);
-        if (forcedMatch != null) {
-            return forcedMatch == u;
-        }
 
         if (DUMMY_TYPE_VERTEX.equals(v.getType())) {
             List<Vertex> adjacentVertices = sourceGraph.getAdjacentVertices(v);
@@ -535,6 +531,7 @@ public class SchemaDiffing {
                     if (matchingTargetField != null) {
                         Vertex dummyTypeVertex = getDummyTypeVertex(matchingTargetField, targetGraph);
                         forcedMatchingCache.put(v, dummyTypeVertex);
+                        forcedMatchingCache.put(dummyTypeVertex, v);
                         return u == dummyTypeVertex;
                     }
                 } else if (vertex.getType().equals(INPUT_FIELD)) {
@@ -542,6 +539,7 @@ public class SchemaDiffing {
                     if (matchingTargetInputField != null) {
                         Vertex dummyTypeVertex = getDummyTypeVertex(matchingTargetInputField, targetGraph);
                         forcedMatchingCache.put(v, dummyTypeVertex);
+                        forcedMatchingCache.put(dummyTypeVertex, v);
                         return u == dummyTypeVertex;
                     }
                 }
@@ -552,6 +550,7 @@ public class SchemaDiffing {
             Vertex matchingTargetInputField = findMatchingTargetInputField(v, sourceGraph, targetGraph);
             if (matchingTargetInputField != null) {
                 forcedMatchingCache.put(v, matchingTargetInputField);
+                forcedMatchingCache.put(matchingTargetInputField, v);
                 return u == matchingTargetInputField;
             }
         }
@@ -559,6 +558,7 @@ public class SchemaDiffing {
             Vertex matchingTargetField = findMatchingTargetField(v, sourceGraph, targetGraph);
             if (matchingTargetField != null) {
                 forcedMatchingCache.put(v, matchingTargetField);
+                forcedMatchingCache.put(matchingTargetField, v);
                 return u == matchingTargetField;
             }
         }
@@ -566,6 +566,7 @@ public class SchemaDiffing {
             Vertex matchingTargetEnumValue = findMatchingEnumValue(v, sourceGraph, targetGraph);
             if (matchingTargetEnumValue != null) {
                 forcedMatchingCache.put(v, matchingTargetEnumValue);
+                forcedMatchingCache.put(matchingTargetEnumValue, v);
                 return u == matchingTargetEnumValue;
             }
         }
