@@ -519,6 +519,10 @@ public class SchemaDiffing {
         if (isNamedType(v.getType())) {
             Vertex targetVertex = targetGraph.getType(v.get("name"));
             if (targetVertex != null && Objects.equals(v.getType(), targetVertex.getType())) {
+                if (u == targetVertex) {
+                    forcedMatchingCache.put(v, targetVertex);
+                    forcedMatchingCache.put(targetVertex, v);
+                }
                 return u == targetVertex;
             }
         }
