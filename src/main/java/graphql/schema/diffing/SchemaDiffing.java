@@ -4,6 +4,7 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
 import com.google.common.util.concurrent.AtomicDouble;
+import com.google.common.util.concurrent.AtomicDoubleArray;
 import graphql.schema.GraphQLSchema;
 
 import java.util.ArrayList;
@@ -17,7 +18,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertTrue;
@@ -62,19 +67,20 @@ public class SchemaDiffing {
 
     SchemaGraph sourceGraph;
     SchemaGraph targetGraph;
+    ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
 
-    public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2, boolean oldVersion) {
+    public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2, boolean oldVersion) throws InterruptedException {
         sourceGraph = new SchemaGraphFactory().createGraph(graphQLSchema1);
         targetGraph = new SchemaGraphFactory().createGraph(graphQLSchema2);
         return diffImpl(sourceGraph, targetGraph);
 
     }
 
-    public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) {
+    public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws InterruptedException {
         return diffGraphQLSchema(graphQLSchema1, graphQLSchema2, false);
     }
 
-    List<EditOperation> diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) {
+    List<EditOperation> diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) throws InterruptedException {
         if (sourceGraph.size() < targetGraph.size()) {
             sourceGraph.addIsolatedVertices(targetGraph.size() - sourceGraph.size());
         } else if (sourceGraph.size() > targetGraph.size()) {
@@ -247,7 +253,7 @@ public class SchemaDiffing {
                                   AtomicReference<List<EditOperation>> bestEdit,
                                   SchemaGraph sourceGraph,
                                   SchemaGraph targetGraph
-    ) {
+    ) throws InterruptedException {
         Mapping partialMapping = parentEntry.partialMapping;
         assertTrue(level - 1 == partialMapping.size());
         List<Vertex> sourceList = sourceGraph.getVertices();
@@ -262,54 +268,54 @@ public class SchemaDiffing {
 
 
         int costMatrixSize = sourceList.size() - level + 1;
-        double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
+//        double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
 
+        AtomicDoubleArray[] costMatrix = new AtomicDoubleArray[costMatrixSize];
+        Arrays.setAll(costMatrix, (index) -> new AtomicDoubleArray(costMatrixSize));
+        // costMatrix gets modified by the hungarian algorithm ... therefore we create two of them
+        AtomicDoubleArray[] costMatrixCopy = new AtomicDoubleArray[costMatrixSize];
+        Arrays.setAll(costMatrixCopy, (index) -> new AtomicDoubleArray(costMatrixSize));
 
         // we are skipping the first level -i indices
         Set<Vertex> partialMappingSourceSet = new LinkedHashSet<>(partialMapping.getSources());
         Set<Vertex> partialMappingTargetSet = new LinkedHashSet<>(partialMapping.getTargets());
 
+
+        List<Callable<Void>> callables = new ArrayList<>();
+
         // costMatrix[0] is the row for  v_i
-        int counter = 0;
-        int blockedCounter = 0;
         for (int i = level - 1; i < sourceList.size(); i++) {
             Vertex v = sourceList.get(i);
-            int j = 0;
-            for (Vertex u : availableTargetVertices) {
-                double cost = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet);
-                costMatrix[i - level + 1][j] = cost;
-                j++;
-                counter++;
-                if (cost == Integer.MAX_VALUE) {
-                    blockedCounter++;
-                } else {
-//                    System.out.println("not blocked " + v.getType());
+            int finalI = i;
+            callables.add(() -> {
+                int j = 0;
+                for (Vertex u : availableTargetVertices) {
+                    double cost = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet);
+                    costMatrix[finalI - level + 1].set(j, cost);
+                    costMatrixCopy[finalI - level + 1].set(j, cost);
+                    j++;
                 }
-            }
+                return null;
+            });
         }
-//        System.out.println("counter: " + counter + " vs " + blockedCounter + " perc: " + (blockedCounter / (double) counter));
+        forkJoinPool.invokeAll(callables);
+        forkJoinPool.awaitTermination(10000, TimeUnit.DAYS);
+
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrix);
         int editorialCostForMapping = editorialCostForMapping(partialMapping, sourceGraph, targetGraph, new ArrayList<>());
-
-        // generate all children (which are siblings to each other)
         List<MappingEntry> siblings = new ArrayList<>();
         for (int child = 0; child < availableTargetVertices.size(); child++) {
             int[] assignments = child == 0 ? hungarianAlgorithm.execute() : hungarianAlgorithm.nextChild();
-            if (hungarianAlgorithm.costMatrix[0][assignments[0]] == Integer.MAX_VALUE) {
+            if (hungarianAlgorithm.costMatrix[0].get(assignments[0]) == Integer.MAX_VALUE) {
                 break;
             }
 
-            double costMatrixSumSibling = getCostMatrixSum(costMatrix, assignments);
+            double costMatrixSumSibling = getCostMatrixSum(costMatrixCopy, assignments);
             double lowerBoundForPartialMappingSibling = editorialCostForMapping + costMatrixSumSibling;
-//            System.out.println("lower bound: " + child + " : " + lowerBoundForPartialMappingSibling);
             int v_i_target_IndexSibling = assignments[0];
             Vertex bestExtensionTargetVertexSibling = availableTargetVertices.get(v_i_target_IndexSibling);
-//            System.out.println("adding new mapping " + v_i + " => " + bestExtensionTargetVertexSibling);
             Mapping newMappingSibling = partialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
 
-            if (lowerBoundForPartialMappingSibling == parentEntry.lowerBoundCost) {
-//                System.out.println("same lower Bound: " + v_i + " -> " + bestExtensionTargetVertexSibling);
-            }
 
             if (lowerBoundForPartialMappingSibling >= upperBound.doubleValue()) {
                 break;
@@ -319,7 +325,6 @@ public class SchemaDiffing {
             sibling.assignments = assignments;
             sibling.availableTargetVertices = availableTargetVertices;
 
-            Set<Mapping> existingMappings = new LinkedHashSet<>();
             // first child we add to the queue, otherwise save it for later
             if (child == 0) {
 //                System.out.println("adding new child entry " + getDebugMap(sibling.partialMapping) + "  at level " + level + " with candidates left: " + sibling.availableTargetVertices.size() + " at lower bound: " + sibling.lowerBoundCost);
@@ -383,10 +388,10 @@ public class SchemaDiffing {
     }
 
 
-    private double getCostMatrixSum(double[][] costMatrix, int[] assignments) {
+    private double getCostMatrixSum(AtomicDoubleArray[] costMatrix, int[] assignments) {
         double costMatrixSum = 0;
         for (int i = 0; i < assignments.length; i++) {
-            costMatrixSum += costMatrix[i][assignments[i]];
+            costMatrixSum += costMatrix[i].get(assignments[i]);
         }
         return costMatrixSum;
     }
