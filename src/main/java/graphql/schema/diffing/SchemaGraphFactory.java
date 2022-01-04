@@ -32,6 +32,9 @@ public class SchemaGraphFactory {
     public static final String APPLIED_ARGUMENT = "AppliedArgument";
     public static final String DIRECTIVE = "Directive";
     public static final String INPUT_FIELD = "InputField";
+    public static final String VALUE = "Value";
+    public static final String DIRECTIVE_LOCATION = "DirectiveLocation";
+
     private int counter = 1;
 
     public SchemaGraph createGraph(GraphQLSchema schema) {
@@ -264,6 +267,7 @@ public class SchemaGraphFactory {
         }
         scalarVertex.add("name", scalarType.getName());
         scalarVertex.add("description", desc(scalarType.getDescription()));
+        scalarVertex.add("specifiedByUrl", scalarType.getSpecifiedByUrl());
         schemaGraph.addVertex(scalarVertex);
         schemaGraph.addType(scalarType.getName(), scalarVertex);
         cratedAppliedDirectives(scalarVertex, scalarType.getDirectives(), schemaGraph);
@@ -347,6 +351,8 @@ public class SchemaGraphFactory {
     private void newDirective(GraphQLDirective directive, SchemaGraph schemaGraph) {
         Vertex directiveVertex = new Vertex(DIRECTIVE, String.valueOf(counter++));
         directiveVertex.add("name", directive.getName());
+        directiveVertex.add("repeatable", directive.isRepeatable());
+        directiveVertex.add("locations", directive.validLocations());
         boolean graphqlSpecified = DirectiveInfo.isGraphqlSpecifiedDirective(directive.getName());
         directiveVertex.setBuiltInType(graphqlSpecified);
         directiveVertex.add("description", desc(directive.getDescription()));

@@ -206,7 +206,6 @@ class SchemaDiffingTest extends Specification {
 
     }
 
-    @Ignore
     def "change large schema a bit"() {
         given:
         def largeSchema = TestUtil.schemaFromResource("large-schema-2.graphqls", TestUtil.mockRuntimeWiring)

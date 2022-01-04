@@ -83,7 +83,7 @@ public class SchemaDiffing {
         assertTrue(sourceGraph.size() == targetGraph.size());
         int graphSize = sourceGraph.size();
         System.out.println("graph size: " + graphSize);
-        sortSourceGraph(sourceGraph, targetGraph);
+//        sortSourceGraph(sourceGraph, targetGraph);
 //        if (true) {
 //            String print = GraphPrinter.print(sourceGraph);
 //            System.out.println(print);
