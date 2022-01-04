@@ -282,7 +282,6 @@ public class SchemaDiffing {
 
 
         List<Callable<Void>> callables = new ArrayList<>();
-
         // costMatrix[0] is the row for  v_i
         for (int i = level - 1; i < sourceList.size(); i++) {
             Vertex v = sourceList.get(i);
@@ -482,45 +481,24 @@ public class SchemaDiffing {
         return cost;
     }
 
-    static Map<String, List<String>> allowedTypeMappings = new LinkedHashMap<>();
-
-    static {
-        allowedTypeMappings.put(DUMMY_TYPE_VERTEX, Collections.singletonList(DUMMY_TYPE_VERTEX));
-        allowedTypeMappings.put(SCALAR, Collections.singletonList(SCALAR));
-        allowedTypeMappings.put(ENUM, Collections.singletonList(ENUM));
-        allowedTypeMappings.put(ENUM_VALUE, Collections.singletonList(ENUM_VALUE));
-        allowedTypeMappings.put(OBJECT, Arrays.asList(OBJECT));
-        allowedTypeMappings.put(INTERFACE, Arrays.asList(INTERFACE));
-        allowedTypeMappings.put(FIELD, Collections.singletonList(FIELD));
-        allowedTypeMappings.put(ARGUMENT, Collections.singletonList(ARGUMENT));
-        allowedTypeMappings.put(INPUT_OBJECT, Collections.singletonList(INPUT_OBJECT));
-        allowedTypeMappings.put(INPUT_FIELD, Collections.singletonList(INPUT_FIELD));
-        allowedTypeMappings.put(UNION, Collections.singletonList(UNION));
-        allowedTypeMappings.put(APPLIED_DIRECTIVE, Collections.singletonList(APPLIED_DIRECTIVE));
-        allowedTypeMappings.put(APPLIED_ARGUMENT, Collections.singletonList(APPLIED_ARGUMENT));
-        allowedTypeMappings.put(DIRECTIVE, Collections.singletonList(DIRECTIVE));
-    }
 
     private Map<Vertex, Vertex> forcedMatchingCache = new LinkedHashMap<>();
-    private Map<Vertex, Vertex> forcedMatchingNegativeCache = new LinkedHashMap<>();
 
     private boolean isMappingPossible(Vertex v, Vertex u, SchemaGraph sourceGraph, SchemaGraph targetGraph, Set<Vertex> partialMappingTargetSet) {
         Vertex forcedMatch = forcedMatchingCache.get(v);
         if (forcedMatch != null) {
             return forcedMatch == u;
         }
-        // deletion and inserting of vertices
+        // deletion and inserting of vertices is possible
         if (u.isArtificialNode() || v.isArtificialNode()) {
             return true;
         }
-        List<String> targetTypes = allowedTypeMappings.get(v.getType());
-        if (targetTypes == null) {
-            return true;
-        }
-        boolean contains = targetTypes.contains(u.getType());
-        if (!contains) {
+        // the types of the vertices need to match: we don't allow to change the type
+        if (!v.getType().equals(u.getType())) {
             return false;
         }
+
+        // if it is named type we check if the targetGraph has one with the same name and type force a match
         if (isNamedType(v.getType())) {
             Vertex targetVertex = targetGraph.getType(v.get("name"));
             if (targetVertex != null && Objects.equals(v.getType(), targetVertex.getType())) {
@@ -553,7 +531,6 @@ public class SchemaDiffing {
                     }
                 }
             }
-
         }
         if (INPUT_FIELD.equals(v.getType())) {
             Vertex matchingTargetInputField = findMatchingTargetInputField(v, sourceGraph, targetGraph);
