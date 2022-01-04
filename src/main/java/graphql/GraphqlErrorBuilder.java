@@ -59,22 +59,32 @@ public class GraphqlErrorBuilder {
     }
 
     public GraphqlErrorBuilder locations(List<SourceLocation> locations) {
-        this.locations.addAll(assertNotNull(locations));
+        if (locations != null) {
+            this.locations.addAll(locations);
+        } else {
+            this.locations = null;
+        }
         return this;
     }
 
     public GraphqlErrorBuilder location(SourceLocation location) {
-        this.locations.add(assertNotNull(location));
+        if (locations != null) {
+            this.locations.add(location);
+        }
         return this;
     }
 
     public GraphqlErrorBuilder path(ResultPath path) {
-        this.path = assertNotNull(path).toList();
+        if (path != null) {
+            this.path = path.toList();
+        } else {
+            this.path = null;
+        }
         return this;
     }
 
     public GraphqlErrorBuilder path(List<Object> path) {
-        this.path = assertNotNull(path);
+        this.path = path;
         return this;
     }
 
@@ -84,7 +94,7 @@ public class GraphqlErrorBuilder {
     }
 
     public GraphqlErrorBuilder extensions(Map<String, Object> extensions) {
-        this.extensions = assertNotNull(extensions);
+        this.extensions = extensions;
         return this;
     }
 

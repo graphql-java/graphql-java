@@ -110,4 +110,18 @@ class GraphqlErrorBuilderTest extends Specification {
         then:
         thrown(AssertException)
     }
+
+    def "can have nullable attributes"() {
+        when:
+        def error = GraphqlErrorBuilder.newError().message("msg")
+                .locations(null)
+                .extensions(null)
+                .path(null)
+                .build()
+        then:
+        error.message == "msg"
+        error.locations == null
+        error.path == null
+        error.extensions == null
+    }
 }
