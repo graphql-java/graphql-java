@@ -11,6 +11,7 @@ import spock.lang.Ignore
 import spock.lang.Specification
 
 import static graphql.TestUtil.schema
+import static graphql.TestUtil.schemaFromResource
 
 class SchemaDiffingTest extends Specification {
 
@@ -173,7 +174,7 @@ class SchemaDiffingTest extends Specification {
 
     }
 
-    def "change Object into an Interface"() {
+    def "inserting interface with same name as previous object"() {
         given:
         def schema1 = schema("""
            type Query {
@@ -197,6 +198,9 @@ class SchemaDiffingTest extends Specification {
 
         when:
         def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        for (EditOperation operation : diff) {
+            println operation
+        }
 
         then:
         /**
@@ -206,6 +210,47 @@ class SchemaDiffingTest extends Specification {
 
     }
 
+    def "remove scalars and add Enums"() {
+        given:
+        def schema1 = schema("""
+        scalar S1
+        scalar S2
+        scalar S3    
+       enum E1{
+        E1
+       }
+       type Query {
+           s1: S1
+           s2: S2
+           s3: S3
+           e1: E1
+       } 
+        """)
+        def schema2 = schema("""
+           enum E1{
+            E1
+           }
+           enum E2{
+            E2
+           }
+           type Query {
+           e1: E1
+           e2: E2
+           } 
+        """)
+
+        when:
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        for (EditOperation operation : diff) {
+            println operation
+        }
+
+        then:
+        diff.size() == 19
+
+    }
+
+    @Ignore
     def "change large schema a bit"() {
         given:
         def largeSchema = TestUtil.schemaFromResource("large-schema-2.graphqls", TestUtil.mockRuntimeWiring)
@@ -326,7 +371,9 @@ class SchemaDiffingTest extends Specification {
         def diffing = new SchemaDiffing()
         when:
         def diff = diffing.diffGraphQLSchema(schema1, schema2)
-        new DefaultGraphEditOperationAnalyzer(schema1, schema2, diffing.sourceGraph, diffing.targetGraph, changeHandler).analyzeEdits(diff)
+        for(EditOperation editOperation: diff) {
+            println editOperation
+        }
 
         then:
         diff.size() == 5
@@ -757,91 +804,68 @@ class SchemaDiffingTest extends Specification {
         operations.size() == 2
     }
 
+    def "with directives"() {
+        given:
+        def schema1 = schema('''
+            directive @TopLevelType on OBJECT
+            directive @specialId(type: String) on ARGUMENT_DEFINITION
+            type Query {
+                foo: Foo
+            }
+            type Foo @TopLevelType {
+              user(location: ID! @specialId(type : "someId"), limit: Int = 25, start: Int, title: String): PaginatedList
+            }
+            type PaginatedList {
+              count: Int
+            }
+        ''')
+        def schema2 = schema("""
+            directive @TopLevelType on OBJECT
+            directive @specialId(type: String) on ARGUMENT_DEFINITION
+            type Query {
+                foo: Foo
+            }
+            type Foo @TopLevelType {
+              user(location: ID! @specialId(type : "someId"), limit: Int = 25, start: Int, title: String): PaginatedList
+              other(after: String, favourite: Boolean,  first: Int = 25, location: ID! @specialId(type : "someId"), label: [String], offset: Int, status: String, type: String): PaginatedList
+            }
+            type PaginatedList {
+              count: Int
+            }
+        """)
 
-//    def "test example schema"() {
-//        given:
-//        def source = buildSourceGraph()
-//        def target = buildTargetGraph()
-//        when:
-//        new SchemaDiffing().diffImpl(source, target, oldVersion)
-//        then:
-//        true
-//    }
-//
-//    def "test example schema 2"() {
-//        given:
-//        def source = sourceGraph2()
-//        def target = targetGraph2()
-//        when:
-//        new SchemaDiffing().diffImpl(source, target, oldVersion)
-//        then:
-//        true
-//    }
-//
-//    SchemaGraph sourceGraph2() {
-//        def source = new SchemaGraph()
-//        Vertex a = new Vertex("A")
-//        source.addVertex(a)
-//        Vertex b = new Vertex("B")
-//        source.addVertex(b)
-//        Vertex c = new Vertex("C")
-//        source.addVertex(c)
-//        Vertex d = new Vertex("D")
-//        source.addVertex(d)
-//        source.addEdge(new Edge(a, b))
-//        source.addEdge(new Edge(b, c))
-//        source.addEdge(new Edge(c, d))
-//        source
-//    }
-//
-//    SchemaGraph targetGraph2() {
-//        def target = new SchemaGraph()
-//        Vertex a = new Vertex("A")
-//        Vertex d = new Vertex("D")
-//        target.addVertex(a)
-//        target.addVertex(d)
-//        target
-//    }
-//
-//    SchemaGraph buildTargetGraph() {
-//        SchemaGraph targetGraph = new SchemaGraph();
-//        def a_1 = new Vertex("A", "u1")
-//        def d = new Vertex("D", "u2")
-//        def a_2 = new Vertex("A", "u3")
-//        def a_3 = new Vertex("A", "u4")
-//        def e = new Vertex("E", "u5")
-//        targetGraph.addVertex(a_1);
-//        targetGraph.addVertex(d);
-//        targetGraph.addVertex(a_2);
-//        targetGraph.addVertex(a_3);
-//        targetGraph.addVertex(e);
-//
-//        targetGraph.addEdge(new Edge(a_1, d, "a"))
-//        targetGraph.addEdge(new Edge(d, a_2, "a"))
-//        targetGraph.addEdge(new Edge(a_2, a_3, "a"))
-//        targetGraph.addEdge(new Edge(a_3, e, "a"))
-//        targetGraph
-//
-//    }
-//
-//    SchemaGraph buildSourceGraph() {
-//        SchemaGraph sourceGraph = new SchemaGraph();
-//        def c = new Vertex("C", "v5")
-//        def a_1 = new Vertex("A", "v1")
-//        def a_2 = new Vertex("A", "v2")
-//        def a_3 = new Vertex("A", "v3")
-//        def b = new Vertex("B", "v4")
-//        sourceGraph.addVertex(a_1);
-//        sourceGraph.addVertex(a_2);
-//        sourceGraph.addVertex(a_3);
-//        sourceGraph.addVertex(b);
-//        sourceGraph.addVertex(c);
-//
-//        sourceGraph.addEdge(new Edge(c, a_1, "b"))
-//        sourceGraph.addEdge(new Edge(a_1, a_2, "a"))
-//        sourceGraph.addEdge(new Edge(a_2, a_3, "a"))
-//        sourceGraph.addEdge(new Edge(a_3, b, "a"))
-//        sourceGraph
-//
-//    }
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        operations.size() == 32
+    }
+
+    def "built in directives"() {
+        given:
+        def schema1 = schema('''
+            directive @specialId(type: String) on FIELD_DEFINITION
+            
+            
+            type Query {
+                hello: String @specialId(type: "someId")
+            }
+        ''')
+        def schema2 = schema("""
+            directive @specialId(type: String) on FIELD_DEFINITION
+                
+            type Query {
+                renamedHello: String @specialId(type: "otherId")
+            }
+        """)
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        operations.size() == 1
+
+    }
 }
+
+

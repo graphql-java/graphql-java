@@ -2,9 +2,9 @@ package graphql.schema.diffing;
 
 
 import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.HashBiMap;
+import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
-import graphql.collect.ImmutableKit;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -18,6 +18,7 @@ public class SchemaGraph {
     private Map<String, Vertex> typesByName = new LinkedHashMap<>();
     private Map<String, Vertex> directivesByName = new LinkedHashMap<>();
     private Table<Vertex, Vertex, Edge> edgeByVertexPair = HashBasedTable.create();
+    private Multimap<String, Vertex> typeToVertices = LinkedHashMultimap.create();
 
     public SchemaGraph() {
 
@@ -31,6 +32,17 @@ public class SchemaGraph {
 
     public void addVertex(Vertex vertex) {
         vertices.add(vertex);
+        typeToVertices.put(vertex.getType(), vertex);
+    }
+    public void addVertices(Collection<Vertex> vertices) {
+        for(Vertex vertex: vertices) {
+            this.vertices.add(vertex);
+            typeToVertices.put(vertex.getType(), vertex);
+        }
+    }
+
+    public Collection<Vertex> getVerticesByType(String type) {
+        return typeToVertices.get(type);
     }
 
     public void addEdge(Edge edge) {
@@ -114,11 +126,13 @@ public class SchemaGraph {
         return vertices.size();
     }
 
-    public void addIsolatedVertices(int count) {
-        String uniqueType = String.valueOf(UUID.randomUUID());
+    public List<Vertex> addIsolatedVertices(int count, String debugPrefix) {
+        List<Vertex> result = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            Vertex isolatedVertex = Vertex.newArtificialNode(uniqueType);
+            Vertex isolatedVertex = Vertex.newArtificialNode(debugPrefix + i);
             vertices.add(isolatedVertex);
+            result.add(isolatedVertex);
         }
+        return result;
     }
 }

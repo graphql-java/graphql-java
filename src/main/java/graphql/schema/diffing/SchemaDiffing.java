@@ -1,15 +1,17 @@
 package graphql.schema.diffing;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
 import com.google.common.util.concurrent.AtomicDouble;
-import com.google.common.util.concurrent.AtomicDoubleArray;
 import graphql.schema.GraphQLSchema;
+import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -20,15 +22,10 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertTrue;
-import static graphql.schema.diffing.SchemaGraphFactory.APPLIED_ARGUMENT;
-import static graphql.schema.diffing.SchemaGraphFactory.APPLIED_DIRECTIVE;
-import static graphql.schema.diffing.SchemaGraphFactory.ARGUMENT;
 import static graphql.schema.diffing.SchemaGraphFactory.DIRECTIVE;
 import static graphql.schema.diffing.SchemaGraphFactory.DUMMY_TYPE_VERTEX;
 import static graphql.schema.diffing.SchemaGraphFactory.ENUM;
@@ -41,6 +38,8 @@ import static graphql.schema.diffing.SchemaGraphFactory.OBJECT;
 import static graphql.schema.diffing.SchemaGraphFactory.SCALAR;
 import static graphql.schema.diffing.SchemaGraphFactory.UNION;
 import static java.lang.String.format;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.synchronizedMap;
 
 public class SchemaDiffing {
 
@@ -70,8 +69,8 @@ public class SchemaDiffing {
     ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
 
     public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2, boolean oldVersion) throws InterruptedException {
-        sourceGraph = new SchemaGraphFactory().createGraph(graphQLSchema1);
-        targetGraph = new SchemaGraphFactory().createGraph(graphQLSchema2);
+        sourceGraph = new SchemaGraphFactory("source-").createGraph(graphQLSchema1);
+        targetGraph = new SchemaGraphFactory("target-").createGraph(graphQLSchema2);
         return diffImpl(sourceGraph, targetGraph);
 
     }
@@ -80,21 +79,67 @@ public class SchemaDiffing {
         return diffGraphQLSchema(graphQLSchema1, graphQLSchema2, false);
     }
 
+    private void diffNamedList(Collection<Vertex> sourceVertices,
+                               Collection<Vertex> targetVertices,
+                               List<Vertex> deleted, // sourceVertices
+                               List<Vertex> inserted, // targetVertices
+                               BiMap<Vertex, Vertex> same) {
+        Map<String, Vertex> sourceByName = FpKit.groupingByUniqueKey(sourceVertices, vertex -> vertex.get("name"));
+        Map<String, Vertex> targetByName = FpKit.groupingByUniqueKey(targetVertices, vertex -> vertex.get("name"));
+        for (Vertex sourceVertex : sourceVertices) {
+            Vertex targetVertex = targetByName.get((String) sourceVertex.get("name"));
+            if (targetVertex == null) {
+                deleted.add(sourceVertex);
+            } else {
+                same.put(sourceVertex, targetVertex);
+            }
+        }
+
+        for (Vertex targetVertex : targetVertices) {
+            if (sourceByName.get((String) targetVertex.get("name")) == null) {
+                inserted.add(targetVertex);
+            }
+        }
+    }
+
     List<EditOperation> diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) throws InterruptedException {
+        int sizeDiff = sourceGraph.size() - targetGraph.size();
+        System.out.println("graph diff: " + sizeDiff);
+        Map<String, Set<Vertex>> isolatedSourceVertices = new LinkedHashMap<>();
+        Map<String, Set<Vertex>> isolatedTargetVertices = new LinkedHashMap<>();
+        for (String type : SchemaGraphFactory.ALL_TYPES) {
+            Collection<Vertex> sourceVertices = sourceGraph.getVerticesByType(type).stream().filter(vertex -> !vertex.isBuiltInType()).collect(Collectors.toList());
+            Collection<Vertex> targetVertices = targetGraph.getVerticesByType(type).stream().filter(vertex -> !vertex.isBuiltInType()).collect(Collectors.toList());
+            if (sourceVertices.size() > targetVertices.size()) {
+                isolatedTargetVertices.put(type, Vertex.newArtificialNodes(sourceVertices.size() - targetVertices.size(), "target-artificial-"));
+            } else if (targetVertices.size() > sourceVertices.size()) {
+                isolatedSourceVertices.put(type, Vertex.newArtificialNodes(targetVertices.size() - sourceVertices.size(), "source-artificial-"));
+            }
+        }
+        for (Map.Entry<String, Set<Vertex>> entry : isolatedSourceVertices.entrySet()) {
+            sourceGraph.addVertices(entry.getValue());
+        }
+        for (Map.Entry<String, Set<Vertex>> entry : isolatedTargetVertices.entrySet()) {
+            targetGraph.addVertices(entry.getValue());
+        }
+
+        Set<Vertex> isolatedBuiltInSourceVertices = new LinkedHashSet<>();
+        Set<Vertex> isolatedBuiltInTargetVertices = new LinkedHashSet<>();
+        // the only vertices left are built in types.
         if (sourceGraph.size() < targetGraph.size()) {
-            sourceGraph.addIsolatedVertices(targetGraph.size() - sourceGraph.size());
+            isolatedBuiltInSourceVertices.addAll(sourceGraph.addIsolatedVertices(targetGraph.size() - sourceGraph.size(), "source-artificial-"));
         } else if (sourceGraph.size() > targetGraph.size()) {
-            targetGraph.addIsolatedVertices(sourceGraph.size() - targetGraph.size());
+            isolatedBuiltInTargetVertices.addAll(targetGraph.addIsolatedVertices(sourceGraph.size() - targetGraph.size(), "target-artificial-"));
         }
         assertTrue(sourceGraph.size() == targetGraph.size());
-        int graphSize = sourceGraph.size();
-        System.out.println("graph size: " + graphSize);
-//        sortSourceGraph(sourceGraph, targetGraph);
-//        if (true) {
-//            String print = GraphPrinter.print(sourceGraph);
-//            System.out.println(print);
+
+        //        if (true) {
 //            return Collections.emptyList();
 //        }
+        int graphSize = sourceGraph.size();
+        System.out.println("graph size: " + graphSize);
+
+//        sortSourceGraph(sourceGraph, targetGraph);
 
         AtomicDouble upperBoundCost = new AtomicDouble(Double.MAX_VALUE);
         AtomicReference<Mapping> bestFullMapping = new AtomicReference<>();
@@ -138,15 +183,23 @@ public class SchemaDiffing {
                         bestFullMapping,
                         bestEdit,
                         sourceGraph,
-                        targetGraph
+                        targetGraph,
+                        isolatedSourceVertices,
+                        isolatedTargetVertices,
+                        isolatedBuiltInSourceVertices,
+                        isolatedBuiltInTargetVertices
                 );
             }
         }
         System.out.println("ged cost: " + upperBoundCost.doubleValue());
-        System.out.println("edit : " + bestEdit);
-        for (EditOperation editOperation : bestEdit.get()) {
-            System.out.println(editOperation);
-        }
+//        List<String> debugMap = getDebugMap(bestFullMapping.get());
+//        for (String debugLine : debugMap) {
+//            System.out.println(debugLine);
+//        }
+//        System.out.println("edit : " + bestEdit);
+//        for (EditOperation editOperation : bestEdit.get()) {
+//            System.out.println(editOperation);
+//        }
         return bestEdit.get();
     }
 
@@ -186,7 +239,6 @@ public class SchemaDiffing {
             result.add(nextOne);
             nextCandidates.remove(nextOneIndex);
         }
-        System.out.println(result);
         sourceGraph.setVertices(result);
     }
 
@@ -202,7 +254,8 @@ public class SchemaDiffing {
         return result;
     }
 
-    private int totalWeightWithSomeEdges(SchemaGraph sourceGraph, Vertex vertex, List<Edge> edges, Map<Vertex, Integer> vertexWeights, Map<Edge, Integer> edgesWeights) {
+    private int totalWeightWithSomeEdges(SchemaGraph sourceGraph, Vertex
+            vertex, List<Edge> edges, Map<Vertex, Integer> vertexWeights, Map<Edge, Integer> edgesWeights) {
         if (vertex.isBuiltInType()) {
             return Integer.MIN_VALUE + 1;
         }
@@ -212,7 +265,8 @@ public class SchemaDiffing {
         return vertexWeights.get(vertex) + edges.stream().mapToInt(edgesWeights::get).sum();
     }
 
-    private int totalWeightWithAdjacentEdges(SchemaGraph sourceGraph, Vertex vertex, Map<Vertex, Integer> vertexWeights, Map<Edge, Integer> edgesWeights) {
+    private int totalWeightWithAdjacentEdges(SchemaGraph sourceGraph, Vertex
+            vertex, Map<Vertex, Integer> vertexWeights, Map<Edge, Integer> edgesWeights) {
         if (vertex.isBuiltInType()) {
             return Integer.MIN_VALUE + 1;
         }
@@ -249,10 +303,15 @@ public class SchemaDiffing {
                                   int level,
                                   PriorityQueue<MappingEntry> queue,
                                   AtomicDouble upperBound,
-                                  AtomicReference<Mapping> bestMapping,
+                                  AtomicReference<Mapping> bestFullMapping,
                                   AtomicReference<List<EditOperation>> bestEdit,
                                   SchemaGraph sourceGraph,
-                                  SchemaGraph targetGraph
+                                  SchemaGraph targetGraph,
+                                  Map<String, Set<Vertex>> isolatedSourceVertices,
+                                  Map<String, Set<Vertex>> isolatedTargetVertices,
+                                  Set<Vertex> isolatedBuiltInSourceVertices,
+                                  Set<Vertex> isolatedBuiltInTargetVertices
+
     ) throws InterruptedException {
         Mapping partialMapping = parentEntry.partialMapping;
         assertTrue(level - 1 == partialMapping.size());
@@ -270,12 +329,12 @@ public class SchemaDiffing {
         int costMatrixSize = sourceList.size() - level + 1;
 //        double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
 
-        AtomicDoubleArray[] costMatrix = new AtomicDoubleArray[costMatrixSize];
-        Arrays.setAll(costMatrix, (index) -> new AtomicDoubleArray(costMatrixSize));
-        // costMatrix gets modified by the hungarian algorithm ... therefore we create two of them
-        AtomicDoubleArray[] costMatrixCopy = new AtomicDoubleArray[costMatrixSize];
-        Arrays.setAll(costMatrixCopy, (index) -> new AtomicDoubleArray(costMatrixSize));
-
+        double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
+//        Arrays.setAll(costMatrix, (index) -> new AtomicDoubleArray(costMatrixSize));
+//        // costMatrix gets modified by the hungarian algorithm ... therefore we create two of them
+//        AtomicDoubleArray[] costMatrixCopy = new AtomicDoubleArray[costMatrixSize];
+//        Arrays.setAll(costMatrixCopy, (index) -> new AtomicDoubleArray(costMatrixSize));
+//
         // we are skipping the first level -i indices
         Set<Vertex> partialMappingSourceSet = new LinkedHashSet<>(partialMapping.getSources());
         Set<Vertex> partialMappingTargetSet = new LinkedHashSet<>(partialMapping.getTargets());
@@ -286,30 +345,30 @@ public class SchemaDiffing {
         for (int i = level - 1; i < sourceList.size(); i++) {
             Vertex v = sourceList.get(i);
             int finalI = i;
-            callables.add(() -> {
-                int j = 0;
-                for (Vertex u : availableTargetVertices) {
-                    double cost = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet);
-                    costMatrix[finalI - level + 1].set(j, cost);
-                    costMatrixCopy[finalI - level + 1].set(j, cost);
-                    j++;
-                }
-                return null;
-            });
+//            callables.add(() -> {
+            int j = 0;
+            for (Vertex u : availableTargetVertices) {
+                double cost = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet, isolatedSourceVertices, isolatedTargetVertices, isolatedBuiltInSourceVertices, isolatedBuiltInTargetVertices);
+                costMatrix[finalI - level + 1][j] = cost;
+//                costMatrixCopy[finalI - level + 1].set(j, cost);
+                j++;
+            }
+//                return null;
+//            });
         }
-        forkJoinPool.invokeAll(callables);
-        forkJoinPool.awaitTermination(10000, TimeUnit.DAYS);
+//        forkJoinPool.invokeAll(callables);
+//        forkJoinPool.awaitTermination(10000, TimeUnit.DAYS);
 
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrix);
         int editorialCostForMapping = editorialCostForMapping(partialMapping, sourceGraph, targetGraph, new ArrayList<>());
         List<MappingEntry> siblings = new ArrayList<>();
         for (int child = 0; child < availableTargetVertices.size(); child++) {
             int[] assignments = child == 0 ? hungarianAlgorithm.execute() : hungarianAlgorithm.nextChild();
-            if (hungarianAlgorithm.costMatrix[0].get(assignments[0]) == Integer.MAX_VALUE) {
+            if (hungarianAlgorithm.costMatrix[0][assignments[0]] == Integer.MAX_VALUE) {
                 break;
             }
 
-            double costMatrixSumSibling = getCostMatrixSum(costMatrixCopy, assignments);
+            double costMatrixSumSibling = getCostMatrixSum(costMatrix, assignments);
             double lowerBoundForPartialMappingSibling = editorialCostForMapping + costMatrixSumSibling;
             int v_i_target_IndexSibling = assignments[0];
             Vertex bestExtensionTargetVertexSibling = availableTargetVertices.get(v_i_target_IndexSibling);
@@ -338,7 +397,7 @@ public class SchemaDiffing {
                 int costForFullMapping = editorialCostForMapping(fullMapping, sourceGraph, targetGraph, editOperations);
                 if (costForFullMapping < upperBound.doubleValue()) {
                     upperBound.set(costForFullMapping);
-                    bestMapping.set(fullMapping);
+                    bestFullMapping.set(fullMapping);
                     bestEdit.set(editOperations);
                     System.out.println("setting new best edit at level " + level + " with size " + editOperations.size() + " at level " + level);
                 }
@@ -387,15 +446,16 @@ public class SchemaDiffing {
     }
 
 
-    private double getCostMatrixSum(AtomicDoubleArray[] costMatrix, int[] assignments) {
+    private double getCostMatrixSum(double[][] costMatrix, int[] assignments) {
         double costMatrixSum = 0;
         for (int i = 0; i < assignments.length; i++) {
-            costMatrixSum += costMatrix[i].get(assignments[i]);
+            costMatrixSum += costMatrix[i][assignments[i]];
         }
         return costMatrixSum;
     }
 
-    private Vertex findMatchingVertex(Vertex v_i, List<Vertex> availableTargetVertices, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
+    private Vertex findMatchingVertex(Vertex v_i, List<Vertex> availableTargetVertices, SchemaGraph
+            sourceGraph, SchemaGraph targetGraph) {
         String viType = v_i.getType();
         HashMultiset<String> viAdjacentEdges = HashMultiset.create(sourceGraph.getAdjacentEdges(v_i).stream().map(edge -> edge.getLabel()).collect(Collectors.toList()));
         if (viType.equals(SchemaGraphFactory.OBJECT) || viType.equals(INTERFACE) || viType.equals(UNION) || viType.equals(INPUT_OBJECT)) {
@@ -428,7 +488,8 @@ public class SchemaDiffing {
     }
 
     // minimum number of edit operations for a full mapping
-    private int editorialCostForMapping(Mapping partialOrFullMapping, SchemaGraph sourceGraph, SchemaGraph targetGraph, List<EditOperation> editOperationsResult) {
+    private int editorialCostForMapping(Mapping partialOrFullMapping, SchemaGraph sourceGraph, SchemaGraph
+            targetGraph, List<EditOperation> editOperationsResult) {
         int cost = 0;
         for (int i = 0; i < partialOrFullMapping.size(); i++) {
             Vertex sourceVertex = partialOrFullMapping.getSource(i);
@@ -482,30 +543,36 @@ public class SchemaDiffing {
     }
 
 
-    private Map<Vertex, Vertex> forcedMatchingCache = new LinkedHashMap<>();
+    private Map<Vertex, Vertex> forcedMatchingCache = synchronizedMap(new LinkedHashMap<>());
 
-    private boolean isMappingPossible(Vertex v, Vertex u, SchemaGraph sourceGraph, SchemaGraph targetGraph, Set<Vertex> partialMappingTargetSet) {
+    private boolean isMappingPossible(Vertex v,
+                                      Vertex u,
+                                      SchemaGraph sourceGraph,
+                                      SchemaGraph targetGraph,
+                                      Set<Vertex> partialMappingTargetSet,
+                                      Map<String, Set<Vertex>> isolatedSourceVertices,
+                                      Map<String, Set<Vertex>> isolatedTargetVertices,
+                                      Set<Vertex> isolatedBuiltInSourceVertices,
+                                      Set<Vertex> isolatedBuiltInTargetVertices
+    ) {
         Vertex forcedMatch = forcedMatchingCache.get(v);
         if (forcedMatch != null) {
             return forcedMatch == u;
         }
-        // deletion and inserting of vertices is possible
-        if (u.isArtificialNode() || v.isArtificialNode()) {
-            return true;
-        }
-        // the types of the vertices need to match: we don't allow to change the type
-        if (!v.getType().equals(u.getType())) {
+        if (v.isArtificialNode() && u.isArtificialNode()) {
             return false;
         }
-
-        // if it is named type we check if the targetGraph has one with the same name and type force a match
         if (isNamedType(v.getType())) {
             Vertex targetVertex = targetGraph.getType(v.get("name"));
             if (targetVertex != null && Objects.equals(v.getType(), targetVertex.getType())) {
-                if (u == targetVertex) {
-                    forcedMatchingCache.put(v, targetVertex);
-                    forcedMatchingCache.put(targetVertex, v);
-                }
+                forcedMatchingCache.put(v, targetVertex);
+                return u == targetVertex;
+            }
+        }
+        if (DIRECTIVE.equals(v.getType())) {
+            Vertex targetVertex = targetGraph.getDirective(v.get("name"));
+            if (targetVertex != null) {
+                forcedMatchingCache.put(v, targetVertex);
                 return u == targetVertex;
             }
         }
@@ -518,7 +585,6 @@ public class SchemaDiffing {
                     if (matchingTargetField != null) {
                         Vertex dummyTypeVertex = getDummyTypeVertex(matchingTargetField, targetGraph);
                         forcedMatchingCache.put(v, dummyTypeVertex);
-                        forcedMatchingCache.put(dummyTypeVertex, v);
                         return u == dummyTypeVertex;
                     }
                 } else if (vertex.getType().equals(INPUT_FIELD)) {
@@ -526,7 +592,6 @@ public class SchemaDiffing {
                     if (matchingTargetInputField != null) {
                         Vertex dummyTypeVertex = getDummyTypeVertex(matchingTargetInputField, targetGraph);
                         forcedMatchingCache.put(v, dummyTypeVertex);
-                        forcedMatchingCache.put(dummyTypeVertex, v);
                         return u == dummyTypeVertex;
                     }
                 }
@@ -536,7 +601,6 @@ public class SchemaDiffing {
             Vertex matchingTargetInputField = findMatchingTargetInputField(v, sourceGraph, targetGraph);
             if (matchingTargetInputField != null) {
                 forcedMatchingCache.put(v, matchingTargetInputField);
-                forcedMatchingCache.put(matchingTargetInputField, v);
                 return u == matchingTargetInputField;
             }
         }
@@ -544,7 +608,6 @@ public class SchemaDiffing {
             Vertex matchingTargetField = findMatchingTargetField(v, sourceGraph, targetGraph);
             if (matchingTargetField != null) {
                 forcedMatchingCache.put(v, matchingTargetField);
-                forcedMatchingCache.put(matchingTargetField, v);
                 return u == matchingTargetField;
             }
         }
@@ -552,12 +615,30 @@ public class SchemaDiffing {
             Vertex matchingTargetEnumValue = findMatchingEnumValue(v, sourceGraph, targetGraph);
             if (matchingTargetEnumValue != null) {
                 forcedMatchingCache.put(v, matchingTargetEnumValue);
-                forcedMatchingCache.put(matchingTargetEnumValue, v);
                 return u == matchingTargetEnumValue;
             }
         }
-        return true;
+        if (v.isArtificialNode()) {
+            if (u.isBuiltInType()) {
+                return isolatedBuiltInSourceVertices.contains(v);
+            } else {
+                return isolatedSourceVertices.getOrDefault(u.getType(), emptySet()).contains(v);
+            }
+        }
+        if (u.isArtificialNode()) {
+            if (v.isBuiltInType()) {
+                return isolatedBuiltInTargetVertices.contains(u);
+            } else {
+                return isolatedTargetVertices.getOrDefault(v.getType(), emptySet()).contains(u);
+            }
+        }
+        // the types of the vertices need to match: we don't allow to change the type
+        if (!v.getType().equals(u.getType())) {
+            return false;
+        }
 
+        // if it is named type we check if the targetGraph has one with the same name and type force a match
+        return true;
     }
 
     private Vertex getDummyTypeVertex(Vertex vertex, SchemaGraph schemaGraph) {
@@ -645,14 +726,19 @@ public class SchemaDiffing {
                                              List<Vertex> partialMappingSourceList,
                                              Set<Vertex> partialMappingSourceSet,
                                              List<Vertex> partialMappingTargetList,
-                                             Set<Vertex> partialMappingTargetSet
+                                             Set<Vertex> partialMappingTargetSet,
+                                             Map<String, Set<Vertex>> isolatedSourceVertices,
+                                             Map<String, Set<Vertex>> isolatedTargetVertices,
+                                             Set<Vertex> isolatedBuiltInSourceVertices,
+                                             Set<Vertex> isolatedBuiltInTargetVertices
+
     ) {
-        if (!isMappingPossible(v, u, sourceGraph, targetGraph, partialMappingTargetSet)) {
+        if (!isMappingPossible(v, u, sourceGraph, targetGraph, partialMappingTargetSet, isolatedSourceVertices, isolatedTargetVertices, isolatedBuiltInSourceVertices, isolatedBuiltInTargetVertices)) {
             return Integer.MAX_VALUE;
         }
-        if (!isMappingPossible(u, v, targetGraph, sourceGraph, partialMappingSourceSet)) {
-            return Integer.MAX_VALUE;
-        }
+//        if (!isMappingPossible(u, v, targetGraph, sourceGraph, partialMappingSourceSet)) {
+//            return Integer.MAX_VALUE;
+//        }
         boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());
         // inner edge labels of u (resp. v) in regards to the partial mapping: all labels of edges
         // which are adjacent of u (resp. v) which are inner edges

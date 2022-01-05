@@ -1,8 +1,12 @@
 package graphql.schema.diffing;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public class Vertex {
 
@@ -14,10 +18,20 @@ public class Vertex {
 
     private boolean builtInType;
 
-    public static Vertex newArtificialNode(String type) {
-        Vertex vertex = new Vertex(type, null);
+    public static Vertex newArtificialNode(String debugName) {
+        Vertex vertex = new Vertex(SchemaGraphFactory.ISOLATED, debugName);
         vertex.artificialNode = true;
         return vertex;
+    }
+
+    public static Set<Vertex> newArtificialNodes(int count, String debugName) {
+        Set<Vertex> result = new LinkedHashSet<>();
+        for (int i = 1; i <= count; i++) {
+            Vertex vertex = new Vertex(SchemaGraphFactory.ISOLATED, debugName + i);
+            vertex.artificialNode = true;
+            result.add(vertex);
+        }
+        return result;
     }
 
     public Vertex(String type, String debugName) {
