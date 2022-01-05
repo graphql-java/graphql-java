@@ -6,6 +6,7 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
 import com.google.common.util.concurrent.AtomicDouble;
+import com.google.common.util.concurrent.AtomicDoubleArray;
 import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 
@@ -20,9 +21,20 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertTrue;
@@ -43,11 +55,13 @@ import static java.util.Collections.synchronizedMap;
 
 public class SchemaDiffing {
 
-    private static class MappingEntry {
+    private static MappingEntry LAST_ELEMENT = new MappingEntry();
 
-        public List<MappingEntry> mappingEntriesSiblings = new ArrayList<>();
+    private static class MappingEntry {
+        public boolean siblingsFinished;
+        public LinkedBlockingQueue<MappingEntry> mappingEntriesSiblings;
         public int[] assignments;
-        public ArrayList<Vertex> availableTargetVertices;
+        public List<Vertex> availableTargetVertices;
 
         public MappingEntry(Mapping partialMapping, int level, double lowerBoundCost) {
             this.partialMapping = partialMapping;
@@ -67,6 +81,7 @@ public class SchemaDiffing {
     SchemaGraph sourceGraph;
     SchemaGraph targetGraph;
     ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
+    ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2, boolean oldVersion) throws InterruptedException {
         sourceGraph = new SchemaGraphFactory("source-").createGraph(graphQLSchema1);
@@ -111,9 +126,16 @@ public class SchemaDiffing {
             Collection<Vertex> sourceVertices = sourceGraph.getVerticesByType(type).stream().filter(vertex -> !vertex.isBuiltInType()).collect(Collectors.toList());
             Collection<Vertex> targetVertices = targetGraph.getVerticesByType(type).stream().filter(vertex -> !vertex.isBuiltInType()).collect(Collectors.toList());
             if (sourceVertices.size() > targetVertices.size()) {
-                isolatedTargetVertices.put(type, Vertex.newArtificialNodes(sourceVertices.size() - targetVertices.size(), "target-artificial-"));
+                isolatedTargetVertices.put(type, Vertex.newArtificialNodes(sourceVertices.size() - targetVertices.size(), "target-artificial-" + type + "-"));
             } else if (targetVertices.size() > sourceVertices.size()) {
-                isolatedSourceVertices.put(type, Vertex.newArtificialNodes(targetVertices.size() - sourceVertices.size(), "source-artificial-"));
+                isolatedSourceVertices.put(type, Vertex.newArtificialNodes(targetVertices.size() - sourceVertices.size(), "source-artificial-" + type + "-"));
+            }
+            if (isNamedType(type)) {
+                ArrayList<Vertex> deleted = new ArrayList<>();
+                ArrayList<Vertex> inserted = new ArrayList<>();
+                HashBiMap<Vertex, Vertex> same = HashBiMap.create();
+                diffNamedList(sourceVertices, targetVertices, deleted, inserted, same);
+                System.out.println(" " + type + " deleted " + deleted.size() + " inserted" + inserted.size() + " same " + same.size());
             }
         }
         for (Map.Entry<String, Set<Vertex>> entry : isolatedSourceVertices.entrySet()) {
@@ -127,19 +149,17 @@ public class SchemaDiffing {
         Set<Vertex> isolatedBuiltInTargetVertices = new LinkedHashSet<>();
         // the only vertices left are built in types.
         if (sourceGraph.size() < targetGraph.size()) {
-            isolatedBuiltInSourceVertices.addAll(sourceGraph.addIsolatedVertices(targetGraph.size() - sourceGraph.size(), "source-artificial-"));
+            isolatedBuiltInSourceVertices.addAll(sourceGraph.addIsolatedVertices(targetGraph.size() - sourceGraph.size(), "source-artificial-builtin-"));
         } else if (sourceGraph.size() > targetGraph.size()) {
-            isolatedBuiltInTargetVertices.addAll(targetGraph.addIsolatedVertices(sourceGraph.size() - targetGraph.size(), "target-artificial-"));
+            isolatedBuiltInTargetVertices.addAll(targetGraph.addIsolatedVertices(sourceGraph.size() - targetGraph.size(), "target-artificial-builtin-"));
         }
         assertTrue(sourceGraph.size() == targetGraph.size());
+        IsolatedInfo isolatedInfo = new IsolatedInfo(isolatedSourceVertices, isolatedTargetVertices, isolatedBuiltInSourceVertices, isolatedBuiltInTargetVertices);
 
-        //        if (true) {
-//            return Collections.emptyList();
-//        }
         int graphSize = sourceGraph.size();
         System.out.println("graph size: " + graphSize);
 
-//        sortSourceGraph(sourceGraph, targetGraph);
+        sortSourceGraph(sourceGraph, targetGraph);
 
         AtomicDouble upperBoundCost = new AtomicDouble(Double.MAX_VALUE);
         AtomicReference<Mapping> bestFullMapping = new AtomicReference<>();
@@ -157,14 +177,14 @@ public class SchemaDiffing {
         int counter = 0;
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
-//            System.out.println((++counter) + " entry at level " + mappingEntry.level + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost + " map " + getDebugMap(mappingEntry.partialMapping));
-            if ((++counter) % 100 == 0) {
-                System.out.println((counter) + " entry at level");
-            }
+//            System.out.println((++counter) + " check entry at level " + mappingEntry.level + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost + " map " + getDebugMap(mappingEntry.partialMapping));
+//            if ((++counter) % 100 == 0) {
+//                System.out.println((counter) + " entry at level");
+//            }
             if (mappingEntry.lowerBoundCost >= upperBoundCost.doubleValue()) {
                 continue;
             }
-            if (mappingEntry.level > 0 && mappingEntry.mappingEntriesSiblings.size() > 0) {
+            if (mappingEntry.level > 0 && !mappingEntry.siblingsFinished) {
                 getSibling(
                         mappingEntry.level,
                         queue,
@@ -184,10 +204,7 @@ public class SchemaDiffing {
                         bestEdit,
                         sourceGraph,
                         targetGraph,
-                        isolatedSourceVertices,
-                        isolatedTargetVertices,
-                        isolatedBuiltInSourceVertices,
-                        isolatedBuiltInTargetVertices
+                        isolatedInfo
                 );
             }
         }
@@ -307,10 +324,7 @@ public class SchemaDiffing {
                                   AtomicReference<List<EditOperation>> bestEdit,
                                   SchemaGraph sourceGraph,
                                   SchemaGraph targetGraph,
-                                  Map<String, Set<Vertex>> isolatedSourceVertices,
-                                  Map<String, Set<Vertex>> isolatedTargetVertices,
-                                  Set<Vertex> isolatedBuiltInSourceVertices,
-                                  Set<Vertex> isolatedBuiltInTargetVertices
+                                  IsolatedInfo isolatedInfo
 
     ) throws InterruptedException {
         Mapping partialMapping = parentEntry.partialMapping;
@@ -329,11 +343,11 @@ public class SchemaDiffing {
         int costMatrixSize = sourceList.size() - level + 1;
 //        double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
 
-        double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
-//        Arrays.setAll(costMatrix, (index) -> new AtomicDoubleArray(costMatrixSize));
-//        // costMatrix gets modified by the hungarian algorithm ... therefore we create two of them
-//        AtomicDoubleArray[] costMatrixCopy = new AtomicDoubleArray[costMatrixSize];
-//        Arrays.setAll(costMatrixCopy, (index) -> new AtomicDoubleArray(costMatrixSize));
+        AtomicDoubleArray[] costMatrix = new AtomicDoubleArray[costMatrixSize];
+        Arrays.setAll(costMatrix, (index) -> new AtomicDoubleArray(costMatrixSize));
+        // costMatrix gets modified by the hungarian algorithm ... therefore we create two of them
+        AtomicDoubleArray[] costMatrixCopy = new AtomicDoubleArray[costMatrixSize];
+        Arrays.setAll(costMatrixCopy, (index) -> new AtomicDoubleArray(costMatrixSize));
 //
         // we are skipping the first level -i indices
         Set<Vertex> partialMappingSourceSet = new LinkedHashSet<>(partialMapping.getSources());
@@ -345,37 +359,100 @@ public class SchemaDiffing {
         for (int i = level - 1; i < sourceList.size(); i++) {
             Vertex v = sourceList.get(i);
             int finalI = i;
-//            callables.add(() -> {
-            int j = 0;
-            for (Vertex u : availableTargetVertices) {
-                double cost = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet, isolatedSourceVertices, isolatedTargetVertices, isolatedBuiltInSourceVertices, isolatedBuiltInTargetVertices);
-                costMatrix[finalI - level + 1][j] = cost;
-//                costMatrixCopy[finalI - level + 1].set(j, cost);
-                j++;
-            }
-//                return null;
-//            });
+            callables.add(() -> {
+                int j = 0;
+                for (Vertex u : availableTargetVertices) {
+                    double cost = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet, isolatedInfo);
+                    costMatrix[finalI - level + 1].set(j, cost);
+                    costMatrixCopy[finalI - level + 1].set(j, cost);
+                    j++;
+                }
+                return null;
+            });
         }
-//        forkJoinPool.invokeAll(callables);
-//        forkJoinPool.awaitTermination(10000, TimeUnit.DAYS);
+        forkJoinPool.invokeAll(callables);
+        forkJoinPool.awaitTermination(10000, TimeUnit.DAYS);
 
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrix);
         int editorialCostForMapping = editorialCostForMapping(partialMapping, sourceGraph, targetGraph, new ArrayList<>());
-        List<MappingEntry> siblings = new ArrayList<>();
-        for (int child = 0; child < availableTargetVertices.size(); child++) {
-            int[] assignments = child == 0 ? hungarianAlgorithm.execute() : hungarianAlgorithm.nextChild();
-            if (hungarianAlgorithm.costMatrix[0][assignments[0]] == Integer.MAX_VALUE) {
+
+        int[] assignments = hungarianAlgorithm.execute();
+
+        double costMatrixSumSibling = getCostMatrixSum(costMatrixCopy, assignments);
+        double lowerBoundForPartialMappingSibling = editorialCostForMapping + costMatrixSumSibling;
+        int v_i_target_IndexSibling = assignments[0];
+        Vertex bestExtensionTargetVertexSibling = availableTargetVertices.get(v_i_target_IndexSibling);
+        Mapping newMappingSibling = partialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
+
+
+        if (lowerBoundForPartialMappingSibling >= upperBound.doubleValue()) {
+            return;
+        }
+        MappingEntry newMappingEntry = new MappingEntry(newMappingSibling, level, lowerBoundForPartialMappingSibling);
+        LinkedBlockingQueue<MappingEntry> siblings = new LinkedBlockingQueue<>();
+//        newMappingEntry.siblingsReady = new AtomicBoolean();
+        newMappingEntry.mappingEntriesSiblings = siblings;
+        newMappingEntry.assignments = assignments;
+        newMappingEntry.availableTargetVertices = availableTargetVertices;
+
+        queue.add(newMappingEntry);
+        Mapping fullMapping = partialMapping.copy();
+        for (int i = 0; i < assignments.length; i++) {
+            fullMapping.add(sourceList.get(level - 1 + i), availableTargetVertices.get(assignments[i]));
+        }
+
+        assertTrue(fullMapping.size() == sourceGraph.size());
+        List<EditOperation> editOperations = new ArrayList<>();
+        int costForFullMapping = editorialCostForMapping(fullMapping, sourceGraph, targetGraph, editOperations);
+        if (costForFullMapping < upperBound.doubleValue()) {
+            upperBound.set(costForFullMapping);
+            bestFullMapping.set(fullMapping);
+            bestEdit.set(editOperations);
+            System.out.println("setting new best edit at level " + level + " with size " + editOperations.size() + " at level " + level);
+        }
+
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                calculateChildren(
+                        availableTargetVertices,
+                        hungarianAlgorithm,
+                        costMatrixCopy,
+                        editorialCostForMapping,
+                        partialMapping,
+                        v_i,
+                        upperBound.get(),
+                        level,
+                        siblings
+                );
+            }
+        });
+    }
+
+    private void calculateChildren(List<Vertex> availableTargetVertices,
+                                   HungarianAlgorithm hungarianAlgorithm,
+                                   AtomicDoubleArray[] costMatrixCopy,
+                                   double editorialCostForMapping,
+                                   Mapping partialMapping,
+                                   Vertex v_i,
+                                   double upperBound,
+                                   int level,
+                                   LinkedBlockingQueue<MappingEntry> siblings
+    ) {
+        for (int child = 1; child < availableTargetVertices.size(); child++) {
+            int[] assignments = hungarianAlgorithm.nextChild();
+            if (hungarianAlgorithm.costMatrix[0].get(assignments[0]) == Integer.MAX_VALUE) {
                 break;
             }
 
-            double costMatrixSumSibling = getCostMatrixSum(costMatrix, assignments);
+            double costMatrixSumSibling = getCostMatrixSum(costMatrixCopy, assignments);
             double lowerBoundForPartialMappingSibling = editorialCostForMapping + costMatrixSumSibling;
             int v_i_target_IndexSibling = assignments[0];
             Vertex bestExtensionTargetVertexSibling = availableTargetVertices.get(v_i_target_IndexSibling);
             Mapping newMappingSibling = partialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
 
 
-            if (lowerBoundForPartialMappingSibling >= upperBound.doubleValue()) {
+            if (lowerBoundForPartialMappingSibling >= upperBound) {
                 break;
             }
             MappingEntry sibling = new MappingEntry(newMappingSibling, level, lowerBoundForPartialMappingSibling);
@@ -384,28 +461,10 @@ public class SchemaDiffing {
             sibling.availableTargetVertices = availableTargetVertices;
 
             // first child we add to the queue, otherwise save it for later
-            if (child == 0) {
-//                System.out.println("adding new child entry " + getDebugMap(sibling.partialMapping) + "  at level " + level + " with candidates left: " + sibling.availableTargetVertices.size() + " at lower bound: " + sibling.lowerBoundCost);
-                queue.add(sibling);
-                Mapping fullMapping = partialMapping.copy();
-                for (int i = 0; i < assignments.length; i++) {
-                    fullMapping.add(sourceList.get(level - 1 + i), availableTargetVertices.get(assignments[i]));
-                }
-
-                assertTrue(fullMapping.size() == sourceGraph.size());
-                List<EditOperation> editOperations = new ArrayList<>();
-                int costForFullMapping = editorialCostForMapping(fullMapping, sourceGraph, targetGraph, editOperations);
-                if (costForFullMapping < upperBound.doubleValue()) {
-                    upperBound.set(costForFullMapping);
-                    bestFullMapping.set(fullMapping);
-                    bestEdit.set(editOperations);
-                    System.out.println("setting new best edit at level " + level + " with size " + editOperations.size() + " at level " + level);
-                }
-            } else {
-                siblings.add(sibling);
-            }
-
+//            System.out.println("add child " + child);
+            siblings.add(sibling);
         }
+        siblings.add(LAST_ELEMENT);
 
     }
 
@@ -417,14 +476,17 @@ public class SchemaDiffing {
             AtomicReference<List<EditOperation>> bestEdit,
             SchemaGraph sourceGraph,
             SchemaGraph targetGraph,
-            MappingEntry mappingEntry) {
+            MappingEntry mappingEntry) throws InterruptedException {
 
-        MappingEntry sibling = mappingEntry.mappingEntriesSiblings.get(0);
+        MappingEntry sibling = mappingEntry.mappingEntriesSiblings.take();
+        if (sibling == LAST_ELEMENT) {
+            mappingEntry.siblingsFinished = true;
+            return;
+        }
         if (sibling.lowerBoundCost < upperBoundCost.doubleValue()) {
 //            System.out.println("adding new sibling entry " + getDebugMap(sibling.partialMapping) + "  at level " + level + " with candidates left: " + sibling.availableTargetVertices.size() + " at lower bound: " + sibling.lowerBoundCost);
 
             queue.add(sibling);
-            mappingEntry.mappingEntriesSiblings.remove(0);
 
             List<Vertex> sourceList = sourceGraph.getVertices();
             // we need to start here from the parent mapping, this is why we remove the last element
@@ -446,10 +508,10 @@ public class SchemaDiffing {
     }
 
 
-    private double getCostMatrixSum(double[][] costMatrix, int[] assignments) {
+    private double getCostMatrixSum(AtomicDoubleArray[] costMatrix, int[] assignments) {
         double costMatrixSum = 0;
         for (int i = 0; i < assignments.length; i++) {
-            costMatrixSum += costMatrix[i][assignments[i]];
+            costMatrixSum += costMatrix[i].get(assignments[i]);
         }
         return costMatrixSum;
     }
@@ -545,21 +607,55 @@ public class SchemaDiffing {
 
     private Map<Vertex, Vertex> forcedMatchingCache = synchronizedMap(new LinkedHashMap<>());
 
+    static class IsolatedInfo {
+        Map<String, Set<Vertex>> isolatedSourceVertices;
+        Map<String, Set<Vertex>> isolatedTargetVertices;
+        Set<Vertex> isolatedBuiltInSourceVertices;
+        Set<Vertex> isolatedBuiltInTargetVertices;
+
+        public IsolatedInfo(Map<String, Set<Vertex>> isolatedSourceVertices, Map<String, Set<Vertex>> isolatedTargetVertices, Set<Vertex> isolatedBuiltInSourceVertices, Set<Vertex> isolatedBuiltInTargetVertices) {
+            this.isolatedSourceVertices = isolatedSourceVertices;
+            this.isolatedTargetVertices = isolatedTargetVertices;
+            this.isolatedBuiltInSourceVertices = isolatedBuiltInSourceVertices;
+            this.isolatedBuiltInTargetVertices = isolatedBuiltInTargetVertices;
+        }
+    }
+
     private boolean isMappingPossible(Vertex v,
                                       Vertex u,
                                       SchemaGraph sourceGraph,
                                       SchemaGraph targetGraph,
                                       Set<Vertex> partialMappingTargetSet,
-                                      Map<String, Set<Vertex>> isolatedSourceVertices,
-                                      Map<String, Set<Vertex>> isolatedTargetVertices,
-                                      Set<Vertex> isolatedBuiltInSourceVertices,
-                                      Set<Vertex> isolatedBuiltInTargetVertices
+                                      IsolatedInfo isolatedInfo
     ) {
+
         Vertex forcedMatch = forcedMatchingCache.get(v);
         if (forcedMatch != null) {
             return forcedMatch == u;
         }
         if (v.isArtificialNode() && u.isArtificialNode()) {
+            return false;
+        }
+        Map<String, Set<Vertex>> isolatedSourceVertices = isolatedInfo.isolatedSourceVertices;
+        Map<String, Set<Vertex>> isolatedTargetVertices = isolatedInfo.isolatedTargetVertices;
+        Set<Vertex> isolatedBuiltInSourceVertices = isolatedInfo.isolatedBuiltInSourceVertices;
+        Set<Vertex> isolatedBuiltInTargetVertices = isolatedInfo.isolatedBuiltInTargetVertices;
+        if (v.isArtificialNode()) {
+            if (u.isBuiltInType()) {
+                return isolatedBuiltInSourceVertices.contains(v);
+            } else {
+                return isolatedSourceVertices.getOrDefault(u.getType(), emptySet()).contains(v);
+            }
+        }
+        if (u.isArtificialNode()) {
+            if (v.isBuiltInType()) {
+                return isolatedBuiltInTargetVertices.contains(u);
+            } else {
+                return isolatedTargetVertices.getOrDefault(v.getType(), emptySet()).contains(u);
+            }
+        }
+        // the types of the vertices need to match: we don't allow to change the type
+        if (!v.getType().equals(u.getType())) {
             return false;
         }
         if (isNamedType(v.getType())) {
@@ -617,24 +713,6 @@ public class SchemaDiffing {
                 forcedMatchingCache.put(v, matchingTargetEnumValue);
                 return u == matchingTargetEnumValue;
             }
-        }
-        if (v.isArtificialNode()) {
-            if (u.isBuiltInType()) {
-                return isolatedBuiltInSourceVertices.contains(v);
-            } else {
-                return isolatedSourceVertices.getOrDefault(u.getType(), emptySet()).contains(v);
-            }
-        }
-        if (u.isArtificialNode()) {
-            if (v.isBuiltInType()) {
-                return isolatedBuiltInTargetVertices.contains(u);
-            } else {
-                return isolatedTargetVertices.getOrDefault(v.getType(), emptySet()).contains(u);
-            }
-        }
-        // the types of the vertices need to match: we don't allow to change the type
-        if (!v.getType().equals(u.getType())) {
-            return false;
         }
 
         // if it is named type we check if the targetGraph has one with the same name and type force a match
@@ -727,13 +805,10 @@ public class SchemaDiffing {
                                              Set<Vertex> partialMappingSourceSet,
                                              List<Vertex> partialMappingTargetList,
                                              Set<Vertex> partialMappingTargetSet,
-                                             Map<String, Set<Vertex>> isolatedSourceVertices,
-                                             Map<String, Set<Vertex>> isolatedTargetVertices,
-                                             Set<Vertex> isolatedBuiltInSourceVertices,
-                                             Set<Vertex> isolatedBuiltInTargetVertices
+                                             IsolatedInfo isolatedInfo
 
     ) {
-        if (!isMappingPossible(v, u, sourceGraph, targetGraph, partialMappingTargetSet, isolatedSourceVertices, isolatedTargetVertices, isolatedBuiltInSourceVertices, isolatedBuiltInTargetVertices)) {
+        if (!isMappingPossible(v, u, sourceGraph, targetGraph, partialMappingTargetSet, isolatedInfo)) {
             return Integer.MAX_VALUE;
         }
 //        if (!isMappingPossible(u, v, targetGraph, sourceGraph, partialMappingSourceSet)) {
