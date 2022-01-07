@@ -1,10 +1,13 @@
 package graphql.schema.diffing;
 
 import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.HashMultiset;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
+import com.google.common.collect.Table;
 import com.google.common.util.concurrent.AtomicDouble;
 import com.google.common.util.concurrent.AtomicDoubleArray;
 import graphql.schema.GraphQLSchema;
@@ -21,21 +24,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.SchemaGraphFactory.DIRECTIVE;
@@ -117,32 +114,122 @@ public class SchemaDiffing {
         }
     }
 
+    private void diffNamedList(Set<String> sourceNames,
+                               Set<String> targetNames,
+                               List<String> deleted,
+                               List<String> inserted,
+                               List<String> same) {
+        for (String sourceName : sourceNames) {
+            if (targetNames.contains(sourceName)) {
+                same.add(sourceName);
+            } else {
+                deleted.add(sourceName);
+            }
+        }
+
+        for (String targetName : targetNames) {
+            if (!sourceNames.contains(targetName)) {
+                inserted.add(targetName);
+            }
+        }
+    }
+
     List<EditOperation> diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) throws InterruptedException {
         int sizeDiff = sourceGraph.size() - targetGraph.size();
         System.out.println("graph diff: " + sizeDiff);
         Map<String, Set<Vertex>> isolatedSourceVertices = new LinkedHashMap<>();
         Map<String, Set<Vertex>> isolatedTargetVertices = new LinkedHashMap<>();
+        Table<String, String, Set<Vertex>> isolatedTargetVerticesForFields = HashBasedTable.create();
+        Table<String, String, Set<Vertex>> isolatedSourceVerticesForFields = HashBasedTable.create();
         for (String type : SchemaGraphFactory.ALL_TYPES) {
-            Collection<Vertex> sourceVertices = sourceGraph.getVerticesByType(type).stream().filter(vertex -> !vertex.isBuiltInType()).collect(Collectors.toList());
-            Collection<Vertex> targetVertices = targetGraph.getVerticesByType(type).stream().filter(vertex -> !vertex.isBuiltInType()).collect(Collectors.toList());
-            if (sourceVertices.size() > targetVertices.size()) {
-                isolatedTargetVertices.put(type, Vertex.newArtificialNodes(sourceVertices.size() - targetVertices.size(), "target-artificial-" + type + "-"));
-            } else if (targetVertices.size() > sourceVertices.size()) {
-                isolatedSourceVertices.put(type, Vertex.newArtificialNodes(targetVertices.size() - sourceVertices.size(), "source-artificial-" + type + "-"));
+            if (FIELD.equals(type)) {
+
+                Stream<Vertex> sourceVerticesStream = sourceGraph.getVerticesByType(type).stream().filter(vertex -> !vertex.isBuiltInType());
+                Stream<Vertex> targetVerticesStream = targetGraph.getVerticesByType(type).stream().filter(vertex -> !vertex.isBuiltInType());
+                Map<String, ImmutableList<Vertex>> sourceFieldsByContainer = FpKit.groupingBy(sourceVerticesStream, v -> {
+                    Vertex fieldsContainer = getFieldsContainer(v, sourceGraph);
+                    return fieldsContainer.getType() + "-" + fieldsContainer.get("name");
+                });
+                Map<String, ImmutableList<Vertex>> targetFieldsByContainer = FpKit.groupingBy(targetVerticesStream, v -> {
+                    Vertex fieldsContainer = getFieldsContainer(v, targetGraph);
+                    return fieldsContainer.getType() + "-" + fieldsContainer.get("name");
+                });
+
+                List<String> deletedContainers = new ArrayList<>();
+                List<String> insertedContainers = new ArrayList<>();
+                List<String> sameContainers = new ArrayList<>();
+                diffNamedList(sourceFieldsByContainer.keySet(), targetFieldsByContainer.keySet(), deletedContainers, insertedContainers, sameContainers);
+
+                for (String sameContainer : sameContainers) {
+                    int ix = sameContainer.indexOf("-");
+                    String containerName = sameContainer.substring(ix + 1);
+                    // we have this container is source and target
+                    ImmutableList<Vertex> sourceVertices = sourceFieldsByContainer.get(sameContainer);
+                    ImmutableList<Vertex> targetVertices = targetFieldsByContainer.get(sameContainer);
+
+                    ArrayList<Vertex> deletedFields = new ArrayList<>();
+                    ArrayList<Vertex> insertedFields = new ArrayList<>();
+                    HashBiMap<Vertex, Vertex> sameFields = HashBiMap.create();
+                    diffNamedList(sourceVertices, targetVertices, deletedFields, insertedFields, sameFields);
+
+                    if (deletedFields.size() > insertedFields.size()) {
+                        Set<Vertex> newTargetVertices = Vertex.newArtificialNodes(deletedFields.size() - insertedFields.size(), "target-artificial-" + type + "-");
+                        for (Vertex deletedField : deletedFields) {
+                            isolatedTargetVerticesForFields.put(containerName, deletedField.get("name"), newTargetVertices);
+                        }
+                    } else if (insertedFields.size() > deletedFields.size()) {
+                        Set<Vertex> newSourceVertices = Vertex.newArtificialNodes(insertedFields.size() - deletedFields.size(), "source-artificial-" + type + "-");
+                        for (Vertex insertedField : insertedFields) {
+                            isolatedSourceVerticesForFields.put(containerName, insertedField.get("name"), newSourceVertices);
+                        }
+                    }
+                }
+
+                Set<Vertex> insertedFields = new LinkedHashSet<>();
+                Set<Vertex> deletedFields = new LinkedHashSet<>();
+                for (String insertedContainer : insertedContainers) {
+                    insertedFields.addAll(targetFieldsByContainer.get(insertedContainer));
+                }
+                for (String deletedContainer : deletedContainers) {
+                    deletedFields.addAll(sourceFieldsByContainer.get(deletedContainer));
+                }
+                if (deletedFields.size() > insertedFields.size()) {
+                    isolatedTargetVertices.put(type, Vertex.newArtificialNodes(deletedFields.size() - insertedFields.size(), "target-artificial-FIELD-"));
+                } else if (insertedFields.size() > deletedFields.size()) {
+                    isolatedSourceVertices.put(type, Vertex.newArtificialNodes(insertedFields.size() - deletedFields.size(), "source-artificial-FIELD-"));
+                }
+
+            } else {
+                Collection<Vertex> sourceVertices = sourceGraph.getVerticesByType(type).stream().filter(vertex -> !vertex.isBuiltInType()).collect(Collectors.toList());
+                Collection<Vertex> targetVertices = targetGraph.getVerticesByType(type).stream().filter(vertex -> !vertex.isBuiltInType()).collect(Collectors.toList());
+                if (sourceVertices.size() > targetVertices.size()) {
+                    isolatedTargetVertices.put(type, Vertex.newArtificialNodes(sourceVertices.size() - targetVertices.size(), "target-artificial-" + type + "-"));
+                } else if (targetVertices.size() > sourceVertices.size()) {
+                    isolatedSourceVertices.put(type, Vertex.newArtificialNodes(targetVertices.size() - sourceVertices.size(), "source-artificial-" + type + "-"));
+                }
             }
-            if (isNamedType(type)) {
-                ArrayList<Vertex> deleted = new ArrayList<>();
-                ArrayList<Vertex> inserted = new ArrayList<>();
-                HashBiMap<Vertex, Vertex> same = HashBiMap.create();
-                diffNamedList(sourceVertices, targetVertices, deleted, inserted, same);
-                System.out.println(" " + type + " deleted " + deleted.size() + " inserted" + inserted.size() + " same " + same.size());
-            }
+//            if (isNamedType(type)) {
+//                ArrayList<Vertex> deleted = new ArrayList<>();
+//                ArrayList<Vertex> inserted = new ArrayList<>();
+//                HashBiMap<Vertex, Vertex> same = HashBiMap.create();
+//                diffNamedList(sourceVertices, targetVertices, deleted, inserted, same);
+//                System.out.println(" " + type + " deleted " + deleted.size() + " inserted" + inserted.size() + " same " + same.size());
+//            }
         }
+
         for (Map.Entry<String, Set<Vertex>> entry : isolatedSourceVertices.entrySet()) {
             sourceGraph.addVertices(entry.getValue());
         }
         for (Map.Entry<String, Set<Vertex>> entry : isolatedTargetVertices.entrySet()) {
             targetGraph.addVertices(entry.getValue());
+        }
+        for (String containerName : isolatedSourceVerticesForFields.rowKeySet()) {
+            Map<String, Set<Vertex>> row = isolatedSourceVerticesForFields.row(containerName);
+            sourceGraph.addVertices(row.values().iterator().next());
+        }
+        for (String containerName : isolatedTargetVerticesForFields.rowKeySet()) {
+            Map<String, Set<Vertex>> row = isolatedTargetVerticesForFields.row(containerName);
+            targetGraph.addVertices(row.values().iterator().next());
         }
 
         Set<Vertex> isolatedBuiltInSourceVertices = new LinkedHashSet<>();
@@ -154,7 +241,7 @@ public class SchemaDiffing {
             isolatedBuiltInTargetVertices.addAll(targetGraph.addIsolatedVertices(sourceGraph.size() - targetGraph.size(), "target-artificial-builtin-"));
         }
         assertTrue(sourceGraph.size() == targetGraph.size());
-        IsolatedInfo isolatedInfo = new IsolatedInfo(isolatedSourceVertices, isolatedTargetVertices, isolatedBuiltInSourceVertices, isolatedBuiltInTargetVertices);
+        IsolatedInfo isolatedInfo = new IsolatedInfo(isolatedSourceVertices, isolatedTargetVertices, isolatedBuiltInSourceVertices, isolatedBuiltInTargetVertices, isolatedSourceVerticesForFields, isolatedTargetVerticesForFields);
 
         int graphSize = sourceGraph.size();
         System.out.println("graph size: " + graphSize);
@@ -612,12 +699,19 @@ public class SchemaDiffing {
         Map<String, Set<Vertex>> isolatedTargetVertices;
         Set<Vertex> isolatedBuiltInSourceVertices;
         Set<Vertex> isolatedBuiltInTargetVertices;
+        Table<String, String, Set<Vertex>> isolatedSourceVerticesForFields;
+        Table<String, String, Set<Vertex>> isolatedTargetVerticesForFields;
 
-        public IsolatedInfo(Map<String, Set<Vertex>> isolatedSourceVertices, Map<String, Set<Vertex>> isolatedTargetVertices, Set<Vertex> isolatedBuiltInSourceVertices, Set<Vertex> isolatedBuiltInTargetVertices) {
+        public IsolatedInfo(Map<String, Set<Vertex>> isolatedSourceVertices, Map<String, Set<Vertex>> isolatedTargetVertices, Set<Vertex> isolatedBuiltInSourceVertices,
+                            Set<Vertex> isolatedBuiltInTargetVertices,
+                            Table<String, String, Set<Vertex>> isolatedSourceVerticesForFields,
+                            Table<String, String, Set<Vertex>> isolatedTargetVerticesForFields) {
             this.isolatedSourceVertices = isolatedSourceVertices;
             this.isolatedTargetVertices = isolatedTargetVertices;
             this.isolatedBuiltInSourceVertices = isolatedBuiltInSourceVertices;
             this.isolatedBuiltInTargetVertices = isolatedBuiltInTargetVertices;
+            this.isolatedSourceVerticesForFields = isolatedSourceVerticesForFields;
+            this.isolatedTargetVerticesForFields = isolatedTargetVerticesForFields;
         }
     }
 
@@ -640,11 +734,21 @@ public class SchemaDiffing {
         Map<String, Set<Vertex>> isolatedTargetVertices = isolatedInfo.isolatedTargetVertices;
         Set<Vertex> isolatedBuiltInSourceVertices = isolatedInfo.isolatedBuiltInSourceVertices;
         Set<Vertex> isolatedBuiltInTargetVertices = isolatedInfo.isolatedBuiltInTargetVertices;
+        Table<String, String, Set<Vertex>> isolatedSourceVerticesForFields = isolatedInfo.isolatedSourceVerticesForFields;
+        Table<String, String, Set<Vertex>> isolatedTargetVerticesForFields = isolatedInfo.isolatedTargetVerticesForFields;
 
         if (v.isArtificialNode()) {
             if (u.isBuiltInType()) {
                 return isolatedBuiltInSourceVertices.contains(v);
             } else {
+                if (u.getType().equals(FIELD)) {
+                    Vertex fieldsContainer = getFieldsContainer(u, targetGraph);
+                    String containerName = fieldsContainer.get("name");
+                    String fieldName = u.get("name");
+                    if (isolatedSourceVerticesForFields.contains(containerName, fieldName)) {
+                        return isolatedSourceVerticesForFields.get(containerName, fieldName).contains(v);
+                    }
+                }
                 return isolatedSourceVertices.getOrDefault(u.getType(), emptySet()).contains(v);
             }
         }
@@ -652,6 +756,14 @@ public class SchemaDiffing {
             if (v.isBuiltInType()) {
                 return isolatedBuiltInTargetVertices.contains(u);
             } else {
+                if (v.getType().equals(FIELD)) {
+                    Vertex fieldsContainer = getFieldsContainer(v, sourceGraph);
+                    String containerName = fieldsContainer.get("name");
+                    String fieldName = u.get("name");
+                    if (isolatedTargetVerticesForFields.contains(containerName, fieldName)) {
+                        return isolatedTargetVerticesForFields.get(containerName, fieldName).contains(u);
+                    }
+                }
                 return isolatedTargetVertices.getOrDefault(v.getType(), emptySet()).contains(u);
             }
         }

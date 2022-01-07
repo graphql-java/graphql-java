@@ -48,8 +48,19 @@ public class FpKit {
         return list.stream().collect(Collectors.groupingBy(function, LinkedHashMap::new, mapping(Function.identity(), ImmutableList.toImmutableList())));
     }
 
+    public static <T, NewKey> Map<NewKey, ImmutableList<T>> groupingBy(Stream<T> stream, Function<T, NewKey> function) {
+        return stream.collect(Collectors.groupingBy(function, LinkedHashMap::new, mapping(Function.identity(), ImmutableList.toImmutableList())));
+    }
     public static <T, NewKey> Map<NewKey, T> groupingByUniqueKey(Collection<T> list, Function<T, NewKey> keyFunction) {
         return list.stream().collect(Collectors.toMap(
+                keyFunction,
+                identity(),
+                throwingMerger(),
+                LinkedHashMap::new)
+        );
+    }
+    public static <T, NewKey> Map<NewKey, T> groupingByUniqueKey(Stream<T> stream, Function<T, NewKey> keyFunction) {
+        return stream.collect(Collectors.toMap(
                 keyFunction,
                 identity(),
                 throwingMerger(),
