@@ -980,7 +980,49 @@ class SchemaDiffingTest extends Specification {
 
         then:
         operations.size() == 2
+    }
 
+    def "unchanged scheme"() {
+        given:
+        def schema1 = schema('''
+            directive @specialId(type: String) on FIELD_DEFINITION
+            directive @Magic(owner: String!, type: String!) on FIELD_DEFINITION | ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
+
+            
+            type Query {
+                hello: String @specialId(type: "someId")
+                foo(arg: Int, arg2: String = "hello"): [Foo]!
+                old: Boolean @deprecated
+                someOther(input1: MyInput, input2: OtherInput): E
+            }
+            type Foo { 
+                id: ID
+                e1: E 
+                union: MyUnion
+            } 
+            union MyUnion = Foo | Bar
+            type Bar {
+                id: ID
+            }
+            enum E {
+                E1, E2, E3
+            }
+            input MyInput {
+                id: ID
+                other: String! @Magic(owner: "Me", type: "SomeType")
+            }
+            input OtherInput {
+                inputField1: ID! @Magic(owner: "O1", type: "T1")
+                inputField2: ID! @Magic(owner: "O2", type: "T2")
+            }
+        ''')
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema1)
+        operations.each { println it }
+
+        then:
+        operations.size() == 0
     }
 }
 

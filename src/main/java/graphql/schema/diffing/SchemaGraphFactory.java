@@ -343,7 +343,6 @@ public class SchemaGraphFactory {
             Vertex newInputField = newInputField(inputObjectField, schemaGraph, isIntrospectionNode);
             Edge newEdge = new Edge(inputObjectVertex, newInputField);
             schemaGraph.addEdge(newEdge);
-            cratedAppliedDirectives(inputObjectVertex, inputObjectField.getDirectives(), schemaGraph);
         }
         schemaGraph.addVertex(inputObjectVertex);
         schemaGraph.addType(inputObject.getName(), inputObjectVertex);

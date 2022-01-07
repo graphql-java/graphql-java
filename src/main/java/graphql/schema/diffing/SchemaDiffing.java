@@ -31,6 +31,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -84,14 +85,14 @@ public class SchemaDiffing {
     ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
     ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
-    public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2, boolean oldVersion) throws InterruptedException {
+    public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2, boolean oldVersion) throws Exception {
         sourceGraph = new SchemaGraphFactory("source-").createGraph(graphQLSchema1);
         targetGraph = new SchemaGraphFactory("target-").createGraph(graphQLSchema2);
         return diffImpl(sourceGraph, targetGraph);
 
     }
 
-    public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws InterruptedException {
+    public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
         return diffGraphQLSchema(graphQLSchema1, graphQLSchema2, false);
     }
 
@@ -138,7 +139,7 @@ public class SchemaDiffing {
         }
     }
 
-    List<EditOperation> diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) throws InterruptedException {
+    List<EditOperation> diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) throws Exception {
         int sizeDiff = sourceGraph.size() - targetGraph.size();
         System.out.println("graph diff: " + sizeDiff);
         Map<String, Set<Vertex>> isolatedSourceVertices = new LinkedHashMap<>();
@@ -206,7 +207,7 @@ public class SchemaDiffing {
             } else {
                 Collection<Vertex> sourceVertices = sourceGraph.getVerticesByType(type).stream().filter(vertex -> !vertex.isBuiltInType()).collect(Collectors.toList());
                 Collection<Vertex> targetVertices = targetGraph.getVerticesByType(type).stream().filter(vertex -> !vertex.isBuiltInType()).collect(Collectors.toList());
-                System.out.println("type: " + type + " source size: " + sourceVertices.size());
+//                System.out.println("type: " + type + " source size: " + sourceVertices.size());
                 if (sourceVertices.size() > targetVertices.size()) {
                     isolatedTargetVertices.put(type, Vertex.newArtificialNodes(sourceVertices.size() - targetVertices.size(), "target-artificial-" + type + "-"));
                 } else if (targetVertices.size() > sourceVertices.size()) {
@@ -418,7 +419,7 @@ public class SchemaDiffing {
                                   SchemaGraph targetGraph,
                                   IsolatedInfo isolatedInfo
 
-    ) throws InterruptedException {
+    ) throws Exception {
         Mapping partialMapping = parentEntry.partialMapping;
         assertTrue(level - 1 == partialMapping.size());
         List<Vertex> sourceList = sourceGraph.getVertices();
@@ -451,13 +452,16 @@ public class SchemaDiffing {
         for (int i = level - 1; i < sourceList.size(); i++) {
             Vertex v = sourceList.get(i);
             int finalI = i;
-            callables.add(() -> {
+            Callable<Void> callable = () -> {
                 try {
                     int j = 0;
                     for (Vertex u : availableTargetVertices) {
                         double cost = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet, isolatedInfo);
                         costMatrix[finalI - level + 1].set(j, cost);
                         costMatrixCopy[finalI - level + 1].set(j, cost);
+//                        if (v.getType().equals("AppliedArgument") && ((String) v.get("value")).contains("jira-software") && cost != Integer.MAX_VALUE) {
+//                            System.out.println((finalI - level + 1) + ", " + j + ": cost: " + cost + " for " + v + " to " + u);
+//                        }
                         j++;
                     }
                     return null;
@@ -465,18 +469,21 @@ public class SchemaDiffing {
                     t.printStackTrace();
                     return null;
                 }
-            });
+            };
+            callables.add(callable);
+//            callable.call();
         }
         forkJoinPool.invokeAll(callables);
         forkJoinPool.awaitTermination(10000, TimeUnit.DAYS);
 
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrix);
-        int editorialCostForMapping = editorialCostForMapping(partialMapping, sourceGraph, targetGraph, new ArrayList<>());
 
         int[] assignments = hungarianAlgorithm.execute();
+        int editorialCostForMapping = editorialCostForMapping(partialMapping, sourceGraph, targetGraph, new ArrayList<>());
+        double costMatrixSum = getCostMatrixSum(costMatrixCopy, assignments);
 
-        double costMatrixSumSibling = getCostMatrixSum(costMatrixCopy, assignments);
-        double lowerBoundForPartialMappingSibling = editorialCostForMapping + costMatrixSumSibling;
+
+        double lowerBoundForPartialMappingSibling = editorialCostForMapping + costMatrixSum;
         int v_i_target_IndexSibling = assignments[0];
         Vertex bestExtensionTargetVertexSibling = availableTargetVertices.get(v_i_target_IndexSibling);
         Mapping newMappingSibling = partialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
@@ -613,24 +620,24 @@ public class SchemaDiffing {
         return costMatrixSum;
     }
 
-    private Vertex findMatchingVertex(Vertex v_i, List<Vertex> availableTargetVertices, SchemaGraph
-            sourceGraph, SchemaGraph targetGraph) {
-        String viType = v_i.getType();
-        HashMultiset<String> viAdjacentEdges = HashMultiset.create(sourceGraph.getAdjacentEdges(v_i).stream().map(edge -> edge.getLabel()).collect(Collectors.toList()));
-        if (viType.equals(SchemaGraphFactory.OBJECT) || viType.equals(INTERFACE) || viType.equals(UNION) || viType.equals(INPUT_OBJECT)) {
-            for (Vertex targetVertex : availableTargetVertices) {
-                if (v_i.isEqualTo(targetVertex)) {
-                    // check if edges are the same
-                    HashMultiset<String> adjacentEdges = HashMultiset.create(targetGraph.getAdjacentEdges(targetVertex).stream().map(Edge::getLabel).collect(Collectors.toList()));
-                    if (viAdjacentEdges.equals(adjacentEdges)) {
-                        return targetVertex;
-                    }
-                }
-
-            }
-        }
-        return null;
-    }
+//    private Vertex findMatchingVertex(Vertex v_i, List<Vertex> availableTargetVertices, SchemaGraph
+//            sourceGraph, SchemaGraph targetGraph) {
+//        String viType = v_i.getType();
+//        HashMultiset<String> viAdjacentEdges = HashMultiset.create(sourceGraph.getAdjacentEdges(v_i).stream().map(edge -> edge.getLabel()).collect(Collectors.toList()));
+//        if (viType.equals(SchemaGraphFactory.OBJECT) || viType.equals(INTERFACE) || viType.equals(UNION) || viType.equals(INPUT_OBJECT)) {
+//            for (Vertex targetVertex : availableTargetVertices) {
+//                if (v_i.isEqualTo(targetVertex)) {
+//                    // check if edges are the same
+//                    HashMultiset<String> adjacentEdges = HashMultiset.create(targetGraph.getAdjacentEdges(targetVertex).stream().map(Edge::getLabel).collect(Collectors.toList()));
+//                    if (viAdjacentEdges.equals(adjacentEdges)) {
+//                        return targetVertex;
+//                    }
+//                }
+//
+//            }
+//        }
+//        return null;
+//    }
 
     private List<String> getDebugMap(Mapping mapping) {
         List<String> result = new ArrayList<>();
@@ -1145,7 +1152,10 @@ public class SchemaDiffing {
 
         Multiset<String> intersection = Multisets.intersection(multisetLabelsV, multisetLabelsU);
         int multiSetEditDistance = Math.max(multisetLabelsV.size(), multisetLabelsU.size()) - intersection.size();
-        return (equalNodes ? 0 : 1) + multiSetEditDistance / 2.0 + anchoredVerticesCost;
+        double result = (equalNodes ? 0 : 1) + multiSetEditDistance / 2.0 + anchoredVerticesCost;
+        return result;
     }
+
+    AtomicInteger zeroResult = new AtomicInteger();
 
 }
