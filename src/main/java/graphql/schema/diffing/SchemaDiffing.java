@@ -140,7 +140,7 @@ public class SchemaDiffing {
     }
 
     List<EditOperation> diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) throws Exception {
-        int sizeDiff = sourceGraph.size() - targetGraph.size();
+        int sizeDiff = targetGraph.size() - sourceGraph.size();
         System.out.println("graph diff: " + sizeDiff);
         Map<String, Set<Vertex>> isolatedSourceVertices = new LinkedHashMap<>();
         Map<String, Set<Vertex>> isolatedTargetVertices = new LinkedHashMap<>();
@@ -252,7 +252,9 @@ public class SchemaDiffing {
         int graphSize = sourceGraph.size();
         System.out.println("graph size: " + graphSize);
 
-        sortSourceGraph(sourceGraph, targetGraph);
+        if (sizeDiff != 0) {
+            sortSourceGraph(sourceGraph, targetGraph);
+        }
 
         AtomicDouble upperBoundCost = new AtomicDouble(Double.MAX_VALUE);
         AtomicReference<Mapping> bestFullMapping = new AtomicReference<>();
