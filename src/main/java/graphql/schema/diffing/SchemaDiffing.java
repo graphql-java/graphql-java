@@ -640,6 +640,7 @@ public class SchemaDiffing {
         Map<String, Set<Vertex>> isolatedTargetVertices = isolatedInfo.isolatedTargetVertices;
         Set<Vertex> isolatedBuiltInSourceVertices = isolatedInfo.isolatedBuiltInSourceVertices;
         Set<Vertex> isolatedBuiltInTargetVertices = isolatedInfo.isolatedBuiltInTargetVertices;
+
         if (v.isArtificialNode()) {
             if (u.isBuiltInType()) {
                 return isolatedBuiltInSourceVertices.contains(v);
@@ -658,17 +659,32 @@ public class SchemaDiffing {
         if (!v.getType().equals(u.getType())) {
             return false;
         }
-        if (isNamedType(v.getType())) {
-            Vertex targetVertex = targetGraph.getType(v.get("name"));
-            if (targetVertex != null && Objects.equals(v.getType(), targetVertex.getType())) {
-                forcedMatchingCache.put(v, targetVertex);
-                return u == targetVertex;
-            }
+        Boolean result = checkNamedTypes(v, u, targetGraph);
+        if (result != null) {
+            return result;
         }
+        result = checkNamedTypes(u, v, sourceGraph);
+        if (result != null) {
+            return result;
+        }
+        result = checkSpecificTypes(v, u, sourceGraph, targetGraph);
+        if (result != null) {
+            return result;
+        }
+        result = checkSpecificTypes(u, v, targetGraph, sourceGraph);
+        if (result != null) {
+            return result;
+        }
+
+        return true;
+    }
+
+    private Boolean checkSpecificTypes(Vertex v, Vertex u, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
         if (DIRECTIVE.equals(v.getType())) {
             Vertex targetVertex = targetGraph.getDirective(v.get("name"));
             if (targetVertex != null) {
                 forcedMatchingCache.put(v, targetVertex);
+                forcedMatchingCache.put(targetVertex, v);
                 return u == targetVertex;
             }
         }
@@ -681,6 +697,7 @@ public class SchemaDiffing {
                     if (matchingTargetField != null) {
                         Vertex dummyTypeVertex = getDummyTypeVertex(matchingTargetField, targetGraph);
                         forcedMatchingCache.put(v, dummyTypeVertex);
+                        forcedMatchingCache.put(dummyTypeVertex, v);
                         return u == dummyTypeVertex;
                     }
                 } else if (vertex.getType().equals(INPUT_FIELD)) {
@@ -688,6 +705,7 @@ public class SchemaDiffing {
                     if (matchingTargetInputField != null) {
                         Vertex dummyTypeVertex = getDummyTypeVertex(matchingTargetInputField, targetGraph);
                         forcedMatchingCache.put(v, dummyTypeVertex);
+                        forcedMatchingCache.put(dummyTypeVertex, v);
                         return u == dummyTypeVertex;
                     }
                 }
@@ -697,6 +715,7 @@ public class SchemaDiffing {
             Vertex matchingTargetInputField = findMatchingTargetInputField(v, sourceGraph, targetGraph);
             if (matchingTargetInputField != null) {
                 forcedMatchingCache.put(v, matchingTargetInputField);
+                forcedMatchingCache.put(matchingTargetInputField, v);
                 return u == matchingTargetInputField;
             }
         }
@@ -704,6 +723,7 @@ public class SchemaDiffing {
             Vertex matchingTargetField = findMatchingTargetField(v, sourceGraph, targetGraph);
             if (matchingTargetField != null) {
                 forcedMatchingCache.put(v, matchingTargetField);
+                forcedMatchingCache.put(matchingTargetField, v);
                 return u == matchingTargetField;
             }
         }
@@ -711,12 +731,23 @@ public class SchemaDiffing {
             Vertex matchingTargetEnumValue = findMatchingEnumValue(v, sourceGraph, targetGraph);
             if (matchingTargetEnumValue != null) {
                 forcedMatchingCache.put(v, matchingTargetEnumValue);
+                forcedMatchingCache.put(matchingTargetEnumValue, v);
                 return u == matchingTargetEnumValue;
             }
         }
+        return null;
+    }
 
-        // if it is named type we check if the targetGraph has one with the same name and type force a match
-        return true;
+    private Boolean checkNamedTypes(Vertex v, Vertex u, SchemaGraph targetGraph) {
+        if (isNamedType(v.getType())) {
+            Vertex targetVertex = targetGraph.getType(v.get("name"));
+            if (targetVertex != null && Objects.equals(v.getType(), targetVertex.getType())) {
+                forcedMatchingCache.put(v, targetVertex);
+                forcedMatchingCache.put(targetVertex, v);
+                return u == targetVertex;
+            }
+        }
+        return null;
     }
 
     private Vertex getDummyTypeVertex(Vertex vertex, SchemaGraph schemaGraph) {
@@ -811,13 +842,10 @@ public class SchemaDiffing {
         if (!isMappingPossible(v, u, sourceGraph, targetGraph, partialMappingTargetSet, isolatedInfo)) {
             return Integer.MAX_VALUE;
         }
-//        if (!isMappingPossible(u, v, targetGraph, sourceGraph, partialMappingSourceSet)) {
-//            return Integer.MAX_VALUE;
-//        }
         boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());
+
         // inner edge labels of u (resp. v) in regards to the partial mapping: all labels of edges
         // which are adjacent of u (resp. v) which are inner edges
-
         List<Edge> adjacentEdgesV = sourceGraph.getAdjacentEdges(v);
         Multiset<String> multisetLabelsV = HashMultiset.create();
 
