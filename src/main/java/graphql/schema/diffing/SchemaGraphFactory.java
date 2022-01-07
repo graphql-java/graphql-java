@@ -1,6 +1,8 @@
 package graphql.schema.diffing;
 
+import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
+import graphql.language.AstPrinter;
 import graphql.schema.*;
 import graphql.schema.idl.DirectiveInfo;
 import graphql.schema.idl.ScalarInfo;
@@ -135,8 +137,8 @@ public class SchemaGraphFactory {
     }
 
     private void handleAppliedDirective(Vertex appliedDirectiveVertex, SchemaGraph schemaGraph, GraphQLSchema graphQLSchema) {
-        Vertex directiveVertex = schemaGraph.getDirective(appliedDirectiveVertex.get("name"));
-        schemaGraph.addEdge(new Edge(appliedDirectiveVertex, directiveVertex));
+//        Vertex directiveVertex = schemaGraph.getDirective(appliedDirectiveVertex.get("name"));
+//        schemaGraph.addEdge(new Edge(appliedDirectiveVertex, directiveVertex));
     }
 
     private void handleInputObject(Vertex inputObject, SchemaGraph schemaGraph, GraphQLSchema graphQLSchema) {
@@ -268,6 +270,9 @@ public class SchemaGraphFactory {
         vertex.setBuiltInType(isIntrospectionNode);
         vertex.add("name", graphQLArgument.getName());
         vertex.add("description", desc(graphQLArgument.getDescription()));
+        if (graphQLArgument.hasSetDefaultValue()) {
+            vertex.add("defaultValue", AstPrinter.printAst(ValuesResolver.valueToLiteral(graphQLArgument.getArgumentDefaultValue(), graphQLArgument.getType())));
+        }
         cratedAppliedDirectives(vertex, graphQLArgument.getDirectives(), schemaGraph);
         return vertex;
     }
@@ -353,8 +358,11 @@ public class SchemaGraphFactory {
             for (GraphQLArgument appliedArgument : appliedDirective.getArguments()) {
                 Vertex appliedArgumentVertex = new Vertex(APPLIED_ARGUMENT, debugPrefix + String.valueOf(counter++));
                 appliedArgumentVertex.add("name", appliedArgument.getName());
-                appliedArgumentVertex.add("value", appliedArgument.getArgumentValue());
-                schemaGraph.addEdge(new Edge(appliedArgumentVertex, appliedArgumentVertex));
+                if (appliedArgument.hasSetValue()) {
+                    appliedArgumentVertex.add("value", AstPrinter.printAst(ValuesResolver.valueToLiteral(appliedArgument.getArgumentValue(), appliedArgument.getType())));
+                }
+                schemaGraph.addVertex(appliedArgumentVertex);
+                schemaGraph.addEdge(new Edge(appliedDirectiveVertex, appliedArgumentVertex));
             }
             schemaGraph.addVertex(appliedDirectiveVertex);
             schemaGraph.addEdge(new Edge(from, appliedDirectiveVertex));
@@ -384,6 +392,9 @@ public class SchemaGraphFactory {
         vertex.setBuiltInType(isIntrospectionNode);
         vertex.add("name", inputField.getName());
         vertex.add("description", desc(inputField.getDescription()));
+        if (inputField.hasSetDefaultValue()) {
+            vertex.add("defaultValue", AstPrinter.printAst(ValuesResolver.valueToLiteral(inputField.getInputFieldDefaultValue(), inputField.getType())));
+        }
         cratedAppliedDirectives(vertex, inputField.getDirectives(), schemaGraph);
         return vertex;
     }

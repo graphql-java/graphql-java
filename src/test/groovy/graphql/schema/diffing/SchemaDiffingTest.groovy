@@ -47,7 +47,7 @@ class SchemaDiffingTest extends Specification {
 
         when:
         def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
-        println diff
+        diff.each { println it }
         then:
         diff.size() == 1
 
@@ -542,9 +542,10 @@ class SchemaDiffingTest extends Specification {
 
         when:
         def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2, false)
+        diff.each {println it}
 
         then:
-        diff.size() == 58
+        diff.size() == 59
 
     }
 
@@ -952,7 +953,7 @@ class SchemaDiffingTest extends Specification {
         def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        operations.size() == 32
+        operations.size() == 33
     }
 
     def "built in directives"() {
@@ -975,9 +976,10 @@ class SchemaDiffingTest extends Specification {
 
         when:
         def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        operations.each { println it }
 
         then:
-        operations.size() == 1
+        operations.size() == 2
 
     }
 }
