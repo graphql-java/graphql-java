@@ -125,16 +125,4 @@ public class Directives {
     private static Description createDescription(String s) {
         return new Description(s, null, false);
     }
-
-
-    private final static Set<String> SPECIFIED_DIRECTIVES = ImmutableSet.of(
-            IncludeDirective.getName(),
-            SkipDirective.getName(),
-            DeprecatedDirective.getName(),
-            SpecifiedByDirective.getName()
-    );
-
-    public static boolean isGraphqlSpecifiedDirective(String directiveName) {
-        return SPECIFIED_DIRECTIVES.contains(directiveName);
-    }
 }

@@ -1,7 +1,6 @@
 package graphql.schema.usage;
 
 import com.google.common.collect.ImmutableMap;
-import graphql.Directives;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.introspection.Introspection;
@@ -11,6 +10,7 @@ import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.idl.DirectiveInfo;
 import graphql.schema.idl.ScalarInfo;
 
 import java.util.HashMap;
@@ -21,129 +21,123 @@ import java.util.Set;
 
 import static java.util.Collections.emptySet;
 
+/**
+ * This class shows schema usage information.  There are two aspects to this.  To be strongly referenced, a schema element
+ * (directive or type) must some how be connected back to the root query, mutation or subscription type.  It's possible to define
+ * types that reference other types but if they do not get used by a field / interface or union that itself leads back to the root
+ * types then it is not considered strongly references.
+ *
+ * Its reference counts however might be non-zero yet not be strongly referenced.  For example given `type A { f : B } type B { f : A }` both types A and B
+ * will have non-zero counts but if no other type points to A or B that leads back to the root types then they are not strongly referenced types.
+ *
+ * Such types could be removed from the schema because there is no way to ever consume these types in a query.  A common use case for this class
+ * is to find the types and directives in a schema that could in theory be removed because they are not useful.
+ */
 @PublicApi
 public class SchemaUsage {
-    private final Builder builder;
+    private final Map<String, Integer> fieldReferenceCounts;
+    private final Map<String, Integer> inputFieldReferenceCounts;
+    private final Map<String, Integer> outputFieldReferenceCounts;
+    private final Map<String, Integer> argReferenceCount;
+    private final Map<String, Integer> interfaceReferenceCount;
+    private final Map<String, Integer> unionReferenceCount;
+    private final Map<String, Integer> directiveReferenceCount;
+    private final Map<String, Set<String>> interfaceImplementors;
+    private final Map<String, Set<String>> elementBackReferences;
 
-    SchemaUsage(Builder builder) {
-        this.builder = builder;
+    private SchemaUsage(Builder builder) {
+        this.fieldReferenceCounts = ImmutableMap.copyOf(builder.fieldReferenceCounts);
+        this.inputFieldReferenceCounts = ImmutableMap.copyOf(builder.inputFieldReferenceCounts);
+        this.outputFieldReferenceCounts = ImmutableMap.copyOf(builder.outputFieldReferenceCounts);
+        this.argReferenceCount = ImmutableMap.copyOf(builder.argReferenceCount);
+        this.interfaceReferenceCount = ImmutableMap.copyOf(builder.interfaceReferenceCount);
+        this.unionReferenceCount = ImmutableMap.copyOf(builder.unionReferenceCount);
+        this.directiveReferenceCount = ImmutableMap.copyOf(builder.directiveReferenceCount);
+        this.interfaceImplementors = ImmutableMap.copyOf(builder.interfaceImplementors);
+        this.elementBackReferences = ImmutableMap.copyOf(builder.elementBackReferences);
     }
 
     /**
      * This shows how many times a type is referenced by either an input or output field.
-     * <p>
-     * Note if the count is greater than zero it could still not be a referenced
-     * type because of it may be part of the reference chain that does not lead back
-     * to the root query / mutation or subscription type.
-     * </p>
      *
      * @return a map of type name to field reference counts
      */
     public Map<String, Integer> getFieldReferenceCounts() {
-        return ImmutableMap.copyOf(builder.fieldReferenceCounts);
+        return fieldReferenceCounts;
     }
 
     /**
      * This shows how many times a type is referenced by an output field.
-     * <p>
-     * Note if the count is greater than zero it could still not be a referenced
-     * type because of it may be part of the reference chain that does not lead back
-     * to the root query / mutation or subscription type.
-     * </p>
      *
      * @return a map of type name to output field reference counts
      */
     public Map<String, Integer> getOutputFieldReferenceCounts() {
-        return ImmutableMap.copyOf(builder.outputFieldReferenceCounts);
+        return outputFieldReferenceCounts;
     }
 
     /**
      * This shows how many times a type is referenced by an input field.
-     * <p>
-     * Note if the count is greater than zero it could still not be a referenced
-     * type because of it may be part of the reference chain that does not lead back
-     * to the root query / mutation or subscription type.
-     * </p>
      *
      * @return a map of type name to input field reference counts
      */
     public Map<String, Integer> getInputFieldReferenceCounts() {
-        return ImmutableMap.copyOf(builder.inputFieldReferenceCounts);
+        return inputFieldReferenceCounts;
     }
 
     /**
      * This shows how many times a type is referenced by an argument.
-     * <p>
-     * Note if the count is greater than zero it could still not be a referenced
-     * type because of it may be part of the reference chain that does not lead back
-     * to the root query / mutation or subscription type.
-     * </p>
      *
      * @return a map of type name to argument reference counts
      */
     public Map<String, Integer> getArgumentReferenceCounts() {
-        return ImmutableMap.copyOf(builder.argReferenceCount);
+        return argReferenceCount;
     }
 
     /**
      * This shows how many times an interface type is referenced as a member in some other
      * object or interface type.
-     * <p>
-     * Note if the count is greater than zero it could still not be a referenced
-     * type because of it may be part of the reference chain that does not lead back
-     * to the root query / mutation or subscription type.
-     * </p>
      *
      * @return a map of interface type name to object or interface type reference counts
      */
     public Map<String, Integer> getInterfaceReferenceCounts() {
-        return ImmutableMap.copyOf(builder.interfaceReferenceCount);
+        return interfaceReferenceCount;
     }
 
     /**
      * This shows how many times an object type is referenced as a member in some other
      * union type.
-     * <p>
-     * Note if the count is greater than zero it could still not be a referenced
-     * type because of it may be part of the reference chain that does not lead back
-     * to the root query / mutation or subscription type.
-     * </p>
      *
      * @return a map of object type name to union membership reference counts
      */
     public Map<String, Integer> getUnionReferenceCounts() {
-        return ImmutableMap.copyOf(builder.unionReferenceCount);
+        return unionReferenceCount;
     }
 
     /**
      * This shows how many times a directive is applied on some other schema element.
-     * <p>
-     * Note if the count is greater than zero it could still not be a referenced
-     * directive because of it may be part of the reference chain that does not lead back
-     * to the root query / mutation or subscription type.
-     * </p>
      *
      * @return a map of directive name to applied directive counts
      */
     public Map<String, Integer> getDirectiveReferenceCounts() {
-        return ImmutableMap.copyOf(builder.directiveReferenceCount);
+        return directiveReferenceCount;
     }
 
     /**
-     * Returns true if the named element is reference somewhere in the schema back to the root types such as the schema
+     * Returns true if the named element is strongly reference somewhere in the schema back to the root types such as the schema
      * query, mutation or subscription types.
      *
      * Graphql specified scalar types, introspection types and directives are always counted as referenced, even if
      * not used explicitly.
      *
-     * Directives that are defined but never applied on any schema elements will nor report as referenced.
+     * Directives that are defined but never applied on any schema elements will not report as referenced.
+     *
      *
      * @param schema      the schema that contains the name type
      * @param elementName the element name to check
      *
      * @return true if the element could be referenced
      */
-    public boolean isReferenced(GraphQLSchema schema, String elementName) {
+    public boolean isStronglyReferenced(GraphQLSchema schema, String elementName) {
         return isReferencedImpl(schema, elementName, new HashSet<>(), new HashSet<>());
     }
 
@@ -160,7 +154,7 @@ public class SchemaUsage {
         List<GraphQLDirective> directives = schema.getDirectives(elementName);
         if (!directives.isEmpty()) {
             String directiveName = directives.get(0).getName();
-            if (Directives.isGraphqlSpecifiedDirective(directiveName)) {
+            if (DirectiveInfo.isGraphqlSpecifiedDirective(directiveName)) {
                 return true;
             }
             if (isNamedElementReferenced(schema, directiveName, missCache, pathSoFar)) {
@@ -194,7 +188,7 @@ public class SchemaUsage {
         }
 
         if (type instanceof GraphQLInterfaceType) {
-            Set<String> implementors = builder.interfaceImplementors.getOrDefault(type.getName(), emptySet());
+            Set<String> implementors = interfaceImplementors.getOrDefault(type.getName(), emptySet());
             for (String implementor : implementors) {
                 if (isReferencedImpl(schema, implementor, missCache, pathSoFar)) {
                     return true;
@@ -204,7 +198,7 @@ public class SchemaUsage {
         if (type instanceof GraphQLObjectType) {
             List<GraphQLNamedOutputType> interfaces = ((GraphQLObjectType) type).getInterfaces();
             for (GraphQLNamedOutputType memberInterface : interfaces) {
-                Set<String> implementors = builder.interfaceImplementors.getOrDefault(memberInterface.getName(), emptySet());
+                Set<String> implementors = interfaceImplementors.getOrDefault(memberInterface.getName(), emptySet());
                 for (String implementor : implementors) {
                     if (isReferencedImpl(schema, implementor, missCache, pathSoFar)) {
                         return true;
@@ -216,7 +210,7 @@ public class SchemaUsage {
     }
 
     private boolean isNamedElementReferenced(GraphQLSchema schema, String elementName, Set<String> missCache, Set<String> pathSoFar) {
-        Set<String> references = builder.typeBackReferences.getOrDefault(elementName, emptySet());
+        Set<String> references = elementBackReferences.getOrDefault(elementName, emptySet());
         for (String reference : references) {
             if (isReferencedImpl(schema, reference, missCache, pathSoFar)) {
                 return true;
@@ -228,6 +222,7 @@ public class SchemaUsage {
 
     @Internal
     static class Builder {
+        // order of the types (as they are encountered in the schema) does not matter, hence HashMap
         Map<String, Integer> fieldReferenceCounts = new HashMap<>();
         Map<String, Integer> inputFieldReferenceCounts = new HashMap<>();
         Map<String, Integer> outputFieldReferenceCounts = new HashMap<>();
@@ -236,7 +231,7 @@ public class SchemaUsage {
         Map<String, Integer> unionReferenceCount = new HashMap<>();
         Map<String, Integer> directiveReferenceCount = new HashMap<>();
         Map<String, Set<String>> interfaceImplementors = new HashMap<>();
-        Map<String, Set<String>> typeBackReferences = new HashMap<>();
+        Map<String, Set<String>> elementBackReferences = new HashMap<>();
 
         SchemaUsage build() {
             return new SchemaUsage(this);

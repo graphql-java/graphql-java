@@ -53,11 +53,11 @@ public class SchemaUsageSupport {
                 String referencedElementName = referencedElement.getName();
                 if (referencingElement instanceof GraphQLType) {
                     String typeName = (GraphQLTypeUtil.unwrapAll((GraphQLType) referencingElement)).getName();
-                    builder.typeBackReferences.computeIfAbsent(referencedElementName, k -> new HashSet<>()).add(typeName);
+                    builder.elementBackReferences.computeIfAbsent(referencedElementName, k -> new HashSet<>()).add(typeName);
                 }
                 if (referencingElement instanceof GraphQLDirective) {
                     String typeName = ((GraphQLDirective) referencingElement).getName();
-                    builder.typeBackReferences.computeIfAbsent(referencedElementName, k -> new HashSet<>()).add(typeName);
+                    builder.elementBackReferences.computeIfAbsent(referencedElementName, k -> new HashSet<>()).add(typeName);
                 }
             }
 
@@ -155,7 +155,6 @@ public class SchemaUsageSupport {
 
         };
         new SchemaTraverser().depthFirstFullSchema(visitor, schema);
-
         return builder.build();
     }
 

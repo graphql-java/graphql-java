@@ -144,43 +144,43 @@ class SchemaUsageSupportTest extends Specification {
         when:
         def schemaUsage = SchemaUsageSupport.getSchemaUsage(schema)
         then:
-        schemaUsage.isReferenced(schema, "Ref1")
-        schemaUsage.isReferenced(schema, "Ref2")
-        schemaUsage.isReferenced(schema, "IRef1")
-        schemaUsage.isReferenced(schema, "IRef2")
-        schemaUsage.isReferenced(schema, "Floating1")
-        schemaUsage.isReferenced(schema, "Floating2")
-        schemaUsage.isReferenced(schema, "Floating3")
+        schemaUsage.isStronglyReferenced(schema, "Ref1")
+        schemaUsage.isStronglyReferenced(schema, "Ref2")
+        schemaUsage.isStronglyReferenced(schema, "IRef1")
+        schemaUsage.isStronglyReferenced(schema, "IRef2")
+        schemaUsage.isStronglyReferenced(schema, "Floating1")
+        schemaUsage.isStronglyReferenced(schema, "Floating2")
+        schemaUsage.isStronglyReferenced(schema, "Floating3")
 
-        schemaUsage.isReferenced(schema, "RefUnion1")
+        schemaUsage.isStronglyReferenced(schema, "RefUnion1")
 
-        schemaUsage.isReferenced(schema, "RefInput1")
-        schemaUsage.isReferenced(schema, "RefInput2")
-        schemaUsage.isReferenced(schema, "RefInput3")
-        schemaUsage.isReferenced(schema, "RefInput4")
+        schemaUsage.isStronglyReferenced(schema, "RefInput1")
+        schemaUsage.isStronglyReferenced(schema, "RefInput2")
+        schemaUsage.isStronglyReferenced(schema, "RefInput3")
+        schemaUsage.isStronglyReferenced(schema, "RefInput4")
 
-        schemaUsage.isReferenced(schema, "ID")
-        schemaUsage.isReferenced(schema, "String")
-        schemaUsage.isReferenced(schema, "Int")
-        schemaUsage.isReferenced(schema, "__Type")
-        schemaUsage.isReferenced(schema, "__Schema")
+        schemaUsage.isStronglyReferenced(schema, "ID")
+        schemaUsage.isStronglyReferenced(schema, "String")
+        schemaUsage.isStronglyReferenced(schema, "Int")
+        schemaUsage.isStronglyReferenced(schema, "__Type")
+        schemaUsage.isStronglyReferenced(schema, "__Schema")
 
-        schemaUsage.isReferenced(schema, "RefDirectiveObjectType")
-        schemaUsage.isReferenced(schema, "RefDirectiveInputType")
-        schemaUsage.isReferenced(schema, "RefInputTypeDirective")
-        schemaUsage.isReferenced(schema, "RefFieldDirective")
-        schemaUsage.isReferenced(schema, "RefArgDirective")
-        schemaUsage.isReferenced(schema, "RefInputFieldDirective")
+        schemaUsage.isStronglyReferenced(schema, "RefDirectiveObjectType")
+        schemaUsage.isStronglyReferenced(schema, "RefDirectiveInputType")
+        schemaUsage.isStronglyReferenced(schema, "RefInputTypeDirective")
+        schemaUsage.isStronglyReferenced(schema, "RefFieldDirective")
+        schemaUsage.isStronglyReferenced(schema, "RefArgDirective")
+        schemaUsage.isStronglyReferenced(schema, "RefInputFieldDirective")
 
 
-        !schemaUsage.isReferenced(schema, "UnRef1")
-        !schemaUsage.isReferenced(schema, "UnIRef1")
-        !schemaUsage.isReferenced(schema, "UnRefEnum1")
-        !schemaUsage.isReferenced(schema, "UnRefInput1")
+        !schemaUsage.isStronglyReferenced(schema, "UnRef1")
+        !schemaUsage.isStronglyReferenced(schema, "UnIRef1")
+        !schemaUsage.isStronglyReferenced(schema, "UnRefEnum1")
+        !schemaUsage.isStronglyReferenced(schema, "UnRefInput1")
 
-        !schemaUsage.isReferenced(schema, "UnRefFieldDirective")
-        !schemaUsage.isReferenced(schema, "UnRefInputTypeDirective")
-        !schemaUsage.isReferenced(schema, "UnRefDirectiveInputType")
+        !schemaUsage.isStronglyReferenced(schema, "UnRefFieldDirective")
+        !schemaUsage.isStronglyReferenced(schema, "UnRefInputTypeDirective")
+        !schemaUsage.isStronglyReferenced(schema, "UnRefDirectiveInputType")
     }
 
     def "can record counts"() {
@@ -216,13 +216,13 @@ class SchemaUsageSupportTest extends Specification {
         def schemaUsage = SchemaUsageSupport.getSchemaUsage(schema)
 
         then:
-        ! schemaUsage.isReferenced(schema, "UnRefHangingType")
-        ! schemaUsage.isReferenced(schema, "UnRefHangingType2")
-        ! schemaUsage.isReferenced(schema, "UnRefHangingType3")
-        ! schemaUsage.isReferenced(schema, "UnRefHangingInputType")
-        ! schemaUsage.isReferenced(schema, "UnRefHangingInputType2")
-        ! schemaUsage.isReferenced(schema, "UnRefHangingInputType3")
-        ! schemaUsage.isReferenced(schema, "UnRefHangingArgDirective")
+        ! schemaUsage.isStronglyReferenced(schema, "UnRefHangingType")
+        ! schemaUsage.isStronglyReferenced(schema, "UnRefHangingType2")
+        ! schemaUsage.isStronglyReferenced(schema, "UnRefHangingType3")
+        ! schemaUsage.isStronglyReferenced(schema, "UnRefHangingInputType")
+        ! schemaUsage.isStronglyReferenced(schema, "UnRefHangingInputType2")
+        ! schemaUsage.isStronglyReferenced(schema, "UnRefHangingInputType3")
+        ! schemaUsage.isStronglyReferenced(schema, "UnRefHangingArgDirective")
 
         schemaUsage.getDirectiveReferenceCounts()["UnRefHangingArgDirective"] == 1
         schemaUsage.getArgumentReferenceCounts()["UnRefHangingInputType"] == 1
