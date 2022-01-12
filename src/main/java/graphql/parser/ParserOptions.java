@@ -1,7 +1,10 @@
 package graphql.parser;
 
-import graphql.Assert;
 import graphql.PublicApi;
+
+import java.util.function.Consumer;
+
+import static graphql.Assert.assertNotNull;
 
 /**
  * Options that control how the {@link Parser} behaves.
@@ -9,9 +12,22 @@ import graphql.PublicApi;
 @PublicApi
 public class ParserOptions {
 
+    /**
+     * An graphql hacking vector is to send nonsensical queries that burn lots of parsing CPU time and burn
+     * memory representing a document that wont ever execute.  To prevent this for most users, graphql-java
+     * set this value to 15000.  ANTLR parsing time is linear to the number of tokens presented.  The more you
+     * allow the longer it takes.
+     *
+     * If you want to allow more, then {@link #setDefaultParserOptions(ParserOptions)} allows you to change this
+     * JVM wide.
+     */
+    public static int MAX_QUERY_TOKENS = 15000;
+
     private static ParserOptions defaultJvmParserOptions = newParserOptions()
             .captureIgnoredChars(false)
             .captureSourceLocation(true)
+            .maxTokens(MAX_QUERY_TOKENS) // to prevent a billion laughs style attacks, we set a default for graphql-java
+
             .build();
 
     /**
@@ -45,15 +61,19 @@ public class ParserOptions {
      * @see graphql.language.SourceLocation
      */
     public static void setDefaultParserOptions(ParserOptions options) {
-        defaultJvmParserOptions = Assert.assertNotNull(options);
+        defaultJvmParserOptions = assertNotNull(options);
     }
 
     private final boolean captureIgnoredChars;
     private final boolean captureSourceLocation;
+    private final int maxTokens;
+    private final ParsingListener parsingListener;
 
     private ParserOptions(Builder builder) {
         this.captureIgnoredChars = builder.captureIgnoredChars;
         this.captureSourceLocation = builder.captureSourceLocation;
+        this.maxTokens = builder.maxTokens;
+        this.parsingListener = builder.parsingListener;
     }
 
     /**
@@ -79,6 +99,27 @@ public class ParserOptions {
         return captureSourceLocation;
     }
 
+    /**
+     * A graphql hacking vector is to send nonsensical queries that burn lots of parsing CPU time and burn
+     * memory representing a document that won't ever execute.  To prevent this you can set a maximum number of parse
+     * tokens that will be accepted before an exception is thrown and the parsing is stopped.
+     *
+     * @return the maximum number of raw tokens the parser will accept, after which an exception will be thrown.
+     */
+    public int getMaxTokens() {
+        return maxTokens;
+    }
+
+    public ParsingListener getParsingListener() {
+        return parsingListener;
+    }
+
+    public ParserOptions transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
     public static Builder newParserOptions() {
         return new Builder();
     }
@@ -87,6 +128,18 @@ public class ParserOptions {
 
         private boolean captureIgnoredChars = false;
         private boolean captureSourceLocation = true;
+        private int maxTokens = MAX_QUERY_TOKENS;
+        private ParsingListener parsingListener = ParsingListener.NOOP;
+
+        Builder() {
+        }
+
+        Builder(ParserOptions parserOptions) {
+            this.captureIgnoredChars = parserOptions.captureIgnoredChars;
+            this.captureSourceLocation = parserOptions.captureSourceLocation;
+            this.maxTokens = parserOptions.maxTokens;
+            this.parsingListener = parserOptions.parsingListener;
+        }
 
         public Builder captureIgnoredChars(boolean captureIgnoredChars) {
             this.captureIgnoredChars = captureIgnoredChars;
@@ -95,6 +148,16 @@ public class ParserOptions {
 
         public Builder captureSourceLocation(boolean captureSourceLocation) {
             this.captureSourceLocation = captureSourceLocation;
+            return this;
+        }
+
+        public Builder maxTokens(int maxTokens) {
+            this.maxTokens = maxTokens;
+            return this;
+        }
+
+        public Builder parsingListener(ParsingListener parsingListener) {
+            this.parsingListener = assertNotNull(parsingListener);
             return this;
         }
 

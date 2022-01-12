@@ -14,6 +14,7 @@ import spock.lang.Specification
 
 import static graphql.Assert.assertShouldNeverHappen
 import static graphql.schema.GraphQLTypeUtil.unwrapAll
+import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class TypeResolverExecutionTest extends Specification {
 
@@ -479,5 +480,106 @@ class TypeResolverExecutionTest extends Specification {
         then:
         res.data == null
         res.errors[0] instanceof UnresolvedTypeError
+    }
+
+    def "can get access to field selection set during type resolution"() {
+        def sdl = '''
+
+        type Query {
+            foo : BarInterface
+        }
+        
+        interface BarInterface {
+             name : String
+        }
+         
+        type NewBar implements BarInterface {
+            name : String
+            newBarOnlyField : String
+        }
+
+        type OldBar implements BarInterface {
+            name : String
+            oldBarOnlyField : String
+        }
+        '''
+
+        TypeResolver typeResolver = new TypeResolver() {
+            @Override
+            GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                boolean askedForOldBar = !env.getSelectionSet().getFields("oldBarOnlyField").isEmpty()
+                if (askedForOldBar) {
+                    return env.getSchema().getObjectType("OldBar")
+                }
+                return env.getSchema().getObjectType("NewBar")
+            }
+        }
+
+
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type(newTypeWiring("Query")
+                        .dataFetcher("foo", { env -> [name: "NAME"] }))
+                .type(newTypeWiring("BarInterface")
+                        .typeResolver(typeResolver))
+                .build()
+
+
+        def graphQL = TestUtil.graphQL(sdl, wiring).build()
+
+        when:
+        def query = '''
+        query {           
+            foo {
+                __typename
+                ...OldBarFragment
+                ...NewBarFragment
+            }
+        }
+
+        fragment OldBarFragment on OldBar {
+          name
+          oldBarOnlyField
+        }
+        
+        fragment NewBarFragment on NewBar {
+          name
+          newBarOnlyField
+        }
+        '''
+
+        def er = graphQL.execute(query)
+
+        then:
+        er.errors.isEmpty()
+        er.data == ["foo": [
+                "__typename"     : "OldBar",
+                "name"           : "NAME",
+                "oldBarOnlyField": null,
+        ]]
+
+
+        when:
+        query = '''
+        query {           
+            foo {
+                __typename
+                ...NewBarFragment
+            }
+        }
+
+        fragment NewBarFragment on NewBar {
+          name
+        }
+        '''
+
+        er = graphQL.execute(query)
+
+        then:
+        er.errors.isEmpty()
+        er.data == ["foo": [
+                "__typename": "NewBar",
+                "name"      : "NAME",
+        ]]
+
     }
 }

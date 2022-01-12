@@ -24,6 +24,8 @@ import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLSchemaElement
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLUnionType
+import graphql.schema.GraphqlTypeComparatorRegistry
+import graphql.schema.GraphqlTypeComparators
 import graphql.schema.TypeResolver
 import spock.lang.Specification
 
@@ -892,53 +894,7 @@ type Query {
 
         then:
         // args and directives are sorted like the rest of the schema printer
-        result == '''"Directs the executor to include this field or fragment only when the `if` argument is true"
-directive @include(
-    "Included when true."
-    if: Boolean!
-  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-
-"Directs the executor to skip this field or fragment when the `if`'argument is true."
-directive @skip(
-    "Skipped when true."
-    if: Boolean!
-  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-
-directive @interfaceFieldDirective on FIELD_DEFINITION
-
-directive @unionTypeDirective on UNION
-
-directive @query1 repeatable on OBJECT
-
-directive @query2(arg1: String) on OBJECT
-
-directive @fieldDirective1 on FIELD_DEFINITION
-
-directive @fieldDirective2(argBool: Boolean, argFloat: Float, argInt: Int, argStr: String) on FIELD_DEFINITION
-
-directive @argDirective on ARGUMENT_DEFINITION
-
-directive @interfaceImplementingTypeDirective on OBJECT
-
-directive @enumTypeDirective on ENUM
-
-directive @single on OBJECT
-
-directive @singleField on FIELD_DEFINITION
-
-directive @interfaceImplementingFieldDirective on FIELD_DEFINITION
-
-directive @enumValueDirective on ENUM_VALUE
-
-directive @inputTypeDirective on INPUT_OBJECT
-
-directive @inputFieldDirective on INPUT_FIELD_DEFINITION
-
-directive @interfaceTypeDirective on INTERFACE
-
-directive @scalarDirective on SCALAR
-
-directive @repeatableDirective repeatable on SCALAR
+        result == '''directive @argDirective on ARGUMENT_DEFINITION
 
 "Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
@@ -946,11 +902,57 @@ directive @deprecated(
     reason: String = "No longer supported"
   ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
+directive @enumTypeDirective on ENUM
+
+directive @enumValueDirective on ENUM_VALUE
+
+directive @fieldDirective1 on FIELD_DEFINITION
+
+directive @fieldDirective2(argBool: Boolean, argFloat: Float, argInt: Int, argStr: String) on FIELD_DEFINITION
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @inputFieldDirective on INPUT_FIELD_DEFINITION
+
+directive @inputTypeDirective on INPUT_OBJECT
+
+directive @interfaceFieldDirective on FIELD_DEFINITION
+
+directive @interfaceImplementingFieldDirective on FIELD_DEFINITION
+
+directive @interfaceImplementingTypeDirective on OBJECT
+
+directive @interfaceTypeDirective on INTERFACE
+
+directive @query1 repeatable on OBJECT
+
+directive @query2(arg1: String) on OBJECT
+
+directive @repeatableDirective repeatable on SCALAR
+
+directive @scalarDirective on SCALAR
+
+directive @single on OBJECT
+
+directive @singleField on FIELD_DEFINITION
+
+"Directs the executor to skip this field or fragment when the `if`'argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(
     "The URL that specifies the behaviour of this scalar."
     url: String!
   ) on SCALAR
+
+directive @unionTypeDirective on UNION
 
 interface SomeInterface @interfaceTypeDirective {
   fieldA: String @interfaceFieldDirective
@@ -1067,7 +1069,13 @@ input SomeInput {
 
         then:
         // args and directives are sorted like the rest of the schema printer
-        result == '''"Directs the executor to include this field or fragment only when the `if` argument is true"
+        result == '''"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
 directive @include(
     "Included when true."
     if: Boolean!
@@ -1078,12 +1086,6 @@ directive @skip(
     "Skipped when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-
-"Marks the field, argument, input field or enum value as deprecated"
-directive @deprecated(
-    "The reason for the deprecation"
-    reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(
@@ -1160,27 +1162,27 @@ type Query {
         def resultWithDirectives = new SchemaPrinter(defaultOptions().includeDirectives(true)).print(schema)
 
         then:
-        resultWithDirectives == '''"Directs the executor to include this field or fragment only when the `if` argument is true"
+        resultWithDirectives == '''"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+directive @example on FIELD_DEFINITION
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
 directive @include(
     "Included when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 
 "Directs the executor to skip this field or fragment when the `if`'argument is true."
 directive @skip(
     "Skipped when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-
-directive @example on FIELD_DEFINITION
-
-directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
-
-"Marks the field, argument, input field or enum value as deprecated"
-directive @deprecated(
-    "The reason for the deprecation"
-    reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(
@@ -1225,27 +1227,27 @@ type Query {
         def resultWithDirectiveDefinitions = new SchemaPrinter(defaultOptions().includeDirectiveDefinitions(true)).print(schema)
 
         then:
-        resultWithDirectiveDefinitions == '''"Directs the executor to include this field or fragment only when the `if` argument is true"
+        resultWithDirectiveDefinitions == '''"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+directive @example on FIELD_DEFINITION
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
 directive @include(
     "Included when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 
 "Directs the executor to skip this field or fragment when the `if`'argument is true."
 directive @skip(
     "Skipped when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-
-directive @example on FIELD_DEFINITION
-
-directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
-
-"Marks the field, argument, input field or enum value as deprecated"
-directive @deprecated(
-    "The reason for the deprecation"
-    reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(
@@ -1359,7 +1361,15 @@ type Query {
         def result = new SchemaPrinter(printOptions).print(schema)
 
         then:
-        result == '''"Directs the executor to include this field or fragment only when the `if` argument is true"
+        result == '''"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+directive @directive1 on SCALAR
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
 directive @include(
     "Included when true."
     if: Boolean!
@@ -1370,14 +1380,6 @@ directive @skip(
     "Skipped when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-
-directive @directive1 on SCALAR
-
-"Marks the field, argument, input field or enum value as deprecated"
-directive @deprecated(
-    "The reason for the deprecation"
-    reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(
@@ -1862,6 +1864,14 @@ type PrintMeType {
   query: MyQuery
 }
 
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+directive @foo on SCHEMA
+
 "Directs the executor to include this field or fragment only when the `if` argument is true"
 directive @include(
     "Included when true."
@@ -1873,14 +1883,6 @@ directive @skip(
     "Skipped when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-
-directive @foo on SCHEMA
-
-"Marks the field, argument, input field or enum value as deprecated"
-directive @deprecated(
-    "The reason for the deprecation"
-    reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(
@@ -1907,6 +1909,21 @@ type MyQuery {
 
         then:
         result == """directive @foo on FIELD_DEFINITION"""
+    }
+
+    def "directive with leading pipe gets discarded"() {
+        def sdl = """
+            directive @foo on | OBJECT | FIELD_DEFINITION
+            type Query { anything: String @foo }
+        """
+        def schema = TestUtil.schema(sdl)
+        def directive = schema.getDirective("foo");
+
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeDirectives(true)).print(directive)
+
+        then:
+        result == """directive @foo on OBJECT | FIELD_DEFINITION"""
     }
 
     def "description printing escapes triple quotes"() {
@@ -1997,6 +2014,119 @@ type Query {
   f: String @foo(arg : {a : "A", b : "B"})
 }
 
+'''
+    }
+
+    def "can specify a new ordering for the schema printer"() {
+
+        def sdl = """
+            type Query { id( b:ID a:ID c:ID) : ID }
+            
+            type XQuery { id: ID }
+            type YQuery { id: ID }
+            type ZQuery { id: ID }
+            
+            interface XInterface { id: ID }
+            interface ZInterface { id: ID }
+            interface YInterface { id: ID }
+            
+            
+            input XInput { x : Int }
+            input ZInput { x : Int }
+            input YInput { x : Int }
+            
+            scalar XScalar
+            scalar ZScalar
+            scalar YScalar
+            
+            union XUnion = Query | XQuery
+            union ZUnion = Query | XQuery
+            union YUnion = Query | XQuery
+        """
+        def schema = TestUtil.schema(sdl)
+
+        // by name descending
+        GraphqlTypeComparatorRegistry comparatorRegistry = { env -> return GraphqlTypeComparators.byNameAsc().reversed() }
+        def options = defaultOptions().includeDirectives(true).setComparators(comparatorRegistry)
+        when:
+        def result = new SchemaPrinter(options).print(schema)
+
+        then:
+        result == '''"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
+"Directs the executor to skip this field or fragment when the `if`'argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+union ZUnion = XQuery | Query
+
+scalar ZScalar
+
+type ZQuery {
+  id: ID
+}
+
+interface ZInterface {
+  id: ID
+}
+
+input ZInput {
+  x: Int
+}
+
+union YUnion = XQuery | Query
+
+scalar YScalar
+
+type YQuery {
+  id: ID
+}
+
+interface YInterface {
+  id: ID
+}
+
+input YInput {
+  x: Int
+}
+
+union XUnion = XQuery | Query
+
+scalar XScalar
+
+type XQuery {
+  id: ID
+}
+
+interface XInterface {
+  id: ID
+}
+
+input XInput {
+  x: Int
+}
+
+type Query {
+  id(c: ID, b: ID, a: ID): ID
+}
 '''
 
     }

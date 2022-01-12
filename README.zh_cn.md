@@ -12,7 +12,7 @@ This is a [GraphQL](https://github.com/facebook/graphql) Java implementation.
 
 ## 文档
 
-关于 `graphql-java` 的详细使用说明，请阅读: http://graphql-java.readthedocs.io/
+关于 `graphql-java` 的详细使用说明，请阅读: https://www.graphql-java.com/documentation/getting-started
 
 这也是个很好的教程 : https://www.howtographql.com/graphql-java/0-introduction/
 

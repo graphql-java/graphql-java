@@ -2,7 +2,6 @@ package benchmark;
 
 import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
-import org.jetbrains.annotations.NotNull;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Measurement;
@@ -62,7 +61,6 @@ public class TypeDefinitionParserVersusSerializeBenchMark {
         });
     }
 
-    @NotNull
     private static ByteArrayOutputStream serialisedRegistryStream(TypeDefinitionRegistry registryOut) {
         return asRTE(() -> {
             ByteArrayOutputStream baOS = new ByteArrayOutputStream();

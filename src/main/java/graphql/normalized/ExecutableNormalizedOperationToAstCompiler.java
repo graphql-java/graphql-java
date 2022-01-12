@@ -16,6 +16,7 @@ import graphql.language.Selection;
 import graphql.language.SelectionSet;
 import graphql.language.TypeName;
 import graphql.language.Value;
+import graphql.schema.GraphQLSchema;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -31,12 +32,11 @@ import static graphql.language.TypeName.newTypeName;
 
 @Internal
 public class ExecutableNormalizedOperationToAstCompiler {
-    public static Document compileToDocument(
-            OperationDefinition.Operation operationKind,
-            String operationName,
-            List<ExecutableNormalizedField> topLevelFields
-    ) {
-        List<Selection<?>> selections = selectionsForNormalizedFields(topLevelFields);
+    public static Document compileToDocument(GraphQLSchema schema,
+                                             OperationDefinition.Operation operationKind,
+                                             String operationName,
+                                             List<ExecutableNormalizedField> topLevelFields) {
+        List<Selection<?>> selections = selectionsForNormalizedFields(schema, topLevelFields);
         SelectionSet selectionSet = new SelectionSet(selections);
 
         return Document.newDocument()
@@ -48,36 +48,44 @@ public class ExecutableNormalizedOperationToAstCompiler {
                 .build();
     }
 
-    private static List<Selection<?>> selectionsForNormalizedFields(List<ExecutableNormalizedField> executableNormalizedFields) {
-        ImmutableList.Builder<Selection<?>> result = ImmutableList.builder();
+    private static List<Selection<?>> selectionsForNormalizedFields(GraphQLSchema schema,
+                                                                    List<ExecutableNormalizedField> executableNormalizedFields) {
+        ImmutableList.Builder<Selection<?>> selections = ImmutableList.builder();
 
-        Map<String, List<Field>> overallGroupedFields = new LinkedHashMap<>();
+        // All conditional fields go here instead of directly to selections so they can be grouped together
+        // in the same inline fragement in the output
+        Map<String, List<Field>> conditionalFieldsByObjectTypeName = new LinkedHashMap<>();
+
         for (ExecutableNormalizedField nf : executableNormalizedFields) {
-            Map<String, List<Field>> groupFieldsForChild = selectionForNormalizedField(nf);
-
-            groupFieldsForChild.forEach((objectTypeName, fields) -> {
-                List<Field> fieldList = overallGroupedFields.computeIfAbsent(objectTypeName, ignored -> new ArrayList<>());
-                fieldList.addAll(fields);
-            });
-
+            Map<String, List<Field>> groupFieldsForChild = selectionForNormalizedField(schema, nf);
+            if (nf.isConditional(schema)) {
+                groupFieldsForChild.forEach((objectTypeName, fields) -> {
+                    List<Field> fieldList = conditionalFieldsByObjectTypeName.computeIfAbsent(objectTypeName, ignored -> new ArrayList<>());
+                    fieldList.addAll(fields);
+                });
+            } else {
+                List<Field> fields = groupFieldsForChild.values().iterator().next();
+                selections.addAll(fields);
+            }
         }
 
-        overallGroupedFields.forEach((objectTypeName, fields) -> {
+        conditionalFieldsByObjectTypeName.forEach((objectTypeName, fields) -> {
             TypeName typeName = newTypeName(objectTypeName).build();
             InlineFragment inlineFragment = newInlineFragment().
                     typeCondition(typeName)
                     .selectionSet(selectionSet(fields))
                     .build();
-            result.add(inlineFragment);
+            selections.add(inlineFragment);
         });
 
-        return result.build();
+        return selections.build();
     }
 
-    private static Map<String, List<Field>> selectionForNormalizedField(ExecutableNormalizedField executableNormalizedField) {
+    private static Map<String, List<Field>> selectionForNormalizedField(GraphQLSchema schema,
+                                                                        ExecutableNormalizedField executableNormalizedField) {
         Map<String, List<Field>> groupedFields = new LinkedHashMap<>();
         for (String objectTypeName : executableNormalizedField.getObjectTypeNames()) {
-            List<Selection<?>> subSelections = selectionsForNormalizedFields(executableNormalizedField.getChildren());
+            List<Selection<?>> subSelections = selectionsForNormalizedFields(schema, executableNormalizedField.getChildren());
             SelectionSet selectionSet = null;
             if (subSelections.size() > 0) {
                 selectionSet = newSelectionSet()

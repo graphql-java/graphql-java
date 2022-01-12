@@ -300,7 +300,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
             this.description = existing.getDescription();
             this.definition = existing.getDefinition();
             this.deprecationReason = existing.deprecationReason;
-            DirectivesUtil.enforceAddAll(this.directives, existing.getDirectives());
+            DirectivesUtil.addAll(this.directives, existing.getDirectives());
         }
 
         @Override
@@ -439,14 +439,14 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
 
         public Builder withDirective(GraphQLDirective directive) {
             assertNotNull(directive, () -> "directive can't be null");
-            DirectivesUtil.enforceAdd(this.directives, directive);
+            DirectivesUtil.add(this.directives, directive);
             return this;
         }
 
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
             assertNotNull(directives, () -> "directive can't be null");
             this.directives.clear();
-            DirectivesUtil.enforceAddAll(this.directives, directives);
+            DirectivesUtil.addAll(this.directives, directives);
             return this;
         }
 

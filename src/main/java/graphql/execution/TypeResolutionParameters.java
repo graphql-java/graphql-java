@@ -1,15 +1,16 @@
 package graphql.execution;
 
 import graphql.GraphQLContext;
-import graphql.PublicApi;
+import graphql.Internal;
 import graphql.collect.ImmutableMapWithNullValues;
+import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
 
 import java.util.Map;
 
-@PublicApi
+@Internal
 public class TypeResolutionParameters {
 
     private final GraphQLInterfaceType graphQLInterfaceType;
@@ -20,6 +21,7 @@ public class TypeResolutionParameters {
     private final GraphQLSchema schema;
     private final Object context;
     private final GraphQLContext graphQLContext;
+    private final DataFetchingFieldSelectionSet selectionSet;
 
     private TypeResolutionParameters(Builder builder) {
         this.graphQLInterfaceType = builder.graphQLInterfaceType;
@@ -30,6 +32,7 @@ public class TypeResolutionParameters {
         this.schema = builder.schema;
         this.context = builder.context;
         this.graphQLContext = builder.graphQLContext;
+        this.selectionSet = builder.selectionSet;
     }
 
     public GraphQLInterfaceType getGraphQLInterfaceType() {
@@ -54,6 +57,10 @@ public class TypeResolutionParameters {
 
     public GraphQLSchema getSchema() {
         return schema;
+    }
+
+    public DataFetchingFieldSelectionSet getSelectionSet() {
+        return selectionSet;
     }
 
     public static Builder newParameters() {
@@ -84,6 +91,7 @@ public class TypeResolutionParameters {
         private GraphQLSchema schema;
         private Object context;
         private GraphQLContext graphQLContext;
+        private DataFetchingFieldSelectionSet selectionSet;
 
         public Builder field(MergedField field) {
             this.field = field;
@@ -123,6 +131,11 @@ public class TypeResolutionParameters {
 
         public Builder graphQLContext(GraphQLContext context) {
             this.graphQLContext = context;
+            return this;
+        }
+
+        public Builder selectionSet(DataFetchingFieldSelectionSet selectionSet) {
+            this.selectionSet = selectionSet;
             return this;
         }
 

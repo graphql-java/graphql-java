@@ -293,6 +293,14 @@ public class GraphQLSchema {
         return (GraphQLObjectType) graphQLType;
     }
 
+    /**
+     * Returns a {@link GraphQLFieldDefinition} as the specified co-ordinates or null
+     * if it does not exist
+     *
+     * @param fieldCoordinates the field co-ordinates
+     *
+     * @return the field or null if it does not exist
+     */
     public GraphQLFieldDefinition getFieldDefinition(FieldCoordinates fieldCoordinates) {
         String fieldName = fieldCoordinates.getFieldName();
         if (fieldCoordinates.isSystemCoordinates()) {
@@ -317,12 +325,33 @@ public class GraphQLSchema {
         return null;
     }
 
+    /**
+     * @return all the named types in the scheme as a map from name to named type
+     */
     public Map<String, GraphQLNamedType> getTypeMap() {
         return typeMap;
     }
 
+    /**
+     * This returns all the {@link GraphQLNamedType} named types in th schema
+     *
+     * @return all the {@link GraphQLNamedType} types in the schema
+     */
     public List<GraphQLNamedType> getAllTypesAsList() {
         return getAllTypesAsList(typeMap);
+    }
+
+    /**
+     * This returns all the top level {@link GraphQLNamedSchemaElement} named types and directives
+     * in the schema
+     *
+     * @return all the top level {@link GraphQLNamedSchemaElement} types and directives in the schema
+     */
+    public List<GraphQLNamedSchemaElement> getAllElementsAsList() {
+        List<GraphQLNamedSchemaElement> list = new ArrayList<>();
+        list.addAll(getDirectives());
+        list.addAll(getAllTypesAsList());
+        return list;
     }
 
     /**
@@ -358,14 +387,23 @@ public class GraphQLSchema {
         return assertShouldNeverHappen("Unsupported abstract type %s. Abstract types supported are Union and Interface.", abstractType.getName());
     }
 
+    /**
+     * @return the Query type of the schema
+     */
     public GraphQLObjectType getQueryType() {
         return queryType;
     }
 
+    /**
+     * @return the Mutation type of the schema of null if there is not one
+     */
     public GraphQLObjectType getMutationType() {
         return mutationType;
     }
 
+    /**
+     * @return the Subscription type of the schema of null if there is not one
+     */
     public GraphQLObjectType getSubscriptionType() {
         return subscriptionType;
     }

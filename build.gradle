@@ -211,7 +211,8 @@ artifacts {
 
 test {
     testLogging {
-        exceptionFormat = 'full'
+        events "FAILED", "SKIPPED"
+        exceptionFormat = "FULL"
     }
 }
 
@@ -297,6 +298,11 @@ signing {
 // all publish tasks depend on the build task
 tasks.withType(PublishToMavenRepository) {
     dependsOn build
+}
+
+// Only publish Maven POM, disable default Gradle modules file
+tasks.withType(GenerateModuleMetadata) {
+    enabled = false
 }
 
 test {

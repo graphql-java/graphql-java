@@ -1,6 +1,7 @@
 package graphql.parser
 
-
+import graphql.ExecutionInput
+import graphql.TestUtil
 import graphql.language.Argument
 import graphql.language.ArrayValue
 import graphql.language.AstComparator
@@ -796,7 +797,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         println document
         then:
         def e = thrown(InvalidSyntaxException)
-        e.message.contains("Invalid syntax")
+        e.message.contains("Invalid Syntax")
         e.sourcePreview == input + "\n"
         e.location.line == 3
         e.location.column == 20
@@ -1070,5 +1071,74 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         !options.isCaptureSourceLocation()
         document.getSourceLocation() == SourceLocation.EMPTY
         document.getDefinitions()[0].getSourceLocation() == SourceLocation.EMPTY
+    }
+
+    def "a billion laughs attack will be prevented by default"() {
+        def lol = "@lol" * 10000 // two tokens = 20000+ tokens
+        def text = "query { f $lol }"
+        when:
+        Parser.parse(text)
+
+        then:
+        def e = thrown(ParseCancelledException)
+        e.getMessage().contains("parsing has been cancelled")
+
+        when: "integration test to prove it cancels by default"
+
+        def sdl = """type Query { f : ID} """
+        def graphQL = TestUtil.graphQL(sdl).build()
+        def er = graphQL.execute(text)
+        then:
+        er.errors.size() == 1
+        er.errors[0].message.contains("parsing has been cancelled")
+    }
+
+    def "they can shoot themselves if they want to with large documents"() {
+        def lol = "@lol" * 10000 // two tokens = 20000+ tokens
+        def text = "query { f $lol }"
+
+        def options = ParserOptions.newParserOptions().maxTokens(30000).build()
+        when:
+        def doc = new Parser().parseDocument(text, options)
+
+        then:
+        doc != null
+    }
+
+    def "they can set their own listener into action"() {
+        def queryText = "query { f(arg : 1) }"
+
+        def count = 0
+        def tokens = []
+        ParsingListener listener = { count++; tokens.add(it.getText()) }
+        def parserOptions = ParserOptions.newParserOptions().parsingListener(listener).build()
+        when:
+        def doc = new Parser().parseDocument(queryText, parserOptions)
+
+        then:
+        doc != null
+        count == 9
+        tokens == ["query" , "{", "f" , "(", "arg", ":", "1", ")", "}"]
+
+        when: "integration test to prove it be supplied via EI"
+
+        def sdl = """type Query { f(arg : Int) : ID} """
+        def graphQL = TestUtil.graphQL(sdl).build()
+
+
+        def context = [:]
+        context.put(ParserOptions.class, parserOptions)
+        def executionInput = ExecutionInput.newExecutionInput()
+                .query(queryText)
+                .graphQLContext(context).build()
+
+        count = 0
+        tokens = []
+        def er = graphQL.execute(executionInput)
+        then:
+        er.errors.size() == 0
+        count == 9
+        tokens == ["query" , "{", "f" , "(", "arg", ":", "1", ")", "}"]
+
     }
 }

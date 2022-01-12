@@ -1,6 +1,5 @@
 package graphql.schema.idl;
 
-import graphql.Assert;
 import graphql.AssertException;
 import graphql.Internal;
 import graphql.introspection.Introspection.DirectiveLocation;
@@ -257,10 +256,6 @@ public class SchemaGeneratorHelper {
 
     private GraphQLDirective buildAppliedDirective(BuildContext buildCtx, Directive directive, DirectiveLocation directiveLocation, Set<GraphQLDirective> runtimeDirectives, GraphqlTypeComparatorRegistry comparatorRegistry, Set<String> previousNames) {
         GraphQLDirective gqlDirective = buildAppliedDirective(buildCtx, directive, runtimeDirectives, directiveLocation, comparatorRegistry);
-        if (previousNames.contains(directive.getName())) {
-            // other parts of the code protect against duplicate non repeatable directives
-            Assert.assertTrue(gqlDirective.isRepeatable(), () -> String.format("The directive '%s' MUST be defined as a repeatable directive if its repeated on an SDL element", directive.getName()));
-        }
         previousNames.add(gqlDirective.getName());
         return gqlDirective;
     }
@@ -285,7 +280,9 @@ public class SchemaGeneratorHelper {
         });
         builder.repeatable(graphQLDirective.isRepeatable());
 
-        List<GraphQLArgument> appliedArguments = map(directive.getArguments(), arg -> buildAppliedDArgument(arg, graphQLDirective));
+        builder.definition(buildCtx.isCaptureAstDefinitions() ? graphQLDirective.getDefinition() : null);
+
+        List<GraphQLArgument> appliedArguments = map(directive.getArguments(), arg -> buildAppliedDArgument(buildCtx, arg, graphQLDirective));
 
         appliedArguments = transferMissingArguments(buildCtx, appliedArguments, graphQLDirective);
         appliedArguments.forEach(builder::argument);
@@ -293,12 +290,14 @@ public class SchemaGeneratorHelper {
         return builder.build();
     }
 
-    private GraphQLArgument buildAppliedDArgument(Argument arg, GraphQLDirective directiveDefinition) {
+    private GraphQLArgument buildAppliedDArgument(BuildContext buildCtx, Argument arg, GraphQLDirective directiveDefinition) {
         GraphQLArgument directiveDefArgument = directiveDefinition.getArgument(arg.getName());
         GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
-        builder.name(arg.getName());
         GraphQLInputType inputType = directiveDefArgument.getType();
-        builder.type(inputType);
+        builder.name(arg.getName())
+                .type(inputType)
+                .definition(buildCtx.isCaptureAstDefinitions() ? directiveDefArgument.getDefinition() : null);
+
         // we know it is a literal because it was created by SchemaGenerator
         if (directiveDefArgument.getArgumentDefaultValue().isSet()) {
             builder.defaultValueLiteral((Value) directiveDefArgument.getArgumentDefaultValue().getValue());

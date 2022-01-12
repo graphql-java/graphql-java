@@ -97,47 +97,41 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(QUERY, null, fields)
+        def document = compileToDocument(schema, QUERY, null, fields)
         def printed = AstPrinter.printAst(document)
         then:
         printed == '''query {
-  ... on Query {
-    animal {
-      ... on Bird {
+  animal {
+    ... on Bird {
+      name
+      otherName: name
+      friends {
+        isBirdOwner
         name
-        otherName: name
-        friends {
-          ... on Friend {
-            isBirdOwner
+        pets {
+          ... on Cat {
+            breed
+          }
+        }
+      }
+    }
+    ... on Cat {
+      name
+      otherName: name
+      mood
+      friends {
+        isCatOwner
+        pets {
+          ... on Dog {
             name
-            pets {
-              ... on Cat {
-                breed
-              }
-            }
           }
         }
       }
-      ... on Cat {
-        name
-        otherName: name
-        mood
-        friends {
-          ... on Friend {
-            isCatOwner
-            pets {
-              ... on Dog {
-                name
-              }
-            }
-          }
-        }
-      }
-      ... on Dog {
-        name
-        otherName: name
-        breed
-      }
+    }
+    ... on Dog {
+      name
+      otherName: name
+      breed
     }
   }
 }
@@ -155,57 +149,46 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         type Bar {
             baz : Baz
         }
-        
         interface Baz {
             boo : String
         }
-        
         type ABaz implements Baz {
             boo : String
             a : String
         }
-
         type BBaz implements Baz {
             boo : String
             b : String
         }
-            
-        
         input I {
             arg1: String
         }
         '''
         def query = '''query {
-  foo(arg: {arg1 : "fooArg"}) {
-    bar(arg: {arg1 : "barArg"}) {
-        baz {
-            ... on ABaz {
-              boo
-              a
+    foo(arg: {arg1 : "fooArg"}) {
+        bar(arg: {arg1 : "barArg"}) {
+            baz {
+                ... on ABaz {
+                    boo
+                    a
+                }
             }
         }
     }
-  }
 }
         '''
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(QUERY, null, fields)
+        def document = compileToDocument(schema, QUERY, null, fields)
         then:
         AstPrinter.printAst(document) == '''query {
-  ... on Query {
-    foo(arg: {arg1 : "fooArg"}) {
-      ... on Foo {
-        bar(arg: {arg1 : "barArg"}) {
-          ... on Bar {
-            baz {
-              ... on ABaz {
-                boo
-                a
-              }
-            }
-          }
+  foo(arg: {arg1 : "fooArg"}) {
+    bar(arg: {arg1 : "barArg"}) {
+      baz {
+        ... on ABaz {
+          boo
+          a
         }
       }
     }
@@ -229,13 +212,11 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(QUERY, null, fields)
+        def document = compileToDocument(schema, QUERY, null, fields)
         then:
         AstPrinter.printAst(document) == '''query {
-  ... on Query {
-    foo1(arg: "hello")
-    foo2(a: 123, b: true, c: 123.45)
-  }
+  foo1(arg: "hello")
+  foo2(a: 123, b: true, c: 123.45)
 }
 '''
     }
@@ -255,13 +236,11 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(QUERY, "My_Op23", fields)
+        def document = compileToDocument(schema, QUERY, "My_Op23", fields)
         then:
         AstPrinter.printAst(document) == '''query My_Op23 {
-  ... on Query {
-    foo1(arg: "hello")
-    foo2(a: 123, b: true, c: 123.45)
-  }
+  foo1(arg: "hello")
+  foo2(a: 123, b: true, c: 123.45)
 }
 '''
     }
@@ -300,12 +279,10 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(QUERY, null, fields)
+        def document = compileToDocument(schema, QUERY, null, fields)
         then:
         AstPrinter.printAst(document) == '''query {
-  ... on Query {
-    foo1(arg: {arg1 : "Hello", arg2 : 123, arg3 : "IDID", arg4 : false, arg5 : 123.123, nested : {arg1 : "Hello2", arg2 : 1234, arg3 : "IDID1", arg4 : null, arg5 : null}})
-  }
+  foo1(arg: {arg1 : "Hello", arg2 : 123, arg3 : "IDID", arg4 : false, arg5 : 123.123, nested : {arg1 : "Hello2", arg2 : 1234, arg3 : "IDID1", arg4 : null, arg5 : null}})
 }
 '''
     }
@@ -331,12 +308,10 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(MUTATION, null, fields)
+        def document = compileToDocument(schema, MUTATION, null, fields)
         then:
         AstPrinter.printAst(document) == '''mutation {
-  ... on Mutation {
-    foo1(arg: {arg1 : "Mutation"})
-  }
+  foo1(arg: {arg1 : "Mutation"})
 }
 '''
     }
@@ -362,11 +337,194 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = TestUtil.schema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = compileToDocument(SUBSCRIPTION, null, fields)
+        def document = compileToDocument(schema, SUBSCRIPTION, null, fields)
         then:
         AstPrinter.printAst(document) == '''subscription {
-  ... on Subscription {
-    foo1(arg: {arg1 : "Subscription"})
+  foo1(arg: {arg1 : "Subscription"})
+}
+'''
+    }
+
+    def "test redundant inline fragments specified in original query"() {
+        def sdl = '''
+        type Query {
+            foo1(arg: I): Foo 
+        }
+        type Mutation {
+            foo1(arg: I): Foo 
+        }
+        type Foo {
+            test: String
+        }
+        input I {
+            arg1: String
+        }
+        '''
+        def query = '''mutation {
+            ... on Mutation {
+                foo1(arg: {
+                    arg1: "Mutation"
+                }) {
+                    ... on Foo {
+                        test
+                    }
+                }
+            }
+        }
+        '''
+        GraphQLSchema schema = TestUtil.schema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def document = compileToDocument(schema, MUTATION, null, fields)
+        then:
+        AstPrinter.printAst(document) == '''mutation {
+  foo1(arg: {arg1 : "Mutation"}) {
+    test
+  }
+}
+'''
+    }
+
+    def "inserts inline fragment on interface types"() {
+        def sdl = '''
+        type Query {
+            foo1(arg: I): Foo 
+        }
+        type Mutation {
+            foo1(arg: I): Foo 
+        }
+        interface Foo {
+            test: String
+        }
+        type AFoo implements Foo {
+            test: String
+        }
+        input I {
+            arg1: String
+        }
+        '''
+        def query = '''query {
+            ... on Query {
+                foo1(arg: {
+                    arg1: "Query"
+                }) {
+                    ... on Foo {
+                        test
+                    }
+                }
+            }
+        }
+        '''
+        GraphQLSchema schema = TestUtil.schema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def document = compileToDocument(schema, QUERY, null, fields)
+        then:
+        AstPrinter.printAst(document) == '''query {
+  foo1(arg: {arg1 : "Query"}) {
+    ... on AFoo {
+      test
+    }
+  }
+}
+'''
+    }
+
+    def "handles concrete and abstract fields"() {
+        def sdl = '''
+        type Query {
+            foo1(arg: I): Foo 
+        }
+        type Mutation {
+            foo1(arg: I): Foo 
+        }
+        interface Foo {
+            test: String
+        }
+        type AFoo implements Foo {
+            test: String
+            afoo: String
+        }
+        input I {
+            arg1: String
+        }
+        '''
+        def query = '''query {
+            ... on Query {
+                foo1(arg: {
+                    arg1: "Query"
+                }) {
+                    test
+                    ... on AFoo {
+                        afoo
+                    }
+                    ... on AFoo {
+                        __typename
+                    }
+                }
+            }
+        }
+        '''
+        GraphQLSchema schema = TestUtil.schema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def document = compileToDocument(schema, QUERY, null, fields)
+        then:
+        AstPrinter.printAst(document) == '''query {
+  foo1(arg: {arg1 : "Query"}) {
+    ... on AFoo {
+      test
+      afoo
+      __typename
+    }
+  }
+}
+'''
+    }
+
+    def "handles typename outside fragment and inside fragment"() {
+        def sdl = '''
+        type Query {
+            foo1(arg: I): Foo 
+        }
+        type Mutation {
+            foo1(arg: I): Foo 
+        }
+        interface Foo {
+            test: String
+        }
+        type AFoo implements Foo {
+            test: String
+        }
+        input I {
+            arg1: String
+        }
+        '''
+        def query = '''query {
+            ... on Query {
+                foo1(arg: {
+                    arg1: "Query"
+                }) {
+                    __typename
+                    test
+                    ... on AFoo {
+                        __typename
+                    }
+                }
+            }
+        }
+        '''
+        GraphQLSchema schema = TestUtil.schema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def document = compileToDocument(schema, QUERY, null, fields)
+        then:
+        AstPrinter.printAst(document) == '''query {
+  foo1(arg: {arg1 : "Query"}) {
+    ... on AFoo {
+      __typename
+      test
+    }
   }
 }
 '''
@@ -386,5 +544,3 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         assert graphQL.execute(query, null, variables).errors.size() == 0
     }
 }
-
-

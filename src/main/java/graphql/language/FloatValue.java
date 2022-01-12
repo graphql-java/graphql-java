@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -77,7 +78,7 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
 
         FloatValue that = (FloatValue) o;
 
-        return !(value != null ? !value.equals(that.value) : that.value != null);
+        return Objects.equals(value, that.value);
 
     }
 

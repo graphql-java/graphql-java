@@ -4,6 +4,7 @@ import graphql.execution.MergedField
 import graphql.execution.MergedSelectionSet
 import graphql.language.Document
 import graphql.language.Field
+import graphql.language.NullValue
 import graphql.language.ObjectTypeDefinition
 import graphql.language.OperationDefinition
 import graphql.language.ScalarTypeDefinition
@@ -181,7 +182,7 @@ class TestUtil {
 
             @Override
             Object parseLiteral(Object input) {
-                return null
+                return NullValue.newNullValue().build()
             }
         }
     }
