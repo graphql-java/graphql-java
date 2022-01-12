@@ -49,14 +49,14 @@ public class SchemaUsageSupport {
                 return (k, v) -> v == null ? 1 : v + 1;
             }
 
-            private void recordBackReference(GraphQLNamedSchemaElement referencedElement, GraphQLSchemaElement referencingElelement) {
+            private void recordBackReference(GraphQLNamedSchemaElement referencedElement, GraphQLSchemaElement referencingElement) {
                 String referencedElementName = referencedElement.getName();
-                if (referencingElelement instanceof GraphQLType) {
-                    String typeName = (GraphQLTypeUtil.unwrapAll((GraphQLType) referencingElelement)).getName();
+                if (referencingElement instanceof GraphQLType) {
+                    String typeName = (GraphQLTypeUtil.unwrapAll((GraphQLType) referencingElement)).getName();
                     builder.typeBackReferences.computeIfAbsent(referencedElementName, k -> new HashSet<>()).add(typeName);
                 }
-                if (referencingElelement instanceof GraphQLDirective) {
-                    String typeName = ((GraphQLDirective) referencingElelement).getName();
+                if (referencingElement instanceof GraphQLDirective) {
+                    String typeName = ((GraphQLDirective) referencingElement).getName();
                     builder.typeBackReferences.computeIfAbsent(referencedElementName, k -> new HashSet<>()).add(typeName);
                 }
             }
@@ -108,16 +108,23 @@ public class SchemaUsageSupport {
 
             @Override
             public TraversalControl visitGraphQLDirective(GraphQLDirective directive, TraverserContext<GraphQLSchemaElement> context) {
-                builder.directiveReferenceCount.compute(directive.getName(), incCount());
                 GraphQLSchemaElement parentElement = context.getParentNode();
+                if (parentElement != null) {
+                    // a null parent is a directive definition
+                    // we record a count if the directive is applied to something - not just defined
+                    builder.directiveReferenceCount.compute(directive.getName(), incCount());
+                }
                 if (parentElement instanceof GraphQLArgument) {
-                    parentElement = context.getParentContext().getParentNode();
+                    context = context.getParentContext();
+                    parentElement = context.getParentNode();
                 }
                 if (parentElement instanceof GraphQLFieldDefinition) {
-                    parentElement = context.getParentContext().getParentNode();
+                    context = context.getParentContext();
+                    parentElement = context.getParentNode();
                 }
                 if (parentElement instanceof GraphQLInputObjectField) {
-                    parentElement = context.getParentContext().getParentNode();
+                    context = context.getParentContext();
+                    parentElement = context.getParentNode();
                 }
                 recordBackReference(directive, parentElement);
                 return CONTINUE;
