@@ -131,17 +131,16 @@ public class SchemaUsage {
      *
      * Directives that are defined but never applied on any schema elements will not report as referenced.
      *
-     *
      * @param schema      the schema that contains the name type
      * @param elementName the element name to check
      *
      * @return true if the element could be referenced
      */
     public boolean isStronglyReferenced(GraphQLSchema schema, String elementName) {
-        return isReferencedImpl(schema, elementName, new HashSet<>(), new HashSet<>());
+        return isReferencedImpl(schema, elementName, new HashSet<>());
     }
 
-    private boolean isReferencedImpl(GraphQLSchema schema, String elementName, Set<String> missCache, Set<String> pathSoFar) {
+    private boolean isReferencedImpl(GraphQLSchema schema, String elementName, Set<String> pathSoFar) {
         if (pathSoFar.contains(elementName)) {
             return false; // circular reference to that element
         }
@@ -157,16 +156,13 @@ public class SchemaUsage {
             if (DirectiveInfo.isGraphqlSpecifiedDirective(directiveName)) {
                 return true;
             }
-            if (isNamedElementReferenced(schema, directiveName, missCache, pathSoFar)) {
+            if (isNamedElementReferenced(schema, directiveName, pathSoFar)) {
                 return true;
             }
         }
 
         GraphQLNamedType type = schema.getTypeAs(elementName);
         if (type == null) {
-            return false;
-        }
-        if (missCache.contains(elementName)) {
             return false;
         }
         if (Introspection.isIntrospectionTypes(type)) {
@@ -183,14 +179,14 @@ public class SchemaUsage {
             return true;
         }
 
-        if (isNamedElementReferenced(schema, elementName, missCache, pathSoFar)) {
+        if (isNamedElementReferenced(schema, elementName, pathSoFar)) {
             return true;
         }
 
         if (type instanceof GraphQLInterfaceType) {
             Set<String> implementors = interfaceImplementors.getOrDefault(type.getName(), emptySet());
             for (String implementor : implementors) {
-                if (isReferencedImpl(schema, implementor, missCache, pathSoFar)) {
+                if (isReferencedImpl(schema, implementor, pathSoFar)) {
                     return true;
                 }
             }
@@ -200,7 +196,7 @@ public class SchemaUsage {
             for (GraphQLNamedOutputType memberInterface : interfaces) {
                 Set<String> implementors = interfaceImplementors.getOrDefault(memberInterface.getName(), emptySet());
                 for (String implementor : implementors) {
-                    if (isReferencedImpl(schema, implementor, missCache, pathSoFar)) {
+                    if (isReferencedImpl(schema, implementor, pathSoFar)) {
                         return true;
                     }
                 }
@@ -209,14 +205,13 @@ public class SchemaUsage {
         return false;
     }
 
-    private boolean isNamedElementReferenced(GraphQLSchema schema, String elementName, Set<String> missCache, Set<String> pathSoFar) {
+    private boolean isNamedElementReferenced(GraphQLSchema schema, String elementName, Set<String> pathSoFar) {
         Set<String> references = elementBackReferences.getOrDefault(elementName, emptySet());
         for (String reference : references) {
-            if (isReferencedImpl(schema, reference, missCache, pathSoFar)) {
+            if (isReferencedImpl(schema, reference, pathSoFar)) {
                 return true;
             }
         }
-        missCache.add(elementName);
         return false;
     }
 
