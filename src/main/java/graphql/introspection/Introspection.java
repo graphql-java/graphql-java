@@ -203,7 +203,7 @@ public class Introspection {
                     .argument(newArgument()
                             .name("includeDeprecated")
                             .type(GraphQLBoolean)
-                            .defaultValue(false)))
+                            .defaultValueProgrammatic(false)))
             .field(newFieldDefinition()
                     .name("type")
                     .type(nonNull(typeRef("__Type"))))
@@ -353,7 +353,7 @@ public class Introspection {
                     .argument(newArgument()
                             .name("includeDeprecated")
                             .type(GraphQLBoolean)
-                            .defaultValue(false)))
+                            .defaultValueProgrammatic(false)))
             .field(newFieldDefinition()
                     .name("interfaces")
                     .type(list(nonNull(typeRef("__Type")))))
@@ -366,14 +366,14 @@ public class Introspection {
                     .argument(newArgument()
                             .name("includeDeprecated")
                             .type(GraphQLBoolean)
-                            .defaultValue(false)))
+                            .defaultValueProgrammatic(false)))
             .field(newFieldDefinition()
                     .name("inputFields")
                     .type(list(nonNull(__InputValue)))
                     .argument(newArgument()
                             .name("includeDeprecated")
                             .type(GraphQLBoolean)
-                            .defaultValue(false)))
+                            .defaultValueProgrammatic(false)))
             .field(newFieldDefinition()
                     .name("ofType")
                     .type(typeRef("__Type")))
@@ -631,7 +631,6 @@ public class Introspection {
      * @param schema     the schema to use
      * @param parentType the type of the parent object
      * @param fieldName  the field to look up
-     *
      * @return a field definition otherwise throws an assertion exception if its null
      */
     public static GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {
