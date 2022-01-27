@@ -178,7 +178,10 @@ task testng(type: Test) {
 }
 check.dependsOn testng
 
-compileJava.source file("build/generated-src"), sourceSets.main.java
+compileJava {
+    options.compilerArgs += ["-parameters"]
+    source  file("build/generated-src"), sourceSets.main.java
+}
 
 generateGrammarSource {
     includes = ['Graphql.g4']
@@ -211,7 +214,8 @@ artifacts {
 
 test {
     testLogging {
-        exceptionFormat = 'full'
+        events "FAILED", "SKIPPED"
+        exceptionFormat = "FULL"
     }
 }
 
