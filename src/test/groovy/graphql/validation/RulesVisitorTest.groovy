@@ -72,7 +72,7 @@ class RulesVisitorTest extends Specification {
         notThrown(StackOverflowError)
     }
 
-    def "RulesVisitor visits fragment definition once per operation"() {
+    def "RulesVisitor visits fragment definition with isVisitFragmentSpread rules once per operation"() {
         given:
         def query = """
         fragment A on A { __typename }
