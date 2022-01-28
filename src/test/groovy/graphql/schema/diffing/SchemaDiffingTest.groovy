@@ -7,11 +7,9 @@ import graphql.schema.GraphQLTypeVisitorStub
 import graphql.schema.SchemaTransformer
 import graphql.util.TraversalControl
 import graphql.util.TraverserContext
-import spock.lang.Ignore
 import spock.lang.Specification
 
 import static graphql.TestUtil.schema
-import static graphql.TestUtil.schemaFromResource
 
 class SchemaDiffingTest extends Specification {
 
@@ -364,7 +362,6 @@ class SchemaDiffingTest extends Specification {
 
     }
 
-    @Ignore
     def "change large schema a bit"() {
         given:
         def largeSchema = TestUtil.schemaFromResource("large-schema-2.graphqls", TestUtil.mockRuntimeWiring)
@@ -542,7 +539,7 @@ class SchemaDiffingTest extends Specification {
 
         when:
         def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2, false)
-        diff.each {println it}
+        diff.each { println it }
 
         then:
         diff.size() == 59
@@ -888,6 +885,48 @@ class SchemaDiffingTest extends Specification {
 
         then:
         operations.size() == 4
+    }
+
+    def "input fields"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            foo(arg: I1, arg2: I2): String
+           } 
+           input I1 {
+               f1: String
+               f2: String
+           }
+           input I2 {
+               g1: String
+               g2: String
+           }
+        """)
+        def schema2 = schema("""
+           type Query {
+            foo(arg: I1,arg2: I2 ): String
+           }
+           input I1 {
+               f1: String
+           }
+           input I2 {
+               g2: String
+               g3: String
+               g4: String
+           }
+        """)
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        operations.each { println it }
+
+        then:
+        /**
+         * The test here is that f2 is deleted and one g is renamed and g3 is inserted.
+         * It would be less operations with f2 renamed to g3, but this would defy expectations.
+         *
+         */
+        operations.size() == 7
     }
 
     def "adding enum value"() {
