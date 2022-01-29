@@ -29,12 +29,17 @@ public class RulesVisitor implements DocumentVisitor {
     private final List<AbstractRule> allRules;
     private List<AbstractRule> currentRules;
     private final Set<String> visitedFragmentSpreads = new HashSet<>();
+    private final List<AbstractRule> fragmentSpreadVisitRules;
+    private final List<AbstractRule> nonFragmentSpreadRules;
+    private boolean operationScope = false;
     private int fragmentSpreadVisitDepth = 0;
 
     public RulesVisitor(ValidationContext validationContext, List<AbstractRule> rules) {
         this.validationContext = validationContext;
         this.allRules = rules;
         this.currentRules = allRules;
+        this.nonFragmentSpreadRules = filterRulesVisitingFragmentSpreads(allRules, false);
+        this.fragmentSpreadVisitRules = filterRulesVisitingFragmentSpreads(allRules, true);
     }
 
     private List<AbstractRule> filterRulesVisitingFragmentSpreads(List<AbstractRule> rules, boolean isVisitFragmentSpreads) {
@@ -107,8 +112,7 @@ public class RulesVisitor implements DocumentVisitor {
     private void checkFragmentSpread(FragmentSpread node, List<Node> ancestors) {
         currentRules.forEach(r -> r.checkFragmentSpread(node));
 
-        List<AbstractRule> fragmentSpreadVisitRules = filterRulesVisitingFragmentSpreads(currentRules, true);
-        if (!fragmentSpreadVisitRules.isEmpty()) {
+        if (operationScope) {
             FragmentDefinition fragment = validationContext.getFragment(node.getName());
             if (fragment != null && !visitedFragmentSpreads.contains(node.getName())) {
                 // Manually traverse into the FragmentDefinition
@@ -128,13 +132,14 @@ public class RulesVisitor implements DocumentVisitor {
         // an OperationDefinition, then suspend all isVisitFragmentSpread rules for this subtree.
         // Expect these rules to be checked when the FragmentSpread is traversed
         if (fragmentSpreadVisitDepth == 0) {
-            currentRules = filterRulesVisitingFragmentSpreads(currentRules, false);
+            currentRules = nonFragmentSpreadRules;
         }
 
         currentRules.forEach(r -> r.checkFragmentDefinition(node));
     }
 
     private void checkOperationDefinition(OperationDefinition node) {
+        operationScope = true;
         currentRules.forEach(r -> r.checkOperationDefinition(node));
     }
 
@@ -168,6 +173,7 @@ public class RulesVisitor implements DocumentVisitor {
     private void leaveOperationDefinition(OperationDefinition node) {
         // fragments should be revisited for each operation
         visitedFragmentSpreads.clear();
+        operationScope = false;
         currentRules.forEach(r -> r.leaveOperationDefinition(node));
     }
 
