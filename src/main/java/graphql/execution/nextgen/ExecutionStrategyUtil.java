@@ -73,7 +73,7 @@ public class ExecutionStrategyUtil {
         Object localContext = resolvedValue.getLocalContext();
 
         GraphQLOutputType sourceType = executionInfo.getUnwrappedNonNullType();
-        GraphQLObjectType resolvedObjectType = resolveType.resolveType(executionContext, field, source, executionInfo, sourceType);
+        GraphQLObjectType resolvedObjectType = resolveType.resolveType(executionContext, field, source, executionInfo, sourceType, localContext);
         FieldCollectorParameters collectorParameters = newParameters()
                 .schema(executionContext.getGraphQLSchema())
                 .objectType(resolvedObjectType)
