@@ -83,10 +83,11 @@ class IntrospectionTest extends Specification {
     def "Introspection#__DirectiveLocation(GraphQLEnumType) should have 19 distinct values"() {
         given:
         def directiveLocationValues = Introspection.__DirectiveLocation.values
+        def numValues = 19
 
         expect:
-        directiveLocationValues.size() == 19
-        directiveLocationValues.unique(false).size() == 19
+        directiveLocationValues.size() == numValues
+        directiveLocationValues.unique(false).size() == numValues
     }
 
     def "Introspection#__DirectiveLocation(GraphQLEnumType) should contain all Introspection.DirectiveLocation"() {
