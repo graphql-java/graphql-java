@@ -21,7 +21,7 @@ jobs:
           - { c: '8', t: '17' }
           - { c: '11', t: '11' }
           - { c: '17', t: '17' }
-          - { c: '18', t: '18' }
+          - { c: '18-ea', t: '18-ea' }
         dist:
           - { name: 'temurin', vm: 'hotspot' }
 #          - { name: 'adopt-openj9', vm: 'openj9' }
