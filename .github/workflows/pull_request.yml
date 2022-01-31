@@ -9,7 +9,7 @@ on:
       - master
 jobs:
   buildAndTest:
-    name: buildAndTest ${{ matrix.java.c }}/${{ matrix.java.t || matrix.java.c }} (${{ matrix.distribution }}) on ${{ matrix.os }}
+    name: buildAndTest ${{ matrix.java.c }}/${{ matrix.java.t || matrix.java.c }} (${{ matrix.dist.vm }}) on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -17,30 +17,34 @@ jobs:
         os: [ 'ubuntu-latest', 'windows-latest' ]
         java:
           - { c: '8', t: '8' }
+          - { c: '8', t: '11' }
           - { c: '8', t: '17' }
           - { c: '11', t: '11' }
           - { c: '17', t: '17' }
-        distribution: [ 'temurin' ]
+        dist:
+          - { dist: 'temurin', vm: 'hotspot' }
+          - { dist: 'adopt-openj9', vm: 'openj9' }
     env:
       ORG_GRADLE_PROJECT_toolchainCompileVersion: ${{ matrix.java.c }}
       ORG_GRADLE_PROJECT_toolchainJavadocVersion: ${{ matrix.java.c }}
       ORG_GRADLE_PROJECT_toolchainTestVersion: ${{ matrix.java.t || matrix.java.c }}
+      ORG_GRADLE_PROJECT_toolchainVm: ${{ matrix.dist.vm }}
     steps:
       - uses: actions/checkout@v2
       - uses: gradle/wrapper-validation-action@v1
       - id: setup-test-jdk
-        name: Set up testing JDK (${{ matrix.java.t || 'undefined' }}, ${{ matrix.distribution }})
+        name: Set up testing JDK (${{ matrix.java.t || 'undefined' }}, ${{ matrix.dist.name }})
         uses: actions/setup-java@v2
         if: ${{ matrix.java.t != null && (matrix.java.c != matrix.java.t) }}
         with:
           java-version: ${{ matrix.java.t }}
-          distribution: ${{ matrix.distribution }}
+          distribution: ${{ matrix.dist.name }}
       - id: setup-base-jdk
-        name: Set up base JDK (${{ matrix.java.c }}, ${{ matrix.distribution }})
+        name: Set up base JDK (${{ matrix.java.c }}, ${{ matrix.dist.name }})
         uses: actions/setup-java@v2
         with:
           java-version: ${{ matrix.java.c }}
-          distribution: ${{ matrix.distribution }}
+          distribution: ${{ matrix.dist.name }}
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
       - name: Gradle version information
@@ -63,6 +67,6 @@ jobs:
         uses: actions/upload-artifact@v2
         if: ${{ failure() }}
         with:
-          name: gradle-test-summary-b${{ matrix.java.c }}-t${{ matrix.java.t || matrix.java.c }}-${{ matrix.distribution }}-${{ matrix.os }}
+          name: gradle-test-summary-b${{ matrix.java.c }}-t${{ matrix.java.t || matrix.java.c }}-${{ matrix.dist.name }}-${{ matrix.os }}
           path: build/reports/tests/test/
           retention-days: 4
