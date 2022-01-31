@@ -21,7 +21,7 @@ jobs:
           - { c: '8.0.282', t: '17' }
           - { c: '11', t: '11' }
           - { c: '17', t: '17' }
-#          - { c: '18-ea', t: '18-ea' }
+          - { c: '18-ea', t: '18-ea' }
         dist:
           - { name: 'zulu', vm: 'hotspot' }
 #          - { name: 'adopt-openj9', vm: 'openj9' }
