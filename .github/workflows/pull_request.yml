@@ -9,7 +9,7 @@ on:
       - master
 jobs:
   buildAndTest:
-    name: \"build ${{ matrix.java }} / test ${{ matrix.test || matrix.java }} on ${{ matrix.distribution }}/${{ matrix.os }}\"
+    name: build ${{ matrix.java }} / test ${{ matrix.test || matrix.java }} on ${{ matrix.distribution }}/${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -36,10 +36,16 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: gradle/wrapper-validation-action@v1
-      - name: Set up JDK
+      - name: Set up base JDK (${{ matrix.java }}, ${{ matrix.distribution }})
         uses: actions/setup-java@v2
         with:
           java-version: ${{ matrix.java }}
+          distribution: ${{ matrix.distribution }}
+      - name: Set up testing JDK (${{ matrix.test }}, ${{ matrix.distribution }})
+        uses: actions/setup-java@v2
+        if: ${{ matrix.java != matrix.test }}
+        with:
+          java-version: ${{ matrix.test }}
           distribution: ${{ matrix.distribution }}
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
@@ -57,6 +63,7 @@ jobs:
           arguments: check --info --stacktrace
       - name: Archive Gradle Test Summary
         uses: actions/upload-artifact@v2
+        if: ${{ failure() }}
         with:
           name: gradle-test-summary
           path: build/reports/tests/test/
