@@ -1191,10 +1191,11 @@ public class SchemaGeneratorHelper {
         return new PropertyDataFetcher(fieldName);
     }
 
-    private List<Directive> directivesOf(List<? extends TypeDefinition> typeDefinitions) {
+    private List<Directive> directivesOf(List<? extends TypeDefinition<?>> typeDefinitions) {
         return typeDefinitions.stream()
-                .map(TypeDefinition::getDirectives).filter(Objects::nonNull)
-                .<Directive>flatMap(List::stream).collect(Collectors.toList());
+                .map(TypeDefinition::getDirectives)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream).collect(Collectors.toList());
     }
 
     private <T extends GraphQLDirectiveContainer> T directivesObserve(BuildContext buildCtx, T directiveContainer) {
