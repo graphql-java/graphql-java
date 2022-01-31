@@ -21,15 +21,19 @@ jobs:
           - os: 'ubuntu-latest'
             java: '8'
             test: '17'
+            distribution: 'temurin'
           - os: 'windows-latest'
             java: '8'
             test: '17'
-          - os: 'ubuntu-latest'
-            java: '8'
-            test: '8'
-          - os: 'windows-latest'
-            java: '8'
-            test: '8'
+            distribution: 'temurin'
+#          - os: 'ubuntu-latest'
+#            java: '8'
+#            test: '8'
+#            distribution: 'temurin'
+#          - os: 'windows-latest'
+#            java: '8'
+#            test: '8'
+#            distribution: 'temurin'
     env:
       ORG_GRADLE_PROJECT_toolchainCompileVersion: ${{ matrix.java }}
       ORG_GRADLE_PROJECT_toolchainJavadocVersion: ${{ matrix.java }}
@@ -53,7 +57,11 @@ jobs:
       - name: Gradle version information
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: javaToolchains --version
+          arguments: --version
+      - name: Gradle Java toolchains
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: javaToolchains printUsedVersions
       - name: Build (on Java ${{ matrix.java }})
         uses: gradle/gradle-build-action@v2
         with:
