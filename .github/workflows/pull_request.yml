@@ -8,12 +8,20 @@ on:
     branches:
       - master
 jobs:
-#  checkMatrixCompatibility:
-#
+  checkMatrixCompatibility:
+    outputs:
+      status: ${{ steps.early.conclusion }}
+    runs-on: ubuntu-latest
+    steps:
+      - id: early
+        if: ${{ (matrix.java == matrix.test) || matrix.test == '8' }}
+        name: Early exit
+        run: echo 1
   buildAndTest:
+    needs: checkMatrixCompatibility
     name: buildAndTest ${{ matrix.java }}/${{ matrix.test || matrix.java }} (${{ matrix.distribution }}) on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    if: ${{ (matrix.java == matrix.test) || matrix.test == '8' }}
+    if: needs.check.outputs.status == 'success'
     strategy:
       fail-fast: false
       matrix:
