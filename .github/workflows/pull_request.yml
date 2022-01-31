@@ -28,35 +28,37 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: gradle/wrapper-validation-action@v1
-      - name: Set up base JDK (${{ matrix.java.c }}, ${{ matrix.distribution }})
-        uses: actions/setup-java@v2
-        with:
-          java-version: ${{ matrix.java.c }}
-          distribution: ${{ matrix.distribution }}
-      - name: Set up testing JDK (${{ matrix.java.t || 'undefined' }}, ${{ matrix.distribution }})
+      - id: setup-test-jdk
+        name: Set up testing JDK (${{ matrix.java.t || 'undefined' }}, ${{ matrix.distribution }})
         uses: actions/setup-java@v2
         if: ${{ matrix.java.t != null && (matrix.java.c != matrix.java.t) }}
         with:
           java-version: ${{ matrix.java.t }}
+          distribution: ${{ matrix.distribution }}
+      - id: setup-base-jdk
+        name: Set up base JDK (${{ matrix.java.c }}, ${{ matrix.distribution }})
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{ matrix.java.c }}
           distribution: ${{ matrix.distribution }}
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
       - name: Gradle version information
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: --version
+          arguments: --version -Porg.gradle.java.installations.paths=${{ steps.setup-test-jdk.outputs.path }}
       - name: Gradle Java toolchains
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: javaToolchains printUsedVersions
+          arguments: javaToolchains printUsedVersions -Porg.gradle.java.installations.paths=${{ steps.setup-test-jdk.outputs.path }}
       - name: Build (on Java ${{ matrix.java.c }})
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: assemble
+          arguments: assemble -Porg.gradle.java.installations.paths=${{ steps.setup-test-jdk.outputs.path }}
       - name: Test (on Java ${{ matrix.java.t || matrix.java.c }})
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: check --info --stacktrace
+          arguments: check --info --stacktrace -Porg.gradle.java.installations.paths=${{ steps.setup-test-jdk.outputs.path }}
       - name: Archive Gradle Test Summary
         uses: actions/upload-artifact@v2
         if: ${{ failure() }}
