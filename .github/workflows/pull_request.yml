@@ -8,10 +8,12 @@ on:
     branches:
       - master
 jobs:
+#  checkMatrixCompatibility:
+#
   buildAndTest:
     name: buildAndTest ${{ matrix.java }}/${{ matrix.test || matrix.java }} (${{ matrix.distribution }}) on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    if: (matrix.java == matrix.test) || matrix.test == '8'
+    if: ${{ (matrix.java == matrix.test) || matrix.test == '8' }}
     strategy:
       fail-fast: false
       matrix:
@@ -19,23 +21,6 @@ jobs:
         java: [ '8', '11', '17' ]
         test: [ '8', '11', '17' ]
         distribution: [ 'temurin' ]
-    #        include:
-    #          - os: 'ubuntu-latest'
-    #            java: '8'
-    #            test: '17'
-    #            distribution: 'temurin'
-    #          - os: 'windows-latest'
-    #            java: '8'
-    #            test: '17'
-    #            distribution: 'temurin'
-    #          - os: 'ubuntu-latest'
-    #            java: '8'
-    #            test: '8'
-    #            distribution: 'temurin'
-    #          - os: 'windows-latest'
-    #            java: '8'
-    #            test: '8'
-    #            distribution: 'temurin'
     env:
       ORG_GRADLE_PROJECT_toolchainCompileVersion: ${{ matrix.java }}
       ORG_GRADLE_PROJECT_toolchainJavadocVersion: ${{ matrix.java }}
