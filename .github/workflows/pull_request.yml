@@ -17,13 +17,19 @@ jobs:
         os: [ 'ubuntu-latest', 'windows-latest' ]
         java:
           - { c: '8', t: '8' }
-          - { c: '8', t: '11' }
+#          - { c: '8', t: '11' }
           - { c: '8', t: '17' }
           - { c: '11', t: '11' }
           - { c: '17', t: '17' }
+          - { c: '18', t: '18' }
         dist:
           - { name: 'temurin', vm: 'hotspot' }
-          - { name: 'adopt-openj9', vm: 'openj9' }
+#          - { name: 'adopt-openj9', vm: 'openj9' }
+#        exclude:
+#          - # Hangs for some reason
+#            os: 'windows-latest'
+#            java: { c: '8', t: '17' }
+#            dist: { name: 'adopt-openj9', vm: 'openj9' }
     env:
       ORG_GRADLE_PROJECT_toolchainCompileVersion: ${{ matrix.java.c }}
       ORG_GRADLE_PROJECT_toolchainJavadocVersion: ${{ matrix.java.c }}
