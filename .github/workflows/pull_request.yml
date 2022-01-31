@@ -24,6 +24,12 @@ jobs:
           - os: 'windows-latest'
             java: '8'
             test: '17'
+          - os: 'ubuntu-latest'
+            java: '8'
+            test: '8'
+          - os: 'windows-latest'
+            java: '8'
+            test: '8'
     env:
       ORG_GRADLE_PROJECT_toolchain.version.compile: ${{ matrix.java }}
       ORG_GRADLE_PROJECT_toolchain.version.test: ${{ matrix.test || matrix.java }}
@@ -49,3 +55,9 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: check --info --stacktrace
+      - name: Archive Gradle Test Summary
+        uses: actions/upload-artifact@v2
+        with:
+          name: gradle-test-summary
+          path: build/reports/tests/test/
+          retention-days: 4
