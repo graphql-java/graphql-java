@@ -1,4 +1,4 @@
-name: Pull Request Build
+name: PR Verify
 # For pull requests: builds and test
 on:
   push:
@@ -9,14 +9,14 @@ on:
       - master
 jobs:
   buildAndTest:
-    name: : build ${{ matrix.java }} / test ${{ matrix.test || matrix.java }} on ${{ matrix.distribution }}/${{ matrix.os }}
+    name: \"build ${{ matrix.java }} / test ${{ matrix.test || matrix.java }} on ${{ matrix.distribution }}/${{ matrix.os }}\"
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ 'ubuntu-latest', 'windows-latest' ]
         java: [ '8', '11', '17' ]
-        distribution: ['temurin']
+        distribution: [ 'temurin' ]
         include:
           - os: 'ubuntu-latest'
             java: '8'
