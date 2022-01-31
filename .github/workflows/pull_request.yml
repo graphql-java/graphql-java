@@ -41,7 +41,7 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
           distribution: ${{ matrix.distribution }}
-      - name: Set up testing JDK (${{ matrix.test }}, ${{ matrix.distribution }})
+      - name: Set up testing JDK (${{ matrix.test || 'undefined' }}, ${{ matrix.distribution }})
         uses: actions/setup-java@v2
         if: ${{ matrix.test != null && (matrix.java != matrix.test) }}
         with:
@@ -65,6 +65,6 @@ jobs:
         uses: actions/upload-artifact@v2
         if: ${{ failure() }}
         with:
-          name: gradle-test-summary
+          name: gradle-test-summary-b${{ matrix.java }}-t${{ matrix.test || matrix.java }}-${{ matrix.distribution }}-${{ matrix.os }}
           path: build/reports/tests/test/
           retention-days: 4
