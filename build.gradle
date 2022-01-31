@@ -12,9 +12,13 @@ plugins {
     id "groovy"
 }
 
-final String compileVersion = project.hasProperty("toolchain.version.compile") ? project.property("toolchain.version.compile") : "8"
-final String testVersion = project.hasProperty("toolchain.version.test") ? project.property("toolchain.version.test") : "8"
-final String javadocVersion = project.hasProperty("toolchain.version.javadoc") ? project.property("toolchain.version.javadoc") : "8"
+final String compileVersion = project.hasProperty("toolchainCompileVersion") ? project.property("toolchainCompileVersion") : "8"
+final String testVersion = project.hasProperty("toolchainTestVersion") ? project.property("toolchainTestVersion") : "8"
+final String javadocVersion = project.hasProperty("toolchainJavadocVersion") ? project.property("toolchainJavadocVersion") : "8"
+
+task("printUsedVersions") {
+    println("Java versions: (compile: ${compileVersion}), (test: ${testVersion}), (javadoc: ${javadocVersion})")
+}
 
 def getDevelopmentVersion() {
     def gitCheckOutput = new StringBuilder()

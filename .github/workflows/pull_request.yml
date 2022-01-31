@@ -9,7 +9,7 @@ on:
       - master
 jobs:
   buildAndTest:
-    name: build ${{ matrix.java }} / test ${{ matrix.test || matrix.java }} on ${{ matrix.distribution }}/${{ matrix.os }}
+    name: buildAndTest ${{ matrix.java }}/${{ matrix.test || matrix.java }} (${{ matrix.distribution }}) on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -31,8 +31,9 @@ jobs:
             java: '8'
             test: '8'
     env:
-      ORG_GRADLE_PROJECT_toolchain.version.compile: ${{ matrix.java }}
-      ORG_GRADLE_PROJECT_toolchain.version.test: ${{ matrix.test || matrix.java }}
+      ORG_GRADLE_PROJECT_toolchainCompileVersion: ${{ matrix.java }}
+      ORG_GRADLE_PROJECT_toolchainJavadocVersion: ${{ matrix.java }}
+      ORG_GRADLE_PROJECT_toolchainTestVersion: ${{ matrix.test || matrix.java }}
     steps:
       - uses: actions/checkout@v2
       - uses: gradle/wrapper-validation-action@v1
