@@ -1,4 +1,5 @@
 import java.text.SimpleDateFormat
+import java.util.regex.Pattern
 
 plugins {
     id 'java'
@@ -12,9 +13,12 @@ plugins {
     id "groovy"
 }
 
-final String compileVersion = project.hasProperty("toolchainCompileVersion") ? project.property("toolchainCompileVersion") : "8"
-final String testVersion = project.hasProperty("toolchainTestVersion") ? project.property("toolchainTestVersion") : "8"
-final String javadocVersion = project.hasProperty("toolchainJavadocVersion") ? project.property("toolchainJavadocVersion") : "8"
+final String compileVersion = project.hasProperty("toolchainCompileVersion") ?
+        (project.property("toolchainCompileVersion") as String).replaceAll("^([0-9]+).*", "\$1") : "8"
+final String testVersion = project.hasProperty("toolchainTestVersion") ?
+        (project.property("toolchainTestVersion") as String).replaceAll("^([0-9]+).*", "\$1") : "8"
+final String javadocVersion = project.hasProperty("toolchainJavadocVersion") ?
+        (project.property("toolchainJavadocVersion") as String).replaceAll("^([0-9]+).*", "\$1"): "8"
 def toolchainVm = project.property("toolchainVm")
 JvmImplementation vmImplementation = null
 if ("hotspot" == toolchainVm) {
