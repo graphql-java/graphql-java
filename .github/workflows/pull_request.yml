@@ -9,13 +9,41 @@ on:
       - master
 jobs:
   buildAndTest:
-    runs-on: ubuntu-latest
+    name: build ${{ matrix.java }} / test ${{ matrix.test || matrix.java }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ 'ubuntu-latest', 'windows-latest' ]
+        java: [ '8', '11', '17' ]
+        include:
+          - os: 'ubuntu-latest'
+            java: '8'
+            test: '17'
+          - os: 'windows-latest'
+            java: '8'
+            test: '17'
+    env:
+      ORG_GRADLE_PROJECT_toolchain.version.compile: ${{ matrix.java }}
+      ORG_GRADLE_PROJECT_toolchain.version.test: ${{ matrix.test || matrix.java }}
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: gradle/wrapper-validation-action@v1
-      - name: Set up JDK 1.8
-        uses: actions/setup-java@v1
+      - name: Set up JDK
+        uses: actions/setup-java@v2
         with:
-          java-version: '8.0.282'
-      - name: build and test
-        run: ./gradlew assemble && ./gradlew check --info --stacktrace
+          java-version: ${{ matrix.java }}
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+      - name: Gradle version information
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: javaToolchains --version
+      - name: Build (on Java ${{ matrix.java }})
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: assemble
+      - name: Test (on Java ${{ matrix.test || matrix.java }})
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: check --info --stacktrace
