@@ -16,8 +16,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ 'ubuntu-latest', 'windows-latest' ]
-        java: ['8' '11', '17' ]
-        test: ['8' '11', '17']
+        java: ['8', '11', '17' ]
+        test: ['8', '11', '17']
         distribution: [ 'temurin' ]
 #        include:
 #          - os: 'ubuntu-latest'
