@@ -9,7 +9,7 @@ on:
       - master
 jobs:
   buildAndTest:
-    name: buildAndTest ${{ matrix.java }}/${{ matrix.test || matrix.java }} (${{ matrix.distribution }}) on ${{ matrix.os }}
+    name: buildAndTest ${{ matrix.java.c }}/${{ matrix.java.t || matrix.java.c }} (${{ matrix.distribution }}) on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
