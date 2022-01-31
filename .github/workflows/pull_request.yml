@@ -43,7 +43,7 @@ jobs:
           distribution: ${{ matrix.distribution }}
       - name: Set up testing JDK (${{ matrix.test }}, ${{ matrix.distribution }})
         uses: actions/setup-java@v2
-        if: ${{ matrix.java != matrix.test }}
+        if: ${{ matrix.test != null && (matrix.java != matrix.test) }}
         with:
           java-version: ${{ matrix.test }}
           distribution: ${{ matrix.distribution }}
