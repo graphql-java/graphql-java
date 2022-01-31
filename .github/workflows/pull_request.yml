@@ -9,13 +9,14 @@ on:
       - master
 jobs:
   buildAndTest:
-    name: build ${{ matrix.java }} / test ${{ matrix.test || matrix.java }} on ${{ matrix.os }}
+    name: : build ${{ matrix.java }} / test ${{ matrix.test || matrix.java }} on ${{ matrix.distribution }}/${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ 'ubuntu-latest', 'windows-latest' ]
         java: [ '8', '11', '17' ]
+        distribution: ['temurin']
         include:
           - os: 'ubuntu-latest'
             java: '8'
@@ -33,6 +34,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: ${{ matrix.java }}
+          distribution: ${{ matrix.distribution }}
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
       - name: Gradle version information
