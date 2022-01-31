@@ -8,42 +8,34 @@ on:
     branches:
       - master
 jobs:
-  checkMatrixCompatibility:
-    outputs:
-      status: ${{ steps.early.conclusion }}
-    runs-on: ubuntu-latest
-    steps:
-      - id: early
-        if: ${{ (matrix.java == matrix.test) || matrix.test == '8' }}
-        name: Early exit
-        run: echo 1
   buildAndTest:
-    needs: checkMatrixCompatibility
     name: buildAndTest ${{ matrix.java }}/${{ matrix.test || matrix.java }} (${{ matrix.distribution }}) on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    if: needs.check.outputs.status == 'success'
     strategy:
       fail-fast: false
       matrix:
         os: [ 'ubuntu-latest', 'windows-latest' ]
-        java: [ '8', '11', '17' ]
-        test: [ '8', '11', '17' ]
+        java:
+          - { c: '8', t: '8' }
+          - { c: '8', t: '17' }
+          - { c: '11', t: '11' }
+          - { c: '17', t: '17' }
         distribution: [ 'temurin' ]
     env:
-      ORG_GRADLE_PROJECT_toolchainCompileVersion: ${{ matrix.java }}
-      ORG_GRADLE_PROJECT_toolchainJavadocVersion: ${{ matrix.java }}
-      ORG_GRADLE_PROJECT_toolchainTestVersion: ${{ matrix.test || matrix.java }}
+      ORG_GRADLE_PROJECT_toolchainCompileVersion: ${{ matrix.java.c }}
+      ORG_GRADLE_PROJECT_toolchainJavadocVersion: ${{ matrix.java.c }}
+      ORG_GRADLE_PROJECT_toolchainTestVersion: ${{ matrix.java.t || matrix.java.c }}
     steps:
       - uses: actions/checkout@v2
       - uses: gradle/wrapper-validation-action@v1
-      - name: Set up base JDK (${{ matrix.java }}, ${{ matrix.distribution }})
+      - name: Set up base JDK (${{ matrix.java.c }}, ${{ matrix.distribution }})
         uses: actions/setup-java@v2
         with:
-          java-version: ${{ matrix.java }}
+          java-version: ${{ matrix.java.c }}
           distribution: ${{ matrix.distribution }}
-      - name: Set up testing JDK (${{ matrix.test || 'undefined' }}, ${{ matrix.distribution }})
+      - name: Set up testing JDK (${{ matrix.java.t || 'undefined' }}, ${{ matrix.distribution }})
         uses: actions/setup-java@v2
-        if: ${{ matrix.test != null && (matrix.java != matrix.test) }}
+        if: ${{ matrix.java.t != null && (matrix.java.c != matrix.java.t) }}
         with:
           java-version: ${{ matrix.test }}
           distribution: ${{ matrix.distribution }}
@@ -57,11 +49,11 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: javaToolchains printUsedVersions
-      - name: Build (on Java ${{ matrix.java }})
+      - name: Build (on Java ${{ matrix.java.c }})
         uses: gradle/gradle-build-action@v2
         with:
           arguments: assemble
-      - name: Test (on Java ${{ matrix.test || matrix.java }})
+      - name: Test (on Java ${{ matrix.java.t || matrix.java.c }})
         uses: gradle/gradle-build-action@v2
         with:
           arguments: check --info --stacktrace
@@ -69,6 +61,6 @@ jobs:
         uses: actions/upload-artifact@v2
         if: ${{ failure() }}
         with:
-          name: gradle-test-summary-b${{ matrix.java }}-t${{ matrix.test || matrix.java }}-${{ matrix.distribution }}-${{ matrix.os }}
+          name: gradle-test-summary-b${{ matrix.java.c }}-t${{ matrix.java.t || matrix.java.c }}-${{ matrix.distribution }}-${{ matrix.os }}
           path: build/reports/tests/test/
           retention-days: 4
