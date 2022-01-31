@@ -22,8 +22,8 @@ jobs:
           - { c: '11', t: '11' }
           - { c: '17', t: '17' }
         dist:
-          - { dist: 'temurin', vm: 'hotspot' }
-          - { dist: 'adopt-openj9', vm: 'openj9' }
+          - { name: 'temurin', vm: 'hotspot' }
+          - { name: 'adopt-openj9', vm: 'openj9' }
     env:
       ORG_GRADLE_PROJECT_toolchainCompileVersion: ${{ matrix.java.c }}
       ORG_GRADLE_PROJECT_toolchainJavadocVersion: ${{ matrix.java.c }}
