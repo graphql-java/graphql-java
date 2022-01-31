@@ -26,14 +26,14 @@ jobs:
             java: '8'
             test: '17'
             distribution: 'temurin'
-#          - os: 'ubuntu-latest'
-#            java: '8'
-#            test: '8'
-#            distribution: 'temurin'
-#          - os: 'windows-latest'
-#            java: '8'
-#            test: '8'
-#            distribution: 'temurin'
+          - os: 'ubuntu-latest'
+            java: '8'
+            test: '8'
+            distribution: 'temurin'
+          - os: 'windows-latest'
+            java: '8'
+            test: '8'
+            distribution: 'temurin'
     env:
       ORG_GRADLE_PROJECT_toolchainCompileVersion: ${{ matrix.java }}
       ORG_GRADLE_PROJECT_toolchainJavadocVersion: ${{ matrix.java }}
