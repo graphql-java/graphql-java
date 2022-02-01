@@ -30,6 +30,10 @@ import static graphql.execution.nextgen.FetchedValueAnalysis.FetchedValueType.SC
 import static graphql.execution.nextgen.FetchedValueAnalysis.newFetchedValueAnalysis;
 import static graphql.schema.GraphQLTypeUtil.isList;
 
+/**
+ * @deprecated Jan 2022 - We have decided to deprecate the NextGen engine, and it will be removed in a future release.
+ */
+@Deprecated
 @Internal
 public class FetchedValueAnalyzer {
 

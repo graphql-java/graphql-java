@@ -15,6 +15,10 @@ import java.util.Optional;
 
 import static graphql.collect.ImmutableKit.map;
 
+/**
+ * @deprecated Jan 2022 - We have decided to deprecate the NextGen engine, and it will be removed in a future release.
+ */
+@Deprecated
 @Internal
 public class ResultNodesCreator {
 
