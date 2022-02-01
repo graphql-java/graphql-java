@@ -1,5 +1,6 @@
 package graphql.parser
 
+import org.spockframework.runtime.extension.builtin.PreconditionContext
 import spock.lang.IgnoreIf
 import spock.lang.Specification
 
@@ -11,6 +12,9 @@ class MultiSourceReaderTest extends Specification {
         multiSource.close()
     }
 
+    // TODO un-ignore and fix test
+    //  https://spockframework.org/spock/docs/2.0/extensions.html#_ignoreif
+    @IgnoreIf({ PreconditionContext it -> it.os.windows })
     def "can combine files"() {
         when:
         multiSource = MultiSourceReader.newMultiSourceReader()
@@ -84,8 +88,6 @@ class MultiSourceReaderTest extends Specification {
         multiSource.getSourceName() == "PartC"
     }
 
-    // TODO un-ignore and fix test
-    @IgnoreIf({ System.getProperty("os.name").toLowerCase().contains("windows") })
     def "can read all the lines as one"() {
 
         when:
