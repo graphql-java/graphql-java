@@ -5,6 +5,7 @@ import graphql.execution.ResultPath;
 import graphql.language.SourceLocation;
 import graphql.schema.DataFetchingEnvironment;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -31,10 +32,12 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
         return message;
     }
 
+    @Nullable
     public List<Object> getPath() {
         return path;
     }
 
+    @Nullable
     public List<SourceLocation> getLocations() {
         return locations;
     }
@@ -43,6 +46,7 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
         return errorType;
     }
 
+    @Nullable
     public Map<String, Object> getExtensions() {
         return extensions;
     }
@@ -80,6 +84,7 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
         return (B) this;
     }
 
+    @Nullable
     public B locations(List<SourceLocation> locations) {
         if (locations != null) {
             this.locations.addAll(locations);
@@ -89,6 +94,7 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
         return (B) this;
     }
 
+    @Nullable
     public B location(SourceLocation location) {
         if (locations != null) {
             this.locations.add(location);
@@ -96,6 +102,7 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
         return (B) this;
     }
 
+    @Nullable
     public B path(ResultPath path) {
         if (path != null) {
             this.path = path.toList();
@@ -105,6 +112,7 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
         return (B) this;
     }
 
+    @Nullable
     public B path(List<Object> path) {
         this.path = path;
         return (B) this;
@@ -115,6 +123,7 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
         return (B) this;
     }
 
+    @Nullable
     public B extensions(Map<String, Object> extensions) {
         this.extensions = extensions;
         return (B) this;
