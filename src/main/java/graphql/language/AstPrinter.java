@@ -482,7 +482,7 @@ public class AstPrinter {
         } else if (value instanceof FloatValue) {
             return valueOf(((FloatValue) value).getValue());
         } else if (value instanceof StringValue) {
-            return wrap("\"", escapeJsonString(((StringValue) value).getValue()), "\"");
+            return "\"" + escapeJsonString(((StringValue) value).getValue()) + "\"";
         } else if (value instanceof EnumValue) {
             return valueOf(((EnumValue) value).getName());
         } else if (value instanceof BooleanValue) {

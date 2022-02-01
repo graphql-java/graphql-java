@@ -39,6 +39,19 @@ class GraphqlErrorBuilderTest extends Specification {
         graphQLError.getErrorType() == ErrorType.DataFetchingException
     }
 
+    def "builder getters work"() {
+        when:
+        def errorBuilder = GraphqlErrorBuilder.newError()
+                .message("Gunfight at the %s corral", "NotOK")
+                .location(location)
+                .path(["a","b"])
+        then:
+        errorBuilder.getMessage() == "Gunfight at the NotOK corral"
+        errorBuilder.getErrorType() == ErrorType.DataFetchingException
+        errorBuilder.getPath() == ["a","b"]
+        errorBuilder.getLocations() == [location]
+    }
+
     def "data fetcher result building works"() {
         when:
         def result = GraphqlErrorBuilder.newError().message("Gunfight at the %s corral", "NotOK").toResult()

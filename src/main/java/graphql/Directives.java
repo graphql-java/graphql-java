@@ -99,7 +99,7 @@ public class Directives {
             .argument(newArgument()
                     .name("reason")
                     .type(GraphQLString)
-                    .defaultValue(NO_LONGER_SUPPORTED)
+                    .defaultValueProgrammatic(NO_LONGER_SUPPORTED)
                     .description("The reason for the deprecation"))
             .validLocations(FIELD_DEFINITION, ENUM_VALUE, ARGUMENT_DEFINITION, INPUT_FIELD_DEFINITION)
             .definition(DEPRECATED_DIRECTIVE_DEFINITION)

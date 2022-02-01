@@ -34,6 +34,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
@@ -65,6 +66,7 @@ public class GraphQL {
      * which is the result of executing the provided query.
      *
      * @param executionInputBuilder {@link ExecutionInput.Builder}
+     *
      * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(ExecutionInput.Builder executionInputBuilder) {
@@ -85,6 +87,7 @@ public class GraphQL {
      * </pre>
      *
      * @param builderFunction a function that is given a {@link ExecutionInput.Builder}
+     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> execute(UnaryOperator<ExecutionInput.Builder> builderFunction) {
@@ -98,6 +101,7 @@ public class GraphQL {
      * which is the result of executing the provided query.
      *
      * @param executionInput {@link ExecutionInput}
+     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(ExecutionInput executionInput) {
@@ -111,6 +115,7 @@ public class GraphQL {
      * which is the result of executing the provided query.
      *
      * @param executionInputBuilder {@link ExecutionInput.Builder}
+     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput.Builder executionInputBuilder) {
@@ -131,6 +136,7 @@ public class GraphQL {
      * </pre>
      *
      * @param builderFunction a function that is given a {@link ExecutionInput.Builder}
+     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(UnaryOperator<ExecutionInput.Builder> builderFunction) {
@@ -144,6 +150,7 @@ public class GraphQL {
      * which is the result of executing the provided query.
      *
      * @param executionInput {@link ExecutionInput}
+     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
@@ -252,7 +259,8 @@ public class GraphQL {
         CompletableFuture<List<ValidationError>> cf = new CompletableFuture<>();
         validationCtx.onDispatched(cf);
 
-        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document);
+        Predicate<Class<?>> validationRulePredicate = executionInput.getGraphQLContext().getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, r -> true);
+        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate);
 
         validationCtx.onCompleted(validationErrors, null);
         cf.complete(validationErrors);
@@ -292,6 +300,7 @@ public class GraphQL {
      * Helps you build a GraphQL object ready to execute queries
      *
      * @param graphQLSchema the schema to use
+     *
      * @return a builder of GraphQL objects
      */
     public static Builder newGraphQL(GraphQLSchema graphQLSchema) {
@@ -303,6 +312,7 @@ public class GraphQL {
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new GraphQL object based on calling build on that builder
      */
     public GraphQL transform(Consumer<Builder> builderConsumer) {

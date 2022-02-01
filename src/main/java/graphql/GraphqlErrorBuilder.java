@@ -14,9 +14,12 @@ import static graphql.Assert.assertNotNull;
 /**
  * This helps you build {@link graphql.GraphQLError}s and also has a quick way to make a  {@link graphql.execution.DataFetcherResult}s
  * from that error.
+ *
+ * @param <B> this base class allows you to derive new classes from this base error builder
  */
+@SuppressWarnings("unchecked")
 @PublicApi
-public class GraphqlErrorBuilder {
+public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
 
     private String message;
     private List<Object> path;
@@ -24,12 +27,31 @@ public class GraphqlErrorBuilder {
     private ErrorClassification errorType = ErrorType.DataFetchingException;
     private Map<String, Object> extensions = null;
 
+    public String getMessage() {
+        return message;
+    }
+
+    public List<Object> getPath() {
+        return path;
+    }
+
+    public List<SourceLocation> getLocations() {
+        return locations;
+    }
+
+    public ErrorClassification getErrorType() {
+        return errorType;
+    }
+
+    public Map<String, Object> getExtensions() {
+        return extensions;
+    }
 
     /**
      * @return a builder of {@link graphql.GraphQLError}s
      */
-    public static GraphqlErrorBuilder newError() {
-        return new GraphqlErrorBuilder();
+    public static GraphqlErrorBuilder<?> newError() {
+        return new GraphqlErrorBuilder<>();
     }
 
     /**
@@ -40,62 +62,62 @@ public class GraphqlErrorBuilder {
      *
      * @return a builder of {@link graphql.GraphQLError}s
      */
-    public static GraphqlErrorBuilder newError(DataFetchingEnvironment dataFetchingEnvironment) {
-        return new GraphqlErrorBuilder()
+    public static GraphqlErrorBuilder<?> newError(DataFetchingEnvironment dataFetchingEnvironment) {
+        return new GraphqlErrorBuilder<>()
                 .location(dataFetchingEnvironment.getField().getSourceLocation())
                 .path(dataFetchingEnvironment.getExecutionStepInfo().getPath());
     }
 
-    private GraphqlErrorBuilder() {
+    protected GraphqlErrorBuilder() {
     }
 
-    public GraphqlErrorBuilder message(String message, Object... formatArgs) {
+    public B message(String message, Object... formatArgs) {
         if (formatArgs == null || formatArgs.length == 0) {
             this.message = assertNotNull(message);
         } else {
             this.message = String.format(assertNotNull(message), formatArgs);
         }
-        return this;
+        return (B) this;
     }
 
-    public GraphqlErrorBuilder locations(List<SourceLocation> locations) {
+    public B locations(List<SourceLocation> locations) {
         if (locations != null) {
             this.locations.addAll(locations);
         } else {
             this.locations = null;
         }
-        return this;
+        return (B) this;
     }
 
-    public GraphqlErrorBuilder location(SourceLocation location) {
+    public B location(SourceLocation location) {
         if (locations != null) {
             this.locations.add(location);
         }
-        return this;
+        return (B) this;
     }
 
-    public GraphqlErrorBuilder path(ResultPath path) {
+    public B path(ResultPath path) {
         if (path != null) {
             this.path = path.toList();
         } else {
             this.path = null;
         }
-        return this;
+        return (B) this;
     }
 
-    public GraphqlErrorBuilder path(List<Object> path) {
+    public B path(List<Object> path) {
         this.path = path;
-        return this;
+        return (B) this;
     }
 
-    public GraphqlErrorBuilder errorType(ErrorClassification errorType) {
+    public B errorType(ErrorClassification errorType) {
         this.errorType = assertNotNull(errorType);
-        return this;
+        return (B) this;
     }
 
-    public GraphqlErrorBuilder extensions(Map<String, Object> extensions) {
+    public B extensions(Map<String, Object> extensions) {
         this.extensions = extensions;
-        return this;
+        return (B) this;
     }
 
     /**
@@ -157,7 +179,7 @@ public class GraphqlErrorBuilder {
      *
      * @return a new data fetcher result that contains the built error
      */
-    public DataFetcherResult toResult() {
+    public DataFetcherResult<?> toResult() {
         return DataFetcherResult.newResult()
                 .error(build())
                 .build();
