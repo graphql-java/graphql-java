@@ -7,14 +7,16 @@ import graphql.introspection.Introspection;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedOutputType;
+import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.DirectiveInfo;
 import graphql.schema.idl.ScalarInfo;
 
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -140,6 +142,28 @@ public class SchemaUsage {
         return isReferencedImpl(schema, elementName, new HashSet<>());
     }
 
+    /**
+     * This returns all the unreferenced named elements in a schema.
+     *
+     * @param schema the schema to check
+     *
+     * @return a set of the named schema elements where {@link #isStronglyReferenced(GraphQLSchema, String)} returns false
+     */
+    public Set<GraphQLNamedSchemaElement> getUnReferencedElements(GraphQLSchema schema) {
+        Set<GraphQLNamedSchemaElement> elements = new LinkedHashSet<>();
+        schema.getAllTypesAsList().forEach(type -> {
+            if (!isStronglyReferenced(schema, type.getName())) {
+                elements.add(type);
+            }
+        });
+        schema.getDirectives().forEach(directive -> {
+            if (!isStronglyReferenced(schema, directive.getName())) {
+                elements.add(directive);
+            }
+        });
+        return elements;
+    }
+
     private boolean isReferencedImpl(GraphQLSchema schema, String elementName, Set<String> pathSoFar) {
         if (pathSoFar.contains(elementName)) {
             return false; // circular reference to that element
@@ -217,16 +241,15 @@ public class SchemaUsage {
 
     @Internal
     static class Builder {
-        // order of the types (as they are encountered in the schema) does not matter, hence HashMap
-        Map<String, Integer> fieldReferenceCounts = new HashMap<>();
-        Map<String, Integer> inputFieldReferenceCounts = new HashMap<>();
-        Map<String, Integer> outputFieldReferenceCounts = new HashMap<>();
-        Map<String, Integer> argReferenceCount = new HashMap<>();
-        Map<String, Integer> interfaceReferenceCount = new HashMap<>();
-        Map<String, Integer> unionReferenceCount = new HashMap<>();
-        Map<String, Integer> directiveReferenceCount = new HashMap<>();
-        Map<String, Set<String>> interfaceImplementors = new HashMap<>();
-        Map<String, Set<String>> elementBackReferences = new HashMap<>();
+        Map<String, Integer> fieldReferenceCounts = new LinkedHashMap<>();
+        Map<String, Integer> inputFieldReferenceCounts = new LinkedHashMap<>();
+        Map<String, Integer> outputFieldReferenceCounts = new LinkedHashMap<>();
+        Map<String, Integer> argReferenceCount = new LinkedHashMap<>();
+        Map<String, Integer> interfaceReferenceCount = new LinkedHashMap<>();
+        Map<String, Integer> unionReferenceCount = new LinkedHashMap<>();
+        Map<String, Integer> directiveReferenceCount = new LinkedHashMap<>();
+        Map<String, Set<String>> interfaceImplementors = new LinkedHashMap<>();
+        Map<String, Set<String>> elementBackReferences = new LinkedHashMap<>();
 
         SchemaUsage build() {
             return new SchemaUsage(this);

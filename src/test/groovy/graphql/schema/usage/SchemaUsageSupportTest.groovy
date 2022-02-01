@@ -181,6 +181,12 @@ class SchemaUsageSupportTest extends Specification {
         !schemaUsage.isStronglyReferenced(schema, "UnRefFieldDirective")
         !schemaUsage.isStronglyReferenced(schema, "UnRefInputTypeDirective")
         !schemaUsage.isStronglyReferenced(schema, "UnRefDirectiveInputType")
+
+        schemaUsage.getUnReferencedElements(schema).collect {it.name}.sort() ==
+                ["UnIRef1", "UnRef1", "UnRefDirectiveInputType", "UnRefEnum1",
+                 "UnRefHangingInputType", "UnRefHangingInputType2", "UnRefHangingInputType3",
+                 "UnRefHangingType","UnRefHangingType2", "UnRefInput1",
+                 "UnRefFieldDirective", "UnRefInputTypeDirective", "UnRefHangingArgDirective"].sort()
     }
 
     def "can record counts"() {
