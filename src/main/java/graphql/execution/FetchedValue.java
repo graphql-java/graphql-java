@@ -2,12 +2,17 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import graphql.GraphQLError;
-import graphql.Internal;
+import graphql.PublicApi;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 
 import java.util.List;
 import java.util.function.Consumer;
 
-@Internal
+/**
+ * Note: This is returned by {@link InstrumentationFieldCompleteParameters#getFetchedValue()}
+ * and therefore part of the public despite never used in a method signature.
+ */
+@PublicApi
 public class FetchedValue {
     private final Object fetchedValue;
     private final Object rawFetchedValue;

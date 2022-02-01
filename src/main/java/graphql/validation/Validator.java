@@ -32,6 +32,8 @@ import graphql.validation.rules.VariablesAreInputTypes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Internal
 public class Validator {
@@ -56,10 +58,16 @@ public class Validator {
     }
 
     public List<ValidationError> validateDocument(GraphQLSchema schema, Document document) {
+        return validateDocument(schema, document, ruleClass -> true);
+    }
+
+    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document, Predicate<Class<?>> applyRule) {
         ValidationContext validationContext = new ValidationContext(schema, document);
 
         ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector(MAX_VALIDATION_ERRORS);
         List<AbstractRule> rules = createRules(validationContext, validationErrorCollector);
+        // filter out any rules they don't want applied
+        rules = rules.stream().filter(r -> applyRule.test(r.getClass())).collect(Collectors.toList());
         LanguageTraversal languageTraversal = new LanguageTraversal();
         try {
             languageTraversal.traverse(document, new RulesVisitor(validationContext, rules));

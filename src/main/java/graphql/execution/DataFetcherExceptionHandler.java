@@ -27,7 +27,9 @@ public interface DataFetcherExceptionHandler {
      * version
      */
     @Deprecated
-    DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters);
+    default DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
+        return SimpleDataFetcherExceptionHandler.defaultImpl.onException(handlerParameters);
+    }
 
     /**
      * When an exception occurs during a call to a {@link DataFetcher} then this handler
