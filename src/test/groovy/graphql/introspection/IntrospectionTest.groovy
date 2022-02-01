@@ -6,6 +6,8 @@ import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLNamedType
+import spock.lang.Issue
+import spock.lang.See
 import spock.lang.Specification
 
 import static graphql.GraphQL.newGraphQL
@@ -62,6 +64,43 @@ class IntrospectionTest extends Specification {
                         ]
                 ]
         ]
+    }
+
+    @Issue("https://github.com/graphql-java/graphql-java/issues/2702")
+    def "Introspection#__DirectiveLocation(GraphQLEnumType) `name` should match `value`'s DirectiveLocation#name() #2702"() {
+        given:
+        def directiveLocationValues = Introspection.__DirectiveLocation.values
+
+        expect:
+        directiveLocationValues.each {
+            def value = it.value
+            assert value instanceof Introspection.DirectiveLocation
+            assert it.name == (value as Introspection.DirectiveLocation).name()
+        }
+    }
+
+    @See("https://spec.graphql.org/October2021/#sec-Schema-Introspection.Schema-Introspection-Schema")
+    def "Introspection#__DirectiveLocation(GraphQLEnumType) should have 19 distinct values"() {
+        given:
+        def directiveLocationValues = Introspection.__DirectiveLocation.values
+        def numValues = 19
+
+        expect:
+        directiveLocationValues.size() == numValues
+        directiveLocationValues.unique(false).size() == numValues
+    }
+
+    def "Introspection#__DirectiveLocation(GraphQLEnumType) should contain all Introspection.DirectiveLocation"() {
+        given:
+        def directiveLocationValues = new ArrayList<>(Introspection.__DirectiveLocation.values)
+        def possibleLocations = new ArrayList<>(Introspection.DirectiveLocation.values().toList()).iterator()
+
+        expect:
+        while (possibleLocations.hasNext()) {
+            def nextPossibleLocation = possibleLocations.next()
+            assert directiveLocationValues.retainAll { (it.value != nextPossibleLocation) }
+        }
+        assert directiveLocationValues.isEmpty()
     }
 
     def "schema description can be defined in SDL and queried via introspection"() {
