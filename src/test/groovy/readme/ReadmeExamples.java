@@ -1,5 +1,8 @@
 package readme;
 
+import graphql.GraphQLError;
+import graphql.GraphqlErrorBuilder;
+import graphql.InvalidSyntaxError;
 import graphql.Scalars;
 import graphql.StarWarsData;
 import graphql.TypeResolutionEnvironment;
@@ -446,6 +449,27 @@ public class ReadmeExamples {
                 }
             }
         };
+    }
+
+    static class SpecialError extends InvalidSyntaxError {
+
+        public SpecialError(SpecialErrorBuilder builder) {
+            super(builder.getLocations(), builder.getMessage());
+        }
+    }
+
+    static class SpecialErrorBuilder extends GraphqlErrorBuilder<SpecialErrorBuilder> {
+
+        @Override
+        public SpecialError build() {
+            return new SpecialError(this);
+        }
+    }
+
+    private void errorBuilderExample() {
+        GraphQLError err = GraphqlErrorBuilder.newError().message("direct").build();
+
+        SpecialError specialErr = new SpecialErrorBuilder().message("special").build();
     }
 
     private DataFetcher createDataFetcher(FieldDefinition definition, Directive directive) {
