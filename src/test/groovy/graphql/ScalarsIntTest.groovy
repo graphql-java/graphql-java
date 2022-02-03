@@ -58,7 +58,7 @@ class ScalarsIntTest extends Specification {
         42.0000d              | 42
         new Integer(42)       | 42
         "-1"                  | -1
-        new BigInteger(42)    | 42
+        new BigInteger("42")  | 42
         new BigDecimal("42")  | 42
         42.0f                 | 42
         42.0d                 | 42
