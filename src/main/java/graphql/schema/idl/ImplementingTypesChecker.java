@@ -66,8 +66,7 @@ class ImplementingTypesChecker {
         List<InterfaceTypeDefinition> interfaces = typeRegistry.getTypes(InterfaceTypeDefinition.class);
         List<ObjectTypeDefinition> objects = typeRegistry.getTypes(ObjectTypeDefinition.class);
 
-        Stream.of(interfaces.stream(), objects.stream())
-                .flatMap(Function.identity())
+        Stream.<ImplementingTypeDefinition<?>>concat(interfaces.stream(), objects.stream())
                 .forEach(type -> checkImplementingType(errors, typeRegistry, type));
     }
 
