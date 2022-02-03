@@ -22,6 +22,10 @@ import java.util.concurrent.CompletableFuture;
 import static graphql.collect.ImmutableKit.map;
 import static graphql.execution.FieldCollectorParameters.newParameters;
 
+/**
+ * @deprecated Jan 2022 - We have decided to deprecate the NextGen engine, and it will be removed in a future release.
+ */
+@Deprecated
 @Internal
 public class ExecutionStrategyUtil {
 

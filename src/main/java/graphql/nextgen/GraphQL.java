@@ -39,6 +39,11 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 
+/**
+ *
+ * @deprecated Jan 2022 - We have decided to deprecate the NextGen engine, and it will be removed in a future release.
+ */
+@Deprecated
 @SuppressWarnings("Duplicates")
 @Internal
 public class GraphQL {
