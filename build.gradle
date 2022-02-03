@@ -12,7 +12,6 @@ plugins {
     id "groovy"
 }
 
-
 def getDevelopmentVersion() {
     def gitCheckOutput = new StringBuilder()
     def gitCheckError = new StringBuilder()
