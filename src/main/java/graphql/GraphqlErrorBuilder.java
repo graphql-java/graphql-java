@@ -84,8 +84,7 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
         return (B) this;
     }
 
-    @Nullable
-    public B locations(List<SourceLocation> locations) {
+    public B locations(@Nullable List<SourceLocation> locations) {
         if (locations != null) {
             this.locations.addAll(locations);
         } else {
@@ -94,16 +93,14 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
         return (B) this;
     }
 
-    @Nullable
-    public B location(SourceLocation location) {
+    public B location(@Nullable SourceLocation location) {
         if (locations != null) {
             this.locations.add(location);
         }
         return (B) this;
     }
 
-    @Nullable
-    public B path(ResultPath path) {
+    public B path(@Nullable ResultPath path) {
         if (path != null) {
             this.path = path.toList();
         } else {
@@ -112,8 +109,7 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
         return (B) this;
     }
 
-    @Nullable
-    public B path(List<Object> path) {
+    public B path(@Nullable List<Object> path) {
         this.path = path;
         return (B) this;
     }
@@ -123,8 +119,7 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
         return (B) this;
     }
 
-    @Nullable
-    public B extensions(Map<String, Object> extensions) {
+    public B extensions(@Nullable Map<String, Object> extensions) {
         this.extensions = extensions;
         return (B) this;
     }
