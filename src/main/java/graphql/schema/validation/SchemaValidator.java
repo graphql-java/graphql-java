@@ -24,6 +24,7 @@ public class SchemaValidator {
         rules.add(new DefaultValuesAreValid());
         rules.add(new AppliedDirectivesAreValid());
         rules.add(new AppliedDirectiveArgumentsAreValid());
+        rules.add(new InputAndOutputTypesUsedAppropriately());
     }
 
     public List<GraphQLTypeVisitor> getRules() {
