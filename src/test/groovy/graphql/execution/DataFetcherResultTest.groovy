@@ -37,6 +37,23 @@ class DataFetcherResultTest extends Specification {
         result.hasErrors()
     }
 
+    def "clearErrors can be called in a builder"() {
+        when:
+        def builder = DataFetcherResult.newResult()
+                .errors([error1, error2])
+        then:
+        builder.hasErrors()
+
+        when:
+        builder.clearErrors()
+        then:
+        !builder.hasErrors()
+
+        when:
+        def result = builder.build()
+        then:
+        !result.hasErrors()
+    }
 
     def "transforming"() {
         when:
