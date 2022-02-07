@@ -20,7 +20,7 @@ import static graphql.Assert.assertNotNull;
  */
 @SuppressWarnings("unchecked")
 @PublicApi
-public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
+public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<B>> {
 
     private String message;
     private List<Object> path;
