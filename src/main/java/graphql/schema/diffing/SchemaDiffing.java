@@ -554,8 +554,10 @@ public class SchemaDiffing {
     }
 
     // minimum number of edit operations for a full mapping
-    private int editorialCostForMapping(Mapping partialOrFullMapping, SchemaGraph sourceGraph, SchemaGraph
-            targetGraph, List<EditOperation> editOperationsResult) {
+    private int editorialCostForMapping(Mapping partialOrFullMapping,
+                                        SchemaGraph sourceGraph,
+                                        SchemaGraph targetGraph,
+                                        List<EditOperation> editOperationsResult) {
         int cost = 0;
         for (int i = 0; i < partialOrFullMapping.size(); i++) {
             Vertex sourceVertex = partialOrFullMapping.getSource(i);

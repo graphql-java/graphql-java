@@ -457,8 +457,9 @@ public class FillupIsolatedVertices {
             for (IsolatedVertexContext isolatedVertexContext : contexts) {
                 contextForVertex.add(isolatedVertexContext.idForVertex(targetVertex, targetGraph));
             }
-            contextForVertex.add(targetVertex.getName());
-            System.out.println(contextForVertex);
+            if (!targetVertex.getType().equals(DUMMY_TYPE_VERTEX)) {
+                contextForVertex.add(targetVertex.getName());
+            }
             while (contextForVertex.size() > 0) {
                 if (isolatedVertices.contextToIsolatedSourceVertices.containsKey(contextForVertex)) {
                     return isolatedVertices.contextToIsolatedSourceVertices.get(contextForVertex).contains(isolatedSourceVertex);
@@ -475,7 +476,9 @@ public class FillupIsolatedVertices {
             for (IsolatedVertexContext isolatedVertexContext : contexts) {
                 contextForVertex.add(isolatedVertexContext.idForVertex(sourceVertex, sourceGraph));
             }
-            contextForVertex.add(sourceVertex.getName());
+            if (!sourceVertex.getType().equals(DUMMY_TYPE_VERTEX)) {
+                contextForVertex.add(sourceVertex.getName());
+            }
             while (contextForVertex.size() > 0) {
                 if (isolatedVertices.contextToIsolatedTargetVertices.containsKey(contextForVertex)) {
                     return isolatedVertices.contextToIsolatedTargetVertices.get(contextForVertex).contains(isolatedTargetVertex);
@@ -538,13 +541,13 @@ public class FillupIsolatedVertices {
                     Set<Vertex> newTargetVertices = Vertex.newIsolatedNodes(notUsedSource.size() - notUsedTarget.size(), "target-isolated-" + typeNameForDebug + "-");
                     // all deleted vertices can map to all new TargetVertices
                     for (Vertex deletedVertex : notUsedSource) {
-                        isolatedVertices.putTarget(concat(contextId, deletedVertex.getName()), newTargetVertices);
+                        isolatedVertices.putTarget(Arrays.asList(sameContext), newTargetVertices);
                     }
                 } else if (notUsedTarget.size() > notUsedSource.size()) {
                     Set<Vertex> newSourceVertices = Vertex.newIsolatedNodes(notUsedTarget.size() - notUsedSource.size(), "source-isolated-" + typeNameForDebug + "-");
                     // all inserted fields can map to all new source vertices
                     for (Vertex insertedVertex : notUsedTarget) {
-                        isolatedVertices.putSource(concat(contextId, insertedVertex.getName()), newSourceVertices);
+                        isolatedVertices.putSource(Arrays.asList(sameContext), newSourceVertices);
                     }
                 }
             } else {

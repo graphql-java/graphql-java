@@ -1,5 +1,7 @@
 package graphql.schema.diffing;
 
+import graphql.Assert;
+
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -58,7 +60,7 @@ public class Vertex {
     }
 
     public String getName() {
-        return (String) properties.get("name");
+        return (String) Assert.assertNotNull(properties.get("name"), () -> String.format("should not call getName on %s", this));
     }
 
     public Map<String, Object> getProperties() {
