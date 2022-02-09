@@ -335,7 +335,7 @@ public class FillupIsolatedVertices {
 
 
         sourceGraph.addVertices(isolatedVertices.allIsolatedSource);
-        sourceGraph.addVertices(isolatedVertices.allIsolatedTarget);
+        targetGraph.addVertices(isolatedVertices.allIsolatedTarget);
 
         if (sourceGraph.size() < targetGraph.size()) {
             isolatedVertices.isolatedBuiltInSourceVertices.addAll(sourceGraph.addIsolatedVertices(targetGraph.size() - sourceGraph.size(), "source-isolated-builtin-"));
@@ -518,6 +518,22 @@ public class FillupIsolatedVertices {
         List<String> deletedContexts = new ArrayList<>();
         List<String> insertedContexts = new ArrayList<>();
         List<String> sameContexts = new ArrayList<>();
+
+        if (contextIx == 0) {
+            if (sourceGroups.size() == 0 && targetGroups.size() == 1) {
+                // we only have inserted elements
+                String context = targetGroups.keySet().iterator().next();
+                int count = targetGroups.get(context).size();
+                Set<Vertex> newSourceVertices = Vertex.newIsolatedNodes(count, "source-isolated-" + typeNameForDebug + "-");
+                isolatedVertices.putSource(Arrays.asList(context), newSourceVertices);
+            } else if (sourceGroups.size() == 1 && targetGroups.size() == 0) {
+                // we only have deleted elements
+                String context = sourceGroups.keySet().iterator().next();
+                int count = sourceGroups.get(context).size();
+                Set<Vertex> newTargetVertices = Vertex.newIsolatedNodes(count, "target-isolated-" + typeNameForDebug + "-");
+                isolatedVertices.putTarget(Arrays.asList(context), newTargetVertices);
+            }
+        }
         diffNamedList(sourceGroups.keySet(), targetGroups.keySet(), deletedContexts, insertedContexts, sameContexts);
         for (String sameContext : sameContexts) {
             ImmutableList<Vertex> sourceVertices = sourceGroups.get(sameContext);

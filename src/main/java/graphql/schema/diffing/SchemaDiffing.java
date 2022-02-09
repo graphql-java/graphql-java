@@ -400,18 +400,22 @@ public class SchemaDiffing {
         int[] assignments = hungarianAlgorithm.execute();
         int editorialCostForMapping = editorialCostForMapping(partialMapping, sourceGraph, targetGraph, new ArrayList<>());
         double costMatrixSum = getCostMatrixSum(costMatrixCopy, assignments);
+//        if (costMatrixSum >= Integer.MAX_VALUE) {
+//            logUnmappable(costMatrixCopy, assignments, sourceList, availableTargetVertices, level);
+//            throw new RuntimeException("should not happen");
+//        }
 
 
-        double lowerBoundForPartialMappingSibling = editorialCostForMapping + costMatrixSum;
+        double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
         int v_i_target_IndexSibling = assignments[0];
         Vertex bestExtensionTargetVertexSibling = availableTargetVertices.get(v_i_target_IndexSibling);
         Mapping newMappingSibling = partialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
 
 
-        if (lowerBoundForPartialMappingSibling >= upperBound.doubleValue()) {
+        if (lowerBoundForPartialMapping >= upperBound.doubleValue()) {
             return;
         }
-        MappingEntry newMappingEntry = new MappingEntry(newMappingSibling, level, lowerBoundForPartialMappingSibling);
+        MappingEntry newMappingEntry = new MappingEntry(newMappingSibling, level, lowerBoundForPartialMapping);
         LinkedBlockingQueue<MappingEntry> siblings = new LinkedBlockingQueue<>();
 //        newMappingEntry.siblingsReady = new AtomicBoolean();
         newMappingEntry.mappingEntriesSiblings = siblings;
@@ -527,6 +531,8 @@ public class SchemaDiffing {
                 System.out.println("setting new best edit at level " + level + " with size " + editOperations.size() + " at level " + level);
 
             }
+        } else {
+//            System.out.println("sibling not good enough");
         }
     }
 
@@ -537,6 +543,18 @@ public class SchemaDiffing {
             costMatrixSum += costMatrix[i].get(assignments[i]);
         }
         return costMatrixSum;
+    }
+
+    private void logUnmappable(AtomicDoubleArray[] costMatrix, int[] assignments, List<Vertex> sourceList, ArrayList<Vertex> availableTargetVertices, int level) {
+        for (int i = 0; i < assignments.length; i++) {
+            double value = costMatrix[i].get(assignments[i]);
+            if (value >= Integer.MAX_VALUE) {
+                System.out.println("i " + i + " can't mapped");
+                Vertex v = sourceList.get(i + level - 1);
+                Vertex u = availableTargetVertices.get(assignments[i]);
+                System.out.println("from " + v + " to " + u);
+            }
+        }
     }
 
     private List<String> getDebugMap(Mapping mapping) {
