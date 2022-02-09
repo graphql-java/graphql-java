@@ -7,8 +7,21 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
+
+import static graphql.Assert.assertTrue;
+import static graphql.schema.diffing.SchemaGraphFactory.DIRECTIVE;
+import static graphql.schema.diffing.SchemaGraphFactory.FIELD;
+import static graphql.schema.diffing.SchemaGraphFactory.INPUT_OBJECT;
+import static graphql.schema.diffing.SchemaGraphFactory.INTERFACE;
+import static graphql.schema.diffing.SchemaGraphFactory.OBJECT;
+import static java.lang.String.format;
 
 public class SchemaGraph {
 
@@ -34,8 +47,9 @@ public class SchemaGraph {
         vertices.add(vertex);
         typeToVertices.put(vertex.getType(), vertex);
     }
+
     public void addVertices(Collection<Vertex> vertices) {
-        for(Vertex vertex: vertices) {
+        for (Vertex vertex : vertices) {
             this.vertices.add(vertex);
             typeToVertices.put(vertex.getType(), vertex);
         }
@@ -129,10 +143,30 @@ public class SchemaGraph {
     public List<Vertex> addIsolatedVertices(int count, String debugPrefix) {
         List<Vertex> result = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            Vertex isolatedVertex = Vertex.newArtificialNode(debugPrefix + i);
+            Vertex isolatedVertex = Vertex.newIsolatedNode(debugPrefix + i);
             vertices.add(isolatedVertex);
             result.add(isolatedVertex);
         }
         return result;
     }
+
+    public Vertex getFieldOrDirectiveForArgument(Vertex argument) {
+        List<Vertex> adjacentVertices = getAdjacentVertices(argument, vertex -> vertex.getType().equals(FIELD) || vertex.getType().equals(DIRECTIVE));
+        assertTrue(adjacentVertices.size() == 1, () -> format("No field or directive found for %s", argument));
+        return adjacentVertices.get(0);
+    }
+
+    public Vertex getFieldsContainerForField(Vertex field) {
+        List<Vertex> adjacentVertices = getAdjacentVertices(field, vertex -> vertex.getType().equals(OBJECT) || vertex.getType().equals(INTERFACE));
+        assertTrue(adjacentVertices.size() == 1, () -> format("No fields container found for %s", field));
+        return adjacentVertices.get(0);
+    }
+
+    public Vertex getInputObjectForInputField(Vertex inputField) {
+        List<Vertex> adjacentVertices = this.getAdjacentVertices(inputField, vertex -> vertex.getType().equals(INPUT_OBJECT));
+        assertTrue(adjacentVertices.size() == 1, () -> format("No input object found for %s", inputField));
+        return adjacentVertices.get(0);
+    }
+
+
 }

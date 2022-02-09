@@ -1,9 +1,7 @@
 package graphql.schema.diffing;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -13,22 +11,22 @@ public class Vertex {
     private String type;
     private Map<String, Object> properties = new LinkedHashMap<>();
     private String debugName;
-    private boolean artificialNode;
+    private boolean isolated;
 
 
     private boolean builtInType;
 
-    public static Vertex newArtificialNode(String debugName) {
+    public static Vertex newIsolatedNode(String debugName) {
         Vertex vertex = new Vertex(SchemaGraphFactory.ISOLATED, debugName);
-        vertex.artificialNode = true;
+        vertex.isolated = true;
         return vertex;
     }
 
-    public static Set<Vertex> newArtificialNodes(int count, String debugName) {
+    public static Set<Vertex> newIsolatedNodes(int count, String debugName) {
         Set<Vertex> result = new LinkedHashSet<>();
         for (int i = 1; i <= count; i++) {
             Vertex vertex = new Vertex(SchemaGraphFactory.ISOLATED, debugName + i);
-            vertex.artificialNode = true;
+            vertex.isolated = true;
             result.add(vertex);
         }
         return result;
@@ -39,8 +37,8 @@ public class Vertex {
         this.debugName = debugName;
     }
 
-    public boolean isArtificialNode() {
-        return artificialNode;
+    public boolean isIsolated() {
+        return isolated;
     }
 
     public void add(String propName, Object propValue) {
@@ -57,6 +55,10 @@ public class Vertex {
 
     public <T> T getProperty(String name) {
         return (T) properties.get(name);
+    }
+
+    public String getName() {
+        return (String) properties.get("name");
     }
 
     public Map<String, Object> getProperties() {

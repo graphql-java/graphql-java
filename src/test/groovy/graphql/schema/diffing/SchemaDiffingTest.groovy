@@ -929,6 +929,40 @@ class SchemaDiffingTest extends Specification {
         operations.size() == 7
     }
 
+    def "arguments"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            a(f1: String, f2:String): String
+            b(g1: String, g2:String): O1
+           } 
+           type O1 {
+            c(h1: String, h2:String): String
+            d(i1: String, i2:String): O1
+           }
+        """)
+        def schema2 = schema("""
+           type Query {
+            a(f1: String): String
+            b(g2: String, g3:String, g4: String): String
+           }
+           type O1 {
+            c(h1: String, h2:String): String
+            renamed(i2: String, i3:String): O1
+           }
+        """)
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        operations.each { println it }
+
+        then:
+        /**
+         *
+         */
+        operations.size() == 7
+    }
+
     def "adding enum value"() {
         given:
         def schema1 = schema("""
