@@ -4,6 +4,7 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
+import graphql.Assert;
 import graphql.util.FpKit;
 
 import java.util.ArrayList;
@@ -18,9 +19,20 @@ import java.util.Set;
 
 import static graphql.schema.diffing.SchemaDiffing.diffNamedList;
 import static graphql.schema.diffing.SchemaDiffing.diffVertices;
+import static graphql.schema.diffing.SchemaGraphFactory.APPLIED_ARGUMENT;
+import static graphql.schema.diffing.SchemaGraphFactory.APPLIED_DIRECTIVE;
 import static graphql.schema.diffing.SchemaGraphFactory.ARGUMENT;
+import static graphql.schema.diffing.SchemaGraphFactory.DIRECTIVE;
+import static graphql.schema.diffing.SchemaGraphFactory.DUMMY_TYPE_VERTEX;
+import static graphql.schema.diffing.SchemaGraphFactory.ENUM;
+import static graphql.schema.diffing.SchemaGraphFactory.ENUM_VALUE;
 import static graphql.schema.diffing.SchemaGraphFactory.FIELD;
 import static graphql.schema.diffing.SchemaGraphFactory.INPUT_FIELD;
+import static graphql.schema.diffing.SchemaGraphFactory.INPUT_OBJECT;
+import static graphql.schema.diffing.SchemaGraphFactory.INTERFACE;
+import static graphql.schema.diffing.SchemaGraphFactory.OBJECT;
+import static graphql.schema.diffing.SchemaGraphFactory.SCALAR;
+import static graphql.schema.diffing.SchemaGraphFactory.UNION;
 import static graphql.util.FpKit.concat;
 
 public class FillupIsolatedVertices {
@@ -33,8 +45,195 @@ public class FillupIsolatedVertices {
 
     static {
         typeContexts.put(FIELD, fieldContext());
-        typeContexts.put(INPUT_FIELD, inputFieldContexts());
         typeContexts.put(ARGUMENT, argumentsForFieldsContexts());
+        typeContexts.put(INPUT_FIELD, inputFieldContexts());
+        typeContexts.put(DUMMY_TYPE_VERTEX, dummyTypeContext());
+        typeContexts.put(OBJECT, objectContext());
+        typeContexts.put(INTERFACE, interfaceContext());
+        typeContexts.put(UNION, unionContext());
+        typeContexts.put(INPUT_OBJECT, inputObjectContext());
+        typeContexts.put(SCALAR, scalarContext());
+        typeContexts.put(ENUM, enumContext());
+        typeContexts.put(ENUM_VALUE, enumValueContext());
+        typeContexts.put(APPLIED_DIRECTIVE, appliedDirectiveContext());
+        typeContexts.put(APPLIED_ARGUMENT, appliedArgumentContext());
+        typeContexts.put(DIRECTIVE, directiveContext());
+    }
+
+    private static List<IsolatedVertexContext> dummyTypeContext() {
+        IsolatedVertexContext dummyType = new IsolatedVertexContext() {
+            @Override
+            public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
+                return vertex.getType();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return DUMMY_TYPE_VERTEX.equals(vertex.getType()) && !vertex.isBuiltInType();
+            }
+        };
+        List<IsolatedVertexContext> contexts = Arrays.asList(dummyType);
+        return contexts;
+    }
+
+    private static List<IsolatedVertexContext> scalarContext() {
+        IsolatedVertexContext scalar = new IsolatedVertexContext() {
+            @Override
+            public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
+                return vertex.getType();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return SCALAR.equals(vertex.getType()) && !vertex.isBuiltInType();
+            }
+        };
+        List<IsolatedVertexContext> contexts = Arrays.asList(scalar);
+        return contexts;
+    }
+
+    private static List<IsolatedVertexContext> inputObjectContext() {
+        IsolatedVertexContext inputObject = new IsolatedVertexContext() {
+            @Override
+            public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
+                return vertex.getType();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return INPUT_OBJECT.equals(vertex.getType()) && !vertex.isBuiltInType();
+            }
+        };
+        List<IsolatedVertexContext> contexts = Arrays.asList(inputObject);
+        return contexts;
+    }
+
+    private static List<IsolatedVertexContext> objectContext() {
+        IsolatedVertexContext object = new IsolatedVertexContext() {
+            @Override
+            public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
+                return vertex.getType();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return OBJECT.equals(vertex.getType()) && !vertex.isBuiltInType();
+            }
+        };
+        List<IsolatedVertexContext> contexts = Arrays.asList(object);
+        return contexts;
+    }
+
+    private static List<IsolatedVertexContext> enumContext() {
+        IsolatedVertexContext enumCtx = new IsolatedVertexContext() {
+            @Override
+            public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
+                return vertex.getType();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return ENUM.equals(vertex.getType()) && !vertex.isBuiltInType();
+            }
+        };
+        List<IsolatedVertexContext> contexts = Arrays.asList(enumCtx);
+        return contexts;
+    }
+
+    private static List<IsolatedVertexContext> enumValueContext() {
+        IsolatedVertexContext enumValue = new IsolatedVertexContext() {
+            @Override
+            public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
+                return vertex.getType();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return ENUM_VALUE.equals(vertex.getType()) && !vertex.isBuiltInType();
+            }
+        };
+        List<IsolatedVertexContext> contexts = Arrays.asList(enumValue);
+        return contexts;
+    }
+
+    private static List<IsolatedVertexContext> interfaceContext() {
+        IsolatedVertexContext interfaceContext = new IsolatedVertexContext() {
+            @Override
+            public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
+                return vertex.getType();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return INTERFACE.equals(vertex.getType()) && !vertex.isBuiltInType();
+            }
+        };
+        List<IsolatedVertexContext> contexts = Arrays.asList(interfaceContext);
+        return contexts;
+    }
+
+    private static List<IsolatedVertexContext> unionContext() {
+        IsolatedVertexContext unionContext = new IsolatedVertexContext() {
+            @Override
+            public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
+                return vertex.getType();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return UNION.equals(vertex.getType()) && !vertex.isBuiltInType();
+            }
+        };
+        List<IsolatedVertexContext> contexts = Arrays.asList(unionContext);
+        return contexts;
+    }
+
+    private static List<IsolatedVertexContext> directiveContext() {
+        IsolatedVertexContext directiveContext = new IsolatedVertexContext() {
+            @Override
+            public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
+                return vertex.getType();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return DIRECTIVE.equals(vertex.getType()) && !vertex.isBuiltInType();
+            }
+        };
+        List<IsolatedVertexContext> contexts = Arrays.asList(directiveContext);
+        return contexts;
+    }
+
+    private static List<IsolatedVertexContext> appliedDirectiveContext() {
+        IsolatedVertexContext appliedDirective = new IsolatedVertexContext() {
+            @Override
+            public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
+                return vertex.getType();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return APPLIED_DIRECTIVE.equals(vertex.getType()) && !vertex.isBuiltInType();
+            }
+        };
+        List<IsolatedVertexContext> contexts = Arrays.asList(appliedDirective);
+        return contexts;
+    }
+
+    private static List<IsolatedVertexContext> appliedArgumentContext() {
+        IsolatedVertexContext appliedArgument = new IsolatedVertexContext() {
+            @Override
+            public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
+                return vertex.getType();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return APPLIED_ARGUMENT.equals(vertex.getType()) && !vertex.isBuiltInType();
+            }
+        };
+        List<IsolatedVertexContext> contexts = Arrays.asList(appliedArgument);
+        return contexts;
     }
 
     private static List<IsolatedVertexContext> fieldContext() {
@@ -63,7 +262,6 @@ public class FillupIsolatedVertices {
         };
         List<IsolatedVertexContext> contexts = Arrays.asList(field, container);
         return contexts;
-//        calc(contexts, FIELD);
     }
 
     private static List<IsolatedVertexContext> argumentsForFieldsContexts() {
@@ -123,6 +321,18 @@ public class FillupIsolatedVertices {
         calcIsolatedVertices(typeContexts.get(FIELD), FIELD);
         calcIsolatedVertices(typeContexts.get(ARGUMENT), ARGUMENT);
         calcIsolatedVertices(typeContexts.get(INPUT_FIELD), INPUT_FIELD);
+        calcIsolatedVertices(typeContexts.get(DUMMY_TYPE_VERTEX), DUMMY_TYPE_VERTEX);
+        calcIsolatedVertices(typeContexts.get(OBJECT), OBJECT);
+        calcIsolatedVertices(typeContexts.get(INTERFACE), INTERFACE);
+        calcIsolatedVertices(typeContexts.get(UNION), UNION);
+        calcIsolatedVertices(typeContexts.get(INPUT_OBJECT), INPUT_OBJECT);
+        calcIsolatedVertices(typeContexts.get(SCALAR), SCALAR);
+        calcIsolatedVertices(typeContexts.get(ENUM), ENUM);
+        calcIsolatedVertices(typeContexts.get(ENUM_VALUE), ENUM_VALUE);
+        calcIsolatedVertices(typeContexts.get(APPLIED_DIRECTIVE), APPLIED_DIRECTIVE);
+        calcIsolatedVertices(typeContexts.get(APPLIED_ARGUMENT), APPLIED_ARGUMENT);
+        calcIsolatedVertices(typeContexts.get(DIRECTIVE), DIRECTIVE);
+
 
         sourceGraph.addVertices(isolatedVertices.allIsolatedSource);
         sourceGraph.addVertices(isolatedVertices.allIsolatedTarget);
@@ -242,9 +452,7 @@ public class FillupIsolatedVertices {
 
         public boolean mappingPossibleForIsolatedSource(Vertex isolatedSourceVertex, Vertex targetVertex) {
             List<IsolatedVertexContext> contexts = typeContexts.get(targetVertex.getType());
-            if (contexts == null) {
-                return true;
-            }
+            Assert.assertNotNull(contexts);
             List<String> contextForVertex = new ArrayList<>();
             for (IsolatedVertexContext isolatedVertexContext : contexts) {
                 contextForVertex.add(isolatedVertexContext.idForVertex(targetVertex, targetGraph));
@@ -262,9 +470,7 @@ public class FillupIsolatedVertices {
 
         public boolean mappingPossibleForIsolatedTarget(Vertex sourceVertex, Vertex isolatedTargetVertex) {
             List<IsolatedVertexContext> contexts = typeContexts.get(sourceVertex.getType());
-            if (contexts == null) {
-                return true;
-            }
+            Assert.assertNotNull(contexts);
             List<String> contextForVertex = new ArrayList<>();
             for (IsolatedVertexContext isolatedVertexContext : contexts) {
                 contextForVertex.add(isolatedVertexContext.idForVertex(sourceVertex, sourceGraph));
