@@ -562,13 +562,6 @@ public class FillupIsolatedVertices {
                     }
                 }
             } else {
-
-                ArrayList<Vertex> deletedVertices = new ArrayList<>();
-                ArrayList<Vertex> insertedVertices = new ArrayList<>();
-                HashBiMap<Vertex, Vertex> sameVertices = HashBiMap.create();
-                diffVertices(notUsedSource, notUsedTarget, deletedVertices, insertedVertices, sameVertices, vertex -> {
-                    return concat(currentContextId, vertex.getName());
-                });
                 usedSourceVertices.addAll(sourceGroups.get(sameContext));
                 usedTargetVertices.addAll(targetGroups.get(sameContext));
                 if (notUsedSource.size() > notUsedTarget.size()) {

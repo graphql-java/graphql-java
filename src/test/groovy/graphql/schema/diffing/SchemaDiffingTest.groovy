@@ -968,6 +968,29 @@ class SchemaDiffingTest extends Specification {
         operations.size() == 11
     }
 
+    def "same arguments in different contexts"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+               foo(someArg:String): String
+           } 
+        """)
+        def schema2 = schema("""
+           type Query {
+            field1(arg1: String): String
+            field2(arg1: String): String
+            field3(arg1: String): String
+           } 
+        """)
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        operations.each { println it }
+
+        then:
+        operations.size() == 18
+    }
+
     def "adding enum value"() {
         given:
         def schema1 = schema("""
