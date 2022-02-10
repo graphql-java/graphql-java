@@ -958,9 +958,13 @@ class SchemaDiffingTest extends Specification {
 
         then:
         /**
-         *
+         * Query.f2 deleted
+         * O1.b.g1 => O1.b.g4
+         * O1.d.i1 -> O.renamed.i3
+         * O1.d => O1.renamed
+         * Inserted O1.b.g3
          */
-        operations.size() == 7
+        operations.size() == 11
     }
 
     def "adding enum value"() {
