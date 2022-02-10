@@ -513,15 +513,24 @@ public class GraphQL {
             InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema, instrumentationState);
             executionInput = instrumentation.instrumentExecutionInput(executionInput, inputInstrumentationParameters);
 
+            CompletableFuture<ExecutionResult> beginExecutionCF = new CompletableFuture<>();
             InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema, instrumentationState);
             InstrumentationContext<ExecutionResult> executionInstrumentation = instrumentation.beginExecution(instrumentationParameters);
+            executionInstrumentation.onDispatched(beginExecutionCF);
 
             GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters);
 
             CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput, graphQLSchema, instrumentationState);
             //
             // finish up instrumentation
-            executionResult = executionResult.whenComplete(executionInstrumentation::onCompleted);
+            executionResult = executionResult.whenComplete((result, throwable) -> {
+                if (throwable != null) {
+                    beginExecutionCF.completeExceptionally(throwable);
+                } else {
+                    beginExecutionCF.complete(result);
+                }
+                executionInstrumentation.onCompleted(result, throwable);
+            });
             //
             // allow instrumentation to tweak the result
             executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters));

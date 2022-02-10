@@ -42,29 +42,41 @@ class InstrumentationTest extends Specification {
 
         def expected = [
                 "start:execution",
+                "onDispatched:execution",
 
                 "start:parse",
+                "onDispatched:parse",
                 "end:parse",
 
                 "start:validation",
+                "onDispatched:validation",
                 "end:validation",
 
                 "start:execute-operation",
+                "onDispatched:execute-operation",
 
                 "start:execution-strategy",
+                "onDispatched:execution-strategy",
 
                 "start:field-hero",
+                "onDispatched:field-hero",
                 "start:fetch-hero",
+                "onDispatched:fetch-hero",
                 "end:fetch-hero",
 
                 "start:complete-hero",
+                "onDispatched:complete-hero",
 
                 "start:execution-strategy",
+                "onDispatched:execution-strategy",
 
                 "start:field-id",
+                "onDispatched:field-id",
                 "start:fetch-id",
+                "onDispatched:fetch-id",
                 "end:fetch-id",
                 "start:complete-id",
+                "onDispatched:complete-id",
                 "end:complete-id",
                 "end:field-id",
 
