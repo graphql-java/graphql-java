@@ -5,9 +5,11 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
+import graphql.Assert;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,16 +17,46 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
-import static graphql.schema.diffing.SchemaGraphFactory.APPLIED_ARGUMENT;
-import static graphql.schema.diffing.SchemaGraphFactory.DIRECTIVE;
-import static graphql.schema.diffing.SchemaGraphFactory.FIELD;
-import static graphql.schema.diffing.SchemaGraphFactory.INPUT_OBJECT;
-import static graphql.schema.diffing.SchemaGraphFactory.INTERFACE;
-import static graphql.schema.diffing.SchemaGraphFactory.OBJECT;
 import static java.lang.String.format;
+import static java.lang.String.valueOf;
 
 public class SchemaGraph {
+
+    public static final String OBJECT = "Object";
+    public static final String INTERFACE = "Interface";
+    public static final String UNION = "Union";
+    public static final String FIELD = "Field";
+    public static final String ARGUMENT = "Argument";
+    public static final String SCALAR = "Scalar";
+    public static final String ENUM = "Enum";
+    public static final String ENUM_VALUE = "EnumValue";
+    public static final String INPUT_OBJECT = "InputObject";
+    public static final String INPUT_FIELD = "InputField";
+    public static final String DIRECTIVE = "Directive";
+    public static final String APPLIED_DIRECTIVE = "AppliedDirective";
+    public static final String APPLIED_ARGUMENT = "AppliedArgument";
+    public static final String DUMMY_TYPE_VERTEX = "__DUMMY_TYPE_VERTEX";
+    public static final String ISOLATED = "__ISOLATED";
+
+    public static final List<String> ALL_TYPES = Arrays.asList(DUMMY_TYPE_VERTEX, OBJECT, INTERFACE, UNION, INPUT_OBJECT, SCALAR, ENUM, ENUM_VALUE, APPLIED_DIRECTIVE, FIELD, ARGUMENT, APPLIED_ARGUMENT, DIRECTIVE, INPUT_FIELD);
+    public static final List<String> ALL_NAMED_TYPES = Arrays.asList(OBJECT, INTERFACE, UNION, INPUT_OBJECT, SCALAR, ENUM);
+
+    /**
+     * SCHEMA,
+     * SCALAR,
+     * OBJECT,
+     * FIELD_DEFINITION,
+     * ARGUMENT_DEFINITION,
+     * INTERFACE,
+     * UNION,
+     * ENUM,
+     * ENUM_VALUE,
+     * INPUT_OBJECT,
+     * INPUT_FIELD_DEFINITION
+     */
+    public static final List<String> appliedDirectiveContainerTypes = Arrays.asList(SCALAR, OBJECT, FIELD, ARGUMENT, INTERFACE, UNION, ENUM, ENUM_VALUE, INPUT_OBJECT, INPUT_FIELD);
 
     private List<Vertex> vertices = new ArrayList<>();
     private List<Edge> edges = new ArrayList<>();
@@ -169,5 +201,52 @@ public class SchemaGraph {
         return adjacentVertices.get(0);
     }
 
+    public Vertex getAppliedDirectiveForAppliedArgument(Vertex appliedArgument) {
+        List<Vertex> adjacentVertices = this.getAdjacentVertices(appliedArgument, vertex -> vertex.getType().equals(APPLIED_DIRECTIVE));
+        assertTrue(adjacentVertices.size() == 1, () -> format("No applied directive found for %s", appliedArgument));
+        return adjacentVertices.get(0);
+    }
+
+    public Vertex getAppliedDirectiveContainerForAppliedDirective(Vertex appliedDirective) {
+        List<Vertex> adjacentVertices = this.getAdjacentVertices(appliedDirective, vertex -> !vertex.getType().equals(APPLIED_ARGUMENT));
+        assertTrue(adjacentVertices.size() == 1, () -> format("No applied directive container found for %s", appliedDirective));
+        return adjacentVertices.get(0);
+    }
+
+    public Vertex getParentSchemaElement(Vertex vertex) {
+        switch (vertex.getType()) {
+            case OBJECT:
+                break;
+            case INTERFACE:
+                break;
+            case UNION:
+                break;
+            case FIELD:
+                return getFieldsContainerForField(vertex);
+            case ARGUMENT:
+                return getFieldOrDirectiveForArgument(vertex);
+            case SCALAR:
+                break;
+            case ENUM:
+                break;
+            case ENUM_VALUE:
+                break;
+            case INPUT_OBJECT:
+                break;
+            case INPUT_FIELD:
+                return getInputObjectForInputField(vertex);
+            case DIRECTIVE:
+                break;
+            case APPLIED_DIRECTIVE:
+                break;
+            case APPLIED_ARGUMENT:
+                break;
+            case DUMMY_TYPE_VERTEX:
+                break;
+            case ISOLATED:
+                return Assert.assertShouldNeverHappen();
+        }
+        return assertShouldNeverHappen();
+    }
 
 }

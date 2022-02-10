@@ -19,7 +19,7 @@ public class Vertex {
     private boolean builtInType;
 
     public static Vertex newIsolatedNode(String debugName) {
-        Vertex vertex = new Vertex(SchemaGraphFactory.ISOLATED, debugName);
+        Vertex vertex = new Vertex(SchemaGraph.ISOLATED, debugName);
         vertex.isolated = true;
         return vertex;
     }
@@ -27,7 +27,7 @@ public class Vertex {
     public static Set<Vertex> newIsolatedNodes(int count, String debugName) {
         Set<Vertex> result = new LinkedHashSet<>();
         for (int i = 1; i <= count; i++) {
-            Vertex vertex = new Vertex(SchemaGraphFactory.ISOLATED, debugName + i);
+            Vertex vertex = new Vertex(SchemaGraph.ISOLATED, debugName + i);
             vertex.isolated = true;
             result.add(vertex);
         }

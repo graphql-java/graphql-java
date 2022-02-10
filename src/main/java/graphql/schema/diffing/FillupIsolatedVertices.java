@@ -19,20 +19,20 @@ import java.util.Set;
 
 import static graphql.schema.diffing.SchemaDiffing.diffNamedList;
 import static graphql.schema.diffing.SchemaDiffing.diffVertices;
-import static graphql.schema.diffing.SchemaGraphFactory.APPLIED_ARGUMENT;
-import static graphql.schema.diffing.SchemaGraphFactory.APPLIED_DIRECTIVE;
-import static graphql.schema.diffing.SchemaGraphFactory.ARGUMENT;
-import static graphql.schema.diffing.SchemaGraphFactory.DIRECTIVE;
-import static graphql.schema.diffing.SchemaGraphFactory.DUMMY_TYPE_VERTEX;
-import static graphql.schema.diffing.SchemaGraphFactory.ENUM;
-import static graphql.schema.diffing.SchemaGraphFactory.ENUM_VALUE;
-import static graphql.schema.diffing.SchemaGraphFactory.FIELD;
-import static graphql.schema.diffing.SchemaGraphFactory.INPUT_FIELD;
-import static graphql.schema.diffing.SchemaGraphFactory.INPUT_OBJECT;
-import static graphql.schema.diffing.SchemaGraphFactory.INTERFACE;
-import static graphql.schema.diffing.SchemaGraphFactory.OBJECT;
-import static graphql.schema.diffing.SchemaGraphFactory.SCALAR;
-import static graphql.schema.diffing.SchemaGraphFactory.UNION;
+import static graphql.schema.diffing.SchemaGraph.APPLIED_ARGUMENT;
+import static graphql.schema.diffing.SchemaGraph.APPLIED_DIRECTIVE;
+import static graphql.schema.diffing.SchemaGraph.ARGUMENT;
+import static graphql.schema.diffing.SchemaGraph.DIRECTIVE;
+import static graphql.schema.diffing.SchemaGraph.DUMMY_TYPE_VERTEX;
+import static graphql.schema.diffing.SchemaGraph.ENUM;
+import static graphql.schema.diffing.SchemaGraph.ENUM_VALUE;
+import static graphql.schema.diffing.SchemaGraph.FIELD;
+import static graphql.schema.diffing.SchemaGraph.INPUT_FIELD;
+import static graphql.schema.diffing.SchemaGraph.INPUT_OBJECT;
+import static graphql.schema.diffing.SchemaGraph.INTERFACE;
+import static graphql.schema.diffing.SchemaGraph.OBJECT;
+import static graphql.schema.diffing.SchemaGraph.SCALAR;
+import static graphql.schema.diffing.SchemaGraph.UNION;
 import static graphql.util.FpKit.concat;
 
 public class FillupIsolatedVertices {
@@ -232,7 +232,46 @@ public class FillupIsolatedVertices {
                 return APPLIED_ARGUMENT.equals(vertex.getType()) && !vertex.isBuiltInType();
             }
         };
-        List<IsolatedVertexContext> contexts = Arrays.asList(appliedArgument);
+        IsolatedVertexContext appliedDirective = new IsolatedVertexContext() {
+            @Override
+            public String idForVertex(Vertex appliedArgument, SchemaGraph schemaGraph) {
+                Vertex appliedDirective = schemaGraph.getAppliedDirectiveForAppliedArgument(appliedArgument);
+                return appliedDirective.getName();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return true;
+            }
+        };
+        IsolatedVertexContext appliedDirectiveContainer = new IsolatedVertexContext() {
+            @Override
+            public String idForVertex(Vertex appliedArgument, SchemaGraph schemaGraph) {
+                Vertex appliedDirective = schemaGraph.getAppliedDirectiveForAppliedArgument(appliedArgument);
+                Vertex appliedDirectiveContainer = schemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
+                return appliedDirectiveContainer.getName();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return true;
+            }
+        };
+        IsolatedVertexContext parentOfAppliedDirectiveContainer = new IsolatedVertexContext() {
+            @Override
+            public String idForVertex(Vertex appliedArgument, SchemaGraph schemaGraph) {
+                Vertex appliedDirective = schemaGraph.getAppliedDirectiveForAppliedArgument(appliedArgument);
+                Vertex appliedDirectiveContainer = schemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
+                Vertex parent = schemaGraph.getParentSchemaElement(appliedDirectiveContainer);
+                return parent.getName();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return true;
+            }
+        };
+        List<IsolatedVertexContext> contexts = Arrays.asList(appliedArgument, parentOfAppliedDirectiveContainer, appliedDirectiveContainer, appliedDirective);
         return contexts;
     }
 
@@ -378,50 +417,12 @@ public class FillupIsolatedVertices {
     }
 
     public abstract static class IsolatedVertexContext {
-//        // it is always by type first
-//        final String type;
-//        // then a list of names
-//        List<String> subContextIds = new ArrayList<>();
-//
-//        public IsolatedVertexContext(String type) {
-//            this.type = type;
-//        }
-//
-//        public static IsolatedVertexContext newContext(String type) {
-//            return new IsolatedVertexContext(type);
-//        }
-//
-//        public static IsolatedVertexContext newContext(String type, String subContext1, String subContext2) {
-//            IsolatedVertexContext result = new IsolatedVertexContext(type);
-//            result.subContextIds.add(subContext1);
-//            result.subContextIds.add(subContext2);
-//            return result;
-//        }
-//
-//        public static IsolatedVertexContext newContext(String type, String subContext1, String subContext2, String subContext3) {
-//            IsolatedVertexContext result = new IsolatedVertexContext(type);
-//            result.subContextIds.add(subContext1);
-//            result.subContextIds.add(subContext2);
-//            result.subContextIds.add(subContext3);
-//            return result;
-//        }
-//
-//        public static IsolatedVertexContext newContext(String type, String subContext1) {
-//            IsolatedVertexContext result = new IsolatedVertexContext(type);
-//            result.subContextIds.add(subContext1);
-//            return result;
-//        }
 
         public abstract String idForVertex(Vertex vertex, SchemaGraph schemaGraph);
 
         public abstract boolean filter(Vertex vertex, SchemaGraph schemaGraph);
     }
 
-    /**
-     * This is all about which vertices are allowed to map to which isolated vertices.
-     * It maps a "context" to a list of isolated vertices.
-     * Contexts are "InputField", "foo.InputObject.InputField"
-     */
     public class IsolatedVertices {
 
         public Multimap<Object, Vertex> contextToIsolatedSourceVertices = HashMultimap.create();
@@ -434,19 +435,10 @@ public class FillupIsolatedVertices {
         public final Set<Vertex> isolatedBuiltInTargetVertices = new LinkedHashSet<>();
 
 
-//        public void putSource(Object contextId, Vertex v) {
-//            contextToIsolatedSourceVertices.put(contextId, v);
-//
-//        }
-
         public void putSource(Object contextId, Collection<Vertex> isolatedSourcedVertices) {
             contextToIsolatedSourceVertices.putAll(contextId, isolatedSourcedVertices);
             allIsolatedSource.addAll(isolatedSourcedVertices);
         }
-
-//        public void putTarget(Object contextId, Vertex v) {
-//            contextToIsolatedTargetVertices.put(contextId, v);
-//        }
 
         public void putTarget(Object contextId, Collection<Vertex> isolatedTargetVertices) {
             contextToIsolatedTargetVertices.putAll(contextId, isolatedTargetVertices);

@@ -1046,6 +1046,34 @@ class SchemaDiffingTest extends Specification {
         operations.size() == 2
     }
 
+    def "applied arguments in different contexts"() {
+        given:
+        def schema1 = schema('''
+            directive @d(a1: String, a2: String, b1: String, b2: String, b3: String, b4: String) on FIELD_DEFINITION
+            type Query {
+                foo: String @d(a1: "a1", a2: "a2")
+                foo2: String @d(b1: "b1", b2: "b2")
+            }
+        ''')
+        def schema2 = schema("""
+            directive @d(a1: String, a2: String, b1: String, b2: String, b3: String, b4: String) on FIELD_DEFINITION
+            type Query {
+                foo: String @d(a1: "a1")
+                foo2: String @d(b2: "b2", b3: "b3", b4: "b4")
+            }
+        """)
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        operations.each { println it }
+
+        then:
+        /**
+         * The test here is that the context of the applied argument is considered and that a2 is deleted and one b is inserted and another one changed.
+         */
+        operations.size() == 5
+    }
+
     def "with directives"() {
         given:
         def schema1 = schema('''
