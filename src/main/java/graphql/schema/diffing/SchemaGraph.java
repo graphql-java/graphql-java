@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 import static graphql.Assert.assertTrue;
+import static graphql.schema.diffing.SchemaGraphFactory.APPLIED_ARGUMENT;
 import static graphql.schema.diffing.SchemaGraphFactory.DIRECTIVE;
 import static graphql.schema.diffing.SchemaGraphFactory.FIELD;
 import static graphql.schema.diffing.SchemaGraphFactory.INPUT_OBJECT;

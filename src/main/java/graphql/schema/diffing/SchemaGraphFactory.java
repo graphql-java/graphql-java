@@ -355,13 +355,13 @@ public class SchemaGraphFactory {
             Vertex appliedDirectiveVertex = new Vertex(APPLIED_DIRECTIVE, debugPrefix + String.valueOf(counter++));
             appliedDirectiveVertex.add("name", appliedDirective.getName());
             for (GraphQLArgument appliedArgument : appliedDirective.getArguments()) {
-                Vertex appliedArgumentVertex = new Vertex(APPLIED_ARGUMENT, debugPrefix + String.valueOf(counter++));
-                appliedArgumentVertex.add("name", appliedArgument.getName());
                 if (appliedArgument.hasSetValue()) {
+                    Vertex appliedArgumentVertex = new Vertex(APPLIED_ARGUMENT, debugPrefix + String.valueOf(counter++));
+                    appliedArgumentVertex.add("name", appliedArgument.getName());
                     appliedArgumentVertex.add("value", AstPrinter.printAst(ValuesResolver.valueToLiteral(appliedArgument.getArgumentValue(), appliedArgument.getType())));
+                    schemaGraph.addVertex(appliedArgumentVertex);
+                    schemaGraph.addEdge(new Edge(appliedDirectiveVertex, appliedArgumentVertex));
                 }
-                schemaGraph.addVertex(appliedArgumentVertex);
-                schemaGraph.addEdge(new Edge(appliedDirectiveVertex, appliedArgumentVertex));
             }
             schemaGraph.addVertex(appliedDirectiveVertex);
             schemaGraph.addEdge(new Edge(from, appliedDirectiveVertex));

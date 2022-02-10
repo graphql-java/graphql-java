@@ -278,35 +278,38 @@ public class FillupIsolatedVertices {
             }
         };
 
-        IsolatedVertexContext field = new IsolatedVertexContext() {
+        IsolatedVertexContext fieldOrDirective = new IsolatedVertexContext() {
             @Override
             public String idForVertex(Vertex argument, SchemaGraph schemaGraph) {
-                Vertex field = schemaGraph.getFieldOrDirectiveForArgument(argument);
-                return field.getName();
+                Vertex fieldOrDirective = schemaGraph.getFieldOrDirectiveForArgument(argument);
+                return fieldOrDirective.getType() + "." + fieldOrDirective.getName();
             }
 
             @Override
             public boolean filter(Vertex argument, SchemaGraph schemaGraph) {
-                Vertex fieldOrDirective = schemaGraph.getFieldOrDirectiveForArgument(argument);
-                return fieldOrDirective.getType().equals(FIELD);
+                return true;
             }
         };
-        IsolatedVertexContext container = new IsolatedVertexContext() {
+        IsolatedVertexContext containerOrDirectiveHolder = new IsolatedVertexContext() {
             @Override
             public String idForVertex(Vertex argument, SchemaGraph schemaGraph) {
-                Vertex field = schemaGraph.getFieldOrDirectiveForArgument(argument);
-                Vertex fieldsContainer = schemaGraph.getFieldsContainerForField(field);
-                // can be Interface or Object
-                return fieldsContainer.getType() + "." + fieldsContainer.getName();
+                Vertex fieldOrDirective = schemaGraph.getFieldOrDirectiveForArgument(argument);
+                if (fieldOrDirective.getType().equals(FIELD)) {
+                    Vertex fieldsContainer = schemaGraph.getFieldsContainerForField(fieldOrDirective);
+                    // can be Interface or Object
+                    return fieldsContainer.getType() + "." + fieldsContainer.getName();
+                } else {
+                    // a directive doesn't have further context
+                    return "";
+                }
             }
 
             @Override
             public boolean filter(Vertex argument, SchemaGraph schemaGraph) {
-                Vertex fieldOrDirective = schemaGraph.getFieldOrDirectiveForArgument(argument);
-                return fieldOrDirective.getType().equals(FIELD);
+                return true;
             }
         };
-        List<IsolatedVertexContext> contexts = Arrays.asList(argument, container, field);
+        List<IsolatedVertexContext> contexts = Arrays.asList(argument, containerOrDirectiveHolder, fieldOrDirective);
         return contexts;
     }
 

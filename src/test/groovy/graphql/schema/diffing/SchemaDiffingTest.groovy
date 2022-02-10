@@ -7,6 +7,7 @@ import graphql.schema.GraphQLTypeVisitorStub
 import graphql.schema.SchemaTransformer
 import graphql.util.TraversalControl
 import graphql.util.TraverserContext
+import spock.lang.Ignore
 import spock.lang.Specification
 
 import static graphql.TestUtil.schema
@@ -929,7 +930,7 @@ class SchemaDiffingTest extends Specification {
         operations.size() == 7
     }
 
-    def "arguments"() {
+    def "arguments in fields"() {
         given:
         def schema1 = schema("""
            type Query {
@@ -991,6 +992,55 @@ class SchemaDiffingTest extends Specification {
 
         when:
         def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        operations.size() == 2
+    }
+
+    def "arguments in directives changed"() {
+        given:
+        def schema1 = schema('''
+            directive @d(a1: String, a2: String) on FIELD_DEFINITION
+            type Query {
+                foo: String @d
+            }
+        ''')
+        def schema2 = schema("""
+            directive @d(a1: String, a3: String, a4: String) on FIELD_DEFINITION
+            type Query {
+                foo: String @d
+            }
+        """)
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        operations.each { println it }
+
+        then:
+        /**
+         * change argument, insert argument, new edge from Directive to new Argument
+         */
+        operations.size() == 3
+    }
+
+    def "change applied argument"() {
+        given:
+        def schema1 = schema('''
+            directive @d(a1: String, a2: String) on FIELD_DEFINITION
+            type Query {
+                foo: String @d(a1: "S1", a2: "S2")
+            }
+        ''')
+        def schema2 = schema("""
+            directive @d(a1: String, a2: String) on FIELD_DEFINITION
+            type Query {
+                foo: String @d(a2: "S2Changed", a1: "S1Changed")
+            }
+        """)
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        operations.each { println it }
 
         then:
         operations.size() == 2
