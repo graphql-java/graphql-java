@@ -5,6 +5,7 @@ import graphql.execution.ResultPath;
 import graphql.language.SourceLocation;
 import graphql.schema.DataFetchingEnvironment;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,7 @@ import static graphql.Assert.assertNotNull;
  */
 @SuppressWarnings("unchecked")
 @PublicApi
-public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
+public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<B>> {
 
     private String message;
     private List<Object> path;
@@ -31,10 +32,12 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
         return message;
     }
 
+    @Nullable
     public List<Object> getPath() {
         return path;
     }
 
+    @Nullable
     public List<SourceLocation> getLocations() {
         return locations;
     }
@@ -43,6 +46,7 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
         return errorType;
     }
 
+    @Nullable
     public Map<String, Object> getExtensions() {
         return extensions;
     }
@@ -80,23 +84,33 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
         return (B) this;
     }
 
-    public B locations(List<SourceLocation> locations) {
-        this.locations.addAll(assertNotNull(locations));
+    public B locations(@Nullable List<SourceLocation> locations) {
+        if (locations != null) {
+            this.locations.addAll(locations);
+        } else {
+            this.locations = null;
+        }
         return (B) this;
     }
 
-    public B location(SourceLocation location) {
-        this.locations.add(assertNotNull(location));
+    public B location(@Nullable SourceLocation location) {
+        if (locations != null) {
+            this.locations.add(location);
+        }
         return (B) this;
     }
 
-    public B path(ResultPath path) {
-        this.path = assertNotNull(path).toList();
+    public B path(@Nullable ResultPath path) {
+        if (path != null) {
+            this.path = path.toList();
+        } else {
+            this.path = null;
+        }
         return (B) this;
     }
 
-    public B path(List<Object> path) {
-        this.path = assertNotNull(path);
+    public B path(@Nullable List<Object> path) {
+        this.path = path;
         return (B) this;
     }
 
@@ -105,8 +119,8 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<?>> {
         return (B) this;
     }
 
-    public B extensions(Map<String, Object> extensions) {
-        this.extensions = assertNotNull(extensions);
+    public B extensions(@Nullable Map<String, Object> extensions) {
+        this.extensions = extensions;
         return (B) this;
     }
 

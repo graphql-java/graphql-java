@@ -2,6 +2,10 @@ package graphql.execution.nextgen.result;
 
 import graphql.Internal;
 
+/**
+ * @deprecated Jan 2022 - We have decided to deprecate the NextGen engine, and it will be removed in a future release.
+ */
+@Deprecated
 @Internal
 public class NamedResultNode {
     private final String name;

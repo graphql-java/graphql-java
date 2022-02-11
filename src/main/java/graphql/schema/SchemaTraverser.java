@@ -32,6 +32,27 @@ public class SchemaTraverser {
         this(GraphQLSchemaElement::getChildren);
     }
 
+    /**
+     * This will visit all of the schema elements in the specified schema and invokes the visitor.
+     *
+     * @param typeVisitor a list of visitors to use
+     * @param schema      the schema to visit
+     *
+     * @return a traversal result
+     */
+    public TraverserResult depthFirstFullSchema(GraphQLTypeVisitor typeVisitor, GraphQLSchema schema) {
+        return depthFirstFullSchema(Collections.singletonList(typeVisitor), schema, Collections.emptyMap());
+    }
+
+    /**
+     * This will visit all of the schema elements in the specified schema, invoking each visitor in turn.
+     *
+     * @param typeVisitors a list of visitors to use
+     * @param schema       the schema to visit
+     * @param rootVars     this sets up variables to be made available to the {@link TraverserContext}.  This can be empty but not null
+     *
+     * @return a traversal result
+     */
     public TraverserResult depthFirstFullSchema(List<GraphQLTypeVisitor> typeVisitors, GraphQLSchema schema, Map<Class<?>, Object> rootVars) {
         Set<GraphQLSchemaElement> roots = new LinkedHashSet<>();
         roots.add(schema.getQueryType());

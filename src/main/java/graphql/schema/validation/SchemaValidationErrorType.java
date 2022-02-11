@@ -17,5 +17,7 @@ public enum SchemaValidationErrorType {
     RepetitiveElementError,
     InvalidDefaultValue,
     InvalidAppliedDirectiveArgument,
-    InvalidAppliedDirective
+    InvalidAppliedDirective,
+    OutputTypeUsedInInputTypeContext,
+    InputTypeUsedInOutputTypeContext,
 }

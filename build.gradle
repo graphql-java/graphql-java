@@ -27,6 +27,10 @@ if ("hotspot" == toolchainVm) {
     vmImplementation = JvmImplementation.J9
 } else {
     throw new GradleException("Unknown toolchain VM `${toolchainVm}`, should be `openj9` or `hotspot`")
+    id "com.github.johnrengelman.shadow" version "7.1.2"
+    id "biz.aQute.bnd.builder" version "6.1.0"
+    id "io.github.gradle-nexus.publish-plugin" version "1.1.0"
+    id "groovy"
 }
 
 task("printUsedVersions") {
@@ -62,7 +66,7 @@ def getDevelopmentVersion() {
 def reactiveStreamsVersion = '1.0.3'
 def slf4jVersion = '1.7.35'
 def releaseVersion = System.env.RELEASE_VERSION
-def antlrVersion = '4.9.3'
+def antlrVersion = '4.9.3' // https://mvnrepository.com/artifact/org.antlr/antlr4-runtime
 version = releaseVersion ? releaseVersion : getDevelopmentVersion()
 group = 'com.graphql-java'
 
@@ -102,7 +106,7 @@ dependencies {
     api 'com.graphql-java:java-dataloader:3.1.0'
     api 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
     antlr 'org.antlr:antlr4:' + antlrVersion
-    implementation 'com.google.guava:guava:30.0-jre'
+    implementation 'com.google.guava:guava:31.0.1-jre'
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
     testImplementation 'org.spockframework:spock-core:2.0-groovy-3.0'
     testImplementation 'org.codehaus.groovy:groovy:3.0.9'
@@ -112,11 +116,11 @@ dependencies {
     testImplementation 'org.eclipse.jetty:jetty-server:9.4.26.v20200117'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.13.1'
     testImplementation 'org.slf4j:slf4j-simple:' + slf4jVersion
-    testImplementation 'org.awaitility:awaitility-groovy:3.0.0'
+    testImplementation 'org.awaitility:awaitility-groovy:3.1.6'
     testImplementation 'com.github.javafaker:javafaker:0.13'
 
     testImplementation 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
-    testImplementation "io.reactivex.rxjava2:rxjava:2.1.5"
+    testImplementation "io.reactivex.rxjava2:rxjava:2.2.21"
 
     testImplementation 'org.testng:testng:6.1.1' // use for reactive streams test inheritance
 
@@ -135,7 +139,7 @@ shadowJar {
         include 'com.google.common.primitives.*'
     }
     dependencies {
-        include(dependency('com.google.guava:guava:30.0-jre'))
+        include(dependency('com.google.guava:guava:31.0.1-jre'))
     }
     from "LICENSE.md"
     from "src/main/antlr/Graphql.g4"

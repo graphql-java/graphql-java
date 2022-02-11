@@ -46,6 +46,10 @@ import java.util.function.Supplier;
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 import static java.util.Collections.singletonList;
 
+/**
+ * @deprecated Jan 2022 - We have decided to deprecate the NextGen engine, and it will be removed in a future release.
+ */
+@Deprecated
 @Internal
 public class ValueFetcher {
 
