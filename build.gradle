@@ -27,10 +27,6 @@ if ("hotspot" == toolchainVm) {
     vmImplementation = JvmImplementation.J9
 } else {
     throw new GradleException("Unknown toolchain VM `${toolchainVm}`, should be `openj9` or `hotspot`")
-    id "com.github.johnrengelman.shadow" version "7.1.2"
-    id "biz.aQute.bnd.builder" version "6.1.0"
-    id "io.github.gradle-nexus.publish-plugin" version "1.1.0"
-    id "groovy"
 }
 
 task("printUsedVersions") {
