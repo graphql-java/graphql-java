@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.Set;
 
 public class Vertex {
@@ -93,6 +94,37 @@ public class Vertex {
                 ", debugName='" + debugName + '\'' +
                 ", builtInType='" + builtInType + '\'' +
                 '}';
+    }
+
+    public VertexData toData() {
+        return new VertexData(this.type, this.properties);
+    }
+
+    public static class VertexData {
+        private final String type;
+        private final Map<String, Object> properties;
+
+        public VertexData(String type, Map<String, Object> properties) {
+            this.type = type;
+            this.properties = properties;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            VertexData that = (VertexData) o;
+            return Objects.equals(type, that.type) && Objects.equals(properties, that.properties);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(type, properties);
+        }
     }
 
 }

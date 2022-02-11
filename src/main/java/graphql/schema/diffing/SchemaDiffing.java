@@ -234,30 +234,55 @@ public class SchemaDiffing {
 
 
     private void sortSourceGraph(SchemaGraph sourceGraph, SchemaGraph targetGraph) {
-        Map<Vertex, Integer> vertexWeights = new LinkedHashMap<>();
-        Map<Edge, Integer> edgesWeights = new LinkedHashMap<>();
+
+
+        // how often does each source edge (based on the label) appear in target graph
+        Map<String, AtomicInteger> targetLabelCount = new LinkedHashMap<>();
+        for (Edge targetEdge : targetGraph.getEdges()) {
+            targetLabelCount.computeIfAbsent(targetEdge.getLabel(), __ -> new AtomicInteger()).incrementAndGet();
+        }
+        // how often does each source vertex (based on the data) appear in the target graph
+        Map<Vertex.VertexData, AtomicInteger> targetVertexDataCount = new LinkedHashMap<>();
+        for (Vertex targetVertex : targetGraph.getVertices()) {
+            targetVertexDataCount.computeIfAbsent(targetVertex.toData(), __ -> new AtomicInteger()).incrementAndGet();
+        }
+
+        // an infrequency weight is 1 - count in target. Meaning the higher the
+        // value, the smaller the count, the less frequent it.
+        // Higher Infrequency => more unique is the vertex/label
+        Map<Vertex, Integer> vertexInfrequencyWeights = new LinkedHashMap<>();
+        Map<Edge, Integer> edgesInfrequencyWeights = new LinkedHashMap<>();
         for (Vertex vertex : sourceGraph.getVertices()) {
-            vertexWeights.put(vertex, infrequencyWeightForVertex(vertex, targetGraph));
+            vertexInfrequencyWeights.put(vertex, 1 - targetVertexDataCount.getOrDefault(vertex.toData(), new AtomicInteger()).get());
         }
         for (Edge edge : sourceGraph.getEdges()) {
-            edgesWeights.put(edge, infrequencyWeightForEdge(edge, targetGraph));
+            edgesInfrequencyWeights.put(edge, 1 - targetLabelCount.getOrDefault(edge.getLabel(), new AtomicInteger()).get());
         }
-        List<Vertex> result = new ArrayList<>();
+
+        /**
+         * vertices are sorted by increasing frequency/decreasing infrequency/decreasing uniqueness
+         * we start with the most unique/least frequent/most infrequent and add incrementally the next most infrequent.
+         */
+
+        //TODO: improve this: this is doing to much: we just want the max infrequent vertex, not all sorted
         ArrayList<Vertex> nextCandidates = new ArrayList<>(sourceGraph.getVertices());
-        nextCandidates.sort(Comparator.comparingInt(o -> totalWeightWithAdjacentEdges(sourceGraph, o, vertexWeights, edgesWeights)));
-//        System.out.println("0: " + totalWeight(sourceGraph, nextCandidates.get(0), vertexWeights, edgesWeights));
-//        System.out.println("last: " + totalWeight(sourceGraph, nextCandidates.get(nextCandidates.size() - 1), vertexWeights, edgesWeights));
+        nextCandidates.sort(Comparator.comparingInt(o -> totalInfrequencyWeightWithAdjacentEdges(sourceGraph, o, vertexInfrequencyWeights, edgesInfrequencyWeights)));
+
         Vertex curVertex = nextCandidates.get(nextCandidates.size() - 1);
-        result.add(curVertex);
         nextCandidates.remove(nextCandidates.size() - 1);
 
+        List<Vertex> result = new ArrayList<>();
+        result.add(curVertex);
         while (nextCandidates.size() > 0) {
             Vertex nextOne = null;
             int curMaxWeight = Integer.MIN_VALUE;
             int index = 0;
             int nextOneIndex = -1;
+
+            // which ones of the candidates has the highest infrequency weight relatively to the current result set of vertices
             for (Vertex candidate : nextCandidates) {
-                int totalWeight = totalWeightWithSomeEdges(sourceGraph, candidate, allAdjacentEdges(sourceGraph, result, candidate), vertexWeights, edgesWeights);
+                List<Edge> allAdjacentEdges = allAdjacentEdges(sourceGraph, result, candidate);
+                int totalWeight = totalInfrequencyWeightWithSomeEdges(candidate, allAdjacentEdges, vertexInfrequencyWeights, edgesInfrequencyWeights);
                 if (totalWeight > curMaxWeight) {
                     nextOne = candidate;
                     nextOneIndex = index;
@@ -283,19 +308,23 @@ public class SchemaDiffing {
         return result;
     }
 
-    private int totalWeightWithSomeEdges(SchemaGraph sourceGraph, Vertex
-            vertex, List<Edge> edges, Map<Vertex, Integer> vertexWeights, Map<Edge, Integer> edgesWeights) {
+    private int totalInfrequencyWeightWithSomeEdges(Vertex vertex,
+                                                    List<Edge> edges,
+                                                    Map<Vertex, Integer> vertexInfrequencyWeights,
+                                                    Map<Edge, Integer> edgesInfrequencyWeights) {
         if (vertex.isBuiltInType()) {
             return Integer.MIN_VALUE + 1;
         }
         if (vertex.isIsolated()) {
             return Integer.MIN_VALUE + 2;
         }
-        return vertexWeights.get(vertex) + edges.stream().mapToInt(edgesWeights::get).sum();
+        return vertexInfrequencyWeights.get(vertex) + edges.stream().mapToInt(edgesInfrequencyWeights::get).sum();
     }
 
-    private int totalWeightWithAdjacentEdges(SchemaGraph sourceGraph, Vertex
-            vertex, Map<Vertex, Integer> vertexWeights, Map<Edge, Integer> edgesWeights) {
+    private int totalInfrequencyWeightWithAdjacentEdges(SchemaGraph sourceGraph,
+                                                        Vertex vertex,
+                                                        Map<Vertex, Integer> vertexInfrequencyWeights,
+                                                        Map<Edge, Integer> edgesInfrequencyWeights) {
         if (vertex.isBuiltInType()) {
             return Integer.MIN_VALUE + 1;
         }
@@ -303,7 +332,7 @@ public class SchemaDiffing {
             return Integer.MIN_VALUE + 2;
         }
         List<Edge> adjacentEdges = sourceGraph.getAdjacentEdges(vertex);
-        return vertexWeights.get(vertex) + adjacentEdges.stream().mapToInt(edgesWeights::get).sum();
+        return vertexInfrequencyWeights.get(vertex) + adjacentEdges.stream().mapToInt(edgesInfrequencyWeights::get).sum();
     }
 
     private int infrequencyWeightForVertex(Vertex sourceVertex, SchemaGraph targetGraph) {

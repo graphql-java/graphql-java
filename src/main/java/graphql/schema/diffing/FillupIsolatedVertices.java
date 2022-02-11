@@ -384,8 +384,6 @@ public class FillupIsolatedVertices {
         } else if (sourceGraph.size() > targetGraph.size()) {
             isolatedVertices.isolatedBuiltInTargetVertices.addAll(targetGraph.addIsolatedVertices(sourceGraph.size() - targetGraph.size(), "target-isolated-builtin-"));
         }
-
-        System.out.println(isolatedVertices);
     }
 
     private static List<IsolatedVertexContext> inputFieldContexts() {

@@ -363,6 +363,7 @@ class SchemaDiffingTest extends Specification {
 
     }
 
+    @Ignore
     def "change large schema a bit"() {
         given:
         def largeSchema = TestUtil.schemaFromResource("large-schema-2.graphqls", TestUtil.mockRuntimeWiring)
@@ -378,6 +379,28 @@ class SchemaDiffingTest extends Specification {
             }
         })
         println "changed fields: " + counter
+        when:
+        def diff = new SchemaDiffing().diffGraphQLSchema(largeSchema, changedOne)
+        then:
+        diff.size() == 171
+    }
+
+    @Ignore
+    def "change large schema a bit 2"() {
+        given:
+        def largeSchema = TestUtil.schemaFromResource("large-schema-2.graphqls", TestUtil.mockRuntimeWiring)
+        int counter = 0;
+        def changedOne = SchemaTransformer.transformSchema(largeSchema, new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition fieldDefinition, TraverserContext<GraphQLSchemaElement> context) {
+                if (fieldDefinition.getName() == "field50") {
+                    counter++;
+                    return deleteNode(context);
+                }
+                return TraversalControl.CONTINUE
+            }
+        })
+        println "deleted fields: " + counter
         when:
         def diff = new SchemaDiffing().diffGraphQLSchema(largeSchema, changedOne)
         then:
