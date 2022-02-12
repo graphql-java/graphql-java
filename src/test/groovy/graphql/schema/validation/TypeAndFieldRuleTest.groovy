@@ -6,9 +6,6 @@ import graphql.schema.GraphQLTypeReference
 import graphql.schema.TypeResolverProxy
 import spock.lang.Specification
 
-import static graphql.Scalars.GraphQLBoolean
-import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
-import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLUnionType.newUnionType
 
 class TypeAndFieldRuleTest extends Specification {
@@ -127,7 +124,7 @@ class TypeAndFieldRuleTest extends Specification {
         then:
         InvalidSchemaException e = thrown(InvalidSchemaException)
         !e.getErrors().isEmpty()
-        e.getErrors()[0].errorType == SchemaValidationErrorType.InvalidUnionMemberTypeError
+        e.getErrors()[0].classification == SchemaValidationErrorType.InvalidUnionMemberTypeError
     }
 
     def "union member types must be unique"() {
@@ -160,6 +157,6 @@ class TypeAndFieldRuleTest extends Specification {
         then:
         InvalidSchemaException e = thrown(InvalidSchemaException)
         !e.getErrors().isEmpty()
-        e.getErrors()[0].errorType == SchemaValidationErrorType.RepetitiveElementError
+        e.getErrors()[0].classification == SchemaValidationErrorType.RepetitiveElementError
     }
 }
