@@ -95,10 +95,10 @@ public class SchemaDiffing {
                                          List<Vertex> deleted, // sourceVertices
                                          List<Vertex> inserted, // targetVertices
                                          BiMap<Vertex, Vertex> same) {
-        Map<String, Vertex> sourceByName = FpKit.groupingByUniqueKey(sourceVertices, vertex -> vertex.get("name"));
-        Map<String, Vertex> targetByName = FpKit.groupingByUniqueKey(targetVertices, vertex -> vertex.get("name"));
+        Map<String, Vertex> sourceByName = FpKit.groupingByUniqueKey(sourceVertices, Vertex::getName);
+        Map<String, Vertex> targetByName = FpKit.groupingByUniqueKey(targetVertices, Vertex::getName);
         for (Vertex sourceVertex : sourceVertices) {
-            Vertex targetVertex = targetByName.get((String) sourceVertex.get("name"));
+            Vertex targetVertex = targetByName.get(sourceVertex.getName());
             if (targetVertex == null) {
                 deleted.add(sourceVertex);
             } else {
@@ -668,86 +668,91 @@ public class SchemaDiffing {
                                       FillupIsolatedVertices.IsolatedVertices isolatedInfo
     ) {
 
-        Vertex forcedMatch = forcedMatchingCache.get(v);
-        if (forcedMatch != null) {
-            return forcedMatch == u;
-        }
-        if (v.isIsolated() && u.isIsolated()) {
-            return false;
-        }
-        Set<Vertex> isolatedBuiltInSourceVertices = isolatedInfo.isolatedBuiltInSourceVertices;
-        Set<Vertex> isolatedBuiltInTargetVertices = isolatedInfo.isolatedBuiltInTargetVertices;
+//        Vertex forcedMatch = forcedMatchingCache.get(v);
+//        if (forcedMatch != null) {
+//            return forcedMatch == u;
+//        }
+//        if (v.isIsolated() && u.isIsolated()) {
+//            return false;
+//        }
+//        Set<Vertex> isolatedBuiltInSourceVertices = isolatedInfo.isolatedBuiltInSourceVertices;
+//        Set<Vertex> isolatedBuiltInTargetVertices = isolatedInfo.isolatedBuiltInTargetVertices;
 
-        if (v.isIsolated()) {
-            if (u.isBuiltInType()) {
-                return isolatedBuiltInSourceVertices.contains(v);
-            } else {
-                return isolatedInfo.mappingPossibleForIsolatedSource(v, u);
-//                if (u.getType().equals(FIELD)) {
-//                    Vertex fieldsContainer = targetGraph.getFieldsContainerForField(u);
-//                    String containerName = fieldsContainer.get("name");
-//                    String fieldName = u.get("name");
-//                    if (isolatedSourceVerticesForFields.contains(containerName, fieldName)) {
-//                        return isolatedSourceVerticesForFields.get(containerName, fieldName).contains(v);
-//                    }
-//                }
-//                if (u.getType().equals(INPUT_FIELD)) {
-//                    Vertex inputObject = targetGraph.getInputObjectForInputField(u);
-//                    String inputObjectName = inputObject.get("name");
-//                    String fieldName = u.get("name");
-//                    if (isolatedSourceVerticesForInputFields.contains(inputObjectName, fieldName)) {
-//                        return isolatedSourceVerticesForInputFields.get(inputObjectName, fieldName).contains(v);
-//                    }
-//                }
-//                return isolatedSourceVertices.getOrDefault(u.getType(), emptySet()).contains(v);
-            }
-        }
-        if (u.isIsolated()) {
-            if (v.isBuiltInType()) {
-                return isolatedBuiltInTargetVertices.contains(u);
-            } else {
-                return isolatedInfo.mappingPossibleForIsolatedTarget(v, u);
-//                if (v.getType().equals(FIELD)) {
-//                    Vertex fieldsContainer = sourceGraph.getFieldsContainerForField(v);
-//                    String containerName = fieldsContainer.get("name");
-//                    String fieldName = v.get("name");
-//                    if (isolatedTargetVerticesForFields.contains(containerName, fieldName)) {
-//                        return isolatedTargetVerticesForFields.get(containerName, fieldName).contains(u);
-//                    }
-//                }
-//                if (v.getType().equals(INPUT_FIELD)) {
-//                    Vertex inputObject = sourceGraph.getInputObjectForInputField(v);
-//                    String inputObjectName = inputObject.get("name");
-//                    String fieldName = v.get("name");
-//                    if (isolatedTargetVerticesForInputFields.contains(inputObjectName, fieldName)) {
-//                        return isolatedTargetVerticesForInputFields.get(inputObjectName, fieldName).contains(u);
-//                    }
-//                }
-//                return isolatedTargetVertices.getOrDefault(v.getType(), emptySet()).contains(u);
-            }
-        }
-        // the types of the vertices need to match: we don't allow to change the type
-        if (!v.getType().equals(u.getType())) {
-            return false;
-        }
-        Boolean result = checkNamedTypes(v, u, targetGraph);
-        if (result != null) {
-            return result;
-        }
-        result = checkNamedTypes(u, v, sourceGraph);
-        if (result != null) {
-            return result;
-        }
-        result = checkSpecificTypes(v, u, sourceGraph, targetGraph);
-        if (result != null) {
-            return result;
-        }
-        result = checkSpecificTypes(u, v, targetGraph, sourceGraph);
-        if (result != null) {
-            return result;
-        }
-
-        return true;
+//        if (v.isIsolated()) {
+//            if (u.isBuiltInType()) {
+//                return isolatedBuiltInSourceVertices.contains(v);
+//            }
+//        }
+//            } else {
+//                return isolatedInfo.mappingPossible(v, u);
+////                if (u.getType().equals(FIELD)) {
+////                    Vertex fieldsContainer = targetGraph.getFieldsContainerForField(u);
+////                    String containerName = fieldsContainer.get("name");
+////                    String fieldName = u.get("name");
+////                    if (isolatedSourceVerticesForFields.contains(containerName, fieldName)) {
+////                        return isolatedSourceVerticesForFields.get(containerName, fieldName).contains(v);
+////                    }
+////                }
+////                if (u.getType().equals(INPUT_FIELD)) {
+////                    Vertex inputObject = targetGraph.getInputObjectForInputField(u);
+////                    String inputObjectName = inputObject.get("name");
+////                    String fieldName = u.get("name");
+////                    if (isolatedSourceVerticesForInputFields.contains(inputObjectName, fieldName)) {
+////                        return isolatedSourceVerticesForInputFields.get(inputObjectName, fieldName).contains(v);
+////                    }
+////                }
+////                return isolatedSourceVertices.getOrDefault(u.getType(), emptySet()).contains(v);
+//            }
+//        }
+//        if (u.isIsolated()) {
+//            if (v.isBuiltInType()) {
+//                return isolatedBuiltInTargetVertices.contains(u);
+//            }
+//        }
+//            } else {
+//                return isolatedInfo.mappingPossibleForIsolatedTarget(v, u);
+////                if (v.getType().equals(FIELD)) {
+////                    Vertex fieldsContainer = sourceGraph.getFieldsContainerForField(v);
+////                    String containerName = fieldsContainer.get("name");
+////                    String fieldName = v.get("name");
+////                    if (isolatedTargetVerticesForFields.contains(containerName, fieldName)) {
+////                        return isolatedTargetVerticesForFields.get(containerName, fieldName).contains(u);
+////                    }
+////                }
+////                if (v.getType().equals(INPUT_FIELD)) {
+////                    Vertex inputObject = sourceGraph.getInputObjectForInputField(v);
+////                    String inputObjectName = inputObject.get("name");
+////                    String fieldName = v.get("name");
+////                    if (isolatedTargetVerticesForInputFields.contains(inputObjectName, fieldName)) {
+////                        return isolatedTargetVerticesForInputFields.get(inputObjectName, fieldName).contains(u);
+////                    }
+////                }
+////                return isolatedTargetVertices.getOrDefault(v.getType(), emptySet()).contains(u);
+//            }
+//        }
+//        // the types of the vertices need to match: we don't allow to change the type
+//        if (!v.getType().equals(u.getType())) {
+//            return false;
+//        }
+//        Boolean result = checkNamedTypes(v, u, targetGraph);
+//        if (result != null) {
+//            return result;
+//        }
+//        result = checkNamedTypes(u, v, sourceGraph);
+//        if (result != null) {
+//            return result;
+//        }
+//        result = checkSpecificTypes(v, u, sourceGraph, targetGraph);
+//        if (result != null) {
+//            return result;
+//        }
+//        result = checkSpecificTypes(u, v, targetGraph, sourceGraph);
+//        if (result != null) {
+//            return result;
+//        }
+//
+//        return true;
+        return isolatedInfo.mappingPossible(v, u);
     }
 
     private Boolean checkSpecificTypes(Vertex v, Vertex u, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
