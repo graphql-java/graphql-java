@@ -20,7 +20,6 @@ import java.util.function.Predicate;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static java.lang.String.format;
-import static java.lang.String.valueOf;
 
 public class SchemaGraph {
 
@@ -249,4 +248,9 @@ public class SchemaGraph {
         return assertShouldNeverHappen();
     }
 
+    public Vertex getEnumForEnumValue(Vertex enumValue) {
+        List<Vertex> adjacentVertices = this.getAdjacentVertices(enumValue, vertex -> vertex.getType().equals(ENUM));
+        assertTrue(adjacentVertices.size() == 1, () -> format("No enum found for %s", enumValue));
+        return adjacentVertices.get(0);
+    }
 }

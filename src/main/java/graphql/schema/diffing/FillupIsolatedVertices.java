@@ -213,6 +213,17 @@ public class FillupIsolatedVertices {
                 return ENUM_VALUE.equals(vertex.getType());
             }
         };
+        VertexContextSegment enumName = new VertexContextSegment() {
+            @Override
+            public String idForVertex(Vertex enumValue, SchemaGraph schemaGraph) {
+                return schemaGraph.getEnumForEnumValue(enumValue).getName();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return true;
+            }
+        };
         VertexContextSegment enumValueName = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex enumValue, SchemaGraph schemaGraph) {
@@ -224,7 +235,7 @@ public class FillupIsolatedVertices {
                 return true;
             }
         };
-        List<VertexContextSegment> contexts = Arrays.asList(enumValueType, enumValueName);
+        List<VertexContextSegment> contexts = Arrays.asList(enumValueType, enumName, enumValueName);
         return contexts;
     }
 
@@ -534,8 +545,8 @@ public class FillupIsolatedVertices {
         sourceGraph.addVertices(isolatedVertices.allIsolatedSource);
         targetGraph.addVertices(isolatedVertices.allIsolatedTarget);
 
-        System.out.println("done isolated");
         Assert.assertTrue(sourceGraph.size() == targetGraph.size());
+        System.out.println("done isolated");
 //        if (sourceGraph.size() < targetGraph.size()) {
 //            isolatedVertices.isolatedBuiltInSourceVertices.addAll(sourceGraph.addIsolatedVertices(targetGraph.size() - sourceGraph.size(), "source-isolated-builtin-"));
 //        } else if (sourceGraph.size() > targetGraph.size()) {
