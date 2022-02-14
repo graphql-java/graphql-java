@@ -118,7 +118,8 @@ public class FillupIsolatedVertices {
             public String idForVertex(Vertex dummyType, SchemaGraph schemaGraph) {
                 Vertex fieldOrInputField = schemaGraph.getFieldOrInputFieldForDummyType(dummyType);
                 if (fieldOrInputField.getType().equals(FIELD)) {
-                    return schemaGraph.getFieldsContainerForField(fieldOrInputField).getName();
+                    Vertex fieldsContainer = schemaGraph.getFieldsContainerForField(fieldOrInputField);
+                    return fieldsContainer.getType() + "." + fieldsContainer.getName();
                 } else {
                     return schemaGraph.getInputObjectForInputField(fieldOrInputField).getName();
                 }
