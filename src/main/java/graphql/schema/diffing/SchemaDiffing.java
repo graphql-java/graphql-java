@@ -188,7 +188,7 @@ public class SchemaDiffing {
         int counter = 0;
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
-//            System.out.println((++counter) + " check entry at level " + mappingEntry.level + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost + " map " + getDebugMap(mappingEntry.partialMapping));
+            System.out.println((++counter) + " check entry at level " + mappingEntry.level + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost + " map " + getDebugMap(mappingEntry.partialMapping));
 //            if ((++counter) % 100 == 0) {
 //                System.out.println((counter) + " entry at level");
 //            }
@@ -234,7 +234,18 @@ public class SchemaDiffing {
 
     private void sortSourceGraph(SchemaGraph sourceGraph, SchemaGraph targetGraph, FillupIsolatedVertices.IsolatedVertices isolatedVertices) {
         // we sort descending by number of possible target vertices
-        Collections.sort(sourceGraph.getVertices(), (o1, o2) -> Integer.compare(isolatedVertices.possibleMappings.get(o2).size(), isolatedVertices.possibleMappings.get(o1).size()));
+        Collections.sort(sourceGraph.getVertices(), (v1, v2) ->
+
+        {
+
+            int v2Count = v2.isBuiltInType() ? -1 : (v2.isIsolated() ? 0 : isolatedVertices.possibleMappings.get(v2).size());
+            int v1Count = v1.isBuiltInType() ? -1 : (v1.isIsolated() ? 0 : isolatedVertices.possibleMappings.get(v1).size());
+            return Integer.compare(v2Count, v1Count);
+        });
+
+        for (Vertex vertex : sourceGraph.getVertices()) {
+            System.out.println("c: " + isolatedVertices.possibleMappings.get(vertex).size() + " v: " + vertex);
+        }
 
 //
 //
@@ -669,6 +680,7 @@ public class SchemaDiffing {
                                       Set<Vertex> partialMappingTargetSet,
                                       FillupIsolatedVertices.IsolatedVertices isolatedInfo
     ) {
+        return isolatedInfo.mappingPossible(v, u);
 
 //        Vertex forcedMatch = forcedMatchingCache.get(v);
 //        if (forcedMatch != null) {
@@ -754,7 +766,6 @@ public class SchemaDiffing {
 //        }
 //
 //        return true;
-        return isolatedInfo.mappingPossible(v, u);
     }
 
     private Boolean checkSpecificTypes(Vertex v, Vertex u, SchemaGraph sourceGraph, SchemaGraph targetGraph) {

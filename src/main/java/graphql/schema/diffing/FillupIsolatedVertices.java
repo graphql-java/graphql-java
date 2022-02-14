@@ -32,6 +32,8 @@ import static graphql.schema.diffing.SchemaGraph.OBJECT;
 import static graphql.schema.diffing.SchemaGraph.SCALAR;
 import static graphql.schema.diffing.SchemaGraph.UNION;
 import static graphql.util.FpKit.concat;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 public class FillupIsolatedVertices {
 
@@ -99,6 +101,7 @@ public class FillupIsolatedVertices {
 
 
     private static List<VertexContextSegment> dummyTypeContext() {
+
         VertexContextSegment dummyType = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
@@ -110,7 +113,36 @@ public class FillupIsolatedVertices {
                 return DUMMY_TYPE_VERTEX.equals(vertex.getType());
             }
         };
-        List<VertexContextSegment> contexts = Arrays.asList(dummyType);
+        VertexContextSegment inputObjectOrFieldContainerContext = new VertexContextSegment() {
+            @Override
+            public String idForVertex(Vertex dummyType, SchemaGraph schemaGraph) {
+                Vertex fieldOrInputField = schemaGraph.getFieldOrInputFieldForDummyType(dummyType);
+                if (fieldOrInputField.getType().equals(FIELD)) {
+                    return schemaGraph.getFieldsContainerForField(fieldOrInputField).getName();
+                } else {
+                    return schemaGraph.getInputObjectForInputField(fieldOrInputField).getName();
+                }
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return true;
+            }
+        };
+        VertexContextSegment inputFieldOrFieldName = new VertexContextSegment() {
+            @Override
+            public String idForVertex(Vertex dummyType, SchemaGraph schemaGraph) {
+                Vertex fieldOrInputField = schemaGraph.getFieldOrInputFieldForDummyType(dummyType);
+                return fieldOrInputField.getName();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return true;
+            }
+        };
+
+        List<VertexContextSegment> contexts = Arrays.asList(dummyType, inputObjectOrFieldContainerContext, inputFieldOrFieldName);
         return contexts;
     }
 
@@ -536,7 +568,6 @@ public class FillupIsolatedVertices {
     }
 
     public void ensureGraphAreSameSize() {
-//        calcIsolatedVertices(typeContexts.get(FIELD), FIELD);
         calcPossibleMappings(typeContexts.get(FIELD), FIELD);
         calcPossibleMappings(typeContexts.get(ARGUMENT), ARGUMENT);
         calcPossibleMappings(typeContexts.get(INPUT_FIELD), INPUT_FIELD);
@@ -573,6 +604,20 @@ public class FillupIsolatedVertices {
 
 
     public abstract static class VertexContextSegment {
+
+        private List<VertexContextSegment> children;
+
+        public VertexContextSegment(List<VertexContextSegment> children) {
+            this.children = children;
+        }
+
+        public VertexContextSegment() {
+            this.children = emptyList();
+        }
+
+        public VertexContextSegment(VertexContextSegment child) {
+            this.children = singletonList(child);
+        }
 
         public abstract String idForVertex(Vertex vertex, SchemaGraph schemaGraph);
 
@@ -662,7 +707,7 @@ public class FillupIsolatedVertices {
     }
 
 
-    public void calcIsolatedVertices(List<VertexContextSegment> contexts, String typeNameForDebug) {
+    private void calcIsolatedVertices(List<VertexContextSegment> contexts, String typeNameForDebug) {
         Collection<Vertex> currentSourceVertices = sourceGraph.getVertices();
         Collection<Vertex> currentTargetVertices = targetGraph.getVertices();
         calcIsolatedVerticesImpl(currentSourceVertices, currentTargetVertices, Collections.emptyList(), 0, contexts, new LinkedHashSet<>(), new LinkedHashSet<>(), typeNameForDebug);

@@ -253,4 +253,10 @@ public class SchemaGraph {
         assertTrue(adjacentVertices.size() == 1, () -> format("No enum found for %s", enumValue));
         return adjacentVertices.get(0);
     }
+
+    public Vertex getFieldOrInputFieldForDummyType(Vertex enumValue) {
+        List<Vertex> adjacentVertices = this.getAdjacentVertices(enumValue, vertex -> vertex.getType().equals(FIELD) || vertex.getType().equals(INPUT_FIELD));
+        assertTrue(adjacentVertices.size() == 1, () -> format("No field or input field found for %s", enumValue));
+        return adjacentVertices.get(0);
+    }
 }

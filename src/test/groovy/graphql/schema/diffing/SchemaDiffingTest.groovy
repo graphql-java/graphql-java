@@ -7,7 +7,6 @@ import graphql.schema.GraphQLTypeVisitorStub
 import graphql.schema.SchemaTransformer
 import graphql.util.TraversalControl
 import graphql.util.TraverserContext
-import spock.lang.Ignore
 import spock.lang.Specification
 
 import static graphql.TestUtil.schema
@@ -384,7 +383,6 @@ class SchemaDiffingTest extends Specification {
         diff.size() == 171
     }
 
-    @Ignore
     def "change large schema a bit 2"() {
         given:
         def largeSchema = TestUtil.schemaFromResource("large-schema-2.graphqls", TestUtil.mockRuntimeWiring)
@@ -402,8 +400,9 @@ class SchemaDiffingTest extends Specification {
         println "deleted fields: " + counter
         when:
         def diff = new SchemaDiffing().diffGraphQLSchema(largeSchema, changedOne)
+        diff.each { println it }
         then:
-        diff.size() == 171
+        diff.size() == 855
     }
 
     def "change object type name used twice"() {
@@ -514,7 +513,7 @@ class SchemaDiffingTest extends Specification {
     }
 
 
-    def "changing schema a lot"() {
+    def "added different types and fields"() {
         given:
         def schema1 = schema("""
            type Query {
