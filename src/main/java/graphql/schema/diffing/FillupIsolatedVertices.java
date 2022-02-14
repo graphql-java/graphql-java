@@ -126,7 +126,18 @@ public class FillupIsolatedVertices {
                 return SCALAR.equals(vertex.getType());
             }
         };
-        List<VertexContextSegment> contexts = Arrays.asList(scalar);
+        VertexContextSegment scalarName = new VertexContextSegment() {
+            @Override
+            public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
+                return vertex.getName();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return true;
+            }
+        };
+        List<VertexContextSegment> contexts = Arrays.asList(scalar, scalarName);
         return contexts;
     }
 
@@ -319,7 +330,7 @@ public class FillupIsolatedVertices {
             }
         };
 
-        List<VertexContextSegment> contexts = Arrays.asList(directiveType);
+        List<VertexContextSegment> contexts = Arrays.asList(directiveType, directiveName);
         return contexts;
     }
 
@@ -546,6 +557,12 @@ public class FillupIsolatedVertices {
         targetGraph.addVertices(isolatedVertices.allIsolatedTarget);
 
         Assert.assertTrue(sourceGraph.size() == targetGraph.size());
+        for (Vertex vertex : isolatedVertices.possibleMappings.keySet()) {
+            Collection<Vertex> vertices = isolatedVertices.possibleMappings.get(vertex);
+            if (vertices.size() > 1) {
+                System.out.println("multiple for " + vertex);
+            }
+        }
         System.out.println("done isolated");
 //        if (sourceGraph.size() < targetGraph.size()) {
 //            isolatedVertices.isolatedBuiltInSourceVertices.addAll(sourceGraph.addIsolatedVertices(targetGraph.size() - sourceGraph.size(), "source-isolated-builtin-"));
