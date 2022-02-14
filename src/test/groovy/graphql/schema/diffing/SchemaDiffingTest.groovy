@@ -402,7 +402,8 @@ class SchemaDiffingTest extends Specification {
         def diff = new SchemaDiffing().diffGraphQLSchema(largeSchema, changedOne)
         diff.each { println it }
         then:
-        diff.size() == 855
+        // deleting 171 fields + dummyTypes + 3 edges for each field,dummyType pair = 5*171
+        diff.size() == 5 * 171
     }
 
     def "change object type name used twice"() {
