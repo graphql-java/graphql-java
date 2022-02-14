@@ -949,7 +949,7 @@ class SchemaDiffingTest extends Specification {
          * It would be less operations with f2 renamed to g3, but this would defy expectations.
          *
          */
-        operations.size() == 7
+        operations.size() == 11
     }
 
     def "arguments in fields"() {
