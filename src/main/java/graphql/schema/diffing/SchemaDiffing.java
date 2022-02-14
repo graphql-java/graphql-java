@@ -13,7 +13,7 @@ import graphql.util.FpKit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -27,7 +27,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -170,7 +169,7 @@ public class SchemaDiffing {
         System.out.println("graph size: " + graphSize);
 
         if (sizeDiff != 0) {
-            sortSourceGraph(sourceGraph, targetGraph);
+            sortSourceGraph(sourceGraph, targetGraph, isolatedVertices);
         }
 
         AtomicDouble upperBoundCost = new AtomicDouble(Double.MAX_VALUE);
@@ -180,7 +179,7 @@ public class SchemaDiffing {
         PriorityQueue<MappingEntry> queue = new PriorityQueue<>((mappingEntry1, mappingEntry2) -> {
             int compareResult = Double.compare(mappingEntry1.lowerBoundCost, mappingEntry2.lowerBoundCost);
             if (compareResult == 0) {
-                return (-1) * Integer.compare(mappingEntry1.level, mappingEntry2.level);
+                return Integer.compare(mappingEntry2.level, mappingEntry1.level);
             } else {
                 return compareResult;
             }
@@ -233,67 +232,70 @@ public class SchemaDiffing {
     }
 
 
-    private void sortSourceGraph(SchemaGraph sourceGraph, SchemaGraph targetGraph) {
+    private void sortSourceGraph(SchemaGraph sourceGraph, SchemaGraph targetGraph, FillupIsolatedVertices.IsolatedVertices isolatedVertices) {
+        // we sort descending by number of possible target vertices
+        Collections.sort(sourceGraph.getVertices(), (o1, o2) -> Integer.compare(isolatedVertices.possibleMappings.get(o2).size(), isolatedVertices.possibleMappings.get(o1).size()));
 
-
-        // how often does each source edge (based on the label) appear in target graph
-        Map<String, AtomicInteger> targetLabelCount = new LinkedHashMap<>();
-        for (Edge targetEdge : targetGraph.getEdges()) {
-            targetLabelCount.computeIfAbsent(targetEdge.getLabel(), __ -> new AtomicInteger()).incrementAndGet();
-        }
-        // how often does each source vertex (based on the data) appear in the target graph
-        Map<Vertex.VertexData, AtomicInteger> targetVertexDataCount = new LinkedHashMap<>();
-        for (Vertex targetVertex : targetGraph.getVertices()) {
-            targetVertexDataCount.computeIfAbsent(targetVertex.toData(), __ -> new AtomicInteger()).incrementAndGet();
-        }
-
-        // an infrequency weight is 1 - count in target. Meaning the higher the
-        // value, the smaller the count, the less frequent it.
-        // Higher Infrequency => more unique is the vertex/label
-        Map<Vertex, Integer> vertexInfrequencyWeights = new LinkedHashMap<>();
-        Map<Edge, Integer> edgesInfrequencyWeights = new LinkedHashMap<>();
-        for (Vertex vertex : sourceGraph.getVertices()) {
-            vertexInfrequencyWeights.put(vertex, 1 - targetVertexDataCount.getOrDefault(vertex.toData(), new AtomicInteger()).get());
-        }
-        for (Edge edge : sourceGraph.getEdges()) {
-            edgesInfrequencyWeights.put(edge, 1 - targetLabelCount.getOrDefault(edge.getLabel(), new AtomicInteger()).get());
-        }
-
-        /**
-         * vertices are sorted by increasing frequency/decreasing infrequency/decreasing uniqueness
-         * we start with the most unique/least frequent/most infrequent and add incrementally the next most infrequent.
-         */
-
-        //TODO: improve this: this is doing to much: we just want the max infrequent vertex, not all sorted
-        ArrayList<Vertex> nextCandidates = new ArrayList<>(sourceGraph.getVertices());
-        nextCandidates.sort(Comparator.comparingInt(o -> totalInfrequencyWeightWithAdjacentEdges(sourceGraph, o, vertexInfrequencyWeights, edgesInfrequencyWeights)));
-
-        Vertex curVertex = nextCandidates.get(nextCandidates.size() - 1);
-        nextCandidates.remove(nextCandidates.size() - 1);
-
-        List<Vertex> result = new ArrayList<>();
-        result.add(curVertex);
-        while (nextCandidates.size() > 0) {
-            Vertex nextOne = null;
-            int curMaxWeight = Integer.MIN_VALUE;
-            int index = 0;
-            int nextOneIndex = -1;
-
-            // which ones of the candidates has the highest infrequency weight relatively to the current result set of vertices
-            for (Vertex candidate : nextCandidates) {
-                List<Edge> allAdjacentEdges = allAdjacentEdges(sourceGraph, result, candidate);
-                int totalWeight = totalInfrequencyWeightWithSomeEdges(candidate, allAdjacentEdges, vertexInfrequencyWeights, edgesInfrequencyWeights);
-                if (totalWeight > curMaxWeight) {
-                    nextOne = candidate;
-                    nextOneIndex = index;
-                    curMaxWeight = totalWeight;
-                }
-                index++;
-            }
-            result.add(nextOne);
-            nextCandidates.remove(nextOneIndex);
-        }
-        sourceGraph.setVertices(result);
+//
+//
+//        // how often does each source edge (based on the label) appear in target graph
+//        Map<String, AtomicInteger> targetLabelCount = new LinkedHashMap<>();
+//        for (Edge targetEdge : targetGraph.getEdges()) {
+//            targetLabelCount.computeIfAbsent(targetEdge.getLabel(), __ -> new AtomicInteger()).incrementAndGet();
+//        }
+//        // how often does each source vertex (based on the data) appear in the target graph
+//        Map<Vertex.VertexData, AtomicInteger> targetVertexDataCount = new LinkedHashMap<>();
+//        for (Vertex targetVertex : targetGraph.getVertices()) {
+//            targetVertexDataCount.computeIfAbsent(targetVertex.toData(), __ -> new AtomicInteger()).incrementAndGet();
+//        }
+//
+//        // an infrequency weight is 1 - count in target. Meaning the higher the
+//        // value, the smaller the count, the less frequent it.
+//        // Higher Infrequency => more unique is the vertex/label
+//        Map<Vertex, Integer> vertexInfrequencyWeights = new LinkedHashMap<>();
+//        Map<Edge, Integer> edgesInfrequencyWeights = new LinkedHashMap<>();
+//        for (Vertex vertex : sourceGraph.getVertices()) {
+//            vertexInfrequencyWeights.put(vertex, 1 - targetVertexDataCount.getOrDefault(vertex.toData(), new AtomicInteger()).get());
+//        }
+//        for (Edge edge : sourceGraph.getEdges()) {
+//            edgesInfrequencyWeights.put(edge, 1 - targetLabelCount.getOrDefault(edge.getLabel(), new AtomicInteger()).get());
+//        }
+//
+//        /**
+//         * vertices are sorted by increasing frequency/decreasing infrequency/decreasing uniqueness
+//         * we start with the most unique/least frequent/most infrequent and add incrementally the next most infrequent.
+//         */
+//
+//        //TODO: improve this: this is doing to much: we just want the max infrequent vertex, not all sorted
+//        ArrayList<Vertex> nextCandidates = new ArrayList<>(sourceGraph.getVertices());
+//        nextCandidates.sort(Comparator.comparingInt(o -> totalInfrequencyWeightWithAdjacentEdges(sourceGraph, o, vertexInfrequencyWeights, edgesInfrequencyWeights)));
+//
+//        Vertex curVertex = nextCandidates.get(nextCandidates.size() - 1);
+//        nextCandidates.remove(nextCandidates.size() - 1);
+//
+//        List<Vertex> result = new ArrayList<>();
+//        result.add(curVertex);
+//        while (nextCandidates.size() > 0) {
+//            Vertex nextOne = null;
+//            int curMaxWeight = Integer.MIN_VALUE;
+//            int index = 0;
+//            int nextOneIndex = -1;
+//
+//            // which ones of the candidates has the highest infrequency weight relatively to the current result set of vertices
+//            for (Vertex candidate : nextCandidates) {
+//                List<Edge> allAdjacentEdges = allAdjacentEdges(sourceGraph, result, candidate);
+//                int totalWeight = totalInfrequencyWeightWithSomeEdges(candidate, allAdjacentEdges, vertexInfrequencyWeights, edgesInfrequencyWeights);
+//                if (totalWeight > curMaxWeight) {
+//                    nextOne = candidate;
+//                    nextOneIndex = index;
+//                    curMaxWeight = totalWeight;
+//                }
+//                index++;
+//            }
+//            result.add(nextOne);
+//            nextCandidates.remove(nextOneIndex);
+//        }
+//        sourceGraph.setVertices(result);
     }
 
     private List<Edge> allAdjacentEdges(SchemaGraph schemaGraph, List<Vertex> fromList, Vertex to) {
@@ -1026,6 +1028,5 @@ public class SchemaDiffing {
         return result;
     }
 
-    AtomicInteger zeroResult = new AtomicInteger();
 
 }

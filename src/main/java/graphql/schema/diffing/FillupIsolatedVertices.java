@@ -39,7 +39,7 @@ public class FillupIsolatedVertices {
     SchemaGraph targetGraph;
     IsolatedVertices isolatedVertices;
 
-    static Map<String, List<IsolatedVertexContext>> typeContexts = new LinkedHashMap<>();
+    static Map<String, List<VertexContextSegment>> typeContexts = new LinkedHashMap<>();
 
     static {
         typeContexts.put(FIELD, fieldContext());
@@ -58,8 +58,8 @@ public class FillupIsolatedVertices {
         typeContexts.put(DIRECTIVE, directiveContext());
     }
 
-    private static List<IsolatedVertexContext> inputFieldContexts() {
-        IsolatedVertexContext inputFieldType = new IsolatedVertexContext() {
+    private static List<VertexContextSegment> inputFieldContexts() {
+        VertexContextSegment inputFieldType = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
                 return vertex.getType();
@@ -70,7 +70,7 @@ public class FillupIsolatedVertices {
                 return INPUT_FIELD.equals(vertex.getType());
             }
         };
-        IsolatedVertexContext inputObjectContext = new IsolatedVertexContext() {
+        VertexContextSegment inputObjectContext = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex inputField, SchemaGraph schemaGraph) {
                 Vertex inputObject = schemaGraph.getInputObjectForInputField(inputField);
@@ -82,7 +82,7 @@ public class FillupIsolatedVertices {
                 return true;
             }
         };
-        IsolatedVertexContext inputFieldName = new IsolatedVertexContext() {
+        VertexContextSegment inputFieldName = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex inputField, SchemaGraph schemaGraph) {
                 return inputField.getName();
@@ -93,13 +93,13 @@ public class FillupIsolatedVertices {
                 return true;
             }
         };
-        List<IsolatedVertexContext> contexts = Arrays.asList(inputFieldType, inputObjectContext, inputFieldName);
+        List<VertexContextSegment> contexts = Arrays.asList(inputFieldType, inputObjectContext, inputFieldName);
         return contexts;
     }
 
 
-    private static List<IsolatedVertexContext> dummyTypeContext() {
-        IsolatedVertexContext dummyType = new IsolatedVertexContext() {
+    private static List<VertexContextSegment> dummyTypeContext() {
+        VertexContextSegment dummyType = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
                 return vertex.getType();
@@ -110,12 +110,12 @@ public class FillupIsolatedVertices {
                 return DUMMY_TYPE_VERTEX.equals(vertex.getType());
             }
         };
-        List<IsolatedVertexContext> contexts = Arrays.asList(dummyType);
+        List<VertexContextSegment> contexts = Arrays.asList(dummyType);
         return contexts;
     }
 
-    private static List<IsolatedVertexContext> scalarContext() {
-        IsolatedVertexContext scalar = new IsolatedVertexContext() {
+    private static List<VertexContextSegment> scalarContext() {
+        VertexContextSegment scalar = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
                 return vertex.getType();
@@ -126,12 +126,12 @@ public class FillupIsolatedVertices {
                 return SCALAR.equals(vertex.getType());
             }
         };
-        List<IsolatedVertexContext> contexts = Arrays.asList(scalar);
+        List<VertexContextSegment> contexts = Arrays.asList(scalar);
         return contexts;
     }
 
-    private static List<IsolatedVertexContext> inputObjectContext() {
-        IsolatedVertexContext inputObject = new IsolatedVertexContext() {
+    private static List<VertexContextSegment> inputObjectContext() {
+        VertexContextSegment inputObject = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
                 return vertex.getType();
@@ -142,12 +142,12 @@ public class FillupIsolatedVertices {
                 return INPUT_OBJECT.equals(vertex.getType());
             }
         };
-        List<IsolatedVertexContext> contexts = Arrays.asList(inputObject);
+        List<VertexContextSegment> contexts = Arrays.asList(inputObject);
         return contexts;
     }
 
-    private static List<IsolatedVertexContext> objectContext() {
-        IsolatedVertexContext objectType = new IsolatedVertexContext() {
+    private static List<VertexContextSegment> objectContext() {
+        VertexContextSegment objectType = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
                 return vertex.getType();
@@ -159,7 +159,7 @@ public class FillupIsolatedVertices {
             }
         };
 
-        IsolatedVertexContext objectName = new IsolatedVertexContext() {
+        VertexContextSegment objectName = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex object, SchemaGraph schemaGraph) {
                 return object.getName();
@@ -170,12 +170,12 @@ public class FillupIsolatedVertices {
                 return true;
             }
         };
-        List<IsolatedVertexContext> contexts = Arrays.asList(objectType, objectName);
+        List<VertexContextSegment> contexts = Arrays.asList(objectType, objectName);
         return contexts;
     }
 
-    private static List<IsolatedVertexContext> enumContext() {
-        IsolatedVertexContext enumCtxType = new IsolatedVertexContext() {
+    private static List<VertexContextSegment> enumContext() {
+        VertexContextSegment enumCtxType = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
                 return vertex.getType();
@@ -186,7 +186,7 @@ public class FillupIsolatedVertices {
                 return ENUM.equals(vertex.getType());
             }
         };
-        IsolatedVertexContext enumName = new IsolatedVertexContext() {
+        VertexContextSegment enumName = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex enumVertex, SchemaGraph schemaGraph) {
                 return enumVertex.getName();
@@ -197,12 +197,12 @@ public class FillupIsolatedVertices {
                 return true;
             }
         };
-        List<IsolatedVertexContext> contexts = Arrays.asList(enumCtxType, enumName);
+        List<VertexContextSegment> contexts = Arrays.asList(enumCtxType, enumName);
         return contexts;
     }
 
-    private static List<IsolatedVertexContext> enumValueContext() {
-        IsolatedVertexContext enumValueType = new IsolatedVertexContext() {
+    private static List<VertexContextSegment> enumValueContext() {
+        VertexContextSegment enumValueType = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
                 return vertex.getType();
@@ -213,7 +213,7 @@ public class FillupIsolatedVertices {
                 return ENUM_VALUE.equals(vertex.getType());
             }
         };
-        IsolatedVertexContext enumValueName = new IsolatedVertexContext() {
+        VertexContextSegment enumValueName = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex enumValue, SchemaGraph schemaGraph) {
                 return enumValue.getName();
@@ -224,12 +224,12 @@ public class FillupIsolatedVertices {
                 return true;
             }
         };
-        List<IsolatedVertexContext> contexts = Arrays.asList(enumValueType, enumValueName);
+        List<VertexContextSegment> contexts = Arrays.asList(enumValueType, enumValueName);
         return contexts;
     }
 
-    private static List<IsolatedVertexContext> interfaceContext() {
-        IsolatedVertexContext interfaceType = new IsolatedVertexContext() {
+    private static List<VertexContextSegment> interfaceContext() {
+        VertexContextSegment interfaceType = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
                 return vertex.getType();
@@ -240,7 +240,7 @@ public class FillupIsolatedVertices {
                 return INTERFACE.equals(vertex.getType());
             }
         };
-        IsolatedVertexContext interfaceName = new IsolatedVertexContext() {
+        VertexContextSegment interfaceName = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex interfaceVertex, SchemaGraph schemaGraph) {
                 return interfaceVertex.getName();
@@ -252,12 +252,12 @@ public class FillupIsolatedVertices {
             }
         };
 
-        List<IsolatedVertexContext> contexts = Arrays.asList(interfaceType, interfaceName);
+        List<VertexContextSegment> contexts = Arrays.asList(interfaceType, interfaceName);
         return contexts;
     }
 
-    private static List<IsolatedVertexContext> unionContext() {
-        IsolatedVertexContext unionType = new IsolatedVertexContext() {
+    private static List<VertexContextSegment> unionContext() {
+        VertexContextSegment unionType = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
                 return vertex.getType();
@@ -268,7 +268,7 @@ public class FillupIsolatedVertices {
                 return UNION.equals(vertex.getType());
             }
         };
-        IsolatedVertexContext unionName = new IsolatedVertexContext() {
+        VertexContextSegment unionName = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex union, SchemaGraph schemaGraph) {
                 return union.getName();
@@ -280,12 +280,12 @@ public class FillupIsolatedVertices {
             }
         };
 
-        List<IsolatedVertexContext> contexts = Arrays.asList(unionType, unionName);
+        List<VertexContextSegment> contexts = Arrays.asList(unionType, unionName);
         return contexts;
     }
 
-    private static List<IsolatedVertexContext> directiveContext() {
-        IsolatedVertexContext directiveType = new IsolatedVertexContext() {
+    private static List<VertexContextSegment> directiveContext() {
+        VertexContextSegment directiveType = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
                 return vertex.getType();
@@ -296,7 +296,7 @@ public class FillupIsolatedVertices {
                 return DIRECTIVE.equals(vertex.getType());
             }
         };
-        IsolatedVertexContext directiveName = new IsolatedVertexContext() {
+        VertexContextSegment directiveName = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex directive, SchemaGraph schemaGraph) {
                 return directive.getName();
@@ -308,12 +308,12 @@ public class FillupIsolatedVertices {
             }
         };
 
-        List<IsolatedVertexContext> contexts = Arrays.asList(directiveType);
+        List<VertexContextSegment> contexts = Arrays.asList(directiveType);
         return contexts;
     }
 
-    private static List<IsolatedVertexContext> appliedDirectiveContext() {
-        IsolatedVertexContext appliedDirectiveType = new IsolatedVertexContext() {
+    private static List<VertexContextSegment> appliedDirectiveContext() {
+        VertexContextSegment appliedDirectiveType = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
                 return vertex.getType();
@@ -324,7 +324,7 @@ public class FillupIsolatedVertices {
                 return APPLIED_DIRECTIVE.equals(vertex.getType());
             }
         };
-        IsolatedVertexContext appliedDirectiveName = new IsolatedVertexContext() {
+        VertexContextSegment appliedDirectiveName = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex appliedDirective, SchemaGraph schemaGraph) {
                 return appliedDirective.getName();
@@ -336,12 +336,12 @@ public class FillupIsolatedVertices {
             }
         };
 
-        List<IsolatedVertexContext> contexts = Arrays.asList(appliedDirectiveType, appliedDirectiveName);
+        List<VertexContextSegment> contexts = Arrays.asList(appliedDirectiveType, appliedDirectiveName);
         return contexts;
     }
 
-    private static List<IsolatedVertexContext> appliedArgumentContext() {
-        IsolatedVertexContext appliedArgumentType = new IsolatedVertexContext() {
+    private static List<VertexContextSegment> appliedArgumentContext() {
+        VertexContextSegment appliedArgumentType = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
                 return vertex.getType();
@@ -352,7 +352,7 @@ public class FillupIsolatedVertices {
                 return APPLIED_ARGUMENT.equals(vertex.getType());
             }
         };
-        IsolatedVertexContext appliedDirective = new IsolatedVertexContext() {
+        VertexContextSegment appliedDirective = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex appliedArgument, SchemaGraph schemaGraph) {
                 Vertex appliedDirective = schemaGraph.getAppliedDirectiveForAppliedArgument(appliedArgument);
@@ -364,7 +364,7 @@ public class FillupIsolatedVertices {
                 return true;
             }
         };
-        IsolatedVertexContext appliedDirectiveContainer = new IsolatedVertexContext() {
+        VertexContextSegment appliedDirectiveContainer = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex appliedArgument, SchemaGraph schemaGraph) {
                 Vertex appliedDirective = schemaGraph.getAppliedDirectiveForAppliedArgument(appliedArgument);
@@ -377,7 +377,7 @@ public class FillupIsolatedVertices {
                 return true;
             }
         };
-        IsolatedVertexContext parentOfAppliedDirectiveContainer = new IsolatedVertexContext() {
+        VertexContextSegment parentOfAppliedDirectiveContainer = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex appliedArgument, SchemaGraph schemaGraph) {
                 Vertex appliedDirective = schemaGraph.getAppliedDirectiveForAppliedArgument(appliedArgument);
@@ -391,7 +391,7 @@ public class FillupIsolatedVertices {
                 return true;
             }
         };
-        IsolatedVertexContext appliedArgumentName = new IsolatedVertexContext() {
+        VertexContextSegment appliedArgumentName = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex appliedArgument, SchemaGraph schemaGraph) {
                 return appliedArgument.getName();
@@ -402,12 +402,12 @@ public class FillupIsolatedVertices {
                 return true;
             }
         };
-        List<IsolatedVertexContext> contexts = Arrays.asList(appliedArgumentType, parentOfAppliedDirectiveContainer, appliedDirectiveContainer, appliedDirective, appliedArgumentName);
+        List<VertexContextSegment> contexts = Arrays.asList(appliedArgumentType, parentOfAppliedDirectiveContainer, appliedDirectiveContainer, appliedDirective, appliedArgumentName);
         return contexts;
     }
 
-    private static List<IsolatedVertexContext> fieldContext() {
-        IsolatedVertexContext field = new IsolatedVertexContext() {
+    private static List<VertexContextSegment> fieldContext() {
+        VertexContextSegment field = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
                 return vertex.getType();
@@ -418,7 +418,7 @@ public class FillupIsolatedVertices {
                 return FIELD.equals(vertex.getType());
             }
         };
-        IsolatedVertexContext container = new IsolatedVertexContext() {
+        VertexContextSegment container = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex field, SchemaGraph schemaGraph) {
                 Vertex fieldsContainer = schemaGraph.getFieldsContainerForField(field);
@@ -431,7 +431,7 @@ public class FillupIsolatedVertices {
             }
         };
 
-        IsolatedVertexContext fieldName = new IsolatedVertexContext() {
+        VertexContextSegment fieldName = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex field, SchemaGraph schemaGraph) {
                 return field.getName();
@@ -442,13 +442,13 @@ public class FillupIsolatedVertices {
                 return true;
             }
         };
-        List<IsolatedVertexContext> contexts = Arrays.asList(field, container, fieldName);
+        List<VertexContextSegment> contexts = Arrays.asList(field, container, fieldName);
         return contexts;
     }
 
-    private static List<IsolatedVertexContext> argumentsForFieldsContexts() {
+    private static List<VertexContextSegment> argumentsForFieldsContexts() {
 
-        IsolatedVertexContext argumentType = new IsolatedVertexContext() {
+        VertexContextSegment argumentType = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
                 return vertex.getType();
@@ -460,7 +460,7 @@ public class FillupIsolatedVertices {
             }
         };
 
-        IsolatedVertexContext fieldOrDirective = new IsolatedVertexContext() {
+        VertexContextSegment fieldOrDirective = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex argument, SchemaGraph schemaGraph) {
                 Vertex fieldOrDirective = schemaGraph.getFieldOrDirectiveForArgument(argument);
@@ -472,7 +472,7 @@ public class FillupIsolatedVertices {
                 return true;
             }
         };
-        IsolatedVertexContext containerOrDirectiveHolder = new IsolatedVertexContext() {
+        VertexContextSegment containerOrDirectiveHolder = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex argument, SchemaGraph schemaGraph) {
                 Vertex fieldOrDirective = schemaGraph.getFieldOrDirectiveForArgument(argument);
@@ -491,7 +491,7 @@ public class FillupIsolatedVertices {
                 return true;
             }
         };
-        IsolatedVertexContext argumentName = new IsolatedVertexContext() {
+        VertexContextSegment argumentName = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex argument, SchemaGraph schemaGraph) {
                 return argument.getName();
@@ -502,7 +502,7 @@ public class FillupIsolatedVertices {
                 return true;
             }
         };
-        List<IsolatedVertexContext> contexts = Arrays.asList(argumentType, containerOrDirectiveHolder, fieldOrDirective, argumentName);
+        List<VertexContextSegment> contexts = Arrays.asList(argumentType, containerOrDirectiveHolder, fieldOrDirective, argumentName);
         return contexts;
     }
 
@@ -544,7 +544,7 @@ public class FillupIsolatedVertices {
     }
 
 
-    public abstract static class IsolatedVertexContext {
+    public abstract static class VertexContextSegment {
 
         public abstract String idForVertex(Vertex vertex, SchemaGraph schemaGraph);
 
@@ -634,7 +634,7 @@ public class FillupIsolatedVertices {
     }
 
 
-    public void calcIsolatedVertices(List<IsolatedVertexContext> contexts, String typeNameForDebug) {
+    public void calcIsolatedVertices(List<VertexContextSegment> contexts, String typeNameForDebug) {
         Collection<Vertex> currentSourceVertices = sourceGraph.getVertices();
         Collection<Vertex> currentTargetVertices = targetGraph.getVertices();
         calcIsolatedVerticesImpl(currentSourceVertices, currentTargetVertices, Collections.emptyList(), 0, contexts, new LinkedHashSet<>(), new LinkedHashSet<>(), typeNameForDebug);
@@ -648,7 +648,7 @@ public class FillupIsolatedVertices {
             Collection<Vertex> currentTargetVertices,
             List<String> currentContextId,
             int curContextSegmentIx,
-            List<IsolatedVertexContext> contextSegments,
+            List<VertexContextSegment> contextSegments,
             Set<Vertex> usedSourceVertices,
             Set<Vertex> usedTargetVertices,
             String typeNameForDebug) {
@@ -657,7 +657,7 @@ public class FillupIsolatedVertices {
          * the elements grouped by the current context segment.
          */
 
-        IsolatedVertexContext finalCurrentContext = contextSegments.get(curContextSegmentIx);
+        VertexContextSegment finalCurrentContext = contextSegments.get(curContextSegmentIx);
         Map<String, ImmutableList<Vertex>> sourceGroups = FpKit.filterAndGroupingBy(currentSourceVertices,
                 v -> finalCurrentContext.filter(v, sourceGraph),
                 v -> finalCurrentContext.idForVertex(v, sourceGraph));
@@ -740,7 +740,7 @@ public class FillupIsolatedVertices {
 
     }
 
-    public void calcPossibleMappings(List<IsolatedVertexContext> contexts, String typeNameForDebug) {
+    public void calcPossibleMappings(List<VertexContextSegment> contexts, String typeNameForDebug) {
         Collection<Vertex> currentSourceVertices = sourceGraph.getVertices();
         Collection<Vertex> currentTargetVertices = targetGraph.getVertices();
         calcPossibleMappingImpl(currentSourceVertices,
@@ -761,12 +761,12 @@ public class FillupIsolatedVertices {
             Collection<Vertex> currentTargetVertices,
             List<String> contextId,
             int contextIx,
-            List<IsolatedVertexContext> contexts,
+            List<VertexContextSegment> contexts,
             Set<Vertex> usedSourceVertices,
             Set<Vertex> usedTargetVertices,
             String typeNameForDebug) {
 
-        IsolatedVertexContext finalCurrentContext = contexts.get(contextIx);
+        VertexContextSegment finalCurrentContext = contexts.get(contextIx);
         Map<String, ImmutableList<Vertex>> sourceGroups = FpKit.filterAndGroupingBy(currentSourceVertices,
                 v -> finalCurrentContext.filter(v, sourceGraph),
                 v -> finalCurrentContext.idForVertex(v, sourceGraph));
