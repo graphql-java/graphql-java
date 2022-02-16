@@ -87,6 +87,7 @@ public class ExecutionStepInfo {
      * @deprecated use {@link #getObjectType()} instead as it is named better
      * @see ExecutionStepInfo#getObjectType()
      */
+    @Deprecated
     public GraphQLObjectType getFieldContainer() {
         return fieldContainer;
     }

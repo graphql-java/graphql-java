@@ -44,14 +44,14 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 
 @Internal
 public class TraversalContext implements DocumentVisitor {
-    final GraphQLSchema schema;
-    final List<GraphQLOutputType> outputTypeStack = new ArrayList<>();
-    final List<GraphQLCompositeType> parentTypeStack = new ArrayList<>();
-    final List<GraphQLInputType> inputTypeStack = new ArrayList<>();
-    final List<GraphQLFieldDefinition> fieldDefStack = new ArrayList<>();
-    final List<String> nameStack = new ArrayList<>();
-    GraphQLDirective directive;
-    GraphQLArgument argument;
+    private final GraphQLSchema schema;
+    private final List<GraphQLOutputType> outputTypeStack = new ArrayList<>();
+    private final List<GraphQLCompositeType> parentTypeStack = new ArrayList<>();
+    private final List<GraphQLInputType> inputTypeStack = new ArrayList<>();
+    private final List<GraphQLFieldDefinition> fieldDefStack = new ArrayList<>();
+    private final List<String> nameStack = new ArrayList<>();
+    private GraphQLDirective directive;
+    private GraphQLArgument argument;
 
 
     public TraversalContext(GraphQLSchema graphQLSchema) {
@@ -249,7 +249,6 @@ public class TraversalContext implements DocumentVisitor {
         outputTypeStack.add(type);
     }
 
-
     private <T> T lastElement(List<T> list) {
         if (list.size() == 0) return null;
         return list.get(list.size() - 1);
@@ -296,7 +295,6 @@ public class TraversalContext implements DocumentVisitor {
     public GraphQLArgument getArgument() {
         return argument;
     }
-
 
     private GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLType parentType, Field field) {
         if (schema.getQueryType().equals(parentType)) {

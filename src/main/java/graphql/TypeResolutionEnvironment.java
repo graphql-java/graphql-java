@@ -1,7 +1,10 @@
 package graphql;
 
 import graphql.collect.ImmutableMapWithNullValues;
+import graphql.execution.DataFetcherResult;
 import graphql.execution.MergedField;
+import graphql.execution.TypeResolutionParameters;
+import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
@@ -24,24 +27,20 @@ public class TypeResolutionEnvironment {
     private final GraphQLSchema schema;
     private final Object context;
     private final GraphQLContext graphQLContext;
+    private final Object localContext;
     private final DataFetchingFieldSelectionSet fieldSelectionSet;
 
-    public TypeResolutionEnvironment(Object object,
-                                     Map<String, Object> arguments,
-                                     MergedField field,
-                                     GraphQLType fieldType,
-                                     GraphQLSchema schema,
-                                     Object context,
-                                     GraphQLContext graphQLContext,
-                                     DataFetchingFieldSelectionSet fieldSelectionSet) {
-        this.object = object;
-        this.arguments = ImmutableMapWithNullValues.copyOf(arguments);
-        this.field = field;
-        this.fieldType = fieldType;
-        this.schema = schema;
-        this.context = context;
-        this.graphQLContext = graphQLContext;
-        this.fieldSelectionSet = fieldSelectionSet;
+    @Internal
+    public TypeResolutionEnvironment(TypeResolutionParameters parameters) {
+        this.object = parameters.getValue();
+        this.arguments = ImmutableMapWithNullValues.copyOf(parameters.getArgumentValues());
+        this.field = parameters.getField();
+        this.fieldType = parameters.getFieldType();
+        this.schema = parameters.getSchema();
+        this.context = parameters.getContext();
+        this.graphQLContext = parameters.getGraphQLContext();
+        this.localContext = parameters.getLocalContext();
+        this.fieldSelectionSet = parameters.getSelectionSet();
     }
 
 
@@ -97,6 +96,7 @@ public class TypeResolutionEnvironment {
      */
     @Deprecated
     public <T> T getContext() {
+        //noinspection unchecked
         return (T) context;
     }
 
@@ -105,6 +105,18 @@ public class TypeResolutionEnvironment {
      */
     public GraphQLContext getGraphQLContext() {
         return graphQLContext;
+    }
+
+    /**
+     * Returns the local context object set in via {@link DataFetcherResult#getLocalContext()}
+     *
+     * @param <T> to two
+     *
+     * @return the local context object
+     */
+    <T> T getLocalContext() {
+        //noinspection unchecked
+        return (T) localContext;
     }
 
     /**

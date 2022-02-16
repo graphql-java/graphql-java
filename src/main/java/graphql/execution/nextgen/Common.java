@@ -13,6 +13,10 @@ import static graphql.language.OperationDefinition.Operation.MUTATION;
 import static graphql.language.OperationDefinition.Operation.QUERY;
 import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
 
+/**
+ * @deprecated Jan 2022 - We have decided to deprecate the NextGen engine, and it will be removed in a future release.
+ */
+@Deprecated
 @Internal
 public class Common {
 

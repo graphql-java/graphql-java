@@ -20,7 +20,7 @@ public class SchemaValidationErrorCollector {
 
     public boolean containsValidationError(SchemaValidationErrorType validationErrorType) {
         for (SchemaValidationError validationError : errors) {
-            if (validationError.getErrorType() == validationErrorType) return true;
+            if (validationError.getClassification() == validationErrorType) return true;
         }
         return false;
     }

@@ -139,6 +139,11 @@ public class DataFetcherResult<T> {
             return this;
         }
 
+        public Builder<T> clearErrors() {
+            this.errors.clear();
+            return this;
+        }
+
         /**
          * @return true if there are any errors present
          */

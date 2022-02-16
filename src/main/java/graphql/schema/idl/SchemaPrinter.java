@@ -712,7 +712,7 @@ public class SchemaPrinter {
                 out.printf("\n%s\n", AstPrinter.printAst(extension));
             }
         }
-        out.println();
+        out.print('\n');
     }
 
     private static String printAst(InputValueWithState value, GraphQLInputType type) {
@@ -971,7 +971,7 @@ public class SchemaPrinter {
             if (superClazz != Object.class) {
                 schemaElementPrinter = printer(superClazz);
             } else {
-                schemaElementPrinter = (out, type, visibility) -> out.println("Type not implemented : " + type);
+                schemaElementPrinter = (out, type, visibility) -> out.print("Type not implemented : " + type + "\n");
             }
             printers.put(clazz, schemaElementPrinter);
         }
