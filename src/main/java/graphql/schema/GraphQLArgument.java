@@ -34,9 +34,14 @@ import static graphql.execution.ValuesResolver.getInputValueImpl;
  * object but rather in the AST direct or in the query variables map and the 'defaultValue' represents a value to use if both of these are
  * not present. You can think of them like a descriptor of what shape an argument might have.
  * <p>
- * However with directives on SDL elements, the value is specified in AST only and transferred into the GraphQLArgument object and the
+ * However, with directives on SDL elements, the value is specified in AST only and transferred into the GraphQLArgument object and the
  * 'defaultValue' comes instead from the directive definition elsewhere in the SDL.  You can think of them as 'instances' of arguments, their shape and their
  * specific value on that directive.
+ * <p>
+ * Originally graphql-java re-used the {@link GraphQLDirective} and {@link GraphQLArgument}
+ * classes to do both purposes.  This was a modelling mistake.  New {@link GraphQLAppliedDirective} and {@link GraphQLAppliedDirectiveArgument}
+ * classes have been introduced to better model when a directive is applied to a schema element,
+ * as opposed to its schema definition itself.
  */
 @PublicApi
 public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputValueDefinition {
@@ -111,10 +116,13 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
 
 
     /**
-     * This is only used for applied directives.
+     * This is only used for applied directives, that is when this argument is on a {@link GraphQLDirective} applied to a schema or query element
      *
      * @return an input value with state for an applied directive
+     *
+     * @deprecated use {@link GraphQLAppliedDirectiveArgument} instead
      */
+    @Deprecated
     public @NotNull InputValueWithState getArgumentValue() {
         return value;
     }
@@ -134,7 +142,10 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * @param <T>      the type you want it cast as
      *
      * @return a value of type T which is the java value of the argument
+     *
+     * @deprecated use {@link GraphQLAppliedDirectiveArgument} instead
      */
+    @Deprecated
     public static <T> T getArgumentValue(GraphQLArgument argument) {
         return getInputValueImpl(argument.getType(), argument.getArgumentValue());
     }
@@ -415,7 +426,10 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          * @param value can't be null as a `null` is represented a @{@link graphql.language.NullValue} Literal
          *
          * @return this builder
+         *
+         * @deprecated use {@link  GraphQLAppliedDirectiveArgument} methods instead
          */
+        @Deprecated
         public Builder valueLiteral(@NotNull Value value) {
             this.value = InputValueWithState.newLiteralValue(value);
             return this;
@@ -425,7 +439,10 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          * @param value values can be null to represent null value
          *
          * @return this builder
+         *
+         * @deprecated use {@link  GraphQLAppliedDirectiveArgument} methods instead
          */
+        @Deprecated
         public Builder valueProgrammatic(@Nullable Object value) {
             this.value = InputValueWithState.newExternalValue(value);
             return this;
@@ -435,7 +452,10 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          * Removes the value to represent a missing value (which is different from null)
          *
          * @return this builder
+         *
+         * @deprecated use {@link  GraphQLAppliedDirectiveArgument} methods instead
          */
+        @Deprecated
         public Builder clearValue() {
             this.value = InputValueWithState.NOT_SET;
             return this;
