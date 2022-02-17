@@ -18,7 +18,7 @@ import graphql.language.ScalarTypeDefinition;
 import graphql.language.TypeDefinition;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.DefaultGraphqlTypeComparatorRegistry;
-import graphql.schema.GraphQLAppliedArgument;
+import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
@@ -881,9 +881,9 @@ public class SchemaPrinter {
         StringBuilder sb = new StringBuilder();
         sb.append("@").append(directive.getName());
 
-        Comparator<? super GraphQLSchemaElement> comparator = getComparator(GraphQLAppliedDirective.class, GraphQLAppliedArgument.class);
+        Comparator<? super GraphQLSchemaElement> comparator = getComparator(GraphQLAppliedDirective.class, GraphQLAppliedDirectiveArgument.class);
 
-        List<GraphQLAppliedArgument> args = directive.getArguments();
+        List<GraphQLAppliedDirectiveArgument> args = directive.getArguments();
         args = args
                 .stream()
                 .filter(arg -> arg.getArgumentValue().isSet())
@@ -892,7 +892,7 @@ public class SchemaPrinter {
         if (!args.isEmpty()) {
             sb.append("(");
             for (int i = 0; i < args.size(); i++) {
-                GraphQLAppliedArgument arg = args.get(i);
+                GraphQLAppliedDirectiveArgument arg = args.get(i);
                 String argValue = null;
                 if (arg.hasSetValue()) {
                     argValue = printAst(arg.getArgumentValue(), arg.getType());

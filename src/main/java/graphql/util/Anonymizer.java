@@ -41,7 +41,7 @@ import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.parser.Parser;
-import graphql.schema.GraphQLAppliedArgument;
+import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
@@ -198,10 +198,10 @@ public class Anonymizer {
             }
 
             @Override
-            public TraversalControl visitGraphQLAppliedArgument(GraphQLAppliedArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
+            public TraversalControl visitGraphQLAppliedArgument(GraphQLAppliedDirectiveArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
                 String newName = assertNotNull(newNameMap.get(graphQLArgument));
 
-                GraphQLAppliedArgument newElement = graphQLArgument.transform(builder -> {
+                GraphQLAppliedDirectiveArgument newElement = graphQLArgument.transform(builder -> {
                     builder.name(newName).description(null).definition(null);
                     if (graphQLArgument.hasSetValue()) {
                         Value<?> valueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getArgumentValue(), graphQLArgument.getType());
@@ -281,7 +281,7 @@ public class Anonymizer {
             @Override
             public TraversalControl visitGraphQLAppliedDirective(GraphQLAppliedDirective graphQLDirective, TraverserContext<GraphQLSchemaElement> context) {
                 if (Directives.DEPRECATED_DIRECTIVE_DEFINITION.getName().equals(graphQLDirective.getName())) {
-                    GraphQLAppliedArgument reason = GraphQLAppliedArgument.newArgument().name("reason")
+                    GraphQLAppliedDirectiveArgument reason = GraphQLAppliedDirectiveArgument.newArgument().name("reason")
                             .type(Scalars.GraphQLString)
                             .clearValue().build();
                     GraphQLAppliedDirective newElement = graphQLDirective.transform(builder -> {
@@ -512,7 +512,7 @@ public class Anonymizer {
             }
 
             @Override
-            public TraversalControl visitGraphQLAppliedArgument(GraphQLAppliedArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
+            public TraversalControl visitGraphQLAppliedArgument(GraphQLAppliedDirectiveArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
                 GraphQLSchemaElement parentNode = context.getParentNode();
                 if (parentNode instanceof GraphQLAppliedDirective) {
                     // if we already went over the argument for this directive name, no need to add new names

@@ -80,7 +80,7 @@ public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {
         }
 
         @Override
-        public TraversalControl visitGraphQLAppliedArgument(GraphQLAppliedArgument node, TraverserContext<GraphQLSchemaElement> context) {
+        public TraversalControl visitGraphQLAppliedArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
             node.replaceType((GraphQLInputType) resolvedType);
             return super.visitGraphQLAppliedArgument(node, context);
         }

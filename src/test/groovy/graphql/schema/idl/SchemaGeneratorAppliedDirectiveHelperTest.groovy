@@ -2,12 +2,9 @@ package graphql.schema.idl
 
 
 import graphql.TestUtil
-import graphql.schema.GraphQLAppliedArgument
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLInputType
 import spock.lang.Specification
-
-import static graphql.Scalars.GraphQLString
 
 class SchemaGeneratorAppliedDirectiveHelperTest extends Specification {
 

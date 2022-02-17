@@ -4,7 +4,6 @@ import graphql.PublicApi;
 import graphql.language.NamedNode;
 import graphql.language.NodeParentTree;
 import graphql.schema.DataFetcher;
-import graphql.schema.GraphQLAppliedArgument;
 import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;

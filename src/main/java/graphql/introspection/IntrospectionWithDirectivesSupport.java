@@ -8,9 +8,8 @@ import graphql.execution.ValuesResolver;
 import graphql.language.AstPrinter;
 import graphql.language.Node;
 import graphql.schema.DataFetcher;
-import graphql.schema.GraphQLAppliedArgument;
+import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLAppliedDirective;
-import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
@@ -203,7 +202,7 @@ public class IntrospectionWithDirectivesSupport {
                     .filter(arg -> arg.getArgumentValue().isSet());
         };
         DataFetcher<?> argValueDF = env -> {
-            final GraphQLAppliedArgument argument = env.getSource();
+            final GraphQLAppliedDirectiveArgument argument = env.getSource();
             InputValueWithState value = argument.getArgumentValue();
             Node<?> literal = ValuesResolver.valueToLiteral(value, argument.getType());
             return AstPrinter.printAst(literal);

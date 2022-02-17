@@ -27,7 +27,7 @@ import static graphql.util.FpKit.getByName;
  * <p>
  * A directive has a definition, that is what arguments it takes, and it can also be applied
  * to other schema elements.  Originally graphql-java re-used the {@link GraphQLDirective} and {@link GraphQLArgument}
- * classes to do both purposes.  This was a modelling mistake.  New {@link GraphQLAppliedDirective} and {@link GraphQLAppliedArgument}
+ * classes to do both purposes.  This was a modelling mistake.  New {@link GraphQLAppliedDirective} and {@link GraphQLAppliedDirectiveArgument}
  * classes have been introduced to better model when a directive is applied to a schema element,
  * as opposed to its schema definition itself.
  */

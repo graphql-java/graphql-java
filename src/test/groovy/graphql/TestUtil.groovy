@@ -12,12 +12,11 @@ import graphql.language.Type
 import graphql.parser.Parser
 import graphql.schema.Coercing
 import graphql.schema.DataFetcher
-import graphql.schema.GraphQLAppliedArgument
+import graphql.schema.GraphQLAppliedDirectiveArgument
 import graphql.schema.GraphQLAppliedDirective
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLInputType
-import graphql.schema.GraphQLNamedSchemaElement
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
@@ -32,7 +31,6 @@ import graphql.schema.idl.WiringFactory
 import graphql.schema.idl.errors.SchemaProblem
 import groovy.json.JsonOutput
 
-import java.util.function.Function
 import java.util.function.Supplier
 import java.util.stream.Collectors
 
@@ -270,7 +268,7 @@ class TestUtil {
             def builder = GraphQLAppliedDirective.newDirective().name(directiveName)
 
             names.each { argName ->
-                builder.argument(GraphQLAppliedArgument.newArgument().name(argName).type(GraphQLInt).valueProgrammatic(BigInteger.valueOf(0)).build())
+                builder.argument(GraphQLAppliedDirectiveArgument.newArgument().name(argName).type(GraphQLInt).valueProgrammatic(BigInteger.valueOf(0)).build())
             }
             return builder.build()
         }.toArray() as GraphQLAppliedDirective[]
@@ -281,7 +279,7 @@ class TestUtil {
             def builder = GraphQLAppliedDirective.newDirective().name(directiveName)
 
             names.each { argName ->
-                builder.argument(GraphQLAppliedArgument.newArgument().name(argName).type(GraphQLInt).build())
+                builder.argument(GraphQLAppliedDirectiveArgument.newArgument().name(argName).type(GraphQLInt).build())
             }
             return builder.build()
         }.toArray() as GraphQLAppliedDirective[]
@@ -291,7 +289,7 @@ class TestUtil {
         return names.collect { newArgument().name(it).type(GraphQLInt).build() }
     }
 
-    static List<GraphQLAppliedArgument> mockAppliedArguments(String... names) {
+    static List<GraphQLAppliedDirectiveArgument> mockAppliedArguments(String... names) {
         return names.collect { newArgument().name(it).type(GraphQLInt).build() }
     }
 

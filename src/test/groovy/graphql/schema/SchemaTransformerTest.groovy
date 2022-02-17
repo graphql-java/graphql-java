@@ -808,7 +808,7 @@ type Query {
         def visitor = new GraphQLTypeVisitorStub() {
 
             @Override
-            TraversalControl visitGraphQLAppliedArgument(GraphQLAppliedArgument node, TraverserContext<GraphQLSchemaElement> context) {
+            TraversalControl visitGraphQLAppliedArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
                 if (context.getParentNode() instanceof GraphQLAppliedDirective) {
                     GraphQLAppliedDirective directive = context.getParentNode()
                     if (directive.name == "foo") {

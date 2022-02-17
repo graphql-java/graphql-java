@@ -8,7 +8,7 @@ import graphql.language.DirectiveDefinition;
 import graphql.language.InputValueDefinition;
 import graphql.language.Type;
 import graphql.language.Value;
-import graphql.schema.GraphQLAppliedArgument;
+import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
@@ -115,7 +115,7 @@ class SchemaGeneratorAppliedDirectiveHelper {
         builderAppliedDirective.definition(buildCtx.isCaptureAstDefinitions() ? directive : null);
 
         List<GraphQLArgument> directiveArguments = new ArrayList<>();
-        List<GraphQLAppliedArgument> appliedArguments = new ArrayList<>();
+        List<GraphQLAppliedDirectiveArgument> appliedArguments = new ArrayList<>();
 
         for (Argument arg : directive.getArguments()) {
             directiveArguments.add(buildDirectiveArg(buildCtx, arg, graphQLDirective));
@@ -154,9 +154,9 @@ class SchemaGeneratorAppliedDirectiveHelper {
         return builder.build();
     }
 
-    private static GraphQLAppliedArgument buildAppliedArg(SchemaGeneratorHelper.BuildContext buildCtx, Argument arg, GraphQLDirective directiveDefinition) {
+    private static GraphQLAppliedDirectiveArgument buildAppliedArg(SchemaGeneratorHelper.BuildContext buildCtx, Argument arg, GraphQLDirective directiveDefinition) {
         GraphQLArgument directiveDefArgument = directiveDefinition.getArgument(arg.getName());
-        GraphQLAppliedArgument.Builder builder = GraphQLAppliedArgument.newArgument();
+        GraphQLAppliedDirectiveArgument.Builder builder = GraphQLAppliedDirectiveArgument.newArgument();
         builder.name(arg.getName())
                 .type(directiveDefArgument.getType())
                 .definition(buildCtx.isCaptureAstDefinitions() ? arg : null);
@@ -198,13 +198,13 @@ class SchemaGeneratorAppliedDirectiveHelper {
         return argumentsOut;
     }
 
-    private static List<GraphQLAppliedArgument> transferMissingAppliedArguments(List<GraphQLAppliedArgument> arguments, GraphQLDirective directiveDefinition) {
-        Map<String, GraphQLAppliedArgument> declaredArgs = FpKit.getByName(arguments, GraphQLAppliedArgument::getName, FpKit.mergeFirst());
-        List<GraphQLAppliedArgument> argumentsOut = new ArrayList<>(arguments);
+    private static List<GraphQLAppliedDirectiveArgument> transferMissingAppliedArguments(List<GraphQLAppliedDirectiveArgument> arguments, GraphQLDirective directiveDefinition) {
+        Map<String, GraphQLAppliedDirectiveArgument> declaredArgs = FpKit.getByName(arguments, GraphQLAppliedDirectiveArgument::getName, FpKit.mergeFirst());
+        List<GraphQLAppliedDirectiveArgument> argumentsOut = new ArrayList<>(arguments);
 
         for (GraphQLArgument directiveDefArg : directiveDefinition.getArguments()) {
             if (!declaredArgs.containsKey(directiveDefArg.getName())) {
-                GraphQLAppliedArgument.Builder missingArg = GraphQLAppliedArgument.newArgument()
+                GraphQLAppliedDirectiveArgument.Builder missingArg = GraphQLAppliedDirectiveArgument.newArgument()
                         .name(directiveDefArg.getName())
                         .type(directiveDefArg.getType())
                         .description(directiveDefArg.getDescription());

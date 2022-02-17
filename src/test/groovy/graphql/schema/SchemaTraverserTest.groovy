@@ -402,7 +402,7 @@ class SchemaTraverserTest extends Specification {
         def stack = []
 
         @Override
-        TraversalControl visitGraphQLAppliedArgument(GraphQLAppliedArgument node, TraverserContext<GraphQLSchemaElement> context) {
+        TraversalControl visitGraphQLAppliedArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
             stack.add("appliedArgument: ${node.getName()}")
             return super.visitGraphQLAppliedArgument(node, context)
         }

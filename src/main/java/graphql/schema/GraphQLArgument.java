@@ -301,10 +301,10 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     /**
      * This method can be used to turn an argument that was being use as an applied argument into one.
      *
-     * @return an {@link GraphQLAppliedArgument}
+     * @return an {@link GraphQLAppliedDirectiveArgument}
      */
-    public GraphQLAppliedArgument toAppliedArgument() {
-        return GraphQLAppliedArgument.newArgument()
+    public GraphQLAppliedDirectiveArgument toAppliedArgument() {
+        return GraphQLAppliedDirectiveArgument.newArgument()
                 .name(name)
                 .type(getType())
                 .inputValueWithState(value)
