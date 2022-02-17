@@ -8,6 +8,7 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphqlTypeBuilder;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -46,6 +47,7 @@ public class QueryAppliedDirective {
         this.definition = definition;
     }
 
+    @Nonnull
     public String getName() {
         return name;
     }
@@ -59,6 +61,7 @@ public class QueryAppliedDirective {
         return arguments;
     }
 
+    @Nullable
     public QueryAppliedDirectiveArgument getArgument(String name) {
         for (QueryAppliedDirectiveArgument argument : arguments) {
             if (argument.getName().equals(name)) {

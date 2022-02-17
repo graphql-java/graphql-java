@@ -150,22 +150,18 @@ public class DirectivesUtil {
 
         }
 
-        @Deprecated // use GraphQLAppliedDirectives eventually
         public ImmutableMap<String, List<GraphQLDirective>> getAllDirectivesByName() {
             return allDirectivesByName;
         }
 
-        @Deprecated // use GraphQLAppliedDirectives eventually
         public ImmutableMap<String, GraphQLDirective> getDirectivesByName() {
             return nonRepeatableDirectivesByName;
         }
 
-        @Deprecated // use GraphQLAppliedDirectives eventually
         public List<GraphQLDirective> getDirectives() {
             return allDirectives;
         }
 
-        @Deprecated // use GraphQLAppliedDirectives eventually
         public GraphQLDirective getDirective(String directiveName) {
             List<GraphQLDirective> directiveList = allDirectivesByName.get(directiveName);
             if (directiveList == null || directiveList.isEmpty()) {
@@ -174,7 +170,6 @@ public class DirectivesUtil {
             return directiveList.get(0);
         }
 
-        @Deprecated // use GraphQLAppliedDirectives eventually
         public List<GraphQLDirective> getDirectives(String directiveName) {
             return allDirectivesByName.getOrDefault(directiveName, emptyList());
         }

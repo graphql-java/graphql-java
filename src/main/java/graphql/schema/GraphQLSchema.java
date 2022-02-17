@@ -58,8 +58,8 @@ public class GraphQLSchema {
     private final GraphQLFieldDefinition introspectionTypeField;
     // we don't allow modification of "__typename" - its a scalar
     private final GraphQLFieldDefinition __typename = Introspection.TypeNameMetaFieldDef;
-    private final DirectivesUtil.DirectivesHolder directives;
-    private final DirectivesUtil.DirectivesHolder schemaDirectives;
+    private final DirectivesUtil.DirectivesHolder directiveDefinitionsHolder;
+    private final DirectivesUtil.DirectivesHolder schemaAppliedDirectivesHolder;
 
     private final SchemaDefinition definition;
     private final ImmutableList<SchemaExtensionDefinition> extensionDefinitions;
@@ -91,8 +91,8 @@ public class GraphQLSchema {
         this.introspectionSchemaType = builder.introspectionSchemaType;
         this.introspectionSchemaField = Introspection.buildSchemaField(builder.introspectionSchemaType);
         this.introspectionTypeField = Introspection.buildTypeField(builder.introspectionSchemaType);
-        this.directives = new DirectivesUtil.DirectivesHolder(builder.additionalDirectives, emptyList());
-        this.schemaDirectives = new DirectivesUtil.DirectivesHolder(builder.schemaDirectives, builder.schemaAppliedDirectives);
+        this.directiveDefinitionsHolder = new DirectivesUtil.DirectivesHolder(builder.additionalDirectives, emptyList());
+        this.schemaAppliedDirectivesHolder = new DirectivesUtil.DirectivesHolder(builder.schemaDirectives, builder.schemaAppliedDirectives);
         this.definition = builder.definition;
         this.extensionDefinitions = nonNullCopyOf(builder.extensionDefinitions);
         this.description = builder.description;
@@ -122,8 +122,8 @@ public class GraphQLSchema {
         this.introspectionSchemaType = existingSchema.introspectionSchemaType;
         this.introspectionSchemaField = Introspection.buildSchemaField(existingSchema.introspectionSchemaType);
         this.introspectionTypeField = Introspection.buildTypeField(existingSchema.introspectionSchemaType);
-        this.directives = existingSchema.directives;
-        this.schemaDirectives = existingSchema.schemaDirectives;
+        this.directiveDefinitionsHolder = existingSchema.directiveDefinitionsHolder;
+        this.schemaAppliedDirectivesHolder = existingSchema.schemaAppliedDirectivesHolder;
         this.definition = existingSchema.definition;
         this.extensionDefinitions = existingSchema.extensionDefinitions;
         this.description = existingSchema.description;
@@ -149,8 +149,8 @@ public class GraphQLSchema {
         this.introspectionSchemaType = existingSchema.introspectionSchemaType;
         this.introspectionSchemaField = existingSchema.introspectionSchemaField;
         this.introspectionTypeField = existingSchema.introspectionTypeField;
-        this.directives = existingSchema.directives;
-        this.schemaDirectives = existingSchema.schemaDirectives;
+        this.directiveDefinitionsHolder = existingSchema.directiveDefinitionsHolder;
+        this.schemaAppliedDirectivesHolder = existingSchema.schemaAppliedDirectivesHolder;
         this.definition = existingSchema.definition;
         this.extensionDefinitions = existingSchema.extensionDefinitions;
         this.typeMap = existingSchema.typeMap;
@@ -162,11 +162,11 @@ public class GraphQLSchema {
     }
 
     private static GraphQLDirective[] schemaDirectivesArray(GraphQLSchema existingSchema) {
-        return existingSchema.schemaDirectives.getDirectives().toArray(new GraphQLDirective[0]);
+        return existingSchema.schemaAppliedDirectivesHolder.getDirectives().toArray(new GraphQLDirective[0]);
     }
 
     private static GraphQLAppliedDirective[] schemaAppliedDirectivesArray(GraphQLSchema existingSchema) {
-        return existingSchema.schemaDirectives.getAppliedDirectives().toArray(new GraphQLAppliedDirective[0]);
+        return existingSchema.schemaAppliedDirectivesHolder.getAppliedDirectives().toArray(new GraphQLAppliedDirective[0]);
     }
 
     private static List<GraphQLNamedType> getAllTypesAsList(ImmutableMap<String, GraphQLNamedType> typeMap) {
@@ -423,30 +423,20 @@ public class GraphQLSchema {
     }
 
     /**
-     * This returns the list of directives that are associated with this schema object including
+     * This returns the list of directives definitions that are associated with this schema object including
      * built in ones.
      *
      * @return a list of directives
      */
     public List<GraphQLDirective> getDirectives() {
-        return directives.getDirectives();
+        return directiveDefinitionsHolder.getDirectives();
     }
 
     /**
-     * @return a a map of non repeatable directives by directive name
+     * @return a map of non repeatable directives by directive name
      */
     public Map<String, GraphQLDirective> getDirectivesByName() {
-        return directives.getDirectivesByName();
-    }
-
-    /**
-     * Directives can be `repeatable` and hence this returns a list of directives by name, some with an arity of 1 and some with an arity of greater than
-     * 1.
-     *
-     * @return a map of all directives by directive name
-     */
-    public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
-        return directives.getAllDirectivesByName();
+        return directiveDefinitionsHolder.getDirectivesByName();
     }
 
     /**
@@ -457,68 +447,58 @@ public class GraphQLSchema {
      * @return the directive or null if there is not one with that name
      */
     public GraphQLDirective getDirective(String directiveName) {
-        return directives.getDirective(directiveName);
+        return directiveDefinitionsHolder.getDirective(directiveName);
     }
 
-    /**
-     * Returns a list of named directive that can include non repeatable and repeatable directives.
-     *
-     * @param directiveName the name of the directives to retrieve
-     *
-     * @return the directive or empty list if there is not one with that name
-     */
-    public List<GraphQLDirective> getDirectives(String directiveName) {
-        return directives.getDirectives(directiveName);
-    }
+
 
     /**
-     * Returns the first named directive that can include non-repeatable and repeatable directives
-     * or null if there is not one called that name
-     *
-     * @param directiveName the name of the directives to retrieve
-     *
-     * @return the directive or null if there is not one with that name
-     */
-    public GraphQLDirective getFirstDirective(String directiveName) {
-        return DirectivesUtil.getFirstDirective(directiveName, getAllDirectivesByName());
-    }
-
-    /**
-     * This returns the list of directives that have been explicitly put on the
+     * This returns the list of directives that have been explicitly applied to the
      * schema object.  Note that {@link #getDirectives()} will return
      * directives for all schema elements, whereas this is just for the schema
      * element itself
      *
      * @return a list of directives
+     *
+     * @deprecated Use the {@link GraphQLAppliedDirective} methods instead
      */
+    @Deprecated
     public List<GraphQLDirective> getSchemaDirectives() {
-        return schemaDirectives.getDirectives();
+        return schemaAppliedDirectivesHolder.getDirectives();
     }
 
     /**
-     * This returns a map of non repeatable directives that have been explicitly put on the
+     * This returns a map of non-repeatable directives that have been explicitly applied to the
      * schema object.  Note that {@link #getDirectives()} will return
      * directives for all schema elements, whereas this is just for the schema
      * element itself
      *
-     * @return a list of directives
-     */
-    public Map<String, GraphQLDirective> getSchemaDirectiveByName() {
-        return schemaDirectives.getDirectivesByName();
-    }
-
-    /**
-     * Schema directives can be `repeatable` and hence this returns a list of directives by name, some with an arity of 1 and some with an arity of greater than
-     * 1.
+     * @return a map  of directives
      *
-     * @return a map of all schema directives by directive name
+     * @deprecated Use the {@link GraphQLAppliedDirective} methods instead
      */
-    public Map<String, List<GraphQLDirective>> getAllSchemaDirectivesByName() {
-        return schemaDirectives.getAllDirectivesByName();
+    @Deprecated
+    public Map<String, GraphQLDirective> getSchemaDirectiveByName() {
+        return schemaAppliedDirectivesHolder.getDirectivesByName();
     }
 
     /**
-     * This returns the named directive that have been explicitly put on the
+     * This returns a map of non-repeatable and repeatable directives that have been explicitly applied to the
+     * schema object.  Note that {@link #getDirectives()} will return
+     * directives for all schema elements, whereas this is just for the schema
+     * element itself
+     *
+     * @return a map  of directives
+     *
+     * @deprecated Use the {@link GraphQLAppliedDirective} methods instead
+     */
+    @Deprecated
+    public Map<String, List<GraphQLDirective>> getAllSchemaDirectivesByName() {
+        return schemaAppliedDirectivesHolder.getAllDirectivesByName();
+    }
+
+    /**
+     * This returns the named directive that have been explicitly applied to the
      * schema object.  Note that {@link graphql.schema.GraphQLDirectiveContainer#getDirective(String)} will return
      * directives for all schema elements, whereas this is just for the schema
      * element itself
@@ -526,39 +506,55 @@ public class GraphQLSchema {
      * @param directiveName the name of the directive
      *
      * @return a named directive
+     *
+     * @deprecated Use the {@link GraphQLAppliedDirective} methods instead
      */
+    @Deprecated
     public GraphQLDirective getSchemaDirective(String directiveName) {
-        return schemaDirectives.getDirective(directiveName);
-    }
-
-    public List<GraphQLDirective> getSchemaDirectives(String directiveName) {
-        return schemaDirectives.getDirectives(directiveName);
+        return schemaAppliedDirectivesHolder.getDirective(directiveName);
     }
 
     /**
-     * This returns the list of directives that have been explicitly put on the
+     * This returns the named directives that have been explicitly applied to the
+     * schema object.
+     *
+     * @param directiveName the name of the directive
+     *
+     * @return A list of repeated applied directives
+     *
+     * @deprecated Use the {@link GraphQLAppliedDirective} methods instead
+     */
+    @Deprecated
+    public List<GraphQLDirective> getSchemaDirectives(String directiveName) {
+        return schemaAppliedDirectivesHolder.getDirectives(directiveName);
+    }
+
+    /**
+     * This returns the list of directives that have been explicitly applied to the
      * schema object.  Note that {@link #getDirectives()} will return
      * directives for all schema elements, whereas this is just for the schema
      * element itself
      *
-     * @return a list of directives
+     * @return a map of directives
      */
     public List<GraphQLAppliedDirective> getSchemaAppliedDirectives() {
-        return schemaDirectives.getAppliedDirectives();
+        return schemaAppliedDirectivesHolder.getAppliedDirectives();
     }
 
     /**
-     * Schema directives can be `repeatable` and hence this returns a list of directives by name, some with an arity of 1 and some with an arity of greater than
-     * 1.
+     * This returns a map of non-repeatable and repeatable directives that have been explicitly applied to the
+     * schema object.  Note that {@link #getDirectives()} will return
+     * directives for all schema elements, whereas this is just for the schema
+     * element itself
      *
      * @return a map of all schema directives by directive name
      */
     public Map<String, List<GraphQLAppliedDirective>> getAllSchemaAppliedDirectivesByName() {
-        return schemaDirectives.getAllAppliedDirectivesByName();
+        return schemaAppliedDirectivesHolder.getAllAppliedDirectivesByName();
     }
 
     /**
-     * This returns the named directive that have been explicitly put on the
+     * This returns the named directive that have been explicitly applied to the
      * schema object.  Note that {@link graphql.schema.GraphQLDirectiveContainer#getDirective(String)} will return
      * directives for all schema elements, whereas this is just for the schema
      * element itself
@@ -568,13 +564,14 @@ public class GraphQLSchema {
      * @return a named directive
      */
     public GraphQLAppliedDirective getSchemaAppliedDirective(String directiveName) {
-        return schemaDirectives.getAppliedDirective(directiveName);
+        return schemaAppliedDirectivesHolder.getAppliedDirective(directiveName);
     }
 
     public List<GraphQLAppliedDirective> getSchemaAppliedDirectives(String directiveName) {
-        return schemaDirectives.getAppliedDirectives(directiveName);
+        return schemaAppliedDirectivesHolder.getAppliedDirectives(directiveName);
     }
 
+    @Nullable
     public SchemaDefinition getDefinition() {
         return definition;
     }
@@ -591,6 +588,7 @@ public class GraphQLSchema {
         return subscriptionType != null;
     }
 
+    @Nullable
     public String getDescription() {
         return description;
     }

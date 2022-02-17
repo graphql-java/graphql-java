@@ -174,9 +174,9 @@ public class SchemaUsage {
             return true;
         }
 
-        List<GraphQLDirective> directives = schema.getDirectives(elementName);
-        if (!directives.isEmpty()) {
-            String directiveName = directives.get(0).getName();
+        GraphQLDirective directive = schema.getDirective(elementName);
+        if (directive != null) {
+            String directiveName = directive.getName();
             if (DirectiveInfo.isGraphqlSpecifiedDirective(directiveName)) {
                 return true;
             }

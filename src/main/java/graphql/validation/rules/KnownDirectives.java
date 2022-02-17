@@ -31,7 +31,7 @@ public class KnownDirectives extends AbstractRule {
 
     @Override
     public void checkDirective(Directive directive, List<Node> ancestors) {
-        GraphQLDirective graphQLDirective = getValidationContext().getSchema().getFirstDirective(directive.getName());
+        GraphQLDirective graphQLDirective = getValidationContext().getSchema().getDirective(directive.getName());
         if (graphQLDirective == null) {
             String message = String.format("Unknown directive %s", directive.getName());
             addError(ValidationErrorType.UnknownDirective, directive.getSourceLocation(), message);

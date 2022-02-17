@@ -45,10 +45,12 @@ public class QueryAppliedDirectiveArgument {
         this.definition = definition;
     }
 
+    @NotNull
     public String getName() {
         return name;
     }
 
+    @NotNull
     public GraphQLInputType getType() {
         return originalType;
     }
@@ -79,6 +81,7 @@ public class QueryAppliedDirectiveArgument {
      *
      * @return a value of type T which is the java value of the argument
      */
+    @Nullable
     public <T> T getValue() {
         return getInputValueImpl(getType(), value);
     }
@@ -92,6 +95,7 @@ public class QueryAppliedDirectiveArgument {
         return null;
     }
 
+    @Nullable
     public Argument getDefinition() {
         return definition;
     }
