@@ -45,6 +45,7 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.execution.ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDER;
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.completeInstrumentationCtxCF;
 
 /**
  * This class is where all graphql-java query execution begins.  It combines the objects that are needed
@@ -513,15 +514,17 @@ public class GraphQL {
             InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema, instrumentationState);
             executionInput = instrumentation.instrumentExecutionInput(executionInput, inputInstrumentationParameters);
 
+            CompletableFuture<ExecutionResult> beginExecutionCF = new CompletableFuture<>();
             InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema, instrumentationState);
             InstrumentationContext<ExecutionResult> executionInstrumentation = instrumentation.beginExecution(instrumentationParameters);
+            executionInstrumentation.onDispatched(beginExecutionCF);
 
             GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters);
 
             CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput, graphQLSchema, instrumentationState);
             //
             // finish up instrumentation
-            executionResult = executionResult.whenComplete(executionInstrumentation::onCompleted);
+            executionResult = executionResult.whenComplete(completeInstrumentationCtxCF(executionInstrumentation, beginExecutionCF));
             //
             // allow instrumentation to tweak the result
             executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters));
@@ -556,7 +559,7 @@ public class GraphQL {
             }
             try {
                 return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState);
-            } catch (AbortExecutionException e){
+            } catch (AbortExecutionException e) {
                 return CompletableFuture.completedFuture(e.toExecutionResult());
             }
         });
