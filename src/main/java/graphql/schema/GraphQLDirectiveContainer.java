@@ -8,11 +8,16 @@ import java.util.Map;
 import static java.util.Collections.emptyList;
 
 /**
- * Represents a graphql runtime type that can have {@link graphql.schema.GraphQLDirective}'s.
+ * Represents a graphql runtime type that can have {@link graphql.schema.GraphQLAppliedDirective}'s.
  * <p>
  * Directives can be repeatable and (by default) non-repeatable.
  * <p>
  * There are access methods here that get the two different types.
+ * <p>
+ * The use of {@link GraphQLDirective} to represent a directive applied to an element is deprecated in favour of
+ * {@link GraphQLAppliedDirective}.   A {@link GraphQLDirective} really should represent the definition of a directive in a schema not its use
+ * on schema elements.  However, it has been left in place for legacy reasons and will be removed in a
+ * future version.
  *
  * @see graphql.language.DirectiveDefinition
  * @see graphql.language.DirectiveDefinition#isRepeatable()
@@ -62,40 +67,6 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
     }
 
     /**
-     * This will return a list of all the directives that have been put on {@link graphql.schema.GraphQLNamedSchemaElement} as a flat list, which may contain repeatable
-     * and non repeatable directives.
-     *
-     * @return a list of all the directives associated with this named schema element
-     */
-    List<GraphQLDirective> getDirectives();
-
-    /**
-     * This will return a Map of the non repeatable directives that are associated with a {@link graphql.schema.GraphQLNamedSchemaElement}.  Any repeatable directives
-     * will be filtered out of this map.
-     *
-     * @return a map of non repeatable directives by directive name.
-     */
-    Map<String, GraphQLDirective> getDirectivesByName();
-
-    /**
-     * This will return a Map of the all directives that are associated with a {@link graphql.schema.GraphQLNamedSchemaElement}, including both
-     * repeatable and non repeatable directives.
-     *
-     * @return a map of all directives by directive name
-     */
-    Map<String, List<GraphQLDirective>> getAllDirectivesByName();
-
-    /**
-     * Returns a non repeatable directive with the provided name.  This will throw a {@link graphql.AssertException} if
-     * the directive is a repeatable directive that has more then one instance.
-     *
-     * @param directiveName the name of the directive to retrieve
-     *
-     * @return the directive or null if there is not one with that name
-     */
-    GraphQLDirective getDirective(String directiveName);
-
-    /**
      * This will return true if the element has a directive (repeatable or non repeatable) with the specified name
      *
      * @param directiveName the name of the directive
@@ -107,12 +78,60 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
     }
 
     /**
+     * This will return a list of all the directives that have been put on {@link graphql.schema.GraphQLNamedSchemaElement} as a flat list, which may contain repeatable
+     * and non-repeatable directives.
+     *
+     * @return a list of all the directives associated with this named schema element
+     *
+     * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
+     */
+    @Deprecated
+    List<GraphQLDirective> getDirectives();
+
+    /**
+     * This will return a Map of the non repeatable directives that are associated with a {@link graphql.schema.GraphQLNamedSchemaElement}.  Any repeatable directives
+     * will be filtered out of this map.
+     *
+     * @return a map of non repeatable directives by directive name.
+     *
+     * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
+     */
+    @Deprecated
+    Map<String, GraphQLDirective> getDirectivesByName();
+
+    /**
+     * This will return a Map of the all directives that are associated with a {@link graphql.schema.GraphQLNamedSchemaElement}, including both
+     * repeatable and non repeatable directives.
+     *
+     * @return a map of all directives by directive name
+     *
+     * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
+     */
+    @Deprecated
+    Map<String, List<GraphQLDirective>> getAllDirectivesByName();
+
+    /**
+     * Returns a non-repeatable directive with the provided name.  This will throw a {@link graphql.AssertException} if
+     * the directive is a repeatable directive that has more then one instance.
+     *
+     * @param directiveName the name of the directive to retrieve
+     *
+     * @return the directive or null if there is not one with that name
+     *
+     * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
+     */
+    @Deprecated
+    GraphQLDirective getDirective(String directiveName);
+
+    /**
      * Returns all of the directives with the provided name, including repeatable and non repeatable directives.
      *
      * @param directiveName the name of the directives to retrieve
      *
      * @return the directives or empty list if there is not one with that name
+     * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
+    @Deprecated
     default List<GraphQLDirective> getDirectives(String directiveName) {
         return getAllDirectivesByName().getOrDefault(directiveName, emptyList());
     }
