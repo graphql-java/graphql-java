@@ -43,6 +43,10 @@ public abstract class GraphqlDirectivesContainerTypeBuilder<B extends GraphqlDir
     }
 
 
+    /**
+     * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
+     */
+    @Deprecated
     public B replaceDirectives(List<GraphQLDirective> directives) {
         assertNotNull(directives, () -> "directive can't be null");
         this.directives.clear();
@@ -50,6 +54,10 @@ public abstract class GraphqlDirectivesContainerTypeBuilder<B extends GraphqlDir
         return (B) this;
     }
 
+    /**
+     * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
+     */
+    @Deprecated
     public B withDirectives(GraphQLDirective... directives) {
         assertNotNull(directives, () -> "directives can't be null");
         this.directives.clear();
@@ -59,12 +67,20 @@ public abstract class GraphqlDirectivesContainerTypeBuilder<B extends GraphqlDir
         return (B) this;
     }
 
+    /**
+     * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
+     */
+    @Deprecated
     public B withDirective(GraphQLDirective directive) {
         assertNotNull(directive, () -> "directive can't be null");
         this.directives.add(directive);
         return (B) this;
     }
 
+    /**
+     * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
+     */
+    @Deprecated
     public B withDirective(GraphQLDirective.Builder builder) {
         return withDirective(builder.build());
     }
