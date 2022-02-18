@@ -22,7 +22,6 @@ import static graphql.schema.FieldCoordinates.coordinates
 
 class ExecutableNormalizedOperationFactoryTest extends Specification {
 
-
     def "test"() {
         String schema = """
 type Query{ 
@@ -708,7 +707,7 @@ type Dog implements Animal{
     }
 
     def "query with interface in between"() {
-        def graphQLSchema = TestUtil.schema("""
+        def graphQLSchema = schema("""
         type Query {
             pets: [Pet]
         }
@@ -745,36 +744,87 @@ type Dog implements Animal{
                         'Human.name']
     }
 
+    def "test interface fields with different output types on the implementations"() {
+        def graphQLSchema = schema("""
+        interface Animal {
+            parent: Animal
+            name: String
+        }
+        type Cat implements Animal {
+            name: String
+            parent: Cat
+        }
+        type Dog implements Animal {
+            name: String
+            parent: Dog
+            isGoodBoy: Boolean
+        }
+        type Query {
+            animal: Animal
+        }
+        """)
+
+        def query = """
+        {
+            animal {
+                parent {
+                    name
+                }
+            }
+        }
+        """
+
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+
+        def dependencyGraph = new ExecutableNormalizedOperationFactory()
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
+
+        expect:
+        printedTree == [
+                "-Query.animal: Animal",
+                "--[Cat, Dog].parent: Cat, Dog",
+                "---[Cat, Dog].name: String",
+        ]
+    }
 
     List<String> printTree(ExecutableNormalizedOperation queryExecutionTree) {
         def result = []
-        Traverser<ExecutableNormalizedField> traverser = Traverser.depthFirst({ it.getChildren() });
+        Traverser<ExecutableNormalizedField> traverser = Traverser.depthFirst({ it.getChildren() })
         traverser.traverse(queryExecutionTree.getTopLevelFields(), new TraverserVisitorStub<ExecutableNormalizedField>() {
             @Override
             TraversalControl enter(TraverserContext<ExecutableNormalizedField> context) {
-                ExecutableNormalizedField queryExecutionField = context.thisNode();
+                ExecutableNormalizedField queryExecutionField = context.thisNode()
                 result << queryExecutionField.printDetails()
-                return TraversalControl.CONTINUE;
+                return TraversalControl.CONTINUE
             }
-        });
+        })
         result
     }
 
-    List<String> printTreeWithLevelInfo(ExecutableNormalizedOperation queryExecutionTree, GraphQLSchema schema) {
+    static List<String> printTreeWithLevelInfo(ExecutableNormalizedOperation queryExecutionTree, GraphQLSchema schema) {
         def result = []
-        Traverser<ExecutableNormalizedField> traverser = Traverser.depthFirst({ it.getChildren() });
+        Traverser<ExecutableNormalizedField> traverser = Traverser.depthFirst({ it.getChildren() })
         traverser.traverse(queryExecutionTree.getTopLevelFields(), new TraverserVisitorStub<ExecutableNormalizedField>() {
             @Override
             TraversalControl enter(TraverserContext<ExecutableNormalizedField> context) {
-                ExecutableNormalizedField queryExecutionField = context.thisNode();
+                ExecutableNormalizedField queryExecutionField = context.thisNode()
                 String prefix = ""
                 for (int i = 1; i <= queryExecutionField.getLevel(); i++) {
                     prefix += "-"
                 }
-                result << (prefix + queryExecutionField.printDetails() + ": " + GraphQLTypeUtil.simplePrint(queryExecutionField.getType(schema)))
-                return TraversalControl.CONTINUE;
+
+                def possibleOutputTypes = new LinkedHashSet<String>()
+                for (fieldDef in queryExecutionField.getFieldDefinitions(schema)) {
+                    possibleOutputTypes.add(GraphQLTypeUtil.simplePrint(fieldDef.type))
+                }
+
+                result << (prefix + queryExecutionField.printDetails() + ": " + possibleOutputTypes.join(", "))
+                return TraversalControl.CONTINUE
             }
-        });
+        })
         result
     }
 
