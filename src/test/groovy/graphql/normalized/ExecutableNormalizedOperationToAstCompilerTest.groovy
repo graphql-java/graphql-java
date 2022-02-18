@@ -1,6 +1,5 @@
 package graphql.normalized
 
-
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.language.AstPrinter
@@ -838,13 +837,13 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         when:
         def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         then:
-        AstPrinter.printAst(result.document) == '''query {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''query {
   foo(arg: {arg1 : "fooArg"}) {
     bar(arg: {arg1 : "barArg"}) {
       baz {
         ... on ABaz {
-          boo
           a
+          boo
         }
       }
     }
@@ -870,7 +869,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         when:
         def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         then:
-        AstPrinter.printAst(result.document) == '''query {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''query {
   foo1(arg: "hello")
   foo2(a: 123, b: true, c: 123.45)
 }
@@ -894,7 +893,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         when:
         def result = compileToDocument(schema, QUERY, "My_Op23", fields, noVariables)
         then:
-        AstPrinter.printAst(result.document) == '''query My_Op23 {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''query My_Op23 {
   foo1(arg: "hello")
   foo2(a: 123, b: true, c: 123.45)
 }
@@ -937,7 +936,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         when:
         def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         then:
-        AstPrinter.printAst(result.document) == '''query {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''query {
   foo1(arg: {arg1 : "Hello", arg2 : 123, arg3 : "IDID", arg4 : false, arg5 : 123.123, nested : {arg1 : "Hello2", arg2 : 1234, arg3 : "IDID1", arg4 : null, arg5 : null}})
 }
 '''
@@ -966,7 +965,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         when:
         def result = compileToDocument(schema, MUTATION, null, fields, noVariables)
         then:
-        AstPrinter.printAst(result.document) == '''mutation {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''mutation {
   foo1(arg: {arg1 : "Mutation"})
 }
 '''
@@ -995,7 +994,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         when:
         def result = compileToDocument(schema, SUBSCRIPTION, null, fields, noVariables)
         then:
-        AstPrinter.printAst(result.document) == '''subscription {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''subscription {
   foo1(arg: {arg1 : "Subscription"})
 }
 '''
@@ -1033,7 +1032,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         when:
         def result = compileToDocument(schema, MUTATION, null, fields, noVariables)
         then:
-        AstPrinter.printAst(result.document) == '''mutation {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''mutation {
   foo1(arg: {arg1 : "Mutation"}) {
     test
   }
@@ -1076,7 +1075,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         when:
         def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         then:
-        AstPrinter.printAst(result.document) == '''query {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''query {
   foo1(arg: {arg1 : "Query"}) {
     test
   }
@@ -1263,7 +1262,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
 
         then:
         result.variables == [v0: ["48x48": "hello"]]
-        AstPrinter.printAst(result.document) == '''mutation ($v0: JSON!) {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''mutation ($v0: JSON!) {
   foo1(arg: $v0)
 }
 '''
@@ -1293,7 +1292,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def result = compileToDocument(schema, MUTATION, null, fields, jsonVariables)
         then:
         result.variables == [v0: "hello there"]
-        AstPrinter.printAst(result.document) == '''mutation ($v0: JSON!) {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''mutation ($v0: JSON!) {
   foo1(arg: $v0)
 }
 '''
@@ -1324,7 +1323,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
 
         then:
         result.variables == [v0: 1]
-        AstPrinter.printAst(result.document) == '''mutation ($v0: JSON!) {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''mutation ($v0: JSON!) {
   foo1(arg: $v0)
 }
 '''
@@ -1352,7 +1351,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def result = compileToDocument(schema, MUTATION, null, fields, noVariables)
         then:
         result.variables == [:]
-        AstPrinter.printAst(result.document) == '''mutation {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''mutation {
   foo1
 }
 '''
@@ -1380,7 +1379,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def result = compileToDocument(schema, MUTATION, null, fields, noVariables)
         then:
         result.variables == [:]
-        AstPrinter.printAst(result.document) == '''mutation {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''mutation {
   foo1(arg: null)
 }
 '''
@@ -1408,7 +1407,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def result = compileToDocument(schema, MUTATION, null, fields, jsonVariables)
         then:
         result.variables == [v0: [one: "two", three: ["four", "five"]]]
-        AstPrinter.printAst(result.document) == '''mutation ($v0: JSON!) {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''mutation ($v0: JSON!) {
   foo1(arg: $v0)
 }
 '''
@@ -1438,7 +1437,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         result.variables.size() == 2
         result.variables['v0'] == [one: "two", three: ["four", "five"]]
         result.variables['v1'] == [[one: "two", three: ["four", "five"]]]
-        AstPrinter.printAst(result.document) == '''mutation ($v0: JSON!, $v1: [JSON!]) {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''mutation ($v0: JSON!, $v1: [JSON!]) {
   foo1(arg1: $v0, arg2: $v1)
 }
 '''
@@ -1473,7 +1472,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         then:
         vars.size() == 1
         vars['v0'] == [lastName: "Ibrahimoviç", name: "Zlatan", clubs: ["MU", "Barsa", "Inter", "Milan"]]
-        AstPrinter.printAst(result.document) == '''mutation ($v0: JSON) {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''mutation ($v0: JSON) {
   foo1(arg: {id : "ID-00", json : $v0})
 }
 '''
@@ -1506,7 +1505,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def result = compileToDocument(schema, MUTATION, null, fields, noVariables)
         then:
         result.variables == [:]
-        AstPrinter.printAst(result.document) == '''mutation {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''mutation {
   foo1(arg: {id : "ID-00", json : null})
 }
 '''
@@ -1539,7 +1538,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def result = compileToDocument(schema, MUTATION, null, fields, noVariables)
         then:
         result.variables == [:]
-        AstPrinter.printAst(result.document) == '''mutation {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''mutation {
   foo1(arg: {id : "ID-00"})
 }
 '''
@@ -1586,7 +1585,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
                                     "48x48" : "Zlatan_48x48.jpg",
                                     "96x96" : null
                                    ]]
-        AstPrinter.printAst(result.document) == '''mutation ($v0: [JSON!]) {
+        AstPrinter.printAst(new AstSorter().sort(result.document)) == '''mutation ($v0: [JSON!]) {
   foo1(arg: {id : "ID-00", json : $v0})
 }
 '''
@@ -1651,23 +1650,23 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def result = compileToDocument(schema, QUERY, "named", fields, allVariables)
         def document = result.document
         def vars = result.variables
-        def ast = AstPrinter.printAst(document)
+        def ast = AstPrinter.printAst(new AstSorter().sort(document))
         then:
 
         ast == '''query named($v0: [Int], $v1: [I], $v2: [I!]!, $v3: I, $v4: I, $v5: I) {
-  listField1(arg: $v0)
-  listField2(arg: $v1)
-  fooNonNull(arg: $v2)
   foo(arg: $v5) {
     bar(arg: $v4) {
       baz {
         ... on ABaz {
-          boo(arg: $v3)
           a
+          boo(arg: $v3)
         }
       }
     }
   }
+  fooNonNull(arg: $v2)
+  listField1(arg: $v0)
+  listField2(arg: $v1)
 }
 '''
 
