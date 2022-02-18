@@ -14,7 +14,7 @@ import static graphql.util.TraversalControl.CONTINUE;
 public class GraphQLTypeVisitorStub implements GraphQLTypeVisitor {
 
     @Override
-    public TraversalControl visitGraphQLAppliedArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
+    public TraversalControl visitGraphQLAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
         return visitGraphQLType(node, context);
     }
 

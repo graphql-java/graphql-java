@@ -72,9 +72,22 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @param directiveName the name of the directive
      *
      * @return true if there is a directive on this element with that name
+     * @deprecated use {@link #hasAppliedDirective(String)} instead
      */
+    @Deprecated
     default boolean hasDirective(String directiveName) {
         return getAllDirectivesByName().containsKey(directiveName);
+    }
+
+    /**
+     * This will return true if the element has a directive (repeatable or non repeatable) with the specified name
+     *
+     * @param directiveName the name of the directive
+     *
+     * @return true if there is a directive on this element with that name
+     */
+    default boolean hasAppliedDirective(String directiveName) {
+        return getAllAppliedDirectivesByName().containsKey(directiveName);
     }
 
     /**

@@ -198,7 +198,7 @@ public class Anonymizer {
             }
 
             @Override
-            public TraversalControl visitGraphQLAppliedArgument(GraphQLAppliedDirectiveArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
+            public TraversalControl visitGraphQLAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
                 String newName = assertNotNull(newNameMap.get(graphQLArgument));
 
                 GraphQLAppliedDirectiveArgument newElement = graphQLArgument.transform(builder -> {
@@ -512,7 +512,7 @@ public class Anonymizer {
             }
 
             @Override
-            public TraversalControl visitGraphQLAppliedArgument(GraphQLAppliedDirectiveArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
+            public TraversalControl visitGraphQLAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
                 GraphQLSchemaElement parentNode = context.getParentNode();
                 if (parentNode instanceof GraphQLAppliedDirective) {
                     // if we already went over the argument for this directive name, no need to add new names

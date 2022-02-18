@@ -54,8 +54,8 @@ public class MultiReadOnlyGraphQLTypeVisitor implements GraphQLTypeVisitor {
     }
 
     @Override
-    public TraversalControl visitGraphQLAppliedArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
-        visitors.forEach(v -> v.visitGraphQLAppliedArgument(node, context));
+    public TraversalControl visitGraphQLAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
+        visitors.forEach(v -> v.visitGraphQLAppliedDirectiveArgument(node, context));
         return TraversalControl.CONTINUE;
     }
 

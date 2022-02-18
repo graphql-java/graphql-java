@@ -53,7 +53,7 @@ public interface GraphQLTypeVisitor {
         return TraversalControl.CONTINUE;
     }
 
-    default TraversalControl visitGraphQLAppliedArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
+    default TraversalControl visitGraphQLAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
         return TraversalControl.CONTINUE;
     }
 

@@ -166,7 +166,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
 
     @Override
     public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
-        return visitor.visitGraphQLAppliedArgument(this, context);
+        return visitor.visitGraphQLAppliedDirectiveArgument(this, context);
     }
 
     @Override
