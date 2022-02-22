@@ -20,10 +20,10 @@ import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLType
 import graphql.schema.TypeResolver
-import graphql.schema.idl.MockedWiringFactory
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
+import graphql.schema.idl.TestMockedWiringFactory
 import graphql.schema.idl.TypeRuntimeWiring
 import graphql.schema.idl.WiringFactory
 import graphql.schema.idl.errors.SchemaProblem
@@ -160,7 +160,7 @@ class TestUtil {
         }
     }
 
-    static WiringFactory mockWiringFactory = new MockedWiringFactory()
+    static WiringFactory mockWiringFactory = new TestMockedWiringFactory()
 
     static RuntimeWiring mockRuntimeWiring = RuntimeWiring.newRuntimeWiring().wiringFactory(mockWiringFactory).build()
 
@@ -189,12 +189,12 @@ class TestUtil {
 
     static GraphQLScalarType mockScalar(ScalarTypeDefinition definition) {
         newScalar()
-            .name(definition.getName())
-            .description(definition.getDescription() == null ? null : definition.getDescription().getContent())
-            .coercing(mockCoercing())
-            .replaceDirectives(definition.getDirectives().stream().map({ mockDirective(it.getName()) }).collect(Collectors.toList()))
-            .definition(definition)
-            .build()
+                .name(definition.getName())
+                .description(definition.getDescription() == null ? null : definition.getDescription().getContent())
+                .coercing(mockCoercing())
+                .replaceDirectives(definition.getDirectives().stream().map({ mockDirective(it.getName()) }).collect(Collectors.toList()))
+                .definition(definition)
+                .build()
     }
 
     static GraphQLDirective mockDirective(String name) {
