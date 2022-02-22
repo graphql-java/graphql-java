@@ -47,6 +47,7 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.collect.ImmutableKit.map;
 import static graphql.execution.MergedField.newMergedField;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
+import static graphql.util.FpKit.filterSet;
 import static graphql.util.FpKit.groupingBy;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
@@ -352,16 +353,6 @@ public class ExecutableNormalizedOperationFactory {
         for (GraphQLObjectType objectType : allRelevantObjects) {
             Set<CollectedField> relevantFields = filterSet(fields, field -> field.objectTypes.contains(objectType));
             result.add(new CollectedFieldGroup(relevantFields, singleton(objectType)));
-        }
-        return result.build();
-    }
-
-    public static <T> Set<T> filterSet(Collection<T> input, Predicate<T> filter) {
-        ImmutableSet.Builder<T> result = ImmutableSet.builder();
-        for (T t : input) {
-            if (filter.test(t)) {
-                result.add(t);
-            }
         }
         return result.build();
     }
