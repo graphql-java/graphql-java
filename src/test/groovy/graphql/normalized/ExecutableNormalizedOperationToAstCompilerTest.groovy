@@ -14,6 +14,7 @@ import spock.lang.Specification
 import static graphql.language.OperationDefinition.Operation.MUTATION
 import static graphql.language.OperationDefinition.Operation.QUERY
 import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION
+import static graphql.normalized.ExecutableNormalizedOperationToAstCompiler.compileToDocument
 
 class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
 
@@ -121,8 +122,8 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def document = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, QUERY, null, fields, noVariables).document
-        def printed = AstPrinter.printAst(document)
+        def result = compileToDocument(schema, QUERY, null, fields, noVariables)
+        def printed = AstPrinter.printAst(result.document)
         then:
         printed == '''query {
   animal {
@@ -204,7 +205,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, QUERY, null, fields, noVariables)
+        def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         then:
         AstPrinter.printAst(result.document) == '''query {
   foo(arg: {arg1 : "fooArg"}) {
@@ -236,7 +237,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, QUERY, null, fields, noVariables)
+        def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         then:
         AstPrinter.printAst(result.document) == '''query {
   foo1(arg: "hello")
@@ -260,7 +261,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, QUERY, "My_Op23", fields, noVariables)
+        def result = compileToDocument(schema, QUERY, "My_Op23", fields, noVariables)
         then:
         AstPrinter.printAst(result.document) == '''query My_Op23 {
   foo1(arg: "hello")
@@ -303,7 +304,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, QUERY, null, fields, noVariables)
+        def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         then:
         AstPrinter.printAst(result.document) == '''query {
   foo1(arg: {arg1 : "Hello", arg2 : 123, arg3 : "IDID", arg4 : false, arg5 : 123.123, nested : {arg1 : "Hello2", arg2 : 1234, arg3 : "IDID1", arg4 : null, arg5 : null}})
@@ -332,7 +333,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, MUTATION, null, fields, noVariables)
+        def result = compileToDocument(schema, MUTATION, null, fields, noVariables)
         then:
         AstPrinter.printAst(result.document) == '''mutation {
   foo1(arg: {arg1 : "Mutation"})
@@ -361,7 +362,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, SUBSCRIPTION, null, fields, noVariables)
+        def result = compileToDocument(schema, SUBSCRIPTION, null, fields, noVariables)
         then:
         AstPrinter.printAst(result.document) == '''subscription {
   foo1(arg: {arg1 : "Subscription"})
@@ -399,7 +400,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, MUTATION, null, fields, noVariables)
+        def result = compileToDocument(schema, MUTATION, null, fields, noVariables)
         then:
         AstPrinter.printAst(result.document) == '''mutation {
   foo1(arg: {arg1 : "Mutation"}) {
@@ -442,7 +443,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, QUERY, null, fields, noVariables)
+        def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         then:
         AstPrinter.printAst(result.document) == '''query {
   foo1(arg: {arg1 : "Query"}) {
@@ -492,7 +493,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, QUERY, null, fields, noVariables)
+        def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         then:
         AstPrinter.printAst(result.document) == '''query {
   foo1(arg: {arg1 : "Query"}) {
@@ -541,7 +542,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, QUERY, null, fields, noVariables)
+        def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         then:
         AstPrinter.printAst(result.document) == '''query {
   foo1(arg: {arg1 : "Query"}) {
@@ -578,7 +579,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def fields = createNormalizedFields(schema, query, vars)
 
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, MUTATION, null, fields, jsonVariables)
+        def result = compileToDocument(schema, MUTATION, null, fields, jsonVariables)
 
         then:
         result.variables == [v0: ["48x48": "hello"]]
@@ -609,7 +610,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def fields = createNormalizedFields(schema, query, vars)
 
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, MUTATION, null, fields, jsonVariables)
+        def result = compileToDocument(schema, MUTATION, null, fields, jsonVariables)
         then:
         result.variables == [v0: "hello there"]
         AstPrinter.printAst(result.document) == '''mutation ($v0: JSON!) {
@@ -639,7 +640,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def fields = createNormalizedFields(schema, query, vars)
 
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, MUTATION, null, fields, jsonVariables)
+        def result = compileToDocument(schema, MUTATION, null, fields, jsonVariables)
 
         then:
         result.variables == [v0: 1]
@@ -668,7 +669,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def fields = createNormalizedFields(schema, query)
 
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, MUTATION, null, fields, noVariables)
+        def result = compileToDocument(schema, MUTATION, null, fields, noVariables)
         then:
         result.variables == [:]
         AstPrinter.printAst(result.document) == '''mutation {
@@ -696,7 +697,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def fields = createNormalizedFields(schema, query)
 
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, MUTATION, null, fields, noVariables)
+        def result = compileToDocument(schema, MUTATION, null, fields, noVariables)
         then:
         result.variables == [:]
         AstPrinter.printAst(result.document) == '''mutation {
@@ -724,7 +725,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def fields = createNormalizedFields(schema, query)
 
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, MUTATION, null, fields, jsonVariables)
+        def result = compileToDocument(schema, MUTATION, null, fields, jsonVariables)
         then:
         result.variables == [v0: [one: "two", three: ["four", "five"]]]
         AstPrinter.printAst(result.document) == '''mutation ($v0: JSON!) {
@@ -752,7 +753,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def fields = createNormalizedFields(schema, query)
 
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, MUTATION, null, fields, jsonVariables)
+        def result = compileToDocument(schema, MUTATION, null, fields, jsonVariables)
         then:
         result.variables.size() == 2
         result.variables['v0'] == [one: "two", three: ["four", "five"]]
@@ -787,7 +788,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def fields = createNormalizedFields(schema, query)
 
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, MUTATION, null, fields, jsonVariables)
+        def result = compileToDocument(schema, MUTATION, null, fields, jsonVariables)
         def vars = result.variables
         then:
         vars.size() == 1
@@ -822,7 +823,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def fields = createNormalizedFields(schema, query)
 
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, MUTATION, null, fields, noVariables)
+        def result = compileToDocument(schema, MUTATION, null, fields, noVariables)
         then:
         result.variables == [:]
         AstPrinter.printAst(result.document) == '''mutation {
@@ -855,7 +856,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def fields = createNormalizedFields(schema, query)
 
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, MUTATION, null, fields, noVariables)
+        def result = compileToDocument(schema, MUTATION, null, fields, noVariables)
         then:
         result.variables == [:]
         AstPrinter.printAst(result.document) == '''mutation {
@@ -896,7 +897,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def fields = createNormalizedFields(schema, query, variables)
 
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, MUTATION, null, fields, jsonVariables)
+        def result = compileToDocument(schema, MUTATION, null, fields, jsonVariables)
         then:
         result.variables.size() == 1
         result.variables['v0'] == [[name    : "Zlatan",
@@ -967,7 +968,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def fields = createNormalizedFields(schema, query)
 
         when:
-        def result = ExecutableNormalizedOperationToAstCompiler.compileToDocument(schema, QUERY, "named", fields, allVariables)
+        def result = compileToDocument(schema, QUERY, "named", fields, allVariables)
         def document = result.document
         def vars = result.variables
         def ast = AstPrinter.printAst(document)
